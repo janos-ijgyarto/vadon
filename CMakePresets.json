@@ -1,0 +1,201 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 21,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "base",
+      "description": "Sets build and install directory",
+      "hidden": true,
+      "binaryDir": "${sourceDir}/out/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}",
+        "CMAKE_RUNTIME_OUTPUT_DIRECTORY": "${sourceDir}/out/build/${presetName}/bin",
+        "VADON_CONFIGURATION_NAME": "${presetName}",
+        "VADON_PLATFORM_INTERFACE": "DEFAULT",
+        "VADON_GRAPHICS": "DEFAULT",
+        "VADON_LINK_STATIC": "OFF",
+        "VADON_ENABLE_APPLICATION": "ON",
+        "VADON_ENABLE_DEMO": "ON"
+      },
+      "warnings": { "dev": false }
+    },
+    {
+      "name": "platform-windows",
+      "description": "Base preset for Windows",
+      "hidden": true,
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      }
+    },
+    {
+      "name": "platform-linux",
+      "description": "Base preset for Linux",
+      "hidden": true,
+      "vendor": {
+        "microsoft.com/VisualStudioSettings/CMake/1.0": {
+          "hostOS": [ "Linux" ]
+        }
+      }
+    },
+    {
+      "name": "generator-vs",
+      "description": "Base preset for configurations using VS 2022 as the generator",
+      "hidden": true,
+      "generator": "Visual Studio 17 2022",
+      "vendor": {
+        "microsoft.com/VisualStudioSettings/CMake/1.0": {
+          "hostOS": [ "Windows" ]
+        }
+      }
+    },
+    {
+      "name": "generator-ninja",
+      "hidden": true,
+      "generator": "Ninja"
+    },
+    {
+      "name": "compiler-cl",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "cl",
+        "CMAKE_CXX_COMPILER": "cl"
+      }
+    },
+    {
+      "name": "compiler-clang-cl",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "clang-cl",
+        "CMAKE_CXX_COMPILER": "clang-cl"
+      },
+      "toolset": "ClangCL",
+      "vendor": {
+        "microsoft.com/VisualStudioSettings/CMake/1.0": {
+          "intelliSenseMode": "windows-clang-x64"
+        }
+      }
+    },
+    {
+      "name": "compiler-g++",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_CXX_COMPILER": "g++"
+      }
+    },
+    {
+      "name": "architecture-win32",
+      "hidden": true,
+      "architecture": {
+        "value": "Win32",
+        "strategy": "set"
+      }
+    },
+    {
+      "name": "architecture-x64",
+      "hidden": true,
+      "architecture": {
+        "value": "x64",
+        "strategy": "set"
+      }
+    },
+    {
+      "name": "config-debug",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_CONFIGURATION_TYPES": "Debug"
+      }
+    },
+    {
+      "name": "config-release",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_CONFIGURATION_TYPES": "Release"
+      }
+    },
+    {
+      "name": "engine-link-static",
+      "hidden": true,
+      "cacheVariables": {
+        "VADON_LINK_STATIC": "ON"
+      }
+    },
+    {
+      "name": "windows-cl-debug",
+      "displayName": "MSVC debug",
+      "description": "Windows Ninja build using MSVC",
+      "inherits": [ "base", "platform-windows", "generator-ninja", "compiler-cl", "config-debug" ]
+    },
+    {
+      "name": "windows-cl-release",
+      "displayName": "MSVC release",
+      "description": "Windows Ninja build using MSVC",
+      "inherits": [ "base", "platform-windows", "generator-ninja", "compiler-cl", "config-release" ]
+    },
+    {
+      "name": "windows-cl-debug-static",
+      "displayName": "MSVC debug STATIC",
+      "description": "Windows Ninja build using MSVC (static linkage)",
+      "inherits": [ "engine-link-static", "windows-cl-debug" ]
+    },
+    {
+      "name": "windows-cl-release-static",
+      "displayName": "MSVC release STATIC",
+      "description": "Windows Ninja build using MSVC (static linkage)",
+      "inherits": [ "engine-link-static", "windows-cl-release" ]
+    },
+    {
+      "name": "linux-ninja-g++",
+      "description": "Linux Ninja build using g++",
+      "inherits": [ "base", "platform-linux", "generator-ninja", "compiler-g++" ]
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "Demo-base",
+      "hidden": true,
+      "cleanFirst": false,
+      "targets": "VadonDemo"
+    },
+    {
+      "name": "Demo-debug-cl",
+      "displayName": "MSVC Debug",
+      "description": "Windows debug build using cl",
+      "inherits": "Demo-base",
+      "configurePreset": "windows-cl-debug",
+      "configuration": "Debug"
+    },
+    {
+      "name": "Demo-release-cl",
+      "displayName": "MSVC Release",
+      "description": "Windows release build using cl",
+      "inherits": "Demo-base",
+      "configurePreset": "windows-cl-release",
+      "configuration": "Release"
+    },
+    {
+      "name": "Demo-debug-win64-cl-static",
+      "displayName": "MSVC Debug STATIC",
+      "description": "Windows debug build using cl",
+      "inherits": "Demo-base",
+      "configurePreset": "windows-cl-debug-static",
+      "configuration": "Debug"
+    },
+    {
+      "name": "Demo-release-win64-cl-static",
+      "displayName": "MSVC Release STATIC",
+      "description": "Windows release build using cl",
+      "inherits": "Demo-base",
+      "configurePreset": "windows-cl-release-static",
+      "configuration": "Release"
+    }
+  ]
+}

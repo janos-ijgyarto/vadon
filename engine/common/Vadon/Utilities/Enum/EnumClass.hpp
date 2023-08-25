@@ -1,0 +1,26 @@
+#ifndef VADON_UTILITIES_ENUM_ENUMCLASS_HPP
+#define VADON_UTILITIES_ENUM_ENUMCLASS_HPP
+#include <type_traits>
+namespace Vadon::Utilities
+{
+	template <typename T>
+	constexpr auto to_integral(T value)
+	{
+		// Add a check just in case somebody tried to call this on a non-enum for some reason
+		if constexpr (std::is_enum_v<T>)
+		{
+			return static_cast<std::underlying_type_t<T>>(value);
+		}
+		else
+		{
+			return value;
+		}
+	}
+
+	template<typename T>
+	constexpr std::enable_if_t<std::is_enum_v<T>, T> to_enum(std::underlying_type_t<T> value)
+	{
+		return static_cast<T>(value);
+	}
+}
+#endif
