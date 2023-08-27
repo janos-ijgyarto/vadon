@@ -9,10 +9,11 @@ namespace Vadon::Render
 	class TextureSystem : public GraphicsSystem<TextureSystem>
 	{
 	public:
-		virtual TextureHandle create_2d_texture(const Texture2DInfo& texture_info, const ShaderResourceInfo& resource_info, const void* init_data = nullptr) = 0;
-
-		virtual ShaderResourceHandle get_texture_resource(TextureHandle texture_handle) = 0;
+		virtual TextureHandle create_texture(const TextureInfo& texture_info, const void* init_data = nullptr) = 0;
+		virtual TextureHandle create_texture_from_memory(size_t size, const void* data) = 0;
 		virtual void remove_texture(TextureHandle texture_handle) = 0;
+
+		virtual ShaderResourceViewHandle create_texture_srv(TextureHandle texture_handle, const ShaderResourceViewInfo& srv_info) = 0;
 
 		virtual TextureSamplerHandle create_sampler(const TextureSamplerInfo& sampler_info) = 0;
 		virtual void remove_sampler(TextureSamplerHandle sampler_handle) = 0;

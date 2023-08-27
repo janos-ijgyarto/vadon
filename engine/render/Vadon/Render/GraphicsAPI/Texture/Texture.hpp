@@ -13,19 +13,20 @@ namespace Vadon::Render
 		int quality = 0;
 	};
 
-	// FIXME: have separate info for 1D, 2D, and 3D textures?
-	struct Texture2DInfo
+	struct TextureInfo
 	{
-		Utilities::Vector2i dimensions = Utilities::Vector2i(0, 0);
+		Utilities::Vector3i dimensions = Utilities::Vector3i(0, 0, 0);
 		int mip_levels = 0;
 		int array_size = 0;
 		GraphicsAPIDataFormat format = GraphicsAPIDataFormat::UNKNOWN;
 
 		TextureSampleInfo sample_info;
 		BufferUsage usage = BufferUsage::DEFAULT;
-		BufferBinding binding = BufferBinding::SHADER_RESOURCE;
+		BufferBindFlags bind_flags = BufferBindFlags::SHADER_RESOURCE;
 		int access = 0;
 		int misc = 0;
+
+		bool is_valid() const { return (dimensions.x > 0); }
 	};
 
 	enum class TextureFilter

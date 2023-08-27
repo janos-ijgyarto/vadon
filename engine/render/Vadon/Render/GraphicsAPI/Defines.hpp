@@ -12,6 +12,7 @@ namespace Vadon::Render
 		FLOAT_32,
 		UINT_32,
 		UINT_16,
+		BC1_UNORM
 	};
 
 	// FIXME: better naming convention?

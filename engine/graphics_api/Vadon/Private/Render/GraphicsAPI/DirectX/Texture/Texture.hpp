@@ -5,19 +5,18 @@
 namespace Vadon::Private::Render::DirectX
 {
 	using TextureSampleInfo = Vadon::Render::TextureSampleInfo;
-	using Texture2DInfo = Vadon::Render::Texture2DInfo;
+	using TextureInfo = Vadon::Render::TextureInfo;
 
 	using TextureHandle = Vadon::Render::TextureHandle;
 
+	using D3DTexture1D = ComPtr<ID3D11Texture1D>;
 	using D3DTexture2D = ComPtr<ID3D11Texture2D>;
+	using D3DTexture3D = ComPtr<ID3D11Texture3D>;
 
 	struct Texture
 	{
-		// FIXME: store different texture types, e.g as variant?
-		Texture2DInfo info;
-		D3DTexture2D d3d_texture_2d;
-
-		ShaderResourceHandle resource;
+		TextureInfo info;
+		D3DResource d3d_texture_resource;
 	};
 
 	using TextureSamplerInfo = Vadon::Render::TextureSamplerInfo;

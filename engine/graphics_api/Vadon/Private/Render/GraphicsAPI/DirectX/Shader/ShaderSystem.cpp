@@ -199,9 +199,9 @@ namespace Vadon::Private::Render::DirectX
 		device_context->IASetInputLayout(vertex_layout->d3d_input_layout.Get());
 	}
 
-	void ShaderSystem::apply_resource(ShaderType shader_type, ShaderResourceHandle resource_handle, int32_t slot)
+	void ShaderSystem::apply_resource(ShaderType shader_type, ShaderResourceViewHandle resource_handle, int32_t slot)
 	{
-		ShaderResource* resource = m_resource_pool.get(resource_handle);
+		ShaderResourceView* resource = m_resource_pool.get(resource_handle);
 		ID3D11ShaderResourceView* resource_array[] = { resource ? resource->d3d_srv.Get() : nullptr };
 
 		GraphicsAPI::DeviceContext* device_context = m_graphics_api.get_device_context();
@@ -217,18 +217,35 @@ namespace Vadon::Private::Render::DirectX
 		}
 	}
 
-	ShaderResourceHandle ShaderSystem::create_resource(ID3D11Resource* resource, const ShaderResourceInfo& resource_info)
+	ShaderResourceViewHandle ShaderSystem::add_resource_view(D3DShaderResourceView d3d_srv)
 	{
-		ShaderResourceHandle new_resource_handle;
-
 		D3D11_SHADER_RESOURCE_VIEW_DESC srv_description;
 		ZeroMemory(&srv_description, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
 
-		// TODO: branch on SRV type!
-		srv_description.Format = get_dxgi_format(resource_info.format);
-		srv_description.ViewDimension = get_d3d_srv_dimension(resource_info.type);
-		srv_description.Texture2D.MipLevels = resource_info.texture_info.mip_levels;
-		srv_description.Texture2D.MostDetailedMip = resource_info.texture_info.most_detailed_mip;
+		d3d_srv->GetDesc(&srv_description);
+
+		ShaderResourceViewInfo srv_info = get_srv_info(srv_description);
+
+		return add_resource_view_internal(d3d_srv, srv_info);
+	}
+
+	ShaderResourceViewHandle ShaderSystem::create_resource_view(ID3D11Resource* resource, const ShaderResourceViewInfo& srv_info)
+	{
+		D3D11_SHADER_RESOURCE_VIEW_DESC srv_description;
+		ZeroMemory(&srv_description, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
+
+		srv_description.Format = get_dxgi_format(srv_info.format);
+		srv_description.ViewDimension = get_d3d_srv_dimension(srv_info.type);
+
+		switch (srv_info.type)
+		{
+		case ShaderResourceType::TEXTURE_2D:
+		{
+			srv_description.Texture2D.MipLevels = srv_info.resource_type_data.mip_levels;
+			srv_description.Texture2D.MostDetailedMip = srv_info.resource_type_data.most_detailed_mip;
+		}
+		break;
+		}
 
 		D3DShaderResourceView d3d_srv;
 
@@ -237,27 +254,40 @@ namespace Vadon::Private::Render::DirectX
 		if (FAILED(result))
 		{
 			// TODO: error message
-			return new_resource_handle;
+			return ShaderResourceViewHandle();
 		}
 
-		new_resource_handle = m_resource_pool.add();
-
-		ShaderResource* new_resource = m_resource_pool.get(new_resource_handle);
-		new_resource->info = resource_info;
-		new_resource->d3d_srv = d3d_srv;
-
-		return new_resource_handle;
+		return add_resource_view_internal(d3d_srv, srv_info);
 	}
 
-	void ShaderSystem::remove_resource(ShaderResourceHandle resource_handle)
+	void ShaderSystem::remove_resource_view(ShaderResourceViewHandle srv_handle)
 	{
-		ShaderResource* resource = m_resource_pool.get(resource_handle);
+		ShaderResourceView* resource = m_resource_pool.get(srv_handle);
 		if (!resource)
 		{
 			return;
 		}
 
 		resource->d3d_srv.Reset();
+	}
+
+	ShaderResourceViewInfo ShaderSystem::get_srv_info(D3D11_SHADER_RESOURCE_VIEW_DESC& srv_desc)
+	{
+		ShaderResourceViewInfo srv_info;
+		srv_info.format = get_graphics_api_data_format(srv_desc.Format);
+		srv_info.type = get_srv_type(srv_desc.ViewDimension);
+
+		switch (srv_info.type)
+		{
+		case ShaderResourceType::TEXTURE_2D:
+		{
+			srv_info.resource_type_data.mip_levels = srv_desc.Texture2D.MipLevels;
+			srv_info.resource_type_data.most_detailed_mip = srv_desc.Texture2D.MostDetailedMip;
+		}
+		break;
+		}
+
+		return srv_info;
 	}
 
 	ShaderSystem::ShaderSystem(Vadon::Core::EngineCoreInterface& core, GraphicsAPI& graphics_api)
@@ -375,5 +405,16 @@ namespace Vadon::Private::Render::DirectX
 		}
 
 		return shader_blob;
+	}
+
+	ShaderResourceViewHandle ShaderSystem::add_resource_view_internal(D3DShaderResourceView d3d_srv, const ShaderResourceViewInfo& srv_info)
+	{
+		ShaderResourceViewHandle new_resource_handle = m_resource_pool.add();
+
+		ShaderResourceView* new_resource = m_resource_pool.get(new_resource_handle);
+		new_resource->info = srv_info;
+		new_resource->d3d_srv = d3d_srv;
+
+		return new_resource_handle;
 	}
 }

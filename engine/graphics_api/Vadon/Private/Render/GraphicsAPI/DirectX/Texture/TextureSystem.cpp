@@ -6,6 +6,8 @@
 
 #include <Vadon/Private/Render/GraphicsAPI/DirectX/Shader/ShaderSystem.hpp>
 
+#include <Vadon/Private/Render/GraphicsAPI/DirectX/Texture/DDSTextureLoader11.h>
+
 namespace Vadon::Private::Render::DirectX
 {
 	namespace
@@ -43,82 +45,172 @@ namespace Vadon::Private::Render::DirectX
 
 			return D3D11_TEXTURE_ADDRESS_WRAP;
 		}
+
+		D3D11_TEXTURE2D_DESC create_2d_texture_desc(const TextureInfo& texture_info)
+		{
+			D3D11_TEXTURE2D_DESC texture_description;
+			ZeroMemory(&texture_description, sizeof(D3D11_TEXTURE2D_DESC));
+
+			texture_description.Width = texture_info.dimensions.x;
+			texture_description.Height = texture_info.dimensions.y;
+			texture_description.MipLevels = texture_info.mip_levels;
+			texture_description.ArraySize = texture_info.array_size;
+			texture_description.Format = get_dxgi_format(texture_info.format);
+
+			texture_description.SampleDesc.Count = texture_info.sample_info.count;
+			texture_description.SampleDesc.Quality = texture_info.sample_info.quality;
+
+			texture_description.Usage = get_d3d_usage(texture_info.usage);
+			texture_description.BindFlags = get_d3d_bind_flags(texture_info.bind_flags);
+
+			if (texture_info.usage == BufferUsage::DYNAMIC)
+			{
+				// Dynamic textures need write access
+				texture_description.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+			}
+
+			texture_description.MiscFlags = 0;
+
+			return texture_description;
+		}
+
+		TextureInfo create_texture_info(const D3DResource& texture_resource)
+		{
+			D3D11_RESOURCE_DIMENSION resource_dimension;
+			texture_resource->GetType(&resource_dimension);
+
+			TextureInfo texture_info;
+
+			switch (resource_dimension)
+			{
+			case D3D11_RESOURCE_DIMENSION_UNKNOWN:
+				// TODO!!!
+				break;
+			case D3D11_RESOURCE_DIMENSION_BUFFER:
+				// TODO!!!
+				break;
+			case D3D11_RESOURCE_DIMENSION_TEXTURE1D:
+				// TODO!!!
+				break;
+			case D3D11_RESOURCE_DIMENSION_TEXTURE2D:
+			{
+				D3DTexture2D d3d_texture_2d;
+				HRESULT result = texture_resource.As(&d3d_texture_2d);
+				if (FAILED(result))
+				{
+					return texture_info;
+				}
+
+				D3D11_TEXTURE2D_DESC texture_description;
+				ZeroMemory(&texture_description, sizeof(D3D11_TEXTURE2D_DESC));
+
+				d3d_texture_2d->GetDesc(&texture_description);
+
+				texture_info.dimensions.x = texture_description.Width;
+				texture_info.dimensions.y = texture_description.Height;
+				texture_info.mip_levels = texture_description.MipLevels;
+				texture_info.array_size = texture_description.ArraySize;
+				texture_info.format = get_graphics_api_data_format(texture_description.Format);
+
+				texture_info.sample_info.count = texture_description.SampleDesc.Count;
+				texture_info.sample_info.quality = texture_description.SampleDesc.Quality;
+
+				texture_info.usage = get_buffer_usage(texture_description.Usage);
+				texture_info.bind_flags = get_buffer_bind_flags(Utilities::to_enum<D3D11_BIND_FLAG>(texture_description.BindFlags));
+			}
+			break;
+			case D3D11_RESOURCE_DIMENSION_TEXTURE3D:
+				// TODO!!!
+				break;
+			}
+
+			return texture_info;
+		}
 	}
 
-	TextureHandle TextureSystem::create_2d_texture(const Texture2DInfo& texture_info, const ShaderResourceInfo& resource_info, const void* init_data)
+	TextureHandle TextureSystem::create_texture_from_memory(size_t size, const void* data)
 	{
-		TextureHandle new_texture_handle;
-
-		D3D11_TEXTURE2D_DESC texture_description;
-		ZeroMemory(&texture_description, sizeof(D3D11_TEXTURE2D_DESC));
-
-		texture_description.Width = texture_info.dimensions.x;
-		texture_description.Height = texture_info.dimensions.y;
-		texture_description.MipLevels = texture_info.mip_levels;
-		texture_description.ArraySize = texture_info.array_size;
-		texture_description.Format = get_dxgi_format(texture_info.format);
-
-		texture_description.SampleDesc.Count = texture_info.sample_info.count;
-		texture_description.SampleDesc.Quality = texture_info.sample_info.quality;
-
-		texture_description.Usage = get_d3d_usage(texture_info.usage);
-		texture_description.BindFlags = get_d3d_binding(texture_info.binding);
-
-		if (texture_info.usage == BufferUsage::DYNAMIC)
-		{
-			// Dynamic textures need write access
-			texture_description.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-		}
-
-		texture_description.MiscFlags = 0;
-
 		GraphicsAPI::Device* device = m_graphics_api.get_device();
-		D3DTexture2D new_d3d_texture;
+		
+		D3DResource texture_resource;
 
-		D3D11_SUBRESOURCE_DATA subresource_data;
-		ZeroMemory(&subresource_data, sizeof(D3D11_SUBRESOURCE_DATA));
-
-		if (init_data)
-		{
-			subresource_data.pSysMem = init_data;
-			subresource_data.SysMemPitch = texture_description.Width * 4; // FIXME: make this programmable!
-			subresource_data.SysMemSlicePitch = 0;
-		}
-
-		const HRESULT result = device->CreateTexture2D(&texture_description, init_data ? &subresource_data : nullptr, new_d3d_texture.ReleaseAndGetAddressOf());
+		// TODO: could just move code into this function to fill in the texture info
+		HRESULT result = ::DirectX::CreateDDSTextureFromMemory(device, static_cast<const uint8_t*>(data), size, texture_resource.ReleaseAndGetAddressOf(), nullptr, 0, nullptr);
 		if (FAILED(result))
 		{
-			// TODO: error message!
-			return new_texture_handle;
+			return TextureHandle();
 		}
 
-		// Create texture view
-		ShaderSystem& shader_system = m_graphics_api.get_directx_shader_system();
-		ShaderResourceHandle new_texture_resource_view = shader_system.create_resource(new_d3d_texture.Get(), resource_info);
-		if (!new_texture_resource_view.is_valid())
+		// Make sure we can query valid texture info
+		const TextureInfo texture_info = create_texture_info(texture_resource);
+		if (texture_info.is_valid() == false)
 		{
-			return new_texture_handle;
+			return TextureHandle();
 		}
 
-		new_texture_handle = m_texture_pool.add();
+		// Add texture to pool
+		TextureHandle new_texture_handle = m_texture_pool.add();
 
 		Texture* new_texture = m_texture_pool.get(new_texture_handle);
 		new_texture->info = texture_info;
-		new_texture->d3d_texture_2d = new_d3d_texture;
-		new_texture->resource = new_texture_resource_view;
+		new_texture->d3d_texture_resource = texture_resource;
 
 		return new_texture_handle;
 	}
 
-	ShaderResourceHandle TextureSystem::get_texture_resource(TextureHandle texture_handle)
+	TextureHandle TextureSystem::create_texture(const TextureInfo& texture_info, const void* init_data)
 	{
-		Texture* texture = m_texture_pool.get(texture_handle);
-		if (!texture)
+		TextureHandle new_texture_handle;
+
+		GraphicsAPI::Device* device = m_graphics_api.get_device();
+		D3DResource new_d3d_texture;
+
+		if (texture_info.dimensions.z > 0)
 		{
-			return ShaderResourceHandle();
+			// 3D texture
+			// TODO!!!
+		}
+		else if (texture_info.dimensions.y > 0)
+		{
+			// 2D texture
+			const D3D11_TEXTURE2D_DESC texture_description = create_2d_texture_desc(texture_info);
+
+			D3D11_SUBRESOURCE_DATA subresource_data;
+			ZeroMemory(&subresource_data, sizeof(D3D11_SUBRESOURCE_DATA));
+
+			if (init_data)
+			{
+				subresource_data.pSysMem = init_data;
+				subresource_data.SysMemPitch = texture_description.Width * static_cast<UINT>(get_bits_per_pixel(texture_description.Format)) / 8; // FIXME: use DDS loader utilities!
+				subresource_data.SysMemSlicePitch = 0; // TODO: when to set this?
+			}
+
+			// TODO: when mipmaps and texture arrays get involved, we need to make a subresource for those!
+
+			D3DTexture2D d3d_texture_2d;
+			const HRESULT result = device->CreateTexture2D(&texture_description, init_data ? &subresource_data : nullptr, d3d_texture_2d.ReleaseAndGetAddressOf());
+			if (FAILED(result))
+			{
+				// TODO: error message!
+				return new_texture_handle;
+			}
+
+			new_d3d_texture = d3d_texture_2d;
+		}
+		else
+		{
+			// 1D texture
+			// TODO!!!
 		}
 
-		return texture->resource;
+		// Add texture to pool
+		new_texture_handle = m_texture_pool.add();
+
+		Texture* new_texture = m_texture_pool.get(new_texture_handle);
+		new_texture->info = texture_info;
+		new_texture->d3d_texture_resource = new_d3d_texture;
+
+		return new_texture_handle;
 	}
 
 	void TextureSystem::remove_texture(TextureHandle texture_handle)
@@ -129,11 +221,22 @@ namespace Vadon::Private::Render::DirectX
 			return;
 		}
 
-		ShaderSystem& shader_system = m_graphics_api.get_directx_shader_system();
-		shader_system.remove_resource(texture->resource);
-
-		texture->d3d_texture_2d.Reset();
+		// NOTE: we do not remove the SRV, only the texture (client is responsible for full cleanup)
+		texture->d3d_texture_resource.Reset();
 		m_texture_pool.remove(texture_handle);
+	}
+
+	ShaderResourceViewHandle TextureSystem::create_texture_srv(TextureHandle texture_handle, const ShaderResourceViewInfo& srv_info)
+	{
+		Texture* texture = m_texture_pool.get(texture_handle);
+		if (texture == nullptr)
+		{
+			return ShaderResourceViewHandle();
+		}
+
+		// Create shader resource view from D3D resource
+		ShaderSystem& shader_system = m_graphics_api.get_directx_shader_system();
+		return shader_system.create_resource_view(texture->d3d_texture_resource.Get(), srv_info);
 	}
 
 	TextureSamplerHandle TextureSystem::create_sampler(const TextureSamplerInfo& sampler_info)

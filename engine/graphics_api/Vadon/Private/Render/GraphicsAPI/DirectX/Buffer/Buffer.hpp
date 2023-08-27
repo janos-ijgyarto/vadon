@@ -7,7 +7,7 @@
 namespace Vadon::Private::Render::DirectX
 {
 	using BufferUsage = Vadon::Render::BufferUsage;
-	using BufferBinding = Vadon::Render::BufferBinding;
+	using BufferBindFlags = Vadon::Render::BufferBindFlags;
 
 	using BufferInfo = Vadon::Render::BufferInfo;
 
@@ -25,6 +25,8 @@ namespace Vadon::Private::Render::DirectX
 	using BufferHandle = Vadon::Render::BufferHandle;
 
 	D3D11_USAGE get_d3d_usage(BufferUsage usage);
-	D3D11_BIND_FLAG get_d3d_binding(BufferBinding binding);
+	BufferUsage get_buffer_usage(D3D11_USAGE usage);
+	D3D11_BIND_FLAG get_d3d_bind_flags(BufferBindFlags bind_flags);
+	BufferBindFlags get_buffer_bind_flags(D3D11_BIND_FLAG d3d_bind_flags);
 }
 #endif

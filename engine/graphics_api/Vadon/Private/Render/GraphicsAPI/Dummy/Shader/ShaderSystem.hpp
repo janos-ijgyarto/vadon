@@ -18,7 +18,7 @@ namespace Vadon::Private::Render::Dummy
 		VertexLayoutHandle create_vertex_layout(ShaderHandle shader_handle, const VertexLayoutInfo& layout_info) override;
 		void set_vertex_layout(VertexLayoutHandle layout_handle) override;
 
-		void apply_resource(ShaderType shader_type, ShaderResourceHandle resource_handle, int32_t slot) override;
+		void apply_resource(ShaderType shader_type, ShaderResourceViewHandle resource_handle, int32_t slot) override;
 	private:
 		ShaderSystem(Vadon::Core::EngineCoreInterface& core, GraphicsAPI& graphics_api);
 

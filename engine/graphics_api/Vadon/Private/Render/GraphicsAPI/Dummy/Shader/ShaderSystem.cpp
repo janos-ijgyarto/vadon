@@ -30,7 +30,7 @@ namespace Vadon::Private::Render::Dummy
 		// TODO!!!
 	}
 
-	void ShaderSystem::apply_resource(ShaderType /*shader_type*/, ShaderResourceHandle /*resource_handle*/, int32_t /*slot*/)
+	void ShaderSystem::apply_resource(ShaderType /*shader_type*/, ShaderResourceViewHandle /*resource_handle*/, int32_t /*slot*/)
 	{
 		// TODO!!!
 	}

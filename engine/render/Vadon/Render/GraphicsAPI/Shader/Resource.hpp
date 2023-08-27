@@ -20,21 +20,23 @@ namespace Vadon::Render
         BUFFEREX
     };
 
-    struct Texture2DSRVInfo
+    // FIXME: have a struct for each resource type?
+    struct ShaderResourceTypeData
     {
-        int32_t most_detailed_mip;
-        int32_t mip_levels;
+        int32_t most_detailed_mip = 0;
+        int32_t mip_levels = 0;
+        int32_t first_array_slice = 0;
+        int32_t array_size = 0;
     };
 
-    struct ShaderResourceInfo
+    struct ShaderResourceViewInfo
     {
         GraphicsAPIDataFormat format;
         ShaderResourceType type;
 
-        // TODO: use a variant for the type-specific data? Or use separate structs?
-        Texture2DSRVInfo texture_info;
+        ShaderResourceTypeData resource_type_data;
     };
 
-    VADON_DECLARE_TYPED_POOL_HANDLE(ShaderResource, ShaderResourceHandle);
+    VADON_DECLARE_TYPED_POOL_HANDLE(ShaderResourceView, ShaderResourceViewHandle);
 }
 #endif

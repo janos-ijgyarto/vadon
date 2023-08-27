@@ -18,6 +18,12 @@ namespace Vadon::Utilities
 	}
 
 	template<typename T>
+	constexpr std::enable_if_t<std::is_enum_v<T>, bool> to_bool(T value)
+	{
+		return to_integral(value) != 0;
+	}
+
+	template<typename T>
 	constexpr std::enable_if_t<std::is_enum_v<T>, T> to_enum(std::underlying_type_t<T> value)
 	{
 		return static_cast<T>(value);

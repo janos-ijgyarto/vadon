@@ -7,15 +7,18 @@ namespace Vadon::Private::Render::DirectX
 	class GraphicsAPI;
 
 	using ShaderResourceType = Vadon::Render::ShaderResourceType;
-	using ShaderResourceInfo = Vadon::Render::ShaderResourceInfo;
+	using ShaderResourceTypeData = Vadon::Render::ShaderResourceTypeData;
+	using ShaderResourceViewInfo = Vadon::Render::ShaderResourceViewInfo;
 
-	using ShaderResourceHandle = Vadon::Render::ShaderResourceHandle;
+	using ShaderResourceViewHandle = Vadon::Render::ShaderResourceViewHandle;
 
+	using D3DResourcePtr = ID3D11Resource*;
+	using D3DResource = ComPtr<ID3D11Resource>;
 	using D3DShaderResourceView = ComPtr<ID3D11ShaderResourceView>;
 
-	struct ShaderResource
+	struct ShaderResourceView
 	{
-		Vadon::Render::ShaderResourceInfo info;
+		Vadon::Render::ShaderResourceViewInfo info;
 		D3DShaderResourceView d3d_srv;
 	};
 
@@ -52,6 +55,39 @@ namespace Vadon::Private::Render::DirectX
 		}
 
 		return D3D11_SRV_DIMENSION_UNKNOWN;
+	}
+
+	constexpr ShaderResourceType get_srv_type(D3D11_SRV_DIMENSION srv_dimension)
+	{
+		switch (srv_dimension)
+		{
+		case D3D11_SRV_DIMENSION_UNKNOWN:
+			return ShaderResourceType::UNKNOWN;
+		case D3D11_SRV_DIMENSION_BUFFER:
+			return ShaderResourceType::BUFFER;
+		case D3D11_SRV_DIMENSION_TEXTURE1D:
+			return ShaderResourceType::TEXTURE_1D;
+		case D3D11_SRV_DIMENSION_TEXTURE1DARRAY:
+			return ShaderResourceType::TEXTURE_1D_ARRAY;
+		case D3D11_SRV_DIMENSION_TEXTURE2D:
+			return ShaderResourceType::TEXTURE_2D;
+		case D3D11_SRV_DIMENSION_TEXTURE2DARRAY:
+			return ShaderResourceType::TEXTURE_2D_ARRAY;
+		case D3D11_SRV_DIMENSION_TEXTURE2DMS:
+			return ShaderResourceType::TEXTURE_2D_MS;
+		case D3D11_SRV_DIMENSION_TEXTURE2DMSARRAY:
+			return ShaderResourceType::TEXTURE_2D_MS_ARRAY;
+		case D3D11_SRV_DIMENSION_TEXTURE3D:
+			return ShaderResourceType::TEXTURE_3D;
+		case D3D11_SRV_DIMENSION_TEXTURECUBE:
+			return ShaderResourceType::TEXTURE_CUBE;
+		case D3D11_SRV_DIMENSION_TEXTURECUBEARRAY:
+			return ShaderResourceType::TEXTURE_CUBE_ARRAY;
+		case D3D11_SRV_DIMENSION_BUFFEREX:
+			return ShaderResourceType::BUFFEREX;
+		}
+
+		return ShaderResourceType::UNKNOWN;
 	}
 }
 #endif

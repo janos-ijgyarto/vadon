@@ -3,21 +3,27 @@
 
 namespace Vadon::Private::Render::Dummy
 {
-	Vadon::Render::TextureHandle TextureSystem::create_2d_texture(const Vadon::Render::Texture2DInfo& /*texture_info*/, const Vadon::Render::ShaderResourceInfo& /*resource_info*/, const void* /*init_data*/)
+	Vadon::Render::TextureHandle TextureSystem::create_texture(const Vadon::Render::TextureInfo& /*texture_info*/, const void* /*init_data*/)
 	{
 		// TODO!!!
 		return Vadon::Render::TextureHandle();
 	}
 
-	Vadon::Render::ShaderResourceHandle TextureSystem::get_texture_resource(Vadon::Render::TextureHandle /*texture_handle*/)
+	Vadon::Render::TextureHandle TextureSystem::create_texture_from_memory(size_t /*size*/, const void* /*data*/)
 	{
 		// TODO!!!
-		return Vadon::Render::ShaderResourceHandle();
+		return Vadon::Render::TextureHandle();
 	}
 
 	void TextureSystem::remove_texture(Vadon::Render::TextureHandle /*texture_handle*/)
 	{
 		// TODO!!!
+	}
+
+	Vadon::Render::ShaderResourceViewHandle TextureSystem::create_texture_srv(Vadon::Render::TextureHandle /*texture_handle*/, const Vadon::Render::ShaderResourceViewInfo& /*srv_info*/)
+	{
+		// TODO
+		return Vadon::Render::ShaderResourceViewHandle();
 	}
 
 	Vadon::Render::TextureSamplerHandle TextureSystem::create_sampler(const Vadon::Render::TextureSamplerInfo& /*sampler_info*/)

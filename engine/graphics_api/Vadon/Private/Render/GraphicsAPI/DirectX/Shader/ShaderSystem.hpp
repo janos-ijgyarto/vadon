@@ -20,14 +20,17 @@ namespace Vadon::Private::Render::DirectX
 		VertexLayoutHandle create_vertex_layout(ShaderHandle shader_handle, const VertexLayoutInfo& layout_info) override;
 		void set_vertex_layout(VertexLayoutHandle layout_handle) override;
 
-		void apply_resource(ShaderType shader_type, ShaderResourceHandle resource_handle, int32_t slot) override;
+		void apply_resource(ShaderType shader_type, ShaderResourceViewHandle resource_handle, int32_t slot) override;
 
-		ShaderResourceHandle create_resource(ID3D11Resource* resource, const ShaderResourceInfo& resource_info);
-		void remove_resource(ShaderResourceHandle resource_handle);
+		ShaderResourceViewHandle add_resource_view(D3DShaderResourceView d3d_srv);
+		ShaderResourceViewHandle create_resource_view(D3DResourcePtr resource, const ShaderResourceViewInfo& srv_info);
+		void remove_resource_view(ShaderResourceViewHandle resource_handle);
+
+		static ShaderResourceViewInfo get_srv_info(D3D11_SHADER_RESOURCE_VIEW_DESC& srv_desc);
 	private:
 		using ShaderPool = Vadon::Utilities::ObjectPool<Vadon::Render::Shader, Shader>;
 		using VertexLayoutPool = Vadon::Utilities::ObjectPool<Vadon::Render::VertexLayout, VertexLayout>;
-		using ShaderResourcePool = Vadon::Utilities::ObjectPool<Vadon::Render::ShaderResource, ShaderResource>;
+		using ShaderResourcePool = Vadon::Utilities::ObjectPool<Vadon::Render::ShaderResourceView, ShaderResourceView>;
 
 		ShaderSystem(Vadon::Core::EngineCoreInterface& core, GraphicsAPI& graphics_api);
 
@@ -38,6 +41,8 @@ namespace Vadon::Private::Render::DirectX
 		ShaderHandle create_pixel_shader(const ShaderInfo& shader_info);
 
 		D3DBlob compile_shader(const ShaderInfo& shader_info);
+
+		ShaderResourceViewHandle add_resource_view_internal(D3DShaderResourceView d3d_srv, const ShaderResourceViewInfo& srv_info);
 
 		GraphicsAPI& m_graphics_api;
 		

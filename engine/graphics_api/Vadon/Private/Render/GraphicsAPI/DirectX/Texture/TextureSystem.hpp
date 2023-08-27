@@ -14,10 +14,11 @@ namespace Vadon::Private::Render::DirectX
 	class TextureSystem : public Vadon::Render::TextureSystem
 	{
 	public:
-		TextureHandle create_2d_texture(const Texture2DInfo& texture_info, const ShaderResourceInfo& resource_info, const void* init_data = nullptr) override;
-
-		ShaderResourceHandle get_texture_resource(TextureHandle texture_handle) override;
+		TextureHandle create_texture(const TextureInfo& texture_info, const void* init_data = nullptr) override;
+		TextureHandle create_texture_from_memory(size_t size, const void* data) override;
 		void remove_texture(TextureHandle texture_handle) override;
+
+		ShaderResourceViewHandle create_texture_srv(TextureHandle texture_handle, const ShaderResourceViewInfo& srv_info) override;
 
 		TextureSamplerHandle create_sampler(const TextureSamplerInfo& sampler_info) override;
 		void remove_sampler(TextureSamplerHandle sampler_handle) override;

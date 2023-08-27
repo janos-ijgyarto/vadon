@@ -226,7 +226,7 @@ float4 main(PS_INPUT input) : SV_Target
             ImVec2 clip_min;
             ImVec2 clip_max;
 
-            Vadon::Render::ShaderResourceHandle texture_handle;
+            Vadon::Render::ShaderResourceViewHandle texture_handle;
         };
 
         using DrawCommandBuffer = std::vector<DrawCommand>;
@@ -627,10 +627,10 @@ float4 main(PS_INPUT input) : SV_Target
                 const VadonApp::Platform::KeyboardEvent& keyboard_event = std::get<VadonApp::Platform::KeyboardEvent>(current_event);
                 
                 ImGuiIO& io = ImGui::GetIO();
-                io.AddKeyEvent(ImGuiMod_Ctrl, Vadon::Utilities::to_integral(keyboard_event.modifiers & VadonApp::Platform::KeyModifiers::CTRL) != 0);
-                io.AddKeyEvent(ImGuiMod_Shift, Vadon::Utilities::to_integral(keyboard_event.modifiers & VadonApp::Platform::KeyModifiers::SHIFT) != 0);
-                io.AddKeyEvent(ImGuiMod_Alt, Vadon::Utilities::to_integral(keyboard_event.modifiers & VadonApp::Platform::KeyModifiers::ALT) != 0);
-                io.AddKeyEvent(ImGuiMod_Super, Vadon::Utilities::to_integral(keyboard_event.modifiers & VadonApp::Platform::KeyModifiers::GUI) != 0);
+                io.AddKeyEvent(ImGuiMod_Ctrl, Vadon::Utilities::to_bool(keyboard_event.modifiers & VadonApp::Platform::KeyModifiers::CTRL));
+                io.AddKeyEvent(ImGuiMod_Shift, Vadon::Utilities::to_bool(keyboard_event.modifiers & VadonApp::Platform::KeyModifiers::SHIFT));
+                io.AddKeyEvent(ImGuiMod_Alt, Vadon::Utilities::to_bool(keyboard_event.modifiers & VadonApp::Platform::KeyModifiers::ALT));
+                io.AddKeyEvent(ImGuiMod_Super, Vadon::Utilities::to_bool(keyboard_event.modifiers & VadonApp::Platform::KeyModifiers::GUI));
 
                 ImGuiKey key = get_imgui_key(keyboard_event.key);
                 io.AddKeyEvent(key, keyboard_event.down);
@@ -714,7 +714,7 @@ float4 main(PS_INPUT input) : SV_Target
         //ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_FirstUseEver);
         //ImGui::SetNextWindowSize(ImVec2(0, 0), ImGuiCond_FirstUseEver);
 
-        const bool enable_close = Vadon::Utilities::to_integral(window.flags & WindowFlags::ENABLE_CLOSE);
+        const bool enable_close = Vadon::Utilities::to_bool(window.flags & WindowFlags::ENABLE_CLOSE);
         if (!enable_close)
         {
             return ImGui::Begin(window.title.c_str());
@@ -914,7 +914,7 @@ float4 main(PS_INPUT input) : SV_Target
         m_platform_data.performance_frequency = platform_interface.get_performance_frequency();
 
         const VadonApp::Platform::FeatureFlags platform_feature_flags = platform_interface.get_feature_flags();
-        m_platform_data.mouse_global_state = Vadon::Utilities::to_integral(platform_feature_flags & VadonApp::Platform::FeatureFlags::MOUSE_GLOBAL_STATE);
+        m_platform_data.mouse_global_state = Vadon::Utilities::to_bool(platform_feature_flags & VadonApp::Platform::FeatureFlags::MOUSE_GLOBAL_STATE);
 
         return true;
     }
@@ -993,7 +993,7 @@ float4 main(PS_INPUT input) : SV_Target
             // Create constant buffer
             {
                 Vadon::Render::BufferInfo constant_buffer_info;
-                constant_buffer_info.binding = Vadon::Render::BufferBinding::CONSTANT;
+                constant_buffer_info.bind_flags = Vadon::Render::BufferBindFlags::CONSTANT;
                 constant_buffer_info.usage = Vadon::Render::BufferUsage::DYNAMIC;
                 constant_buffer_info.element_size = sizeof(VertexConstantBuffer);
                 constant_buffer_info.capacity = 1;
@@ -1016,7 +1016,7 @@ float4 main(PS_INPUT input) : SV_Target
 
             // Upload texture to graphics system
             {
-                Vadon::Render::Texture2DInfo texture_info;
+                Vadon::Render::TextureInfo texture_info;
                 texture_info.dimensions.x = width;
                 texture_info.dimensions.y = height;
                 texture_info.mip_levels = 1;
@@ -1024,20 +1024,20 @@ float4 main(PS_INPUT input) : SV_Target
                 texture_info.format = Vadon::Render::GraphicsAPIDataFormat::UNORM4_8;
                 texture_info.sample_info.count = 1;
                 texture_info.usage = Vadon::Render::BufferUsage::DEFAULT;
-                texture_info.binding = Vadon::Render::BufferBinding::SHADER_RESOURCE;
+                texture_info.bind_flags = Vadon::Render::BufferBindFlags::SHADER_RESOURCE;
                 texture_info.access = 0;
 
                 // Create texture view
-                Vadon::Render::ShaderResourceInfo texture_resource_info;
-                texture_resource_info.format = Vadon::Render::GraphicsAPIDataFormat::UNORM4_8;
-                texture_resource_info.type = Vadon::Render::ShaderResourceType::TEXTURE_2D;
-                texture_resource_info.texture_info.mip_levels = texture_info.mip_levels;
-                texture_resource_info.texture_info.most_detailed_mip = 0;
+                Vadon::Render::ShaderResourceViewInfo texture_srv_info;
+                texture_srv_info.format = Vadon::Render::GraphicsAPIDataFormat::UNORM4_8;
+                texture_srv_info.type = Vadon::Render::ShaderResourceType::TEXTURE_2D;
+                texture_srv_info.resource_type_data.mip_levels = texture_info.mip_levels;
+                texture_srv_info.resource_type_data.most_detailed_mip = 0;
 
-                m_fonts_texture = texture_system.create_2d_texture(texture_info, texture_resource_info, pixels);
+                m_fonts_texture = texture_system.create_texture(texture_info, pixels);
 
                 // Store texture in the lookup
-                Vadon::Render::ShaderResourceHandle fonts_texture_resource = texture_system.get_texture_resource(m_fonts_texture);
+                Vadon::Render::ShaderResourceViewHandle fonts_texture_resource = texture_system.create_texture_srv(m_fonts_texture, texture_srv_info);
 
                 const size_t fonts_texture_id = m_texture_counter++;
                 m_texture_lookup[fonts_texture_id] = fonts_texture_resource;
@@ -1126,7 +1126,7 @@ float4 main(PS_INPUT input) : SV_Target
 
         // Setup display size (every frame to accommodate for window resizing)
         int width, height;
-        if (Vadon::Utilities::to_integral(window_info.window.flags & VadonApp::Platform::WindowFlags::MINIMIZED))
+        if (Vadon::Utilities::to_bool(window_info.window.flags & VadonApp::Platform::WindowFlags::MINIMIZED))
         {
             width = height = 0;
         }
@@ -1282,7 +1282,7 @@ float4 main(PS_INPUT input) : SV_Target
 
             // Prepare vertex buffer
             Vadon::Render::BufferInfo vertex_buffer_info;
-            vertex_buffer_info.binding = Vadon::Render::BufferBinding::VERTEX;
+            vertex_buffer_info.bind_flags = Vadon::Render::BufferBindFlags::VERTEX;
             vertex_buffer_info.usage = Vadon::Render::BufferUsage::DYNAMIC;
             vertex_buffer_info.element_size = sizeof(ImDrawVert);
             vertex_buffer_info.capacity = m_vertex_buffer.capacity;
@@ -1303,7 +1303,7 @@ float4 main(PS_INPUT input) : SV_Target
 
             // Prepare vertex buffer
             Vadon::Render::BufferInfo index_buffer_info;
-            index_buffer_info.binding = Vadon::Render::BufferBinding::INDEX;
+            index_buffer_info.bind_flags = Vadon::Render::BufferBindFlags::INDEX;
             index_buffer_info.usage = Vadon::Render::BufferUsage::DYNAMIC;
             index_buffer_info.element_size = sizeof(ImDrawIdx);
             index_buffer_info.capacity = m_index_buffer.capacity;

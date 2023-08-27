@@ -2,6 +2,11 @@
 #define VADON_UTILITIES_ENUM_ENUMCLASSBITFLAG_HPP
 #include <Vadon/Utilities/Enum/EnumClass.hpp>
 
+#define VADON_START_BITMASK_SWITCH(_bitmask) \
+for (uint64_t current_bit = 1; Vadon::Utilities::to_integral(_bitmask) >= current_bit; current_bit *= 2) \
+if ((Vadon::Utilities::to_integral(_bitmask) & current_bit) != 0) \
+switch (static_cast<decltype(_bitmask)>(current_bit))
+
 namespace Vadon::Utilities
 {
 	template <typename T>

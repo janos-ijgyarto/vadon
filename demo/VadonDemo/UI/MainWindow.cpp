@@ -248,7 +248,7 @@ float4 main(PS_INPUT input) : SV_Target
 
 			// Prepare vertex buffer
 			Vadon::Render::BufferInfo vertex_buffer_info;
-			vertex_buffer_info.binding = Vadon::Render::BufferBinding::VERTEX;
+			vertex_buffer_info.bind_flags = Vadon::Render::BufferBindFlags::VERTEX;
 			vertex_buffer_info.usage = Vadon::Render::BufferUsage::DYNAMIC;
 			vertex_buffer_info.element_size = sizeof(Vertex);
 			vertex_buffer_info.capacity = 6;
