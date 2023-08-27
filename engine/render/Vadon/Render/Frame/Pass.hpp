@@ -5,8 +5,7 @@
 #include <functional>
 namespace Vadon::Render
 {
-	using RenderPassFunction = std::function<void()>; // FIXME: should this have any overlap with the task system?
-	using RenderPassValidator = std::function<bool()>;
+	using RenderPassExecution = std::function<void()>; // FIXME: should this have any overlap with the task system?
 
 	struct PassResource
 	{
@@ -23,17 +22,13 @@ namespace Vadon::Render
 
 		std::string name;
 
+		// TODO: set the slots for the resources and targets?
 		std::vector<PassResource> shader_resources;
 		std::vector<PassResource> targets;
 
-		std::vector<ShaderHandle> shaders;
-
-		PipelineState pipeline_state;
-
 		// TODO: anything else?
 
-		RenderPassFunction render_function;
-		RenderPassValidator validator_function = &default_validator_function;
+		RenderPassExecution execution;
 	};
 }
 #endif

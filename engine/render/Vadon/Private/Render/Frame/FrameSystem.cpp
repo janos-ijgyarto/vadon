@@ -167,7 +167,6 @@ namespace Vadon::Private::Render
 
 		Vadon::Render::GraphicsAPI& graphics_api = m_engine_core.get_system<Vadon::Render::GraphicsAPI>();
 
-		Vadon::Render::PipelineSystem& pipeline_system = m_engine_core.get_system<Vadon::Render::PipelineSystem>();
 		Vadon::Render::RenderTargetSystem& rt_system = m_engine_core.get_system<Vadon::Render::RenderTargetSystem>();
 		Vadon::Render::ShaderSystem& shader_system = m_engine_core.get_system<Vadon::Render::ShaderSystem>();
 
@@ -176,35 +175,21 @@ namespace Vadon::Private::Render
 			const size_t current_node_index = node_index_queue[current_queue_index];
 			const FrameGraphNode& current_node = frame_graph->nodes[current_node_index];
 
-			// Make sure node passes validation
-			if (current_node.pass.validator_function())
+			// FIXME: should we set the target here, or expect the execution function to do so?
+			// (i.e is the metadata only there to define graph execution order, and not make assumptions about what the execution needs?)
+			for (const Vadon::Render::PassResource& current_target : current_node.pass.targets)
 			{
-				// TODO: set pipeline state, resources, targets, etc.
-				for (Vadon::Render::ShaderHandle current_shader : current_node.pass.shaders)
+				// FIXME: applying first valid target, should allow multiple targets!
+				auto target_it = frame_graph->targets.find(current_target.name);
+				if (target_it != frame_graph->targets.end())
 				{
-					shader_system.apply_shader(current_shader);
+					rt_system.set_target(target_it->second);
+					break;
 				}
-
-				const Vadon::Render::PipelineState& pipeline_state = current_node.pass.pipeline_state;
-
-				pipeline_system.apply_blend_state(pipeline_state.blend_update);
-				pipeline_system.apply_rasterizer_state(pipeline_state.rasterizer_state);
-				pipeline_system.apply_depth_stencil_state(pipeline_state.depth_stencil_update);
-
-				for (const Vadon::Render::PassResource& current_target : current_node.pass.targets)
-				{
-					// FIXME: applying first valid target, should allow multiple targets!
-					auto target_it = frame_graph->targets.find(current_target.name);
-					if (target_it != frame_graph->targets.end())
-					{
-						rt_system.set_target(target_it->second);
-						break;
-					}
-				}
-
-				// Run the pass render function
-				current_node.pass.render_function();
 			}
+
+			// Run the pass render function
+			current_node.pass.execution();
 
 			// Add children to queue
 			if (current_node.child_nodes.count > 0)

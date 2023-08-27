@@ -179,8 +179,10 @@ float4 main(PS_INPUT input) : SV_Target
 
 		Render::Shader m_test_shader;
 		Vadon::Render::BufferHandle m_vertex_buffer;
+		Vadon::Render::PipelineState m_pipeline_state;
 
 		MainWindowDevGUI m_dev_gui;
+		std::vector<Vadon::Render::ShaderHandle> m_dev_gui_shaders;
 
 		Internal(Core::GameCore& game_core)
 			: m_game_core(game_core)
@@ -282,7 +284,7 @@ float4 main(PS_INPUT input) : SV_Target
 				Vadon::Render::RenderTargetSystem& rt_system = engine_core.get_system<Vadon::Render::RenderTargetSystem>();
 				const Vadon::Render::RenderTargetHandle main_window_target = rt_system.get_window_target(main_window_info.render_handle);
 
-				clear_pass.render_function = [main_window_target, &rt_system]()
+				clear_pass.execution = [main_window_target, &rt_system]()
 				{
 					rt_system.clear_target(main_window_target, Vadon::Render::RGBAColor(0.0f, 0.0f, 0.6f, 1.0f));
 				};
@@ -296,16 +298,22 @@ float4 main(PS_INPUT input) : SV_Target
 
 				test_pass.targets.emplace_back("main_window_cleared", "main_window_triangles");
 
-				test_pass.shaders.push_back(m_test_shader.vertex_shader);
-				test_pass.shaders.push_back(m_test_shader.pixel_shader);
-
-				test_pass.render_function = [&platform_interface, &graphics_api, this]()
+				test_pass.execution = [&platform_interface, &graphics_api, &shader_system, this]()
 				{
 					VadonApp::Core::Application& engine_app = m_game_core.get_engine_app();
 					Vadon::Core::EngineCoreInterface& engine_core = engine_app.get_engine_core();
 
 					Vadon::Render::PipelineSystem& pipeline_system = engine_core.get_system<Vadon::Render::PipelineSystem>();
 					pipeline_system.set_primitive_topology(Vadon::Render::PrimitiveTopology::TRIANGLE_LIST);
+
+					// Reset pipeline state
+					pipeline_system.apply_blend_state(m_pipeline_state.blend_update);
+					pipeline_system.apply_depth_stencil_state(m_pipeline_state.depth_stencil_update);
+					pipeline_system.apply_rasterizer_state(m_pipeline_state.rasterizer_state);
+
+					// Apply shaders
+					shader_system.apply_shader(m_test_shader.vertex_shader);
+					shader_system.apply_shader(m_test_shader.pixel_shader);
 
 					const VadonApp::Platform::RenderWindowInfo main_window_info = platform_interface.get_window_info();
 
@@ -315,7 +323,6 @@ float4 main(PS_INPUT input) : SV_Target
 					Vadon::Render::RenderTargetSystem& rt_system = engine_core.get_system<Vadon::Render::RenderTargetSystem>();
 					rt_system.apply_viewport(viewport);
 
-					Vadon::Render::ShaderSystem& shader_system = engine_core.get_system<Vadon::Render::ShaderSystem>();
 					shader_system.set_vertex_layout(m_test_shader.vertex_layout);
 
 					Vadon::Render::BufferSystem& buffer_system = engine_core.get_system<Vadon::Render::BufferSystem>();
@@ -335,24 +342,40 @@ float4 main(PS_INPUT input) : SV_Target
 
 				dev_gui_pass.targets.emplace_back("main_window_triangles", "main_window_dev_gui");
 
-				dev_gui_pass.shaders = dev_gui_system.get_shaders();
-				dev_gui_pass.pipeline_state = dev_gui_system.get_pipeline_state();
+				m_dev_gui_shaders = dev_gui_system.get_shaders();
 
-				dev_gui_pass.render_function = [this, &dev_gui_system]()
+				dev_gui_pass.execution = [this, &dev_gui_system, &shader_system]()
 				{
+					if(m_dev_gui_enabled == false)
+					{
+						return;
+					}
+
 					const int32_t* read_frame_index = m_dev_gui_buffer.get_read_buffer();
 					if (read_frame_index)
 					{
 						// Read frame ready, swap with the ready frame
 						dev_gui_system.swap_frame(*read_frame_index, 3);
 					}
+
+					// Apply shaders and pipeline state
+					const Vadon::Render::PipelineState& dev_gui_pipeline_state = dev_gui_system.get_pipeline_state();
+
+					VadonApp::Core::Application& engine_app = m_game_core.get_engine_app();
+					Vadon::Core::EngineCoreInterface& engine_core = engine_app.get_engine_core();
+
+					Vadon::Render::PipelineSystem& pipeline_system = engine_core.get_system<Vadon::Render::PipelineSystem>();
+					pipeline_system.apply_blend_state(dev_gui_pipeline_state.blend_update);
+					pipeline_system.apply_depth_stencil_state(dev_gui_pipeline_state.depth_stencil_update);
+					pipeline_system.apply_rasterizer_state(dev_gui_pipeline_state.rasterizer_state);
+
+					for (Vadon::Render::ShaderHandle current_shader : m_dev_gui_shaders)
+					{
+						shader_system.apply_shader(current_shader);
+					}
+
 					// Always render the ready frame
 					dev_gui_system.render_frame(3);
-				};
-
-				dev_gui_pass.validator_function = [this]()
-				{
-					return m_dev_gui_enabled;
 				};
 			}
 
