@@ -226,6 +226,17 @@ namespace Vadon::Private::Render::DirectX
 		m_texture_pool.remove(texture_handle);
 	}
 
+	TextureInfo TextureSystem::get_texture_info(TextureHandle texture_handle) const
+	{
+		const Texture* texture = m_texture_pool.get(texture_handle);
+		if (texture == nullptr)
+		{
+			return TextureInfo();
+		}
+
+		return texture->info;
+	}
+
 	ShaderResourceViewHandle TextureSystem::create_texture_srv(TextureHandle texture_handle, const ShaderResourceViewInfo& srv_info)
 	{
 		Texture* texture = m_texture_pool.get(texture_handle);

@@ -199,6 +199,17 @@ namespace Vadon::Private::Render::DirectX
 		device_context->IASetInputLayout(vertex_layout->d3d_input_layout.Get());
 	}
 
+	ShaderResourceViewInfo ShaderSystem::get_resource_view_info(ShaderResourceViewHandle srv_handle) const
+	{
+		const ShaderResourceView* resource = m_resource_pool.get(srv_handle);
+		if (resource == nullptr)
+		{
+			return ShaderResourceViewInfo();
+		}
+
+		return resource->info;
+	}
+
 	void ShaderSystem::apply_resource(ShaderType shader_type, ShaderResourceViewHandle resource_handle, int32_t slot)
 	{
 		ShaderResourceView* resource = m_resource_pool.get(resource_handle);

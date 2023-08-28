@@ -20,6 +20,12 @@ namespace Vadon::Private::Render::Dummy
 		// TODO!!!
 	}
 
+	Vadon::Render::TextureInfo TextureSystem::get_texture_info(Vadon::Render::TextureHandle /*texture_handle*/) const
+	{
+		// TODO!!!
+		return Vadon::Render::TextureInfo();
+	}
+
 	Vadon::Render::ShaderResourceViewHandle TextureSystem::create_texture_srv(Vadon::Render::TextureHandle /*texture_handle*/, const Vadon::Render::ShaderResourceViewInfo& /*srv_info*/)
 	{
 		// TODO

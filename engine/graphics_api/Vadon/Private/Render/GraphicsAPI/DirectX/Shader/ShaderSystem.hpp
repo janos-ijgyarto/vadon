@@ -20,6 +20,7 @@ namespace Vadon::Private::Render::DirectX
 		VertexLayoutHandle create_vertex_layout(ShaderHandle shader_handle, const VertexLayoutInfo& layout_info) override;
 		void set_vertex_layout(VertexLayoutHandle layout_handle) override;
 
+		ShaderResourceViewInfo get_resource_view_info(ShaderResourceViewHandle srv_handle) const override;
 		void apply_resource(ShaderType shader_type, ShaderResourceViewHandle resource_handle, int32_t slot) override;
 
 		ShaderResourceViewHandle add_resource_view(D3DShaderResourceView d3d_srv);

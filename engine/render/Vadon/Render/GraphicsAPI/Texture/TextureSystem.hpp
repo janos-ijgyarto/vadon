@@ -13,6 +13,8 @@ namespace Vadon::Render
 		virtual TextureHandle create_texture_from_memory(size_t size, const void* data) = 0;
 		virtual void remove_texture(TextureHandle texture_handle) = 0;
 
+		virtual TextureInfo get_texture_info(TextureHandle texture_handle) const = 0;
+
 		virtual ShaderResourceViewHandle create_texture_srv(TextureHandle texture_handle, const ShaderResourceViewInfo& srv_info) = 0;
 
 		virtual TextureSamplerHandle create_sampler(const TextureSamplerInfo& sampler_info) = 0;
