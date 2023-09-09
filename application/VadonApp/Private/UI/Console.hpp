@@ -19,6 +19,7 @@ namespace VadonApp::Private::UI
 		void error(std::string_view message) override;
 
 		void show() override;
+		bool is_visible() const override { return m_window.open; }
 		void render() override;
 	private:
 		Console(Core::Application& application);

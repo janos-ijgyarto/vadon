@@ -14,6 +14,7 @@ namespace VadonApp::UI
 	{
 	public:
 		virtual void show() = 0;
+		virtual bool is_visible() const = 0;
 		virtual void render() = 0;
 
 		void register_event_handler(ConsoleCommandEvent::Handler&& handler)
