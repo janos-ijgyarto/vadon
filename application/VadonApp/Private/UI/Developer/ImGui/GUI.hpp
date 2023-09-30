@@ -5,6 +5,7 @@
 
 #include <Vadon/Render/GraphicsAPI/Buffer/Buffer.hpp>
 #include <Vadon/Render/GraphicsAPI/Pipeline/Pipeline.hpp>
+#include <Vadon/Render/GraphicsAPI/Shader/Shader.hpp>
 #include <Vadon/Render/GraphicsAPI/Shader/Resource.hpp>
 #include <Vadon/Render/GraphicsAPI/Texture/Texture.hpp>
 namespace VadonApp::Private::UI::Developer::ImGUI
@@ -98,6 +99,10 @@ namespace VadonApp::Private::UI::Developer::ImGUI
 
 		PlatformUserData m_platform_data;
 
+		Vadon::Render::PipelineState m_pipeline_state;
+
+		Vadon::Render::ShaderHandle m_vertex_shader;
+		Vadon::Render::ShaderHandle m_pixel_shader;
 		Vadon::Render::VertexLayoutHandle m_vertex_layout;
 
 		Buffer m_vertex_buffer;

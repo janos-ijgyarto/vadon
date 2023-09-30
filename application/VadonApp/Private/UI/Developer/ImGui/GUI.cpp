@@ -425,6 +425,15 @@ float4 main(PS_INPUT input) : SV_Target
             Vadon::Render::ShaderSystem& shader_system = engine_core.get_system<Vadon::Render::ShaderSystem>();
             Vadon::Render::TextureSystem& texture_system = engine_core.get_system<Vadon::Render::TextureSystem>();
 
+            // Apply shaders and pipeline state
+            pipeline_system.apply_blend_state(m_gui_system.m_pipeline_state.blend_update);
+            pipeline_system.apply_depth_stencil_state(m_gui_system.m_pipeline_state.depth_stencil_update);
+            pipeline_system.apply_rasterizer_state(m_gui_system.m_pipeline_state.rasterizer_state);
+
+            pipeline_system.set_primitive_topology(Vadon::Render::PrimitiveTopology::TRIANGLE_LIST);
+
+            shader_system.apply_shader(m_gui_system.m_vertex_shader);
+            shader_system.apply_shader(m_gui_system.m_pixel_shader);
             shader_system.set_vertex_layout(m_gui_system.m_vertex_layout);
 
             buffer_system.set_vertex_buffer(m_gui_system.m_vertex_buffer.buffer_handle, 0);
@@ -942,10 +951,8 @@ float4 main(PS_INPUT input) : SV_Target
                 vertex_shader_info.name = "ImGuiVShader";
                 vertex_shader_info.type = Vadon::Render::ShaderType::VERTEX;
 
-                Vadon::Render::ShaderHandle vertex_shader = shader_system.create_shader(vertex_shader_info);
-                assert(vertex_shader.is_valid());
-
-                m_shaders.push_back(vertex_shader);
+                m_vertex_shader = shader_system.create_shader(vertex_shader_info);
+                assert(m_vertex_shader.is_valid());
 
                 // Create vertex layout
                 Vadon::Render::VertexLayoutInfo vertex_layout_info;
@@ -971,7 +978,7 @@ float4 main(PS_INPUT input) : SV_Target
                     color_element.name = "COLOR";
                 }
 
-                m_vertex_layout = shader_system.create_vertex_layout(vertex_shader, vertex_layout_info);
+                m_vertex_layout = shader_system.create_vertex_layout(m_vertex_shader, vertex_layout_info);
                 assert(m_vertex_layout.is_valid());
             }
 
@@ -982,10 +989,8 @@ float4 main(PS_INPUT input) : SV_Target
                 pixel_shader_info.name = "ImGuiPShader";
                 pixel_shader_info.type = Vadon::Render::ShaderType::PIXEL;
 
-                Vadon::Render::ShaderHandle pixel_shader = shader_system.create_shader(pixel_shader_info);
-                assert(pixel_shader.is_valid());
-
-                m_shaders.push_back(pixel_shader);
+                m_pixel_shader = shader_system.create_shader(pixel_shader_info);
+                assert(m_pixel_shader.is_valid());
             }
 
             update_buffers(INIT_VERTEX_BUFFER_CAPACITY, INIT_INDEX_BUFFER_CAPACITY);

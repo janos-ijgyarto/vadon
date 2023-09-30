@@ -3,9 +3,6 @@
 #include <VadonApp/UI/UIModule.hpp>
 #include <VadonApp/UI/Developer/GUIElements.hpp>
 #include <VadonApp/Platform/Event/Event.hpp>
-
-#include <Vadon/Render/GraphicsAPI/Pipeline/Pipeline.hpp>
-#include <Vadon/Render/GraphicsAPI/Shader/Shader.hpp>
 namespace VadonApp::UI::Developer
 {
 	// Developer GUI, primarily based on ImGui
@@ -13,9 +10,6 @@ namespace VadonApp::UI::Developer
 	{
 	public:
 		virtual ~GUISystem() {}
-
-		const std::vector<Vadon::Render::ShaderHandle>& get_shaders() const { return m_shaders; }
-		const Vadon::Render::PipelineState& get_pipeline_state() const { return m_pipeline_state; }
 
 		virtual void dispatch_platform_events(const Platform::PlatformEventList& platform_events) = 0;
 
@@ -65,9 +59,6 @@ namespace VadonApp::UI::Developer
 		virtual void set_scroll_y(float ratio = 0.5f) = 0;
 	protected:
 		GUISystem(Core::Application& application) : System(application) {}
-
-		std::vector<Vadon::Render::ShaderHandle> m_shaders;
-		Vadon::Render::PipelineState m_pipeline_state;
 	};
 }
 #endif
