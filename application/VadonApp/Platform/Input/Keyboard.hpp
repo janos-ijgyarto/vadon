@@ -47,8 +47,10 @@ namespace VadonApp::Platform
         KEY_x,
         KEY_y,
         KEY_z,
-        LEFT,
         RIGHT,
+        LEFT,
+        DOWN,
+        UP,
         LEFT_CTRL,
         LEFT_SHIFT
     };
