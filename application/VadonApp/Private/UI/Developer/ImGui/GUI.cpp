@@ -437,7 +437,7 @@ float4 main(PS_INPUT input) : SV_Target
             shader_system.set_vertex_layout(m_gui_system.m_vertex_layout);
 
             buffer_system.set_vertex_buffer(m_gui_system.m_vertex_buffer.buffer_handle, 0);
-            buffer_system.set_index_buffer(m_gui_system.m_index_buffer.buffer_handle, sizeof(ImDrawIdx) == 2 ? Vadon::Render::GraphicsAPIDataFormat::UINT_16 : Vadon::Render::GraphicsAPIDataFormat::UINT_32);
+            buffer_system.set_index_buffer(m_gui_system.m_index_buffer.buffer_handle, sizeof(ImDrawIdx) == 2 ? Vadon::Render::GraphicsAPIDataFormat::R16_UINT : Vadon::Render::GraphicsAPIDataFormat::R32_UINT);
             buffer_system.set_constant_buffer(m_gui_system.m_constant_buffer, 0);
 
             // Setup viewport
@@ -959,21 +959,21 @@ float4 main(PS_INPUT input) : SV_Target
 
                 {
                     Vadon::Render::VertexLayoutElement& position_element = vertex_layout_info.emplace_back();
-                    position_element.format = Vadon::Render::GraphicsAPIDataFormat::FLOAT2_32;
+                    position_element.format = Vadon::Render::GraphicsAPIDataFormat::R32G32_FLOAT;
                     position_element.type = Vadon::Render::VertexElementType::PER_VERTEX;
                     position_element.name = "POSITION";
                 }
 
                 {
                     Vadon::Render::VertexLayoutElement& texcoord_element = vertex_layout_info.emplace_back();
-                    texcoord_element.format = Vadon::Render::GraphicsAPIDataFormat::FLOAT2_32;
+                    texcoord_element.format = Vadon::Render::GraphicsAPIDataFormat::R32G32_FLOAT;
                     texcoord_element.type = Vadon::Render::VertexElementType::PER_VERTEX;
                     texcoord_element.name = "TEXCOORD";
                 }
 
                 {
                     Vadon::Render::VertexLayoutElement& color_element = vertex_layout_info.emplace_back();
-                    color_element.format = Vadon::Render::GraphicsAPIDataFormat::UNORM4_8;
+                    color_element.format = Vadon::Render::GraphicsAPIDataFormat::R8G8B8A8_UNORM;
                     color_element.type = Vadon::Render::VertexElementType::PER_VERTEX;
                     color_element.name = "COLOR";
                 }
@@ -1026,7 +1026,7 @@ float4 main(PS_INPUT input) : SV_Target
                 texture_info.dimensions.y = height;
                 texture_info.mip_levels = 1;
                 texture_info.array_size = 1;
-                texture_info.format = Vadon::Render::GraphicsAPIDataFormat::UNORM4_8;
+                texture_info.format = Vadon::Render::GraphicsAPIDataFormat::R8G8B8A8_UNORM;
                 texture_info.sample_info.count = 1;
                 texture_info.usage = Vadon::Render::BufferUsage::DEFAULT;
                 texture_info.bind_flags = Vadon::Render::BufferBindFlags::SHADER_RESOURCE;
@@ -1034,7 +1034,7 @@ float4 main(PS_INPUT input) : SV_Target
 
                 // Create texture view
                 Vadon::Render::ShaderResourceViewInfo texture_srv_info;
-                texture_srv_info.format = Vadon::Render::GraphicsAPIDataFormat::UNORM4_8;
+                texture_srv_info.format = Vadon::Render::GraphicsAPIDataFormat::R8G8B8A8_UNORM;
                 texture_srv_info.type = Vadon::Render::ShaderResourceType::TEXTURE_2D;
                 texture_srv_info.resource_type_data.mip_levels = texture_info.mip_levels;
                 texture_srv_info.resource_type_data.most_detailed_mip = 0;

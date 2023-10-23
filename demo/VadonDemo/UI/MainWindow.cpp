@@ -221,14 +221,14 @@ float4 main(PS_INPUT input) : SV_Target
 
 				{
 					Vadon::Render::VertexLayoutElement& position_element = vertex_layout_info.emplace_back();
-					position_element.format = Vadon::Render::GraphicsAPIDataFormat::FLOAT4_32;
+					position_element.format = Vadon::Render::GraphicsAPIDataFormat::R32G32B32A32_FLOAT;
 					position_element.type = Vadon::Render::VertexElementType::PER_VERTEX;
 					position_element.name = "POSITION";
 				}
 
 				{
 					Vadon::Render::VertexLayoutElement& color_element = vertex_layout_info.emplace_back();
-					color_element.format = Vadon::Render::GraphicsAPIDataFormat::FLOAT4_32;
+					color_element.format = Vadon::Render::GraphicsAPIDataFormat::R32G32B32A32_FLOAT;
 					color_element.type = Vadon::Render::VertexElementType::PER_VERTEX;
 					color_element.name = "COLOR";
 				}
