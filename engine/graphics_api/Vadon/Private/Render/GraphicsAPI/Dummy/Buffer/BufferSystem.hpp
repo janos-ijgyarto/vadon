@@ -17,6 +17,8 @@ namespace Vadon::Private::Render::Dummy
 		void set_vertex_buffer(Vadon::Render::BufferHandle buffer_handle, int slot) override;
 		void set_index_buffer(Vadon::Render::BufferHandle buffer_handle, Vadon::Render::GraphicsAPIDataFormat format) override;
 		void set_constant_buffer(Vadon::Render::BufferHandle buffer_handle, int slot) override;
+
+		Vadon::Render::ShaderResourceViewHandle create_shader_resource_view(Vadon::Render::BufferHandle buffer_handle, const Vadon::Render::ShaderResourceViewInfo& srv_info) override;
 	protected:
 		BufferSystem(Core::EngineCoreInterface& core, GraphicsAPI& graphics_api);
 

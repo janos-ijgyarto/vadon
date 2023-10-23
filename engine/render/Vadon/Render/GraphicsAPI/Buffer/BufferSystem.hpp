@@ -2,6 +2,7 @@
 #define VADON_RENDER_GRAPHICSAPI_BUFFER_BUFFERSYSTEM_HPP
 #include <Vadon/Render/GraphicsAPI/GraphicsModule.hpp>
 #include <Vadon/Render/GraphicsAPI/Buffer/Buffer.hpp>
+#include <Vadon/Render/GraphicsAPI/Shader/Resource.hpp>
 #include <Vadon/Render/GraphicsAPI/Defines.hpp>
 namespace Vadon::Utilities
 {
@@ -21,6 +22,8 @@ namespace Vadon::Render
 		virtual void set_vertex_buffer(BufferHandle buffer_handle, int slot) = 0;
 		virtual void set_index_buffer(BufferHandle buffer_handle, GraphicsAPIDataFormat format) = 0;
 		virtual void set_constant_buffer(BufferHandle buffer_handle, int slot) = 0;
+
+		virtual ShaderResourceViewHandle create_shader_resource_view(BufferHandle buffer_handle, const ShaderResourceViewInfo& srv_info) = 0;
 	protected:
 		BufferSystem(Core::EngineCoreInterface& core) 
 			: EngineSystem(core) 

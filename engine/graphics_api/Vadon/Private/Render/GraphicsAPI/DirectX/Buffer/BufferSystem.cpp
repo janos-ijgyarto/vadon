@@ -2,6 +2,7 @@
 #include <Vadon/Private/Render/GraphicsAPI/DirectX/Buffer/BufferSystem.hpp>
 
 #include <Vadon/Private/Render/GraphicsAPI/DirectX/GraphicsAPI.hpp>
+#include <Vadon/Private/Render/GraphicsAPI/DirectX/Shader/ShaderSystem.hpp>
 
 #include <Vadon/Utilities/Data/DataUtilities.hpp>
 #include <Vadon/Utilities/Enum/EnumClass.hpp>
@@ -272,6 +273,17 @@ namespace Vadon::Private::Render::DirectX
 		device_context->VSSetConstantBuffers(slot, 1, constant_buffers);
 		device_context->GSSetConstantBuffers(slot, 1, constant_buffers);
 		device_context->PSSetConstantBuffers(slot, 1, constant_buffers);
+	}
+
+	ShaderResourceViewHandle BufferSystem::create_shader_resource_view(BufferHandle buffer_handle, const ShaderResourceViewInfo& srv_info)
+	{
+		const Buffer* buffer = m_buffer_pool.get(buffer_handle);
+		if (!buffer)
+		{
+			// TODO: error message?
+			return ShaderResourceViewHandle();
+		}
+		return m_graphics_api.get_directx_shader_system().create_resource_view(buffer->d3d_buffer.Get(), srv_info);
 	}
 
 	BufferSystem::BufferSystem(Core::EngineCoreInterface& core, GraphicsAPI& graphics_api)

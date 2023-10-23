@@ -21,6 +21,8 @@ namespace Vadon::Private::Render::DirectX
 		void set_vertex_buffer(BufferHandle buffer_handle, int slot) override;
 		void set_index_buffer(BufferHandle buffer_handle, GraphicsAPIDataFormat format) override;
 		void set_constant_buffer(BufferHandle buffer_handle, int slot) override;
+
+		ShaderResourceViewHandle create_shader_resource_view(BufferHandle buffer_handle, const ShaderResourceViewInfo& srv_info) override;
 	private:
 		using BufferPool = Vadon::Utilities::ObjectPool<Vadon::Render::Buffer, Buffer>;
 

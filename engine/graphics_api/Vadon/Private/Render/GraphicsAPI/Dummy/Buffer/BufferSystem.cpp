@@ -34,6 +34,11 @@ namespace Vadon::Private::Render::Dummy
 		// TODO!!!
 	}
 
+	Vadon::Render::ShaderResourceViewHandle BufferSystem::create_shader_resource_view(Vadon::Render::BufferHandle /*buffer_handle*/, const Vadon::Render::ShaderResourceViewInfo& /*srv_info*/)
+	{
+		return Vadon::Render::ShaderResourceViewHandle();
+	}
+
 	BufferSystem::BufferSystem(Core::EngineCoreInterface& core, GraphicsAPI& graphics_api)
 		: Vadon::Render::BufferSystem(core)
 		, m_graphics_api(graphics_api)
