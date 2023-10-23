@@ -228,6 +228,18 @@ namespace Vadon::Private::Render::DirectX
 		}
 	}
 
+	void ShaderSystem::remove_resource(ShaderResourceViewHandle srv_handle)
+	{
+		ShaderResourceView* resource = m_resource_pool.get(srv_handle);
+		if (!resource)
+		{
+			return;
+		}
+
+		resource->d3d_srv.Reset();
+		m_resource_pool.remove(srv_handle);
+	}
+
 	ShaderResourceViewHandle ShaderSystem::add_resource_view(D3DShaderResourceView d3d_srv)
 	{
 		D3D11_SHADER_RESOURCE_VIEW_DESC srv_description;
@@ -275,17 +287,6 @@ namespace Vadon::Private::Render::DirectX
 		}
 
 		return add_resource_view_internal(d3d_srv, srv_info);
-	}
-
-	void ShaderSystem::remove_resource_view(ShaderResourceViewHandle srv_handle)
-	{
-		ShaderResourceView* resource = m_resource_pool.get(srv_handle);
-		if (!resource)
-		{
-			return;
-		}
-
-		resource->d3d_srv.Reset();
 	}
 
 	ShaderResourceViewInfo ShaderSystem::get_srv_info(D3D11_SHADER_RESOURCE_VIEW_DESC& srv_desc)

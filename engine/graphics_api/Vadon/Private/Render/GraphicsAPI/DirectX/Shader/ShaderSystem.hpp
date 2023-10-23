@@ -22,10 +22,10 @@ namespace Vadon::Private::Render::DirectX
 
 		ShaderResourceViewInfo get_resource_view_info(ShaderResourceViewHandle srv_handle) const override;
 		void apply_resource(ShaderType shader_type, ShaderResourceViewHandle resource_handle, int32_t slot) override;
+		void remove_resource(ShaderResourceViewHandle srv_handle) override;
 
 		ShaderResourceViewHandle add_resource_view(D3DShaderResourceView d3d_srv);
 		ShaderResourceViewHandle create_resource_view(D3DResourcePtr resource, const ShaderResourceViewInfo& srv_info);
-		void remove_resource_view(ShaderResourceViewHandle resource_handle);
 
 		static ShaderResourceViewInfo get_srv_info(D3D11_SHADER_RESOURCE_VIEW_DESC& srv_desc);
 	private:

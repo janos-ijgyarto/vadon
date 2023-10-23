@@ -41,6 +41,11 @@ namespace Vadon::Private::Render::Dummy
 		// TODO!!!
 	}
 
+	void ShaderSystem::remove_resource(ShaderResourceViewHandle /*srv_handle*/)
+	{
+		// TODO!!!
+	}
+
 	ShaderSystem::ShaderSystem(Vadon::Core::EngineCoreInterface& core, GraphicsAPI& graphics_api)
 		: Vadon::Render::ShaderSystem(core)
 		, m_graphics_api(graphics_api)

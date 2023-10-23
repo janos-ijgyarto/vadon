@@ -20,6 +20,7 @@ namespace Vadon::Private::Render::Dummy
 
 		ShaderResourceViewInfo get_resource_view_info(ShaderResourceViewHandle srv_handle) const override;
 		void apply_resource(ShaderType shader_type, ShaderResourceViewHandle resource_handle, int32_t slot) override;
+		void remove_resource(ShaderResourceViewHandle srv_handle) override;
 	private:
 		ShaderSystem(Vadon::Core::EngineCoreInterface& core, GraphicsAPI& graphics_api);
 

@@ -17,6 +17,7 @@ namespace Vadon::Render
 
 		virtual ShaderResourceViewInfo get_resource_view_info(ShaderResourceViewHandle srv_handle) const = 0;
 		virtual void apply_resource(ShaderType shader_type, ShaderResourceViewHandle srv_handle, int32_t slot) = 0;
+		virtual void remove_resource(ShaderResourceViewHandle srv_handle) = 0;
 	protected:
 		ShaderSystem(Core::EngineCoreInterface& core) 
 			: EngineSystem(core) 
