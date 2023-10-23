@@ -250,6 +250,12 @@ namespace Vadon::Private::Render::DirectX
 
 		switch (srv_info.type)
 		{
+		case ShaderResourceType::BUFFER:
+		{
+			srv_description.Buffer.FirstElement = srv_info.resource_type_data.first_array_slice;
+			srv_description.Buffer.NumElements = srv_info.resource_type_data.array_size;
+		}
+		break;
 		case ShaderResourceType::TEXTURE_2D:
 		{
 			srv_description.Texture2D.MipLevels = srv_info.resource_type_data.mip_levels;
