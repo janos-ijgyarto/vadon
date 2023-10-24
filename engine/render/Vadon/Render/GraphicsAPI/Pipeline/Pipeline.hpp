@@ -112,6 +112,13 @@ namespace Vadon::Render
 		ALL = 1
 	};
 
+	struct DepthInfo
+	{
+		bool enable = false;
+		DepthWriteMask write_mask = DepthWriteMask::ZERO;
+		GraphicsAPIComparisonFunction comparison_func = GraphicsAPIComparisonFunction::NEVER;
+	};
+
 	enum class StencilOperation
 	{
 		KEEP,
@@ -124,24 +131,27 @@ namespace Vadon::Render
 		DECR
 	};
 
-	struct DepthStencilOperationInfo
+	struct StencilOperationInfo
 	{
-		StencilOperation stencil_fail_op = StencilOperation::KEEP;
-		StencilOperation stencil_depth_fail_op = StencilOperation::KEEP;
-		StencilOperation stencil_pass_op = StencilOperation::KEEP;
-		GraphicsAPIComparisonFunction stencil_function = GraphicsAPIComparisonFunction::NEVER;
+		StencilOperation fail = StencilOperation::KEEP;
+		StencilOperation depth_fail = StencilOperation::KEEP;
+		StencilOperation pass = StencilOperation::KEEP;
+		GraphicsAPIComparisonFunction comparison_func = GraphicsAPIComparisonFunction::NEVER;
+	};
+
+	struct StencilInfo
+	{
+		bool enable = false;
+		uint8_t read_mask = 0;
+		uint8_t write_mask = 0;
+		StencilOperationInfo front_face;
+		StencilOperationInfo back_face;
 	};
 
 	struct DepthStencilInfo
 	{
-		bool depth_enable = false;
-		DepthWriteMask depth_write_mask = DepthWriteMask::ZERO;
-		GraphicsAPIComparisonFunction depth_function = GraphicsAPIComparisonFunction::NEVER;
-		bool stencil_enable = false;
-		uint8_t stencil_read_mask = 0;
-		uint8_t stencil_write_mask = 0;
-		DepthStencilOperationInfo front_face;
-		DepthStencilOperationInfo back_face;
+		DepthInfo depth;
+		StencilInfo stencil;
 	};
 
 	VADON_DECLARE_TYPED_POOL_HANDLE(DepthStencilState, DepthStencilStateHandle);

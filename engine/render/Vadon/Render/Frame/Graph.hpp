@@ -4,10 +4,10 @@
 #include <Vadon/Render/GraphicsAPI/RenderTarget/RenderTarget.hpp>
 namespace Vadon::Render
 {
-	struct FrameRenderTarget
+	struct FrameResource
 	{
 		std::string name;
-		RenderTargetHandle target;
+		// TODO: any other info?
 	};
 
 	struct FrameGraphInfo
@@ -15,7 +15,7 @@ namespace Vadon::Render
 		std::string name;
 		std::vector<RenderPass> passes;
 
-		std::vector<FrameRenderTarget> targets;
+		std::vector<FrameResource> targets;
 
 		// TODO: any other info?
 	};

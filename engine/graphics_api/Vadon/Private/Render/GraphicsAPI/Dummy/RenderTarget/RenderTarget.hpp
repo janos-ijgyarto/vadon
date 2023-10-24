@@ -16,5 +16,11 @@ namespace Vadon::Private::Render::Dummy
 	using RenderTargetInfo = Vadon::Render::RenderTargetInfo;
 
 	using RenderTargetHandle = Vadon::Render::RenderTargetHandle;
+
+	using DepthStencilViewInfo = Vadon::Render::DepthStencilViewInfo;
+
+	using DepthStencilClear = Vadon::Render::DepthStencilClear;
+
+	using DepthStencilHandle = Vadon::Render::DepthStencilHandle;
 }
 #endif

@@ -5,6 +5,7 @@
 #include <Vadon/Utilities/Container/ObjectPool/Pool.hpp>
 
 #include <Vadon/Private/Render/GraphicsAPI/DirectX/D3DCommon.hpp>
+#include <Vadon/Private/Render/GraphicsAPI/DirectX/Shader/Resource.hpp>
 #include <Vadon/Private/Render/GraphicsAPI/DirectX/RenderTarget/RenderTarget.hpp>
 
 namespace Vadon::Private::Render::DirectX
@@ -26,12 +27,17 @@ namespace Vadon::Private::Render::DirectX
 		void copy_target(RenderTargetHandle source_handle, RenderTargetHandle destination_handle) override;
 		void remove_target(RenderTargetHandle rt_handle) override;
 
-		void set_target(RenderTargetHandle rt_handle) override;
+		void set_target(RenderTargetHandle rt_handle, DepthStencilHandle ds_handle) override;
 		void clear_target(RenderTargetHandle rt_handle, const Vadon::Render::RGBAColor& clear_color) override;
+		void clear_depth_stencil(DepthStencilHandle ds_handle, const DepthStencilClear& clear) override;
+
+		void remove_depth_stencil(DepthStencilHandle ds_handle) override;
 
 		void apply_viewport(const Viewport& viewport) override;
 
 		RenderTargetHandle get_window_target(WindowHandle window_handle) override;
+
+		DepthStencilHandle create_depth_stencil_view(const D3DResource& resource, const DepthStencilViewInfo& ds_view_info);
 	private:
 		RenderTargetSystem(Vadon::Core::EngineCoreInterface& core, GraphicsAPI& graphics_api);
 
@@ -40,6 +46,7 @@ namespace Vadon::Private::Render::DirectX
 		void shutdown();
 
 		using RenderTargetPool = Vadon::Utilities::ObjectPool<Vadon::Render::RenderTarget, RenderTarget>;
+		using DepthStencilPool = Vadon::Utilities::ObjectPool<Vadon::Render::DepthStencil, DepthStencil>;
 		using WindowPool = Vadon::Utilities::ObjectPool<Vadon::Render::Window, Window>;
 
 		bool update_back_buffer_view(DXGISwapChain& swap_chain, D3DRenderTargetView& back_buffer_view);
@@ -47,6 +54,7 @@ namespace Vadon::Private::Render::DirectX
 		GraphicsAPI& m_graphics_api;
 
 		RenderTargetPool m_rt_pool;
+		DepthStencilPool m_ds_pool;
 		WindowPool m_window_pool;
 
 		friend GraphicsAPI;

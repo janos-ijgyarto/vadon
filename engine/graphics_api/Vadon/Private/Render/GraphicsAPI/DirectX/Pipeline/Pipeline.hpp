@@ -39,7 +39,10 @@ namespace Vadon::Private::Render::DirectX
 
 	using DepthWriteMask = Vadon::Render::DepthWriteMask;
 	using StencilOperation = Vadon::Render::StencilOperation;
-	using DepthStencilOperationInfo = Vadon::Render::DepthStencilOperationInfo;
+	using StencilOperationInfo = Vadon::Render::StencilOperationInfo;
+
+	using DepthInfo = Vadon::Render::DepthInfo;
+	using StencilInfo = Vadon::Render::StencilInfo;
 	using DepthStencilInfo = Vadon::Render::DepthStencilInfo;
 
 	using DepthStencilStateHandle = Vadon::Render::DepthStencilStateHandle;

@@ -261,6 +261,11 @@ namespace Vadon::Private::Render::DirectX
 		log("DirectX successfully shut down.\n");
 	}
 
+	RenderTargetSystem& GraphicsAPI::get_directx_rt_system()
+	{
+		return m_internal->m_rt_system;
+	}
+
 	ShaderSystem& GraphicsAPI::get_directx_shader_system()
 	{
 		return m_internal->m_shader_system;

@@ -264,12 +264,7 @@ float4 main(PS_INPUT input) : SV_Target
 			VadonApp::Platform::PlatformInterface& platform_interface = engine_app.get_system<VadonApp::Platform::PlatformInterface>();
 			{
 				// Draw to the main window
-				const VadonApp::Platform::RenderWindowInfo main_window_info = platform_interface.get_window_info();
-
-				Vadon::Render::RenderTargetSystem& rt_system = engine_core.get_system<Vadon::Render::RenderTargetSystem>();
-				const Vadon::Render::RenderTargetHandle main_window_target = rt_system.get_window_target(main_window_info.render_handle);
-
-				frame_graph_info.targets.emplace_back("main_window", main_window_target);
+				frame_graph_info.targets.emplace_back("main_window");
 			}
 
 			{
@@ -285,7 +280,9 @@ float4 main(PS_INPUT input) : SV_Target
 
 				clear_pass.execution = [main_window_target, &rt_system]()
 				{
+					// Clear target and set it
 					rt_system.clear_target(main_window_target, Vadon::Render::RGBAColor(0.0f, 0.0f, 0.6f, 1.0f));
+					rt_system.set_target(main_window_target, Vadon::Render::DepthStencilHandle());
 				};
 			}
 

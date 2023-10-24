@@ -18,8 +18,15 @@ namespace Vadon::Private::Render::DirectX
 
 	using RenderTargetHandle = Vadon::Render::RenderTargetHandle;
 
+	using DepthStencilViewInfo = Vadon::Render::DepthStencilViewInfo;
+
+	using DepthStencilClear = Vadon::Render::DepthStencilClear;
+
+	using DepthStencilHandle = Vadon::Render::DepthStencilHandle;
+
 	using DXGISwapChain = ComPtr<IDXGISwapChain>;
 	using D3DRenderTargetView = ComPtr<ID3D11RenderTargetView>;
+	using D3DDepthStencilView = ComPtr<ID3D11DepthStencilView>;
 
 	struct Window
 	{
@@ -33,7 +40,14 @@ namespace Vadon::Private::Render::DirectX
 
 	struct RenderTarget
 	{
+		RenderTargetInfo info;
 		D3DRenderTargetView d3d_rt_view;
+	};
+
+	struct DepthStencil
+	{
+		DepthStencilViewInfo info;
+		D3DDepthStencilView d3d_ds_view;
 	};
 }
 #endif

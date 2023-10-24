@@ -4,6 +4,7 @@
 #include <Vadon/Private/Render/GraphicsAPI/DirectX/GraphicsAPI.hpp>
 #include <Vadon/Private/Render/GraphicsAPI/DirectX/Buffer/Buffer.hpp>
 
+#include <Vadon/Private/Render/GraphicsAPI/DirectX/RenderTarget/RenderTargetSystem.hpp>
 #include <Vadon/Private/Render/GraphicsAPI/DirectX/Shader/ShaderSystem.hpp>
 
 #include <Vadon/Private/Render/GraphicsAPI/DirectX/Texture/DDSTextureLoader11.h>
@@ -243,12 +244,27 @@ namespace Vadon::Private::Render::DirectX
 		Texture* texture = m_texture_pool.get(texture_handle);
 		if (texture == nullptr)
 		{
+			// TODO: warning?
 			return ResourceViewHandle();
 		}
 
 		// Create shader resource view from D3D resource
 		ShaderSystem& shader_system = m_graphics_api.get_directx_shader_system();
 		return shader_system.create_resource_view(texture->d3d_texture_resource.Get(), srv_info);
+	}
+
+	DepthStencilHandle TextureSystem::create_depth_stencil_view(TextureHandle texture_handle, const DepthStencilViewInfo& ds_view_info)
+	{
+		Texture* texture = m_texture_pool.get(texture_handle);
+		if (texture == nullptr)
+		{
+			// TODO: warning?
+			return DepthStencilHandle();
+		}
+
+		// Pass on to the RT system
+		// TODO: any operations or checks regarding the texture?
+		return m_graphics_api.get_directx_rt_system().create_depth_stencil_view(texture->d3d_texture_resource, ds_view_info);
 	}
 
 	TextureSamplerHandle TextureSystem::create_sampler(const TextureSamplerInfo& sampler_info)

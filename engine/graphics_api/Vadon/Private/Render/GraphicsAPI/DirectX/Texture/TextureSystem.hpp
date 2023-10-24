@@ -2,6 +2,7 @@
 #define VADON_PRIVATE_RENDER_GRAPHICSAPI_DIRECTX_TEXTURE_TEXTURESYSTEM_HPP
 #include <Vadon/Render/GraphicsAPI/Texture/TextureSystem.hpp>
 
+#include <Vadon/Private/Render/GraphicsAPI/DirectX/RenderTarget/RenderTarget.hpp>
 #include <Vadon/Private/Render/GraphicsAPI/DirectX/Shader/Resource.hpp>
 #include <Vadon/Private/Render/GraphicsAPI/DirectX/Shader/Shader.hpp>
 #include <Vadon/Private/Render/GraphicsAPI/DirectX/Texture/Texture.hpp>
@@ -20,6 +21,7 @@ namespace Vadon::Private::Render::DirectX
 
 		TextureInfo get_texture_info(TextureHandle texture_handle) const override;
 		ResourceViewHandle create_resource_view(TextureHandle texture_handle, const ResourceViewInfo& resource_view_info) override;
+		DepthStencilHandle create_depth_stencil_view(TextureHandle texture_handle, const DepthStencilViewInfo& ds_view_info) override;
 
 		TextureSamplerHandle create_sampler(const TextureSamplerInfo& sampler_info) override;
 		void remove_sampler(TextureSamplerHandle sampler_handle) override;

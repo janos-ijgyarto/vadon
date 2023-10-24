@@ -3,12 +3,6 @@
 
 #include <Vadon/Core/CoreInterface.hpp>
 
-#include <Vadon/Render/GraphicsAPI/GraphicsAPI.hpp>
-#include <Vadon/Render/GraphicsAPI/Pipeline/PipelineSystem.hpp>
-#include <Vadon/Render/GraphicsAPI/RenderTarget/RenderTargetSystem.hpp>
-#include <Vadon/Render/GraphicsAPI/Shader/ShaderSystem.hpp>
-
-
 namespace Vadon::Private::Render
 {
 	FrameGraphHandle FrameSystem::create_graph(const FrameGraphInfo& graph_info)
@@ -57,7 +51,7 @@ namespace Vadon::Private::Render
 				}
 
 				// Check whether any of the input resources are the result of earlier passes
-				for (const Vadon::Render::PassResource& current_resource : current_pass.shader_resources)
+				for (const Vadon::Render::PassResource& current_resource : current_pass.resources)
 				{
 					auto resource_it = resource_lookup.find(current_resource.name);
 					if (resource_it != resource_lookup.end())
@@ -146,11 +140,6 @@ namespace Vadon::Private::Render
 				}
 			}
 
-			for (const Vadon::Render::FrameRenderTarget& current_target : graph_info.targets)
-			{
-				new_frame_graph->targets[current_target.name] = current_target.target;
-			}
-
 			return new_graph_handle;
 		}
 	}
@@ -165,30 +154,12 @@ namespace Vadon::Private::Render
 		std::vector<size_t> node_index_queue(frame_graph->root_nodes);
 		size_t current_queue_index = 0;
 
-		Vadon::Render::GraphicsAPI& graphics_api = m_engine_core.get_system<Vadon::Render::GraphicsAPI>();
-
-		Vadon::Render::RenderTargetSystem& rt_system = m_engine_core.get_system<Vadon::Render::RenderTargetSystem>();
-		Vadon::Render::ShaderSystem& shader_system = m_engine_core.get_system<Vadon::Render::ShaderSystem>();
-
 		while (current_queue_index < node_index_queue.size())
 		{
 			const size_t current_node_index = node_index_queue[current_queue_index];
 			const FrameGraphNode& current_node = frame_graph->nodes[current_node_index];
 
-			// FIXME: should we set the target here, or expect the execution function to do so?
-			// (i.e is the metadata only there to define graph execution order, and not make assumptions about what the execution needs?)
-			for (const Vadon::Render::PassResource& current_target : current_node.pass.targets)
-			{
-				// FIXME: applying first valid target, should allow multiple targets!
-				auto target_it = frame_graph->targets.find(current_target.name);
-				if (target_it != frame_graph->targets.end())
-				{
-					rt_system.set_target(target_it->second);
-					break;
-				}
-			}
-
-			// Run the pass render function
+			// Run the pass execution function
 			current_node.pass.execution();
 
 			// Add children to queue

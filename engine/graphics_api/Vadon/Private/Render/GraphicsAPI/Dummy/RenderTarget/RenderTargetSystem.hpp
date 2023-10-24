@@ -23,8 +23,11 @@ namespace Vadon::Private::Render::Dummy
 		void copy_target(RenderTargetHandle source_handle, RenderTargetHandle destination_handle) override;
 		void remove_target(RenderTargetHandle rt_handle) override;
 
-		void set_target(RenderTargetHandle rt_handle) override;
+		void set_target(RenderTargetHandle rt_handle, DepthStencilHandle ds_handle) override;
 		void clear_target(RenderTargetHandle rt_handle, const Vadon::Render::RGBAColor& clear_color) override;
+		void clear_depth_stencil(DepthStencilHandle ds_handle, const DepthStencilClear& clear) override;
+		
+		void remove_depth_stencil(DepthStencilHandle ds_handle) override;
 
 		void apply_viewport(const Viewport& viewport) override;
 

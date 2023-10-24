@@ -51,12 +51,22 @@ namespace Vadon::Private::Render::Dummy
 		// TODO
 	}
 
-	void RenderTargetSystem::set_target(RenderTargetHandle /*rt_handle*/)
+	void RenderTargetSystem::set_target(RenderTargetHandle /*rt_handle*/, DepthStencilHandle /*ds_handle*/)
 	{
 		// TODO
 	}
 
 	void RenderTargetSystem::clear_target(RenderTargetHandle /*rt_handle*/, const Vadon::Render::RGBAColor& /*clear_color*/)
+	{
+		// TODO
+	}
+
+	void RenderTargetSystem::clear_depth_stencil(DepthStencilHandle /*ds_handle*/, const DepthStencilClear& /*clear*/)
+	{
+		// TODO
+	}
+
+	void RenderTargetSystem::remove_depth_stencil(DepthStencilHandle /*ds_handle*/)
 	{
 		// TODO
 	}

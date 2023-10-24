@@ -152,15 +152,15 @@ namespace Vadon::Private::Render::DirectX
 			return D3D11_STENCIL_OP_KEEP;
 		}
 
-		D3D11_DEPTH_STENCILOP_DESC get_d3d_depth_stencil_op_desc(const DepthStencilOperationInfo& depth_stencil_op_info)
+		D3D11_DEPTH_STENCILOP_DESC get_d3d_depth_stencil_op_desc(const StencilOperationInfo& stencil_op_info)
 		{
 			D3D11_DEPTH_STENCILOP_DESC d3d_depth_stencilop_desc;
 			ZeroMemory(&d3d_depth_stencilop_desc, sizeof(D3D11_DEPTH_STENCILOP_DESC));
 
-			d3d_depth_stencilop_desc.StencilFailOp = get_d3d_stencil_op(depth_stencil_op_info.stencil_fail_op);
-			d3d_depth_stencilop_desc.StencilDepthFailOp = get_d3d_stencil_op(depth_stencil_op_info.stencil_depth_fail_op);
-			d3d_depth_stencilop_desc.StencilPassOp = get_d3d_stencil_op(depth_stencil_op_info.stencil_pass_op);
-			d3d_depth_stencilop_desc.StencilFunc = get_d3d_comparison_func(depth_stencil_op_info.stencil_function);
+			d3d_depth_stencilop_desc.StencilFailOp = get_d3d_stencil_op(stencil_op_info.fail);
+			d3d_depth_stencilop_desc.StencilDepthFailOp = get_d3d_stencil_op(stencil_op_info.depth_fail);
+			d3d_depth_stencilop_desc.StencilPassOp = get_d3d_stencil_op(stencil_op_info.pass);
+			d3d_depth_stencilop_desc.StencilFunc = get_d3d_comparison_func(stencil_op_info.comparison_func);
 
 			return d3d_depth_stencilop_desc;
 		}
@@ -321,15 +321,20 @@ namespace Vadon::Private::Render::DirectX
 		D3D11_DEPTH_STENCIL_DESC depth_stencil_desc;
 		ZeroMemory(&depth_stencil_desc, sizeof(D3D11_DEPTH_STENCIL_DESC));
 
-		depth_stencil_desc.DepthEnable = depth_stencil_info.depth_enable;
-		depth_stencil_desc.DepthWriteMask = get_d3d_depth_write_mask(depth_stencil_info.depth_write_mask);
-		depth_stencil_desc.DepthFunc = get_d3d_comparison_func(depth_stencil_info.depth_function);
-		depth_stencil_desc.StencilEnable = depth_stencil_info.stencil_enable;
-		depth_stencil_desc.StencilReadMask = depth_stencil_info.stencil_read_mask;
-		depth_stencil_desc.StencilWriteMask = depth_stencil_info.stencil_write_mask;
+		const DepthInfo& depth_info = depth_stencil_info.depth;
+		
+		depth_stencil_desc.DepthEnable = depth_info.enable;
+		depth_stencil_desc.DepthWriteMask = get_d3d_depth_write_mask(depth_info.write_mask);
+		depth_stencil_desc.DepthFunc = get_d3d_comparison_func(depth_info.comparison_func);
 
-		depth_stencil_desc.FrontFace = get_d3d_depth_stencil_op_desc(depth_stencil_info.front_face);
-		depth_stencil_desc.BackFace = get_d3d_depth_stencil_op_desc(depth_stencil_info.back_face);
+		const StencilInfo& stencil_info = depth_stencil_info.stencil;
+
+		depth_stencil_desc.StencilEnable = stencil_info.enable;
+		depth_stencil_desc.StencilReadMask = stencil_info.read_mask;
+		depth_stencil_desc.StencilWriteMask = stencil_info.write_mask;
+
+		depth_stencil_desc.FrontFace = get_d3d_depth_stencil_op_desc(stencil_info.front_face);
+		depth_stencil_desc.BackFace = get_d3d_depth_stencil_op_desc(stencil_info.back_face);
 
 		D3DDepthStencilState new_d3d_depth_stencil_state;
 		GraphicsAPI::Device* device = m_graphics_api.get_device();

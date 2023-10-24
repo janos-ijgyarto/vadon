@@ -23,7 +23,7 @@ namespace Vadon::Render
 		std::string name;
 
 		// TODO: set the slots for the resources and targets?
-		std::vector<PassResource> shader_resources;
+		std::vector<PassResource> resources;
 		std::vector<PassResource> targets;
 
 		// TODO: anything else?

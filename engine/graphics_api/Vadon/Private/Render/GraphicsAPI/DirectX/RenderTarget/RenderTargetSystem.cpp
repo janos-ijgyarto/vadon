@@ -232,20 +232,27 @@ namespace Vadon::Private::Render::DirectX
 		m_rt_pool.remove(rt_handle);
 	}
 
-	void RenderTargetSystem::set_target(RenderTargetHandle rt_handle)
+	void RenderTargetSystem::set_target(RenderTargetHandle rt_handle, DepthStencilHandle ds_handle)
 	{
 		// TODO: allow for multiple RTs!
 		ID3D11RenderTargetView* render_target_views[] = { nullptr };
+		ID3D11DepthStencilView* depth_stencil_view = nullptr;
 
 		// If we find such a RT, we set it. If not found, we assume user wanted to unset the RT
 		RenderTarget* render_target = m_rt_pool.get(rt_handle);
-		if (render_target)
+		if (render_target != nullptr)
 		{
 			render_target_views[0] = render_target->d3d_rt_view.Get();
 		}
 
+		DepthStencil* depth_stencil = m_ds_pool.get(ds_handle);
+		if (depth_stencil != nullptr)
+		{
+			depth_stencil_view = depth_stencil->d3d_ds_view.Get();
+		}
+
 		GraphicsAPI::DeviceContext* device_context = m_graphics_api.get_device_context();
-		device_context->OMSetRenderTargets(1, render_target_views, nullptr);
+		device_context->OMSetRenderTargets(1, render_target_views, depth_stencil_view);
 	}
 
 	void RenderTargetSystem::clear_target(RenderTargetHandle rt_handle, const Vadon::Render::RGBAColor& clear_color)
@@ -257,8 +264,40 @@ namespace Vadon::Private::Render::DirectX
 			return;
 		}
 
-		ID3D11DeviceContext* device_context = m_graphics_api.get_device_context();
+		GraphicsAPI::DeviceContext* device_context = m_graphics_api.get_device_context();
 		device_context->ClearRenderTargetView(render_target->d3d_rt_view.Get(), &clear_color.x);
+	}
+
+	void RenderTargetSystem::clear_depth_stencil(DepthStencilHandle ds_handle, const DepthStencilClear& clear)
+	{
+		DepthStencil* depth_stencil = m_ds_pool.get(ds_handle);
+		if (depth_stencil == nullptr)
+		{
+			// TODO: warning?
+			return;
+		}
+
+		// FIXME: proper utility function!
+		const UINT clear_flags = Vadon::Utilities::to_integral(clear.clear_flags);
+
+		GraphicsAPI::DeviceContext* device_context = m_graphics_api.get_device_context();
+		device_context->ClearDepthStencilView(depth_stencil->d3d_ds_view.Get(), clear_flags, clear.depth, clear.stencil);
+	}
+
+	void RenderTargetSystem::remove_depth_stencil(DepthStencilHandle ds_handle)
+	{
+		DepthStencil* depth_stencil = m_ds_pool.get(ds_handle);
+		if (depth_stencil == nullptr)
+		{
+			// Attempting to remove nonexistent RT
+			warning(std::format("Render target system attempted to remove target with ID \"{0}\", but was not found!", ds_handle.handle.to_uint()));
+			return;
+		}
+
+		// Release the D3D resource
+		depth_stencil->d3d_ds_view.Reset();
+
+		m_ds_pool.remove(ds_handle);
 	}
 
 	void RenderTargetSystem::apply_viewport(const Vadon::Render::Viewport& viewport)
@@ -286,6 +325,29 @@ namespace Vadon::Private::Render::DirectX
 		}
 
 		return window->back_buffer;
+	}
+
+	DepthStencilHandle RenderTargetSystem::create_depth_stencil_view(const D3DResource& resource, const DepthStencilViewInfo& ds_view_info)
+	{
+		GraphicsAPI::Device* d3d_device = m_graphics_api.get_device();
+
+		D3DDepthStencilView d3d_ds_view;
+
+		// FIXME: use DS info!
+		HRESULT result = d3d_device->CreateDepthStencilView(resource.Get(), NULL, d3d_ds_view.ReleaseAndGetAddressOf());
+		if (FAILED(result))
+		{
+			// TODO: error?
+			return DepthStencilHandle();
+		}
+
+		DepthStencilHandle new_ds_handle = m_ds_pool.add();
+		DepthStencil* new_depth_stencil = m_ds_pool.get(new_ds_handle);
+
+		new_depth_stencil->info = ds_view_info;
+		new_depth_stencil->d3d_ds_view = d3d_ds_view;
+
+		return new_ds_handle;
 	}
 
 	RenderTargetSystem::RenderTargetSystem(Vadon::Core::EngineCoreInterface& core, GraphicsAPI& graphics_api)

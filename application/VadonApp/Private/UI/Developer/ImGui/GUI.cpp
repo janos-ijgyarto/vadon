@@ -1108,13 +1108,18 @@ float4 main(PS_INPUT input) : SV_Target
         {
             Vadon::Render::DepthStencilInfo depth_stencil_info;
 
-            depth_stencil_info.depth_enable = false;
-            depth_stencil_info.depth_write_mask = Vadon::Render::DepthWriteMask::ALL;
-            depth_stencil_info.depth_function = Vadon::Render::GraphicsAPIComparisonFunction::ALWAYS;
-            depth_stencil_info.stencil_enable = false;
-            depth_stencil_info.front_face.stencil_fail_op = depth_stencil_info.front_face.stencil_depth_fail_op = depth_stencil_info.front_face.stencil_pass_op = Vadon::Render::StencilOperation::KEEP;
-            depth_stencil_info.front_face.stencil_function = Vadon::Render::GraphicsAPIComparisonFunction::ALWAYS;
-            depth_stencil_info.back_face = depth_stencil_info.front_face;
+            Vadon::Render::DepthInfo& depth_info = depth_stencil_info.depth;
+
+            depth_info.enable = false;
+            depth_info.write_mask = Vadon::Render::DepthWriteMask::ALL;
+            depth_info.comparison_func = Vadon::Render::GraphicsAPIComparisonFunction::ALWAYS;
+
+            Vadon::Render::StencilInfo& stencil_info = depth_stencil_info.stencil;
+
+            stencil_info.enable = false;
+            stencil_info.front_face.fail = stencil_info.front_face.depth_fail = stencil_info.front_face.pass = Vadon::Render::StencilOperation::KEEP;
+            stencil_info.front_face.comparison_func = Vadon::Render::GraphicsAPIComparisonFunction::ALWAYS;
+            stencil_info.back_face = stencil_info.front_face;
 
             m_pipeline_state.depth_stencil_update.depth_stencil = pipeline_system.get_depth_stencil_state(depth_stencil_info);
             m_pipeline_state.depth_stencil_update.stencil_ref = 0;

@@ -44,5 +44,27 @@ namespace Vadon::Render
 	};
 
 	VADON_DECLARE_TYPED_POOL_HANDLE(RenderTarget, RenderTargetHandle);
+
+	// TODO: depth-stencil parameters!
+	struct DepthStencilViewInfo
+	{
+
+	};
+
+	enum class DepthStencilClearFlags
+	{
+		NONE = 0,
+		DEPTH = 1 << 0,
+		STENCIL = 1 << 1
+	};
+
+	struct DepthStencilClear
+	{
+		DepthStencilClearFlags clear_flags = DepthStencilClearFlags::NONE;
+		float depth = 0.0f;
+		uint8_t stencil = 0;
+	};
+
+	VADON_DECLARE_TYPED_POOL_HANDLE(DepthStencil, DepthStencilHandle);
 }
 #endif
