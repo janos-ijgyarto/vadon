@@ -26,10 +26,10 @@ namespace Vadon::Private::Render::Dummy
 		return Vadon::Render::TextureInfo();
 	}
 
-	Vadon::Render::ShaderResourceViewHandle TextureSystem::create_texture_srv(Vadon::Render::TextureHandle /*texture_handle*/, const Vadon::Render::ShaderResourceViewInfo& /*srv_info*/)
+	Vadon::Render::ResourceViewHandle TextureSystem::create_resource_view(Vadon::Render::TextureHandle /*texture_handle*/, const Vadon::Render::ResourceViewInfo& /*resource_view_info*/)
 	{
 		// TODO
-		return Vadon::Render::ShaderResourceViewHandle();
+		return Vadon::Render::ResourceViewHandle();
 	}
 
 	Vadon::Render::TextureSamplerHandle TextureSystem::create_sampler(const Vadon::Render::TextureSamplerInfo& /*sampler_info*/)

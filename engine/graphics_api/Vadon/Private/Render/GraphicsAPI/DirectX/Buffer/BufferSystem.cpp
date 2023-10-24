@@ -9,85 +9,6 @@
 
 namespace Vadon::Private::Render::DirectX
 {
-	D3D11_USAGE get_d3d_usage(BufferUsage usage)
-	{
-		switch (usage)
-		{
-		case BufferUsage::DEFAULT:
-			return D3D11_USAGE::D3D11_USAGE_DEFAULT;
-		case BufferUsage::IMMUTABLE:
-			return D3D11_USAGE::D3D11_USAGE_IMMUTABLE;
-		case BufferUsage::DYNAMIC:
-			return D3D11_USAGE::D3D11_USAGE_DYNAMIC;
-		case BufferUsage::STAGING:
-			return D3D11_USAGE::D3D11_USAGE_STAGING;
-		}
-
-		return D3D11_USAGE::D3D11_USAGE_DEFAULT;
-	}
-
-	BufferUsage get_buffer_usage(D3D11_USAGE usage)
-	{
-		switch (usage)
-		{
-		case D3D11_USAGE::D3D11_USAGE_DEFAULT:
-			return BufferUsage::DEFAULT;
-		case D3D11_USAGE::D3D11_USAGE_IMMUTABLE:
-			return BufferUsage::IMMUTABLE;
-		case D3D11_USAGE::D3D11_USAGE_DYNAMIC:
-			return BufferUsage::DYNAMIC;
-		case D3D11_USAGE::D3D11_USAGE_STAGING:
-			return BufferUsage::STAGING;
-		}
-
-		return BufferUsage::DEFAULT;
-	}
-
-	D3D11_BIND_FLAG get_d3d_bind_flags(BufferBindFlags bind_flags)
-	{
-		UINT d3d_bind_flags = 0;
-		VADON_START_BITMASK_SWITCH(bind_flags)
-		{
-		case BufferBindFlags::VERTEX:
-			d3d_bind_flags |= D3D11_BIND_FLAG::D3D11_BIND_VERTEX_BUFFER;
-			break;
-		case BufferBindFlags::INDEX:
-			d3d_bind_flags |= D3D11_BIND_FLAG::D3D11_BIND_INDEX_BUFFER;
-			break;
-		case BufferBindFlags::CONSTANT:
-			d3d_bind_flags |= D3D11_BIND_FLAG::D3D11_BIND_CONSTANT_BUFFER;
-			break;
-		case BufferBindFlags::SHADER_RESOURCE:
-			d3d_bind_flags |= D3D11_BIND_FLAG::D3D11_BIND_SHADER_RESOURCE;
-			break;
-		}
-
-		return D3D11_BIND_FLAG(d3d_bind_flags);
-	}
-
-	BufferBindFlags get_buffer_bind_flags(D3D11_BIND_FLAG d3d_bind_flags)
-	{
-		BufferBindFlags bind_flags = BufferBindFlags::NONE;
-
-		VADON_START_BITMASK_SWITCH(d3d_bind_flags)
-		{
-		case D3D11_BIND_FLAG::D3D11_BIND_VERTEX_BUFFER:
-			bind_flags |= BufferBindFlags::VERTEX;
-			break;
-		case D3D11_BIND_FLAG::D3D11_BIND_INDEX_BUFFER:
-			bind_flags |= BufferBindFlags::INDEX;
-			break;
-		case D3D11_BIND_FLAG::D3D11_BIND_CONSTANT_BUFFER:
-			bind_flags |= BufferBindFlags::CONSTANT;
-			break;
-		case D3D11_BIND_FLAG::D3D11_BIND_SHADER_RESOURCE:
-			bind_flags |= BufferBindFlags::SHADER_RESOURCE;
-			break;
-		}
-
-		return bind_flags;
-	}
-
 	BufferHandle BufferSystem::create_buffer(const BufferInfo& buffer_info, const void* init_data)
 	{
 		D3D11_BUFFER_DESC buffer_description;
@@ -97,12 +18,14 @@ namespace Vadon::Private::Render::DirectX
 		buffer_description.Usage = get_d3d_usage(buffer_info.usage); // TODO: some buffers cannot trivially assign the same usage (e.g read-write)
 		buffer_description.BindFlags = get_d3d_bind_flags(buffer_info.bind_flags);
 
-		if (buffer_info.usage == BufferUsage::DYNAMIC)
+		// FIXME: should we instead read the access flag from the info struct?
+		if (buffer_info.usage == ResourceUsage::DYNAMIC)
 		{
 			// Dynamic buffers need write access
 			buffer_description.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 		}
-		buffer_description.MiscFlags = 0; // TODO: add support for flags, e.g structured buffers
+		// FIXME: should we allow all misc. flags, or just the ones relevant for buffers?
+		buffer_description.MiscFlags = get_d3d_misc_flags(buffer_info.misc_flags);
 
 		GraphicsAPI::Device* device = m_graphics_api.get_device();
 		ComPtr<ID3D11Buffer> new_d3d_buffer;
@@ -146,7 +69,7 @@ namespace Vadon::Private::Render::DirectX
 		m_buffer_pool.remove(buffer_handle);
 	}
 
-	bool BufferSystem::buffer_data(BufferHandle buffer_handle, const Vadon::Utilities::DataRange& range, const void* data, bool force_discard)
+	bool BufferSystem::buffer_data(BufferHandle buffer_handle, const Vadon::Utilities::DataRange& range, const void* data, bool no_overwrite)
 	{
 		const Buffer* buffer = m_buffer_pool.get(buffer_handle);
 		if (!buffer)
@@ -158,10 +81,10 @@ namespace Vadon::Private::Render::DirectX
 
 		switch (buffer->info.usage)
 		{
-		case BufferUsage::DEFAULT:
+		case ResourceUsage::DEFAULT:
 		{
 			// FIXME: revise box usage and source row/depth pitch
-			const bool is_not_cbuffer = Utilities::to_bool(buffer->info.bind_flags & BufferBindFlags::CONSTANT);
+			const bool is_not_cbuffer = Utilities::to_bool(buffer->info.bind_flags & ResourceBindFlags::CONSTANT_BUFFER);
 			const uint32_t source_row_pitch = is_not_cbuffer ? (buffer->info.element_size * range.count) : (buffer->info.element_size * buffer->info.capacity);
 
 			// Create a box that defines the region we want to update (need to use byte widths for the dimensions)
@@ -177,18 +100,18 @@ namespace Vadon::Private::Render::DirectX
 			device_context->UpdateSubresource(buffer->d3d_buffer.Get(), 0, is_not_cbuffer ? &dest_box : nullptr, data, source_row_pitch, 0);
 			return true;
 		}
-		case BufferUsage::IMMUTABLE:
+		case ResourceUsage::IMMUTABLE:
 			// TODO: what goes here?
 			break;
-		case BufferUsage::DYNAMIC:
-		case BufferUsage::STAGING:
+		case ResourceUsage::DYNAMIC:
+		case ResourceUsage::STAGING:
 		{
 			D3D11_MAPPED_SUBRESOURCE mapped_subresource;
 			ZeroMemory(&mapped_subresource, sizeof(D3D11_MAPPED_SUBRESOURCE));
 
 			// Do not allow "NO_OVERWRITE" if it's a shader resource
 			// FIXME: allow if we are on D3D 11.1
-			const D3D11_MAP map_type = (Utilities::to_bool(buffer->info.bind_flags & (BufferBindFlags::VERTEX | BufferBindFlags::INDEX)) && (force_discard == false))
+			const D3D11_MAP map_type = (Utilities::to_bool(buffer->info.bind_flags & (ResourceBindFlags::VERTEX_BUFFER | ResourceBindFlags::INDEX_BUFFER)) && (no_overwrite == true))
 				? D3D11_MAP::D3D11_MAP_WRITE_NO_OVERWRITE : D3D11_MAP::D3D11_MAP_WRITE_DISCARD;
 
 			// TODO: other parameters?
@@ -221,7 +144,7 @@ namespace Vadon::Private::Render::DirectX
 			return;
 		}
 
-		if (Utilities::to_bool(buffer->info.bind_flags & BufferBindFlags::VERTEX) == false)
+		if (Utilities::to_bool(buffer->info.bind_flags & ResourceBindFlags::VERTEX_BUFFER) == false)
 		{
 			// TODO: error message?
 			return;
@@ -247,7 +170,7 @@ namespace Vadon::Private::Render::DirectX
 			return;
 		}
 
-		if (Utilities::to_bool(buffer->info.bind_flags & BufferBindFlags::INDEX) == false)
+		if (Utilities::to_bool(buffer->info.bind_flags & ResourceBindFlags::INDEX_BUFFER) == false)
 		{
 			// TODO: error message?
 			return;
@@ -275,13 +198,13 @@ namespace Vadon::Private::Render::DirectX
 		device_context->PSSetConstantBuffers(slot, 1, constant_buffers);
 	}
 
-	ShaderResourceViewHandle BufferSystem::create_shader_resource_view(BufferHandle buffer_handle, const ShaderResourceViewInfo& srv_info)
+	ResourceViewHandle BufferSystem::create_resource_view(BufferHandle buffer_handle, const ResourceViewInfo& srv_info)
 	{
 		const Buffer* buffer = m_buffer_pool.get(buffer_handle);
 		if (!buffer)
 		{
 			// TODO: error message?
-			return ShaderResourceViewHandle();
+			return ResourceViewHandle();
 		}
 		return m_graphics_api.get_directx_shader_system().create_resource_view(buffer->d3d_buffer.Get(), srv_info);
 	}

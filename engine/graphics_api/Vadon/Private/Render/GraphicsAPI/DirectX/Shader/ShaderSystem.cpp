@@ -199,18 +199,18 @@ namespace Vadon::Private::Render::DirectX
 		device_context->IASetInputLayout(vertex_layout->d3d_input_layout.Get());
 	}
 
-	ShaderResourceViewInfo ShaderSystem::get_resource_view_info(ShaderResourceViewHandle srv_handle) const
+	ResourceViewInfo ShaderSystem::get_resource_view_info(ResourceViewHandle resource_view_handle) const
 	{
-		const ShaderResourceView* resource = m_resource_pool.get(srv_handle);
+		const ShaderResourceView* resource = m_resource_pool.get(resource_view_handle);
 		if (resource == nullptr)
 		{
-			return ShaderResourceViewInfo();
+			return ResourceViewInfo();
 		}
 
 		return resource->info;
 	}
 
-	void ShaderSystem::apply_resource(ShaderType shader_type, ShaderResourceViewHandle resource_handle, int32_t slot)
+	void ShaderSystem::apply_resource(ShaderType shader_type, ResourceViewHandle resource_handle, int32_t slot)
 	{
 		ShaderResourceView* resource = m_resource_pool.get(resource_handle);
 		ID3D11ShaderResourceView* resource_array[] = { resource ? resource->d3d_srv.Get() : nullptr };
@@ -228,50 +228,50 @@ namespace Vadon::Private::Render::DirectX
 		}
 	}
 
-	void ShaderSystem::remove_resource(ShaderResourceViewHandle srv_handle)
+	void ShaderSystem::remove_resource(ResourceViewHandle resource_view_handle)
 	{
-		ShaderResourceView* resource = m_resource_pool.get(srv_handle);
+		ShaderResourceView* resource = m_resource_pool.get(resource_view_handle);
 		if (!resource)
 		{
 			return;
 		}
 
 		resource->d3d_srv.Reset();
-		m_resource_pool.remove(srv_handle);
+		m_resource_pool.remove(resource_view_handle);
 	}
 
-	ShaderResourceViewHandle ShaderSystem::add_resource_view(D3DShaderResourceView d3d_srv)
+	ResourceViewHandle ShaderSystem::add_resource_view(D3DShaderResourceView d3d_srv)
 	{
 		D3D11_SHADER_RESOURCE_VIEW_DESC srv_description;
 		ZeroMemory(&srv_description, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
 
 		d3d_srv->GetDesc(&srv_description);
 
-		ShaderResourceViewInfo srv_info = get_srv_info(srv_description);
+		ResourceViewInfo srv_info = get_srv_info(srv_description);
 
 		return add_resource_view_internal(d3d_srv, srv_info);
 	}
 
-	ShaderResourceViewHandle ShaderSystem::create_resource_view(ID3D11Resource* resource, const ShaderResourceViewInfo& srv_info)
+	ResourceViewHandle ShaderSystem::create_resource_view(ID3D11Resource* resource, const ResourceViewInfo& resource_view_info)
 	{
 		D3D11_SHADER_RESOURCE_VIEW_DESC srv_description;
 		ZeroMemory(&srv_description, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
 
-		srv_description.Format = get_dxgi_format(srv_info.format);
-		srv_description.ViewDimension = get_d3d_srv_dimension(srv_info.type);
+		srv_description.Format = get_dxgi_format(resource_view_info.format);
+		srv_description.ViewDimension = get_d3d_srv_dimension(resource_view_info.type);
 
-		switch (srv_info.type)
+		switch (resource_view_info.type)
 		{
-		case ShaderResourceType::BUFFER:
+		case ResourceType::BUFFER:
 		{
-			srv_description.Buffer.FirstElement = srv_info.resource_type_data.first_array_slice;
-			srv_description.Buffer.NumElements = srv_info.resource_type_data.array_size;
+			srv_description.Buffer.FirstElement = resource_view_info.type_info.first_array_slice;
+			srv_description.Buffer.NumElements = resource_view_info.type_info.array_size;
 		}
 		break;
-		case ShaderResourceType::TEXTURE_2D:
+		case ResourceType::TEXTURE_2D:
 		{
-			srv_description.Texture2D.MipLevels = srv_info.resource_type_data.mip_levels;
-			srv_description.Texture2D.MostDetailedMip = srv_info.resource_type_data.most_detailed_mip;
+			srv_description.Texture2D.MipLevels = resource_view_info.type_info.mip_levels;
+			srv_description.Texture2D.MostDetailedMip = resource_view_info.type_info.most_detailed_mip;
 		}
 		break;
 		}
@@ -283,24 +283,24 @@ namespace Vadon::Private::Render::DirectX
 		if (FAILED(result))
 		{
 			// TODO: error message
-			return ShaderResourceViewHandle();
+			return ResourceViewHandle();
 		}
 
-		return add_resource_view_internal(d3d_srv, srv_info);
+		return add_resource_view_internal(d3d_srv, resource_view_info);
 	}
 
-	ShaderResourceViewInfo ShaderSystem::get_srv_info(D3D11_SHADER_RESOURCE_VIEW_DESC& srv_desc)
+	ResourceViewInfo ShaderSystem::get_srv_info(D3D11_SHADER_RESOURCE_VIEW_DESC& srv_desc)
 	{
-		ShaderResourceViewInfo srv_info;
+		ResourceViewInfo srv_info;
 		srv_info.format = get_graphics_api_data_format(srv_desc.Format);
 		srv_info.type = get_srv_type(srv_desc.ViewDimension);
 
 		switch (srv_info.type)
 		{
-		case ShaderResourceType::TEXTURE_2D:
+		case ResourceType::TEXTURE_2D:
 		{
-			srv_info.resource_type_data.mip_levels = srv_desc.Texture2D.MipLevels;
-			srv_info.resource_type_data.most_detailed_mip = srv_desc.Texture2D.MostDetailedMip;
+			srv_info.type_info.mip_levels = srv_desc.Texture2D.MipLevels;
+			srv_info.type_info.most_detailed_mip = srv_desc.Texture2D.MostDetailedMip;
 		}
 		break;
 		}
@@ -425,9 +425,9 @@ namespace Vadon::Private::Render::DirectX
 		return shader_blob;
 	}
 
-	ShaderResourceViewHandle ShaderSystem::add_resource_view_internal(D3DShaderResourceView d3d_srv, const ShaderResourceViewInfo& srv_info)
+	ResourceViewHandle ShaderSystem::add_resource_view_internal(D3DShaderResourceView d3d_srv, const ResourceViewInfo& srv_info)
 	{
-		ShaderResourceViewHandle new_resource_handle = m_resource_pool.add();
+		ResourceViewHandle new_resource_handle = m_resource_pool.add();
 
 		ShaderResourceView* new_resource = m_resource_pool.get(new_resource_handle);
 		new_resource->info = srv_info;

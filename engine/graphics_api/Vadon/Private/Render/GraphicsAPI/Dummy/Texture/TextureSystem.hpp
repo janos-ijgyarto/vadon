@@ -13,7 +13,7 @@ namespace Vadon::Private::Render::Dummy
 		void remove_texture(Vadon::Render::TextureHandle texture_handle) override;
 
 		Vadon::Render::TextureInfo get_texture_info(Vadon::Render::TextureHandle texture_handle) const override;
-		Vadon::Render::ShaderResourceViewHandle create_texture_srv(Vadon::Render::TextureHandle texture_handle, const Vadon::Render::ShaderResourceViewInfo& srv_info) override;
+		Vadon::Render::ResourceViewHandle create_resource_view(Vadon::Render::TextureHandle texture_handle, const Vadon::Render::ResourceViewInfo& resource_view_info) override;
 
 		Vadon::Render::TextureSamplerHandle create_sampler(const Vadon::Render::TextureSamplerInfo& sampler_info) override;
 		void remove_sampler(Vadon::Render::TextureSamplerHandle sampler_handle) override;

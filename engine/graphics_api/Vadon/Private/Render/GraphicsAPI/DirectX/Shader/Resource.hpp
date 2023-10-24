@@ -4,13 +4,16 @@
 #include <Vadon/Private/Render/GraphicsAPI/DirectX/D3DCommon.hpp>
 namespace Vadon::Private::Render::DirectX
 {
-	class GraphicsAPI;
+	using ResourceType = Vadon::Render::ResourceType;
+	using ResourceUsage = Vadon::Render::ResourceUsage;
+	using ResourceBindFlags = Vadon::Render::ResourceBindFlags;
+	using ResourceMiscFlags = Vadon::Render::ResourceMiscFlags;
+	using ResourceAccessFlags = Vadon::Render::ResourceAccessFlags;
 
-	using ShaderResourceType = Vadon::Render::ShaderResourceType;
-	using ShaderResourceTypeData = Vadon::Render::ShaderResourceTypeData;
-	using ShaderResourceViewInfo = Vadon::Render::ShaderResourceViewInfo;
+	using ResourceTypeInfo = Vadon::Render::ResourceTypeInfo;
+	using ResourceViewInfo = Vadon::Render::ResourceViewInfo;
 
-	using ShaderResourceViewHandle = Vadon::Render::ShaderResourceViewHandle;
+	using ResourceViewHandle = Vadon::Render::ResourceViewHandle;
 
 	using D3DResourcePtr = ID3D11Resource*;
 	using D3DResource = ComPtr<ID3D11Resource>;
@@ -18,76 +21,258 @@ namespace Vadon::Private::Render::DirectX
 
 	struct ShaderResourceView
 	{
-		Vadon::Render::ShaderResourceViewInfo info;
+		Vadon::Render::ResourceViewInfo info;
 		D3DShaderResourceView d3d_srv;
 	};
 
 	using D3DUnorderedAccessView = ComPtr<ID3D11UnorderedAccessView>;
 
-	constexpr D3D11_SRV_DIMENSION get_d3d_srv_dimension(ShaderResourceType resource_type)
+	constexpr D3D11_USAGE get_d3d_usage(ResourceUsage usage)
+	{
+		switch (usage)
+		{
+		case ResourceUsage::DEFAULT:
+			return D3D11_USAGE::D3D11_USAGE_DEFAULT;
+		case ResourceUsage::IMMUTABLE:
+			return D3D11_USAGE::D3D11_USAGE_IMMUTABLE;
+		case ResourceUsage::DYNAMIC:
+			return D3D11_USAGE::D3D11_USAGE_DYNAMIC;
+		case ResourceUsage::STAGING:
+			return D3D11_USAGE::D3D11_USAGE_STAGING;
+		}
+
+		return D3D11_USAGE::D3D11_USAGE_DEFAULT;
+	}
+
+	constexpr ResourceUsage get_resource_usage(D3D11_USAGE usage)
+	{
+		switch (usage)
+		{
+		case D3D11_USAGE::D3D11_USAGE_DEFAULT:
+			return ResourceUsage::DEFAULT;
+		case D3D11_USAGE::D3D11_USAGE_IMMUTABLE:
+			return ResourceUsage::IMMUTABLE;
+		case D3D11_USAGE::D3D11_USAGE_DYNAMIC:
+			return ResourceUsage::DYNAMIC;
+		case D3D11_USAGE::D3D11_USAGE_STAGING:
+			return ResourceUsage::STAGING;
+		}
+
+		return ResourceUsage::DEFAULT;
+	}
+
+	constexpr D3D11_BIND_FLAG get_d3d_bind_flags(ResourceBindFlags bind_flags)
+	{
+		UINT d3d_bind_flags = 0;
+		VADON_START_BITMASK_SWITCH(bind_flags)
+		{
+		case ResourceBindFlags::VERTEX_BUFFER:
+			d3d_bind_flags |= D3D11_BIND_FLAG::D3D11_BIND_VERTEX_BUFFER;
+			break;
+		case ResourceBindFlags::INDEX_BUFFER:
+			d3d_bind_flags |= D3D11_BIND_FLAG::D3D11_BIND_INDEX_BUFFER;
+			break;
+		case ResourceBindFlags::CONSTANT_BUFFER:
+			d3d_bind_flags |= D3D11_BIND_FLAG::D3D11_BIND_CONSTANT_BUFFER;
+			break;
+		case ResourceBindFlags::SHADER_RESOURCE:
+			d3d_bind_flags |= D3D11_BIND_FLAG::D3D11_BIND_SHADER_RESOURCE;
+			break;
+		case ResourceBindFlags::STREAM_OUTPUT:
+			d3d_bind_flags |= D3D11_BIND_FLAG::D3D11_BIND_STREAM_OUTPUT;
+			break;
+		case ResourceBindFlags::RENDER_TARGET:
+			d3d_bind_flags |= D3D11_BIND_FLAG::D3D11_BIND_RENDER_TARGET;
+			break;
+		case ResourceBindFlags::DEPTH_STENCIL:
+			d3d_bind_flags |= D3D11_BIND_FLAG::D3D11_BIND_DEPTH_STENCIL;
+			break;
+		case ResourceBindFlags::UNORDERED_ACCESS:
+			d3d_bind_flags |= D3D11_BIND_FLAG::D3D11_BIND_UNORDERED_ACCESS;
+			break;
+		case ResourceBindFlags::DECODER:
+			d3d_bind_flags |= D3D11_BIND_FLAG::D3D11_BIND_DECODER;
+			break;
+		case ResourceBindFlags::VIDEO_ENCODER:
+			d3d_bind_flags |= D3D11_BIND_FLAG::D3D11_BIND_VIDEO_ENCODER;
+			break;
+		}
+
+		return D3D11_BIND_FLAG(d3d_bind_flags);
+	}
+
+	constexpr ResourceBindFlags get_resource_bind_flags(D3D11_BIND_FLAG d3d_bind_flags)
+	{
+		ResourceBindFlags bind_flags = ResourceBindFlags::NONE;
+
+		VADON_START_BITMASK_SWITCH(d3d_bind_flags)
+		{
+		case D3D11_BIND_FLAG::D3D11_BIND_VERTEX_BUFFER:
+			bind_flags |= ResourceBindFlags::VERTEX_BUFFER;
+			break;
+		case D3D11_BIND_FLAG::D3D11_BIND_INDEX_BUFFER:
+			bind_flags |= ResourceBindFlags::INDEX_BUFFER;
+			break;
+		case D3D11_BIND_FLAG::D3D11_BIND_CONSTANT_BUFFER:
+			bind_flags |= ResourceBindFlags::CONSTANT_BUFFER;
+			break;
+		case D3D11_BIND_FLAG::D3D11_BIND_SHADER_RESOURCE:
+			bind_flags |= ResourceBindFlags::SHADER_RESOURCE;
+			break;
+		case D3D11_BIND_FLAG::D3D11_BIND_STREAM_OUTPUT:
+			bind_flags |= ResourceBindFlags::SHADER_RESOURCE;
+			break;
+		case D3D11_BIND_FLAG::D3D11_BIND_RENDER_TARGET:
+			bind_flags |= ResourceBindFlags::SHADER_RESOURCE;
+			break;
+		case D3D11_BIND_FLAG::D3D11_BIND_DEPTH_STENCIL:
+			bind_flags |= ResourceBindFlags::SHADER_RESOURCE;
+			break;
+		case D3D11_BIND_FLAG::D3D11_BIND_UNORDERED_ACCESS:
+			bind_flags |= ResourceBindFlags::SHADER_RESOURCE;
+			break;
+		case D3D11_BIND_FLAG::D3D11_BIND_DECODER:
+			bind_flags |= ResourceBindFlags::SHADER_RESOURCE;
+			break;
+		case D3D11_BIND_FLAG::D3D11_BIND_VIDEO_ENCODER:
+			bind_flags |= ResourceBindFlags::SHADER_RESOURCE;
+			break;
+		}
+
+		return bind_flags;
+	}
+
+	constexpr D3D11_RESOURCE_MISC_FLAG get_d3d_misc_flags(ResourceMiscFlags flags)
+	{
+		UINT d3d_misc_flags = 0;
+		VADON_START_BITMASK_SWITCH(flags)
+		{
+		case ResourceMiscFlags::GENERATE_MIPS:
+			d3d_misc_flags |= D3D11_RESOURCE_MISC_GENERATE_MIPS;
+			break;
+		case ResourceMiscFlags::SHARED:
+			d3d_misc_flags |= D3D11_RESOURCE_MISC_SHARED;
+			break;
+		case ResourceMiscFlags::TEXTURECUBE:
+			d3d_misc_flags |= D3D11_RESOURCE_MISC_TEXTURECUBE;
+			break;
+		case ResourceMiscFlags::DRAWINDIRECT_ARGS:
+			d3d_misc_flags |= D3D11_RESOURCE_MISC_DRAWINDIRECT_ARGS;
+			break;
+		case ResourceMiscFlags::BUFFER_ALLOW_RAW_VIEWS:
+			d3d_misc_flags |= D3D11_RESOURCE_MISC_BUFFER_ALLOW_RAW_VIEWS;
+			break;
+		case ResourceMiscFlags::BUFFER_STRUCTURED:
+			d3d_misc_flags |= D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+			break;
+		case ResourceMiscFlags::RESOURCE_CLAMP:
+			d3d_misc_flags |= D3D11_RESOURCE_MISC_RESOURCE_CLAMP;
+			break;
+		case ResourceMiscFlags::SHARED_KEYEDMUTEX:
+			d3d_misc_flags |= D3D11_RESOURCE_MISC_SHARED_KEYEDMUTEX;
+			break;
+		case ResourceMiscFlags::GDI_COMPATIBLE:
+			d3d_misc_flags |= D3D11_RESOURCE_MISC_GDI_COMPATIBLE;
+			break;
+		case ResourceMiscFlags::SHARED_NTHANDLE: 
+			d3d_misc_flags |= D3D11_RESOURCE_MISC_SHARED_NTHANDLE;
+			break;
+		case ResourceMiscFlags::RESTRICTED_CONTENT: 
+			d3d_misc_flags |= D3D11_RESOURCE_MISC_RESTRICTED_CONTENT;
+			break;
+		case ResourceMiscFlags::RESTRICT_SHARED_RESOURCE: 
+			d3d_misc_flags |= D3D11_RESOURCE_MISC_RESTRICT_SHARED_RESOURCE;
+			break;
+		case ResourceMiscFlags::RESTRICT_SHARED_RESOURCE_DRIVER: 
+			d3d_misc_flags |= D3D11_RESOURCE_MISC_RESTRICT_SHARED_RESOURCE_DRIVER;
+			break;
+		case ResourceMiscFlags::GUARDED: 
+			d3d_misc_flags |= D3D11_RESOURCE_MISC_GUARDED;
+			break;
+		case ResourceMiscFlags::TILE_POOL: 
+			d3d_misc_flags |= D3D11_RESOURCE_MISC_TILE_POOL;
+			break;
+		case ResourceMiscFlags::TILED: 
+			d3d_misc_flags |= D3D11_RESOURCE_MISC_TILED;
+			break;
+		case ResourceMiscFlags::HW_PROTECTED: 
+			d3d_misc_flags |= D3D11_RESOURCE_MISC_HW_PROTECTED;
+			break;
+		case ResourceMiscFlags::SHARED_DISPLAYABLE: 
+			d3d_misc_flags |= D3D11_RESOURCE_MISC_SHARED_DISPLAYABLE;
+			break;
+		case ResourceMiscFlags::SHARED_EXCLUSIVE_WRITER:
+			d3d_misc_flags |= D3D11_RESOURCE_MISC_SHARED_EXCLUSIVE_WRITER;
+			break;
+		}
+
+		return D3D11_RESOURCE_MISC_FLAG(d3d_misc_flags);
+	}
+
+	constexpr D3D11_SRV_DIMENSION get_d3d_srv_dimension(ResourceType resource_type)
 	{
 		switch (resource_type)
 		{
-		case ShaderResourceType::UNKNOWN:
+		case ResourceType::UNKNOWN:
 			return D3D11_SRV_DIMENSION_UNKNOWN;
-		case ShaderResourceType::BUFFER:
+		case ResourceType::BUFFER:
 			return D3D11_SRV_DIMENSION_BUFFER;
-		case ShaderResourceType::TEXTURE_1D:
+		case ResourceType::TEXTURE_1D:
 			return D3D11_SRV_DIMENSION_TEXTURE1D;
-		case ShaderResourceType::TEXTURE_1D_ARRAY:
+		case ResourceType::TEXTURE_1D_ARRAY:
 			return D3D11_SRV_DIMENSION_TEXTURE1DARRAY;
-		case ShaderResourceType::TEXTURE_2D:
+		case ResourceType::TEXTURE_2D:
 			return D3D11_SRV_DIMENSION_TEXTURE2D;
-		case ShaderResourceType::TEXTURE_2D_ARRAY:
+		case ResourceType::TEXTURE_2D_ARRAY:
 			return D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
-		case ShaderResourceType::TEXTURE_2D_MS:
+		case ResourceType::TEXTURE_2D_MS:
 			return D3D11_SRV_DIMENSION_TEXTURE2DMS;
-		case ShaderResourceType::TEXTURE_2D_MS_ARRAY:
+		case ResourceType::TEXTURE_2D_MS_ARRAY:
 			return D3D11_SRV_DIMENSION_TEXTURE2DMSARRAY;
-		case ShaderResourceType::TEXTURE_3D:
+		case ResourceType::TEXTURE_3D:
 			return D3D11_SRV_DIMENSION_TEXTURE3D;
-		case ShaderResourceType::TEXTURE_CUBE:
+		case ResourceType::TEXTURE_CUBE:
 			return D3D11_SRV_DIMENSION_TEXTURECUBE;
-		case ShaderResourceType::TEXTURE_CUBE_ARRAY:
+		case ResourceType::TEXTURE_CUBE_ARRAY:
 			return D3D11_SRV_DIMENSION_TEXTURECUBEARRAY;
-		case ShaderResourceType::BUFFEREX:
+		case ResourceType::BUFFEREX:
 			return D3D11_SRV_DIMENSION_BUFFEREX;
 		}
 
 		return D3D11_SRV_DIMENSION_UNKNOWN;
 	}
 
-	constexpr ShaderResourceType get_srv_type(D3D11_SRV_DIMENSION srv_dimension)
+	constexpr ResourceType get_srv_type(D3D11_SRV_DIMENSION srv_dimension)
 	{
 		switch (srv_dimension)
 		{
 		case D3D11_SRV_DIMENSION_UNKNOWN:
-			return ShaderResourceType::UNKNOWN;
+			return ResourceType::UNKNOWN;
 		case D3D11_SRV_DIMENSION_BUFFER:
-			return ShaderResourceType::BUFFER;
+			return ResourceType::BUFFER;
 		case D3D11_SRV_DIMENSION_TEXTURE1D:
-			return ShaderResourceType::TEXTURE_1D;
+			return ResourceType::TEXTURE_1D;
 		case D3D11_SRV_DIMENSION_TEXTURE1DARRAY:
-			return ShaderResourceType::TEXTURE_1D_ARRAY;
+			return ResourceType::TEXTURE_1D_ARRAY;
 		case D3D11_SRV_DIMENSION_TEXTURE2D:
-			return ShaderResourceType::TEXTURE_2D;
+			return ResourceType::TEXTURE_2D;
 		case D3D11_SRV_DIMENSION_TEXTURE2DARRAY:
-			return ShaderResourceType::TEXTURE_2D_ARRAY;
+			return ResourceType::TEXTURE_2D_ARRAY;
 		case D3D11_SRV_DIMENSION_TEXTURE2DMS:
-			return ShaderResourceType::TEXTURE_2D_MS;
+			return ResourceType::TEXTURE_2D_MS;
 		case D3D11_SRV_DIMENSION_TEXTURE2DMSARRAY:
-			return ShaderResourceType::TEXTURE_2D_MS_ARRAY;
+			return ResourceType::TEXTURE_2D_MS_ARRAY;
 		case D3D11_SRV_DIMENSION_TEXTURE3D:
-			return ShaderResourceType::TEXTURE_3D;
+			return ResourceType::TEXTURE_3D;
 		case D3D11_SRV_DIMENSION_TEXTURECUBE:
-			return ShaderResourceType::TEXTURE_CUBE;
+			return ResourceType::TEXTURE_CUBE;
 		case D3D11_SRV_DIMENSION_TEXTURECUBEARRAY:
-			return ShaderResourceType::TEXTURE_CUBE_ARRAY;
+			return ResourceType::TEXTURE_CUBE_ARRAY;
 		case D3D11_SRV_DIMENSION_BUFFEREX:
-			return ShaderResourceType::BUFFEREX;
+			return ResourceType::BUFFEREX;
 		}
 
-		return ShaderResourceType::UNKNOWN;
+		return ResourceType::UNKNOWN;
 	}
 }
 #endif

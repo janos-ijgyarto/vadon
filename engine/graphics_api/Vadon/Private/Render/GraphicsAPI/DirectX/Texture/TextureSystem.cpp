@@ -63,13 +63,14 @@ namespace Vadon::Private::Render::DirectX
 			texture_description.Usage = get_d3d_usage(texture_info.usage);
 			texture_description.BindFlags = get_d3d_bind_flags(texture_info.bind_flags);
 
-			if (texture_info.usage == BufferUsage::DYNAMIC)
+			// FIXME: use access flags from the info struct?
+			if (texture_info.usage == ResourceUsage::DYNAMIC)
 			{
 				// Dynamic textures need write access
 				texture_description.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 			}
 
-			texture_description.MiscFlags = 0;
+			texture_description.MiscFlags = get_d3d_misc_flags(texture_info.misc);
 
 			return texture_description;
 		}
@@ -115,8 +116,8 @@ namespace Vadon::Private::Render::DirectX
 				texture_info.sample_info.count = texture_description.SampleDesc.Count;
 				texture_info.sample_info.quality = texture_description.SampleDesc.Quality;
 
-				texture_info.usage = get_buffer_usage(texture_description.Usage);
-				texture_info.bind_flags = get_buffer_bind_flags(Utilities::to_enum<D3D11_BIND_FLAG>(texture_description.BindFlags));
+				texture_info.usage = get_resource_usage(texture_description.Usage);
+				texture_info.bind_flags = get_resource_bind_flags(Utilities::to_enum<D3D11_BIND_FLAG>(texture_description.BindFlags));
 			}
 			break;
 			case D3D11_RESOURCE_DIMENSION_TEXTURE3D:
@@ -237,12 +238,12 @@ namespace Vadon::Private::Render::DirectX
 		return texture->info;
 	}
 
-	ShaderResourceViewHandle TextureSystem::create_texture_srv(TextureHandle texture_handle, const ShaderResourceViewInfo& srv_info)
+	ResourceViewHandle TextureSystem::create_resource_view(TextureHandle texture_handle, const ResourceViewInfo& srv_info)
 	{
 		Texture* texture = m_texture_pool.get(texture_handle);
 		if (texture == nullptr)
 		{
-			return ShaderResourceViewHandle();
+			return ResourceViewHandle();
 		}
 
 		// Create shader resource view from D3D resource

@@ -3,11 +3,11 @@
 #include <Vadon/Render/GraphicsAPI/Shader/Resource.hpp>
 namespace Vadon::Private::Render::Dummy
 {
-    using ShaderResourceType = Vadon::Render::ShaderResourceType;
+    using ResourceType = Vadon::Render::ResourceType;
 
-    using ShaderResourceTypeData = Vadon::Render::ShaderResourceTypeData;
-    using ShaderResourceViewInfo = Vadon::Render::ShaderResourceViewInfo;
+    using ResourceTypeInfo = Vadon::Render::ResourceTypeInfo;
+    using ResourceViewInfo = Vadon::Render::ResourceViewInfo;
 
-    using ShaderResourceViewHandle = Vadon::Render::ShaderResourceViewHandle;
+    using ResourceViewHandle = Vadon::Render::ResourceViewHandle;
 }
 #endif

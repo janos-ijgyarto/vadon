@@ -9,22 +9,22 @@ namespace Vadon::Render
 {
 	struct TextureSampleInfo
 	{
-		int count = 0;
-		int quality = 0;
+		int32_t count = 0;
+		int32_t quality = 0;
 	};
 
 	struct TextureInfo
 	{
 		Utilities::Vector3i dimensions = Utilities::Vector3i(0, 0, 0);
-		int mip_levels = 0;
-		int array_size = 0;
+		int32_t mip_levels = 0;
+		int32_t array_size = 0;
 		GraphicsAPIDataFormat format = GraphicsAPIDataFormat::UNKNOWN;
 
 		TextureSampleInfo sample_info;
-		BufferUsage usage = BufferUsage::DEFAULT;
-		BufferBindFlags bind_flags = BufferBindFlags::SHADER_RESOURCE;
-		int access = 0;
-		int misc = 0;
+		ResourceUsage usage = ResourceUsage::DEFAULT;
+		ResourceBindFlags bind_flags = ResourceBindFlags::NONE;
+		ResourceAccessFlags access = ResourceAccessFlags::NONE;
+		ResourceMiscFlags misc = ResourceMiscFlags::NONE;
 
 		bool is_valid() const { return (dimensions.x > 0); }
 	};

@@ -1,45 +1,21 @@
 #ifndef VADON_RENDER_GRAPHICSAPI_BUFFER_BUFFER_HPP
 #define VADON_RENDER_GRAPHICSAPI_BUFFER_BUFFER_HPP
-#include <Vadon/Utilities/Container/ObjectPool/Handle.hpp>
-#include <Vadon/Utilities/Enum/EnumClassBitFlag.hpp>
+#include <Vadon/Render/GraphicsAPI/Shader/Resource.hpp>
 namespace Vadon::Render
 {
-	enum class BufferUsage
-	{
-		DEFAULT,
-		IMMUTABLE,
-		DYNAMIC,
-		STAGING,
-		USAGE_COUNT
-	};
-
-	enum class BufferBindFlags
-	{
-		NONE = 0,
-		VERTEX = 1 << 0,
-		INDEX = 1 << 1,
-		CONSTANT = 1 << 2,
-		SHADER_RESOURCE = 1 << 3
-	};
-
-	// TODO: other flags, e.g structured buffer
-
+	// FIXME: for buffers, we probably should constrain the info contents to data that is relevant for buffers
+	// The usage/bind/etc. are generic, applicable to different resources in different ways
+	// Could have enums specific to buffers, then combine with utility structs/functions that convert to the relevant API data
 	struct BufferInfo
 	{
-		BufferUsage usage;
-		BufferBindFlags bind_flags;
-		int element_size = 0;
-		int capacity = 0;
+		ResourceUsage usage = ResourceUsage::DEFAULT;
+		ResourceBindFlags bind_flags = ResourceBindFlags::NONE;
+		ResourceMiscFlags misc_flags = ResourceMiscFlags::NONE;
+		ResourceAccessFlags access_flags = ResourceAccessFlags::NONE;
+		int32_t element_size = 0;
+		int32_t capacity = 0;
 	};
 
 	VADON_DECLARE_TYPED_POOL_HANDLE(Buffer, BufferHandle);
-}
-namespace Vadon::Utilities
-{
-	template<>
-	struct EnableEnumBitwiseOperators<Vadon::Render::BufferBindFlags> : public std::true_type
-	{
-
-	};
 }
 #endif

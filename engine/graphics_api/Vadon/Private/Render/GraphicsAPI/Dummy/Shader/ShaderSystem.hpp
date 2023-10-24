@@ -18,9 +18,9 @@ namespace Vadon::Private::Render::Dummy
 		VertexLayoutHandle create_vertex_layout(ShaderHandle shader_handle, const VertexLayoutInfo& layout_info) override;
 		void set_vertex_layout(VertexLayoutHandle layout_handle) override;
 
-		ShaderResourceViewInfo get_resource_view_info(ShaderResourceViewHandle srv_handle) const override;
-		void apply_resource(ShaderType shader_type, ShaderResourceViewHandle resource_handle, int32_t slot) override;
-		void remove_resource(ShaderResourceViewHandle srv_handle) override;
+		ResourceViewInfo get_resource_view_info(ResourceViewHandle resource_view_handle) const override;
+		void apply_resource(ShaderType shader_type, ResourceViewHandle resource_view_handle, int32_t slot) override;
+		void remove_resource(ResourceViewHandle resource_view_handle) override;
 	private:
 		ShaderSystem(Vadon::Core::EngineCoreInterface& core, GraphicsAPI& graphics_api);
 

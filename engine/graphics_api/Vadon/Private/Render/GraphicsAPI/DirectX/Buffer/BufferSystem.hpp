@@ -16,13 +16,13 @@ namespace Vadon::Private::Render::DirectX
 		BufferHandle create_buffer(const BufferInfo& buffer_info, const void* init_data = nullptr) override;
 		void remove_buffer(BufferHandle buffer_handle) override;
 
-		bool buffer_data(BufferHandle buffer_handle, const Vadon::Utilities::DataRange& range, const void* data, bool force_discard = false) override;
+		bool buffer_data(BufferHandle buffer_handle, const Vadon::Utilities::DataRange& range, const void* data, bool no_overwrite = false) override;
 
 		void set_vertex_buffer(BufferHandle buffer_handle, int slot) override;
 		void set_index_buffer(BufferHandle buffer_handle, GraphicsAPIDataFormat format) override;
 		void set_constant_buffer(BufferHandle buffer_handle, int slot) override;
 
-		ShaderResourceViewHandle create_shader_resource_view(BufferHandle buffer_handle, const ShaderResourceViewInfo& srv_info) override;
+		ResourceViewHandle create_resource_view(BufferHandle buffer_handle, const ResourceViewInfo& resource_view_info) override;
 	private:
 		using BufferPool = Vadon::Utilities::ObjectPool<Vadon::Render::Buffer, Buffer>;
 

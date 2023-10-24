@@ -19,7 +19,7 @@ namespace Vadon::Private::Render::DirectX
 		void remove_texture(TextureHandle texture_handle) override;
 
 		TextureInfo get_texture_info(TextureHandle texture_handle) const override;
-		ShaderResourceViewHandle create_texture_srv(TextureHandle texture_handle, const ShaderResourceViewInfo& srv_info) override;
+		ResourceViewHandle create_resource_view(TextureHandle texture_handle, const ResourceViewInfo& resource_view_info) override;
 
 		TextureSamplerHandle create_sampler(const TextureSamplerInfo& sampler_info) override;
 		void remove_sampler(TextureSamplerHandle sampler_handle) override;

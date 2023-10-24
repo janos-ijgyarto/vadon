@@ -112,7 +112,7 @@ namespace VadonApp::Private::UI::Developer::ImGUI
 		Vadon::Render::TextureHandle m_fonts_texture;
 		Vadon::Render::TextureSamplerHandle m_sampler;
 
-		std::unordered_map<size_t, Vadon::Render::ShaderResourceViewHandle> m_texture_lookup;
+		std::unordered_map<size_t, Vadon::Render::ResourceViewHandle> m_texture_lookup;
 		size_t m_texture_counter;
 
 		struct Internal;

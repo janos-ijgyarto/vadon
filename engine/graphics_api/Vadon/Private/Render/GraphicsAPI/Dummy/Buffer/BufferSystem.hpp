@@ -11,14 +11,14 @@ namespace Vadon::Private::Render::Dummy
 		Vadon::Render::BufferHandle create_buffer(const Vadon::Render::BufferInfo& buffer_info, const void* init_data = nullptr) override;
 		void remove_buffer(Vadon::Render::BufferHandle buffer_handle) override;
 
-		bool buffer_data(Vadon::Render::BufferHandle buffer_handle, const Vadon::Utilities::DataRange& range, const void* data, bool force_discard = false) override;
+		bool buffer_data(Vadon::Render::BufferHandle buffer_handle, const Vadon::Utilities::DataRange& range, const void* data, bool no_overwrite = false) override;
 
 		// FIXME: allow setting slots more efficiently!!!
 		void set_vertex_buffer(Vadon::Render::BufferHandle buffer_handle, int slot) override;
 		void set_index_buffer(Vadon::Render::BufferHandle buffer_handle, Vadon::Render::GraphicsAPIDataFormat format) override;
 		void set_constant_buffer(Vadon::Render::BufferHandle buffer_handle, int slot) override;
 
-		Vadon::Render::ShaderResourceViewHandle create_shader_resource_view(Vadon::Render::BufferHandle buffer_handle, const Vadon::Render::ShaderResourceViewInfo& srv_info) override;
+		Vadon::Render::ResourceViewHandle create_resource_view(Vadon::Render::BufferHandle buffer_handle, const Vadon::Render::ResourceViewInfo& resource_view_info) override;
 	protected:
 		BufferSystem(Core::EngineCoreInterface& core, GraphicsAPI& graphics_api);
 

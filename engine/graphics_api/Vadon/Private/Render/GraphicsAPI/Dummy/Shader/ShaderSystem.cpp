@@ -30,18 +30,18 @@ namespace Vadon::Private::Render::Dummy
 		// TODO!!!
 	}
 
-	ShaderResourceViewInfo ShaderSystem::get_resource_view_info(ShaderResourceViewHandle /*srv_handle*/) const
+	ResourceViewInfo ShaderSystem::get_resource_view_info(ResourceViewHandle /*resource_view_handle*/) const
 	{
 		// TODO!!!
-		return ShaderResourceViewInfo();
+		return ResourceViewInfo();
 	}
 
-	void ShaderSystem::apply_resource(ShaderType /*shader_type*/, ShaderResourceViewHandle /*resource_handle*/, int32_t /*slot*/)
+	void ShaderSystem::apply_resource(ShaderType /*shader_type*/, ResourceViewHandle /*resource_view_handle*/, int32_t /*slot*/)
 	{
 		// TODO!!!
 	}
 
-	void ShaderSystem::remove_resource(ShaderResourceViewHandle /*srv_handle*/)
+	void ShaderSystem::remove_resource(ResourceViewHandle /*resource_view_handle*/)
 	{
 		// TODO!!!
 	}
