@@ -8,6 +8,8 @@ namespace Vadon::Private::Render::Dummy
 {
 	class GraphicsAPI;
 
+	using ShaderResourceSpan = Vadon::Render::ShaderResourceSpan;
+
 	class ShaderSystem : public Vadon::Render::ShaderSystem
 	{
 	public:
@@ -20,6 +22,8 @@ namespace Vadon::Private::Render::Dummy
 
 		ResourceViewInfo get_resource_view_info(ResourceViewHandle resource_view_handle) const override;
 		void apply_resource(ShaderType shader_type, ResourceViewHandle resource_view_handle, int32_t slot) override;
+		void apply_resource_slots(ShaderType shader_type, const ShaderResourceSpan& resource_views) override;
+
 		void remove_resource(ResourceViewHandle resource_view_handle) override;
 	private:
 		ShaderSystem(Vadon::Core::EngineCoreInterface& core, GraphicsAPI& graphics_api);

@@ -63,6 +63,25 @@ namespace Vadon::Private::Render::DirectX
 
 			return shader_macros;
 		}
+
+		void apply_shader_resources(ShaderType shader_type, GraphicsAPI::DeviceContext* device_context, UINT start_slot, UINT num_views, ID3D11ShaderResourceView* const* shader_resource_views)
+		{
+			switch (shader_type)
+			{
+			case ShaderType::VERTEX:
+				device_context->VSSetShaderResources(start_slot, num_views, shader_resource_views);
+				break;
+			case ShaderType::GEOMETRY:
+				device_context->GSSetShaderResources(start_slot, num_views, shader_resource_views);
+				break;
+			case ShaderType::PIXEL:
+				device_context->PSSetShaderResources(start_slot, num_views, shader_resource_views);
+				break;
+			case ShaderType::COMPUTE:
+				device_context->CSSetShaderResources(start_slot, num_views, shader_resource_views);
+				break;
+			}
+		}
 	}
 
 	ShaderHandle ShaderSystem::create_shader(const ShaderInfo& shader_info)
@@ -212,20 +231,44 @@ namespace Vadon::Private::Render::DirectX
 
 	void ShaderSystem::apply_resource(ShaderType shader_type, ResourceViewHandle resource_handle, int32_t slot)
 	{
-		ShaderResourceView* resource = m_resource_pool.get(resource_handle);
-		ID3D11ShaderResourceView* resource_array[] = { resource ? resource->d3d_srv.Get() : nullptr };
-
-		GraphicsAPI::DeviceContext* device_context = m_graphics_api.get_device_context();
-
-		switch (shader_type)
+		ID3D11ShaderResourceView* resource_array[] = { nullptr };
+		if (resource_handle.is_valid() == true)
 		{
-		case ShaderType::VERTEX:
-			device_context->VSSetShaderResources(slot, 1, resource_array);
-			break;
-		case ShaderType::PIXEL:
-			device_context->PSSetShaderResources(slot, 1, resource_array);
-			break;
+			ShaderResourceView* resource = m_resource_pool.get(resource_handle);
+			if (resource == nullptr)
+			{
+				// TODO: error?
+				return;
+			}
+			resource_array[0] = resource->d3d_srv.Get();
 		}
+
+		apply_shader_resources(shader_type, m_graphics_api.get_device_context(), slot, 1, resource_array);
+	}
+
+	void ShaderSystem::apply_resource_slots(ShaderType shader_type, const ShaderResourceSpan& resource_views)
+	{
+		static std::vector<ID3D11ShaderResourceView*> temp_srv_vector;
+		temp_srv_vector.clear();
+		temp_srv_vector.reserve(resource_views.resources.size());
+
+		for (const ResourceViewHandle& current_resource_handle : resource_views.resources)
+		{
+			ID3D11ShaderResourceView* current_srv = nullptr;
+			if (current_resource_handle.is_valid() == true)
+			{
+				ShaderResourceView* current_resource = m_resource_pool.get(current_resource_handle);
+				if (current_resource == nullptr)
+				{
+					// TODO: error?
+					return;
+				}
+				current_srv = current_resource->d3d_srv.Get();
+			}
+			temp_srv_vector.push_back(current_srv);
+		}
+
+		apply_shader_resources(shader_type, m_graphics_api.get_device_context(), resource_views.start_slot, static_cast<UINT>(resource_views.resources.size()), temp_srv_vector.data());
 	}
 
 	void ShaderSystem::remove_resource(ResourceViewHandle resource_view_handle)
@@ -252,7 +295,7 @@ namespace Vadon::Private::Render::DirectX
 		return add_resource_view_internal(d3d_srv, srv_info);
 	}
 
-	ResourceViewHandle ShaderSystem::create_resource_view(ID3D11Resource* resource, const ResourceViewInfo& resource_view_info)
+	ResourceViewHandle ShaderSystem::create_resource_view(D3DResourcePtr resource, const ResourceViewInfo& resource_view_info)
 	{
 		D3D11_SHADER_RESOURCE_VIEW_DESC srv_description;
 		ZeroMemory(&srv_description, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
@@ -260,6 +303,7 @@ namespace Vadon::Private::Render::DirectX
 		srv_description.Format = get_dxgi_format(resource_view_info.format);
 		srv_description.ViewDimension = get_d3d_srv_dimension(resource_view_info.type);
 
+		// FIXME: implement other types!
 		switch (resource_view_info.type)
 		{
 		case ResourceType::BUFFER:
@@ -274,6 +318,8 @@ namespace Vadon::Private::Render::DirectX
 			srv_description.Texture2D.MostDetailedMip = resource_view_info.type_info.most_detailed_mip;
 		}
 		break;
+		default:
+			return ResourceViewHandle();
 		}
 
 		D3DShaderResourceView d3d_srv;

@@ -41,6 +41,11 @@ namespace Vadon::Private::Render::Dummy
 		// TODO!!!
 	}
 
+	void ShaderSystem::apply_resource_slots(ShaderType /*shader_type*/, const ShaderResourceSpan& /*resource_views*/)
+	{
+		// TODO!!!
+	}
+
 	void ShaderSystem::remove_resource(ResourceViewHandle /*resource_view_handle*/)
 	{
 		// TODO!!!

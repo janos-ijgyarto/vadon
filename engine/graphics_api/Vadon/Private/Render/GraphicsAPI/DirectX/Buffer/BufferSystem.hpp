@@ -4,11 +4,17 @@
 
 #include <Vadon/Utilities/Container/ObjectPool/Pool.hpp>
 
+#include <Vadon/Private/Render/GraphicsAPI/DirectX/Shader/Shader.hpp>
 #include <Vadon/Private/Render/GraphicsAPI/DirectX/Buffer/Buffer.hpp>
 
 namespace Vadon::Private::Render::DirectX
 {
 	class GraphicsAPI;
+
+	using BufferWriteData = Vadon::Render::BufferWriteData;
+	using VertexBufferInfo = Vadon::Render::VertexBufferInfo;
+	using VertexBufferSpan = Vadon::Render::VertexBufferSpan;
+	using ConstantBufferSpan = Vadon::Render::ConstantBufferSpan;
 
 	class BufferSystem final : public Vadon::Render::BufferSystem
 	{
@@ -16,13 +22,17 @@ namespace Vadon::Private::Render::DirectX
 		BufferHandle create_buffer(const BufferInfo& buffer_info, const void* init_data = nullptr) override;
 		void remove_buffer(BufferHandle buffer_handle) override;
 
-		bool buffer_data(BufferHandle buffer_handle, const Vadon::Utilities::DataRange& range, const void* data, bool no_overwrite = false) override;
+		bool buffer_data(BufferHandle buffer_handle, const BufferWriteData& write_data) override;
 
-		void set_vertex_buffer(BufferHandle buffer_handle, int slot) override;
-		void set_index_buffer(BufferHandle buffer_handle, GraphicsAPIDataFormat format) override;
-		void set_constant_buffer(BufferHandle buffer_handle, int slot) override;
+		void set_vertex_buffer(BufferHandle buffer_handle, int32_t slot, int32_t stride, int32_t offset) override;
+		void set_vertex_buffer_slots(const VertexBufferSpan& vertex_buffers) override;
 
-		ResourceViewHandle create_resource_view(BufferHandle buffer_handle, const ResourceViewInfo& resource_view_info) override;
+		void set_index_buffer(BufferHandle buffer_handle, GraphicsAPIDataFormat format, int32_t offset) override;
+
+		void set_constant_buffer(ShaderType shader, BufferHandle buffer_handle, int32_t slot) override;
+		void set_constant_buffer_slots(ShaderType shader, const ConstantBufferSpan& constant_buffers) override;
+
+		ResourceViewHandle create_resource_view(BufferHandle buffer_handle, const BufferResourceViewInfo& resource_view_info) override;
 	private:
 		using BufferPool = Vadon::Utilities::ObjectPool<Vadon::Render::Buffer, Buffer>;
 

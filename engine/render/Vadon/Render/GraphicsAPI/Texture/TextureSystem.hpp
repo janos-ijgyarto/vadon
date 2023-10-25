@@ -3,10 +3,16 @@
 #include <Vadon/Render/GraphicsAPI/GraphicsModule.hpp>
 #include <Vadon/Render/GraphicsAPI/Texture/Texture.hpp>
 #include <Vadon/Render/GraphicsAPI/RenderTarget/RenderTarget.hpp>
-#include <Vadon/Render/GraphicsAPI/Shader/Resource.hpp>
 #include <Vadon/Render/GraphicsAPI/Shader/Shader.hpp>
+#include <span>
 namespace Vadon::Render
 {
+	struct TextureSamplerSpan
+	{
+		int32_t start_slot = 0;
+		std::span<TextureSamplerHandle> samplers;
+	};
+
 	class TextureSystem : public GraphicsSystem<TextureSystem>
 	{
 	public:
@@ -17,13 +23,14 @@ namespace Vadon::Render
 		virtual TextureInfo get_texture_info(TextureHandle texture_handle) const = 0;
 
 		// FIXME: add function to create RT from texture!
-		virtual ResourceViewHandle create_resource_view(TextureHandle texture_handle, const ResourceViewInfo& resource_view_info) = 0;
+		virtual ResourceViewHandle create_resource_view(TextureHandle texture_handle, const TextureResourceViewInfo& resource_view_info) = 0;
 		virtual DepthStencilHandle create_depth_stencil_view(TextureHandle texture_handle, const DepthStencilViewInfo& ds_view_info) = 0;
 
 		virtual TextureSamplerHandle create_sampler(const TextureSamplerInfo& sampler_info) = 0;
 		virtual void remove_sampler(TextureSamplerHandle sampler_handle) = 0;
 
-		virtual void set_sampler(ShaderType shader_type, TextureSamplerHandle sampler_handle, int slot) = 0;
+		virtual void set_sampler(ShaderType shader_type, TextureSamplerHandle sampler_handle, int32_t slot) = 0;
+		virtual void set_sampler_slots(ShaderType shader_type, const TextureSamplerSpan& samplers) = 0;
 	protected:
 		TextureSystem(Core::EngineCoreInterface& core) 
 			: EngineSystem(core) 

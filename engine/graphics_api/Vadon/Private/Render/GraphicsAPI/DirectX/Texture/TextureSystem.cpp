@@ -13,6 +13,107 @@ namespace Vadon::Private::Render::DirectX
 {
 	namespace
 	{
+		UINT get_texture_d3d_bind_flags(const TextureInfo& texture_info)
+		{
+			UINT bind_flags = 0;
+
+			VADON_START_BITMASK_SWITCH(texture_info.flags)
+			{
+			case TextureFlags::RESOURCE_VIEW:
+				bind_flags |= D3D11_BIND_SHADER_RESOURCE;
+				break;
+			case TextureFlags::UNORDERED_ACCESS_VIEW:
+				bind_flags |= D3D11_BIND_UNORDERED_ACCESS;
+				break;
+			case TextureFlags::RENDER_TARGET:
+				bind_flags |= D3D11_BIND_RENDER_TARGET;
+				break;
+			case TextureFlags::DEPTH_STENCIL:
+				bind_flags |= D3D11_BIND_DEPTH_STENCIL;
+				break;
+			}
+
+			return bind_flags;
+		}
+
+		UINT get_texture_d3d_misc_flags(const TextureInfo& texture_info)
+		{
+			UINT misc_flags = 0;
+
+			VADON_START_BITMASK_SWITCH(texture_info.flags)
+			{
+			case TextureFlags::CUBE:
+				misc_flags |= D3D11_RESOURCE_MISC_TEXTURECUBE;
+				break;
+			}
+
+			return misc_flags;
+		}
+
+		TextureFlags get_texture_bind_flags(D3D11_BIND_FLAG bind_flags)
+		{
+			TextureFlags texture_flags = TextureFlags::NONE;
+
+			VADON_START_BITMASK_SWITCH(bind_flags)
+			{
+			case D3D11_BIND_SHADER_RESOURCE:
+				texture_flags |= TextureFlags::RESOURCE_VIEW;
+				break;
+			case D3D11_BIND_UNORDERED_ACCESS:
+				texture_flags |= TextureFlags::UNORDERED_ACCESS_VIEW;
+				break;
+			case D3D11_BIND_RENDER_TARGET:
+				texture_flags |= TextureFlags::RENDER_TARGET;
+				break;
+			case D3D11_BIND_DEPTH_STENCIL:
+				texture_flags |= TextureFlags::DEPTH_STENCIL;
+				break;
+			}
+
+			return texture_flags;
+		}
+
+		TextureFlags get_texture_misc_flags(D3D11_RESOURCE_MISC_FLAG misc_flags)
+		{
+			TextureFlags texture_flags = TextureFlags::NONE;
+
+			VADON_START_BITMASK_SWITCH(misc_flags)
+			{
+			case D3D11_RESOURCE_MISC_TEXTURECUBE:
+				texture_flags |= TextureFlags::CUBE;
+				break;
+			}
+
+			return texture_flags;
+		}
+
+		constexpr ResourceType get_texture_resource_type(TextureResourceViewType type)
+		{
+			switch (type)
+			{
+			case TextureResourceViewType::TEXTURE_1D:
+				return ResourceType::TEXTURE_1D;
+			case TextureResourceViewType::TEXTURE_1D_ARRAY:
+				return ResourceType::TEXTURE_1D_ARRAY;
+			case TextureResourceViewType::TEXTURE_2D:
+				return ResourceType::TEXTURE_2D;
+			case TextureResourceViewType::TEXTURE_2D_ARRAY:
+				return ResourceType::TEXTURE_2D_ARRAY;
+			case TextureResourceViewType::TEXTURE_2D_MS:
+				return ResourceType::TEXTURE_2D_MS;
+			case TextureResourceViewType::TEXTURE_2D_MS_ARRAY:
+				return ResourceType::TEXTURE_2D_MS_ARRAY;
+			case TextureResourceViewType::TEXTURE_3D:
+				return ResourceType::TEXTURE_3D;
+			case TextureResourceViewType::TEXTURE_CUBE:
+				return ResourceType::TEXTURE_CUBE;
+			case TextureResourceViewType::TEXTURE_CUBE_ARRAY:
+				return ResourceType::TEXTURE_CUBE_ARRAY;
+			}
+
+			return ResourceType::UNKNOWN;
+		}
+
 		constexpr D3D11_FILTER get_d3d_filter(TextureFilter filter)
 		{
 			// FIXME: implement proper mapping for all types
@@ -62,16 +163,9 @@ namespace Vadon::Private::Render::DirectX
 			texture_description.SampleDesc.Quality = texture_info.sample_info.quality;
 
 			texture_description.Usage = get_d3d_usage(texture_info.usage);
-			texture_description.BindFlags = get_d3d_bind_flags(texture_info.bind_flags);
-
-			// FIXME: use access flags from the info struct?
-			if (texture_info.usage == ResourceUsage::DYNAMIC)
-			{
-				// Dynamic textures need write access
-				texture_description.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-			}
-
-			texture_description.MiscFlags = get_d3d_misc_flags(texture_info.misc);
+			texture_description.BindFlags = get_texture_d3d_bind_flags(texture_info);
+			texture_description.CPUAccessFlags = get_d3d_cpu_access_flags(texture_info.access_flags);
+			texture_description.MiscFlags = get_texture_d3d_misc_flags(texture_info);
 
 			return texture_description;
 		}
@@ -118,7 +212,9 @@ namespace Vadon::Private::Render::DirectX
 				texture_info.sample_info.quality = texture_description.SampleDesc.Quality;
 
 				texture_info.usage = get_resource_usage(texture_description.Usage);
-				texture_info.bind_flags = get_resource_bind_flags(Utilities::to_enum<D3D11_BIND_FLAG>(texture_description.BindFlags));
+				texture_info.flags = get_texture_bind_flags(Utilities::to_enum<D3D11_BIND_FLAG>(texture_description.BindFlags));
+				texture_info.access_flags = get_cpu_access_flags(Utilities::to_enum<D3D11_CPU_ACCESS_FLAG>(texture_description.CPUAccessFlags));
+				texture_info.flags |= get_texture_misc_flags(Utilities::to_enum<D3D11_RESOURCE_MISC_FLAG>(texture_description.MiscFlags));
 			}
 			break;
 			case D3D11_RESOURCE_DIMENSION_TEXTURE3D:
@@ -127,6 +223,25 @@ namespace Vadon::Private::Render::DirectX
 			}
 
 			return texture_info;
+		}
+
+		void apply_shader_samplers(ShaderType shader_type, GraphicsAPI::DeviceContext* device_context, UINT start_slot, UINT num_samplers, ID3D11SamplerState* const* sampler_states)
+		{
+			switch (shader_type)
+			{
+			case ShaderType::VERTEX:
+				device_context->VSSetSamplers(start_slot, num_samplers, sampler_states);
+				break;
+			case ShaderType::GEOMETRY:
+				device_context->GSSetSamplers(start_slot, num_samplers, sampler_states);
+				break;
+			case ShaderType::PIXEL:
+				device_context->PSSetSamplers(start_slot, num_samplers, sampler_states);
+				break;
+			case ShaderType::COMPUTE:
+				device_context->CSSetSamplers(start_slot, num_samplers, sampler_states);
+				break;
+			}
 		}
 	}
 
@@ -239,7 +354,7 @@ namespace Vadon::Private::Render::DirectX
 		return texture->info;
 	}
 
-	ResourceViewHandle TextureSystem::create_resource_view(TextureHandle texture_handle, const ResourceViewInfo& srv_info)
+	ResourceViewHandle TextureSystem::create_resource_view(TextureHandle texture_handle, const TextureResourceViewInfo& resource_view_info)
 	{
 		Texture* texture = m_texture_pool.get(texture_handle);
 		if (texture == nullptr)
@@ -248,9 +363,18 @@ namespace Vadon::Private::Render::DirectX
 			return ResourceViewHandle();
 		}
 
+		ResourceViewInfo texture_resource_view_info;
+		texture_resource_view_info.type = get_texture_resource_type(resource_view_info.type); // FIXME: Does type need to match texture?
+		texture_resource_view_info.format = resource_view_info.format; // FIXME: does format need to match texture?
+
+		texture_resource_view_info.type_info.most_detailed_mip = resource_view_info.most_detailed_mip;
+		texture_resource_view_info.type_info.mip_levels = resource_view_info.mip_levels;
+		texture_resource_view_info.type_info.first_array_slice = resource_view_info.first_array_slice;
+		texture_resource_view_info.type_info.array_size = resource_view_info.array_size;
+
 		// Create shader resource view from D3D resource
 		ShaderSystem& shader_system = m_graphics_api.get_directx_shader_system();
-		return shader_system.create_resource_view(texture->d3d_texture_resource.Get(), srv_info);
+		return shader_system.create_resource_view(texture->d3d_texture_resource.Get(), texture_resource_view_info);
 	}
 
 	DepthStencilHandle TextureSystem::create_depth_stencil_view(TextureHandle texture_handle, const DepthStencilViewInfo& ds_view_info)
@@ -314,21 +438,48 @@ namespace Vadon::Private::Render::DirectX
 		m_sampler_pool.remove(sampler_handle);
 	}
 
-	void TextureSystem::set_sampler(ShaderType shader_type, TextureSamplerHandle sampler_handle, int slot)
+	void TextureSystem::set_sampler(ShaderType shader_type, TextureSamplerHandle sampler_handle, int32_t slot)
 	{
-		TextureSampler* sampler = m_sampler_pool.get(sampler_handle);
-		GraphicsAPI::DeviceContext* device_context = m_graphics_api.get_device_context();
-		ID3D11SamplerState* sampler_array[] = { sampler ? sampler->sampler_state.Get() : nullptr };
-
-		switch (shader_type)
+		ID3D11SamplerState* sampler_array[] = { nullptr };
+		if (sampler_handle.is_valid() == true)
 		{
-		case ShaderType::VERTEX:
-			device_context->VSSetSamplers(slot, 1, sampler_array);
-			break;
-		case ShaderType::PIXEL:
-			device_context->PSSetSamplers(slot, 1, sampler_array);
-			break;
+			TextureSampler* sampler = m_sampler_pool.get(sampler_handle);
+			if (sampler == nullptr)
+			{
+				// TODO: error?
+				return;
+			}
+
+			sampler_array[0] = sampler->sampler_state.Get();
 		}
+
+		apply_shader_samplers(shader_type, m_graphics_api.get_device_context(), slot, 1, sampler_array);
+	}
+
+	void TextureSystem::set_sampler_slots(ShaderType shader_type, const TextureSamplerSpan& samplers)
+	{
+		static std::vector<ID3D11SamplerState*> temp_sampler_vector;
+		temp_sampler_vector.clear();
+		temp_sampler_vector.reserve(samplers.samplers.size());
+
+		for (const TextureSamplerHandle& current_sampler_handle : samplers.samplers)
+		{
+			ID3D11SamplerState* sampler_state = nullptr;
+			if (current_sampler_handle.is_valid() == true)
+			{
+				TextureSampler* current_sampler = m_sampler_pool.get(current_sampler_handle);
+				if (current_sampler == nullptr)
+				{
+					// TODO: error?
+					return;
+				}
+
+				sampler_state = current_sampler->sampler_state.Get();
+			}
+			temp_sampler_vector.push_back(sampler_state);
+		}		
+
+		apply_shader_samplers(shader_type, m_graphics_api.get_device_context(), samplers.start_slot, static_cast<UINT>(samplers.samplers.size()), temp_sampler_vector.data());
 	}
 
 	TextureSystem::TextureSystem(Core::EngineCoreInterface& core, GraphicsAPI& graphics_api)

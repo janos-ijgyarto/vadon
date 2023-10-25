@@ -26,7 +26,7 @@ namespace Vadon::Private::Render::Dummy
 		return Vadon::Render::TextureInfo();
 	}
 
-	Vadon::Render::ResourceViewHandle TextureSystem::create_resource_view(Vadon::Render::TextureHandle /*texture_handle*/, const Vadon::Render::ResourceViewInfo& /*resource_view_info*/)
+	Vadon::Render::ResourceViewHandle TextureSystem::create_resource_view(Vadon::Render::TextureHandle /*texture_handle*/, const Vadon::Render::TextureResourceViewInfo& /*resource_view_info*/)
 	{
 		// TODO!!!
 		return Vadon::Render::ResourceViewHandle();
@@ -50,6 +50,11 @@ namespace Vadon::Private::Render::Dummy
 	}
 
 	void TextureSystem::set_sampler(Vadon::Render::ShaderType /*shader_type*/, Vadon::Render::TextureSamplerHandle /*sampler_handle*/, int /*slot*/)
+	{
+		// TODO!!!
+	}
+
+	void TextureSystem::set_sampler_slots(Vadon::Render::ShaderType /*shader_type*/, const Vadon::Render::TextureSamplerSpan& /*samplers*/)
 	{
 		// TODO!!!
 	}

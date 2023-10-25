@@ -4,6 +4,7 @@
 #include <Vadon/Private/Render/GraphicsAPI/DirectX/Shader/Resource.hpp>
 namespace Vadon::Private::Render::DirectX
 {
+	using TextureFlags = Vadon::Render::TextureFlags;
 	using TextureSampleInfo = Vadon::Render::TextureSampleInfo;
 	using TextureInfo = Vadon::Render::TextureInfo;
 
@@ -31,5 +32,8 @@ namespace Vadon::Private::Render::DirectX
 		TextureSamplerInfo info;
 		D3DSamplerState sampler_state;
 	};
+
+	using TextureResourceViewType = Vadon::Render::TextureResourceViewType;
+	using TextureResourceViewInfo = Vadon::Render::TextureResourceViewInfo;
 }
 #endif

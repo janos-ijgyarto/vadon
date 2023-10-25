@@ -13,29 +13,40 @@ namespace Vadon::Private::Render::Dummy
 		// TODO!!!
 	}
 
-	bool BufferSystem::buffer_data(Vadon::Render::BufferHandle /*buffer_handle*/, const Vadon::Utilities::DataRange& /*range*/, const void* /*data*/, bool /*no_overwrite*/)
+	bool BufferSystem::buffer_data(Vadon::Render::BufferHandle /*buffer_handle*/, const Vadon::Render::BufferWriteData& /*write_data*/)
 	{
 		// TODO!!!
-		return true;
+		return false;
 	}
 
-	void BufferSystem::set_vertex_buffer(Vadon::Render::BufferHandle /*buffer_handle*/, int /*slot*/)
-	{
-		// TODO!!!
-	}
-
-	void BufferSystem::set_index_buffer(Vadon::Render::BufferHandle /*buffer_handle*/, Vadon::Render::GraphicsAPIDataFormat /*format*/)
+	void BufferSystem::set_vertex_buffer(Vadon::Render::BufferHandle /*buffer_handle*/, int32_t /*slot*/, int32_t /*stride*/, int32_t /*offset*/)
 	{
 		// TODO!!!
 	}
 
-	void BufferSystem::set_constant_buffer(Vadon::Render::BufferHandle /*buffer_handle*/, int /*slot*/)
+	void BufferSystem::set_vertex_buffer_slots(const Vadon::Render::VertexBufferSpan& /*vertex_buffers*/)
 	{
 		// TODO!!!
 	}
 
-	Vadon::Render::ResourceViewHandle BufferSystem::create_resource_view(Vadon::Render::BufferHandle /*buffer_handle*/, const Vadon::Render::ResourceViewInfo& /*resource_view_info*/)
+	void BufferSystem::set_index_buffer(Vadon::Render::BufferHandle /*buffer_handle*/, Vadon::Render::GraphicsAPIDataFormat /*format*/, int32_t /*offset*/)
 	{
+		// TODO!!!
+	}
+
+	void BufferSystem::set_constant_buffer(Vadon::Render::ShaderType /*shader*/, Vadon::Render::BufferHandle /*buffer_handle*/, int32_t /*slot*/)
+	{
+		// TODO!!!
+	}
+
+	void BufferSystem::set_constant_buffer_slots(Vadon::Render::ShaderType /*shader*/, const Vadon::Render::ConstantBufferSpan& /*constant_buffers*/)
+	{
+		// TODO!!!
+	}
+
+	Vadon::Render::ResourceViewHandle BufferSystem::create_resource_view(Vadon::Render::BufferHandle /*buffer_handle*/, const Vadon::Render::BufferResourceViewInfo& /*resource_view_info*/)
+	{
+		// TODO!!!
 		return Vadon::Render::ResourceViewHandle();
 	}
 

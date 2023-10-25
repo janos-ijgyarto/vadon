@@ -9,23 +9,115 @@
 
 namespace Vadon::Private::Render::DirectX
 {
+	namespace
+	{
+		UINT get_buffer_bind_flags(const BufferInfo& buffer_info)
+		{
+			UINT bind_flags = 0;
+
+			VADON_START_BITMASK_SWITCH(buffer_info.flags)
+			{
+			case BufferFlags::RESOURCE_VIEW:
+				bind_flags |= D3D11_BIND_SHADER_RESOURCE;
+				break;
+			case BufferFlags::UNORDERED_ACCESS_VIEW:
+				bind_flags |= D3D11_BIND_UNORDERED_ACCESS;
+				break;
+			}
+			return bind_flags;
+		}
+
+		D3D11_BUFFER_DESC create_buffer_description(const BufferInfo& buffer_info)
+		{
+			D3D11_BUFFER_DESC buffer_description;
+			ZeroMemory(&buffer_description, sizeof(D3D11_BUFFER_DESC));
+
+			buffer_description.ByteWidth = buffer_info.capacity * buffer_info.element_size;
+			buffer_description.Usage = get_d3d_usage(buffer_info.usage);
+
+			// TODO: do we pre-filter these based on buffer type?
+			buffer_description.BindFlags = get_buffer_bind_flags(buffer_info);
+			buffer_description.CPUAccessFlags = get_d3d_cpu_access_flags(buffer_info.access_flags);
+
+			switch (buffer_info.type)
+			{
+			case BufferType::VERTEX:
+			{
+				buffer_description.BindFlags |= D3D11_BIND_VERTEX_BUFFER;
+			}
+			break;
+			case BufferType::INDEX:
+			{
+				buffer_description.BindFlags |= D3D11_BIND_INDEX_BUFFER;
+			}
+			break;
+			case BufferType::CONSTANT:
+			{
+				// FIXME: send error if any other bind flags were set?
+				buffer_description.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+			}
+			break;
+			case BufferType::RAW:
+			{
+				// FIXME: we are mandating SRV for this buffer type, should we allow user to opt out?
+				buffer_description.BindFlags |= D3D11_BIND_SHADER_RESOURCE;
+
+				buffer_description.MiscFlags |= D3D11_RESOURCE_MISC_BUFFER_ALLOW_RAW_VIEWS;
+			}
+			break;
+			case BufferType::RESOURCE:
+			{
+				// FIXME: we are mandating SRV for this buffer type, should we allow user to opt out?
+				buffer_description.BindFlags |= D3D11_BIND_SHADER_RESOURCE;
+			}
+			break;
+			case BufferType::STRUCTURED:
+			{
+				// FIXME: we are mandating SRV for this buffer type, should we allow user to opt out?
+				buffer_description.BindFlags |= D3D11_BIND_SHADER_RESOURCE;
+
+				buffer_description.MiscFlags |= D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+				buffer_description.StructureByteStride = buffer_info.element_size;
+			}
+			break;
+			}
+
+			return buffer_description;
+		}
+
+		void set_constant_buffers(GraphicsAPI::DeviceContext* device_context, ShaderType shader, UINT start_slot, UINT num_buffers, ID3D11Buffer* const* constant_buffers)
+		{
+			// Set the buffer in the shader
+			switch (shader)
+			{
+			case ShaderType::VERTEX:
+				device_context->VSSetConstantBuffers(start_slot, num_buffers, constant_buffers);
+				break;
+			case ShaderType::GEOMETRY:
+				device_context->GSSetConstantBuffers(start_slot, num_buffers, constant_buffers);
+				break;
+			case ShaderType::PIXEL:
+				device_context->PSSetConstantBuffers(start_slot, num_buffers, constant_buffers);
+				break;
+			case ShaderType::COMPUTE:
+				device_context->CSSetConstantBuffers(start_slot, num_buffers, constant_buffers);
+				break;
+			}
+		}
+
+		std::vector<ID3D11Buffer*> temp_buffer_vector;
+	}
+
 	BufferHandle BufferSystem::create_buffer(const BufferInfo& buffer_info, const void* init_data)
 	{
-		D3D11_BUFFER_DESC buffer_description;
-		ZeroMemory(&buffer_description, sizeof(D3D11_BUFFER_DESC));
+		D3D11_BUFFER_DESC buffer_description = create_buffer_description(buffer_info);
 
-		buffer_description.ByteWidth = buffer_info.capacity * buffer_info.element_size;
-		buffer_description.Usage = get_d3d_usage(buffer_info.usage); // TODO: some buffers cannot trivially assign the same usage (e.g read-write)
-		buffer_description.BindFlags = get_d3d_bind_flags(buffer_info.bind_flags);
-
-		// FIXME: should we instead read the access flag from the info struct?
 		if (buffer_info.usage == ResourceUsage::DYNAMIC)
 		{
-			// Dynamic buffers need write access
+			// Set write flag
+			// FIXME: should we warn user if this was not done correctly?
 			buffer_description.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 		}
-		// FIXME: should we allow all misc. flags, or just the ones relevant for buffers?
-		buffer_description.MiscFlags = get_d3d_misc_flags(buffer_info.misc_flags);
 
 		GraphicsAPI::Device* device = m_graphics_api.get_device();
 		ComPtr<ID3D11Buffer> new_d3d_buffer;
@@ -44,8 +136,6 @@ namespace Vadon::Private::Render::DirectX
 			// TODO: error handling?
 			return BufferHandle();
 		}
-
-		// TODO: handle additional setup, e.g SRVs and UAVs
 
 		const BufferHandle new_buffer_handle = m_buffer_pool.add(buffer_info);
 
@@ -69,7 +159,7 @@ namespace Vadon::Private::Render::DirectX
 		m_buffer_pool.remove(buffer_handle);
 	}
 
-	bool BufferSystem::buffer_data(BufferHandle buffer_handle, const Vadon::Utilities::DataRange& range, const void* data, bool no_overwrite)
+	bool BufferSystem::buffer_data(BufferHandle buffer_handle, const BufferWriteData& write_data)
 	{
 		const Buffer* buffer = m_buffer_pool.get(buffer_handle);
 		if (!buffer)
@@ -79,42 +169,45 @@ namespace Vadon::Private::Render::DirectX
 
 		GraphicsAPI::DeviceContext* device_context = m_graphics_api.get_device_context();
 
+		// FIXME: revise API slightly. Cannot use UpdateSubResource on DYNAMIC, but apparently can on STAGING, and Map can be used on DEFAULT?
 		switch (buffer->info.usage)
 		{
 		case ResourceUsage::DEFAULT:
 		{
-			// FIXME: revise box usage and source row/depth pitch
-			const bool is_not_cbuffer = Utilities::to_bool(buffer->info.bind_flags & ResourceBindFlags::CONSTANT_BUFFER);
-			const uint32_t source_row_pitch = is_not_cbuffer ? (buffer->info.element_size * range.count) : (buffer->info.element_size * buffer->info.capacity);
+			// FIXME: cbuffer can contain array, should we allow updating a portion of it?
+			const bool is_not_cbuffer = buffer->info.type != BufferType::CONSTANT;
+			const uint32_t source_row_pitch = is_not_cbuffer ? (buffer->info.element_size * write_data.range.count) : (buffer->info.element_size * buffer->info.capacity);
 
 			// Create a box that defines the region we want to update (need to use byte widths for the dimensions)
+			// Buffers are all flat, so we only need the L-R portions
 			D3D11_BOX dest_box{
-				static_cast<UINT>(buffer->info.element_size * range.offset), // Left
+				static_cast<UINT>(buffer->info.element_size * write_data.range.offset), // Left
 				0, // Top
 				0, // Front
-				static_cast<UINT>(buffer->info.element_size * (range.offset + range.count)), // Right
+				static_cast<UINT>(buffer->info.element_size * (write_data.range.offset + write_data.range.count)), // Right
 				1, // Bottom
 				1 // Back
 			};
 
-			device_context->UpdateSubresource(buffer->d3d_buffer.Get(), 0, is_not_cbuffer ? &dest_box : nullptr, data, source_row_pitch, 0);
+			// Subresources are only relevant for textures
+			// Constant buffers do not use box at all
+			device_context->UpdateSubresource(buffer->d3d_buffer.Get(), 0, is_not_cbuffer ? &dest_box : nullptr, write_data.data, source_row_pitch, 0);
 			return true;
 		}
 		case ResourceUsage::IMMUTABLE:
-			// TODO: what goes here?
-			break;
+			return false;
 		case ResourceUsage::DYNAMIC:
 		case ResourceUsage::STAGING:
 		{
 			D3D11_MAPPED_SUBRESOURCE mapped_subresource;
 			ZeroMemory(&mapped_subresource, sizeof(D3D11_MAPPED_SUBRESOURCE));
 
-			// Do not allow "NO_OVERWRITE" if it's a shader resource
+			// Do not allow "NO_OVERWRITE" for cbuffer or shader resource
 			// FIXME: allow if we are on D3D 11.1
-			const D3D11_MAP map_type = (Utilities::to_bool(buffer->info.bind_flags & (ResourceBindFlags::VERTEX_BUFFER | ResourceBindFlags::INDEX_BUFFER)) && (no_overwrite == true))
-				? D3D11_MAP::D3D11_MAP_WRITE_NO_OVERWRITE : D3D11_MAP::D3D11_MAP_WRITE_DISCARD;
+			const bool can_use_no_overwrite = (buffer->info.type == BufferType::VERTEX) || (buffer->info.type == BufferType::INDEX);
+			const D3D11_MAP map_type = (can_use_no_overwrite && (write_data.no_overwrite == true)) ? D3D11_MAP::D3D11_MAP_WRITE_NO_OVERWRITE : D3D11_MAP::D3D11_MAP_WRITE_DISCARD;
 
-			// TODO: other parameters?
+			// TODO: enable map flags?
 			const HRESULT result = device_context->Map(buffer->d3d_buffer.Get(), 0, map_type, 0, &mapped_subresource);
 			if (FAILED(result))
 			{
@@ -122,8 +215,8 @@ namespace Vadon::Private::Render::DirectX
 				return false;
 			}
 
-			void* offset_pData = static_cast<char*>(mapped_subresource.pData) + (range.offset * buffer->info.element_size);
-			memcpy(offset_pData, data, buffer->info.element_size * range.count);
+			void* offset_pData = static_cast<char*>(mapped_subresource.pData) + (write_data.range.offset * buffer->info.element_size);
+			memcpy(offset_pData, write_data.data, buffer->info.element_size * write_data.range.count);
 
 			device_context->Unmap(buffer->d3d_buffer.Get(), 0);
 			return true;
@@ -133,80 +226,186 @@ namespace Vadon::Private::Render::DirectX
 		return false;
 	}
 
-	void BufferSystem::set_vertex_buffer(BufferHandle buffer_handle, int slot)
+	void BufferSystem::set_vertex_buffer(BufferHandle buffer_handle, int32_t slot, int32_t stride, int32_t offset)
 	{
 		GraphicsAPI::DeviceContext* device_context = m_graphics_api.get_device_context();
-		const Buffer* buffer = m_buffer_pool.get(buffer_handle);
-		if (buffer == nullptr)
+		if (buffer_handle.is_valid() == false)
 		{
 			// Unset the buffer in the slot
 			device_context->IASetVertexBuffers(slot, 1, nullptr, nullptr, nullptr);
 			return;
 		}
 
-		if (Utilities::to_bool(buffer->info.bind_flags & ResourceBindFlags::VERTEX_BUFFER) == false)
+		const Buffer* buffer = m_buffer_pool.get(buffer_handle);
+		if (buffer == nullptr)
 		{
 			// TODO: error message?
 			return;
 		}
 
-		// FIXME: this should be configurable!
+		if (buffer->info.type != BufferType::VERTEX)
+		{
+			// TODO: error message?
+			return;
+		}
+
 		ID3D11Buffer* vertex_buffers[] = { buffer->d3d_buffer.Get() };
-		UINT element_sizes[] = { static_cast<UINT>(buffer->info.element_size) };
-		constexpr UINT NULL_OFFSET = 0;
+		const UINT buffer_stride = (stride < 0) ? buffer->info.element_size : stride;
+		const UINT buffer_offset = offset;
 
 		// TODO: keep track of what buffers are set where!
-		device_context->IASetVertexBuffers(slot, 1, vertex_buffers, element_sizes, &NULL_OFFSET);
+		device_context->IASetVertexBuffers(slot, 1, vertex_buffers, &buffer_stride, &buffer_offset);
 	}
 
-	void BufferSystem::set_index_buffer(BufferHandle buffer_handle, GraphicsAPIDataFormat format)
+	void BufferSystem::set_vertex_buffer_slots(const VertexBufferSpan& vertex_buffers)
+	{
+		temp_buffer_vector.clear();
+		temp_buffer_vector.reserve(vertex_buffers.buffers.size());
+
+		static std::vector<UINT> strides;
+		strides.clear();
+		strides.reserve(vertex_buffers.buffers.size());
+
+		static std::vector<UINT> offsets;
+		offsets.clear();
+		offsets.reserve(vertex_buffers.buffers.size());
+
+		for (const VertexBufferInfo& current_buffer_info : vertex_buffers.buffers)
+		{
+			ID3D11Buffer* current_buffer_pointer = nullptr;
+			UINT current_stride = 0;
+			UINT current_offset = 0;
+			if (current_buffer_info.buffer.is_valid() == true)
+			{
+				const Buffer* current_buffer = m_buffer_pool.get(current_buffer_info.buffer);
+				if (current_buffer == nullptr)
+				{
+					// TODO: error message?
+					return;
+				}
+				current_buffer_pointer = current_buffer->d3d_buffer.Get();
+				current_stride = (current_buffer_info.stride < 0) ? current_buffer->info.element_size : current_buffer_info.stride;
+				current_offset = current_buffer_info.offset;
+			}
+
+			temp_buffer_vector.push_back(current_buffer_pointer);
+			strides.push_back(current_stride);
+			offsets.push_back(current_offset);
+		}
+
+		// TODO: keep track of what buffers are set where!
+		GraphicsAPI::DeviceContext* device_context = m_graphics_api.get_device_context();
+		device_context->IASetVertexBuffers(static_cast<UINT>(vertex_buffers.start_slot), static_cast<UINT>(vertex_buffers.buffers.size()), temp_buffer_vector.data(), strides.data(), offsets.data());
+	}
+
+	void BufferSystem::set_index_buffer(BufferHandle buffer_handle, GraphicsAPIDataFormat format, int32_t offset)
 	{
 		GraphicsAPI::DeviceContext* device_context = m_graphics_api.get_device_context();
-		const Buffer* buffer = m_buffer_pool.get(buffer_handle);
-		if (buffer == nullptr)
+		if (buffer_handle.is_valid() == false)
 		{
 			// Unset the index buffer
 			device_context->IASetIndexBuffer(nullptr, DXGI_FORMAT_UNKNOWN, 0);
 			return;
 		}
 
-		if (Utilities::to_bool(buffer->info.bind_flags & ResourceBindFlags::INDEX_BUFFER) == false)
+		const Buffer* buffer = m_buffer_pool.get(buffer_handle);
+		if (buffer == nullptr)
+		{
+			// TODO: error message?
+			return;
+		}
+
+		if (buffer->info.type != BufferType::INDEX)
 		{
 			// TODO: error message?
 			return;
 		}
 
 		// TODO: keep track of what buffers are set where!
-		device_context->IASetIndexBuffer(buffer->d3d_buffer.Get(), get_dxgi_format(format), 0);
+		device_context->IASetIndexBuffer(buffer->d3d_buffer.Get(), get_dxgi_format(format), offset);
 	}
 
-	void BufferSystem::set_constant_buffer(BufferHandle buffer_handle, int slot)
+	void BufferSystem::set_constant_buffer(ShaderType shader, BufferHandle buffer_handle, int32_t slot)
 	{
-		const Buffer* buffer = m_buffer_pool.get(buffer_handle);
-		if (!buffer)
+		// Invalid handle means we unset the buffer
+		ID3D11Buffer* constant_buffers[] = { nullptr };
+		if (buffer_handle.is_valid() == true)
 		{
-			// TODO: error message?
-			return;
+			const Buffer* buffer = m_buffer_pool.get(buffer_handle);
+			if (buffer == nullptr)
+			{
+				// TODO: error message?
+				return;
+			}
+
+			constant_buffers[0] = buffer->d3d_buffer.Get();
 		}
 
-		GraphicsAPI::DeviceContext* device_context = m_graphics_api.get_device_context();
-		ID3D11Buffer* constant_buffers[] = { buffer->d3d_buffer.Get() };
-
-		// Set the buffer in our shaders (unset if allocation is invalid)
-		device_context->VSSetConstantBuffers(slot, 1, constant_buffers);
-		device_context->GSSetConstantBuffers(slot, 1, constant_buffers);
-		device_context->PSSetConstantBuffers(slot, 1, constant_buffers);
+		set_constant_buffers(m_graphics_api.get_device_context(), shader, slot, 1, constant_buffers);
 	}
 
-	ResourceViewHandle BufferSystem::create_resource_view(BufferHandle buffer_handle, const ResourceViewInfo& srv_info)
+	void BufferSystem::set_constant_buffer_slots(ShaderType shader, const ConstantBufferSpan& constant_buffers)
+	{
+		temp_buffer_vector.clear();
+		temp_buffer_vector.reserve(constant_buffers.buffers.size());
+
+		for (const BufferHandle& current_buffer_handle : constant_buffers.buffers)
+		{
+			ID3D11Buffer* current_buffer_pointer = nullptr;
+			if (current_buffer_handle.is_valid() == true)
+			{
+				const Buffer* buffer = m_buffer_pool.get(current_buffer_handle);
+				if (buffer == nullptr)
+				{
+					// TODO: error message?
+					return;
+				}
+				current_buffer_pointer = buffer->d3d_buffer.Get();
+			}
+
+			temp_buffer_vector.push_back(current_buffer_pointer);
+		}
+
+		set_constant_buffers(m_graphics_api.get_device_context(), shader, constant_buffers.start_slot, static_cast<UINT>(constant_buffers.buffers.size()), temp_buffer_vector.data());
+	}
+
+	ResourceViewHandle BufferSystem::create_resource_view(BufferHandle buffer_handle, const BufferResourceViewInfo& resource_view_info)
 	{
 		const Buffer* buffer = m_buffer_pool.get(buffer_handle);
-		if (!buffer)
+		if (buffer == nullptr)
 		{
 			// TODO: error message?
 			return ResourceViewHandle();
 		}
-		return m_graphics_api.get_directx_shader_system().create_resource_view(buffer->d3d_buffer.Get(), srv_info);
+
+		const BufferInfo& buffer_info = buffer->info;
+
+		ResourceViewInfo buffer_resource_view_info;
+
+		// FIXME: does the format need to match?
+		if (buffer_info.type == BufferType::STRUCTURED)
+		{
+			buffer_resource_view_info.format = GraphicsAPIDataFormat::UNKNOWN;
+		}
+		else
+		{
+			buffer_resource_view_info.format = resource_view_info.format;
+		}
+
+		// FIXME: can the SRV type differ from buffer type?
+		if (buffer_info.type == BufferType::RAW)
+		{
+			buffer_resource_view_info.type = ResourceType::RAW_BUFFER;
+		}
+		else
+		{
+			buffer_resource_view_info.type = ResourceType::BUFFER;
+		}
+
+		buffer_resource_view_info.type_info.first_array_slice = resource_view_info.first_element;
+		buffer_resource_view_info.type_info.array_size = resource_view_info.num_elements;
+
+		return m_graphics_api.get_directx_shader_system().create_resource_view(buffer->d3d_buffer.Get(), buffer_resource_view_info);
 	}
 
 	BufferSystem::BufferSystem(Core::EngineCoreInterface& core, GraphicsAPI& graphics_api)

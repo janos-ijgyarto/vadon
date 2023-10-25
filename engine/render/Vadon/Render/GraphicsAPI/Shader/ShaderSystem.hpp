@@ -3,8 +3,15 @@
 #include <Vadon/Render/GraphicsAPI/GraphicsAPI.hpp>
 #include <Vadon/Render/GraphicsAPI/Shader/Shader.hpp>
 #include <Vadon/Render/GraphicsAPI/Shader/Resource.hpp>
+#include <span>
 namespace Vadon::Render
 {
+	struct ShaderResourceSpan
+	{
+		int32_t start_slot = 0;
+		std::span<ResourceViewHandle> resources;
+	};
+
 	class ShaderSystem : public GraphicsSystem<ShaderSystem>
 	{
 	public:
@@ -17,7 +24,10 @@ namespace Vadon::Render
 
 		// TODO: use std::span to set multiple resources in one go!
 		virtual ResourceViewInfo get_resource_view_info(ResourceViewHandle resource_view_handle) const = 0;
+		
 		virtual void apply_resource(ShaderType shader_type, ResourceViewHandle resource_view_handle, int32_t slot) = 0;
+		virtual void apply_resource_slots(ShaderType shader_type, const ShaderResourceSpan& resource_views) = 0;
+
 		virtual void remove_resource(ResourceViewHandle resource_view_handle) = 0;
 	protected:
 		ShaderSystem(Core::EngineCoreInterface& core) 

@@ -12,6 +12,8 @@ namespace Vadon::Private::Render::DirectX
 {
 	class GraphicsAPI;
 
+	using TextureSamplerSpan = Vadon::Render::TextureSamplerSpan;
+
 	class TextureSystem : public Vadon::Render::TextureSystem
 	{
 	public:
@@ -20,13 +22,14 @@ namespace Vadon::Private::Render::DirectX
 		void remove_texture(TextureHandle texture_handle) override;
 
 		TextureInfo get_texture_info(TextureHandle texture_handle) const override;
-		ResourceViewHandle create_resource_view(TextureHandle texture_handle, const ResourceViewInfo& resource_view_info) override;
+		ResourceViewHandle create_resource_view(TextureHandle texture_handle, const TextureResourceViewInfo& resource_view_info) override;
 		DepthStencilHandle create_depth_stencil_view(TextureHandle texture_handle, const DepthStencilViewInfo& ds_view_info) override;
 
 		TextureSamplerHandle create_sampler(const TextureSamplerInfo& sampler_info) override;
 		void remove_sampler(TextureSamplerHandle sampler_handle) override;
 
 		void set_sampler(ShaderType shader_type, TextureSamplerHandle sampler_handle, int slot) override;
+		void set_sampler_slots(ShaderType shader_type, const TextureSamplerSpan& samplers) override;
 	private:
 		using TexturePool = Vadon::Utilities::ObjectPool<Vadon::Render::Texture, Texture>;
 		using SamplerPool = Vadon::Utilities::ObjectPool<Vadon::Render::TextureSampler, TextureSampler>;

@@ -6,6 +6,8 @@
 #include <Vadon/Private/Render/GraphicsAPI/DirectX/Shader/Resource.hpp>
 namespace Vadon::Private::Render::DirectX
 {
+	using BufferType = Vadon::Render::BufferType;
+	using BufferFlags = Vadon::Render::BufferFlags;
 	using BufferInfo = Vadon::Render::BufferInfo;
 
 	using D3DBuffer = ComPtr<ID3D11Buffer>;
@@ -20,5 +22,7 @@ namespace Vadon::Private::Render::DirectX
 	};
 
 	using BufferHandle = Vadon::Render::BufferHandle;
+
+	using BufferResourceViewInfo = Vadon::Render::BufferResourceViewInfo;
 }
 #endif

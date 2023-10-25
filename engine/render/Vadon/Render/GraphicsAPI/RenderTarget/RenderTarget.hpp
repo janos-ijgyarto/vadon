@@ -2,6 +2,7 @@
 #define VADON_RENDER_GRAPHICSAPI_RENDERTARGET_RENDERTARGET_HPP
 #include <Vadon/Utilities/Container/ObjectPool/Handle.hpp>
 #include <Vadon/Utilities/Math/Rectangle.hpp>
+#include <Vadon/Utilities/Enum/EnumClassBitFlag.hpp>
 namespace Vadon::Render
 {
 	// Maps vertex positions (in clip space) into render target positions (i.e decides where the result of rendering ends up in the actual target)
@@ -37,10 +38,10 @@ namespace Vadon::Render
 
 	VADON_DECLARE_TYPED_POOL_HANDLE(Window, WindowHandle);
 
+	// TODO: render target parameters!
 	struct RenderTargetInfo
 	{
 		Utilities::Vector2u dimensions;
-		// TODO: other parameters!!!
 	};
 
 	VADON_DECLARE_TYPED_POOL_HANDLE(RenderTarget, RenderTargetHandle);
@@ -48,7 +49,6 @@ namespace Vadon::Render
 	// TODO: depth-stencil parameters!
 	struct DepthStencilViewInfo
 	{
-
 	};
 
 	enum class DepthStencilClearFlags
@@ -66,5 +66,13 @@ namespace Vadon::Render
 	};
 
 	VADON_DECLARE_TYPED_POOL_HANDLE(DepthStencil, DepthStencilHandle);
+}
+namespace Vadon::Utilities
+{
+	template<>
+	struct EnableEnumBitwiseOperators<Vadon::Render::DepthStencilClearFlags> : public std::true_type
+	{
+
+	};
 }
 #endif

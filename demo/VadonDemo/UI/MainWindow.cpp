@@ -249,7 +249,7 @@ float4 main(PS_INPUT input) : SV_Target
 
 			// Prepare vertex buffer
 			Vadon::Render::BufferInfo vertex_buffer_info;
-			vertex_buffer_info.bind_flags = Vadon::Render::ResourceBindFlags::VERTEX_BUFFER;
+			vertex_buffer_info.type = Vadon::Render::BufferType::VERTEX;
 			vertex_buffer_info.usage = Vadon::Render::ResourceUsage::DYNAMIC;
 			vertex_buffer_info.element_size = sizeof(Vertex);
 			vertex_buffer_info.capacity = 6;
@@ -550,7 +550,8 @@ float4 main(PS_INPUT input) : SV_Target
 
 			// Buffer the vertices
 			Vadon::Render::BufferSystem& buffer_system = engine_core.get_system<Vadon::Render::BufferSystem>();
-			buffer_system.buffer_data(m_vertex_buffer, Vadon::Utilities::DataRange{ 0, 6 }, test_vertices.data());
+			Vadon::Render::BufferWriteData vertex_buffer_write_data{ .range = { 0, 6 }, .data = test_vertices.data() };
+			buffer_system.buffer_data(m_vertex_buffer, vertex_buffer_write_data);
 		}
 
 		void test_tasks()

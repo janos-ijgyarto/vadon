@@ -10,6 +10,8 @@ namespace Vadon::Private::Render::DirectX
 {
 	class GraphicsAPI;
 
+	using ShaderResourceSpan = Vadon::Render::ShaderResourceSpan;
+
 	class ShaderSystem : public Vadon::Render::ShaderSystem
 	{
 	public:
@@ -22,6 +24,8 @@ namespace Vadon::Private::Render::DirectX
 
 		ResourceViewInfo get_resource_view_info(ResourceViewHandle resource_view_handle) const override;
 		void apply_resource(ShaderType shader_type, ResourceViewHandle resource_view_handle, int32_t slot) override;
+		void apply_resource_slots(ShaderType shader_type, const ShaderResourceSpan& resource_views) override;
+
 		void remove_resource(ResourceViewHandle resource_view_handle) override;
 
 		ResourceViewHandle add_resource_view(D3DShaderResourceView d3d_srv);

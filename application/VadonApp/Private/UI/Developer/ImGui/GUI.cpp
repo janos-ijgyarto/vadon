@@ -387,8 +387,11 @@ float4 main(PS_INPUT input) : SV_Target
                 m_gui_system.update_buffers(vertex_count, index_count);
 
                 // Buffer the data
-                buffer_system.buffer_data(m_gui_system.m_vertex_buffer.buffer_handle, Vadon::Utilities::DataRange{ 0, vertex_count }, draw_data.vertex_data.data());
-                buffer_system.buffer_data(m_gui_system.m_index_buffer.buffer_handle, Vadon::Utilities::DataRange{ 0, index_count }, draw_data.index_data.data());
+                const Vadon::Render::BufferWriteData vertex_buffer_write_data{ .range = {.offset = 0, .count = vertex_count }, .data = draw_data.vertex_data.data() };
+                buffer_system.buffer_data(m_gui_system.m_vertex_buffer.buffer_handle, vertex_buffer_write_data);
+
+                const Vadon::Render::BufferWriteData index_buffer_write_data{ .range = {.offset = 0, .count = index_count }, .data = draw_data.index_data.data() };
+                buffer_system.buffer_data(m_gui_system.m_index_buffer.buffer_handle, index_buffer_write_data);
             }
 
             // Update constant buffer
@@ -409,7 +412,8 @@ float4 main(PS_INPUT input) : SV_Target
                     { (R + L) / (L - R),  (T + B) / (B - T),    0.5f,       1.0f },
                 };
 
-                buffer_system.buffer_data(m_gui_system.m_constant_buffer, Vadon::Utilities::DataRange{ 0, 1 }, &constant_buffer_data);
+                const Vadon::Render::BufferWriteData constant_buffer_write_data{ .range = { 0, 1 }, .data = &constant_buffer_data };
+                buffer_system.buffer_data(m_gui_system.m_constant_buffer, constant_buffer_write_data);
             }
         }
 
@@ -438,7 +442,7 @@ float4 main(PS_INPUT input) : SV_Target
 
             buffer_system.set_vertex_buffer(m_gui_system.m_vertex_buffer.buffer_handle, 0);
             buffer_system.set_index_buffer(m_gui_system.m_index_buffer.buffer_handle, sizeof(ImDrawIdx) == 2 ? Vadon::Render::GraphicsAPIDataFormat::R16_UINT : Vadon::Render::GraphicsAPIDataFormat::R32_UINT);
-            buffer_system.set_constant_buffer(m_gui_system.m_constant_buffer, 0);
+            buffer_system.set_constant_buffer(Vadon::Render::ShaderType::VERTEX, m_gui_system.m_constant_buffer, 0);
 
             // Setup viewport
             Vadon::Render::Viewport viewport;
@@ -998,7 +1002,7 @@ float4 main(PS_INPUT input) : SV_Target
             // Create constant buffer
             {
                 Vadon::Render::BufferInfo constant_buffer_info;
-                constant_buffer_info.bind_flags = Vadon::Render::ResourceBindFlags::CONSTANT_BUFFER;
+                constant_buffer_info.type = Vadon::Render::BufferType::CONSTANT;
                 constant_buffer_info.usage = Vadon::Render::ResourceUsage::DYNAMIC;
                 constant_buffer_info.element_size = sizeof(VertexConstantBuffer);
                 constant_buffer_info.capacity = 1;
@@ -1029,15 +1033,14 @@ float4 main(PS_INPUT input) : SV_Target
                 texture_info.format = Vadon::Render::GraphicsAPIDataFormat::R8G8B8A8_UNORM;
                 texture_info.sample_info.count = 1;
                 texture_info.usage = Vadon::Render::ResourceUsage::DEFAULT;
-                texture_info.bind_flags = Vadon::Render::ResourceBindFlags::SHADER_RESOURCE;
-                texture_info.access = Vadon::Render::ResourceAccessFlags::NONE;
+                texture_info.flags = Vadon::Render::TextureFlags::RESOURCE_VIEW;
 
                 // Create texture view
-                Vadon::Render::ResourceViewInfo texture_srv_info;
+                Vadon::Render::TextureResourceViewInfo texture_srv_info;
                 texture_srv_info.format = Vadon::Render::GraphicsAPIDataFormat::R8G8B8A8_UNORM;
-                texture_srv_info.type = Vadon::Render::ResourceType::TEXTURE_2D;
-                texture_srv_info.type_info.mip_levels = texture_info.mip_levels;
-                texture_srv_info.type_info.most_detailed_mip = 0;
+                texture_srv_info.type = Vadon::Render::TextureResourceViewType::TEXTURE_2D;
+                texture_srv_info.mip_levels = texture_info.mip_levels;
+                texture_srv_info.most_detailed_mip = 0;
 
                 m_fonts_texture = texture_system.create_texture(texture_info, pixels);
 
@@ -1292,7 +1295,7 @@ float4 main(PS_INPUT input) : SV_Target
 
             // Prepare vertex buffer
             Vadon::Render::BufferInfo vertex_buffer_info;
-            vertex_buffer_info.bind_flags = Vadon::Render::ResourceBindFlags::VERTEX_BUFFER;
+            vertex_buffer_info.type = Vadon::Render::BufferType::VERTEX;
             vertex_buffer_info.usage = Vadon::Render::ResourceUsage::DYNAMIC;
             vertex_buffer_info.element_size = sizeof(ImDrawVert);
             vertex_buffer_info.capacity = m_vertex_buffer.capacity;
@@ -1313,7 +1316,7 @@ float4 main(PS_INPUT input) : SV_Target
 
             // Prepare vertex buffer
             Vadon::Render::BufferInfo index_buffer_info;
-            index_buffer_info.bind_flags = Vadon::Render::ResourceBindFlags::INDEX_BUFFER;
+            index_buffer_info.type = Vadon::Render::BufferType::INDEX;
             index_buffer_info.usage = Vadon::Render::ResourceUsage::DYNAMIC;
             index_buffer_info.element_size = sizeof(ImDrawIdx);
             index_buffer_info.capacity = m_index_buffer.capacity;
