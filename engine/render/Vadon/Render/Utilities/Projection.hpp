@@ -12,7 +12,7 @@ namespace Vadon::Render
 	};
 
 	// NOTE: this corresponds to DirectX::XMMatrixPerspectiveFov (LH/RH determined by system)
-	constexpr Utilities::Matrix4 create_directx_perspective_projection_matrix(float near, float far, float aspect_ratio, float fov_y, CoordinateSystem system = CoordinateSystem::LEFT_HAND)
+	Utilities::Matrix4 create_directx_perspective_projection_matrix(float near, float far, float aspect_ratio, float fov_y, CoordinateSystem system = CoordinateSystem::LEFT_HAND)
 	{
 		const float half_fov_y = 0.5f * fov_y;
 		const float sin_fov = std::sinf(half_fov_y);
@@ -78,14 +78,14 @@ namespace Vadon::Render
 
 	// Uses the glm perspective matrix
 	// NOTE: the result of this depends on the precompiler args passed to glm!
-	constexpr Utilities::Matrix4 create_opengl_orthographic_projection_matrix(float near, float far, float aspect_ratio, float fov)
+	Utilities::Matrix4 create_opengl_perspective_projection_matrix(float near, float far, float aspect_ratio, float fov)
 	{
 		return glm::perspective(fov, aspect_ratio, near, far);
 	}
 
 	// Uses the glm orthographic matrix
 	// NOTE: the result of this depends on the precompiler args passed to glm!
-	constexpr Utilities::Matrix4 create_opengl_orthographic_projection_matrix(float left, float right, float bottom, float top, float near, float far)
+	Utilities::Matrix4 create_opengl_orthographic_projection_matrix(float left, float right, float bottom, float top, float near, float far)
 	{
 		return glm::ortho(left, right, bottom, top, near, far);
 	}
