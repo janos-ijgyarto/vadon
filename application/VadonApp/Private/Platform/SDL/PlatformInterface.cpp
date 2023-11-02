@@ -268,6 +268,8 @@ namespace VadonApp::Private::Platform::SDL
 				VadonApp::Platform::MouseMotionEvent motion_event;
 				motion_event.position.x = sdl_event.motion.x;
 				motion_event.position.y = sdl_event.motion.y;
+				motion_event.relative_motion.x = sdl_event.motion.xrel;
+				motion_event.relative_motion.y = sdl_event.motion.yrel;
 
 				platform_events.emplace_back(motion_event);
 			}

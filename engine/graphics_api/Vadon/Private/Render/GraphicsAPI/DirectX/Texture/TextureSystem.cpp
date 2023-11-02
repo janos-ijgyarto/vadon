@@ -268,9 +268,9 @@ namespace Vadon::Private::Render::DirectX
 		// Add texture to pool
 		TextureHandle new_texture_handle = m_texture_pool.add();
 
-		Texture* new_texture = m_texture_pool.get(new_texture_handle);
-		new_texture->info = texture_info;
-		new_texture->d3d_texture_resource = texture_resource;
+		Texture& new_texture = m_texture_pool.get(new_texture_handle);
+		new_texture.info = texture_info;
+		new_texture.d3d_texture_resource = texture_resource;
 
 		return new_texture_handle;
 	}
@@ -323,45 +323,32 @@ namespace Vadon::Private::Render::DirectX
 		// Add texture to pool
 		new_texture_handle = m_texture_pool.add();
 
-		Texture* new_texture = m_texture_pool.get(new_texture_handle);
-		new_texture->info = texture_info;
-		new_texture->d3d_texture_resource = new_d3d_texture;
+		Texture& new_texture = m_texture_pool.get(new_texture_handle);
+		new_texture.info = texture_info;
+		new_texture.d3d_texture_resource = new_d3d_texture;
 
 		return new_texture_handle;
 	}
 
 	void TextureSystem::remove_texture(TextureHandle texture_handle)
 	{
-		Texture* texture = m_texture_pool.get(texture_handle);
-		if (!texture)
-		{
-			return;
-		}
+		Texture& texture = m_texture_pool.get(texture_handle);
 
-		// NOTE: we do not remove the SRV, only the texture (client is responsible for full cleanup)
-		texture->d3d_texture_resource.Reset();
+		// NOTE: we only remove the texture, no SRVs (client is responsible for full cleanup)
+		texture.d3d_texture_resource.Reset();
+
 		m_texture_pool.remove(texture_handle);
 	}
 
 	TextureInfo TextureSystem::get_texture_info(TextureHandle texture_handle) const
 	{
-		const Texture* texture = m_texture_pool.get(texture_handle);
-		if (texture == nullptr)
-		{
-			return TextureInfo();
-		}
-
-		return texture->info;
+		const Texture& texture = m_texture_pool.get(texture_handle);
+		return texture.info;
 	}
 
 	ResourceViewHandle TextureSystem::create_resource_view(TextureHandle texture_handle, const TextureResourceViewInfo& resource_view_info)
 	{
-		Texture* texture = m_texture_pool.get(texture_handle);
-		if (texture == nullptr)
-		{
-			// TODO: warning?
-			return ResourceViewHandle();
-		}
+		const Texture& texture = m_texture_pool.get(texture_handle);
 
 		ResourceViewInfo texture_resource_view_info;
 		texture_resource_view_info.type = get_texture_resource_type(resource_view_info.type); // FIXME: Does type need to match texture?
@@ -374,21 +361,16 @@ namespace Vadon::Private::Render::DirectX
 
 		// Create shader resource view from D3D resource
 		ShaderSystem& shader_system = m_graphics_api.get_directx_shader_system();
-		return shader_system.create_resource_view(texture->d3d_texture_resource.Get(), texture_resource_view_info);
+		return shader_system.create_resource_view(texture.d3d_texture_resource.Get(), texture_resource_view_info);
 	}
 
 	DepthStencilHandle TextureSystem::create_depth_stencil_view(TextureHandle texture_handle, const DepthStencilViewInfo& ds_view_info)
 	{
-		Texture* texture = m_texture_pool.get(texture_handle);
-		if (texture == nullptr)
-		{
-			// TODO: warning?
-			return DepthStencilHandle();
-		}
+		const Texture& texture = m_texture_pool.get(texture_handle);
 
 		// Pass on to the RT system
 		// TODO: any operations or checks regarding the texture?
-		return m_graphics_api.get_directx_rt_system().create_depth_stencil_view(texture->d3d_texture_resource, ds_view_info);
+		return m_graphics_api.get_directx_rt_system().create_depth_stencil_view(texture.d3d_texture_resource, ds_view_info);
 	}
 
 	TextureSamplerHandle TextureSystem::create_sampler(const TextureSamplerInfo& sampler_info)
@@ -418,22 +400,18 @@ namespace Vadon::Private::Render::DirectX
 
 		new_sampler_handle = m_sampler_pool.add();
 
-		TextureSampler* new_sampler = m_sampler_pool.get(new_sampler_handle);
-		new_sampler->info = sampler_info;
-		new_sampler->sampler_state = new_sampler_state;
+		TextureSampler& new_sampler = m_sampler_pool.get(new_sampler_handle);
+		new_sampler.info = sampler_info;
+		new_sampler.sampler_state = new_sampler_state;
 
 		return new_sampler_handle;
 	}
 
 	void TextureSystem::remove_sampler(TextureSamplerHandle sampler_handle)
 	{
-		TextureSampler* sampler = m_sampler_pool.get(sampler_handle);
-		if (!sampler)
-		{
-			return;
-		}
+		TextureSampler& sampler = m_sampler_pool.get(sampler_handle);
 
-		sampler->sampler_state.Reset();
+		sampler.sampler_state.Reset();
 
 		m_sampler_pool.remove(sampler_handle);
 	}
@@ -443,14 +421,8 @@ namespace Vadon::Private::Render::DirectX
 		ID3D11SamplerState* sampler_array[] = { nullptr };
 		if (sampler_handle.is_valid() == true)
 		{
-			TextureSampler* sampler = m_sampler_pool.get(sampler_handle);
-			if (sampler == nullptr)
-			{
-				// TODO: error?
-				return;
-			}
-
-			sampler_array[0] = sampler->sampler_state.Get();
+			const TextureSampler& sampler = m_sampler_pool.get(sampler_handle);
+			sampler_array[0] = sampler.sampler_state.Get();
 		}
 
 		apply_shader_samplers(shader_type, m_graphics_api.get_device_context(), slot, 1, sampler_array);
@@ -467,14 +439,8 @@ namespace Vadon::Private::Render::DirectX
 			ID3D11SamplerState* sampler_state = nullptr;
 			if (current_sampler_handle.is_valid() == true)
 			{
-				TextureSampler* current_sampler = m_sampler_pool.get(current_sampler_handle);
-				if (current_sampler == nullptr)
-				{
-					// TODO: error?
-					return;
-				}
-
-				sampler_state = current_sampler->sampler_state.Get();
+				const TextureSampler& current_sampler = m_sampler_pool.get(current_sampler_handle);
+				sampler_state = current_sampler.sampler_state.Get();
 			}
 			temp_sampler_vector.push_back(sampler_state);
 		}		

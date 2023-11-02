@@ -11,6 +11,10 @@ namespace VadonApp::UI::Developer
 	public:
 		virtual ~GUISystem() {}
 
+		// FIXME:
+		// - Decouple from specific window
+		// - Allow rendering to arbitrary target
+		// - Just generate draw commands, have client code render it?
 		virtual void dispatch_platform_events(const Platform::PlatformEventList& platform_events) = 0;
 
 		virtual void start_frame() = 0; // Start the frame (must be called before any GUI objects are drawn)

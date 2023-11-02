@@ -10,14 +10,17 @@ namespace Vadon::Private::Render::DirectX
 	class PipelineSystem final : public Vadon::Render::PipelineSystem
 	{
 		BlendStateHandle get_blend_state(const BlendInfo& blend_info) override;
+		bool is_blend_state_valid(BlendStateHandle blend_handle) const override { return m_blend_state_pool.is_handle_valid(blend_handle); }
 		void apply_blend_state(const BlendStateUpdate& blend_update) override;
 		void remove_blend_state(BlendStateHandle blend_handle) override;
 
 		RasterizerStateHandle get_rasterizer_state(const RasterizerInfo& rasterizer_info) override;
+		bool is_rasterizer_state_valid(RasterizerStateHandle rasterizer_handle) const override { return m_rasterizer_state_pool.is_handle_valid(rasterizer_handle); }
 		void apply_rasterizer_state(RasterizerStateHandle rasterizer_handle) override;
 		void remove_rasterizer_state(RasterizerStateHandle rasterizer_handle) override;
 
 		DepthStencilStateHandle get_depth_stencil_state(const DepthStencilInfo& depth_stencil_info) override;
+		bool is_depth_stencil_state_valid(DepthStencilStateHandle depth_stencil_handle) const override { return m_depth_stencil_state_pool.is_handle_valid(depth_stencil_handle); }
 		void apply_depth_stencil_state(const DepthStencilUpdate& depth_stencil_update) override;
 		void remove_depth_stencil_state(DepthStencilStateHandle depth_stencil_handle) override;
 

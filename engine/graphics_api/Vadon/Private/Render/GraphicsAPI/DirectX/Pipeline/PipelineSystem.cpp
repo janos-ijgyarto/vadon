@@ -204,9 +204,9 @@ namespace Vadon::Private::Render::DirectX
 
 		new_blend_state_handle = m_blend_state_pool.add();
 
-		BlendState* new_blend_state = m_blend_state_pool.get(new_blend_state_handle);
-		new_blend_state->info = blend_info;
-		new_blend_state->d3d_blend_state = new_d3d_blend_state;
+		BlendState& new_blend_state = m_blend_state_pool.get(new_blend_state_handle);
+		new_blend_state.info = blend_info;
+		new_blend_state.d3d_blend_state = new_d3d_blend_state;
 
 		return new_blend_state_handle;
 	}
@@ -214,31 +214,22 @@ namespace Vadon::Private::Render::DirectX
 	void PipelineSystem::apply_blend_state(const BlendStateUpdate& blend_update)
 	{
 		GraphicsAPI::DeviceContext* device_context = m_graphics_api.get_device_context();
-		if (!blend_update.blend_state.is_valid())
+		if (blend_update.blend_state.is_valid() == false)
 		{
 			// Use default blend state
 			device_context->OMSetBlendState(nullptr, nullptr, 0xffffffff);
 			return;
 		}
 
-		BlendState* blend_state = m_blend_state_pool.get(blend_update.blend_state);
-		if (!blend_state)
-		{
-			return;
-		}
-
-		device_context->OMSetBlendState(blend_state->d3d_blend_state.Get(), blend_update.blend_factor.data(), blend_update.sample_mask);
+		const BlendState& blend_state = m_blend_state_pool.get(blend_update.blend_state);
+		device_context->OMSetBlendState(blend_state.d3d_blend_state.Get(), blend_update.blend_factor.data(), blend_update.sample_mask);
 	}
 
 	void PipelineSystem::remove_blend_state(BlendStateHandle blend_handle)
 	{
-		BlendState* blend_state = m_blend_state_pool.get(blend_handle);
-		if (!blend_state)
-		{
-			return;
-		}
+		BlendState& blend_state = m_blend_state_pool.get(blend_handle);
 
-		blend_state->d3d_blend_state.Reset();
+		blend_state.d3d_blend_state.Reset();
 
 		m_blend_state_pool.remove(blend_handle);
 	}
@@ -274,9 +265,9 @@ namespace Vadon::Private::Render::DirectX
 
 		new_rasterizer_handle = m_rasterizer_state_pool.add();
 
-		RasterizerState* new_rasterizer_state = m_rasterizer_state_pool.get(new_rasterizer_handle);
-		new_rasterizer_state->info = rasterizer_info;
-		new_rasterizer_state->d3d_rasterizer_state = new_d3d_rasterizer_state;
+		RasterizerState& new_rasterizer_state = m_rasterizer_state_pool.get(new_rasterizer_handle);
+		new_rasterizer_state.info = rasterizer_info;
+		new_rasterizer_state.d3d_rasterizer_state = new_d3d_rasterizer_state;
 
 		return new_rasterizer_handle;
 	}
@@ -291,24 +282,14 @@ namespace Vadon::Private::Render::DirectX
 			return;
 		}
 
-		RasterizerState* rasterizer_state = m_rasterizer_state_pool.get(rasterizer_handle);
-		if (!rasterizer_state)
-		{
-			return;
-		}
-
-		device_context->RSSetState(rasterizer_state->d3d_rasterizer_state.Get());
+		const RasterizerState& rasterizer_state = m_rasterizer_state_pool.get(rasterizer_handle);
+		device_context->RSSetState(rasterizer_state.d3d_rasterizer_state.Get());
 	}
 
 	void PipelineSystem::remove_rasterizer_state(RasterizerStateHandle rasterizer_handle)
 	{
-		RasterizerState* rasterizer_state = m_rasterizer_state_pool.get(rasterizer_handle);
-		if (!rasterizer_state)
-		{
-			return;
-		}
-
-		rasterizer_state->d3d_rasterizer_state.Reset();
+		RasterizerState& rasterizer_state = m_rasterizer_state_pool.get(rasterizer_handle);
+		rasterizer_state.d3d_rasterizer_state.Reset();
 
 		m_rasterizer_state_pool.remove(rasterizer_handle);
 	}
@@ -348,9 +329,9 @@ namespace Vadon::Private::Render::DirectX
 
 		new_depth_stencil_handle = m_depth_stencil_state_pool.add();
 
-		DepthStencilState* new_depth_stencil_state = m_depth_stencil_state_pool.get(new_depth_stencil_handle);
-		new_depth_stencil_state->info = depth_stencil_info;
-		new_depth_stencil_state->d3d_depth_stencil_state = new_d3d_depth_stencil_state;
+		DepthStencilState& new_depth_stencil_state = m_depth_stencil_state_pool.get(new_depth_stencil_handle);
+		new_depth_stencil_state.info = depth_stencil_info;
+		new_depth_stencil_state.d3d_depth_stencil_state = new_d3d_depth_stencil_state;
 
 		return new_depth_stencil_handle;
 	}
@@ -365,24 +346,14 @@ namespace Vadon::Private::Render::DirectX
 			return;
 		}
 
-		DepthStencilState* depth_stencil_state = m_depth_stencil_state_pool.get(depth_stencil_update.depth_stencil);
-		if (!depth_stencil_state)
-		{
-			return;
-		}
-
-		device_context->OMSetDepthStencilState(depth_stencil_state->d3d_depth_stencil_state.Get(), depth_stencil_update.stencil_ref);
+		const DepthStencilState& depth_stencil_state = m_depth_stencil_state_pool.get(depth_stencil_update.depth_stencil);
+		device_context->OMSetDepthStencilState(depth_stencil_state.d3d_depth_stencil_state.Get(), depth_stencil_update.stencil_ref);
 	}
 
 	void PipelineSystem::remove_depth_stencil_state(DepthStencilStateHandle depth_stencil_handle)
 	{
-		DepthStencilState* depth_stencil_state = m_depth_stencil_state_pool.get(depth_stencil_handle);
-		if (!depth_stencil_state)
-		{
-			return;
-		}
-
-		depth_stencil_state->d3d_depth_stencil_state.Reset();
+		DepthStencilState& depth_stencil_state = m_depth_stencil_state_pool.get(depth_stencil_handle);
+		depth_stencil_state.d3d_depth_stencil_state.Reset();
 
 		m_depth_stencil_state_pool.remove(depth_stencil_handle);
 	}

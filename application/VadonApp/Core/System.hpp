@@ -5,8 +5,6 @@
 #include <VadonApp/Core/Application.hpp>
 namespace VadonApp::Core
 {
-	class Application;
-
 	// Utility class, makes creating app subsystems more concise
 	// All app systems are implicitly engine system extensions
 	// App systems can also access the app for additional features

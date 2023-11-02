@@ -9,14 +9,17 @@ namespace Vadon::Private::Render::Dummy
 	{
 	public:
 		Vadon::Render::BlendStateHandle get_blend_state(const Vadon::Render::BlendInfo& blend_info) override;
+		bool is_blend_state_valid(Vadon::Render::BlendStateHandle /*blend_handle*/) const override { return false; }
 		void apply_blend_state(const Vadon::Render::BlendStateUpdate& blend_update) override;
 		void remove_blend_state(Vadon::Render::BlendStateHandle blend_handle) override;
 
 		Vadon::Render::RasterizerStateHandle get_rasterizer_state(const Vadon::Render::RasterizerInfo& rasterizer_info) override;
+		bool is_rasterizer_state_valid(Vadon::Render::RasterizerStateHandle /*rasterizer_handle*/) const override { return false; }
 		void apply_rasterizer_state(Vadon::Render::RasterizerStateHandle rasterizer_handle) override;
 		void remove_rasterizer_state(Vadon::Render::RasterizerStateHandle rasterizer_handle) override;
 
 		Vadon::Render::DepthStencilStateHandle get_depth_stencil_state(const Vadon::Render::DepthStencilInfo& depth_stencil_info) override;
+		bool is_depth_stencil_state_valid(Vadon::Render::DepthStencilStateHandle /*depth_stencil_handle*/) const override { return false; }
 		void apply_depth_stencil_state(const Vadon::Render::DepthStencilUpdate& depth_stencil_update) override;
 		void remove_depth_stencil_state(Vadon::Render::DepthStencilStateHandle depth_stencil_handle) override;
 

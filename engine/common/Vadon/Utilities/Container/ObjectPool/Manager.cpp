@@ -66,12 +66,9 @@ namespace Vadon::Utilities
 		return (selected_entry.active && (selected_entry.generation == handle.generation));
 	}
 
-	bool ObjectPoolManager::remove(const ObjectPoolHandle& handle)
+	void ObjectPoolManager::remove(const ObjectPoolHandle& handle)
 	{
-		if (!validate(handle))
-		{
-			return false;
-		}
+		assert(validate(handle) == true);
 
 		Entry& released_entry = m_entries[handle.index];
 		released_entry.active = false;
@@ -81,14 +78,12 @@ namespace Vadon::Utilities
 		// Update free list
 		released_entry.next_free_index = m_first_free_index;
 		m_first_free_index = handle.index;
-
-		return true;
 	}
 
 	ObjectPoolHandle ObjectPoolManager::Iterator::get_handle() const
 	{
 		ObjectPoolHandle handle;
-		if (is_valid())
+		if (is_valid() == true)
 		{
 			handle.index = static_cast<uint32_t>(std::distance(m_manager.m_entries.begin(), m_entry_it));
 			handle.generation = m_entry_it->generation;

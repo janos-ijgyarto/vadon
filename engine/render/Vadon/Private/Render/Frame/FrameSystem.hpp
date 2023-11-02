@@ -15,6 +15,7 @@ namespace Vadon::Private::Render
 	{
 	public:
 		FrameGraphHandle create_graph(const FrameGraphInfo& graph_info) override;
+		bool is_graph_valid(FrameGraphHandle graph_handle) const override { return m_graph_pool.is_handle_valid(graph_handle); }
 		void execute_graph(FrameGraphHandle graph_handle) override;
 		void execute_graph(const FrameGraphInfo& /*graph_info*/) override {}
 		void remove_graph(FrameGraphHandle graph_handle) override;

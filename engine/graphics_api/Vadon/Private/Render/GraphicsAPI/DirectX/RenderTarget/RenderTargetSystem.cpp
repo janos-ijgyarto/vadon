@@ -107,58 +107,44 @@ namespace Vadon::Private::Render::DirectX
 		// Everything succeeded, create the window and back buffer RT in the pools
 		const WindowHandle new_window_handle = m_window_pool.add();
 
-		Window* new_window = m_window_pool.get(new_window_handle);
+		Window& new_window = m_window_pool.get(new_window_handle);
 
-		new_window->info = window_info;
-		new_window->hwnd = platform_handle;
-		new_window->swap_chain = swap_chain;
+		new_window.info = window_info;
+		new_window.hwnd = platform_handle;
+		new_window.swap_chain = swap_chain;
 
-		new_window->back_buffer = m_rt_pool.add();
+		new_window.back_buffer = m_rt_pool.add();
 
-		RenderTarget* back_buffer_rt = m_rt_pool.get(new_window->back_buffer);
-		back_buffer_rt->d3d_rt_view = back_buffer_view;
+		RenderTarget& back_buffer_rt = m_rt_pool.get(new_window.back_buffer);
+		back_buffer_rt.d3d_rt_view = back_buffer_view;
 
 		return new_window_handle;
 	}
 
-	WindowInfo RenderTargetSystem::get_window_info(WindowHandle window_handle)
+	WindowInfo RenderTargetSystem::get_window_info(WindowHandle window_handle) const
 	{
-		if (Window* window = m_window_pool.get(window_handle))
-		{
-			return window->info;
-		}
-
-		return Vadon::Render::WindowInfo();
+		const Window& window = m_window_pool.get(window_handle);
+		return window.info;
 	}
 	
 	void RenderTargetSystem::update_window(WindowHandle window_handle)
 	{
-		const Window* selected_window = m_window_pool.get(window_handle);
-		if (!selected_window)
-		{
-			return;
-		}
+		const Window& selected_window = m_window_pool.get(window_handle);
 
 		// TODO: present parameters?
-		selected_window->swap_chain->Present(0, 0);
+		selected_window.swap_chain->Present(0, 0);
 	}
 
 	void RenderTargetSystem::remove_window(WindowHandle window_handle)
 	{
-		Window* window = m_window_pool.get(window_handle);
-		if (!window)
-		{
-			// Warn about attempting to remove nonexistent window
-			warning(std::format("Render target system attempted to remove window with handle \"{0}\", but was not found!", window_handle.handle.to_uint()));
-			return;
-		}
+		Window& window = m_window_pool.get(window_handle);
 
 		// Window was found, remove the target
-		remove_target(window->back_buffer);
+		remove_target(window.back_buffer);
 
 		// Unset fullscreen state before we release, just to be safe
-		window->swap_chain->SetFullscreenState(false, NULL);
-		window->swap_chain.Reset();
+		window.swap_chain->SetFullscreenState(false, NULL);
+		window.swap_chain.Reset();
 
 		// Remove the window itself
 		m_window_pool.remove(window_handle);
@@ -166,34 +152,29 @@ namespace Vadon::Private::Render::DirectX
 
 	void RenderTargetSystem::resize_window(WindowHandle window_handle, const Vadon::Utilities::Vector2i& window_size)
 	{
-		Window* window = m_window_pool.get(window_handle);
-		if (!window)
-		{
-			// TODO: warning?
-			return;
-		}
+		Window& window = m_window_pool.get(window_handle);
 
 		// Update window dimensions
-		window->info.dimensions = window_size;
+		window.info.dimensions = window_size;
 
 		// TODO: unset RT if it happens to be set!
 		//ID3D11DeviceContext* device_context = m_graphics_api.get_device_context();
 		//device_context->OMSetRenderTargets(0, 0, 0);
 
 		// Release the swap chain render target
-		RenderTarget* back_buffer_target = m_rt_pool.get(window->back_buffer);
-		back_buffer_target->d3d_rt_view.Reset();
+		RenderTarget& back_buffer_target = m_rt_pool.get(window.back_buffer);
+		back_buffer_target.d3d_rt_view.Reset();
 
 		// Preserve the existing buffer count and format.
 		// Automatically choose the width and height to match the client rect for HWNDs.
-		HRESULT result = window->swap_chain->ResizeBuffers(0, 0, 0, DXGI_FORMAT_UNKNOWN, 0);
+		const HRESULT result = window.swap_chain->ResizeBuffers(0, 0, 0, DXGI_FORMAT_UNKNOWN, 0);
 		if (FAILED(result))
 		{
 			// TODO: warning/error?
 			return;
 		}
 
-		if (!update_back_buffer_view(window->swap_chain, back_buffer_target->d3d_rt_view))
+		if (update_back_buffer_view(window.swap_chain, back_buffer_target.d3d_rt_view) == false)
 		{
 			// TODO: handle error!
 		}
@@ -218,16 +199,10 @@ namespace Vadon::Private::Render::DirectX
 	{
 		// TODO: make sure we check whether the target was set, remove if so
 		// TODO2: make sure we can't remove a window RT directly, only if we remove the window itself?
-		RenderTarget* render_target = m_rt_pool.get(rt_handle);
-		if (!render_target)
-		{
-			// Attempting to remove nonexistent RT
-			warning(std::format("Render target system attempted to remove target with ID \"{0}\", but was not found!", rt_handle.handle.to_uint()));
-			return;
-		}
+		RenderTarget& render_target = m_rt_pool.get(rt_handle);
 
 		// Release the D3D resource
-		render_target->d3d_rt_view.Reset();
+		render_target.d3d_rt_view.Reset();
 
 		m_rt_pool.remove(rt_handle);
 	}
@@ -238,17 +213,17 @@ namespace Vadon::Private::Render::DirectX
 		ID3D11RenderTargetView* render_target_views[] = { nullptr };
 		ID3D11DepthStencilView* depth_stencil_view = nullptr;
 
-		// If we find such a RT, we set it. If not found, we assume user wanted to unset the RT
-		RenderTarget* render_target = m_rt_pool.get(rt_handle);
-		if (render_target != nullptr)
+		// Invalid handle means we unset it
+		if (rt_handle.is_valid() == true)
 		{
-			render_target_views[0] = render_target->d3d_rt_view.Get();
+			const RenderTarget& render_target = m_rt_pool.get(rt_handle);
+			render_target_views[0] = render_target.d3d_rt_view.Get();
 		}
 
-		DepthStencil* depth_stencil = m_ds_pool.get(ds_handle);
-		if (depth_stencil != nullptr)
+		if (ds_handle.is_valid() == true)
 		{
-			depth_stencil_view = depth_stencil->d3d_ds_view.Get();
+			const DepthStencil& depth_stencil = m_ds_pool.get(ds_handle);
+			depth_stencil_view = depth_stencil.d3d_ds_view.Get();
 		}
 
 		GraphicsAPI::DeviceContext* device_context = m_graphics_api.get_device_context();
@@ -257,45 +232,29 @@ namespace Vadon::Private::Render::DirectX
 
 	void RenderTargetSystem::clear_target(RenderTargetHandle rt_handle, const Vadon::Render::RGBAColor& clear_color)
 	{
-		RenderTarget* render_target = m_rt_pool.get(rt_handle);
-		if (!render_target)
-		{
-			// TODO: warning?
-			return;
-		}
+		const RenderTarget& render_target = m_rt_pool.get(rt_handle);
 
 		GraphicsAPI::DeviceContext* device_context = m_graphics_api.get_device_context();
-		device_context->ClearRenderTargetView(render_target->d3d_rt_view.Get(), &clear_color.x);
+		device_context->ClearRenderTargetView(render_target.d3d_rt_view.Get(), &clear_color.x);
 	}
 
 	void RenderTargetSystem::clear_depth_stencil(DepthStencilHandle ds_handle, const DepthStencilClear& clear)
 	{
-		DepthStencil* depth_stencil = m_ds_pool.get(ds_handle);
-		if (depth_stencil == nullptr)
-		{
-			// TODO: warning?
-			return;
-		}
+		const DepthStencil& depth_stencil = m_ds_pool.get(ds_handle);
 
 		// FIXME: proper utility function!
 		const UINT clear_flags = Vadon::Utilities::to_integral(clear.clear_flags);
 
 		GraphicsAPI::DeviceContext* device_context = m_graphics_api.get_device_context();
-		device_context->ClearDepthStencilView(depth_stencil->d3d_ds_view.Get(), clear_flags, clear.depth, clear.stencil);
+		device_context->ClearDepthStencilView(depth_stencil.d3d_ds_view.Get(), clear_flags, clear.depth, clear.stencil);
 	}
 
 	void RenderTargetSystem::remove_depth_stencil(DepthStencilHandle ds_handle)
 	{
-		DepthStencil* depth_stencil = m_ds_pool.get(ds_handle);
-		if (depth_stencil == nullptr)
-		{
-			// Attempting to remove nonexistent RT
-			warning(std::format("Render target system attempted to remove target with ID \"{0}\", but was not found!", ds_handle.handle.to_uint()));
-			return;
-		}
+		DepthStencil& depth_stencil = m_ds_pool.get(ds_handle);
 
 		// Release the D3D resource
-		depth_stencil->d3d_ds_view.Reset();
+		depth_stencil.d3d_ds_view.Reset();
 
 		m_ds_pool.remove(ds_handle);
 	}
@@ -316,15 +275,10 @@ namespace Vadon::Private::Render::DirectX
 		device_context->RSSetViewports(1, &d3d_viewport);
 	}
 
-	RenderTargetHandle RenderTargetSystem::get_window_target(WindowHandle window_handle)
+	RenderTargetHandle RenderTargetSystem::get_window_target(WindowHandle window_handle) const
 	{
-		Window* window = m_window_pool.get(window_handle);
-		if (!window)
-		{
-			return RenderTargetHandle();
-		}
-
-		return window->back_buffer;
+		const Window& window = m_window_pool.get(window_handle);
+		return window.back_buffer;
 	}
 
 	DepthStencilHandle RenderTargetSystem::create_depth_stencil_view(const D3DResource& resource, const DepthStencilViewInfo& ds_view_info)
@@ -342,10 +296,10 @@ namespace Vadon::Private::Render::DirectX
 		}
 
 		DepthStencilHandle new_ds_handle = m_ds_pool.add();
-		DepthStencil* new_depth_stencil = m_ds_pool.get(new_ds_handle);
+		DepthStencil& new_depth_stencil = m_ds_pool.get(new_ds_handle);
 
-		new_depth_stencil->info = ds_view_info;
-		new_depth_stencil->d3d_ds_view = d3d_ds_view;
+		new_depth_stencil.info = ds_view_info;
+		new_depth_stencil.d3d_ds_view = d3d_ds_view;
 
 		return new_ds_handle;
 	}

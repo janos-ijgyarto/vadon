@@ -139,59 +139,52 @@ namespace Vadon::Private::Render::DirectX
 
 		const BufferHandle new_buffer_handle = m_buffer_pool.add(buffer_info);
 
-		Buffer* new_buffer = m_buffer_pool.get(new_buffer_handle);
-		new_buffer->d3d_buffer = new_d3d_buffer;
+		Buffer& new_buffer = m_buffer_pool.get(new_buffer_handle);
+		new_buffer.d3d_buffer = new_d3d_buffer;
 
 		return new_buffer_handle;
 	}
 
 	void BufferSystem::remove_buffer(BufferHandle buffer_handle)
 	{
-		Buffer* buffer = m_buffer_pool.get(buffer_handle);
-		if (!buffer)
-		{
-			return;
-		}
-
 		// Clean up the D3D resources
-		buffer->d3d_buffer.Reset();
+		Buffer& buffer = m_buffer_pool.get(buffer_handle);
+		buffer.d3d_buffer.Reset();
 
+		// Remove the buffer
 		m_buffer_pool.remove(buffer_handle);
 	}
 
 	bool BufferSystem::buffer_data(BufferHandle buffer_handle, const BufferWriteData& write_data)
 	{
-		const Buffer* buffer = m_buffer_pool.get(buffer_handle);
-		if (!buffer)
-		{
-			return false;
-		}
-
+		const Buffer& buffer = m_buffer_pool.get(buffer_handle);
 		GraphicsAPI::DeviceContext* device_context = m_graphics_api.get_device_context();
 
+		const BufferInfo& buffer_info = buffer.info;
+
 		// FIXME: revise API slightly. Cannot use UpdateSubResource on DYNAMIC, but apparently can on STAGING, and Map can be used on DEFAULT?
-		switch (buffer->info.usage)
+		switch (buffer.info.usage)
 		{
 		case ResourceUsage::DEFAULT:
 		{
 			// FIXME: cbuffer can contain array, should we allow updating a portion of it?
-			const bool is_not_cbuffer = buffer->info.type != BufferType::CONSTANT;
-			const uint32_t source_row_pitch = is_not_cbuffer ? (buffer->info.element_size * write_data.range.count) : (buffer->info.element_size * buffer->info.capacity);
+			const bool is_not_cbuffer = buffer_info.type != BufferType::CONSTANT;
+			const uint32_t source_row_pitch = is_not_cbuffer ? (buffer_info.element_size * write_data.range.count) : (buffer_info.element_size * buffer_info.capacity);
 
 			// Create a box that defines the region we want to update (need to use byte widths for the dimensions)
 			// Buffers are all flat, so we only need the L-R portions
 			D3D11_BOX dest_box{
-				static_cast<UINT>(buffer->info.element_size * write_data.range.offset), // Left
+				static_cast<UINT>(buffer_info.element_size * write_data.range.offset), // Left
 				0, // Top
 				0, // Front
-				static_cast<UINT>(buffer->info.element_size * (write_data.range.offset + write_data.range.count)), // Right
+				static_cast<UINT>(buffer_info.element_size * (write_data.range.offset + write_data.range.count)), // Right
 				1, // Bottom
 				1 // Back
 			};
 
 			// Subresources are only relevant for textures
 			// Constant buffers do not use box at all
-			device_context->UpdateSubresource(buffer->d3d_buffer.Get(), 0, is_not_cbuffer ? &dest_box : nullptr, write_data.data, source_row_pitch, 0);
+			device_context->UpdateSubresource(buffer.d3d_buffer.Get(), 0, is_not_cbuffer ? &dest_box : nullptr, write_data.data, source_row_pitch, 0);
 			return true;
 		}
 		case ResourceUsage::IMMUTABLE:
@@ -204,21 +197,21 @@ namespace Vadon::Private::Render::DirectX
 
 			// Do not allow "NO_OVERWRITE" for cbuffer or shader resource
 			// FIXME: allow if we are on D3D 11.1
-			const bool can_use_no_overwrite = (buffer->info.type == BufferType::VERTEX) || (buffer->info.type == BufferType::INDEX);
+			const bool can_use_no_overwrite = (buffer_info.type == BufferType::VERTEX) || (buffer_info.type == BufferType::INDEX);
 			const D3D11_MAP map_type = (can_use_no_overwrite && (write_data.no_overwrite == true)) ? D3D11_MAP::D3D11_MAP_WRITE_NO_OVERWRITE : D3D11_MAP::D3D11_MAP_WRITE_DISCARD;
 
 			// TODO: enable map flags?
-			const HRESULT result = device_context->Map(buffer->d3d_buffer.Get(), 0, map_type, 0, &mapped_subresource);
+			const HRESULT result = device_context->Map(buffer.d3d_buffer.Get(), 0, map_type, 0, &mapped_subresource);
 			if (FAILED(result))
 			{
 				// TODO: error handling?
 				return false;
 			}
 
-			void* offset_pData = static_cast<char*>(mapped_subresource.pData) + (write_data.range.offset * buffer->info.element_size);
-			memcpy(offset_pData, write_data.data, buffer->info.element_size * write_data.range.count);
+			void* offset_pData = static_cast<char*>(mapped_subresource.pData) + (write_data.range.offset * buffer_info.element_size);
+			memcpy(offset_pData, write_data.data, buffer_info.element_size * write_data.range.count);
 
-			device_context->Unmap(buffer->d3d_buffer.Get(), 0);
+			device_context->Unmap(buffer.d3d_buffer.Get(), 0);
 			return true;
 		}
 		}
@@ -236,21 +229,15 @@ namespace Vadon::Private::Render::DirectX
 			return;
 		}
 
-		const Buffer* buffer = m_buffer_pool.get(buffer_handle);
-		if (buffer == nullptr)
+		const Buffer& buffer = m_buffer_pool.get(buffer_handle);
+		if (buffer.info.type != BufferType::VERTEX)
 		{
 			// TODO: error message?
 			return;
 		}
 
-		if (buffer->info.type != BufferType::VERTEX)
-		{
-			// TODO: error message?
-			return;
-		}
-
-		ID3D11Buffer* vertex_buffers[] = { buffer->d3d_buffer.Get() };
-		const UINT buffer_stride = (stride < 0) ? buffer->info.element_size : stride;
+		ID3D11Buffer* vertex_buffers[] = { buffer.d3d_buffer.Get() };
+		const UINT buffer_stride = (stride < 0) ? buffer.info.element_size : stride;
 		const UINT buffer_offset = offset;
 
 		// TODO: keep track of what buffers are set where!
@@ -277,14 +264,9 @@ namespace Vadon::Private::Render::DirectX
 			UINT current_offset = 0;
 			if (current_buffer_info.buffer.is_valid() == true)
 			{
-				const Buffer* current_buffer = m_buffer_pool.get(current_buffer_info.buffer);
-				if (current_buffer == nullptr)
-				{
-					// TODO: error message?
-					return;
-				}
-				current_buffer_pointer = current_buffer->d3d_buffer.Get();
-				current_stride = (current_buffer_info.stride < 0) ? current_buffer->info.element_size : current_buffer_info.stride;
+				const Buffer& current_buffer = m_buffer_pool.get(current_buffer_info.buffer);
+				current_buffer_pointer = current_buffer.d3d_buffer.Get();
+				current_stride = (current_buffer_info.stride < 0) ? current_buffer.info.element_size : current_buffer_info.stride;
 				current_offset = current_buffer_info.offset;
 			}
 
@@ -308,21 +290,15 @@ namespace Vadon::Private::Render::DirectX
 			return;
 		}
 
-		const Buffer* buffer = m_buffer_pool.get(buffer_handle);
-		if (buffer == nullptr)
-		{
-			// TODO: error message?
-			return;
-		}
-
-		if (buffer->info.type != BufferType::INDEX)
+		const Buffer& buffer = m_buffer_pool.get(buffer_handle);
+		if (buffer.info.type != BufferType::INDEX)
 		{
 			// TODO: error message?
 			return;
 		}
 
 		// TODO: keep track of what buffers are set where!
-		device_context->IASetIndexBuffer(buffer->d3d_buffer.Get(), get_dxgi_format(format), offset);
+		device_context->IASetIndexBuffer(buffer.d3d_buffer.Get(), get_dxgi_format(format), offset);
 	}
 
 	void BufferSystem::set_constant_buffer(ShaderType shader, BufferHandle buffer_handle, int32_t slot)
@@ -331,14 +307,8 @@ namespace Vadon::Private::Render::DirectX
 		ID3D11Buffer* constant_buffers[] = { nullptr };
 		if (buffer_handle.is_valid() == true)
 		{
-			const Buffer* buffer = m_buffer_pool.get(buffer_handle);
-			if (buffer == nullptr)
-			{
-				// TODO: error message?
-				return;
-			}
-
-			constant_buffers[0] = buffer->d3d_buffer.Get();
+			const Buffer& buffer = m_buffer_pool.get(buffer_handle);
+			constant_buffers[0] = buffer.d3d_buffer.Get();
 		}
 
 		set_constant_buffers(m_graphics_api.get_device_context(), shader, slot, 1, constant_buffers);
@@ -354,13 +324,8 @@ namespace Vadon::Private::Render::DirectX
 			ID3D11Buffer* current_buffer_pointer = nullptr;
 			if (current_buffer_handle.is_valid() == true)
 			{
-				const Buffer* buffer = m_buffer_pool.get(current_buffer_handle);
-				if (buffer == nullptr)
-				{
-					// TODO: error message?
-					return;
-				}
-				current_buffer_pointer = buffer->d3d_buffer.Get();
+				const Buffer& buffer = m_buffer_pool.get(current_buffer_handle);
+				current_buffer_pointer = buffer.d3d_buffer.Get();
 			}
 
 			temp_buffer_vector.push_back(current_buffer_pointer);
@@ -371,14 +336,8 @@ namespace Vadon::Private::Render::DirectX
 
 	ResourceViewHandle BufferSystem::create_resource_view(BufferHandle buffer_handle, const BufferResourceViewInfo& resource_view_info)
 	{
-		const Buffer* buffer = m_buffer_pool.get(buffer_handle);
-		if (buffer == nullptr)
-		{
-			// TODO: error message?
-			return ResourceViewHandle();
-		}
-
-		const BufferInfo& buffer_info = buffer->info;
+		const Buffer& buffer = m_buffer_pool.get(buffer_handle);
+		const BufferInfo& buffer_info = buffer.info;
 
 		ResourceViewInfo buffer_resource_view_info;
 
@@ -405,7 +364,7 @@ namespace Vadon::Private::Render::DirectX
 		buffer_resource_view_info.type_info.first_array_slice = resource_view_info.first_element;
 		buffer_resource_view_info.type_info.array_size = resource_view_info.num_elements;
 
-		return m_graphics_api.get_directx_shader_system().create_resource_view(buffer->d3d_buffer.Get(), buffer_resource_view_info);
+		return m_graphics_api.get_directx_shader_system().create_resource_view(buffer.d3d_buffer.Get(), buffer_resource_view_info);
 	}
 
 	BufferSystem::BufferSystem(Core::EngineCoreInterface& core, GraphicsAPI& graphics_api)

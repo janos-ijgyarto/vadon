@@ -18,8 +18,6 @@ namespace Vadon::Render
 
 	struct RenderPass
 	{
-		static constexpr bool default_validator_function() { return true; }
-
 		std::string name;
 
 		// TODO: set the slots for the resources and targets?

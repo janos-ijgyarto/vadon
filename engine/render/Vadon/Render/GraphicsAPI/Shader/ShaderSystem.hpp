@@ -16,10 +16,12 @@ namespace Vadon::Render
 	{
 	public:
 		virtual ShaderHandle create_shader(const ShaderInfo& shader_info) = 0;
+		virtual bool is_shader_valid(ShaderHandle shader_handle) const = 0;
 		virtual void apply_shader(ShaderHandle shader_handle) = 0;
 		virtual void remove_shader(ShaderHandle shader_handle) = 0;
 
 		virtual VertexLayoutHandle create_vertex_layout(ShaderHandle shader_handle, const VertexLayoutInfo& layout_info) = 0;
+		virtual bool is_vertex_layout_valid(VertexLayoutHandle layout_handle) const = 0;
 		virtual void set_vertex_layout(VertexLayoutHandle layout_handle) = 0;
 
 		// TODO: use std::span to set multiple resources in one go!
@@ -28,6 +30,7 @@ namespace Vadon::Render
 		virtual void apply_resource(ShaderType shader_type, ResourceViewHandle resource_view_handle, int32_t slot) = 0;
 		virtual void apply_resource_slots(ShaderType shader_type, const ShaderResourceSpan& resource_views) = 0;
 
+		virtual bool is_resource_valid(ResourceViewHandle resource_view_handle) const = 0;
 		virtual void remove_resource(ResourceViewHandle resource_view_handle) = 0;
 	protected:
 		ShaderSystem(Core::EngineCoreInterface& core) 

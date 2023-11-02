@@ -1,8 +1,6 @@
 #include <VadonApp/Private/PCH/VadonApp.hpp>
 #include <VadonApp/Core/System.hpp>
 
-#include <VadonApp/Core/Application.hpp>
-
 #include <Vadon/Core/CoreInterface.hpp>
 
 namespace VadonApp::Core

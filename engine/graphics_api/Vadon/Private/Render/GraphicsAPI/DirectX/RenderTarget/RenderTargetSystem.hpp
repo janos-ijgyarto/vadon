@@ -16,7 +16,8 @@ namespace Vadon::Private::Render::DirectX
 	{
 	public:
 		WindowHandle add_window(const WindowInfo& window_info) override;
-		WindowInfo get_window_info(WindowHandle window_handle) override;
+		bool is_window_valid(WindowHandle window_handle) const override { return m_window_pool.is_handle_valid(window_handle); }
+		WindowInfo get_window_info(WindowHandle window_handle) const override;
 		void update_window(WindowHandle window_handle) override;
 		void remove_window(WindowHandle window_handle) override;
 
@@ -24,6 +25,7 @@ namespace Vadon::Private::Render::DirectX
 		void set_window_mode(WindowHandle window_handle, WindowMode mode) override;
 
 		RenderTargetHandle add_target(const RenderTargetInfo& rt_info) override;
+		bool is_render_target_valid(RenderTargetHandle rt_handle) const override { return m_rt_pool.is_handle_valid(rt_handle); }
 		void copy_target(RenderTargetHandle source_handle, RenderTargetHandle destination_handle) override;
 		void remove_target(RenderTargetHandle rt_handle) override;
 
@@ -31,11 +33,12 @@ namespace Vadon::Private::Render::DirectX
 		void clear_target(RenderTargetHandle rt_handle, const Vadon::Render::RGBAColor& clear_color) override;
 		void clear_depth_stencil(DepthStencilHandle ds_handle, const DepthStencilClear& clear) override;
 
+		bool is_depth_stencil_valid(DepthStencilHandle ds_handle) const override { return m_ds_pool.is_handle_valid(ds_handle); }
 		void remove_depth_stencil(DepthStencilHandle ds_handle) override;
 
 		void apply_viewport(const Viewport& viewport) override;
 
-		RenderTargetHandle get_window_target(WindowHandle window_handle) override;
+		RenderTargetHandle get_window_target(WindowHandle window_handle) const override;
 
 		DepthStencilHandle create_depth_stencil_view(const D3DResource& resource, const DepthStencilViewInfo& ds_view_info);
 	private:

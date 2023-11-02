@@ -20,6 +20,7 @@ namespace Vadon::Private::Render::DirectX
 	{
 	public:
 		BufferHandle create_buffer(const BufferInfo& buffer_info, const void* init_data = nullptr) override;
+		bool is_buffer_valid(BufferHandle buffer_handle) const override { return m_buffer_pool.is_handle_valid(buffer_handle); }
 		void remove_buffer(BufferHandle buffer_handle) override;
 
 		bool buffer_data(BufferHandle buffer_handle, const BufferWriteData& write_data) override;

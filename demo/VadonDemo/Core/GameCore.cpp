@@ -14,6 +14,8 @@
 
 #include <Vadon/Core/Task/TaskSystem.hpp>
 
+#include <Vadon/Utilities/Data/VariantUtilities.hpp>
+
 #include <iostream>
 #include <format>
 
@@ -109,29 +111,27 @@ namespace VadonDemo::Core
 			m_platform_interface.register_event_callback(
 				[this](const VadonApp::Platform::PlatformEventList& platform_events)
 				{
-					// FIXME: make this more concise using std::visit?
-					for (const VadonApp::Platform::PlatformEvent& current_event : platform_events)
-					{
-						const VadonApp::Platform::PlatformEventType current_event_type = Vadon::Utilities::to_enum<VadonApp::Platform::PlatformEventType>(static_cast<int32_t>(current_event.index()));
-						switch (current_event_type)
-						{
-						case VadonApp::Platform::PlatformEventType::QUIT:
+					auto platform_event_visitor = Vadon::Utilities::VisitorOverloadList{
+						[this](const VadonApp::Platform::QuitEvent&)
 						{
 							// Platform is trying to quit, so we request stop
 							Vadon::Core::TaskSystem& task_system = m_engine_app->get_engine_core().get_system<Vadon::Core::TaskSystem>();
 							task_system.request_stop();
-						}
-						break;
-						case VadonApp::Platform::PlatformEventType::KEYBOARD:
+						},
+						[this](const VadonApp::Platform::KeyboardEvent& keyboard_event)
 						{
-							const VadonApp::Platform::KeyboardEvent& keyboard_event = std::get<VadonApp::Platform::KeyboardEvent>(current_event);
 							if (keyboard_event.key == VadonApp::Platform::KeyCode::BACKQUOTE)
 							{
 								m_main_window.show_dev_gui();
 							}
-						}
-						break;
-						}
+						},
+						[](auto) { /* Default, do nothing */ }
+					};
+
+					// FIXME: make this more concise using std::visit?
+					for (const VadonApp::Platform::PlatformEvent& current_event : platform_events)
+					{
+						std::visit(platform_event_visitor, current_event);
 					}
 				}
 			);

@@ -9,6 +9,7 @@ namespace Vadon::Private::Render::Dummy
 	{
 	public:
 		Vadon::Render::BufferHandle create_buffer(const Vadon::Render::BufferInfo& buffer_info, const void* init_data = nullptr) override;
+		bool is_buffer_valid(Vadon::Render::BufferHandle /*buffer_handle*/) const override { return false; }
 		void remove_buffer(Vadon::Render::BufferHandle buffer_handle) override;
 
 		bool buffer_data(Vadon::Render::BufferHandle buffer_handle, const Vadon::Render::BufferWriteData& write_data) override;

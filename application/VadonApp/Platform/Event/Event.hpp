@@ -40,7 +40,8 @@ namespace VadonApp::Platform
 
 	struct MouseMotionEvent : public Utilities::Event<const MouseMotionEvent&, bool>
 	{
-		Vadon::Utilities::Vector2i position;
+		Vadon::Utilities::Vector2i position = { 0, 0 };
+		Vadon::Utilities::Vector2i relative_motion = { 0, 0 };
 		// TODO: other data?
 	};
 

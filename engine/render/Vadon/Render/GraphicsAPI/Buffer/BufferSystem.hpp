@@ -41,6 +41,7 @@ namespace Vadon::Render
 	{
 	public:
 		virtual BufferHandle create_buffer(const BufferInfo& buffer_info, const void* init_data = nullptr) = 0;
+		virtual bool is_buffer_valid(BufferHandle buffer_handle) const = 0;
 		virtual void remove_buffer(BufferHandle buffer_handle) = 0;
 
 		// TODO: extend API to enable mapping, read/write, etc.?

@@ -22,9 +22,10 @@ namespace VadonApp::Platform
 	public:
 		virtual ~PlatformInterface() {}
 
+		// FIXME: might be better to register callbacks, cache in system, etc?
 		virtual PlatformEventList read_events() = 0;
 
-		// TODO2: multiple windows?
+		// TODO: allow creating multiple windows!
 		virtual RenderWindowInfo get_window_info() const = 0;
 		virtual WindowHandle get_window_handle() const = 0;
 

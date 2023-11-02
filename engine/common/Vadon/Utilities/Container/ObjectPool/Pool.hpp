@@ -78,51 +78,53 @@ namespace Vadon::Utilities
 			return new_typed_handle;
 		}
 
-		const _Type* get(const _Handle& handle) const
+		const bool is_handle_valid(const _Handle& handle) const
 		{
-			if (m_manager.validate(handle.handle))
+			return m_manager.validate(handle.handle);
+		}
+
+		const _Type& get(const _Handle& handle) const
+		{
+			if constexpr (std::is_pointer_v<PoolType>)
 			{
-				return get_unchecked(handle);
+				return *m_pool[handle.handle.index];
+			}
+			else
+			{
+				return m_pool[handle.handle.index];
+			}
+		}
+
+		const _Type* get_safe(const _Handle& handle) const
+		{
+			if (is_handle_valid(handle) == true)
+			{
+				return get(handle);
 			}
 
 			return nullptr;
 		}
 
-		const _Type* get_unchecked(const _Handle& handle) const
+		_Type& get(const _Handle& handle)
 		{
+			return const_cast<_Type&>(const_cast<const _Pool*>(this)->get(handle));
+		}
+
+		_Type* get_safe(const _Handle& handle)
+		{
+			return const_cast<_Type*>(const_cast<const _Pool*>(this)->get_safe(handle));
+		}
+
+		void remove(const _Handle& handle)
+		{
+			m_manager.remove(handle.handle);
+
+			// TODO: run destructor on object even if it's not a pointer?
 			if constexpr (std::is_pointer_v<PoolType>)
 			{
-				return m_pool[handle.handle.index];
+				delete m_pool[handle.handle.index];
+				m_pool[handle.handle.index] = nullptr;
 			}
-			else
-			{
-				return &(m_pool[handle.handle.index]);
-			}
-		}
-
-		_Type* get(const _Handle& handle)
-		{
-			return const_cast<_Type*>(const_cast<const _Pool*>(this)->get(handle));
-		}
-
-		_Type* get_unchecked(const _Handle& handle)
-		{
-			return const_cast<_Type*>(const_cast<const _Pool*>(this)->get_unchecked(handle));
-		}
-
-		bool remove(const _Handle& handle)
-		{
-			if (m_manager.remove(handle.handle))
-			{
-				if constexpr (std::is_pointer_v<PoolType>)
-				{
-					delete m_pool[handle.handle.index];
-					m_pool[handle.handle.index] = nullptr;
-				}
-				return true;
-			}
-
-			return false;
 		}
 
 		class Iterator

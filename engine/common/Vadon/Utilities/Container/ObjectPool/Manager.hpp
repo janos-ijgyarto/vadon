@@ -14,7 +14,7 @@ namespace Vadon::Utilities
 
 		ObjectPoolHandle add();
 		bool validate(const ObjectPoolHandle& handle) const;
-		bool remove(const ObjectPoolHandle& handle);
+		void remove(const ObjectPoolHandle& handle);
 	private:
 		struct Entry
 		{

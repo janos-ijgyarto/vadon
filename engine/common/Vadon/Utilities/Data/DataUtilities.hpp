@@ -4,12 +4,12 @@ namespace Vadon::Utilities
 {
 	struct DataRange
 	{
-		static constexpr int32_t InvalidOffset = int32_t(-1);
+		static constexpr int32_t c_invalid_offset = int32_t(-1);
 
-		int32_t offset = InvalidOffset;
+		int32_t offset = c_invalid_offset;
 		int32_t count = 0;
 
-		bool is_valid() const { return (offset != InvalidOffset); }
+		bool is_valid() const { return (offset != c_invalid_offset); }
 	};
 }
 #endif

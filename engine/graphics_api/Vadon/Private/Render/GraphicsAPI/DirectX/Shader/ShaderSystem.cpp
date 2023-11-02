@@ -100,27 +100,22 @@ namespace Vadon::Private::Render::DirectX
 	void ShaderSystem::apply_shader(ShaderHandle shader_handle)
 	{
 		// TODO: be able to unset shaders?
-		Shader* shader = m_shader_pool.get(shader_handle);
-		if (!shader)
-		{
-			// TODO: warning?
-			return;
-		}
+		const Shader& shader = m_shader_pool.get(shader_handle);
 
 		GraphicsAPI::DeviceContext* device_context = m_graphics_api.get_device_context();
 
-		switch (shader->info.type)
+		switch (shader.info.type)
 		{
 		case ShaderType::VERTEX:
-			device_context->VSSetShader(shader->d3d_vertex_shader.Get(), nullptr, 0);
+			device_context->VSSetShader(shader.d3d_vertex_shader.Get(), nullptr, 0);
 			break;
 		case ShaderType::PIXEL:
-			device_context->PSSetShader(shader->d3d_pixel_shader.Get(), nullptr, 0);
+			device_context->PSSetShader(shader.d3d_pixel_shader.Get(), nullptr, 0);
 			break;
 			// TODO: other shader types?
 		}
 
-		m_current_shaders[Vadon::Utilities::to_integral(shader->info.type)] = shader_handle;
+		m_current_shaders[Vadon::Utilities::to_integral(shader.info.type)] = shader_handle;
 	}
 
 	void ShaderSystem::remove_shader(ShaderHandle /*shader_handle*/)
@@ -130,15 +125,10 @@ namespace Vadon::Private::Render::DirectX
 
 	VertexLayoutHandle ShaderSystem::create_vertex_layout(ShaderHandle shader_handle, const VertexLayoutInfo& layout_info)
 	{
-		Shader* shader = m_shader_pool.get(shader_handle);
-		if (!shader)
-		{
-			// TODO: warning/error?
-			return VertexLayoutHandle();
-		}
+		const Shader& shader = m_shader_pool.get(shader_handle);
 
 		// FIXME: can ILs be used on anything other than a vertex shader?
-		if (shader->info.type != ShaderType::VERTEX)
+		if (shader.info.type != ShaderType::VERTEX)
 		{
 			// TODO: warning/error?
 			return VertexLayoutHandle();
@@ -167,7 +157,7 @@ namespace Vadon::Private::Render::DirectX
 		D3DInputLayout d3d_input_layout;
 
 		if (device->CreateInputLayout(input_element_descs.data(), static_cast<UINT>(input_element_descs.size()),
-			shader->d3d_shader_blob->GetBufferPointer(), shader->d3d_shader_blob->GetBufferSize(), d3d_input_layout.ReleaseAndGetAddressOf()) != S_OK)
+			shader.d3d_shader_blob->GetBufferPointer(), shader.d3d_shader_blob->GetBufferSize(), d3d_input_layout.ReleaseAndGetAddressOf()) != S_OK)
 		{
 			return VertexLayoutHandle();
 		}
@@ -175,9 +165,9 @@ namespace Vadon::Private::Render::DirectX
 		// Everything succeeded, add layout to the cache
 		const VertexLayoutHandle new_layout_handle = m_layout_pool.add();
 
-		VertexLayout* new_layout = m_layout_pool.get(new_layout_handle);
-		new_layout->shader = shader_handle;
-		new_layout->d3d_input_layout = d3d_input_layout;
+		VertexLayout& new_layout = m_layout_pool.get(new_layout_handle);
+		new_layout.shader = shader_handle;
+		new_layout.d3d_input_layout = d3d_input_layout;
 
 		return new_layout_handle;
 	}
@@ -200,14 +190,8 @@ namespace Vadon::Private::Render::DirectX
 			return;
 		}
 
-		VertexLayout* vertex_layout = m_layout_pool.get(layout_handle);
-		if (vertex_layout == nullptr)
-		{
-			// TODO: warning/error?
-			return;
-		}
-
-		if (vertex_layout->shader != current_vshader_handle)
+		VertexLayout& vertex_layout = m_layout_pool.get(layout_handle);
+		if (vertex_layout.shader != current_vshader_handle)
 		{
 			// Cannot set layout to a different shader!
 			// FIXME: error message?
@@ -215,18 +199,13 @@ namespace Vadon::Private::Render::DirectX
 		}
 
 		GraphicsAPI::DeviceContext* device_context = m_graphics_api.get_device_context();
-		device_context->IASetInputLayout(vertex_layout->d3d_input_layout.Get());
+		device_context->IASetInputLayout(vertex_layout.d3d_input_layout.Get());
 	}
 
 	ResourceViewInfo ShaderSystem::get_resource_view_info(ResourceViewHandle resource_view_handle) const
 	{
-		const ShaderResourceView* resource = m_resource_pool.get(resource_view_handle);
-		if (resource == nullptr)
-		{
-			return ResourceViewInfo();
-		}
-
-		return resource->info;
+		const ShaderResourceView& resource = m_resource_pool.get(resource_view_handle);
+		return resource.info;
 	}
 
 	void ShaderSystem::apply_resource(ShaderType shader_type, ResourceViewHandle resource_handle, int32_t slot)
@@ -234,13 +213,8 @@ namespace Vadon::Private::Render::DirectX
 		ID3D11ShaderResourceView* resource_array[] = { nullptr };
 		if (resource_handle.is_valid() == true)
 		{
-			ShaderResourceView* resource = m_resource_pool.get(resource_handle);
-			if (resource == nullptr)
-			{
-				// TODO: error?
-				return;
-			}
-			resource_array[0] = resource->d3d_srv.Get();
+			const ShaderResourceView& resource = m_resource_pool.get(resource_handle);
+			resource_array[0] = resource.d3d_srv.Get();
 		}
 
 		apply_shader_resources(shader_type, m_graphics_api.get_device_context(), slot, 1, resource_array);
@@ -257,13 +231,8 @@ namespace Vadon::Private::Render::DirectX
 			ID3D11ShaderResourceView* current_srv = nullptr;
 			if (current_resource_handle.is_valid() == true)
 			{
-				ShaderResourceView* current_resource = m_resource_pool.get(current_resource_handle);
-				if (current_resource == nullptr)
-				{
-					// TODO: error?
-					return;
-				}
-				current_srv = current_resource->d3d_srv.Get();
+				const ShaderResourceView& current_resource = m_resource_pool.get(current_resource_handle);
+				current_srv = current_resource.d3d_srv.Get();
 			}
 			temp_srv_vector.push_back(current_srv);
 		}
@@ -273,13 +242,9 @@ namespace Vadon::Private::Render::DirectX
 
 	void ShaderSystem::remove_resource(ResourceViewHandle resource_view_handle)
 	{
-		ShaderResourceView* resource = m_resource_pool.get(resource_view_handle);
-		if (!resource)
-		{
-			return;
-		}
+		ShaderResourceView& resource = m_resource_pool.get(resource_view_handle);
+		resource.d3d_srv.Reset();
 
-		resource->d3d_srv.Reset();
 		m_resource_pool.remove(resource_view_handle);
 	}
 
@@ -399,10 +364,10 @@ namespace Vadon::Private::Render::DirectX
 		// Everything succeeded, add the shader to our cache
 		const ShaderHandle new_shader_handle = m_shader_pool.add();
 	
-		Shader* new_shader = m_shader_pool.get(new_shader_handle);
-		new_shader->info = shader_info;
-		new_shader->d3d_shader_blob = new_shader_blob;
-		new_shader->d3d_vertex_shader = d3d_vertex_shader;
+		Shader& new_shader = m_shader_pool.get(new_shader_handle);
+		new_shader.info = shader_info;
+		new_shader.d3d_shader_blob = new_shader_blob;
+		new_shader.d3d_vertex_shader = d3d_vertex_shader;
 
 		return new_shader_handle;
 	}
@@ -426,10 +391,10 @@ namespace Vadon::Private::Render::DirectX
 		// Everything succeeded, add the shader to our cache
 		const ShaderHandle new_shader_handle = m_shader_pool.add();
 
-		Shader* new_shader = m_shader_pool.get(new_shader_handle);
-		new_shader->info = shader_info;
-		new_shader->d3d_shader_blob = new_shader_blob;
-		new_shader->d3d_pixel_shader = d3d_pixel_shader;
+		Shader& new_shader = m_shader_pool.get(new_shader_handle);
+		new_shader.info = shader_info;
+		new_shader.d3d_shader_blob = new_shader_blob;
+		new_shader.d3d_pixel_shader = d3d_pixel_shader;
 
 		return new_shader_handle;
 	}
@@ -475,9 +440,9 @@ namespace Vadon::Private::Render::DirectX
 	{
 		ResourceViewHandle new_resource_handle = m_resource_pool.add();
 
-		ShaderResourceView* new_resource = m_resource_pool.get(new_resource_handle);
-		new_resource->info = srv_info;
-		new_resource->d3d_srv = d3d_srv;
+		ShaderResourceView& new_resource = m_resource_pool.get(new_resource_handle);
+		new_resource.info = srv_info;
+		new_resource.d3d_srv = d3d_srv;
 
 		return new_resource_handle;
 	}

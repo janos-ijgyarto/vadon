@@ -9,7 +9,7 @@ namespace Vadon::Private::Render::Dummy
 		return WindowHandle();
 	}
 
-	WindowInfo RenderTargetSystem::get_window_info(WindowHandle /*window_handle*/)
+	WindowInfo RenderTargetSystem::get_window_info(WindowHandle /*window_handle*/) const
 	{
 		// TODO
 		return WindowInfo();
@@ -76,7 +76,7 @@ namespace Vadon::Private::Render::Dummy
 		// TODO
 	}
 
-	RenderTargetHandle RenderTargetSystem::get_window_target(WindowHandle /*window_handle*/)
+	RenderTargetHandle RenderTargetSystem::get_window_target(WindowHandle /*window_handle*/) const
 	{
 		// TODO
 		return RenderTargetHandle();

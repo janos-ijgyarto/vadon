@@ -79,13 +79,13 @@ namespace Vadon::Private::Render
 
 			// TODO: make sure graph is DAG!!!
 			FrameGraphHandle new_graph_handle = m_graph_pool.add();
-			FrameGraph* new_frame_graph = m_graph_pool.get(new_graph_handle);
+			FrameGraph& new_frame_graph = m_graph_pool.get(new_graph_handle);
 
 			// Store the node data
-			new_frame_graph->nodes.reserve(graph_info.passes.size());
+			new_frame_graph.nodes.reserve(graph_info.passes.size());
 			for (const Vadon::Render::RenderPass& current_pass : graph_info.passes)
 			{
-				new_frame_graph->nodes.emplace_back(FrameGraphNode{ current_pass, Vadon::Utilities::DataRange() });
+				new_frame_graph.nodes.emplace_back(FrameGraphNode{ current_pass, Vadon::Utilities::DataRange() });
 			}
 
 			// Cache root nodes
@@ -95,17 +95,17 @@ namespace Vadon::Private::Render
 				{
 					if (is_root)
 					{
-						new_frame_graph->root_nodes.push_back(current_node_index);
+						new_frame_graph.root_nodes.push_back(current_node_index);
 					}
 					++current_node_index;
 				}
 
-				std::sort(new_frame_graph->root_nodes.begin(), new_frame_graph->root_nodes.end());
+				std::sort(new_frame_graph.root_nodes.begin(), new_frame_graph.root_nodes.end());
 			}
 
 			// Build the graph
 			{
-				std::vector<size_t> node_index_queue(new_frame_graph->root_nodes);
+				std::vector<size_t> node_index_queue(new_frame_graph.root_nodes);
 				size_t current_queue_index = 0;
 
 				// Keep track of which nodes we added already
@@ -114,14 +114,14 @@ namespace Vadon::Private::Render
 				while (current_queue_index < node_index_queue.size())
 				{
 					const size_t current_node_index = node_index_queue[current_queue_index];
-					FrameGraphNode& current_node = new_frame_graph->nodes[current_node_index];
+					FrameGraphNode& current_node = new_frame_graph.nodes[current_node_index];
 
 					auto pass_children_it = pass_child_lookup.find(current_node_index);
 					if (pass_children_it != pass_child_lookup.end())
 					{
 						const PassIndexVector& current_node_children = pass_children_it->second;
 						current_node.child_nodes.count = static_cast<int32_t>(current_node_children.size());
-						current_node.child_nodes.offset = static_cast<int32_t>(new_frame_graph->child_indices.size());
+						current_node.child_nodes.offset = static_cast<int32_t>(new_frame_graph.child_indices.size());
 
 						for (size_t current_child_index : current_node_children)
 						{
@@ -129,7 +129,7 @@ namespace Vadon::Private::Render
 							if (!visited_nodes[current_child_index])
 							{
 								node_index_queue.push_back(current_child_index);
-								new_frame_graph->child_indices.push_back(current_child_index);
+								new_frame_graph.child_indices.push_back(current_child_index);
 
 								visited_nodes[current_child_index] = true;
 							}
@@ -148,16 +148,16 @@ namespace Vadon::Private::Render
 	{
 		// FIXME: fit this into the task system?
 		// We should be able to run render tasks in parallel with unrelated tasks, as long as render tasks themselves are kept in sequence
-		FrameGraph* frame_graph = m_graph_pool.get(graph_handle);
+		FrameGraph& frame_graph = m_graph_pool.get(graph_handle);
 	
 		// Execute the graph breadth-first
-		std::vector<size_t> node_index_queue(frame_graph->root_nodes);
+		std::vector<size_t> node_index_queue(frame_graph.root_nodes);
 		size_t current_queue_index = 0;
 
 		while (current_queue_index < node_index_queue.size())
 		{
 			const size_t current_node_index = node_index_queue[current_queue_index];
-			const FrameGraphNode& current_node = frame_graph->nodes[current_node_index];
+			const FrameGraphNode& current_node = frame_graph.nodes[current_node_index];
 
 			// Run the pass execution function
 			current_node.pass.execution();
@@ -165,7 +165,7 @@ namespace Vadon::Private::Render
 			// Add children to queue
 			if (current_node.child_nodes.count > 0)
 			{
-				auto child_indices_begin = frame_graph->child_indices.begin() + current_node.child_nodes.offset;
+				auto child_indices_begin = frame_graph.child_indices.begin() + current_node.child_nodes.offset;
 				auto child_indices_end = child_indices_begin + current_node.child_nodes.count;
 
 				node_index_queue.insert(node_index_queue.end(), child_indices_begin, child_indices_end);

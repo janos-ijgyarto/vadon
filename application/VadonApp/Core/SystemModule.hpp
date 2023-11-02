@@ -14,6 +14,6 @@ namespace VadonApp::Core
 	template<typename ModuleList, typename ModuleImpl, typename... Systems>
 	using SystemModule = Vadon::Core::SystemModule<ModuleList, ModuleImpl, Systems...>;
 
-	using SystemModuleList = Vadon::Utilities::TypeList<class Platform::PlatformModule, class UI::UIModule>;
+	using SystemModuleList = Vadon::Utilities::TypeList<Platform::PlatformModule, UI::UIModule>;
 }
 #endif
