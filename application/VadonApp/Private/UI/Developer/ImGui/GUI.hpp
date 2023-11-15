@@ -19,6 +19,8 @@ namespace VadonApp::Private::UI::Developer::ImGUI
 		bool initialize() override;
 		void shutdown() override;
 
+		IOFlags get_io_flags() const override;
+
 		void dispatch_platform_events(const VadonApp::Platform::PlatformEventList& platform_events) override;
 
 		void start_frame() override;

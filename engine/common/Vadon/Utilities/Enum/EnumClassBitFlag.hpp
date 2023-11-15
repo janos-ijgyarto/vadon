@@ -84,4 +84,6 @@ std::enable_if_t<Vadon::Utilities::EnableEnumBitwiseOperators<T>::value, T>& ope
 	lhs = Vadon::Utilities::to_enum<T>(Vadon::Utilities::to_integral(lhs) >> rhs);
 	return lhs;
 }
+
+#define VADON_ENABLE_BITWISE_OPERATORS(_type) namespace Vadon::Utilities { template<> struct EnableEnumBitwiseOperators<_type> : public std::true_type{}; }
 #endif

@@ -3,13 +3,24 @@
 #include <VadonApp/UI/UIModule.hpp>
 #include <VadonApp/UI/Developer/GUIElements.hpp>
 #include <VadonApp/Platform/Event/Event.hpp>
+#include <Vadon/Utilities/Enum/EnumClassBitFlag.hpp>
 namespace VadonApp::UI::Developer
 {
 	// Developer GUI, primarily based on ImGui
 	class GUISystem : public UISystemBase<GUISystem>
 	{
 	public:
+		enum class IOFlags
+		{
+			NONE = 0,
+			MOUSE_CAPTURE = 1 << 0,
+			KEYBOARD_CAPTURE = 1 << 1,
+			TEXT_INPUT = 1 << 2
+		};
+
 		virtual ~GUISystem() {}
+
+		virtual IOFlags get_io_flags() const = 0;
 
 		// FIXME:
 		// - Decouple from specific window
@@ -65,4 +76,5 @@ namespace VadonApp::UI::Developer
 		GUISystem(Core::Application& application) : System(application) {}
 	};
 }
+VADON_ENABLE_BITWISE_OPERATORS(VadonApp::UI::Developer::GUISystem::IOFlags)
 #endif

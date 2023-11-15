@@ -574,6 +574,29 @@ float4 main(PS_INPUT input) : SV_Target
         log("ImGui shut down successfully!\n");
     }
 
+    GUISystem::IOFlags GUISystem::get_io_flags() const
+    {
+        IOFlags flags = IOFlags::NONE;
+        ImGuiIO& io = ImGui::GetIO();
+
+        if (io.WantCaptureMouse == true)
+        {
+            flags |= IOFlags::MOUSE_CAPTURE;
+        }
+
+        if (io.WantCaptureKeyboard == true)
+        {
+            flags |= IOFlags::KEYBOARD_CAPTURE;
+        }
+
+        if (io.WantTextInput == true)
+        {
+            flags |= IOFlags::TEXT_INPUT;
+        }
+
+        return flags;
+    }
+
     void GUISystem::dispatch_platform_events(const VadonApp::Platform::PlatformEventList& platform_events)
     {
         auto platform_event_visitor = Vadon::Utilities::VisitorOverloadList {
