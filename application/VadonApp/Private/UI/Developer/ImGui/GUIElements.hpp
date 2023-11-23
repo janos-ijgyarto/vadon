@@ -26,5 +26,6 @@ namespace VadonApp::Private::UI::Developer::ImGUI
 	using Checkbox = VadonApp::UI::Developer::Checkbox;
 
 	using ListBox = VadonApp::UI::Developer::ListBox;
+	using ComboBox = VadonApp::UI::Developer::ComboBox;
 }
 #endif

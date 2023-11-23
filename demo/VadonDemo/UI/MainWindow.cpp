@@ -98,6 +98,7 @@ float4 main(PS_INPUT input) : SV_Target
 			VadonApp::UI::Developer::Button task_test_button;
 
 			VadonApp::UI::Developer::ListBox list_box;
+			VadonApp::UI::Developer::ComboBox combo_box;
 
 			void initialize()
 			{
@@ -157,9 +158,11 @@ float4 main(PS_INPUT input) : SV_Target
 				task_test_button.label = "Test task system";
 
 				list_box.label = "List Box";
+				combo_box.label = "Combo Box";
 				for(size_t current_list_item_index = 0; current_list_item_index < 10; ++current_list_item_index)
 				{
-					list_box.items.emplace_back("Item_" + std::to_string(current_list_item_index));
+					list_box.items.emplace_back("List_Item_" + std::to_string(current_list_item_index));
+					combo_box.items.emplace_back("Combo_Item_" + std::to_string(current_list_item_index));
 				}
 			}
 		};
@@ -496,6 +499,14 @@ float4 main(PS_INPUT input) : SV_Target
 							if (dev_gui.push_tree_node("List Box"))
 							{
 								dev_gui.draw_list_box(m_dev_gui.list_box);
+								dev_gui.add_text(std::format("Selected list item: index = {}, text = \"{}\"", m_dev_gui.list_box.selected_item, m_dev_gui.list_box.items[m_dev_gui.list_box.selected_item]));
+								dev_gui.pop_tree_node();
+							}
+
+							if (dev_gui.push_tree_node("Combo Box"))
+							{
+								dev_gui.draw_combo_box(m_dev_gui.combo_box);
+								dev_gui.add_text(std::format("Selected combo item: index = {}, text = \"{}\"", m_dev_gui.combo_box.selected_item, m_dev_gui.combo_box.items[m_dev_gui.combo_box.selected_item]));
 								dev_gui.pop_tree_node();
 							}
 

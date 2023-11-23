@@ -91,8 +91,17 @@ namespace VadonApp::UI::Developer
 		bool checked = false;
 	};
 
+	// FIXME: merge these two?
 	struct ListBox
 	{
+		std::string label;
+		std::vector<std::string> items;
+		size_t selected_item = 0;
+	};
+
+	struct ComboBox
+	{
+		// TODO: flags!
 		std::string label;
 		std::vector<std::string> items;
 		size_t selected_item = 0;

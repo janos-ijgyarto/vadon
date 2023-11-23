@@ -867,6 +867,32 @@ float4 main(PS_INPUT input) : SV_Target
         return false;
     }
 
+    bool GUISystem::draw_combo_box(ComboBox& combo_box)
+    {
+        const char* preview_item = combo_box.items.empty() ? nullptr : combo_box.items[combo_box.selected_item].c_str();
+        if (ImGui::BeginCombo(combo_box.label.c_str(), preview_item) == true)
+        {
+            size_t current_item_index = 0;
+            for (const std::string& current_item : combo_box.items)
+            {
+                const bool is_selected = (current_item_index == combo_box.selected_item);
+                if (ImGui::Selectable(current_item.c_str(), is_selected) == true)
+                {
+                    combo_box.selected_item = current_item_index;
+                }
+                if (is_selected)
+                {
+                    ImGui::SetItemDefaultFocus();   // Set the initial focus when opening the combo (scrolling + for keyboard navigation support in the upcoming navigation branch)
+                }
+                ++current_item_index;
+            }
+            ImGui::EndCombo();
+            return true;
+        }
+
+        return false;
+    }
+
     void GUISystem::add_text(std::string_view text)
     {
         ImGui::Text(text.data());

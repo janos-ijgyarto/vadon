@@ -162,6 +162,11 @@ namespace VadonApp::Private::UI::Developer::Dummy
         return false;
     }
 
+    bool GUISystem::draw_combo_box(ComboBox& /*combo_box*/)
+    {
+        return false;
+    }
+
     void GUISystem::add_text(std::string_view /*text*/)
     {
         // TODO

@@ -53,6 +53,7 @@ namespace VadonApp::Private::UI::Developer::Dummy
 		bool draw_checkbox(Checkbox& checkbox) override;
 
 		bool draw_list_box(ListBox& list_box) override;
+		bool draw_combo_box(ComboBox& combo_box) override;
 
 		void add_text(std::string_view text) override;
 		void add_text_unformatted(std::string_view text) override;

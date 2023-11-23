@@ -65,6 +65,7 @@ namespace VadonApp::UI::Developer
 		virtual bool draw_checkbox(Checkbox& checkbox) = 0;
 
 		virtual bool draw_list_box(ListBox& list_box) = 0;
+		virtual bool draw_combo_box(ComboBox& combo_box) = 0;
 
 		virtual void add_text(std::string_view text) = 0;
 		virtual void add_text_unformatted(std::string_view text) = 0;
