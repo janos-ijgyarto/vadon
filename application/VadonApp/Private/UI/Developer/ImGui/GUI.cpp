@@ -893,6 +893,22 @@ float4 main(PS_INPUT input) : SV_Target
         return false;
     }
 
+    bool GUISystem::begin_table(const Table& table)
+    {
+        // FIXME: make flags modifiable!
+        return ImGui::BeginTable(table.label.c_str(), table.column_count, ImGuiTableFlags_ScrollX | ImGuiTableFlags_ScrollY);
+    }
+
+    void GUISystem::next_table_column()
+    {
+        ImGui::TableNextColumn();
+    }
+
+    void GUISystem::end_table()
+    {
+        ImGui::EndTable();
+    }
+
     void GUISystem::add_text(std::string_view text)
     {
         ImGui::Text(text.data());

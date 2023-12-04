@@ -27,5 +27,7 @@ namespace VadonApp::Private::UI::Developer::ImGUI
 
 	using ListBox = VadonApp::UI::Developer::ListBox;
 	using ComboBox = VadonApp::UI::Developer::ComboBox;
+
+	using Table = VadonApp::UI::Developer::Table;
 }
 #endif

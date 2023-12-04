@@ -167,6 +167,21 @@ namespace VadonApp::Private::UI::Developer::Dummy
         return false;
     }
 
+    bool GUISystem::begin_table(const Table& /*table*/)
+    {
+        return false;
+    }
+
+    void GUISystem::next_table_column()
+    {
+        // TODO
+    }
+
+    void GUISystem::end_table()
+    {
+        // TODO
+    }
+
     void GUISystem::add_text(std::string_view /*text*/)
     {
         // TODO

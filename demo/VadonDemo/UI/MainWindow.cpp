@@ -100,6 +100,9 @@ float4 main(PS_INPUT input) : SV_Target
 			VadonApp::UI::Developer::ListBox list_box;
 			VadonApp::UI::Developer::ComboBox combo_box;
 
+			VadonApp::UI::Developer::Table table;
+			std::vector<int32_t> table_data;
+
 			void initialize()
 			{
 				window.title = "Demo dev GUI window";
@@ -163,6 +166,19 @@ float4 main(PS_INPUT input) : SV_Target
 				{
 					list_box.items.emplace_back("List_Item_" + std::to_string(current_list_item_index));
 					combo_box.items.emplace_back("Combo_Item_" + std::to_string(current_list_item_index));
+				}
+
+				constexpr int32_t table_size = 100;
+				table.label = "Table";
+				table.column_count = table_size;
+
+				table_data.reserve(table_size * table_size);
+				for (int32_t current_y = 0; current_y < table_size; ++current_y)
+				{
+					for (int32_t current_x = 0; current_x < table_size; ++current_x)
+					{
+						table_data.push_back(current_x + (current_y * table_size));
+					}
 				}
 			}
 		};
@@ -507,6 +523,20 @@ float4 main(PS_INPUT input) : SV_Target
 							{
 								dev_gui.draw_combo_box(m_dev_gui.combo_box);
 								dev_gui.add_text(std::format("Selected combo item: index = {}, text = \"{}\"", m_dev_gui.combo_box.selected_item, m_dev_gui.combo_box.items[m_dev_gui.combo_box.selected_item]));
+								dev_gui.pop_tree_node();
+							}
+
+							if (dev_gui.push_tree_node("Table"))
+							{
+								if (dev_gui.begin_table(m_dev_gui.table) == true)
+								{
+									for (int32_t current_value : m_dev_gui.table_data)
+									{
+										dev_gui.next_table_column();
+										dev_gui.add_text(std::to_string(current_value));
+									}
+									dev_gui.end_table();
+								}
 								dev_gui.pop_tree_node();
 							}
 

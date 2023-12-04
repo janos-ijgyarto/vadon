@@ -106,5 +106,12 @@ namespace VadonApp::UI::Developer
 		std::vector<std::string> items;
 		size_t selected_item = 0;
 	};
+
+	struct Table
+	{
+		// TODO: flags!
+		std::string label;
+		int32_t column_count = 0;
+	};
 }
 #endif

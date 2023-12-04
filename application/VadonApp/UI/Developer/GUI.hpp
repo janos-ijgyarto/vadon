@@ -67,6 +67,11 @@ namespace VadonApp::UI::Developer
 		virtual bool draw_list_box(ListBox& list_box) = 0;
 		virtual bool draw_combo_box(ComboBox& combo_box) = 0;
 
+		// NOTE: use in combination with add_text to enter the cell contents
+		virtual bool begin_table(const Table& table) = 0;
+		virtual void next_table_column() = 0;
+		virtual void end_table() = 0;
+
 		virtual void add_text(std::string_view text) = 0;
 		virtual void add_text_unformatted(std::string_view text) = 0;
 
