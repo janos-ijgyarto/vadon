@@ -1,8 +1,7 @@
 #ifndef VADON_RENDER_GRAPHICSAPI_GRAPHICSMODULE_HPP
 #define VADON_RENDER_GRAPHICSAPI_GRAPHICSMODULE_HPP
-#include <Vadon/Core/System/EngineSystem.hpp>
+#include <Vadon/Core/System/System.hpp>
 #include <Vadon/Core/System/SystemModule.hpp>
-#include <Vadon/Core/System/SystemModuleList.hpp>
 namespace Vadon::Render
 {
 	class GraphicsModule : public Core::SystemModule<Core::SystemModuleList, GraphicsModule, class GraphicsAPI, class BufferSystem, class PipelineSystem,
@@ -11,6 +10,6 @@ namespace Vadon::Render
 	};
 
 	template<typename SysImpl>
-	using GraphicsSystem = Core::EngineSystem<GraphicsModule, SysImpl>;
+	using GraphicsSystem = Core::System<GraphicsModule, SysImpl>;
 }
 #endif

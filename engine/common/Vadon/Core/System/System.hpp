@@ -1,28 +1,35 @@
 #ifndef VADON_CORE_SYSTEM_SYSTEM_HPP
 #define VADON_CORE_SYSTEM_SYSTEM_HPP
-#include <Vadon/Core/System/SystemRegistry.hpp>
+#include <Vadon/Core/CoreInterface.hpp>
+#include <Vadon/Core/Logger.hpp>
+#include <Vadon/Utilities/Type/Singleton.hpp>
 namespace Vadon::Core
 {
-	class SystemBase
-	{
-	protected:
-		SystemBase(SystemRegistry& registry, size_t module_index, size_t system_index)			
-		{
-			registry.register_system(this, module_index, system_index);
-		}		
-	};
-
-	template<typename Module, typename SysImpl>
-	class System : public SystemBase
+	class SystemBase : public Logger
 	{
 	public:
-		using _Module = Module;
-		using _System = SysImpl;
-
-		static constexpr size_t get_type_id() { return _Module::template get_system_id<_System>(); }
+		void log(std::string_view message) override { m_engine_core.get_logger().log(message); }
+		void warning(std::string_view message) override { m_engine_core.get_logger().warning(message); }
+		void error(std::string_view message) override { m_engine_core.get_logger().error(message); }
 	protected:
-		System(SystemRegistry& registry)
-			: SystemBase(registry, _Module::get_type_id(), _Module::template get_system_id<_System>())
+		SystemBase(EngineCoreInterface& engine_core)
+			: m_engine_core(engine_core)
+		{
+		}
+
+		// FIXME: this is a hack, should have a proper way to give access to the registry!
+		Utilities::SingletonRegistry& get_registry() { return m_engine_core.m_singleton_registry; }
+
+		EngineCoreInterface& m_engine_core;
+	};
+			
+	template<typename Module, typename SysImpl>
+	class System : public SystemBase, public Utilities::Singleton<Module, SysImpl>
+	{
+	protected:
+		System(EngineCoreInterface& core)
+			: SystemBase(core)
+			, Utilities::Singleton<Module, SysImpl>(get_registry())
 		{
 		}
 	};

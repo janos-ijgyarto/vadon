@@ -19,16 +19,19 @@ namespace VadonApp::Core
 			: m_application(application)
 		{}
 
+		// FIXME: this is a hack, should have a proper way to give access to the registry!
+		Vadon::Utilities::SingletonRegistry& get_registry() { return m_application.m_singleton_registry; }
+
 		Application& m_application;
 	};
 
 	template<typename Module, typename SysImpl>
-	class System : public SystemBase, public Vadon::Core::System<Module, SysImpl>
+	class System : public SystemBase, public Vadon::Utilities::Singleton<Module, SysImpl>
 	{
 	protected:
 		System(Application& application)
 			: SystemBase(application)
-			, Vadon::Core::System<Module, SysImpl>(application)
+			, Vadon::Utilities::Singleton<Module, SysImpl>(get_registry())
 		{
 		}
 	};

@@ -14,7 +14,7 @@ namespace Vadon::Render
 		virtual void remove_graph(FrameGraphHandle graph_handle) = 0;
 	protected:
 		FrameSystem(Core::EngineCoreInterface& core) 
-			: EngineSystem(core)
+			: System(core)
 		{}
 	};
 }

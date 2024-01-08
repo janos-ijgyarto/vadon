@@ -2,8 +2,7 @@
 #define VADONAPP_CORE_APPLICATION_HPP
 #include <VadonApp/VadonApp.hpp>
 #include <VadonApp/Core/Configuration.hpp>
-
-#include <Vadon/Core/System/SystemRegistry.hpp>
+#include <VadonApp/Core/SystemRegistry.hpp>
 
 namespace Vadon::Core
 {
@@ -14,7 +13,7 @@ namespace VadonApp::Core
 {
 	class SystemBase;
 
-	class Application : public Vadon::Core::SystemRegistry
+	class Application : public SystemRegistry
 	{
 	public:
 		using Instance = std::unique_ptr<Application>;

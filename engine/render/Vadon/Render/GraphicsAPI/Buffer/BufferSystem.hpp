@@ -58,7 +58,7 @@ namespace Vadon::Render
 		virtual ResourceViewHandle create_resource_view(BufferHandle buffer_handle, const BufferResourceViewInfo& resource_view_info) = 0;
 	protected:
 		BufferSystem(Core::EngineCoreInterface& core) 
-			: EngineSystem(core) 
+			: System(core) 
 		{
 		}
 	};

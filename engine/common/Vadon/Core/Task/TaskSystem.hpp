@@ -21,7 +21,7 @@ namespace Vadon::Core
 		virtual bool stop_requested() const = 0;
 	protected:
 		TaskSystem(EngineCoreInterface& core) 
-			: EngineSystem(core) 
+			: System(core) 
 		{
 		}
 	};

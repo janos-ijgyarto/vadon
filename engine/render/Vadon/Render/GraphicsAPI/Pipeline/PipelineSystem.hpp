@@ -27,7 +27,8 @@ namespace Vadon::Render
 		virtual void set_primitive_topology(PrimitiveTopology topology) = 0;
 		virtual void set_scissor(const Utilities::RectangleInt& scissor_rectangle) = 0;
 	protected:
-		PipelineSystem(Core::EngineCoreInterface& core) : EngineSystem(core) 
+		PipelineSystem(Core::EngineCoreInterface& core) : 
+			System(core) 
 		{
 		}
 	};

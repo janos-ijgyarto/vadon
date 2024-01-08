@@ -30,7 +30,7 @@ namespace Vadon::Render
 		virtual void draw(const DrawCommand& command) = 0;
 	protected:
 		GraphicsAPI(Core::EngineCoreInterface& core) 
-			: EngineSystem(core) 
+			: System(core) 
 		{
 		}
 	};

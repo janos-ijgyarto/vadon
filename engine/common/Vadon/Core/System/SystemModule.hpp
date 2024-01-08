@@ -1,19 +1,16 @@
 #ifndef VADON_CORE_SYSTEM_SYSTEMMODULE_HPP
 #define VADON_CORE_SYSTEM_SYSTEMMODULE_HPP
-#include <Vadon/Utilities/Type/TypeList.hpp>
+#include <Vadon/Utilities/Type/SingletonModule.hpp>
+namespace Vadon::Render
+{
+	class RenderModule;
+	class GraphicsModule;
+}
 namespace Vadon::Core
 {
-	template<typename ModuleList, typename ModuleImpl, typename... Systems>
-	class SystemModule
-	{
-	public:
-		using _Module = ModuleImpl;
-		using SystemList = Vadon::Utilities::TypeList<Systems...>;
+	template<typename ModuleList, typename ModuleImpl, typename... Types>
+	using SystemModule = Utilities::SingletonModule<ModuleList, ModuleImpl, Types...>;
 
-		static constexpr size_t get_type_id() { return ModuleList::template get_type_id<_Module>(); }
-
-		template<typename Sys>
-		static constexpr size_t get_system_id() { return SystemList::template get_type_id<Sys>(); }
-	};
+	using SystemModuleList = Vadon::Utilities::TypeList<class CoreModule, class Render::RenderModule, class Render::GraphicsModule>;
 }
 #endif

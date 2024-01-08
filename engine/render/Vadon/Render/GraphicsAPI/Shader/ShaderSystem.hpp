@@ -34,7 +34,7 @@ namespace Vadon::Render
 		virtual void remove_resource(ResourceViewHandle resource_view_handle) = 0;
 	protected:
 		ShaderSystem(Core::EngineCoreInterface& core) 
-			: EngineSystem(core) 
+			: System(core) 
 		{
 		}
 	};

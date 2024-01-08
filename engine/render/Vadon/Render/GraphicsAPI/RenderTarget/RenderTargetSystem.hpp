@@ -38,7 +38,7 @@ namespace Vadon::Render
 		virtual RenderTargetHandle get_window_target(WindowHandle window_handle) const = 0;
 	protected:
 		RenderTargetSystem(Core::EngineCoreInterface& core) 
-			: EngineSystem(core) 
+			: System(core) 
 		{
 		}
 	};

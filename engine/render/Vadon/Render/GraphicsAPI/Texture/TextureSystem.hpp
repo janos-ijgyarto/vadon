@@ -35,7 +35,7 @@ namespace Vadon::Render
 		virtual void set_sampler_slots(ShaderType shader_type, const TextureSamplerSpan& samplers) = 0;
 	protected:
 		TextureSystem(Core::EngineCoreInterface& core) 
-			: EngineSystem(core) 
+			: System(core) 
 		{
 		}
 	};
