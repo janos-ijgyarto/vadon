@@ -12,7 +12,7 @@ namespace Vadon::Utilities
 	public:
 		template<typename T> const T& get() const
 		{
-			return *static_cast<const T*>(get_internal(T::_Module::get_module_id(), T::get_type_id()));
+			return *static_cast<const T*>(get_base(get_offset<T>()));
 		}
 
 		template<typename T> T& get()
@@ -20,10 +20,16 @@ namespace Vadon::Utilities
 			return const_cast<T&>(const_cast<const SingletonRegistry*>(this)->get<T>());
 		}
 
+		template<typename T> size_t get_offset() const
+		{
+			return get_offset_internal(T::_Module::get_module_id(), T::get_type_id());
+		}
+
+		SingletonBase* get_base(size_t offset) const { return m_instances[offset]; }
 	protected:
 		VADONCOMMON_API void register_instance(SingletonBase* instance, size_t module_index, size_t type_index);
 	private:
-		VADONCOMMON_API const SingletonBase* get_internal(size_t module_index, size_t type_index) const;
+		VADONCOMMON_API size_t get_offset_internal(size_t module_index, size_t type_index) const;
 
 		using OffsetList = std::vector<size_t>;
 		std::vector<OffsetList> m_module_instance_offsets;
