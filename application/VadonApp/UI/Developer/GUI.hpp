@@ -18,6 +18,18 @@ namespace VadonApp::UI::Developer
 			TEXT_INPUT = 1 << 2
 		};
 
+		enum class TreeNodeFlags
+		{
+			NONE = 0,
+			SELECTED = 1 << 0,
+			FRAMED = 1 << 1,
+			DEFAULT_OPEN = 1 << 5,
+			OPEN_ON_DOUBLE_CLICK = 1 << 6,
+			OPEN_ON_ARROW = 1 << 7,
+			LEAF = 1 << 8,
+			BULLET = 1 << 9
+		};
+
 		virtual ~GUISystem() {}
 
 		virtual IOFlags get_io_flags() const = 0;
@@ -37,13 +49,23 @@ namespace VadonApp::UI::Developer
 		virtual void swap_frame(int32_t source_index, int32_t target_index) = 0; // Swap cached frame data (allows creating a "ready buffer" for multithreaded environments)
 		virtual void render_frame(int32_t frame_index) = 0; // Render from cached frame
 
+		virtual void push_id(std::string_view string_id) = 0;
+		virtual void push_id(const void* pointer_id) = 0;
+		virtual void push_id(int32_t int_id) = 0;
+		virtual void pop_id() = 0;
+
 		virtual bool begin_window(Window& window) = 0;
 		virtual void end_window() = 0;
 
+		virtual bool is_window_focused() const = 0; // TODO: flags!
+		virtual bool is_window_hovered() const = 0; // TODO: flags!
+		
 		virtual bool begin_child_window(const ChildWindow& window) = 0;
 		virtual void end_child_window() = 0;
 
-		virtual bool push_tree_node(std::string_view label) = 0;
+		virtual bool push_tree_node(std::string_view label, TreeNodeFlags flags = TreeNodeFlags::NONE) = 0;
+		virtual bool push_tree_node(std::string_view id, std::string_view label, TreeNodeFlags flags = TreeNodeFlags::NONE) = 0;
+		virtual bool push_tree_node(const void* id, std::string_view label, TreeNodeFlags flags = TreeNodeFlags::NONE) = 0;
 		virtual void pop_tree_node() = 0;
 
 		virtual bool draw_input_int(InputInt& input_int) = 0;
@@ -78,9 +100,25 @@ namespace VadonApp::UI::Developer
 		virtual void same_line() = 0;
 		virtual void set_scroll_x(float ratio = 0.5f) = 0;
 		virtual void set_scroll_y(float ratio = 0.5f) = 0;
+
+		virtual bool is_item_hovered() const = 0;
+		virtual bool is_item_active() const = 0;
+		virtual bool is_item_focused() const = 0;
+		virtual bool is_item_clicked(Platform::MouseButton mouse_button = Platform::MouseButton::LEFT) const = 0;
+		virtual bool is_item_toggled_open() const = 0;
+
+		virtual bool is_key_down(Platform::KeyCode key) const = 0;
+		virtual bool is_key_pressed(Platform::KeyCode key, bool repeat = true) const = 0;
+		virtual bool is_key_released(Platform::KeyCode key) const = 0;
+		 
+		virtual bool is_mouse_down(Platform::MouseButton button) const = 0;
+		virtual bool is_mouse_clicked(Platform::MouseButton button, bool repeat = false) const = 0;
+		virtual bool is_mouse_released(Platform::MouseButton button) const = 0;
+		virtual bool is_mouse_double_clicked(Platform::MouseButton button) const = 0;
 	protected:
 		GUISystem(Core::Application& application) : System(application) {}
 	};
 }
 VADON_ENABLE_BITWISE_OPERATORS(VadonApp::UI::Developer::GUISystem::IOFlags)
+VADON_ENABLE_BITWISE_OPERATORS(VadonApp::UI::Developer::GUISystem::TreeNodeFlags)
 #endif

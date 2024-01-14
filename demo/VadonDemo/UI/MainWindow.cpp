@@ -70,6 +70,186 @@ float4 main(PS_INPUT input) : SV_Target
 
 		using VertexList = std::vector<Vertex>;
 
+		struct TreeNode
+		{
+			std::string label;
+			TreeNode* parent = nullptr;
+			std::vector<TreeNode*> children;
+
+			~TreeNode()
+			{
+				for (TreeNode* current_child : children)
+				{
+					delete current_child;
+				}
+			}
+
+			void add_child()
+			{
+				TreeNode* new_child = new TreeNode();
+				new_child->label = "Node";
+				new_child->parent = this;
+
+				children.push_back(new_child);
+			}
+
+			void remove_child(TreeNode* child)
+			{
+				auto child_it = std::find(children.begin(), children.end(), child);
+				if (child_it != children.end())
+				{
+					children.erase(child_it);
+					delete child;
+				}
+			}
+		};
+
+		struct TreeEditor
+		{
+			TreeNode root_node;
+
+			TreeNode* selected_node = nullptr;
+			std::string selected_node_label;
+
+			VadonApp::UI::Developer::ChildWindow window;
+			VadonApp::UI::Developer::Button add_child_button;
+			VadonApp::UI::Developer::Button remove_node_button;
+			VadonApp::UI::Developer::InputText node_name_input;
+
+			TreeEditor()
+			{
+				root_node.label = "Root";
+
+				window.id = "Tree";
+				window.size = Vadon::Utilities::Vector2(400, 300);
+				window.border = true;
+
+				add_child_button.label = "Add child";
+				remove_node_button.label = "Remove node";
+				node_name_input.label = "Node name";
+			}
+
+			void render(VadonApp::UI::Developer::GUISystem& dev_gui)
+			{
+				TreeNode* clicked_node = nullptr;
+				if (dev_gui.begin_child_window(window) == true)
+				{
+					const VadonApp::UI::Developer::GUISystem::TreeNodeFlags node_base_flags = VadonApp::UI::Developer::GUISystem::TreeNodeFlags::OPEN_ON_ARROW | VadonApp::UI::Developer::GUISystem::TreeNodeFlags::OPEN_ON_DOUBLE_CLICK;
+					if (dev_gui.push_tree_node(&root_node, root_node.label, node_base_flags) == true)
+					{
+						struct NodeStackEntry
+						{
+							TreeNode* node = nullptr;
+							size_t child_index = 0;
+
+							bool is_valid() const { return (child_index < node->children.size()); }
+						};
+
+						using NodeStack = std::vector<NodeStackEntry>;
+
+						static NodeStack node_stack;
+
+						NodeStackEntry& root_entry = node_stack.emplace_back();
+						root_entry.node = &root_node;
+
+						while (node_stack.empty() == false)
+						{
+							NodeStackEntry& current_entry = node_stack.back();
+							if (current_entry.is_valid() == true)
+							{
+								NodeStackEntry child_entry;
+								child_entry.node = current_entry.node->children[current_entry.child_index];
+
+								VadonApp::UI::Developer::GUISystem::TreeNodeFlags current_node_flags = node_base_flags;
+								if (selected_node == child_entry.node)
+								{
+									current_node_flags |= VadonApp::UI::Developer::GUISystem::TreeNodeFlags::SELECTED;
+								}
+								if (child_entry.node->children.empty() == true)
+								{
+									current_node_flags |= VadonApp::UI::Developer::GUISystem::TreeNodeFlags::LEAF;
+								}
+
+								const bool node_open = dev_gui.push_tree_node(child_entry.node, child_entry.node->label, current_node_flags);
+								if (dev_gui.is_item_clicked() && (dev_gui.is_item_toggled_open() == false))
+								{
+									clicked_node = child_entry.node;
+								}
+								if (node_open == true)
+								{
+									node_stack.push_back(child_entry);
+								}
+								++current_entry.child_index;
+							}
+							else
+							{
+								dev_gui.pop_tree_node();
+								node_stack.pop_back();
+							}
+						}
+
+						node_stack.clear();
+					}
+				}
+				const bool window_clicked = dev_gui.is_window_hovered() && dev_gui.is_mouse_clicked(VadonApp::Platform::MouseButton::LEFT);
+				dev_gui.end_child_window();
+
+				if (clicked_node != nullptr)
+				{
+					selected_node = clicked_node;
+					update_selected_node_label();
+				}
+				else if (window_clicked == true)
+				{
+					selected_node = nullptr;
+				}
+
+				const bool add_child = dev_gui.draw_button(add_child_button);
+
+				if (selected_node != nullptr)
+				{
+					dev_gui.add_text(selected_node_label);
+
+					if (add_child == true)
+					{
+						selected_node->add_child();
+					}
+					if (dev_gui.draw_button(remove_node_button) == true)
+					{
+						selected_node->parent->remove_child(selected_node);
+						selected_node = nullptr;
+					}
+					if (dev_gui.draw_input_text(node_name_input) == true)
+					{
+						selected_node->label = node_name_input.input;
+						update_selected_node_label();
+					}
+				}
+				else
+				{
+					if (add_child == true)
+					{
+						root_node.add_child();
+					}
+				}
+			}
+
+			void update_selected_node_label()
+			{
+				node_name_input.input = selected_node->label;
+
+				std::string node_path = selected_node->label;
+				const TreeNode* parent = selected_node->parent;
+				while (parent != nullptr)
+				{
+					node_path = parent->label + "/" + node_path;
+					parent = parent->parent;
+				}
+
+				selected_node_label = "Node path: " + node_path;
+			}
+		};
+
 		struct MainWindowDevGUI
 		{
 			VadonApp::UI::Developer::Window window;
@@ -102,6 +282,8 @@ float4 main(PS_INPUT input) : SV_Target
 
 			VadonApp::UI::Developer::Table table;
 			std::vector<int32_t> table_data;
+
+			TreeEditor tree_editor;
 
 			void initialize()
 			{
@@ -537,6 +719,12 @@ float4 main(PS_INPUT input) : SV_Target
 									}
 									dev_gui.end_table();
 								}
+								dev_gui.pop_tree_node();
+							}
+
+							if (dev_gui.push_tree_node("Tree"))
+							{
+								m_dev_gui.tree_editor.render(dev_gui);
 								dev_gui.pop_tree_node();
 							}
 

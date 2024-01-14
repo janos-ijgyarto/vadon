@@ -61,6 +61,26 @@ namespace VadonApp::Private::UI::Developer::Dummy
         log("Dummy developer GUI shut down successfully!\n");
     }
 
+    void GUISystem::push_id(std::string_view /*string_id*/)
+    {
+        // TODO
+    }
+
+    void GUISystem::push_id(const void* /*pointer_id*/)
+    {
+        // TODO
+    }
+
+    void GUISystem::push_id(int32_t /*int_id*/)
+    {
+        // TODO
+    }
+
+    void GUISystem::pop_id()
+    {
+        // TODO
+    }
+
     bool GUISystem::begin_window(Window& /*window*/)
     {
         // TODO!!!
@@ -69,6 +89,16 @@ namespace VadonApp::Private::UI::Developer::Dummy
 
     void GUISystem::end_window()
     {        
+    }
+
+    bool GUISystem::is_window_focused() const
+    {
+        return false;
+    }
+
+    bool GUISystem::is_window_hovered() const
+    {
+        return false;
     }
 
     bool GUISystem::begin_child_window(const ChildWindow& /*window*/)
@@ -81,7 +111,17 @@ namespace VadonApp::Private::UI::Developer::Dummy
     {
     }
 
-    bool GUISystem::push_tree_node(std::string_view /*label*/)
+    bool GUISystem::push_tree_node(std::string_view /*label*/, TreeNodeFlags /*flags*/)
+    {
+        return false;
+    }
+
+    bool GUISystem::push_tree_node(std::string_view /*id*/, std::string_view /*label*/, TreeNodeFlags /*flags*/)
+    {
+        return false;
+    }
+
+    bool GUISystem::push_tree_node(const void* /*id*/, std::string_view /*label*/, TreeNodeFlags /*flags*/)
     {
         return false;
     }
@@ -205,5 +245,65 @@ namespace VadonApp::Private::UI::Developer::Dummy
     void GUISystem::set_scroll_y(float /*ratio*/)
     {
         // TODO
+    }
+
+    bool GUISystem::is_item_hovered() const
+    {
+        return false;
+    }
+
+    bool GUISystem::is_item_active() const
+    {
+        return false;
+    }
+
+    bool GUISystem::is_item_focused() const
+    {
+        return false;
+    }
+
+    bool GUISystem::is_item_clicked(VadonApp::Platform::MouseButton /*mouse_button*/) const
+    {
+        return false;
+    }
+
+    bool GUISystem::is_item_toggled_open() const
+    {
+        return false;
+    }
+
+    bool GUISystem::is_key_down(VadonApp::Platform::KeyCode /*key*/) const
+    {
+        return false;
+    }
+
+    bool GUISystem::is_key_pressed(VadonApp::Platform::KeyCode /*key*/, bool /*repeat*/) const
+    {
+        return false;
+    }
+
+    bool GUISystem::is_key_released(VadonApp::Platform::KeyCode /*key*/) const
+    {
+        return false;
+    }
+
+    bool GUISystem::is_mouse_down(VadonApp::Platform::MouseButton /*button*/) const
+    {
+        return false;
+    }
+
+    bool GUISystem::is_mouse_clicked(VadonApp::Platform::MouseButton /*button*/, bool /*repeat*/) const
+    {
+        return false;
+    }
+
+    bool GUISystem::is_mouse_released(VadonApp::Platform::MouseButton /*button*/) const
+    {
+        return false;
+    }
+
+    bool GUISystem::is_mouse_double_clicked(VadonApp::Platform::MouseButton /*button*/) const
+    {
+        return false;
     }
 }

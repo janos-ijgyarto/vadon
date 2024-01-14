@@ -25,13 +25,23 @@ namespace VadonApp::Private::UI::Developer::Dummy
 		bool initialize() override;
 		void shutdown() override;
 
+		void push_id(std::string_view string_id) override;
+		void push_id(const void* pointer_id) override;
+		void push_id(int32_t int_id) override;
+		void pop_id() override;
+
 		bool begin_window(Window& window) override;
 		void end_window() override;
+
+		bool is_window_focused() const override;
+		bool is_window_hovered() const override;
 
 		bool begin_child_window(const ChildWindow& window) override;
 		void end_child_window() override;
 
-		bool push_tree_node(std::string_view label) override;
+		bool push_tree_node(std::string_view label, TreeNodeFlags flags = TreeNodeFlags::NONE) override;
+		bool push_tree_node(std::string_view id, std::string_view label, TreeNodeFlags flags = TreeNodeFlags::NONE) override;
+		bool push_tree_node(const void* id, std::string_view label, TreeNodeFlags flags = TreeNodeFlags::NONE) override;
 		void pop_tree_node() override;
 
 		bool draw_input_int(InputInt& input_int) override;
@@ -65,6 +75,21 @@ namespace VadonApp::Private::UI::Developer::Dummy
 		void same_line() override;
 		void set_scroll_x(float ratio = 0.5f) override;
 		void set_scroll_y(float ratio = 0.5f) override;
+
+		bool is_item_hovered() const override;
+		bool is_item_active() const override;
+		bool is_item_focused() const override;
+		bool is_item_clicked(VadonApp::Platform::MouseButton mouse_button = VadonApp::Platform::MouseButton::LEFT) const override;
+		bool is_item_toggled_open() const override;
+
+		bool is_key_down(VadonApp::Platform::KeyCode key) const override;
+		bool is_key_pressed(VadonApp::Platform::KeyCode key, bool repeat = true) const override;
+		bool is_key_released(VadonApp::Platform::KeyCode key) const override;
+
+		bool is_mouse_down(VadonApp::Platform::MouseButton button) const override;
+		bool is_mouse_clicked(VadonApp::Platform::MouseButton button, bool repeat = false) const override;
+		bool is_mouse_released(VadonApp::Platform::MouseButton button) const override;
+		bool is_mouse_double_clicked(VadonApp::Platform::MouseButton button) const override;
 	};
 }
 #endif

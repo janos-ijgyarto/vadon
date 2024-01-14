@@ -35,6 +35,9 @@ namespace VadonApp::UI::Developer
 	struct ChildWindow
 	{
 		std::string id;
+		Vadon::Utilities::Vector2 size = { 0, 0 };
+		bool border = false;
+		WindowFlags flags = WindowFlags::DEFAULT;
 	};
 
 	struct InputBase

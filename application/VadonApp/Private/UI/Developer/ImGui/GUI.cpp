@@ -164,6 +164,37 @@ namespace VadonApp::Private::UI::Developer::ImGUI
             return VadonApp::Platform::Cursor::ARROW;
         }
 
+        int32_t get_imgui_treenode_flags(GUISystem::TreeNodeFlags flags)
+        {
+            int32_t imgui_flags = ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_None;
+            VADON_START_BITMASK_SWITCH(flags)
+            {
+            case GUISystem::TreeNodeFlags::SELECTED:
+                imgui_flags |= ImGuiTreeNodeFlags_Selected;
+                break;
+            case GUISystem::TreeNodeFlags::FRAMED:
+                imgui_flags |= ImGuiTreeNodeFlags_Framed;
+                break;
+            case GUISystem::TreeNodeFlags::DEFAULT_OPEN:
+                imgui_flags |= ImGuiTreeNodeFlags_DefaultOpen;
+                break;
+            case GUISystem::TreeNodeFlags::OPEN_ON_DOUBLE_CLICK:
+                imgui_flags |= ImGuiTreeNodeFlags_OpenOnDoubleClick;
+                break;
+            case GUISystem::TreeNodeFlags::OPEN_ON_ARROW:
+                imgui_flags |= ImGuiTreeNodeFlags_OpenOnArrow;
+                break;
+            case GUISystem::TreeNodeFlags::LEAF:
+                imgui_flags |= ImGuiTreeNodeFlags_Leaf;
+                break;
+            case GUISystem::TreeNodeFlags::BULLET:
+                imgui_flags |= ImGuiTreeNodeFlags_Bullet;
+                break;
+            }
+
+            return imgui_flags;
+        }
+
         GUISystem* dev_gui_instance = nullptr;
 
         constexpr int32_t INIT_VERTEX_BUFFER_CAPACITY = 5000;
@@ -727,6 +758,26 @@ float4 main(PS_INPUT input) : SV_Target
         m_internal->render_draw_data(draw_data);
     }
 
+    void GUISystem::push_id(std::string_view string_id)
+    {
+        ImGui::PushID(string_id.data());
+    }
+
+    void GUISystem::push_id(const void* pointer_id)
+    {
+        ImGui::PushID(pointer_id);
+    }
+
+    void GUISystem::push_id(int32_t int_id)
+    {
+        ImGui::PushID(int_id);
+    }
+
+    void GUISystem::pop_id()
+    {
+        ImGui::PopID();
+    }
+
     bool GUISystem::begin_window(Window& window)
     {
         // TODO: add window initialization?
@@ -734,7 +785,7 @@ float4 main(PS_INPUT input) : SV_Target
         //ImGui::SetNextWindowSize(ImVec2(0, 0), ImGuiCond_FirstUseEver);
 
         const bool enable_close = Vadon::Utilities::to_bool(window.flags & WindowFlags::ENABLE_CLOSE);
-        if (!enable_close)
+        if (enable_close == false)
         {
             return ImGui::Begin(window.title.c_str());
         }
@@ -747,10 +798,20 @@ float4 main(PS_INPUT input) : SV_Target
         ImGui::End();
     }
 
+    bool GUISystem::is_window_focused() const
+    {
+        return ImGui::IsWindowFocused();
+    }
+
+    bool GUISystem::is_window_hovered() const
+    {
+        return ImGui::IsWindowHovered();
+    }
+
     bool GUISystem::begin_child_window(const ChildWindow& window)
     {
-        // TODO!!!
-        return ImGui::BeginChild(window.id.c_str());
+        // TODO: flags!
+        return ImGui::BeginChild(window.id.c_str(), ImVec2(window.size.x, window.size.y), window.border);
     }
 
     void GUISystem::end_child_window()
@@ -758,9 +819,19 @@ float4 main(PS_INPUT input) : SV_Target
         ImGui::EndChild();
     }
 
-    bool GUISystem::push_tree_node(std::string_view label)
+    bool GUISystem::push_tree_node(std::string_view label, TreeNodeFlags flags)
     {
-        return ImGui::TreeNode(label.data());
+        return ImGui::TreeNodeEx(label.data(), get_imgui_treenode_flags(flags));
+    }
+
+    bool GUISystem::push_tree_node(std::string_view id, std::string_view label, TreeNodeFlags flags)
+    {
+        return ImGui::TreeNodeEx(id.data(), get_imgui_treenode_flags(flags), label.data());
+    }
+
+    bool GUISystem::push_tree_node(const void* id, std::string_view label, TreeNodeFlags flags)
+    {
+        return ImGui::TreeNodeEx(id, get_imgui_treenode_flags(flags), label.data());
     }
 
     void GUISystem::pop_tree_node()
@@ -932,6 +1003,66 @@ float4 main(PS_INPUT input) : SV_Target
     void GUISystem::set_scroll_y(float ratio)
     {
         ImGui::SetScrollHereY(ratio);
+    }
+
+    bool GUISystem::is_item_hovered() const
+    {
+        return ImGui::IsItemHovered();
+    }
+
+    bool GUISystem::is_item_active() const
+    {
+        return ImGui::IsItemActive();
+    }
+
+    bool GUISystem::is_item_focused() const
+    {
+        return ImGui::IsItemFocused();
+    }
+
+    bool GUISystem::is_item_clicked(VadonApp::Platform::MouseButton mouse_button) const
+    {
+        return ImGui::IsItemClicked(get_imgui_mouse_button(mouse_button));
+    }
+
+    bool GUISystem::is_item_toggled_open() const
+    {
+        return ImGui::IsItemToggledOpen();
+    }
+
+    bool GUISystem::is_key_down(VadonApp::Platform::KeyCode key) const
+    {
+        return ImGui::IsKeyDown(get_imgui_key(key));
+    }
+
+    bool GUISystem::is_key_pressed(VadonApp::Platform::KeyCode key, bool repeat) const
+    {
+        return ImGui::IsKeyPressed(get_imgui_key(key), repeat);
+    }
+
+    bool GUISystem::is_key_released(VadonApp::Platform::KeyCode key) const
+    {
+        return ImGui::IsKeyReleased(get_imgui_key(key));
+    }
+
+    bool GUISystem::is_mouse_down(VadonApp::Platform::MouseButton button) const
+    {
+        return ImGui::IsMouseDown(get_imgui_mouse_button(button));
+    }
+
+    bool GUISystem::is_mouse_clicked(VadonApp::Platform::MouseButton button, bool repeat) const
+    {
+        return ImGui::IsMouseClicked(get_imgui_mouse_button(button), repeat);
+    }
+
+    bool GUISystem::is_mouse_released(VadonApp::Platform::MouseButton button) const
+    {
+        return ImGui::IsMouseReleased(get_imgui_mouse_button(button));
+    }
+
+    bool GUISystem::is_mouse_double_clicked(VadonApp::Platform::MouseButton button) const
+    {
+        return ImGui::IsMouseDoubleClicked(get_imgui_mouse_button(button));
     }
 
     bool GUISystem::init_platform()
