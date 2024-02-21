@@ -111,6 +111,26 @@ namespace VadonApp::Private::UI::Developer::Dummy
     {
     }
 
+    void GUISystem::open_dialog(std::string_view /*id*/)
+    {
+        // TODO
+    }
+
+    void GUISystem::close_current_dialog()
+    {
+        // TODO
+    }
+
+    bool GUISystem::begin_modal_dialog(Window& /*dialog*/)
+    {
+        return false;
+    }
+
+    void GUISystem::end_dialog()
+    {
+        // TODO
+    }
+
     bool GUISystem::push_tree_node(std::string_view /*label*/, TreeNodeFlags /*flags*/)
     {
         return false;

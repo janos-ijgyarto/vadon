@@ -41,11 +41,12 @@ namespace Vadon::Private::Core
     };
 
     EngineCore::EngineCore()
-        : m_task_system(*this)
+        : m_object_system(*this)
+        , m_task_system(*this) 
         , m_render_system(*this)
+        , m_scene_system(*this)
         , m_default_logger(std::make_unique<DefaultLogger>())
     {
-
     }
 
     EngineCore::~EngineCore() = default;
@@ -56,6 +57,12 @@ namespace Vadon::Private::Core
         constexpr const char* c_failure_message = "Vadon engine core initialization failed!\n";
 
         m_config = config;
+
+        if (m_object_system.initialize() == false)
+        {
+            m_logger->log(c_failure_message);
+            return false;
+        }
 
         if (m_task_system.initialize() == false)
         {
@@ -71,6 +78,12 @@ namespace Vadon::Private::Core
 
         m_graphics_api = Render::GraphicsAPIBase::get_graphics_api(*this);
         if (m_graphics_api->initialize() == false)
+        {
+            m_logger->log(c_failure_message);
+            return false;
+        }
+
+        if (m_scene_system.initialize() == false)
         {
             m_logger->log(c_failure_message);
             return false;
@@ -92,7 +105,10 @@ namespace Vadon::Private::Core
 
         m_task_system.shutdown();
         m_render_system.shutdown();
-        m_graphics_api->shutdown();
+        if (m_graphics_api != nullptr)
+        {
+            m_graphics_api->shutdown();
+        }
 
         m_logger->log("Vadon shut down successfully.\n");
     }

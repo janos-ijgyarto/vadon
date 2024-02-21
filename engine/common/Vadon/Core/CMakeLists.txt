@@ -1,3 +1,4 @@
+add_subdirectory(Object)
 add_subdirectory(System)
 add_subdirectory(Task)
 

@@ -1,5 +1,6 @@
 #include <VadonDemo/Core/GameCore.hpp>
 
+#include <VadonDemo/Model/Model.hpp>
 #include <VadonDemo/Platform/PlatformInterface.hpp>
 #include <VadonDemo/Render/RenderSystem.hpp>
 #include <VadonDemo/UI/MainWindow.hpp>
@@ -30,6 +31,7 @@ namespace VadonDemo::Core
 
 	struct GameCore::Internal
 	{
+		std::unique_ptr<Model::Model> m_model;
 		Platform::PlatformInterface m_platform_interface;
 		Render::RenderSystem m_render_system;
 		UI::MainWindow m_main_window; // FIXME: should use a UI system instead!
@@ -48,6 +50,14 @@ namespace VadonDemo::Core
 			if (!init_engine_application(argc, argv))
 			{
 				std::cout << "Failed to initialize engine application!" << std::endl;
+				return false;
+			}
+
+			// FIXME: need to do this because app and engine only start to exist after initialization
+			// Might want to be able to decouple this?
+			m_model = std::make_unique<Model::Model>(m_engine_app->get_engine_core());
+			if (m_model->initialize() != true)
+			{
 				return false;
 			}
 

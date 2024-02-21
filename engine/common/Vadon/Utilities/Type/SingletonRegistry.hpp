@@ -7,6 +7,8 @@ namespace Vadon::Utilities
 	class SingletonBase;
 
 	// Compile-time registry that can map to one instance per-type. Instances are expected to be registered at load time
+	// FIXME: could revise the storage to better pack the system pointers and have fewer indirections!
+	// (Initially load them into an array, storing metadata, then sort and cache the offsets)
 	class SingletonRegistry
 	{
 	public:

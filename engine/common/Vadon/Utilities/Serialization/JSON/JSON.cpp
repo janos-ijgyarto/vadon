@@ -29,7 +29,7 @@ namespace Vadon::Utilities
 		const JSON& current_object = get_current_object();
 
 		JSONReaderIterator current_it = current_object.find(key);
-		if ((current_it != current_object.end()) && current_it->is_object())
+		if ((current_it != current_object.end()) && (current_it->is_object() == true))
 		{
 			// Add the iterator to the stack (any subsequent reads will be directed to this sub-object)
 			m_internal->iterator_stack.push_back(current_it);
@@ -47,7 +47,7 @@ namespace Vadon::Utilities
 		const JSON& current_object = get_current_object();
 
 		JSONReaderIterator current_it = current_object.find(key);
-		if ((current_it != current_object.end()) && current_it->is_array())
+		if ((current_it != current_object.end()) && (current_it->is_array() == true))
 		{
 			// Add the iterator to the stack (any subsequent reads will be directed to this sub-object)
 			m_internal->iterator_stack.push_back(current_it);

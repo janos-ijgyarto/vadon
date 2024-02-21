@@ -1,0 +1,10 @@
+target_sources(${VADON_CURRENT_TARGET}
+	PRIVATE
+	ClassData.hpp
+	ClassInfo.hpp
+	Object.hpp
+	Object.cpp
+	ObjectSystem.hpp
+	FunctionBind.hpp
+	Variant.hpp
+	)

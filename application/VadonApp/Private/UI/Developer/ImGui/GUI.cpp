@@ -254,7 +254,7 @@ float4 main(PS_INPUT input) : SV_Target
         struct DrawCommand
         {
             Vadon::Render::DrawCommand draw_command;
-                        
+
             ImVec2 clip_min;
             ImVec2 clip_max;
 
@@ -309,7 +309,7 @@ float4 main(PS_INPUT input) : SV_Target
 
     struct GUISystem::Internal
     {
-        GUISystem& m_gui_system;        
+        GUISystem& m_gui_system;
         std::vector<DrawData> m_frame_cache;
 
         Internal(GUISystem& gui_system)
@@ -507,10 +507,10 @@ float4 main(PS_INPUT input) : SV_Target
 
                     // Apply scissor/clipping rectangle
                     pipeline_system.set_scissor(Vadon::Utilities::RectangleInt
-                    {
-                        Vadon::Utilities::Vector2i(current_command.clip_min.x, current_command.clip_min.y),
-                            Vadon::Utilities::Vector2i(current_command.clip_max.x - current_command.clip_min.x, current_command.clip_max.y - current_command.clip_min.y)
-                    }
+                        {
+                            Vadon::Utilities::Vector2i(current_command.clip_min.x, current_command.clip_min.y),
+                                Vadon::Utilities::Vector2i(current_command.clip_max.x - current_command.clip_min.x, current_command.clip_max.y - current_command.clip_min.y)
+                        }
                     );
 
                     // Bind texture
@@ -630,7 +630,7 @@ float4 main(PS_INPUT input) : SV_Target
 
     void GUISystem::dispatch_platform_events(const VadonApp::Platform::PlatformEventList& platform_events)
     {
-        auto platform_event_visitor = Vadon::Utilities::VisitorOverloadList {
+        auto platform_event_visitor = Vadon::Utilities::VisitorOverloadList{
             [this](const VadonApp::Platform::WindowEvent& window_event)
             {
                 if (window_event.type == VadonApp::Platform::WindowEventType::ENTER)
@@ -817,6 +817,28 @@ float4 main(PS_INPUT input) : SV_Target
     void GUISystem::end_child_window()
     {
         ImGui::EndChild();
+    }
+
+    void GUISystem::open_dialog(std::string_view id)
+    {
+        ImGui::OpenPopup(id.data());
+    }
+
+    void GUISystem::close_current_dialog()
+    {
+        ImGui::CloseCurrentPopup();
+    }
+
+    bool GUISystem::begin_modal_dialog(Window& dialog)
+    {
+        dialog.open = true; // Always set to true (only needed for close button)
+        // TODO: flags to set whether to pass in pointer to open flag
+        return ImGui::BeginPopupModal(dialog.title.c_str(), &dialog.open);
+    }
+
+    void GUISystem::end_dialog()
+    {
+        ImGui::EndPopup();
     }
 
     bool GUISystem::push_tree_node(std::string_view label, TreeNodeFlags flags)

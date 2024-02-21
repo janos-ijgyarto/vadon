@@ -1,6 +1,8 @@
 #include <VadonDemo/UI/MainWindow.hpp>
 
 #include <VadonDemo/Core/GameCore.hpp>
+#include <VadonDemo/Model/Model.hpp>
+#include <VadonDemo/Model/Node.hpp>
 #include <VadonDemo/Platform/PlatformInterface.hpp>
 #include <VadonDemo/Render/RenderSystem.hpp>
 
@@ -12,6 +14,7 @@
 #include <VadonApp/UI/Console.hpp>
 #include <VadonApp/UI/Developer/GUI.hpp>
 
+#include <Vadon/Core/Node/NodeSystem.hpp>
 #include <Vadon/Core/Task/TaskSystem.hpp>
 
 #include <Vadon/Render/GraphicsAPI/GraphicsAPI.hpp>
@@ -29,6 +32,12 @@ namespace VadonDemo::UI
 {
 	namespace
 	{
+		using Clock = std::chrono::steady_clock;
+		using TimePoint = std::chrono::time_point<Clock>;
+		using Duration = std::chrono::duration<float>;
+
+		TimePoint last_frame_time = Clock::now();
+
 		constexpr const char* c_vertex_shader_source =
 R"(struct VS_INPUT
 {
@@ -70,186 +79,6 @@ float4 main(PS_INPUT input) : SV_Target
 
 		using VertexList = std::vector<Vertex>;
 
-		struct TreeNode
-		{
-			std::string label;
-			TreeNode* parent = nullptr;
-			std::vector<TreeNode*> children;
-
-			~TreeNode()
-			{
-				for (TreeNode* current_child : children)
-				{
-					delete current_child;
-				}
-			}
-
-			void add_child()
-			{
-				TreeNode* new_child = new TreeNode();
-				new_child->label = "Node";
-				new_child->parent = this;
-
-				children.push_back(new_child);
-			}
-
-			void remove_child(TreeNode* child)
-			{
-				auto child_it = std::find(children.begin(), children.end(), child);
-				if (child_it != children.end())
-				{
-					children.erase(child_it);
-					delete child;
-				}
-			}
-		};
-
-		struct TreeEditor
-		{
-			TreeNode root_node;
-
-			TreeNode* selected_node = nullptr;
-			std::string selected_node_label;
-
-			VadonApp::UI::Developer::ChildWindow window;
-			VadonApp::UI::Developer::Button add_child_button;
-			VadonApp::UI::Developer::Button remove_node_button;
-			VadonApp::UI::Developer::InputText node_name_input;
-
-			TreeEditor()
-			{
-				root_node.label = "Root";
-
-				window.id = "Tree";
-				window.size = Vadon::Utilities::Vector2(400, 300);
-				window.border = true;
-
-				add_child_button.label = "Add child";
-				remove_node_button.label = "Remove node";
-				node_name_input.label = "Node name";
-			}
-
-			void render(VadonApp::UI::Developer::GUISystem& dev_gui)
-			{
-				TreeNode* clicked_node = nullptr;
-				if (dev_gui.begin_child_window(window) == true)
-				{
-					const VadonApp::UI::Developer::GUISystem::TreeNodeFlags node_base_flags = VadonApp::UI::Developer::GUISystem::TreeNodeFlags::OPEN_ON_ARROW | VadonApp::UI::Developer::GUISystem::TreeNodeFlags::OPEN_ON_DOUBLE_CLICK;
-					if (dev_gui.push_tree_node(&root_node, root_node.label, node_base_flags) == true)
-					{
-						struct NodeStackEntry
-						{
-							TreeNode* node = nullptr;
-							size_t child_index = 0;
-
-							bool is_valid() const { return (child_index < node->children.size()); }
-						};
-
-						using NodeStack = std::vector<NodeStackEntry>;
-
-						static NodeStack node_stack;
-
-						NodeStackEntry& root_entry = node_stack.emplace_back();
-						root_entry.node = &root_node;
-
-						while (node_stack.empty() == false)
-						{
-							NodeStackEntry& current_entry = node_stack.back();
-							if (current_entry.is_valid() == true)
-							{
-								NodeStackEntry child_entry;
-								child_entry.node = current_entry.node->children[current_entry.child_index];
-
-								VadonApp::UI::Developer::GUISystem::TreeNodeFlags current_node_flags = node_base_flags;
-								if (selected_node == child_entry.node)
-								{
-									current_node_flags |= VadonApp::UI::Developer::GUISystem::TreeNodeFlags::SELECTED;
-								}
-								if (child_entry.node->children.empty() == true)
-								{
-									current_node_flags |= VadonApp::UI::Developer::GUISystem::TreeNodeFlags::LEAF;
-								}
-
-								const bool node_open = dev_gui.push_tree_node(child_entry.node, child_entry.node->label, current_node_flags);
-								if (dev_gui.is_item_clicked() && (dev_gui.is_item_toggled_open() == false))
-								{
-									clicked_node = child_entry.node;
-								}
-								if (node_open == true)
-								{
-									node_stack.push_back(child_entry);
-								}
-								++current_entry.child_index;
-							}
-							else
-							{
-								dev_gui.pop_tree_node();
-								node_stack.pop_back();
-							}
-						}
-
-						node_stack.clear();
-					}
-				}
-				const bool window_clicked = dev_gui.is_window_hovered() && dev_gui.is_mouse_clicked(VadonApp::Platform::MouseButton::LEFT);
-				dev_gui.end_child_window();
-
-				if (clicked_node != nullptr)
-				{
-					selected_node = clicked_node;
-					update_selected_node_label();
-				}
-				else if (window_clicked == true)
-				{
-					selected_node = nullptr;
-				}
-
-				const bool add_child = dev_gui.draw_button(add_child_button);
-
-				if (selected_node != nullptr)
-				{
-					dev_gui.add_text(selected_node_label);
-
-					if (add_child == true)
-					{
-						selected_node->add_child();
-					}
-					if (dev_gui.draw_button(remove_node_button) == true)
-					{
-						selected_node->parent->remove_child(selected_node);
-						selected_node = nullptr;
-					}
-					if (dev_gui.draw_input_text(node_name_input) == true)
-					{
-						selected_node->label = node_name_input.input;
-						update_selected_node_label();
-					}
-				}
-				else
-				{
-					if (add_child == true)
-					{
-						root_node.add_child();
-					}
-				}
-			}
-
-			void update_selected_node_label()
-			{
-				node_name_input.input = selected_node->label;
-
-				std::string node_path = selected_node->label;
-				const TreeNode* parent = selected_node->parent;
-				while (parent != nullptr)
-				{
-					node_path = parent->label + "/" + node_path;
-					parent = parent->parent;
-				}
-
-				selected_node_label = "Node path: " + node_path;
-			}
-		};
-
 		struct MainWindowDevGUI
 		{
 			VadonApp::UI::Developer::Window window;
@@ -282,8 +111,6 @@ float4 main(PS_INPUT input) : SV_Target
 
 			VadonApp::UI::Developer::Table table;
 			std::vector<int32_t> table_data;
-
-			TreeEditor tree_editor;
 
 			void initialize()
 			{
@@ -370,6 +197,8 @@ float4 main(PS_INPUT input) : SV_Target
 	{
 		Core::GameCore& m_game_core;
 
+		TimePoint m_last_time_point;
+
 		bool m_dev_gui_enabled = false;
 
 		Vadon::Utilities::TripleBuffer<int32_t> m_dev_gui_buffer;
@@ -380,6 +209,7 @@ float4 main(PS_INPUT input) : SV_Target
 
 		Render::Shader m_test_shader;
 		Vadon::Render::BufferHandle m_vertex_buffer;
+		size_t m_current_vertex_count = 0;
 		Vadon::Render::PipelineState m_pipeline_state;
 
 		MainWindowDevGUI m_dev_gui;
@@ -396,6 +226,8 @@ float4 main(PS_INPUT input) : SV_Target
 		{
 			init_renderer();
 			init_dev_gui();
+
+			m_last_time_point = Clock::now();
 
 			return true;
 		}
@@ -447,16 +279,6 @@ float4 main(PS_INPUT input) : SV_Target
 				m_test_shader.pixel_shader = shader_system.create_shader(pixel_shader_info);
 				assert(m_test_shader.pixel_shader.is_valid());
 			}
-
-			// Prepare vertex buffer
-			Vadon::Render::BufferInfo vertex_buffer_info;
-			vertex_buffer_info.type = Vadon::Render::BufferType::VERTEX;
-			vertex_buffer_info.usage = Vadon::Render::ResourceUsage::DYNAMIC;
-			vertex_buffer_info.element_size = sizeof(Vertex);
-			vertex_buffer_info.capacity = 6;
-
-			Vadon::Render::BufferSystem& buffer_system = engine_core.get_system<Vadon::Render::BufferSystem>();
-			m_vertex_buffer = buffer_system.create_buffer(vertex_buffer_info);
 
 			// Prepare frame graph
 			Vadon::Render::FrameGraphInfo frame_graph_info;
@@ -575,6 +397,28 @@ float4 main(PS_INPUT input) : SV_Target
 					write_buffer.insert(write_buffer.end(), event_list.begin(), event_list.end());
 				}
 			);
+		}
+
+		void update_vertex_data(const VertexList& vertices)
+		{
+			if (vertices.size() > m_current_vertex_count)
+			{
+				Vadon::Core::EngineCoreInterface& engine_core = m_game_core.get_engine_app().get_engine_core();
+				Vadon::Render::BufferSystem& buffer_system = engine_core.get_system<Vadon::Render::BufferSystem>();
+				if (m_vertex_buffer.is_valid() == true)
+				{
+					// Clean up previous buffer
+					buffer_system.remove_buffer(m_vertex_buffer);
+				}
+
+				Vadon::Render::BufferInfo vertex_buffer_info;
+				vertex_buffer_info.type = Vadon::Render::BufferType::VERTEX;
+				vertex_buffer_info.usage = Vadon::Render::ResourceUsage::DYNAMIC;
+				vertex_buffer_info.element_size = sizeof(Vertex);
+				vertex_buffer_info.capacity = static_cast<int32_t>(vertices.size());
+
+				m_vertex_buffer = buffer_system.create_buffer(vertex_buffer_info);
+			}
 		}
 
 		Vadon::Core::TaskGroup update()
@@ -722,12 +566,6 @@ float4 main(PS_INPUT input) : SV_Target
 								dev_gui.pop_tree_node();
 							}
 
-							if (dev_gui.push_tree_node("Tree"))
-							{
-								m_dev_gui.tree_editor.render(dev_gui);
-								dev_gui.pop_tree_node();
-							}
-
 							if (dev_gui.draw_button(m_dev_gui.console_button))
 							{
 								engine_app.get_system<VadonApp::UI::UISystem>().get_console().show();
@@ -767,15 +605,16 @@ float4 main(PS_INPUT input) : SV_Target
 			VadonApp::Core::Application& engine_app = m_game_core.get_engine_app();
 			Vadon::Core::EngineCoreInterface& engine_core = engine_app.get_engine_core();
 
-			// TODO: add something to make this more dynamic?
-			static VertexList test_vertices = {
-				{ { -0.5f, 0.5f, 1.0f, 1.0f }, { 1.0f, 0.0f, 0.0f, 1.0f } },
-				{ { -0.25f, 0.5f, 1.0f, 1.0f }, { 0.0f, 1.0f, 0.0f, 1.0f } },
-				{ { -0.5f, 0.25f, 1.0f, 1.0f }, { 0.0f, 0.0f, 1.0f, 1.0f } },
-				{ { -0.1f, -0.1f, 1.0f, 1.0f }, { 0.0f, 1.0f, 1.0f, 1.0f } },
-				{ { 0.0f, 0.1f, 1.0f, 1.0f }, { 1.0f, 0.0f, 1.0f, 1.0f } },
-				{ { 0.1f, -0.1f, 1.0f, 1.0f }, { 1.0f, 1.0f, 0.0f, 1.0f } },
-			};
+			TimePoint current_time = Clock::now();
+			const float delta_time = std::chrono::duration_cast<Duration>(current_time - m_last_time_point).count();
+
+			m_last_time_point = current_time;
+
+			// Update the nodes
+			// FIXME: should be doing it from the model thread, then sync with render thread!
+			engine_core.get_system<Vadon::Core::NodeSystem>().update(delta_time);
+
+			abcdefg;
 
 			// Buffer the vertices
 			Vadon::Render::BufferSystem& buffer_system = engine_core.get_system<Vadon::Render::BufferSystem>();

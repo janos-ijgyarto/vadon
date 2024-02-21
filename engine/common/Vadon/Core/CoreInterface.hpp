@@ -19,6 +19,9 @@ namespace Vadon::Core
 
 		virtual void set_logger(Logger* logger) = 0;
 		virtual Logger& get_logger() = 0;
+
+		// TODO: implement interface (similar to system registry) that allows client code to register additional modules
+		// This would allow them to access client-specific managers through the core interface
 	};
 }
 #endif

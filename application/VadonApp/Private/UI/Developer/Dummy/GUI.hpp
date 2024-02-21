@@ -39,6 +39,12 @@ namespace VadonApp::Private::UI::Developer::Dummy
 		bool begin_child_window(const ChildWindow& window) override;
 		void end_child_window() override;
 
+		void open_dialog(std::string_view id) override;
+		void close_current_dialog() override;
+
+		bool begin_modal_dialog(Window& dialog) override;
+		void end_dialog() override;
+
 		bool push_tree_node(std::string_view label, TreeNodeFlags flags = TreeNodeFlags::NONE) override;
 		bool push_tree_node(std::string_view id, std::string_view label, TreeNodeFlags flags = TreeNodeFlags::NONE) override;
 		bool push_tree_node(const void* id, std::string_view label, TreeNodeFlags flags = TreeNodeFlags::NONE) override;

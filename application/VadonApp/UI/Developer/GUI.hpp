@@ -63,6 +63,12 @@ namespace VadonApp::UI::Developer
 		virtual bool begin_child_window(const ChildWindow& window) = 0;
 		virtual void end_child_window() = 0;
 
+		virtual void open_dialog(std::string_view id) = 0;
+		virtual void close_current_dialog() = 0;
+
+		virtual bool begin_modal_dialog(Window& dialog) = 0;
+		virtual void end_dialog() = 0;
+
 		virtual bool push_tree_node(std::string_view label, TreeNodeFlags flags = TreeNodeFlags::NONE) = 0;
 		virtual bool push_tree_node(std::string_view id, std::string_view label, TreeNodeFlags flags = TreeNodeFlags::NONE) = 0;
 		virtual bool push_tree_node(const void* id, std::string_view label, TreeNodeFlags flags = TreeNodeFlags::NONE) = 0;

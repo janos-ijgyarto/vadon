@@ -45,6 +45,7 @@ option(VADON_ENABLE_DEMO "Add Vadon Demo app" OFF)
 
 if(${VADON_ENABLE_APPLICATION} STREQUAL "ON")
 	add_subdirectory(application)
+	add_subdirectory(editor)
 	
 	if(${VADON_ENABLE_DEMO} STREQUAL "ON")
 		add_subdirectory(demo)
