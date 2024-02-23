@@ -28,6 +28,7 @@ namespace Vadon::Scene
 			: System(core)
 			, m_root_node(core)
 		{
+			m_root_node.m_in_tree = true;
 		}
 
 		Node m_root_node;

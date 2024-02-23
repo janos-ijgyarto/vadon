@@ -1,66 +1,122 @@
 #include <VadonDemo/Model/Node.hpp>
 
-#include <random>
+#include <Vadon/Core/CoreInterface.hpp>
+
+#include <Vadon/Core/Object/ClassData.hpp>
+#include <Vadon/Core/Object/ObjectSystem.hpp>
+
+#include <numbers>
 
 namespace VadonDemo::Model
 {
 	namespace
 	{
-		float get_random_float(float min, float max)
+		constexpr float c_pi = std::numbers::pi_v<float>;
+
+		Vadon::Utilities::Vector2 rotate_vector(const Vadon::Utilities::Vector2& vector, float angle)
 		{
-			return min + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX) / (max - min));
+			const float sin_angle = std::sinf(angle);
+			const float cos_angle = std::cosf(angle);
+
+			return Vadon::Utilities::Vector2(cos_angle * vector.x - sin_angle * vector.y, sin_angle * vector.x + cos_angle * vector.y);
 		}
 	}
 
-	void TestNode::initialize()
+	void Node2D::initialize()
 	{
-		m_origin.x = get_random_float(-300.0f, 300.0f);
-		m_origin.y = get_random_float(-300.0f, 300.0f);
-
-		m_radius = get_random_float(10.0f, 100.0f);
-		m_angular_velocity = get_random_float(float(std::_Pi_val) / 6.0f, float(std::_Pi_val) / 2.0f);
-
-		m_position = m_origin;
-		m_position.y += m_radius;
-
-		m_scale = get_random_float(0.25f, 2.5f);
+		Vadon::Core::ObjectSystem& object_system = m_engine_core.get_system<Vadon::Core::ObjectSystem>();
+		m_parent_2d = object_system.get_object_as<Node2D>(*get_parent());
 	}
 
-	void TestNode::update(float delta_time)
+	void Node2D::update(float /*delta_time*/)
 	{
-		m_rotation += delta_time * m_angular_velocity;
-		if (m_rotation > (float(std::_Pi_val) * 2.0f))
+		// FIXME: this is just a really hacky way to get this working
+		if (m_parent_2d != nullptr)
 		{
-			m_rotation = std::fmodf(m_rotation, float(std::_Pi_val) * 2.0f);
+			m_global_position = m_parent_2d->get_global_position() + m_position;
 		}
-
-		m_position.x = m_origin.x + (std::cosf(m_rotation) * m_radius);
-		m_position.y = m_origin.y + (std::sinf(m_rotation) * m_radius);
-	}
-
-	void TestSystem::initialize()
-	{
-		for (Node* current_child : get_children())
+		else
 		{
-			// FIXME: replace with custom RTTI!
-			TestNode* test_child = dynamic_cast<TestNode*>(current_child);
-			if (test_child != nullptr)
-			{
-				m_test_nodes.push_back(test_child);
-			}
+			m_global_position = m_position;
 		}
 	}
 
-	std::vector<DrawData> TestSystem::render() const
+	void Node2D::bind_methods(Vadon::Core::ObjectClassData& class_data)
 	{
-		std::vector<DrawData> draw_data;
-		for (const TestNode* current_node : m_test_nodes)
+		class_data.bind_method<VADON_METHOD_BIND(get_position)>("get_position");
+		class_data.bind_method<VADON_METHOD_BIND(set_position)>("set_position");
+
+		class_data.bind_method<VADON_METHOD_BIND(get_scale)>("get_scale");
+		class_data.bind_method<VADON_METHOD_BIND(set_scale)>("set_scale");
+
+		class_data.add_property(VADON_ADD_OBJECT_PROPERTY("position", m_position, "get_position", "set_position"));
+		class_data.add_property(VADON_ADD_OBJECT_PROPERTY("scale", m_scale, "get_scale", "set_scale"));
+	}
+
+	void Orbiter::initialize()
+	{
+		Node2D::initialize();
+
+		m_color = Vadon::Utilities::Vector4(0, 1, 0, 1);
+
+		if (m_parent_2d == nullptr)
 		{
-			DrawData& current_draw_data = draw_data.emplace_back();
-			current_draw_data.position = current_node->get_position();
-			current_draw_data.scale = current_node->get_scale();
+			return;
 		}
 
-		return draw_data;
+		Vadon::Core::ObjectSystem& object_system = m_engine_core.get_system<Vadon::Core::ObjectSystem>();
+		Pivot* pivot_parent = object_system.get_object_as<Pivot>(*m_parent_2d);
+		if (pivot_parent != nullptr)
+		{
+			m_pivot_parent = true;
+		}
+	}
+
+	void Orbiter::update(float delta_time)
+	{
+		if (m_pivot_parent == true)
+		{
+			// Rotate around pivot
+			m_position = rotate_vector(m_position, delta_time * m_angular_velocity);
+		}
+
+		Node2D::update(delta_time);
+	}
+
+	void Orbiter::bind_methods(Vadon::Core::ObjectClassData& class_data)
+	{
+		class_data.bind_method<VADON_METHOD_BIND(get_angular_velocity)>("get_angular_velocity");
+		class_data.bind_method<VADON_METHOD_BIND(set_angular_velocity)>("set_angular_velocity");
+
+		class_data.add_property(VADON_ADD_OBJECT_PROPERTY("angular_velocity", m_angular_velocity, "get_angular_velocity", "set_angular_velocity"));
+	}
+
+	void Pivot::initialize()
+	{
+		Node2D::initialize();
+		m_color = Vadon::Utilities::Vector4(1, 0, 0, 1);
+		if (m_parent_2d == nullptr)
+		{
+			return;
+		}
+
+		Vadon::Core::ObjectSystem& object_system = m_engine_core.get_system<Vadon::Core::ObjectSystem>();
+		Pivot* pivot_parent = object_system.get_object_as<Pivot>(*m_parent_2d);
+		if (pivot_parent != nullptr)
+		{
+			m_pivot_parent = true;
+		}
+	}
+
+	void Pivot::update(float delta_time)
+	{
+		if (m_pivot_parent == true)
+		{
+			// Rotate around pivot
+			constexpr float c_pivot_velocity = 1.0f;
+			m_position = rotate_vector(m_position, delta_time * c_pivot_velocity);
+		}
+
+		Node2D::update(delta_time);
 	}
 }

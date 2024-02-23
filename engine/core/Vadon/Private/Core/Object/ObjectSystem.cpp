@@ -306,4 +306,38 @@ namespace Vadon::Private::Core
 			properties.push_back(current_property.second);
 		}
 	}
+
+	bool ObjectSystem::is_instance_of(Object& object, std::string_view class_id) const
+	{
+		std::string_view object_class_id = object.get_class_id();
+		if (object_class_id == class_id)
+		{
+			return true;
+		}
+
+		auto object_class_data_it = m_object_classes.find(std::string(object.get_class_id()));
+		auto target_class_data_it = m_object_classes.find(std::string(class_id));
+		if ((object_class_data_it == m_object_classes.end()) || (target_class_data_it == m_object_classes.end()))
+		{
+			// TODO: error?
+			return false;
+		}
+
+		const ObjectClassData* object_class_data = &object_class_data_it->second;
+		const ObjectClassData* target_class_data = &target_class_data_it->second;
+		while (object_class_data != nullptr)
+		{
+			if (object_class_data->base_data == target_class_data)
+			{
+				// Requested type is base class of this instance
+				return true;
+			}
+
+			// Check further up the hierarchy
+			object_class_data = object_class_data->base_data;
+		}
+
+		// Types are in different branches of Object hierarchy
+		return false;
+	}
 }

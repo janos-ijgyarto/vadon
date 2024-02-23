@@ -1,6 +1,7 @@
 #ifndef VADON_CORE_OBJECT_VARIANT_HPP
 #define VADON_CORE_OBJECT_VARIANT_HPP
 #include <Vadon/Utilities/Container/Box.hpp>
+#include <Vadon/Utilities/Math/Vector.hpp>
 #include <vector>
 #include <string>
 #include <variant>
@@ -13,7 +14,9 @@ namespace Vadon::Core
 	struct VariantArray;
 	struct VariantDictionary;
 
-	using Variant = std::variant<std::monostate, int, float, bool, std::string, Utilities::Box<VariantArray>, Utilities::Box<VariantDictionary>, NoReturnValue>;
+	using Variant = std::variant<std::monostate, int, float, bool, std::string, 
+		Utilities::Vector2, Utilities::Vector2i, Utilities::Vector3, Utilities::Vector3i,
+		Utilities::Box<VariantArray>, Utilities::Box<VariantDictionary>, NoReturnValue>;
 
 	struct VariantArray : public std::vector<Variant>
 	{};

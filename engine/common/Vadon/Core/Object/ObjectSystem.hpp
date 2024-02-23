@@ -20,6 +20,18 @@ namespace Vadon::Core
 		virtual Object* create_object(std::string_view class_id) = 0;
 
 		template<typename T>
+		T* get_object_as(Object& object) const
+		{
+			static_assert(std::is_base_of_v<Object, T> == true, "Object System can only use RTTI with subclasses of Object!");
+			if (is_instance_of(object, T::static_class_id()) == false)
+			{
+				return nullptr;
+			}
+
+			return static_cast<T*>(&object);
+		}
+
+		template<typename T>
 		bool register_object_class(std::string_view pretty_name = "")
 		{
 			static_assert(std::is_base_of_v<Object, T> == true, "Object System only allows registering factories for subclasses of Object!");
@@ -82,6 +94,7 @@ namespace Vadon::Core
 		}
 
 		virtual ObjectClassData* internal_register_object_class(ClassRegistryInfo class_info, ErasedObjectFactoryFunction factory) = 0;
+		virtual bool is_instance_of(Object& object, std::string_view class_id) const = 0;
 	};
 }
 #endif

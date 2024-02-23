@@ -163,7 +163,7 @@
       "name": "Demo-base",
       "hidden": true,
       "cleanFirst": false,
-      "targets": [ "VadonDemo", "VadonEditorDemo" ]
+      "targets": [ "VadonDemoGame", "VadonDemoEditor" ]
     },
     {
       "name": "Demo-debug-cl",

@@ -8,7 +8,7 @@ namespace Vadon::Core
 	class ObjectClassData;
 
 	// Based on Godot's Object API
-	// TODO: force API to construct objects with ref. to engine core (and track all instances)?
+	// FIXME: implement handles to use as object ID, store per-instance metadata in system (could speed up RTTI?)
 	class Object
 	{
 	public:

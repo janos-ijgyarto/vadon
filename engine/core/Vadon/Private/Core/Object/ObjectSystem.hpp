@@ -60,6 +60,8 @@ namespace Vadon::Private::Core
 		Vadon::Core::ObjectClassData* internal_register_object_class(ClassRegistryInfo class_info, ErasedObjectFactoryFunction factory) override;
 		void internal_get_class_properties(const ObjectClassData& class_data, ObjectPropertyList& properties) const;
 
+		bool is_instance_of(Object& object, std::string_view class_id) const override;
+
 		// FIXME: implement more efficient lookups and bookkeeping!
 		std::unordered_map<std::string, ObjectClassData> m_object_classes;
 
