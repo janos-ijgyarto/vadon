@@ -4,6 +4,8 @@
 #include <string_view>
 namespace Vadon::Utilities
 {
+    // FIXME: improve via source_location (if possible...)
+    // FIXME2: make use of consteval?
     template <std::size_t...INDICES>
     constexpr auto substring_as_array(std::string_view string, std::index_sequence<INDICES...>)
     {
@@ -55,21 +57,18 @@ namespace Vadon::Utilities
             constexpr std::string_view type_name = value_string();
 
             constexpr auto class_start = type_name.find(prefix_array[0]);
+            constexpr auto struct_start = type_name.find(prefix_array[1]);
             if constexpr (class_start != std::string::npos)
             {
                 return type_name.substr(class_start + prefix_array[0].size());
             }
-            else 
+            else if constexpr (struct_start != std::string::npos)
             {
-                constexpr auto struct_start = type_name.find(prefix_array[1]);
-                if constexpr (struct_start != std::string::npos)
-                {
-                    return type_name.substr(struct_start + prefix_array[1].size());
-                }
-                else
-                {
-                    return type_name;
-                }
+                return type_name.substr(struct_start + prefix_array[1].size());
+            }
+            else
+            {
+                return type_name;
             }
         }
     };

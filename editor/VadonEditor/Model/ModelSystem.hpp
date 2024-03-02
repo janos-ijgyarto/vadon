@@ -9,17 +9,20 @@ namespace VadonEditor::Core
 }
 namespace VadonEditor::Model
 {
+	class SceneTree;
+
 	class ModelSystem : public ModelSystemBase<ModelSystem>
 	{
 	public:
 		~ModelSystem();
 
-		const Vadon::Core::ObjectClassInfoList& get_node_class_list() const;
+		SceneTree& get_scene_tree();
+
+		Vadon::Core::ObjectClassInfoList get_node_type_list() const;		
 	private:
 		ModelSystem(Core::Editor& editor);
 
 		bool initialize();
-		void post_init();
 		void update();
 
 		struct Internal;

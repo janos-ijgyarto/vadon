@@ -6,6 +6,26 @@
 
 namespace Vadon::Private::Core
 {
+	namespace
+	{
+		std::string get_pretty_name(std::string_view pretty_name, std::string_view class_id)
+		{
+			if (pretty_name.empty() == false)
+			{
+				return std::string(pretty_name);
+			}
+
+			constexpr std::string_view c_namespace_operator = "::";
+			const size_t trim_offset = class_id.find_last_of(c_namespace_operator);
+			if (trim_offset != std::string::npos)
+			{
+				return std::string(class_id.substr(trim_offset + (c_namespace_operator.size() - 1)));
+			}
+
+			return std::string(class_id);
+		}
+	}
+
 	bool ObjectSystem::ObjectClassData::internal_bind_method(std::string_view name, MemberFunctionData method)
 	{
 		if(has_method(name) == true)
@@ -18,21 +38,21 @@ namespace Vadon::Private::Core
 		return true;
 	}
 
-	bool ObjectSystem::ObjectClassData::add_property(ObjectProperty property)
+	bool ObjectSystem::ObjectClassData::add_property(ObjectPropertyInfo property_info)
 	{
-		if (has_property(property.name) == true)
+		if (has_property(property_info.name) == true)
 		{
-			engine_core.get_logger().error(std::format("Class \"{}\" already has property registered with name \"{}\"!\n", class_info.name, property.name));
+			engine_core.get_logger().error(std::format("Class \"{}\" already has property registered with name \"{}\"!\n", class_info.name, property_info.name));
 			return false;
 		}
 
 		// FIXME: find some way to deduplicate the steps below?
 		// Validate getter
 		{
-			auto getter_it = methods.find(std::string(property.getter));
+			auto getter_it = methods.find(std::string(property_info.getter));
 			if (getter_it == methods.end())
 			{
-				engine_core.get_logger().error(std::format("Class \"{}\" has no getter for property \"{}\" named \"{}\"!\n", class_info.name, property.name, property.getter));
+				engine_core.get_logger().error(std::format("Class \"{}\" has no getter for property \"{}\" named \"{}\"!\n", class_info.name, property_info.name, property_info.getter));
 				return false;
 			}
 
@@ -41,17 +61,17 @@ namespace Vadon::Private::Core
 
 		// Validate setter
 		{
-			auto setter_it = methods.find(std::string(property.setter));
+			auto setter_it = methods.find(std::string(property_info.setter));
 			if (setter_it == methods.end())
 			{
-				engine_core.get_logger().error(std::format("Class has no setter for property \"{}\" named \"{}\"!\n", class_info.name, property.setter));
+				engine_core.get_logger().error(std::format("Class has no setter for property \"{}\" named \"{}\"!\n", class_info.name, property_info.setter));
 				return false;
 			}
 
 			// TODO: further restrictions to make sure setter is of the correct format (i.e one argument, matches property type)
 		}
 
-		properties.emplace(std::string(property.name), property);
+		properties.emplace(std::string(property_info.name), property_info);
 		return true;
 	}
 
@@ -75,36 +95,6 @@ namespace Vadon::Private::Core
 		}
 
 		return false;
-	}
-
-	Variant ObjectSystem::ObjectClassData::invoke_method(Object& object, std::string_view name, VariantArgumentList args) const
-	{
-		auto method_it = methods.find(std::string(name));
-		if (method_it == methods.end())
-		{
-			engine_core.get_logger().error(std::format("No member function registered with name \"{}\"!\n", name));
-			return Variant();
-		}
-
-		const MemberFunctionData& method_data = method_it->second;
-
-		// Validation
-		if (method_data.argument_types.size() != args.size())
-		{
-			engine_core.get_logger().error(std::format("Mismatch in argument count for member function \"{}\"!\n", name));
-			return Variant();
-		}
-
-		for (size_t current_argument_index = 0; current_argument_index < method_data.argument_types.size(); ++current_argument_index)
-		{
-			if (method_data.argument_types[current_argument_index] != args[current_argument_index].index())
-			{
-				engine_core.get_logger().error(std::format("Mismatch in argument type for member function \"{}\"!\n", name));
-				return Variant();
-			}
-		}
-
-		return method_data.function(&object, args);
 	}
 
 	Object* ObjectSystem::create_object(std::string_view class_id)
@@ -175,9 +165,9 @@ namespace Vadon::Private::Core
 		return subclass_list;
 	}
 
-	ObjectPropertyList ObjectSystem::get_class_properties(std::string_view class_id, bool recursive) const
+	ObjectPropertyInfoList ObjectSystem::get_class_properties(std::string_view class_id, bool recursive) const
 	{
-		ObjectPropertyList property_list;
+		ObjectPropertyInfoList property_list;
 
 		auto class_data_it = m_object_classes.find(std::string(class_id));
 		if (class_data_it == m_object_classes.end())
@@ -187,20 +177,63 @@ namespace Vadon::Private::Core
 		}
 
 		// Start with own properties
-		const ObjectClassData& class_data = class_data_it->second;
-		internal_get_class_properties(class_data, property_list);
-
-		if (recursive == true)
+		const ObjectClassData* current_class_data = &class_data_it->second;
+		while (current_class_data != nullptr)
 		{
-			// Get properties of the rest of the inheritance chain
-			const ObjectClassData* current_base_data = class_data.base_data;
-			while (current_base_data != nullptr)
+			property_list.reserve(property_list.size() + current_class_data->properties.size());
+			for (const auto& current_property : current_class_data->properties)
 			{
-				internal_get_class_properties(*current_base_data, property_list);
-				current_base_data = current_base_data->base_data;
+				property_list.push_back(current_property.second);
+			}
+			if (recursive == true)
+			{
+				// Get properties of the rest of the inheritance chain
+				current_class_data = current_class_data->base_data;
+			}
+			else
+			{
+				current_class_data = nullptr;
 			}
 		}
+
 		return property_list;
+	}
+
+	ObjectPropertyList ObjectSystem::get_object_properties(Object& object, bool recursive) const
+	{
+		ObjectPropertyList properties;
+
+		auto class_data_it = m_object_classes.find(std::string(object.get_class_id()));
+		if (class_data_it == m_object_classes.end())
+		{
+			// TODO: error?
+			return properties;
+		}
+
+		const ObjectClassData* current_class_data = &class_data_it->second;
+		while (current_class_data != nullptr)
+		{
+			for (auto& current_property : current_class_data->properties)
+			{
+				const ObjectPropertyInfo& property_info = current_property.second;
+
+				// FIXME: properties should store an index so we don't have to do this lookup!
+				const MemberFunctionData& property_getter = current_class_data->methods.find(property_info.getter)->second;
+
+				properties.emplace_back(property_info.name, invoke_method(object, property_info.getter, property_getter));
+			}
+
+			if (recursive == true)
+			{
+				current_class_data = current_class_data->base_data;
+			}
+			else
+			{
+				current_class_data = nullptr;
+			}
+		}
+
+		return properties;
 	}
 
 	Variant ObjectSystem::get_property(Object& object, std::string_view property_name) const
@@ -213,15 +246,17 @@ namespace Vadon::Private::Core
 		}
 
 		const ObjectClassData& class_data = class_data_it->second;
-		auto property_it = class_data.properties.find(std::string(property_name));
-		if(property_it == class_data.properties.end())
+		const ObjectPropertyLookup property_lookup = internal_find_property_info(class_data, property_name);
+		if(property_lookup.is_valid() == false)
 		{
 			// TODO: error?
 			return Variant();
 		}
 
-		const ObjectProperty& property_data = property_it->second;
-		return class_data.invoke_method(object, property_data.getter);
+		// FIXME: properties should store an index so we don't have to do this lookup!
+		const MemberFunctionData& property_getter = property_lookup.class_data->methods.find(property_lookup.property_info->getter)->second;
+
+		return invoke_method(object, property_lookup.property_info->getter, property_getter);
 	}
 
 	void ObjectSystem::set_property(Object& object, std::string_view property_name, Variant value)
@@ -234,15 +269,17 @@ namespace Vadon::Private::Core
 		}
 
 		const ObjectClassData& class_data = class_data_it->second;
-		auto property_it = class_data.properties.find(std::string(property_name));
-		if (property_it == class_data.properties.end())
+		const ObjectPropertyLookup property_lookup = internal_find_property_info(class_data, property_name);
+		if (property_lookup.is_valid() == false)
 		{
 			// TODO: error?
 			return;
 		}
 
-		const ObjectProperty& property_data = property_it->second;
-		class_data.invoke_method(object, property_data.getter, VariantArgumentList{ &value, 1 });
+		// FIXME: properties should store an index so we don't have to do this lookup!
+		const MemberFunctionData& property_setter = property_lookup.class_data->methods.find(property_lookup.property_info->setter)->second;
+
+		invoke_method(object, property_lookup.property_info->setter, property_setter, VariantArgumentList{ &value, 1 });
 	}
 
 	ObjectSystem::ObjectSystem(Vadon::Core::EngineCoreInterface& core)
@@ -277,7 +314,7 @@ namespace Vadon::Private::Core
 		
 		new_class_data.class_info.id = class_info.id;
 		new_class_data.class_info.base_id = class_info.base_id;
-		new_class_data.class_info.name = class_info.pretty_name.empty() ? class_info.id : class_info.pretty_name;
+		new_class_data.class_info.name = get_pretty_name(class_info.pretty_name, class_info.id);
 
 		if (class_info.id != class_info.base_id)
 		{
@@ -298,13 +335,64 @@ namespace Vadon::Private::Core
 		return &new_class_data;
 	}
 
-	void ObjectSystem::internal_get_class_properties(const ObjectClassData& class_data, ObjectPropertyList& properties) const
+	ObjectSystem::ObjectPropertyLookup ObjectSystem::internal_find_property_info(const ObjectClassData& class_data, std::string_view property_name) const
 	{
-		properties.reserve(properties.size() + class_data.properties.size());
-		for (const auto& current_property : class_data.properties)
+		ObjectSystem::ObjectPropertyLookup result;
+
+		const ObjectClassData* current_class_data = &class_data;
+		while (current_class_data != nullptr)
 		{
-			properties.push_back(current_property.second);
+			auto property_info_it = current_class_data->properties.find(std::string(property_name));
+			if (property_info_it != current_class_data->properties.end())
+			{
+				result.class_data = current_class_data;
+				result.property_info = &property_info_it->second;
+
+				return result;
+			}
+			current_class_data = current_class_data->base_data;
 		}
+
+		return result;
+	}
+
+	const MemberFunctionData* ObjectSystem::internal_find_method(const ObjectClassData& class_data, std::string_view method_name) const
+	{
+		const ObjectClassData* current_class_data = &class_data;
+		while (current_class_data != nullptr)
+		{
+			auto method_it = current_class_data->methods.find(std::string(method_name));
+			if (method_it != current_class_data->methods.end())
+			{
+				return &method_it->second;
+			}
+			current_class_data = current_class_data->base_data;
+		}
+
+		return nullptr;
+	}
+
+	Variant ObjectSystem::invoke_method(Object& object, std::string_view method_name, const MemberFunctionData& method_data, VariantArgumentList args) const
+	{
+		// Validation
+		if (method_data.argument_types.size() != args.size())
+		{
+			// FIXME: have to do this because this is a const function, need to revise!
+			m_engine_core.get_logger().error(std::format("Mismatch in argument count for member function \"{}\"!\n", method_name));
+			return Variant();
+		}
+
+		for (size_t current_argument_index = 0; current_argument_index < method_data.argument_types.size(); ++current_argument_index)
+		{
+			if (method_data.argument_types[current_argument_index] != args[current_argument_index].index())
+			{
+				// FIXME: have to do this because this is a const function, need to revise!
+				m_engine_core.get_logger().error(std::format("Mismatch in argument type for member function \"{}\"!\n", method_name));
+				return Variant();
+			}
+		}
+
+		return method_data.function(&object, args);
 	}
 
 	bool ObjectSystem::is_instance_of(Object& object, std::string_view class_id) const

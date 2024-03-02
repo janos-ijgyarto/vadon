@@ -4,15 +4,12 @@
 
 #include <Vadon/Core/Object/ClassInfo.hpp>
 #include <Vadon/Core/Object/Object.hpp>
-#include <Vadon/Core/Object/Variant.hpp>
+#include <Vadon/Core/Object/Property.hpp>
 
 #include <functional>
 namespace Vadon::Core
 {
 	struct ObjectProperty;
-
-	// TODO: make this a class so we can use builder pattern to add properties?
-	using ObjectPropertyList = std::vector<ObjectProperty>;
 
 	class ObjectSystem : public CoreSystem<ObjectSystem>
 	{
@@ -66,10 +63,11 @@ namespace Vadon::Core
 
 		virtual ObjectClassInfoList get_subclass_hierarchy(std::string_view class_id) const = 0;
 
-		virtual ObjectPropertyList get_class_properties(std::string_view class_id, bool recursive = true) const = 0;
+		virtual ObjectPropertyInfoList get_class_properties(std::string_view class_id, bool recursive = true) const = 0;
 
 		// FIXME: implement some kind of ID system so we can skip string lookups!
 		// FIXME2: should object itself have a getter/setter for this?
+		virtual ObjectPropertyList get_object_properties(Object& object, bool recursive = true) const = 0;
 		virtual Variant get_property(Object& object, std::string_view property_name) const = 0;
 		virtual void set_property(Object& object, std::string_view property_name, Variant value) = 0;
 	protected:

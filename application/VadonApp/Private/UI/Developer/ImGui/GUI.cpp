@@ -53,10 +53,8 @@ namespace VadonApp::Private::UI::Developer::ImGUI
             {
             case VadonApp::Platform::KeyCode::RETURN:
                 return ImGuiKey_Enter;
-            case VadonApp::Platform::KeyCode::LEFT:
-                return ImGuiKey_LeftArrow;
-            case VadonApp::Platform::KeyCode::RIGHT:
-                return ImGuiKey_RightArrow;
+            case VadonApp::Platform::KeyCode::ESCAPE:
+                return ImGuiKey_Escape;
             case VadonApp::Platform::KeyCode::BACKSPACE:
                 return ImGuiKey_Backspace;
             case VadonApp::Platform::KeyCode::SPACE:
@@ -133,6 +131,26 @@ namespace VadonApp::Private::UI::Developer::ImGUI
                 return ImGuiKey_Y;
             case VadonApp::Platform::KeyCode::KEY_z:
                 return ImGuiKey_Z;
+            case VadonApp::Platform::KeyCode::INSERT:
+                return ImGuiKey_Insert;
+            case VadonApp::Platform::KeyCode::HOME:
+                return ImGuiKey_Home;
+            case VadonApp::Platform::KeyCode::PAGE_UP:
+                return ImGuiKey_PageUp;
+            case VadonApp::Platform::KeyCode::DELETE_KEY:
+                return ImGuiKey_Delete;
+            case VadonApp::Platform::KeyCode::END:
+                return ImGuiKey_End;
+            case VadonApp::Platform::KeyCode::PAGE_DOWN:
+                return ImGuiKey_PageDown;
+            case VadonApp::Platform::KeyCode::RIGHT:
+                return ImGuiKey_RightArrow;
+            case VadonApp::Platform::KeyCode::LEFT:
+                return ImGuiKey_LeftArrow;
+            case VadonApp::Platform::KeyCode::DOWN:
+                return ImGuiKey_DownArrow;
+            case VadonApp::Platform::KeyCode::UP:
+                return ImGuiKey_UpArrow;
             }
             return ImGuiKey_None;
         }
@@ -776,6 +794,16 @@ float4 main(PS_INPUT input) : SV_Target
     void GUISystem::pop_id()
     {
         ImGui::PopID();
+    }
+
+    GUISystem::ID GUISystem::get_id(std::string_view string_id)
+    {
+        return ImGui::GetID(string_id.data());
+    }
+
+    GUISystem::ID GUISystem::get_id(const void* pointer_id)
+    {
+        return ImGui::GetID(pointer_id);
     }
 
     bool GUISystem::begin_window(Window& window)

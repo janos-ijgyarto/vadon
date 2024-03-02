@@ -21,6 +21,8 @@ namespace Vadon::Private::Scene
 		SceneInfo get_scene_info(SceneHandle scene_handle) const override;
 
 		bool set_scene_data(SceneHandle scene_handle, Node& root_node) override;
+		Node* instantiate_scene(SceneHandle scene_handle) override;
+
 		bool save_scene(SceneHandle scene_handle, Utilities::JSON& writer) override;
 		bool load_scene(SceneHandle scene_handle, Utilities::JSONReader& reader) override;
 

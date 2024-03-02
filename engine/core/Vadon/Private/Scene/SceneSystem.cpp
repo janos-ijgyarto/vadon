@@ -23,13 +23,14 @@ namespace Vadon::Private::Scene
 			node_data.type = node.get_class_id();
 			node_data.parent = parent_index;
 
-			const Core::ObjectPropertyList& node_properties = object_system.get_class_properties(node.get_class_id());
+			// FIXME: filter to properties that are intended to be serialized?
+			const Core::ObjectPropertyList& node_properties = object_system.get_object_properties(node);
 			for (const Core::ObjectProperty& current_property : node_properties)
 			{
 				SceneData::NodeData::Property& current_property_data = node_data.properties.emplace_back();
 
 				current_property_data.name = current_property.name;
-				current_property_data.value = object_system.get_property(node, current_property.name);
+				current_property_data.value = current_property.value;
 			}
 
 			for (Node* current_child : node.get_children())
@@ -52,12 +53,13 @@ namespace Vadon::Private::Scene
 					{
 						json_object[key] = value;
 					}
-					else
+					if constexpr (std::is_same_v<decltype(value), Vadon::Utilities::Vector2> == true)
 					{
-						// TODO: error?
+						// FIXME: have a lookup for the keys!
+						json_object[key] = Vadon::Utilities::JSON::array({ "Vector2", value.x, value.y });
 					}
+					// TODO: other overloads?
 				}
-				// TODO: other overloads?
 			};
 
 			std::visit(variant_visitor, value);
@@ -67,8 +69,23 @@ namespace Vadon::Private::Scene
 		{
 			// FIXME: better way to do this?
 			// FIXME2: support double separately?
-			switch (json_value.type())
+			if (json_value.is_object() == true)
 			{
+				// TODO!!!
+			}
+			else if (json_value.is_array() == true)
+			{
+				// FIXME: proper lookup system!
+				const std::string& type_string = json_value[0];
+				if (type_string == "Vector2")
+				{
+					variant_value = Vadon::Utilities::Vector2(json_value[1].get<float>(), json_value[2].get<float>());
+				}
+			}
+			else
+			{
+				switch (json_value.type())
+				{
 				case Vadon::Utilities::JSONValueType::number_integer:
 					variant_value = json_value.get<int>();
 					break;
@@ -82,7 +99,31 @@ namespace Vadon::Private::Scene
 					variant_value = json_value.get<std::string>();
 					break;
 					// TODO: default?
+				}
 			}
+		}
+
+		std::string get_node_path(const SceneData& scene, int32_t node_index)
+		{
+			const SceneData::NodeData& node_data = scene.nodes[node_index];
+			if (node_data.has_parent() == false)
+			{
+				return ".";
+			}
+
+			std::string path;
+
+			const SceneData::NodeData* current_node_data = &node_data;
+			while (current_node_data->has_parent() == true)
+			{
+				path = current_node_data->name + "/" + path;
+				current_node_data = &scene.nodes[current_node_data->parent];
+			}
+
+			// Trim a final slash
+			path.pop_back();
+
+			return path;
 		}
 	}
 
@@ -114,7 +155,47 @@ namespace Vadon::Private::Scene
 		scene_data.clear();
 
 		Vadon::Core::ObjectSystem& object_system = m_engine_core.get_system<Vadon::Core::ObjectSystem>();
-		return parse_scene_node(root_node, 0, object_system, scene_data);
+		return parse_scene_node(root_node, -1, object_system, scene_data);
+	}
+
+	Node* SceneSystem::instantiate_scene(SceneHandle scene_handle)
+	{
+		const SceneData& scene_data = m_scene_pool.get(scene_handle);
+		Vadon::Core::ObjectSystem& object_system = m_engine_core.get_system<Vadon::Core::ObjectSystem>();
+
+		std::vector<Node*> node_lookup;
+
+		for (const SceneData::NodeData& current_node_data : scene_data.nodes)
+		{
+			Vadon::Core::Object* current_node_object = object_system.create_object(current_node_data.type);
+			if (current_node_object == nullptr)
+			{
+				// TODO: error?
+				continue;
+			}
+			Node* current_node = object_system.get_object_as<Vadon::Scene::Node>(*current_node_object);
+			if (current_node == nullptr)
+			{
+				// TODO: error?
+				delete current_node_object;
+				continue;
+			}
+
+			node_lookup.push_back(current_node);
+
+			for (const SceneData::NodeData::Property& current_property_data : current_node_data.properties)
+			{
+				object_system.set_property(*current_node_object, current_property_data.name, current_property_data.value);
+			}
+
+			if (current_node_data.has_parent() == true)
+			{
+				Node* parent_node = node_lookup[current_node_data.parent];
+				parent_node->add_child(current_node);
+			}
+		}
+
+		return node_lookup.front();
 	}
 
 	bool SceneSystem::save_scene(SceneHandle scene_handle, Vadon::Utilities::JSON& writer)
@@ -131,7 +212,10 @@ namespace Vadon::Private::Scene
 			Vadon::Utilities::JSON current_node_object = Vadon::Utilities::JSON::object();
 
 			current_node_object["name"] = current_node_data.name;
-			current_node_object["parent"] = current_node_data.parent;
+			if (current_node_data.has_parent() == true)
+			{
+				current_node_object["parent"] = get_node_path(scene_data, current_node_data.parent);
+			}
 			current_node_object["type"] = current_node_data.type;
 			
 			Vadon::Utilities::JSON& node_properties_object = current_node_object["properties"];
@@ -159,32 +243,67 @@ namespace Vadon::Private::Scene
 			return false;
 		}
 
+		std::unordered_map<std::string, int32_t> node_index_lookup;
+
 		const Vadon::Utilities::JSON& nodes_array = reader.get_current_object();
 		for (const Vadon::Utilities::JSON& current_node_object : nodes_array)
 		{
+			Vadon::Utilities::JSONReader current_node_reader(current_node_object);
+
+			// FIXME: only add to array once we're sure everything is correct?
+			const int32_t node_index = static_cast<int32_t>(new_scene_data.nodes.size());
 			SceneData::NodeData& node_data = new_scene_data.nodes.emplace_back();
 
 			node_data.name = current_node_object["name"];
-			node_data.parent = current_node_object["parent"];
+
+			{
+				auto parent_it = current_node_object.find("parent");
+				if (parent_it != current_node_object.end())
+				{
+					std::string parent_path = parent_it.value();
+					if (parent_path != ".")
+					{
+						parent_path = "./" + parent_path;
+					}
+					auto parent_index_it = node_index_lookup.find(parent_path);
+					if (parent_index_it != node_index_lookup.end())
+					{
+						node_data.parent = parent_index_it->second;
+					}
+					else
+					{
+						// TODO: error?
+						assert(false);
+					}
+
+					const std::string current_node_path = parent_path + "/" + node_data.name;
+					node_index_lookup[current_node_path] = node_index;
+				}
+				else
+				{
+					// No parent, so this is the root
+					node_index_lookup["."] = node_index;
+				}
+			}
 			node_data.type = current_node_object["type"];
 
-			if (reader.open_array("properties") == false)
+			if (current_node_reader.open_object("properties") == false)
 			{
 				// TODO: error?
 				return false;
 			}
 
-			const Vadon::Utilities::JSON& node_properties_object = reader.get_current_object();
+			const Vadon::Utilities::JSON& node_properties_object = current_node_reader.get_current_object();
 			for (const auto& current_property_object : node_properties_object.items())
 			{
 				SceneData::NodeData::Property& current_property = node_data.properties.emplace_back();
 
 				current_property.name = current_property_object.key();
 
-				const Vadon::Utilities::JSON& property_value = current_property_object.value().type();
+				const Vadon::Utilities::JSON& property_value = current_property_object.value();
 				read_json_to_variant(property_value, current_property.value);
 			}
-			reader.close_object();
+			current_node_reader.close_object();
 		}
 		reader.close_object();
 

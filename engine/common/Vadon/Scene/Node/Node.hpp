@@ -32,7 +32,10 @@ namespace Vadon::Scene
 		const NodeList& get_children() const { return m_children; }
 
 		std::string get_name() const { return m_name; }
-		void set_name(std::string_view name) { m_name = name; }
+		VADONCOMMON_API void set_name(std::string_view name);
+
+		VADONCOMMON_API bool is_ancestor_of(const Node& node) const;
+		VADONCOMMON_API std::string get_node_path() const;
 	protected:
 		VADONCOMMON_API static void bind_methods(Core::ObjectClassData& class_data);
 	private:
@@ -41,6 +44,8 @@ namespace Vadon::Scene
 
 		void enter_tree();
 		void exit_tree();
+
+		void enforce_unique_child_name(Node* child);
 
 		Node* m_parent = nullptr;
 		bool m_in_tree = false; // FIXME: use a flag, or use recursive query?

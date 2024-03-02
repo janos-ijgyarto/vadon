@@ -2,6 +2,8 @@
 
 #include <VadonEditor/Core/Editor.hpp>
 
+#include <VadonEditor/Model/Scene/SceneTree.hpp>
+
 #include <Vadon/Core/Object/ObjectSystem.hpp>
 #include <Vadon/Scene/Node/Node.hpp>
 
@@ -9,23 +11,21 @@ namespace VadonEditor::Model
 {
 	struct ModelSystem::Internal
 	{
-		Core::Editor& m_editor;
-		Vadon::Core::ObjectClassInfoList m_node_class_list;
+		SceneTree m_scene_tree;
 
 		Internal(Core::Editor& editor)
-			: m_editor(editor)
+			: m_scene_tree(editor)
 		{
 		}
 
 		bool initialize()
 		{
-			// TODO!!!
-			return true;
-		}
+			if (m_scene_tree.initialize() == false)
+			{
+				return false;
+			}
 
-		void post_init()
-		{
-			rebuild_node_class_list();
+			return true;
 		}
 
 		void update()
@@ -33,18 +33,22 @@ namespace VadonEditor::Model
 			// TODO
 		}
 
-		void rebuild_node_class_list()
+		Vadon::Core::ObjectClassInfoList get_node_type_list(Core::Editor& editor) const
 		{
-			m_node_class_list = m_editor.get_engine_core().get_system<Vadon::Core::ObjectSystem>().get_subclass_hierarchy<Vadon::Scene::Node>();
+			return editor.get_engine_core().get_system<Vadon::Core::ObjectSystem>().get_subclass_hierarchy<Vadon::Scene::Node>();
 		}
 	};
 
 	ModelSystem::~ModelSystem() = default;
 
-	const Vadon::Core::ObjectClassInfoList& ModelSystem::get_node_class_list() const
+	SceneTree& ModelSystem::get_scene_tree()
 	{
-		// FIXME: should have a check here for whether the list is up-to-date, rebuild if not
-		return m_internal->m_node_class_list;
+		return m_internal->m_scene_tree;
+	}
+
+	Vadon::Core::ObjectClassInfoList ModelSystem::get_node_type_list() const
+	{
+		return m_internal->get_node_type_list(m_editor);
 	}
 
 	ModelSystem::ModelSystem(Core::Editor& editor)
@@ -57,11 +61,6 @@ namespace VadonEditor::Model
 	bool ModelSystem::initialize()
 	{
 		return m_internal->initialize();
-	}
-
-	void ModelSystem::post_init()
-	{
-		m_internal->post_init();
 	}
 
 	void ModelSystem::update()

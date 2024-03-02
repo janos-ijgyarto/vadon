@@ -47,6 +47,12 @@ namespace VadonApp::Platform
         KEY_x,
         KEY_y,
         KEY_z,
+        INSERT,
+        HOME,
+        PAGE_UP,
+        DELETE_KEY, // NOTE: needed suffix to avoid conflict with macro
+        END,
+        PAGE_DOWN,
         RIGHT,
         LEFT,
         DOWN,

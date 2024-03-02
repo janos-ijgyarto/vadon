@@ -92,11 +92,6 @@ namespace VadonEditor::Core
 			return true;
 		}
 
-		void post_init()
-		{
-			m_model_system.post_init();
-		}
-
 		void parse_command_line(int argc, char* argv[])
 		{
 			m_program_name = argv[0];
@@ -278,10 +273,6 @@ namespace VadonEditor::Core
 			m_internal->shutdown();
 			return 2;
 		}
-
-		// FIXME: this was necessary because user adds Nodes in post_init
-		// Should have some kind of signaling system so the model knows when the node type list is out of date?
-		m_internal->post_init();
 
 		return m_internal->execute();
 	}

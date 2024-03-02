@@ -10,6 +10,8 @@ namespace VadonApp::UI::Developer
 	class GUISystem : public UISystemBase<GUISystem>
 	{
 	public:
+		using ID = uint32_t;
+
 		enum class IOFlags
 		{
 			NONE = 0,
@@ -54,6 +56,9 @@ namespace VadonApp::UI::Developer
 		virtual void push_id(int32_t int_id) = 0;
 		virtual void pop_id() = 0;
 
+		virtual ID get_id(std::string_view string_id) = 0; // Calculate unique ID for string
+		virtual ID get_id(const void* pointer_id) = 0;
+
 		virtual bool begin_window(Window& window) = 0;
 		virtual void end_window() = 0;
 
@@ -74,6 +79,7 @@ namespace VadonApp::UI::Developer
 		virtual bool push_tree_node(const void* id, std::string_view label, TreeNodeFlags flags = TreeNodeFlags::NONE) = 0;
 		virtual void pop_tree_node() = 0;
 
+		// FIXME: these all have basically the same API and behavior. Should these be de-duplicated?
 		virtual bool draw_input_int(InputInt& input_int) = 0;
 		virtual bool draw_input_int2(InputInt2& input_int) = 0;
 		virtual bool draw_input_float(InputFloat& input_float) = 0;
@@ -81,6 +87,7 @@ namespace VadonApp::UI::Developer
 
 		virtual bool draw_input_text(InputText& input_text) = 0;
 
+		// FIXME: these all have basically the same API and behavior. Should these be de-duplicated?
 		virtual bool draw_slider_int(SliderInt& slider) = 0;
 		virtual bool draw_slider_int2(SliderInt2& slider) = 0;
 		virtual bool draw_slider_float(SliderFloat& slider) = 0;

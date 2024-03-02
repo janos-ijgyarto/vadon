@@ -7,24 +7,16 @@ namespace VadonEditor::Platform
 {
 	struct PlatformInterface::Internal
 	{
-		Core::Editor& m_editor;
-
 		std::vector<PlatformEventCallback> m_event_callbacks;
-
-		Internal(Core::Editor& editor)
-			: m_editor(editor)
-		{
-
-		}
 
 		bool initialize()
 		{
 			return true;
 		}
 
-		void update()
+		void update(Core::Editor& editor)
 		{
-			VadonApp::Platform::PlatformInterface& platform_interface = m_editor.get_engine_app().get_system<VadonApp::Platform::PlatformInterface>();
+			VadonApp::Platform::PlatformInterface& platform_interface = editor.get_engine_app().get_system<VadonApp::Platform::PlatformInterface>();
 			const VadonApp::Platform::PlatformEventList platform_events = platform_interface.read_events();
 
 			if (platform_events.empty())
@@ -49,7 +41,7 @@ namespace VadonEditor::Platform
 
 	PlatformInterface::PlatformInterface(Core::Editor& editor)
 		: System(editor)
-		, m_internal(std::make_unique<Internal>(editor))
+		, m_internal(std::make_unique<Internal>())
 	{
 
 	}
@@ -61,6 +53,6 @@ namespace VadonEditor::Platform
 
 	void PlatformInterface::update()
 	{
-		m_internal->update();
+		m_internal->update(m_editor);
 	}
 }

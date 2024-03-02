@@ -81,6 +81,18 @@ namespace VadonApp::Private::UI::Developer::Dummy
         // TODO
     }
 
+    GUISystem::ID GUISystem::get_id(std::string_view /*string_id*/)
+    {
+        // TODO
+        return 0;
+    }
+
+    GUISystem::ID GUISystem::get_id(const void* /*pointer_id*/)
+    {
+        // TODO
+        return 0;
+    }
+
     bool GUISystem::begin_window(Window& /*window*/)
     {
         // TODO!!!

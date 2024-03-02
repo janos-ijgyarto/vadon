@@ -171,6 +171,18 @@ namespace VadonApp::Private::Platform::SDL
 				return KeyCode::KEY_y;
 			case SDLK_z:
 				return KeyCode::KEY_z;
+			case SDLK_INSERT:
+				return KeyCode::INSERT;
+			case SDLK_HOME:
+				return KeyCode::HOME;
+			case SDLK_PAGEUP:
+				return KeyCode::PAGE_UP;
+			case SDLK_DELETE:
+				return KeyCode::DELETE_KEY;
+			case SDLK_END:
+				return KeyCode::END;
+			case SDLK_PAGEDOWN:
+				return KeyCode::PAGE_DOWN;
 			case SDLK_RIGHT:
 				return KeyCode::RIGHT;
 			case SDLK_LEFT:

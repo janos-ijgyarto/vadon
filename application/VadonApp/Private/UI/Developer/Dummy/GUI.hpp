@@ -30,6 +30,9 @@ namespace VadonApp::Private::UI::Developer::Dummy
 		void push_id(int32_t int_id) override;
 		void pop_id() override;
 
+		ID get_id(std::string_view string_id) override;
+		ID get_id(const void* pointer_id) override;
+
 		bool begin_window(Window& window) override;
 		void end_window() override;
 

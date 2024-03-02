@@ -30,9 +30,12 @@
 #include <Vadon/Utilities/Container/Concurrent/TripleBuffer.hpp>
 #include <Vadon/Utilities/Data/DataUtilities.hpp>
 #include <Vadon/Utilities/Math/Matrix.hpp>
+#include <Vadon/Utilities/Serialization/JSON/JSONImpl.hpp>
 
 #include <deque>
 #include <format>
+#include <filesystem>
+#include <fstream>
 
 namespace VadonDemo::UI
 {
@@ -260,36 +263,61 @@ float4 main(PS_INPUT input) : SV_Target
 
 			Vadon::Scene::SceneSystem& scene_system = engine_core.get_system<Vadon::Scene::SceneSystem>();
 
-			// FIXME: load scene from file!
+			// FIXME: load using project file!
 			{
-				Vadon::Scene::Node& root_node = scene_system.get_root();
+				Vadon::Scene::SceneInfo scene_info;
+				scene_info.name = "TestScene";
 
-				Model::Pivot* test_pivot = new Model::Pivot(engine_core);
-				test_pivot->set_scale(30.0f);
+				Vadon::Scene::SceneHandle scene_handle = scene_system.create_scene(scene_info);
 
-				Model::Pivot* test_child_pivot = new Model::Pivot(engine_core);
-				test_child_pivot->set_position({ 100, 100 });
-				test_child_pivot->set_scale(15.0f);
+				const std::string scene_file_path = scene_info.name + ".vdsc";
+				if (std::filesystem::exists(scene_file_path) == true)
+				{
+					std::ifstream scene_file(scene_file_path);
+					if (scene_file.is_open() == false)
+					{
+						engine_core.get_logger().error("Cannot open scene file!\n");
+						return;
+					}
 
-				test_pivot->add_child(test_child_pivot);
+					Vadon::Utilities::JSON scene_data_json;
+					try
+					{
+						scene_data_json = Vadon::Utilities::JSON::parse(scene_file);
+					}
+					catch (const Vadon::Utilities::JSON::exception& exception)
+					{
+						engine_core.get_logger().error(std::string("Error parsing scene file: ") + exception.what() + "\n");
+						return;
+					}
 
-				Model::Orbiter* test_orbiter = new Model::Orbiter(engine_core);
+					scene_file.close();
 
-				test_orbiter->set_position({ 150, 150 });
-				test_orbiter->set_scale(10.0f);
-				test_orbiter->set_angular_velocity(10.0f);
+					Vadon::Utilities::JSONReader scene_data_reader(scene_data_json);
+					if (scene_system.load_scene(scene_handle, scene_data_reader) == false)
+					{
+						engine_core.get_logger().error("Error loading scene file!\n");
+						return;
+					}
 
-				test_child_pivot->add_child(test_orbiter);
-				root_node.add_child(test_pivot);
+					Vadon::Scene::Node* scene_node = scene_system.instantiate_scene(scene_handle);
+					if (scene_node == nullptr)
+					{
+						engine_core.get_logger().error("Error instantiating scene!\n");
+						return;
+					}
+
+					scene_system.get_root().add_child(scene_node);
+				}
 			}
 			
 			std::deque<Vadon::Scene::Node*> node_queue;
-			node_queue.push_back(&scene_system.get_root());
+			node_queue.push_front(&scene_system.get_root());
 
 			Vadon::Core::ObjectSystem& object_system = engine_core.get_system<Vadon::Core::ObjectSystem>();
 			while (node_queue.empty() == false)
 			{
-				Vadon::Scene::Node* current_node = node_queue.back();
+				Vadon::Scene::Node* current_node = node_queue.front();
 				Model::Node2D* node_2d = object_system.get_object_as<Model::Node2D>(*current_node);
 
 				if (node_2d != nullptr)
@@ -513,6 +541,7 @@ float4 main(PS_INPUT input) : SV_Target
 				vertex_buffer_info.capacity = static_cast<int32_t>(vertices.size());
 
 				m_vertex_buffer = buffer_system.create_buffer(vertex_buffer_info);
+				m_current_vertex_count = vertices.size();
 			}
 
 			// Buffer the vertices

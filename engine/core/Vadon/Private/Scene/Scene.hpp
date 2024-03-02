@@ -21,10 +21,11 @@ namespace Vadon::Private::Scene
 			};
 
 			std::string name;
-			int32_t parent = 0;
-			// TODO: child index?
+			int32_t parent = -1;
 			std::string type;
 			std::vector<Property> properties;
+
+			bool has_parent() const { return (parent >= 0); }
 		};
 
 		// FIXME: optimize by splitting into arrays for data/strings/etc?

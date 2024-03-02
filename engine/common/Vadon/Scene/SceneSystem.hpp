@@ -16,6 +16,8 @@ namespace Vadon::Scene
 		virtual SceneInfo get_scene_info(SceneHandle scene_handle) const = 0;
 
 		virtual bool set_scene_data(SceneHandle scene_handle, Node& root_node) = 0;
+		virtual Node* instantiate_scene(SceneHandle scene_handle) = 0;
+
 		virtual bool save_scene(SceneHandle scene_handle, Vadon::Utilities::JSON& writer) = 0; // FIXME: take path and write to file internally?
 		virtual bool load_scene(SceneHandle scene_handle, Vadon::Utilities::JSONReader& reader) = 0; // FIXME: take path and read from file internally?
 
