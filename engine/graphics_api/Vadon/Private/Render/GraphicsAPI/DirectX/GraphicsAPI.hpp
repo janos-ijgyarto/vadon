@@ -15,8 +15,8 @@ namespace Vadon::Private::Render::DirectX
 	class GraphicsAPI final : public Render::GraphicsAPIBase
 	{
 	public:
-		using Device = ID3D11Device;
-		using DeviceContext = ID3D11DeviceContext;
+		using Device = ID3D11Device1;
+		using DeviceContext = ID3D11DeviceContext1;
 
 		GraphicsAPI(Vadon::Core::EngineCoreInterface& core);
 		~GraphicsAPI();
@@ -41,8 +41,8 @@ namespace Vadon::Private::Render::DirectX
 		ComPtr<IDXGIFactory6> m_dxgi_factory;
 		ComPtr<IDXGIAdapter4> m_dxgi_adapter;
 
-		ComPtr<ID3D11Device> m_device;
-		ComPtr<ID3D11DeviceContext> m_device_context;
+		ComPtr<Device> m_device;
+		ComPtr<DeviceContext> m_device_context;
 #ifndef NDEBUG
 		ComPtr<ID3D11Debug> m_d3d_debug;
 		ComPtr<ID3D11InfoQueue> m_info_queue;

@@ -1,0 +1,8 @@
+#include <@SHADER_INCLUDE_PATH@/@SHADER_FILE_NAME@.hpp>
+
+namespace @SHADER_SOURCE_NAMESPACE@
+{
+	const char* c_shader_source = R"(
+	@SHADER_FILE_CONTENT@
+	)";
+}

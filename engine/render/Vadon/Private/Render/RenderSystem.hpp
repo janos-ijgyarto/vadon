@@ -1,6 +1,7 @@
 #ifndef VADON_PRIVATE_RENDER_RENDERSYSTEM_HPP
 #define VADON_PRIVATE_RENDER_RENDERSYSTEM_HPP
 #include <Vadon/Render.hpp>
+#include <Vadon/Private/Render/Canvas/CanvasSystem.hpp>
 #include <Vadon/Private/Render/Frame/FrameSystem.hpp>
 namespace Vadon::Core
 {
@@ -20,6 +21,7 @@ namespace Vadon::Private::Render
 		void VADONRENDER_API shutdown();
 	private:
 		Vadon::Core::EngineCoreInterface& m_core;
+		Canvas::CanvasSystem m_canvas_system;
 		FrameSystem m_frame_system;
 	};
 }

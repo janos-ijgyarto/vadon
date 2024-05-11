@@ -1,0 +1,18 @@
+#ifndef VADON_PRIVATE_RENDER_CANVAS_MATERIAL_HPP
+#define VADON_PRIVATE_RENDER_CANVAS_MATERIAL_HPP
+#include <Vadon/Render/Canvas/Material.hpp>
+namespace Vadon::Private::Render::Canvas
+{
+	using SDFParameters = Vadon::Render::Canvas::SDFParameters;
+	using MaterialInfo = Vadon::Render::Canvas::MaterialInfo;
+
+	using MaterialHandle = Vadon::Render::Canvas::MaterialHandle;
+
+	struct MaterialData
+	{
+		MaterialInfo info;
+		SDFParameters sdf;
+		// TODO: other data?
+	};
+}
+#endif

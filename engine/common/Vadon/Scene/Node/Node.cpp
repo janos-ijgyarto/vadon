@@ -109,7 +109,7 @@ namespace Vadon::Scene
 		class_data.bind_method<VADON_METHOD_BIND(get_name)>("get_name");
 		class_data.bind_method<VADON_METHOD_BIND(set_name)>("set_name");
 
-		class_data.add_property(VADON_ADD_OBJECT_PROPERTY("name", m_name, "get_name", "set_name"));
+		class_data.add_property(VADON_ADD_OBJECT_MEMBER_PROPERTY("name", m_name, "get_name", "set_name"));
 	}
 
 	void Node::internal_remove_child(Node* node, bool reparent)

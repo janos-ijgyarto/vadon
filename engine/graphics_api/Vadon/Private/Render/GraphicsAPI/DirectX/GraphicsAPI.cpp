@@ -112,9 +112,9 @@ namespace Vadon::Private::Render::DirectX
 		// FIXME: should implement System interface, where they have this stuff wrapped as "system_log/error/etc."
 		log("Initializing DirectX graphics API.\n");
 
-		std::array<D3D_FEATURE_LEVEL, 2> feature_levels = {
+		std::array<D3D_FEATURE_LEVEL, 1> feature_levels = {
 			D3D_FEATURE_LEVEL_11_1,
-			D3D_FEATURE_LEVEL_11_0
+			//D3D_FEATURE_LEVEL_11_0
 		};
 
 		constexpr UINT num_feature_levels = static_cast<UINT>(feature_levels.size());
@@ -165,7 +165,10 @@ namespace Vadon::Private::Render::DirectX
 			char default_char = ' ';
 			WideCharToMultiByte(CP_ACP, 0, dxgi_adapter_desc.Description, -1, adapter_desc.data(), static_cast<int>(adapter_desc.size()), &default_char, NULL);
 
-			HRESULT result = D3D11CreateDevice(m_dxgi_adapter.Get(), D3D_DRIVER_TYPE_UNKNOWN, NULL, device_flags, feature_levels.data(), num_feature_levels, D3D11_SDK_VERSION, &m_device, &m_d3d_info.m_feature_level, &m_device_context);
+			ComPtr<ID3D11Device> device;
+			ComPtr<ID3D11DeviceContext>  device_context;
+
+			HRESULT result = D3D11CreateDevice(m_dxgi_adapter.Get(), D3D_DRIVER_TYPE_UNKNOWN, NULL, device_flags, feature_levels.data(), num_feature_levels, D3D11_SDK_VERSION, device.ReleaseAndGetAddressOf(), &m_d3d_info.m_feature_level, device_context.ReleaseAndGetAddressOf());
 			if (FAILED(result))
 			{
 				error(std::format("Failed to create D3D11 device: {0}!\n", adapter_desc.data()));
@@ -173,6 +176,19 @@ namespace Vadon::Private::Render::DirectX
 			else
 			{
 				log(std::format("Successfully created D3D11 device: {0}!\n", adapter_desc.data()));
+
+				if (FAILED(device.As(&m_device)))
+				{
+					error("Failed to cast D3D11 device to feature level!\n");
+					return false;
+				}
+
+				if (FAILED(device_context.As(&m_device_context)))
+				{
+					error("Failed to cast D3D11 device context to feature level!\n");
+					return false;
+				}
+
 				break;
 			}
 		}

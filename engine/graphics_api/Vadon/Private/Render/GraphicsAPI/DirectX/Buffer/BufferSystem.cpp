@@ -65,7 +65,7 @@ namespace Vadon::Private::Render::DirectX
 				buffer_description.MiscFlags |= D3D11_RESOURCE_MISC_BUFFER_ALLOW_RAW_VIEWS;
 			}
 			break;
-			case BufferType::RESOURCE:
+			case BufferType::TYPED:
 			{
 				// FIXME: we are mandating SRV for this buffer type, should we allow user to opt out?
 				buffer_description.BindFlags |= D3D11_BIND_SHADER_RESOURCE;
@@ -183,8 +183,7 @@ namespace Vadon::Private::Render::DirectX
 			};
 
 			// Subresources are only relevant for textures
-			// Constant buffers do not use box at all
-			device_context->UpdateSubresource(buffer.d3d_buffer.Get(), 0, is_not_cbuffer ? &dest_box : nullptr, write_data.data, source_row_pitch, 0);
+			device_context->UpdateSubresource1(buffer.d3d_buffer.Get(), 0, &dest_box, write_data.data, source_row_pitch, 0, (write_data.no_overwrite == true) ? D3D11_COPY_NO_OVERWRITE : D3D11_COPY_DISCARD);
 			return true;
 		}
 		case ResourceUsage::IMMUTABLE:

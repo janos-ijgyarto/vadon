@@ -14,5 +14,15 @@ namespace Vadon::Utilities
 	using Vector2u = glm::uvec2;
 	using Vector3u = glm::uvec3;
 	using Vector4u = glm::uvec4;
+
+	// TODO: additional constants?
+	constexpr Vector2 Vector2_Zero = Vector2{ 0, 0 };
+	constexpr Vector2 Vector2_One = Vector2{ 1, 1 };
+
+	constexpr Vector3 Vector3_Zero = Vector3{ 0, 0, 0 };
+	constexpr Vector3 Vector3_One = Vector3{ 1, 1, 1 };
+
+	constexpr Vector4 Vector4_Zero = Vector4{ 0, 0, 0, 0 };
+	constexpr Vector4 Vector4_One = Vector4{ 1, 1, 1, 1 };
 }
 #endif

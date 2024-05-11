@@ -16,6 +16,7 @@ namespace VadonDemo::Model
 	{
 		Vadon::Core::ObjectSystem& obj_system = m_engine_core.get_system<Vadon::Core::ObjectSystem>();
 
+		obj_system.register_object_class<CanvasLayer>();
 		obj_system.register_object_class<Node2D>();
 		obj_system.register_object_class<Orbiter>();
 		obj_system.register_object_class<Pivot>();

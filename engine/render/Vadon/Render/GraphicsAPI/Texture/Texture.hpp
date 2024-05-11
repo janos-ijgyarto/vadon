@@ -92,6 +92,13 @@ namespace Vadon::Render
 		int32_t first_array_slice = 0;
 		int32_t array_size = 0;
 	};
+
+
+	struct TextureObject
+	{
+		TextureHandle texture;
+		ResourceViewHandle resource_view;
+	};
 }
 namespace Vadon::Utilities
 {

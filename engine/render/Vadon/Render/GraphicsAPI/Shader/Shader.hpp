@@ -47,5 +47,14 @@ namespace Vadon::Render
 	using VertexLayoutInfo = std::vector<VertexLayoutElement>;
 
 	VADON_DECLARE_TYPED_POOL_HANDLE(VertexLayout, VertexLayoutHandle);
+
+	// FIXME: more appropriate name?
+	struct ShaderObject
+	{
+		ShaderHandle vertex_shader;
+		ShaderHandle pixel_shader;
+
+		VertexLayoutHandle vertex_layout;
+	};
 }
 #endif

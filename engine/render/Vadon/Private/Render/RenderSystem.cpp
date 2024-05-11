@@ -9,6 +9,7 @@ namespace Vadon::Private::Render
 {
 	RenderSystem::RenderSystem(Vadon::Core::EngineCoreInterface& core)
 		: m_core(core)
+		, m_canvas_system(core)
 		, m_frame_system(core)
 	{
 
@@ -21,7 +22,13 @@ namespace Vadon::Private::Render
 		Vadon::Core::Logger& logger = m_core.get_logger();
 		logger.log("Initializing render system.\n");
 
-		if (!m_frame_system.initialize())
+		if (m_canvas_system.initialize() == false)
+		{
+			logger.log("Render system initialization failed.\n");
+			return false;
+		}
+
+		if (m_frame_system.initialize() == false)
 		{
 			logger.log("Render system initialization failed.\n");
 			return false;

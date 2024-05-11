@@ -70,14 +70,14 @@ namespace Vadon::Private::Core
             return false;
         }
 
-        if (m_render_system.initialize() == false)
+        m_graphics_api = Render::GraphicsAPIBase::get_graphics_api(*this);
+        if (m_graphics_api->initialize() == false)
         {
             m_logger->log(c_failure_message);
             return false;
         }
 
-        m_graphics_api = Render::GraphicsAPIBase::get_graphics_api(*this);
-        if (m_graphics_api->initialize() == false)
+        if (m_render_system.initialize() == false)
         {
             m_logger->log(c_failure_message);
             return false;

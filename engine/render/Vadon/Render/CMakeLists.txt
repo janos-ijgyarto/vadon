@@ -1,3 +1,4 @@
+add_subdirectory(Canvas)
 add_subdirectory(Frame)
 add_subdirectory(GraphicsAPI)
 add_subdirectory(Utilities)

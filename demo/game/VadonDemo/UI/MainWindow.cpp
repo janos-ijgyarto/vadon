@@ -1,39 +1,29 @@
 #include <VadonDemo/UI/MainWindow.hpp>
 
 #include <VadonDemo/Core/GameCore.hpp>
-#include <VadonDemo/Model/Model.hpp>
 #include <VadonDemo/Model/Node.hpp>
 #include <VadonDemo/Platform/PlatformInterface.hpp>
 #include <VadonDemo/Render/RenderSystem.hpp>
 
-#include <VadonApp/Core/Application.hpp>
-
 #include <VadonApp/Platform/PlatformInterface.hpp>
 
-#include <VadonApp/UI/UISystem.hpp>
 #include <VadonApp/UI/Console.hpp>
+#include <VadonApp/UI/UISystem.hpp>
 #include <VadonApp/UI/Developer/GUI.hpp>
-
-#include <Vadon/Scene/SceneSystem.hpp>
 
 #include <Vadon/Core/Object/ObjectSystem.hpp>
 #include <Vadon/Core/Task/TaskSystem.hpp>
 
-#include <Vadon/Render/GraphicsAPI/GraphicsAPI.hpp>
-#include <Vadon/Render/GraphicsAPI/Buffer/BufferSystem.hpp>
-#include <Vadon/Render/GraphicsAPI/Pipeline/PipelineSystem.hpp>
+#include <Vadon/Render/Canvas/CanvasSystem.hpp>
+#include <Vadon/Render/Frame/FrameSystem.hpp>
 #include <Vadon/Render/GraphicsAPI/RenderTarget/RenderTargetSystem.hpp>
-#include <Vadon/Render/GraphicsAPI/Shader/ShaderSystem.hpp>
 
-#include <Vadon/Render/Utilities/Projection.hpp>
+#include <Vadon/Scene/SceneSystem.hpp>
 
 #include <Vadon/Utilities/Container/Concurrent/TripleBuffer.hpp>
-#include <Vadon/Utilities/Data/DataUtilities.hpp>
-#include <Vadon/Utilities/Math/Matrix.hpp>
 #include <Vadon/Utilities/Serialization/JSON/JSONImpl.hpp>
 
 #include <deque>
-#include <format>
 #include <filesystem>
 #include <fstream>
 
@@ -46,55 +36,6 @@ namespace VadonDemo::UI
 		using Duration = std::chrono::duration<float>;
 
 		TimePoint last_frame_time = Clock::now();
-
-		constexpr const char* c_vertex_shader_source =
-R"(cbuffer Constants : register(b0)
-{       
-	struct 
-	{
-		float4x4 projection;
-	} Constants;
-}
-
-struct VS_INPUT
-{
-	float4 pos : POSITION;
-	float4 col : COLOR0;
-};
-
-struct PS_INPUT
-{
-	float4 pos : SV_POSITION;
-	float4 col : COLOR0;
-};
-
-PS_INPUT main(VS_INPUT input)
-{
-	PS_INPUT output;
-	output.pos = mul(input.pos, Constants.projection);
-	output.col = input.col;
-	return output;
-})";
-
-		constexpr const char* c_pixel_shader_source =
-R"(struct PS_INPUT
-{
-	float4 pos : SV_POSITION;
-	float4 col : COLOR0;
-};
-
-float4 main(PS_INPUT input) : SV_Target
-{
-	return input.col; 
-})";
-
-		struct Vertex
-		{
-			Vadon::Utilities::Vector4 position;
-			Vadon::Utilities::Vector4 color;
-		};
-
-		using VertexList = std::vector<Vertex>;
 
 		struct MainWindowDevGUI
 		{
@@ -224,16 +165,9 @@ float4 main(PS_INPUT input) : SV_Target
 		VadonApp::Platform::PlatformEventList* m_dev_gui_event_read_buffer;
 		std::mutex m_dev_gui_event_mutex;
 
-		Render::Shader m_test_shader;
-		Vadon::Render::BufferHandle m_vertex_buffer;
-		size_t m_current_vertex_count = 0;
-		Vadon::Render::PipelineState m_pipeline_state;
-		Vadon::Render::BufferHandle m_constant_buffer;
-
 		MainWindowDevGUI m_dev_gui;
 
-		std::vector<Model::Node2D*> m_rendered_nodes;
-		Vadon::Render::DrawCommand m_draw_command;
+		Vadon::Render::Canvas::RenderContext m_canvas_context;
 
 		Internal(Core::GameCore& game_core)
 			: m_game_core(game_core)
@@ -256,8 +190,6 @@ float4 main(PS_INPUT input) : SV_Target
 
 		void init_scene()
 		{
-			m_rendered_nodes.clear();
-
 			VadonApp::Core::Application& engine_app = m_game_core.get_engine_app();
 			Vadon::Core::EngineCoreInterface& engine_core = engine_app.get_engine_core();
 
@@ -310,25 +242,44 @@ float4 main(PS_INPUT input) : SV_Target
 					scene_system.get_root().add_child(scene_node);
 				}
 			}
-			
-			std::deque<Vadon::Scene::Node*> node_queue;
-			node_queue.push_front(&scene_system.get_root());
 
-			Vadon::Core::ObjectSystem& object_system = engine_core.get_system<Vadon::Core::ObjectSystem>();
-			while (node_queue.empty() == false)
 			{
-				Vadon::Scene::Node* current_node = node_queue.front();
-				Model::Node2D* node_2d = object_system.get_object_as<Model::Node2D>(*current_node);
+				VadonApp::Platform::PlatformInterface& platform_interface = engine_app.get_system<VadonApp::Platform::PlatformInterface>();
+				const VadonApp::Platform::RenderWindowInfo main_window_info = platform_interface.get_window_info();
 
-				if (node_2d != nullptr)
+				m_canvas_context.camera.view_rectangle.size = main_window_info.window.size;
+
 				{
-					m_rendered_nodes.push_back(node_2d);
+					Vadon::Render::RenderTargetSystem& rt_system = engine_core.get_system<Vadon::Render::RenderTargetSystem>();
+
+					Vadon::Render::Canvas::Viewport canvas_viewport;
+					canvas_viewport.render_target = rt_system.get_window_target(main_window_info.render_handle);
+					canvas_viewport.render_viewport.dimensions.size = main_window_info.window.size;
+
+					m_canvas_context.viewports.push_back(canvas_viewport);
 				}
 
-				const Vadon::Scene::NodeList& current_node_children = current_node->get_children();
-				node_queue.insert(node_queue.end(), current_node_children.begin(), current_node_children.end());
+				// Find canvas layer nodes
+				Vadon::Core::ObjectSystem& object_system = engine_core.get_system<Vadon::Core::ObjectSystem>();
 
-				node_queue.pop_front();
+				std::deque<Vadon::Scene::Node*> node_queue;
+				node_queue.push_front(&scene_system.get_root());
+
+				while (node_queue.empty() == false)
+				{
+					Vadon::Scene::Node* current_node = node_queue.front();
+					Model::CanvasLayer* canvas_layer_node = object_system.get_object_as<Model::CanvasLayer>(*current_node);
+
+					if (canvas_layer_node != nullptr)
+					{
+						m_canvas_context.layers.push_back(canvas_layer_node->get_layer_handle());
+					}
+
+					const Vadon::Scene::NodeList& current_node_children = current_node->get_children();
+					node_queue.insert(node_queue.end(), current_node_children.begin(), current_node_children.end());
+
+					node_queue.pop_front();
+				}
 			}
 		}
 
@@ -336,67 +287,6 @@ float4 main(PS_INPUT input) : SV_Target
 		{
 			VadonApp::Core::Application& engine_app = m_game_core.get_engine_app();
 			Vadon::Core::EngineCoreInterface& engine_core = engine_app.get_engine_core();
-
-			// Create shaders
-			Vadon::Render::ShaderSystem& shader_system = engine_core.get_system<Vadon::Render::ShaderSystem>();
-
-			{
-				Vadon::Render::ShaderInfo vertex_shader_info;
-				vertex_shader_info.source = c_vertex_shader_source;
-				vertex_shader_info.entrypoint = "main";
-				vertex_shader_info.type = Vadon::Render::ShaderType::VERTEX;
-
-				m_test_shader.vertex_shader = shader_system.create_shader(vertex_shader_info);
-				assert(m_test_shader.vertex_shader.is_valid());
-
-				// Create vertex layout
-				Vadon::Render::VertexLayoutInfo vertex_layout_info;
-
-				{
-					Vadon::Render::VertexLayoutElement& position_element = vertex_layout_info.emplace_back();
-					position_element.format = Vadon::Render::GraphicsAPIDataFormat::R32G32B32A32_FLOAT;
-					position_element.type = Vadon::Render::VertexElementType::PER_VERTEX;
-					position_element.name = "POSITION";
-				}
-
-				{
-					Vadon::Render::VertexLayoutElement& color_element = vertex_layout_info.emplace_back();
-					color_element.format = Vadon::Render::GraphicsAPIDataFormat::R32G32B32A32_FLOAT;
-					color_element.type = Vadon::Render::VertexElementType::PER_VERTEX;
-					color_element.name = "COLOR";
-				}
-
-				m_test_shader.vertex_layout = shader_system.create_vertex_layout(m_test_shader.vertex_shader, vertex_layout_info);
-				assert(m_test_shader.vertex_layout.is_valid());
-			}
-
-			{
-				Vadon::Render::ShaderInfo pixel_shader_info;
-				pixel_shader_info.source = c_pixel_shader_source;
-				pixel_shader_info.entrypoint = "main";
-				pixel_shader_info.type = Vadon::Render::ShaderType::PIXEL;
-
-				m_test_shader.pixel_shader = shader_system.create_shader(pixel_shader_info);
-				assert(m_test_shader.pixel_shader.is_valid());
-			}
-
-			// Create constant buffer
-			VadonApp::Platform::PlatformInterface& platform_interface = engine_app.get_system<VadonApp::Platform::PlatformInterface>();
-			const VadonApp::Platform::RenderWindowInfo main_window_info = platform_interface.get_window_info();
-			{
-				Vadon::Render::BufferInfo cbuffer_info;
-				cbuffer_info.type = Vadon::Render::BufferType::CONSTANT;
-				cbuffer_info.usage = Vadon::Render::ResourceUsage::DYNAMIC;
-				cbuffer_info.element_size = sizeof(Vadon::Utilities::Matrix4);
-				cbuffer_info.capacity = 1;
-
-				const Vadon::Utilities::Vector2& window_size = main_window_info.window.size;
-
-				const Vadon::Utilities::Matrix4 projection_matrix = Vadon::Render::create_directx_orthographic_projection_matrix(-window_size.x / 2, window_size.x / 2, -window_size.y / 2, window_size.y / 2, -1.0f, 1.0f, Vadon::Render::CoordinateSystem::RIGHT_HAND);
-
-				Vadon::Render::BufferSystem& buffer_system = engine_core.get_system<Vadon::Render::BufferSystem>();
-				m_constant_buffer = buffer_system.create_buffer(cbuffer_info, &projection_matrix);
-			}
 
 			// Prepare frame graph
 			Vadon::Render::FrameGraphInfo frame_graph_info;
@@ -413,6 +303,9 @@ float4 main(PS_INPUT input) : SV_Target
 
 				clear_pass.targets.emplace_back("main_window", "main_window_cleared");
 
+				VadonApp::Platform::PlatformInterface& platform_interface = engine_app.get_system<VadonApp::Platform::PlatformInterface>();
+				const VadonApp::Platform::RenderWindowInfo main_window_info = platform_interface.get_window_info();
+
 				Vadon::Render::RenderTargetSystem& rt_system = engine_core.get_system<Vadon::Render::RenderTargetSystem>();
 				const Vadon::Render::RenderTargetHandle main_window_target = rt_system.get_window_target(main_window_info.render_handle);
 
@@ -425,53 +318,16 @@ float4 main(PS_INPUT input) : SV_Target
 			}
 
 			{
-				Vadon::Render::GraphicsAPI& graphics_api = engine_core.get_system<Vadon::Render::GraphicsAPI>();
+				Vadon::Render::RenderPass& canvas_pass = frame_graph_info.passes.emplace_back();
+				canvas_pass.name = "Canvas";
 
-				Vadon::Render::RenderPass& test_pass = frame_graph_info.passes.emplace_back();
-				test_pass.name = "Triangles";
+				canvas_pass.targets.emplace_back("main_window_cleared", "main_window_canvas");
 
-				test_pass.targets.emplace_back("main_window_cleared", "main_window_triangles");
-
-				test_pass.execution = [&platform_interface, &graphics_api, &shader_system, this]()
-				{
-					if (m_draw_command.vertices.count == 0)
+				canvas_pass.execution = [this]()
 					{
-						// Nothing to draw
-						return;
-					}
-
-					VadonApp::Core::Application& engine_app = m_game_core.get_engine_app();
-					Vadon::Core::EngineCoreInterface& engine_core = engine_app.get_engine_core();
-
-					Vadon::Render::PipelineSystem& pipeline_system = engine_core.get_system<Vadon::Render::PipelineSystem>();
-					pipeline_system.set_primitive_topology(Vadon::Render::PrimitiveTopology::TRIANGLE_LIST);
-
-					// Reset pipeline state
-					pipeline_system.apply_blend_state(m_pipeline_state.blend_update);
-					pipeline_system.apply_depth_stencil_state(m_pipeline_state.depth_stencil_update);
-					pipeline_system.apply_rasterizer_state(m_pipeline_state.rasterizer_state);
-
-					// Apply shaders
-					shader_system.apply_shader(m_test_shader.vertex_shader);
-					shader_system.apply_shader(m_test_shader.pixel_shader);
-
-					const VadonApp::Platform::RenderWindowInfo main_window_info = platform_interface.get_window_info();
-
-					Vadon::Render::Viewport viewport;
-					viewport.dimensions.size = main_window_info.window.size;
-
-					Vadon::Render::RenderTargetSystem& rt_system = engine_core.get_system<Vadon::Render::RenderTargetSystem>();
-					rt_system.apply_viewport(viewport);
-
-					shader_system.set_vertex_layout(m_test_shader.vertex_layout);
-
-					// Set buffers
-					Vadon::Render::BufferSystem& buffer_system = engine_core.get_system<Vadon::Render::BufferSystem>();
-					buffer_system.set_constant_buffer(Vadon::Render::ShaderType::VERTEX, m_constant_buffer, 0);
-					buffer_system.set_vertex_buffer(m_vertex_buffer, 0);
-
-					graphics_api.draw(m_draw_command);
-				};
+						Vadon::Render::Canvas::CanvasSystem& canvas_system = m_game_core.get_engine_app().get_engine_core().get_system<Vadon::Render::Canvas::CanvasSystem>();
+						canvas_system.render(m_canvas_context);
+					};
 			}
 
 			{
@@ -481,9 +337,9 @@ float4 main(PS_INPUT input) : SV_Target
 
 				dev_gui_pass.name = "DevGUI";
 
-				dev_gui_pass.targets.emplace_back("main_window_triangles", "main_window_dev_gui");
+				dev_gui_pass.targets.emplace_back("main_window_canvas", "main_window_dev_gui");
 
-				dev_gui_pass.execution = [this, &dev_gui_system, &shader_system]()
+				dev_gui_pass.execution = [this, &dev_gui_system]()
 				{
 					if(m_dev_gui_enabled == false)
 					{
@@ -519,34 +375,6 @@ float4 main(PS_INPUT input) : SV_Target
 					write_buffer.insert(write_buffer.end(), event_list.begin(), event_list.end());
 				}
 			);
-		}
-
-		void update_vertex_data(const VertexList& vertices)
-		{
-			Vadon::Core::EngineCoreInterface& engine_core = m_game_core.get_engine_app().get_engine_core();
-			Vadon::Render::BufferSystem& buffer_system = engine_core.get_system<Vadon::Render::BufferSystem>();
-
-			if (vertices.size() > m_current_vertex_count)
-			{
-				if (m_vertex_buffer.is_valid() == true)
-				{
-					// Clean up previous buffer
-					buffer_system.remove_buffer(m_vertex_buffer);
-				}
-
-				Vadon::Render::BufferInfo vertex_buffer_info;
-				vertex_buffer_info.type = Vadon::Render::BufferType::VERTEX;
-				vertex_buffer_info.usage = Vadon::Render::ResourceUsage::DYNAMIC;
-				vertex_buffer_info.element_size = sizeof(Vertex);
-				vertex_buffer_info.capacity = static_cast<int32_t>(vertices.size());
-
-				m_vertex_buffer = buffer_system.create_buffer(vertex_buffer_info);
-				m_current_vertex_count = vertices.size();
-			}
-
-			// Buffer the vertices
-			Vadon::Render::BufferWriteData vertex_buffer_write_data{ .range = { 0, static_cast<int32_t>(vertices.size()) }, .data = vertices.data() };
-			buffer_system.buffer_data(m_vertex_buffer, vertex_buffer_write_data);
 		}
 
 		Vadon::Core::TaskGroup update()
@@ -741,32 +569,6 @@ float4 main(PS_INPUT input) : SV_Target
 			// Update the nodes
 			// FIXME: should be doing it from the model thread, then sync with render thread!
 			engine_core.get_system<Vadon::Scene::SceneSystem>().update(delta_time);
-
-			// Generate the render data
-			// FIXME: move this to the shared library so the editor can use it too!
-			// FIXME2: implement generalized basic 2D rendering!
-			VertexList vertices;
-
-			for (Model::Node2D* render_node : m_rendered_nodes)
-			{
-				const Vadon::Utilities::Vector2 global_pos = render_node->get_global_position();
-				const float scale = render_node->get_scale();
-				const Vadon::Utilities::Vector4 color = render_node->get_color();
-				{
-					vertices.emplace_back(Vadon::Utilities::Vector4(global_pos.x, global_pos.y + scale, 0, 1), color);
-					vertices.emplace_back(Vadon::Utilities::Vector4(global_pos.x + scale, global_pos.y, 0, 1), color);
-					vertices.emplace_back(Vadon::Utilities::Vector4(global_pos.x - scale, global_pos.y, 0, 1), color);
-
-					vertices.emplace_back(Vadon::Utilities::Vector4(global_pos.x - scale, global_pos.y, 0, 1), color);
-					vertices.emplace_back(Vadon::Utilities::Vector4(global_pos.x + scale, global_pos.y, 0, 1), color);
-					vertices.emplace_back(Vadon::Utilities::Vector4(global_pos.x, global_pos.y - scale, 0, 1), color);
-				}
-			}
-
-			update_vertex_data(vertices);
-
-			m_draw_command.vertices.offset = 0;
-			m_draw_command.vertices.count = static_cast<int32_t>(vertices.size());
 		}
 
 		void test_tasks()

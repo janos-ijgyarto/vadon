@@ -57,7 +57,10 @@ namespace VadonApp::Private::Core
     void Application::shutdown()
     {
         m_engine->shutdown();
-        m_platform_interface->shutdown();
+        if (m_platform_interface)
+        {
+            m_platform_interface->shutdown();
+        }
         m_ui_system.shutdown();
 
         Vadon::Core::Logger& logger = m_engine->get_logger();

@@ -9,7 +9,7 @@ namespace Vadon::Render
 		INDEX,
 		CONSTANT,
 		RAW, // i.e ByteAddressBuffer
-		RESOURCE, // "Regular" buffer, e.g Buffer<float4>
+		TYPED, // e.g Buffer<float4>
 		STRUCTURED
 	};
 
@@ -37,6 +37,18 @@ namespace Vadon::Render
 		GraphicsAPIDataFormat format = GraphicsAPIDataFormat::UNKNOWN;
 		int32_t first_element = 0;
 		int32_t num_elements = 0;
+	};
+
+	// FIXME: more appropriate name?
+	struct BufferObject
+	{
+		BufferInfo buffer_info;
+		BufferResourceViewInfo resource_view_info;
+
+		BufferHandle buffer_handle;
+		ResourceViewHandle resource_view_handle;
+
+		bool is_valid() const { return buffer_handle.is_valid(); }
 	};
 }
 namespace Vadon::Utilities
