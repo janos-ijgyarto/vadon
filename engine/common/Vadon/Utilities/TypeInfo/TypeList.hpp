@@ -1,5 +1,5 @@
-#ifndef VADON_UTILITIES_TYPE_TYPELIST_HPP
-#define VADON_UTILITIES_TYPE_TYPELIST_HPP
+#ifndef VADON_UTILITIES_TYPEINFO_TYPELIST_HPP
+#define VADON_UTILITIES_TYPEINFO_TYPELIST_HPP
 namespace Vadon::Utilities
 {
 	// Type list for generating sequential unique type IDs at compile time. Users can declare a type list using forward declared types.

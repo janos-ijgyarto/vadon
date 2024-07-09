@@ -1,6 +1,6 @@
 #ifndef VADONAPP_CORE_SYSTEMREGISTRY_HPP
 #define VADONAPP_CORE_SYSTEMREGISTRY_HPP
-#include <Vadon/Utilities/Type/SingletonRegistry.hpp>
+#include <Vadon/Utilities/System/Singleton/Registry.hpp>
 #include <vector>
 namespace VadonApp::Core
 {
@@ -14,7 +14,7 @@ namespace VadonApp::Core
 
 		template<typename Sys> Sys& get_system()
 		{
-			return const_cast<Sys&>(const_cast<const SystemRegistry*>(this)->get_system<Sys>());
+			return const_cast<Sys&>(std::as_const(*this).get_system<Sys>());
 		}
 	private:
 		Vadon::Utilities::SingletonRegistry m_singleton_registry;

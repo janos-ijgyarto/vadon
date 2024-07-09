@@ -6,8 +6,8 @@
 namespace Vadon::Core
 {
 	class EngineCoreInterface;
+	struct EngineEnvironment;
 }
-
 namespace Vadon::Private::Render
 {
 	class RenderSystem
@@ -19,6 +19,8 @@ namespace Vadon::Private::Render
 		bool VADONRENDER_API initialize();
 		void VADONRENDER_API update();
 		void VADONRENDER_API shutdown();
+
+		static VADONRENDER_API void init_engine_environment(Vadon::Core::EngineEnvironment& environment);
 	private:
 		Vadon::Core::EngineCoreInterface& m_core;
 		Canvas::CanvasSystem m_canvas_system;

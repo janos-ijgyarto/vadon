@@ -1,5 +1,5 @@
 #include <Vadon/Private/PCH/Common.hpp>
-#include <Vadon/Utilities/Type/SingletonRegistry.hpp>
+#include <Vadon/Utilities/System/Singleton/Registry.hpp>
 namespace Vadon::Utilities
 {
     size_t SingletonRegistry::get_offset_internal(size_t module_index, size_t type_index) const

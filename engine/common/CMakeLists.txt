@@ -35,13 +35,13 @@ target_link_libraries(${VADON_CURRENT_TARGET} PUBLIC ${VADON_PUBLIC_THIRD_PARTY}
 target_link_libraries(${VADON_CORE_TARGET} PUBLIC ${VADON_CURRENT_TARGET})
 
 if(WIN32)
-	target_compile_definitions(${VADON_CURRENT_TARGET} PRIVATE VADON_PLATFORM_WIN32)
+	target_compile_definitions(${VADON_CURRENT_TARGET} PUBLIC VADON_PLATFORM_WIN32)
 	
 	if(${VADON_LINK_STATIC} STREQUAL "ON")
 		# TODO
 	else()
 		# Provide compile def for DLL export/import
-		target_compile_definitions(${VADON_CURRENT_TARGET} PRIVATE VADON_LINK_DYNAMIC)
+		target_compile_definitions(${VADON_CURRENT_TARGET} PUBLIC VADON_LINK_DYNAMIC)
 		target_compile_definitions(${VADON_CURRENT_TARGET} PRIVATE VADONCOMMON_EXPORTS)
 	endif()
 endif()

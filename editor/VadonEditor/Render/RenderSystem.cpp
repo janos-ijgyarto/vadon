@@ -8,6 +8,9 @@
 #include <VadonApp/Platform/PlatformInterface.hpp>
 #include <VadonApp/UI/Developer/GUI.hpp>
 
+#include <Vadon/Render/Canvas/Context.hpp>
+#include <Vadon/Render/Canvas/CanvasSystem.hpp>
+
 #include <Vadon/Render/Frame/FrameSystem.hpp>
 #include <Vadon/Render/GraphicsAPI/RenderTarget/RenderTargetSystem.hpp>
 
@@ -18,6 +21,8 @@ namespace VadonEditor::Render
 		Core::Editor& m_editor;
 
 		Vadon::Render::FrameGraphHandle m_frame_graph;
+
+		std::vector<Vadon::Render::Canvas::RenderContext> m_canvas_contexts;
 
 		Internal(Core::Editor& editor)
 			: m_editor(editor)
@@ -34,6 +39,7 @@ namespace VadonEditor::Render
 
 		bool init_frame_graph()
 		{
+			// FIXME: should not have a fixed frame graph, instead process active viewports and render tasks
 			VadonApp::Core::Application& engine_app = m_editor.get_engine_app();
 			Vadon::Core::EngineCoreInterface& engine_core = engine_app.get_engine_core();
 
@@ -63,13 +69,32 @@ namespace VadonEditor::Render
 					};
 			}
 
+			// Canvas
+			constexpr const char* canvas_pass_target = "main_window_canvas";
+			{
+				Vadon::Render::RenderPass& canvas_pass = frame_graph_info.passes.emplace_back();
+				canvas_pass.name = "Canvas";
+
+				canvas_pass.targets.emplace_back(clear_pass_target, canvas_pass_target);
+
+				canvas_pass.execution = [this]()
+					{
+						Vadon::Render::Canvas::CanvasSystem& canvas_system = m_editor.get_engine_app().get_engine_core().get_system<Vadon::Render::Canvas::CanvasSystem>();
+						for (const Vadon::Render::Canvas::RenderContext& current_context : m_canvas_contexts)
+						{
+							canvas_system.render(current_context);
+						}
+						m_canvas_contexts.clear();
+					};
+			}
+
 			// Dev GUI
 			constexpr const char* dev_gui_target = "dev_gui";
 			{
 				Vadon::Render::RenderPass& dev_gui_pass = frame_graph_info.passes.emplace_back();
 
 				dev_gui_pass.name = "DevGUI";
-				dev_gui_pass.targets.emplace_back(clear_pass_target, dev_gui_target); // FIXME: make sure these pass-related names are accessible so we're not implicitly using the same string!
+				dev_gui_pass.targets.emplace_back(canvas_pass_target, dev_gui_target); // FIXME: make sure these pass-related names are accessible so we're not implicitly using the same string!
 
 				UI::UISystem& ui_system = m_editor.get_system<UI::UISystem>();
 				VadonApp::UI::Developer::GUISystem& dev_gui_system = engine_app.get_system<VadonApp::UI::Developer::GUISystem>();
@@ -153,8 +178,14 @@ namespace VadonEditor::Render
 
 	RenderSystem::~RenderSystem() = default;
 
+	void RenderSystem::enqueue_canvas(const Vadon::Render::Canvas::RenderContext& context)
+	{
+		m_internal->m_canvas_contexts.push_back(context);
+	}
+
 	RenderSystem::RenderSystem(Core::Editor& editor)
-		: m_internal(std::make_unique<Internal>(editor))
+		: System(editor)
+		, m_internal(std::make_unique<Internal>(editor))
 	{
 
 	}

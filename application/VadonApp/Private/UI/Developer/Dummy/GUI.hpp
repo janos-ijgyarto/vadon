@@ -78,6 +78,8 @@ namespace VadonApp::Private::UI::Developer::Dummy
 		void next_table_column() override;
 		void end_table() override;
 
+		bool add_menu_item(const MenuItem& menu_item) override;
+
 		void add_text(std::string_view text) override;
 		void add_text_unformatted(std::string_view text) override;
 

@@ -2,12 +2,24 @@
 #include <Vadon/Private/Core/Core.hpp>
 
 #include <Vadon/Core/Core.hpp>
+#include <Vadon/Core/Environment.hpp>
+
+#include <Vadon/Private/Render/RenderSystem.hpp>
 
 #include <iostream>
 #include <syncstream>
 
 namespace Vadon::Core
 {
+    void init_engine_environment(EngineEnvironment& environment)
+    {
+        // Make sure all modules have the environment initialized with the same instance
+        EngineEnvironment::initialize(environment);
+
+        Vadon::Private::Render::RenderSystem::init_engine_environment(environment);
+        Vadon::Private::Render::GraphicsAPIBase::init_engine_environment(environment);
+    }
+
     EngineCoreImpl create_engine_core()
     {
         return std::make_unique<Vadon::Private::Core::EngineCore>();

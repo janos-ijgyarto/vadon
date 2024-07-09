@@ -18,7 +18,7 @@
 #include <Vadon/Render/GraphicsAPI/Texture/TextureSystem.hpp>
 
 #include <Vadon/Utilities/Data/DataUtilities.hpp>
-#include <Vadon/Utilities/Data/VariantUtilities.hpp>
+#include <Vadon/Utilities/Data/Visitor.hpp>
 #include <Vadon/Utilities/Math/Matrix.hpp>
 
 #include <imgui.h>
@@ -1028,6 +1028,11 @@ float4 main(PS_INPUT input) : SV_Target
     void GUISystem::end_table()
     {
         ImGui::EndTable();
+    }
+
+    bool GUISystem::add_menu_item(const MenuItem& menu_item)
+    {
+        return ImGui::MenuItem(menu_item.label.c_str(), nullptr, menu_item.selected, menu_item.enabled);
     }
 
     void GUISystem::add_text(std::string_view text)

@@ -1,6 +1,6 @@
-#ifndef VADON_UTILITIES_TYPE_SINGLETONMODULE_HPP
-#define VADON_UTILITIES_TYPE_SINGLETONMODULE_HPP
-#include <Vadon/Utilities/Type/TypeList.hpp>
+#ifndef VADON_UTILITIES_SYSTEM_SINGLETON_MODULE_HPP
+#define VADON_UTILITIES_SYSTEM_SINGLETON_MODULE_HPP
+#include <Vadon/Utilities/TypeInfo/TypeList.hpp>
 namespace Vadon::Utilities
 {
 	template<typename ModuleList, typename ModuleImpl, typename... Types>

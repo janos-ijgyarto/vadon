@@ -4,6 +4,7 @@ target_sources(${VADON_CURRENT_TARGET}
 	PRIVATE
 	CanvasSystem.hpp
 	CanvasSystem.cpp
+	Context.hpp
 	Item.hpp
 	Layer.hpp
 	Material.hpp

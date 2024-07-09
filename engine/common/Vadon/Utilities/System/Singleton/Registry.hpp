@@ -1,5 +1,5 @@
-#ifndef VADON_UTILITIES_TYPE_SINGLETONREGISTRY_HPP
-#define VADON_UTILITIES_TYPE_SINGLETONREGISTRY_HPP
+#ifndef VADON_UTILITIES_SYSTEM_SINGLETON_REGISTRY_HPP
+#define VADON_UTILITIES_SYSTEM_SINGLETON_REGISTRY_HPP
 #include <Vadon/Common.hpp>
 #include <vector>
 namespace Vadon::Utilities
@@ -19,7 +19,7 @@ namespace Vadon::Utilities
 
 		template<typename T> T& get()
 		{
-			return const_cast<T&>(const_cast<const SingletonRegistry*>(this)->get<T>());
+			return const_cast<T&>(std::as_const(*this).get<T>());
 		}
 
 		template<typename T> size_t get_offset() const

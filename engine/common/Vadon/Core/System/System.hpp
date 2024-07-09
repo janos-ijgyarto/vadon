@@ -2,7 +2,7 @@
 #define VADON_CORE_SYSTEM_SYSTEM_HPP
 #include <Vadon/Core/CoreInterface.hpp>
 #include <Vadon/Core/Logger.hpp>
-#include <Vadon/Utilities/Type/Singleton.hpp>
+#include <Vadon/Utilities/System/Singleton/Singleton.hpp>
 namespace Vadon::Core
 {
 	class SystemBase : public Logger

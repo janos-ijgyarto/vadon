@@ -1,7 +1,7 @@
 #ifndef VADON_PRIVATE_SCENE_SCENE_HPP
 #define VADON_PRIVATE_SCENE_SCENE_HPP
 #include <Vadon/Scene/Scene.hpp>
-#include <Vadon/Private/Core/Object/Variant.hpp>
+#include <Vadon/Utilities/Data/Variant.hpp>
 namespace Vadon::Private::Scene
 {
 	using SceneInfo = Vadon::Scene::SceneInfo;
@@ -12,33 +12,39 @@ namespace Vadon::Private::Scene
 	{
 		SceneInfo info;
 
-		struct NodeData
+		struct ComponentData
 		{
 			struct Property
 			{
 				std::string name;
-				Core::Variant value;
+				Vadon::Utilities::Variant value;
 			};
 
-			std::string name;
-			int32_t parent = -1;
 			std::string type;
 			std::vector<Property> properties;
+		};
+
+		struct EntityData
+		{
+			std::string name;
+			int32_t parent = -1;
+			std::vector<ComponentData> components;
 
 			bool has_parent() const { return (parent >= 0); }
 		};
 
 		// FIXME: optimize by splitting into arrays for data/strings/etc?
-		std::vector<NodeData> nodes;
+		std::vector<EntityData> entities;
 
 		void clear()
 		{
-			nodes.clear();
+			entities.clear();
 		}
 
 		void swap(SceneData& other)
 		{
-			nodes.swap(other.nodes);
+			info.swap(other.info);
+			entities.swap(other.entities);
 		}
 	};
 }

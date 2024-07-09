@@ -2,7 +2,9 @@
 #define VADON_PRIVATE_SCENE_SCENESYSTEM_HPP
 #include <Vadon/Scene/SceneSystem.hpp>
 #include <Vadon/Private/Scene/Scene.hpp>
-#include <Vadon/Private/Scene/Node/Node.hpp>
+
+#include <Vadon/Private/ECS/Entity/Entity.hpp>
+#include <Vadon/Private/ECS/World/World.hpp>
 
 #include <Vadon/Utilities/Container/ObjectPool/Pool.hpp>
 namespace Vadon::Private::Core
@@ -20,13 +22,10 @@ namespace Vadon::Private::Scene
 
 		SceneInfo get_scene_info(SceneHandle scene_handle) const override;
 
-		bool set_scene_data(SceneHandle scene_handle, Node& root_node) override;
-		Node* instantiate_scene(SceneHandle scene_handle) override;
+		bool set_scene_data(SceneHandle scene_handle, ECS::World& ecs_world, ECS::EntityHandle root_entity) override;
+		ECS::EntityHandle instantiate_scene(SceneHandle scene_handle, ECS::World& ecs_world) override;
 
-		bool save_scene(SceneHandle scene_handle, Utilities::JSON& writer) override;
-		bool load_scene(SceneHandle scene_handle, Utilities::JSONReader& reader) override;
-
-		void update(float delta_time) override;
+		bool serialize_scene(SceneHandle scene_handle, Vadon::Utilities::Serializer& serializer) override;
 	protected:
 		using ScenePool = Vadon::Utilities::ObjectPool<Vadon::Scene::Scene, SceneData>;
 

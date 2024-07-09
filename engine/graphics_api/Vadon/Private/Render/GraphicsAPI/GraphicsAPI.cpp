@@ -7,8 +7,15 @@
 #include <Vadon/Private/Render/GraphicsAPI/DirectX/GraphicsAPI.hpp>
 #endif
 
+#include <Vadon/Core/Environment.hpp>
+
 namespace Vadon::Private::Render
 {
+	void GraphicsAPIBase::init_engine_environment(Vadon::Core::EngineEnvironment& environment)
+	{
+		Vadon::Core::EngineEnvironment::initialize(environment);
+	}
+
 	GraphicsAPIBase::Implementation GraphicsAPIBase::get_graphics_api(Vadon::Core::EngineCoreInterface& core)
 	{
 #ifdef VADON_GRAPHICS_API_DIRECTX

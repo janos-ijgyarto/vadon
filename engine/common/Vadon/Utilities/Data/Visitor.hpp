@@ -1,5 +1,5 @@
-#ifndef VADON_UTILITIES_DATA_VARIANTUTILITIES_HPP
-#define VADON_UTILITIES_DATA_VARIANTUTILITIES_HPP
+#ifndef VADON_UTILITIES_DATA_VISITOR_HPP
+#define VADON_UTILITIES_DATA_VISITOR_HPP
 namespace Vadon::Utilities
 {
 	// Utility for visiting std::variant with Overload Pattern

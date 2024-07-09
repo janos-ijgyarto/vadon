@@ -3,6 +3,7 @@
 #include <string>
 namespace Vadon::Core
 {
+	// TODO: revise this, use Engine Environment for easier access
 	class Logger
 	{
 	public:

@@ -107,6 +107,8 @@ namespace VadonApp::UI::Developer
 		virtual void next_table_column() = 0;
 		virtual void end_table() = 0;
 
+		virtual bool add_menu_item(const MenuItem& menu_item) = 0;
+
 		virtual void add_text(std::string_view text) = 0;
 		virtual void add_text_unformatted(std::string_view text) = 0;
 

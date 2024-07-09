@@ -1,0 +1,13 @@
+target_sources(${VADON_CURRENT_TARGET}
+    PRIVATE
+        Component.hpp
+        ComponentManager.hpp
+        ComponentManager.cpp
+        Event.hpp
+        Pool.hpp
+        Pool.cpp
+        Query.hpp
+        Query.cpp
+        Registry.hpp
+        Registry.cpp
+   )

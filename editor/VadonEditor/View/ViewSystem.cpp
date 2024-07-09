@@ -3,14 +3,16 @@
 #include <VadonEditor/Core/Editor.hpp>
 
 #include <VadonEditor/Model/ModelSystem.hpp>
+#include <VadonEditor/Model/Scene/Entity.hpp>
 #include <VadonEditor/Model/Scene/SceneTree.hpp>
 
 #include <VadonEditor/UI/UISystem.hpp>
 #include <VadonEditor/UI/Developer/GUI.hpp>
 
-#include <Vadon/Scene/Node/Node.hpp>
+#include <Vadon/ECS/World/World.hpp>
 
-#include <Vadon/Utilities/Data/VariantUtilities.hpp>
+#include <Vadon/Utilities/Data/Variant.hpp>
+#include <Vadon/Utilities/Data/Visitor.hpp>
 
 #include <format>
 
@@ -25,10 +27,10 @@ namespace VadonEditor::View
 			virtual bool render(VadonApp::UI::Developer::GUISystem& dev_gui) = 0;
 
 			const std::string& get_name() const { return m_name; }
-			const Vadon::Core::Variant& get_value() const { return m_value; }
-			void set_value(const Vadon::Core::Variant& value) { m_value = value; value_updated(); }
+			const Vadon::Utilities::Variant& get_value() const { return m_value; }
+			void set_value(const Vadon::Utilities::Variant& value) { m_value = value; value_updated(); }
 		protected:
-			PropertyEditor(std::string_view property_name, const Vadon::Core::Variant& value)
+			PropertyEditor(std::string_view property_name, const Vadon::Utilities::Variant& value)
 				: m_name(property_name)
 				, m_value(value)
 			{}
@@ -36,14 +38,14 @@ namespace VadonEditor::View
 			virtual void value_updated() = 0;
 
 			std::string m_name;
-			Vadon::Core::Variant m_value;
+			Vadon::Utilities::Variant m_value;
 		};
 
 		// FIXME: these all have basically the same API and behavior. Should these be de-duplicated?
 		class IntPropertyEditor final : public PropertyEditor
 		{
 		public:
-			IntPropertyEditor(std::string_view property_name, const Vadon::Core::Variant& value)
+			IntPropertyEditor(std::string_view property_name, const Vadon::Utilities::Variant& value)
 				: PropertyEditor(property_name, value)
 			{
 				m_input.label = property_name; // TODO: parse name to create a more readable label?
@@ -68,7 +70,7 @@ namespace VadonEditor::View
 		class FloatPropertyEditor final : public PropertyEditor
 		{
 		public:
-			FloatPropertyEditor(std::string_view property_name, const Vadon::Core::Variant& value)
+			FloatPropertyEditor(std::string_view property_name, const Vadon::Utilities::Variant& value)
 				: PropertyEditor(property_name, value)
 			{
 				m_input.label = property_name; // TODO: parse name to create a more readable label?
@@ -90,10 +92,35 @@ namespace VadonEditor::View
 			UI::Developer::InputFloat m_input;
 		};
 
+		class BoolPropertyEditor final : public PropertyEditor
+		{
+		public:
+			BoolPropertyEditor(std::string_view property_name, const Vadon::Utilities::Variant& value)
+				: PropertyEditor(property_name, value)
+			{
+				m_checkbox.label = property_name; // TODO: parse name to create a more readable label?
+				m_checkbox.checked = std::get<bool>(value);
+			}
+
+			bool render(VadonApp::UI::Developer::GUISystem& dev_gui) override
+			{
+				if (dev_gui.draw_checkbox(m_checkbox) == true)
+				{
+					m_value = m_checkbox.checked;
+					return true;
+				}
+				return false;
+			}
+		protected:
+			void value_updated() override { m_checkbox.checked = std::get<bool>(m_value); }
+		private:
+			UI::Developer::Checkbox m_checkbox;
+		};
+
 		class Float2PropertyEditor final : public PropertyEditor
 		{
 		public:
-			Float2PropertyEditor(std::string_view property_name, const Vadon::Core::Variant& value)
+			Float2PropertyEditor(std::string_view property_name, const Vadon::Utilities::Variant& value)
 				: PropertyEditor(property_name, value)
 			{
 				m_input.label = property_name; // TODO: parse name to create a more readable label?
@@ -115,10 +142,37 @@ namespace VadonEditor::View
 			UI::Developer::InputFloat2 m_input;
 		};
 
+		// FIXME: some way to do this with less boilerplate?
+		class Float3PropertyEditor final : public PropertyEditor
+		{
+		public:
+			Float3PropertyEditor(std::string_view property_name, const Vadon::Utilities::Variant& value)
+				: PropertyEditor(property_name, value)
+			{
+				m_input.label = property_name; // TODO: parse name to create a more readable label?
+				m_input.input = std::get<Vadon::Utilities::Vector3>(value);
+			}
+
+			bool render(VadonApp::UI::Developer::GUISystem& dev_gui) override
+			{
+				// FIXME: allow simple Vec3 input!
+				if (dev_gui.draw_color3_picker(m_input) == true)
+				{
+					m_value = m_input.input;
+					return true;
+				}
+				return false;
+			}
+		protected:
+			void value_updated() override { m_input.input = std::get<Vadon::Utilities::Vector3>(m_value); }
+		private:
+			UI::Developer::InputFloat3 m_input;
+		};
+
 		class StringPropertyEditor final : public PropertyEditor
 		{
 		public:
-			StringPropertyEditor(std::string_view property_name, const Vadon::Core::Variant& value)
+			StringPropertyEditor(std::string_view property_name, const Vadon::Utilities::Variant& value)
 				: PropertyEditor(property_name, value)
 			{
 				m_input.label = property_name; // TODO: parse name to create a more readable label?
@@ -141,114 +195,289 @@ namespace VadonEditor::View
 			UI::Developer::InputText m_input;
 		};
 
-		// FIXME: move Node and scene tree editing into dedicated subsystems!
-		struct AddNodeDialog
+		// FIXME: move scene tree editing into dedicated subsystems!
+		struct AddComponentDialog
 		{
 			UI::Developer::Window window;
 			
 			UI::Developer::Button add_button;
 			UI::Developer::Button ok_button;
 
-			UI::Developer::ListBox node_type_list;
-			std::vector<std::string> node_class_ids;
+			UI::Developer::ListBox component_type_list;
+			Vadon::ECS::ComponentIDList component_type_ids;
 
-			AddNodeDialog()
+			AddComponentDialog()
 			{
-				window.title = "Add Node";
+				window.title = "Add Component";
 
-				add_button.label = "Add node";
+				add_button.label = "Add component";
 				ok_button.label = "OK";
 
-				node_type_list.label = "Node types";
+				component_type_list.label = "Component types";
 			}
 
-			bool draw(Core::Editor& editor, VadonApp::UI::Developer::GUISystem& dev_gui)
+			bool draw(Model::Entity& entity, Core::Editor& editor, VadonApp::UI::Developer::GUISystem& dev_gui)
 			{
 				if (dev_gui.draw_button(add_button) == true)
 				{
-					// Rebuild node type list
-					node_type_list.items.clear();
-					node_class_ids.clear();
+					// Rebuild component type list
+					component_type_list.items.clear();
+					component_type_ids.clear();
 					
 					Model::ModelSystem& model = editor.get_system<Model::ModelSystem>();
-					const Vadon::Core::ObjectClassInfoList class_info_list = model.get_node_type_list();
-					for (const Vadon::Core::ObjectClassInfo& current_class_info : class_info_list)
+					Model::SceneTree& scene_tree = model.get_scene_tree();
+
+					const Vadon::ECS::ComponentIDList added_component_ids = entity.get_component_types();
+
+					const Vadon::Utilities::TypeInfoList component_info_list = scene_tree.get_component_type_list();
+					for (const Vadon::Utilities::TypeInfo& current_component_type_info : component_info_list)
 					{
-						node_type_list.items.push_back(current_class_info.name);
-						node_class_ids.push_back(current_class_info.id);
+						if (std::find(added_component_ids.begin(), added_component_ids.end(), current_component_type_info.id) != added_component_ids.end())
+						{
+							// Component already added
+							continue;
+						}
+
+						component_type_list.items.push_back(current_component_type_info.name);
+						component_type_ids.push_back(current_component_type_info.id);
 					}
 
 					dev_gui.open_dialog(window.title);
 				}
 
-				bool node_added = false;
+				bool component_added = false;
 				if (dev_gui.begin_modal_dialog(window) == true)
 				{
-					dev_gui.draw_list_box(node_type_list);
+					dev_gui.draw_list_box(component_type_list);
 					if (dev_gui.draw_button(ok_button) == true)
 					{
-						node_added = true;
+						component_added = true;
 						dev_gui.close_current_dialog();
 					}
 
 					dev_gui.end_dialog();
 				}
 
-				return node_added;
+				return component_added;
 			}
 
-			std::string get_selected_node_type() const
+			uint32_t get_selected_component_type() const
 			{
-				return node_class_ids[node_type_list.selected_item];
+				return component_type_ids[component_type_list.selected_item];
 			}
 		};
 
-		class NodeEditor
+		struct ComponentEditor
 		{
-		public:
-			struct EditorNode
+			Vadon::ECS::ComponentID type_id;
+			std::string name;
+
+			std::vector<std::unique_ptr<PropertyEditor>> property_editors;
+
+			VadonApp::UI::Developer::GUISystem::ID property_editors_id = 0;
+
+			VadonApp::UI::Developer::Button remove_button;
+
+			ComponentEditor()
 			{
-				std::string name;
-				std::string type_id;
-				EditorNode* parent = nullptr;
-				std::vector<EditorNode*> children;
+				remove_button.label = "Remove component";
+			}
 
-				void add_child(std::string_view type_id_str)
+			void initialize(Core::Editor& editor, Model::Entity& entity)
+			{
+				Vadon::ECS::World& ecs_world = editor.get_system<Model::ModelSystem>().get_ecs_world();
+				Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
+
+				name = Vadon::Utilities::TypeRegistry::get_type_info(type_id).name;
+
+				void* component_ptr = component_manager.get_component(entity.get_handle(), type_id);
+
+				// TODO: filter to editable properties?
+				const Vadon::Utilities::PropertyList component_properties = Vadon::Utilities::TypeRegistry::get_properties(component_ptr, type_id);
+
+				for (const Vadon::Utilities::Property& current_property : component_properties)
 				{
-					EditorNode* new_child = new EditorNode();
-					new_child->name = "Node";
-					new_child->type_id = type_id_str;
-					new_child->parent = this;
+					auto property_visitor = Vadon::Utilities::VisitorOverloadList{
+						[this, &current_property](int)
+						{
+							property_editors.emplace_back(new IntPropertyEditor(current_property.name, current_property.value));
+						},
+						[this, &current_property](float)
+						{
+							property_editors.emplace_back(new FloatPropertyEditor(current_property.name, current_property.value));
+						},
+						[this, &current_property](bool)
+						{
+							property_editors.emplace_back(new BoolPropertyEditor(current_property.name, current_property.value));
+						},
+						[this, &current_property](Vadon::Utilities::Vector2)
+						{
+							property_editors.emplace_back(new Float2PropertyEditor(current_property.name, current_property.value));
+						},
+						[this, &current_property](Vadon::Utilities::Vector3)
+						{
+							property_editors.emplace_back(new Float3PropertyEditor(current_property.name, current_property.value));
+						},
+						[this, &current_property](std::string)
+						{
+							property_editors.emplace_back(new StringPropertyEditor(current_property.name, current_property.value));
+						},
+						[](auto) { /* TODO: error? */ }
+					};
 
-					children.push_back(new_child);
+					std::visit(property_visitor, current_property.value);
+				}
+			}
+
+			bool draw(VadonApp::UI::Developer::GUISystem& dev_gui, Model::Entity& entity)
+			{
+				// TODO: context menus and/or buttons for adding/removing components
+				bool removed = false;
+				if (dev_gui.push_tree_node(name) == true)
+				{
+					for (auto& current_property : property_editors)
+					{
+						if (current_property->render(dev_gui) == true)
+						{
+							// Property edited, send update to scene tree and update the editor
+							// FIXME: optimize this somehow?
+							entity.edit_component_property(type_id, current_property->get_name(), current_property->get_value());
+							current_property->set_value(entity.get_component_property(type_id, current_property->get_name()));
+						}
+					}
+					if (dev_gui.draw_button(remove_button) == true)
+					{
+						entity.remove_component(type_id);
+						removed = true;
+					}
+					dev_gui.pop_tree_node();					
+				}
+				return removed;
+			}
+		};
+
+		struct EntityEditor
+		{
+			Model::Entity* selected_entity = nullptr;
+			std::string selected_entity_path;
+
+			UI::Developer::InputText entity_name_input;
+			std::vector<ComponentEditor> component_editors;
+
+			UI::Developer::ChildWindow component_tree; // Using tree to make components collapsable
+
+			AddComponentDialog add_component_dialog;
+
+			EntityEditor()
+			{
+				entity_name_input.label = "Entity name";
+
+				component_tree.id = "ComponentTree";
+				component_tree.border = true;
+			}
+
+			void draw(Core::Editor& editor, VadonApp::UI::Developer::GUISystem& dev_gui)
+			{
+				if (selected_entity == nullptr)
+				{
+					return;
 				}
 
-				void remove_child(EditorNode* child)
+				if (dev_gui.draw_input_text(entity_name_input) == true)
 				{
-					auto child_it = std::find(children.begin(), children.end(), child);
-					if (child_it != children.end())
+					selected_entity->set_name(entity_name_input.input);
+					update_name();
+				}
+				dev_gui.add_text(selected_entity_path);
+
+				if (add_component_dialog.draw(*selected_entity, editor, dev_gui) == true)
+				{
+					selected_entity->add_component(add_component_dialog.get_selected_component_type());
+					reset_components(editor);
+				}
+
+				if (component_editors.empty() == false)
+				{
+					// TODO: revise this so we show the property editors for only one component at a time
+					// and reset the view whenever a component is added/removed
+					bool component_removed = false;
+					if (dev_gui.begin_child_window(component_tree) == true)
 					{
-						children.erase(child_it);
-						delete child;
+						for (ComponentEditor& current_component : component_editors)
+						{
+							component_removed |= current_component.draw(dev_gui, *selected_entity);
+						}
+					}
+					dev_gui.end_child_window();
+					if (component_removed == true)
+					{
+						reset_components(editor);
 					}
 				}
-			};
+			}
 
+			void set_selected_entity(Core::Editor& editor, Model::Entity* entity)
+			{
+				if (selected_entity == entity)
+				{
+					return;
+				}
+
+				selected_entity = entity;
+				if (selected_entity == nullptr)
+				{
+					return;
+				}
+
+				update_name();
+				reset_components(editor);
+			}
+
+			void update_name()
+			{
+				entity_name_input.input = selected_entity->get_name();
+				selected_entity_path = "Path: " + selected_entity->get_path();
+			}
+
+			void reset_components(Core::Editor& editor)
+			{
+				component_editors.clear();
+
+				Vadon::ECS::World& ecs_world = editor.get_system<Model::ModelSystem>().get_ecs_world();
+				Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
+
+				const Vadon::ECS::EntityHandle entity_handle = selected_entity->get_handle();
+				const std::vector<uint32_t> component_id_list = component_manager.get_component_list(entity_handle);
+
+				for (uint32_t current_component_id : component_id_list)
+				{
+					ComponentEditor& current_component_editor = component_editors.emplace_back();
+					current_component_editor.type_id = current_component_id;
+
+					current_component_editor.initialize(editor, *selected_entity);
+				}
+			}
+		};
+
+		class SceneEditor
+		{
+		public:
 			struct SceneTreeViewState
 			{
-				Vadon::Scene::Node* clicked_node = nullptr;
+				VadonEditor::Model::Entity* clicked_entity = nullptr;
 			};
 
-			NodeEditor()
+			SceneEditor()
 			{
-				m_window.title = "Node Editor";
+				m_window.title = "Entity Editor";
 				m_window.open = false;
 
 				m_tree_window.id = "Tree";
 				m_tree_window.size = Vadon::Utilities::Vector2(400, 300);
 				m_tree_window.border = true;
 
-				m_remove_node_button.label = "Remove node";
+				m_add_entity_button.label = "Add entity";
+				m_remove_entity_button.label = "Remove entity";
 
 				m_save_scene_button.label = "Save scene";
 				m_load_scene_button.label = "Load scene";
@@ -266,6 +495,25 @@ namespace VadonEditor::View
 
 					if (scene_tree.get_current_scene().is_valid() == true)
 					{
+						const bool add_entity = dev_gui.draw_button(m_add_entity_button);
+						if (m_entity_editor.selected_entity != nullptr)
+						{
+							if (dev_gui.draw_button(m_remove_entity_button) == true)
+							{
+								// TODO: prompt user for confirmation!
+								scene_tree.remove_entity(m_entity_editor.selected_entity);
+								m_entity_editor.set_selected_entity(editor, nullptr);
+							}
+							else if (add_entity == true)
+							{
+								scene_tree.add_entity(m_entity_editor.selected_entity);
+							}
+						}
+						else if (add_entity == true)
+						{
+							scene_tree.add_entity();
+						}
+
 						SceneTreeViewState view_state;
 						if (dev_gui.begin_child_window(m_tree_window) == true)
 						{
@@ -274,55 +522,18 @@ namespace VadonEditor::View
 						const bool window_clicked = dev_gui.is_window_hovered() && dev_gui.is_mouse_clicked(VadonApp::Platform::MouseButton::LEFT);
 						dev_gui.end_child_window();
 
-						if (view_state.clicked_node != nullptr)
+						if (view_state.clicked_entity != nullptr)
 						{
-							set_selected_node(editor, dev_gui, view_state.clicked_node);
+							m_entity_editor.set_selected_entity(editor, view_state.clicked_entity);
 						}
 						else if (window_clicked == true)
 						{
-							set_selected_node(editor, dev_gui, nullptr);
+							m_entity_editor.set_selected_entity(editor, nullptr);
 						}
 
-						const bool add_node = m_add_node_dialog.draw(editor, dev_gui);
+						m_entity_editor.draw(editor, dev_gui);
 
-						if (m_selected_node != nullptr)
-						{
-							dev_gui.add_text(m_selected_node->get_name());
-
-							if (add_node == true)
-							{
-								scene_tree.add_node(m_add_node_dialog.get_selected_node_type(), m_selected_node);
-							}
-							if (dev_gui.draw_button(m_remove_node_button) == true)
-							{
-								// TODO: prompt user for confirmation!
-								scene_tree.delete_node(m_selected_node);
-								set_selected_node(editor, dev_gui, nullptr);
-							}
-
-							dev_gui.push_id(m_property_editors_id);
-							for (auto& current_property : m_property_editors)
-							{
-								if (current_property->render(dev_gui) == true)
-								{
-									// Property edited, send update to scene tree and update the editor
-									// FIXME: optimize this somehow?
-									scene_tree.edit_node_property(*m_selected_node, current_property->get_name(), current_property->get_value());
-									current_property->set_value(scene_tree.get_node_property_value(*m_selected_node, current_property->get_name()));
-								}
-							}
-							dev_gui.pop_id();
-						}
-						else
-						{
-							if (add_node == true)
-							{
-								// Add to root node
-								scene_tree.add_node(m_add_node_dialog.get_selected_node_type(), m_scene_root);
-							}
-						}
-
-						Vadon::Scene::Node* scene_root = scene_tree.get_root();
+						Model::Entity* scene_root = scene_tree.get_root();
 						if (scene_root != nullptr)
 						{
 							if (dev_gui.draw_button(m_save_scene_button) == true)
@@ -342,32 +553,32 @@ namespace VadonEditor::View
 				dev_gui.end_window();
 			}
 		private:
-			void render_node(Vadon::Scene::Node* node, VadonApp::UI::Developer::GUISystem& dev_gui, SceneTreeViewState& view_state)
+			void render_entity_node(Model::Entity* entity, VadonApp::UI::Developer::GUISystem& dev_gui, SceneTreeViewState& view_state)
 			{
 				constexpr VadonApp::UI::Developer::GUISystem::TreeNodeFlags node_base_flags = VadonApp::UI::Developer::GUISystem::TreeNodeFlags::OPEN_ON_ARROW | VadonApp::UI::Developer::GUISystem::TreeNodeFlags::OPEN_ON_DOUBLE_CLICK;
 
-				const Vadon::Scene::NodeList& child_nodes = node->get_children();
+				const Model::EntityList& child_entities = entity->get_children();
 				VadonApp::UI::Developer::GUISystem::TreeNodeFlags current_node_flags = node_base_flags;
-				if (m_selected_node == node)
+				if (m_entity_editor.selected_entity == entity)
 				{
 					current_node_flags |= VadonApp::UI::Developer::GUISystem::TreeNodeFlags::SELECTED;
 				}
-				if (child_nodes.empty() == true)
+				if (child_entities.empty() == true)
 				{
 					current_node_flags |= VadonApp::UI::Developer::GUISystem::TreeNodeFlags::LEAF;
 				}
 
-				const bool node_open = dev_gui.push_tree_node(node, std::format("{} ({})", node->get_name(), node->get_class_id()), current_node_flags);
+				const bool node_open = dev_gui.push_tree_node(entity, entity->get_name(), current_node_flags);
 				if (dev_gui.is_item_clicked() && (dev_gui.is_item_toggled_open() == false))
 				{
-					view_state.clicked_node = node;
+					view_state.clicked_entity = entity;
 				}
 
 				if (node_open == true)
 				{
-					for (Vadon::Scene::Node* current_child : child_nodes)
+					for (Model::Entity* current_child : child_entities)
 					{
-						render_node(current_child, dev_gui, view_state);
+						render_entity_node(current_child, dev_gui, view_state);
 					}
 					dev_gui.pop_tree_node();
 				}
@@ -380,80 +591,84 @@ namespace VadonEditor::View
 				Model::ModelSystem& model = editor.get_system<Model::ModelSystem>();
 				Model::SceneTree& scene_tree = model.get_scene_tree();
 
-				Vadon::Scene::Node* scene_root = scene_tree.get_root();
+				Model::Entity* scene_root = scene_tree.get_root();
 				if (scene_root == nullptr)
 				{
-					// No root node
+					// No root entity
 					return tree_view_state;
 				}
 
-				render_node(scene_root, dev_gui, tree_view_state);
+				render_entity_node(scene_root, dev_gui, tree_view_state);
 
 				return tree_view_state;
 			}
 
-			void set_selected_node(Core::Editor& editor, VadonApp::UI::Developer::GUISystem& dev_gui, Vadon::Scene::Node* node)
+			UI::Developer::Window m_window;
+
+			Model::Entity* m_scene_root = nullptr;
+
+			UI::Developer::Button m_add_entity_button;
+			UI::Developer::Button m_remove_entity_button;
+
+			UI::Developer::ChildWindow m_tree_window;
+
+			EntityEditor m_entity_editor;
+
+			UI::Developer::Button m_save_scene_button;
+			UI::Developer::Button m_load_scene_button; // FIXME: add proper file logic!
+			UI::Developer::ListBox m_component_type_list; // TODO: add some way to categorize?
+		};
+
+		// FIXME: move to application?
+		class ECSDebugView
+		{
+		public:
+			ECSDebugView()
 			{
-				if (m_selected_node == node)
+				m_window.title = "ECS Debug View";
+				m_window.open = false;
+
+				m_entity_list_box.label = "Entities";
+				m_update_entity_list_button.label = "Update";
+			}
+
+			void render(Core::Editor& editor)
+			{
+				VadonApp::Core::Application& engine_app = editor.get_engine_app();
+				VadonApp::UI::Developer::GUISystem& dev_gui = engine_app.get_system<VadonApp::UI::Developer::GUISystem>();
+
+				if (dev_gui.begin_window(m_window) == true)
 				{
-					return;
+					dev_gui.draw_list_box(m_entity_list_box);
+
+					if (dev_gui.draw_button(m_update_entity_list_button) == true)
+					{
+						update_entity_list(editor);
+					}
 				}
+				dev_gui.end_window();
+			}
+		private:
+			void update_entity_list(Core::Editor& editor)
+			{
+				m_entity_list_box.items.clear();
 
-				m_selected_node = node;
-				if (m_selected_node == nullptr)
+				Vadon::ECS::EntityManager& entity_manager = editor.get_system<Model::ModelSystem>().get_ecs_world().get_entity_manager();
+				m_entities = entity_manager.get_active_entities();
+
+				for (const Vadon::ECS::EntityHandle& current_entity : m_entities)
 				{
-					return;
-				}
-
-				Model::ModelSystem& model = editor.get_system<Model::ModelSystem>();
-				Model::SceneTree& scene_tree = model.get_scene_tree();
-
-				m_property_editors.clear();
-
-				m_property_editors_id = dev_gui.get_id(m_selected_node->get_node_path());
-
-				const Vadon::Core::ObjectPropertyList selected_node_properties = scene_tree.get_node_properties(*m_selected_node);
-				for (const Vadon::Core::ObjectProperty& current_property : selected_node_properties)
-				{
-					auto property_visitor = Vadon::Utilities::VisitorOverloadList{
-						[this, &current_property](int)
-						{
-							m_property_editors.emplace_back(new IntPropertyEditor(current_property.name, current_property.value));
-						},
-						[this, &current_property](float)
-						{
-							m_property_editors.emplace_back(new FloatPropertyEditor(current_property.name, current_property.value));
-						},
-						[this, &current_property](Vadon::Utilities::Vector2)
-						{
-							m_property_editors.emplace_back(new Float2PropertyEditor(current_property.name, current_property.value));
-						},
-						[this, &current_property](std::string)
-						{
-							m_property_editors.emplace_back(new StringPropertyEditor(current_property.name, current_property.value));
-						},
-						[](auto){ /* TODO: error? */ }
-					};
-
-					std::visit(property_visitor, current_property.value);
+					const std::string entity_label = std::format("{} ({}_{})", entity_manager.get_entity_name(current_entity), current_entity.handle.index, current_entity.handle.generation);
+					m_entity_list_box.items.push_back(entity_label);
 				}
 			}
 
 			UI::Developer::Window m_window;
 
-			Vadon::Scene::Node* m_scene_root = nullptr;
+			UI::Developer::ListBox m_entity_list_box;
+			UI::Developer::Button m_update_entity_list_button;
 
-			Vadon::Scene::Node* m_selected_node = nullptr;
-			VadonApp::UI::Developer::GUISystem::ID m_property_editors_id = 0;
-			std::vector<std::unique_ptr<PropertyEditor>> m_property_editors;
-
-			UI::Developer::ChildWindow m_tree_window;
-
-			AddNodeDialog m_add_node_dialog;
-			UI::Developer::Button m_remove_node_button;
-			UI::Developer::Button m_save_scene_button;
-			UI::Developer::Button m_load_scene_button; // FIXME: add proper file logic!
-			UI::Developer::ListBox m_node_type_list; // FIXME: replace with tree view, branching on subclasses!
+			Vadon::ECS::EntityList m_entities;
 		};
 	}
 
@@ -461,7 +676,8 @@ namespace VadonEditor::View
 	{
 		Core::Editor& m_editor;
 
-		NodeEditor m_node_editor;
+		SceneEditor m_scene_editor;
+		ECSDebugView m_ecs_debug_view;
 
 		Internal(Core::Editor& editor)
 			: m_editor(editor)
@@ -470,7 +686,10 @@ namespace VadonEditor::View
 
 		bool initialize()
 		{
-			m_editor.get_system<UI::UISystem>().register_ui_element([this](Core::Editor& editor) { m_node_editor.render(editor); });
+			m_editor.get_system<UI::UISystem>().register_ui_element([this](Core::Editor& editor) { 
+				m_scene_editor.render(editor); 
+				m_ecs_debug_view.render(editor);
+				});
 			return true;
 		}
 

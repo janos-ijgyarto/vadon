@@ -1,7 +1,7 @@
 #ifndef VADON_CORE_OBJECT_OBJECT_HPP
 #define VADON_CORE_OBJECT_OBJECT_HPP
 #include <Vadon/Common.hpp>
-#include <Vadon/Utilities/Type/TypeName.hpp>
+#include <Vadon/Utilities/TypeInfo/TypeName.hpp>
 namespace Vadon::Core
 {
 	class EngineCoreInterface;
@@ -17,7 +17,7 @@ namespace Vadon::Core
 
 		VADONCOMMON_API Object(EngineCoreInterface& engine_core);
 
-		static constexpr std::string_view static_class_id() { return "Vadon::Core::Node"; }
+		static constexpr std::string_view static_class_id() { return "Vadon::Core::Object"; }
 		virtual std::string_view get_class_id() const { return static_class_id(); }
 
 		VADONCOMMON_API static void initialize_class(ObjectClassData& class_data);

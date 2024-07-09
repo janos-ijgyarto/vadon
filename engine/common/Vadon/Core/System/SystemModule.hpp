@@ -1,6 +1,6 @@
 #ifndef VADON_CORE_SYSTEM_SYSTEMMODULE_HPP
 #define VADON_CORE_SYSTEM_SYSTEMMODULE_HPP
-#include <Vadon/Utilities/Type/SingletonModule.hpp>
+#include <Vadon/Utilities/System/Singleton/Module.hpp>
 namespace Vadon::Render
 {
 	class RenderModule;

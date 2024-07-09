@@ -1,5 +1,5 @@
-#ifndef VADON_UTILITIES_TYPE_TYPEINFO_HPP
-#define VADON_UTILITIES_TYPE_TYPEINFO_HPP
+#ifndef VADON_UTILITIES_TYPEINFO_TYPENAME_HPP
+#define VADON_UTILITIES_TYPEINFO_TYPENAME_HPP
 #include <array>
 #include <string_view>
 namespace Vadon::Utilities

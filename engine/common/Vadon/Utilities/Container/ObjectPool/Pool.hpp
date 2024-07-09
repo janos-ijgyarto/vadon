@@ -10,10 +10,13 @@ namespace Vadon::Utilities
 	public:
 		using _Pool = ObjectPool<HandleType, PoolType>;
 		using _Type = std::remove_pointer_t<PoolType>;
+		using _PoolConstIterator = typename std::vector<PoolType>::const_iterator;
 		using _PoolIterator = typename std::vector<PoolType>::iterator;
 		using _Handle = TypedPoolHandle<HandleType>;
 
-		using ObjectPair = std::pair<_Handle, _Type*>; // FIXME: use reference when object is not a pointer
+		// FIXME: use reference when object is not a pointer
+		using ConstObjectPair = std::pair<_Handle, const _Type*>;
+		using ObjectPair = std::pair<_Handle, _Type*>;
 
 		ObjectPool()
 		{
@@ -107,12 +110,12 @@ namespace Vadon::Utilities
 
 		_Type& get(const _Handle& handle)
 		{
-			return const_cast<_Type&>(const_cast<const _Pool*>(this)->get(handle));
+			return const_cast<_Type&>(std::as_const(*this).get(handle));
 		}
 
 		_Type* get_safe(const _Handle& handle)
 		{
-			return const_cast<_Type*>(const_cast<const _Pool*>(this)->get_safe(handle));
+			return const_cast<_Type*>(std::as_const(*this).get_safe(handle));
 		}
 
 		void remove(const _Handle& handle)
@@ -127,25 +130,25 @@ namespace Vadon::Utilities
 			}
 		}
 
-		class Iterator
+		class ConstIterator
 		{
 		public:
-			ObjectPair operator*() const
+			ConstObjectPair operator*() const
 			{
 				_Handle object_handle;
 				object_handle.handle = m_manager_it.get_handle();
 
 				if constexpr (std::is_pointer_v<PoolType>)
 				{
-					return ObjectPair(object_handle, *m_pool_it);
+					return ConstObjectPair(object_handle, *m_pool_it);
 				}
 				else
 				{
-					return ObjectPair(object_handle, m_manager_it.is_valid() ? &(*m_pool_it) : nullptr);
+					return ConstObjectPair(object_handle, m_manager_it.is_valid() ? &(*m_pool_it) : nullptr);
 				}
 			}
 
-			Iterator& operator++()
+			ConstIterator& operator++()
 			{
 				// Advance until we get to a valid element
 				++m_manager_it;
@@ -162,22 +165,53 @@ namespace Vadon::Utilities
 				return *this;
 			}
 
-			Iterator operator++(int) { Iterator tmp = *this; ++(*this); return tmp; }
+			ConstIterator operator++(int) { ConstIterator tmp = *this; ++(*this); return tmp; }
 
-			bool operator==(const Iterator& rhs) const { return m_pool_it == rhs.m_pool_it; }
-			bool operator!=(const Iterator& rhs) const { return m_pool_it != rhs.m_pool_it; }
-		private:
-			Iterator(ObjectPoolManager& manager, ObjectPoolManager::Iterator manager_it, _PoolIterator pool_it) : m_manager(manager), m_manager_it(manager_it), m_pool_it(pool_it) {}
+			bool operator==(const ConstIterator& rhs) const { return m_pool_it == rhs.m_pool_it; }
+			bool operator!=(const ConstIterator& rhs) const { return m_pool_it != rhs.m_pool_it; }
+		protected:
+			ConstIterator(const ObjectPoolManager& manager, ObjectPoolManager::Iterator manager_it, _PoolConstIterator pool_it) : m_manager(manager), m_manager_it(manager_it), m_pool_it(pool_it) {}
 
-			ObjectPoolManager& m_manager;
+			const ObjectPoolManager& m_manager;
 			ObjectPoolManager::Iterator m_manager_it;
-			_PoolIterator m_pool_it;
+			_PoolConstIterator m_pool_it;
 
 			friend _Pool;
 		};
 
-		Iterator begin() { return Iterator(m_manager, m_manager.begin(), m_pool.begin()); }
-		Iterator end() { return Iterator(m_manager, m_manager.end(), m_pool.end()); }
+		class Iterator : public ConstIterator
+		{
+		public:
+			using ConstIterator::ConstIterator;
+
+			ObjectPair operator*() const
+			{
+				ConstObjectPair const_pair = ConstIterator::operator*();
+				return ObjectPair(const_pair.first, const_cast<_Type*>(const_pair.second));
+			}
+
+			Iterator& operator++()
+			{
+				ConstIterator::operator++();
+				return *this;
+			}
+
+			Iterator operator++(int)
+			{
+				Iterator tmp = *this;
+				ConstIterator::operator++();
+				return tmp;
+			}
+
+			bool operator==(const Iterator& rhs) const { return ConstIterator::operator==(rhs); }
+			bool operator!=(const Iterator& rhs) const { return ConstIterator::operator!=(rhs); }
+		};
+
+		ConstIterator begin() const { return ConstIterator(m_manager, m_manager.begin(), m_pool.cbegin()); }
+		Iterator begin() { return Iterator(m_manager, m_manager.begin(), m_pool.cbegin()); }
+
+		ConstIterator end() const { return ConstIterator(m_manager, m_manager.end(), m_pool.cend()); }
+		Iterator end() { return Iterator(m_manager, m_manager.end(), m_pool.cend()); }
 	private:
 		ObjectPoolManager m_manager;
 		std::vector<PoolType> m_pool;

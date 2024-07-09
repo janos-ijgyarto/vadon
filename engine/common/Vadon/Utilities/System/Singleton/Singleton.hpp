@@ -1,6 +1,6 @@
-#ifndef VADON_UTILITIES_TYPE_SINGLETON_HPP
-#define VADON_UTILITIES_TYPE_SINGLETON_HPP
-#include <Vadon/Utilities/Type/SingletonRegistry.hpp>
+#ifndef VADON_UTILITIES_SYSTEM_SINGLETON_SINGLETON_HPP
+#define VADON_UTILITIES_SYSTEM_SINGLETON_SINGLETON_HPP
+#include <Vadon/Utilities/System/Singleton/Registry.hpp>
 namespace Vadon::Utilities
 {
 	class SingletonBase

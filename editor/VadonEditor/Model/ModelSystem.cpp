@@ -4,14 +4,17 @@
 
 #include <VadonEditor/Model/Scene/SceneTree.hpp>
 
-#include <Vadon/Core/Object/ObjectSystem.hpp>
+#include <Vadon/ECS/World/World.hpp>
 #include <Vadon/Scene/Node/Node.hpp>
 
 namespace VadonEditor::Model
 {
 	struct ModelSystem::Internal
 	{
+		Vadon::ECS::World m_ecs_world;
 		SceneTree m_scene_tree;
+
+		std::vector<std::function<void()>> m_callbacks;
 
 		Internal(Core::Editor& editor)
 			: m_scene_tree(editor)
@@ -30,25 +33,29 @@ namespace VadonEditor::Model
 
 		void update()
 		{
-			// TODO
-		}
-
-		Vadon::Core::ObjectClassInfoList get_node_type_list(Core::Editor& editor) const
-		{
-			return editor.get_engine_core().get_system<Vadon::Core::ObjectSystem>().get_subclass_hierarchy<Vadon::Scene::Node>();
+			// Run callbacks
+			for (auto& current_callback : m_callbacks)
+			{
+				current_callback();
+			}
 		}
 	};
 
 	ModelSystem::~ModelSystem() = default;
+
+	Vadon::ECS::World& ModelSystem::get_ecs_world()
+	{
+		return m_internal->m_ecs_world;
+	}
 
 	SceneTree& ModelSystem::get_scene_tree()
 	{
 		return m_internal->m_scene_tree;
 	}
 
-	Vadon::Core::ObjectClassInfoList ModelSystem::get_node_type_list() const
+	void ModelSystem::add_callback(std::function<void()> callback)
 	{
-		return m_internal->get_node_type_list(m_editor);
+		m_internal->m_callbacks.push_back(callback);
 	}
 
 	ModelSystem::ModelSystem(Core::Editor& editor)

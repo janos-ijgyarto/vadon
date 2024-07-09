@@ -1,7 +1,7 @@
 #ifndef VADON_CORE_OBJECT_FUNCTIONBIND_HPP
 #define VADON_CORE_OBJECT_FUNCTIONBIND_HPP
 #include <Vadon/Core/Object/Variant.hpp>
-#include <Vadon/Utilities/Type/TypeList.hpp>
+#include <Vadon/Utilities/TypeInfo/TypeList.hpp>
 
 #include <span>
 
