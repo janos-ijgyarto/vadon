@@ -12,6 +12,7 @@ namespace VadonApp::Core
 namespace Vadon::Core
 {
 	class EngineCoreInterface;
+	struct EngineEnvironment;
 }
 
 namespace VadonEditor::Core
@@ -24,7 +25,7 @@ namespace VadonEditor::Core
 
 		VADONEDITOR_API int execute(int argc, char* argv[]);
 
-		VadonApp::Core::Application& get_engine_app();
+		VADONEDITOR_API VadonApp::Core::Application& get_engine_app();
 		VADONEDITOR_API Vadon::Core::EngineCoreInterface& get_engine_core();
 
 		float get_delta_time() const;
@@ -32,6 +33,8 @@ namespace VadonEditor::Core
 		// FIXME: implement a proper CLI parser!
 		bool has_command_line_arg(std::string_view name) const;
 		std::string get_command_line_arg(std::string_view name) const;
+
+		VADONEDITOR_API static void init_editor_environment(Vadon::Core::EngineEnvironment& environment);
 	protected:
 		virtual bool post_init() { return true; }
 	private:

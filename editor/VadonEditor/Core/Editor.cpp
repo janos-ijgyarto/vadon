@@ -11,6 +11,8 @@
 #include <VadonApp/UI/UISystem.hpp>
 #include <VadonApp/UI/Console.hpp>
 
+#include <Vadon/Core/Environment.hpp>
+
 #include <iostream>
 #include <format>
 #include <chrono>
@@ -142,8 +144,9 @@ namespace VadonEditor::Core
 
 			// Prepare platform config
 			{
+				// FIXME: have client provide platform config
 				VadonApp::Platform::WindowInfo& main_window_info = VadonApp_config.platform_config.main_window_info;
-				main_window_info.title = "Omen"; // TODO: version numbering?
+				main_window_info.title = "Vadon Editor"; // TODO: version numbering?
 				main_window_info.position = Vadon::Utilities::Vector2i(-1, -1);
 
 				// FIXME: add casting to CLI parsing so we don't need to do it here
@@ -300,5 +303,11 @@ namespace VadonEditor::Core
 	std::string Editor::get_command_line_arg(std::string_view name) const
 	{
 		return m_internal->get_command_line_arg(name);
+	}
+
+	VADONEDITOR_API void Editor::init_editor_environment(Vadon::Core::EngineEnvironment& environment)
+	{
+		VadonApp::Core::Application::init_application_environment(environment);
+		Vadon::Core::EngineEnvironment::initialize(environment);
 	}
 }

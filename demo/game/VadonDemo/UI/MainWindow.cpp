@@ -1,7 +1,8 @@
 #include <VadonDemo/UI/MainWindow.hpp>
 
 #include <VadonDemo/Core/GameCore.hpp>
-#include <VadonDemo/Model/Node.hpp>
+#include <VadonDemo/Model/Model.hpp>
+#include <VadonDemo/Model/Component.hpp>
 #include <VadonDemo/Platform/PlatformInterface.hpp>
 #include <VadonDemo/Render/RenderSystem.hpp>
 
@@ -11,17 +12,19 @@
 #include <VadonApp/UI/UISystem.hpp>
 #include <VadonApp/UI/Developer/GUI.hpp>
 
-#include <Vadon/Core/Object/ObjectSystem.hpp>
 #include <Vadon/Core/Task/TaskSystem.hpp>
 
+#include <Vadon/Render/Canvas/Context.hpp>
 #include <Vadon/Render/Canvas/CanvasSystem.hpp>
+
+#include <Vadon/ECS/World/World.hpp>
+
 #include <Vadon/Render/Frame/FrameSystem.hpp>
 #include <Vadon/Render/GraphicsAPI/RenderTarget/RenderTargetSystem.hpp>
 
 #include <Vadon/Scene/SceneSystem.hpp>
 
 #include <Vadon/Utilities/Container/Concurrent/TripleBuffer.hpp>
-#include <Vadon/Utilities/Serialization/JSON/JSONImpl.hpp>
 
 #include <deque>
 #include <filesystem>
@@ -192,6 +195,24 @@ namespace VadonDemo::UI
 		{
 			VadonApp::Core::Application& engine_app = m_game_core.get_engine_app();
 			Vadon::Core::EngineCoreInterface& engine_core = engine_app.get_engine_core();
+			Vadon::ECS::World& ecs_world = m_game_core.get_ecs_world();
+
+			Vadon::Core::Logger& logger = engine_core.get_logger();
+
+			// Register component events
+			Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
+			component_manager.register_event_callback<VadonDemo::Model::CanvasItem>(
+				[this](const Vadon::ECS::ComponentEvent& event)
+				{
+					m_game_core.get_model().component_event(m_game_core.get_ecs_world(), event);
+				}
+			);
+			component_manager.register_event_callback<VadonDemo::Model::Celestial>(
+				[this, &ecs_world](const Vadon::ECS::ComponentEvent& event)
+				{
+					m_game_core.get_model().component_event(m_game_core.get_ecs_world(), event);
+				}
+			);
 
 			Vadon::Scene::SceneSystem& scene_system = engine_core.get_system<Vadon::Scene::SceneSystem>();
 
@@ -208,40 +229,51 @@ namespace VadonDemo::UI
 					std::ifstream scene_file(scene_file_path);
 					if (scene_file.is_open() == false)
 					{
-						engine_core.get_logger().error("Cannot open scene file!\n");
+						logger.error("Cannot open scene file!\n");
 						return;
 					}
 
-					Vadon::Utilities::JSON scene_data_json;
-					try
+					std::vector<std::byte> scene_data_buffer;
 					{
-						scene_data_json = Vadon::Utilities::JSON::parse(scene_file);
-					}
-					catch (const Vadon::Utilities::JSON::exception& exception)
-					{
-						engine_core.get_logger().error(std::string("Error parsing scene file: ") + exception.what() + "\n");
-						return;
+						scene_file.seekg(0, std::ios::end);
+						std::streampos file_size = scene_file.tellg();
+						scene_file.seekg(0, std::ios::beg);
+
+						scene_data_buffer.resize(file_size);
+
+						scene_file.read(reinterpret_cast<char*>(scene_data_buffer.data()), file_size);
 					}
 
 					scene_file.close();
 
-					Vadon::Utilities::JSONReader scene_data_reader(scene_data_json);
-					if (scene_system.load_scene(scene_handle, scene_data_reader) == false)
+					Vadon::Utilities::Serializer::Instance serializer = Vadon::Utilities::Serializer::create_serializer(scene_data_buffer, Vadon::Utilities::Serializer::Type::JSON, true);
+					if (serializer->initialize() == false)
 					{
-						engine_core.get_logger().error("Error loading scene file!\n");
+						logger.error(serializer->get_last_error() + '\n');
 						return;
 					}
 
-					Vadon::Scene::Node* scene_node = scene_system.instantiate_scene(scene_handle);
-					if (scene_node == nullptr)
+					if (scene_system.serialize_scene(scene_handle, *serializer) == false)
 					{
-						engine_core.get_logger().error("Error instantiating scene!\n");
 						return;
 					}
 
-					scene_system.get_root().add_child(scene_node);
+					if (serializer->finalize() == false)
+					{
+						logger.error(serializer->get_last_error() + '\n');
+						return;
+					}
+
+					Vadon::ECS::EntityHandle root_entity_handle = scene_system.instantiate_scene(scene_handle, ecs_world);
+					if (root_entity_handle.is_valid() == false)
+					{
+						// Something went wrong
+						return;
+					}
 				}
 			}
+
+			m_game_core.get_model().init_simulation(ecs_world);
 
 			{
 				VadonApp::Platform::PlatformInterface& platform_interface = engine_app.get_system<VadonApp::Platform::PlatformInterface>();
@@ -257,28 +289,8 @@ namespace VadonDemo::UI
 					canvas_viewport.render_viewport.dimensions.size = main_window_info.window.size;
 
 					m_canvas_context.viewports.push_back(canvas_viewport);
-				}
 
-				// Find canvas layer nodes
-				Vadon::Core::ObjectSystem& object_system = engine_core.get_system<Vadon::Core::ObjectSystem>();
-
-				std::deque<Vadon::Scene::Node*> node_queue;
-				node_queue.push_front(&scene_system.get_root());
-
-				while (node_queue.empty() == false)
-				{
-					Vadon::Scene::Node* current_node = node_queue.front();
-					Model::CanvasLayer* canvas_layer_node = object_system.get_object_as<Model::CanvasLayer>(*current_node);
-
-					if (canvas_layer_node != nullptr)
-					{
-						m_canvas_context.layers.push_back(canvas_layer_node->get_layer_handle());
-					}
-
-					const Vadon::Scene::NodeList& current_node_children = current_node->get_children();
-					node_queue.insert(node_queue.end(), current_node_children.begin(), current_node_children.end());
-
-					node_queue.pop_front();
+					m_canvas_context.layers.push_back(m_game_core.get_model().get_canvas_layer());
 				}
 			}
 		}
@@ -558,17 +570,15 @@ namespace VadonDemo::UI
 
 		void render()
 		{
-			VadonApp::Core::Application& engine_app = m_game_core.get_engine_app();
-			Vadon::Core::EngineCoreInterface& engine_core = engine_app.get_engine_core();
-
 			TimePoint current_time = Clock::now();
 			const float delta_time = std::chrono::duration_cast<Duration>(current_time - m_last_time_point).count();
 
 			m_last_time_point = current_time;
 
-			// Update the nodes
-			// FIXME: should be doing it from the model thread, then sync with render thread!
-			engine_core.get_system<Vadon::Scene::SceneSystem>().update(delta_time);
+			// Update model
+			// FIXME: have separate view, sync with model thread!
+			m_game_core.get_model().update_simulation(m_game_core.get_ecs_world(), delta_time);
+			m_game_core.get_model().update_rendering(m_game_core.get_ecs_world());
 		}
 
 		void test_tasks()

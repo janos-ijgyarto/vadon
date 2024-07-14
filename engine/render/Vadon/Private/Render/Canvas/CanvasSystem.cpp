@@ -1,5 +1,7 @@
 #include <Vadon/Private/Render/Canvas/CanvasSystem.hpp>
 
+#include <Vadon/Render/Canvas/Context.hpp>
+
 #include <Vadon/Render/GraphicsAPI/Buffer/BufferSystem.hpp>
 #include <Vadon/Render/GraphicsAPI/Pipeline/PipelineSystem.hpp>
 #include <Vadon/Render/GraphicsAPI/RenderTarget/RenderTargetSystem.hpp>
@@ -198,6 +200,7 @@ namespace Vadon::Private::Render::Canvas
 	{
 		ItemHandle new_item_handle = m_item_pool.add();
 
+		// TODO: move this to Layer implementation!
 		LayerData& layer = m_layer_pool.get(info.layer);
 		layer.items.push_back(new_item_handle);
 
@@ -215,7 +218,17 @@ namespace Vadon::Private::Render::Canvas
 
 	void CanvasSystem::remove_item(ItemHandle item_handle)
 	{
-		// TODO: any cleanup?
+		const ItemData& item = m_item_pool.get(item_handle);
+
+		if (item.info.layer.is_valid() == true)
+		{
+			// Remove from Layer
+			// TODO: move this to Layer implementation!
+			LayerData& layer = m_layer_pool.get(item.info.layer);
+			layer.items.erase(std::remove(layer.items.begin(), layer.items.end(), item_handle), layer.items.end());
+		}
+
+		// TODO: any other cleanup?
 		m_item_pool.remove(item_handle);
 	}
 

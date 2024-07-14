@@ -1,6 +1,6 @@
 #ifndef VADON_CORE_SYSTEM_SYSTEMREGISTRY_HPP
 #define VADON_CORE_SYSTEM_SYSTEMREGISTRY_HPP
-#include <Vadon/Utilities/Type/SingletonRegistry.hpp>
+#include <Vadon/Utilities/System/Singleton/Registry.hpp>
 #include <vector>
 namespace Vadon::Core
 {

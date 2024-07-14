@@ -3,32 +3,12 @@
 #include <Vadon/Render/RenderModule.hpp>
 
 #include <Vadon/Render/Canvas/Item.hpp>
-#include <Vadon/Render/Canvas/Layer.hpp>
 #include <Vadon/Render/Canvas/Material.hpp>
 #include <Vadon/Render/Canvas/Primitive.hpp>
 
-#include <Vadon/Render/GraphicsAPI/RenderTarget/RenderTarget.hpp>
-
 namespace Vadon::Render::Canvas
 {
-	struct Camera
-	{
-		Vadon::Render::Rectangle view_rectangle;
-		float zoom = 1.0f;
-	};
-
-	struct Viewport
-	{
-		Vadon::Render::RenderTargetHandle render_target;
-		Vadon::Render::Viewport render_viewport;
-	};
-
-	struct RenderContext
-	{
-		Camera camera;
-		std::vector<LayerHandle> layers;
-		std::vector<Viewport> viewports;
-	};
+	struct RenderContext;
 
 	class CanvasSystem : public RenderSystem<CanvasSystem>
 	{

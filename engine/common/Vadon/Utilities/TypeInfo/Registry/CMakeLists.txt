@@ -1,0 +1,9 @@
+target_sources(${VADON_CURRENT_TARGET}
+	PRIVATE
+	FunctionBind.hpp
+	MemberBind.hpp
+	Property.hpp
+	Registry.hpp
+	Registry.cpp
+	TypeData.hpp
+	)

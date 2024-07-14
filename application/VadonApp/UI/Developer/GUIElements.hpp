@@ -116,5 +116,13 @@ namespace VadonApp::UI::Developer
 		std::string label;
 		int32_t column_count = 0;
 	};
+
+	struct MenuItem
+	{
+		std::string label;
+		// TODO: shortcut
+		bool selected = false;
+		bool enabled = true;
+	};
 }
 #endif

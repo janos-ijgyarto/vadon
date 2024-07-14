@@ -254,6 +254,11 @@ namespace VadonApp::Private::UI::Developer::Dummy
         // TODO
     }
 
+    bool GUISystem::add_menu_item(const MenuItem& /*menu_item*/)
+    {
+        return false;
+    }
+
     void GUISystem::add_text(std::string_view /*text*/)
     {
         // TODO

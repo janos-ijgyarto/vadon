@@ -23,7 +23,7 @@ add_subdirectory(VadonDemo)
 target_compile_features(${VADONDEMO_CURRENT_TARGET} PRIVATE cxx_std_20)
 target_include_directories(${VADONDEMO_CURRENT_TARGET} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
-set(VADONDEMOCOMMON_LIBRARIES Vadon::Render)
+set(VADONDEMOCOMMON_LIBRARIES Vadon::Common Vadon::Render)
 target_link_libraries(${VADONDEMO_CURRENT_TARGET} PUBLIC ${VADONDEMOCOMMON_LIBRARIES})
 
 if(WIN32)

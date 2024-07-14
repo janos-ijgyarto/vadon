@@ -29,5 +29,7 @@ namespace VadonApp::Private::UI::Developer::Dummy
 	using ComboBox = VadonApp::UI::Developer::ComboBox;
 
 	using Table = VadonApp::UI::Developer::Table;
+
+	using MenuItem = VadonApp::UI::Developer::MenuItem;
 }
 #endif

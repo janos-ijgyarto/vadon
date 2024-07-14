@@ -7,6 +7,11 @@ namespace VadonApp::Core
 	class Application;
 }
 
+namespace VadonDemo::Model
+{
+	class Model;
+}
+
 namespace VadonDemo::Platform
 {
 	class PlatformInterface;
@@ -20,6 +25,11 @@ namespace VadonDemo::Render
 namespace VadonDemo::UI
 {
 	class MainWindow;
+}
+
+namespace Vadon::ECS
+{
+	class World;
 }
 
 namespace VadonDemo::Core
@@ -38,6 +48,10 @@ namespace VadonDemo::Core
 		Platform::PlatformInterface& get_platform_interface();
 		Render::RenderSystem& get_render_system();
 		UI::MainWindow& get_main_window();
+
+		Model::Model& get_model();
+
+		Vadon::ECS::World& get_ecs_world();
 	private:
 		struct Internal;
 		std::unique_ptr<Internal> m_internal;

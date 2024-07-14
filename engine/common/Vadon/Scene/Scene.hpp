@@ -7,6 +7,11 @@ namespace Vadon::Scene
 	{
 		std::string name;
 		// TODO: scene inheritance?
+
+		void swap(SceneInfo& other)
+		{
+			name.swap(other.name);
+		}
 	};
 
 	VADON_DECLARE_TYPED_POOL_HANDLE(Scene, SceneHandle);

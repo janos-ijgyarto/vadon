@@ -13,9 +13,12 @@
 #include <VadonApp/UI/Console.hpp>
 #include <VadonApp/UI/Developer/GUI.hpp>
 
+#include <Vadon/Core/Environment.hpp>
 #include <Vadon/Core/Task/TaskSystem.hpp>
 
-#include <Vadon/Utilities/Data/VariantUtilities.hpp>
+#include <Vadon/ECS/World/World.hpp>
+
+#include <Vadon/Utilities/Data/Visitor.hpp>
 
 #include <iostream>
 #include <format>
@@ -31,11 +34,15 @@ namespace VadonDemo::Core
 
 	struct GameCore::Internal
 	{
+		Vadon::Core::EngineEnvironment m_engine_environment;
+
 		std::unique_ptr<Model::Model> m_model;
 		Platform::PlatformInterface m_platform_interface;
 		Render::RenderSystem m_render_system;
 		UI::MainWindow m_main_window; // FIXME: should use a UI system instead!
 		VadonApp::Core::Application::Instance m_engine_app;
+
+		Vadon::ECS::World m_ecs_world;
 
 		Internal(GameCore& game_core)
 			: m_platform_interface(game_core)
@@ -47,7 +54,7 @@ namespace VadonDemo::Core
 
 		bool initialize(int argc, char* argv[])
 		{
-			if (!init_engine_application(argc, argv))
+			if (init_engine_application(argc, argv) == false)
 			{
 				std::cout << "Failed to initialize engine application!" << std::endl;
 				return false;
@@ -78,12 +85,17 @@ namespace VadonDemo::Core
 
 			register_app_event_handlers();
 
-			m_engine_app->get_system<VadonApp::UI::UISystem>().get_console().log("Vadon Demo app initialized.\n");
+			auto& console = m_engine_app->get_system<VadonApp::UI::UISystem>().get_console();
+			console.log("Vadon Demo app initialized.\n");
+
 			return true;
 		}
 
 		bool init_engine_application(int /*argc*/, char* argv[])
 		{
+			VadonApp::Core::Application::init_application_environment(m_engine_environment);
+			VadonDemo::Model::Model::init_engine_environment(m_engine_environment);
+
 			// Prepare app config
 			// TODO: move to a dedicated subsystem!
 			VadonApp::Core::Configuration app_configuration;
@@ -163,7 +175,7 @@ namespace VadonDemo::Core
 
 		int execute(int argc, char* argv[])
 		{
-			if (!initialize(argc, argv))
+			if (initialize(argc, argv) == false)
 			{
 				std::cout << "Vadon Demo app failed to initialize!" << std::endl;
 				shutdown();
@@ -317,5 +329,15 @@ namespace VadonDemo::Core
 	UI::MainWindow& GameCore::get_main_window()
 	{
 		return m_internal->m_main_window;
+	}
+
+	Model::Model& GameCore::get_model()
+	{
+		return *m_internal->m_model;
+	}
+
+	Vadon::ECS::World& GameCore::get_ecs_world()
+	{
+		return m_internal->m_ecs_world;
 	}
 }

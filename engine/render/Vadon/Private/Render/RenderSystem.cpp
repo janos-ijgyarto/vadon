@@ -2,6 +2,7 @@
 #include <Vadon/Private/Render/RenderSystem.hpp>
 
 #include <Vadon/Core/CoreInterface.hpp>
+#include <Vadon/Core/Environment.hpp>
 
 #include <Vadon/Render/GraphicsAPI/GraphicsAPI.hpp>
 
@@ -51,5 +52,10 @@ namespace Vadon::Private::Render
 		m_frame_system.shutdown();
 
 		logger.log("Render system shut down successfully.\n");
+	}
+
+	void RenderSystem::init_engine_environment(Vadon::Core::EngineEnvironment& environment)
+	{
+		Vadon::Core::EngineEnvironment::initialize(environment);
 	}
 }

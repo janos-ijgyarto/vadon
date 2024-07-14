@@ -1,6 +1,6 @@
 #ifndef VADONEDITOR_CORE_SYSTEM_MODULE_HPP
 #define VADONEDITOR_CORE_SYSTEM_MODULE_HPP
-#include <Vadon/Utilities/Type/SingletonModule.hpp>
+#include <Vadon/Utilities/System/Singleton/Module.hpp>
 namespace VadonEditor::Model
 {
 	class ModelModule;

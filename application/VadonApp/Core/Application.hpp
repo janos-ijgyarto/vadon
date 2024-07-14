@@ -7,6 +7,7 @@
 namespace Vadon::Core
 {
 	class EngineCoreInterface;
+	struct EngineEnvironment;
 }
 
 namespace VadonApp::Core
@@ -28,7 +29,9 @@ namespace VadonApp::Core
 
 		virtual const Configuration& get_config() const = 0;
 
-		static Instance VADONAPP_API create_instance();
+		// TODO: make environment extended for app?
+		static VADONAPP_API void init_application_environment(Vadon::Core::EngineEnvironment& environment);
+		static VADONAPP_API Instance create_instance();
 	};
 }
 #endif

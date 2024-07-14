@@ -3,7 +3,6 @@
 #include <Vadon/Core/CoreInterface.hpp>
 #include <Vadon/Core/Logger.hpp>
 
-#include <Vadon/Private/Core/Object/ObjectSystem.hpp>
 #include <Vadon/Private/Core/Task/TaskSystem.hpp>
 
 #include <Vadon/Private/Render/RenderSystem.hpp>
@@ -35,7 +34,6 @@ namespace Vadon::Private::Core
 		std::unique_ptr<DefaultLogger> m_default_logger;
 		Vadon::Core::Logger* m_logger;
 
-		ObjectSystem m_object_system;
 		TaskSystem m_task_system;
 
 		Render::RenderSystem m_render_system;

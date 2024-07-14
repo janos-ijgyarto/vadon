@@ -2,7 +2,7 @@
 #define VADONEDITOR_CORE_SYSTEM_SYSTEM_HPP
 #include <VadonEditor/Core/Editor.hpp>
 #include <Vadon/Core/Logger.hpp>
-#include <Vadon/Utilities/Type/Singleton.hpp>
+#include <Vadon/Utilities/System/Singleton/Singleton.hpp>
 namespace VadonEditor::Core
 {
 	class Editor;

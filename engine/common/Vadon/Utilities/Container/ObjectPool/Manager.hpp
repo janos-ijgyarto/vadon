@@ -32,7 +32,7 @@ namespace Vadon::Utilities
 		class VADONCOMMON_API Iterator
 		{
 		public:
-			Iterator(ObjectPoolManager& manager, EntryVector::iterator entry_it)
+			Iterator(const ObjectPoolManager& manager, EntryVector::const_iterator entry_it)
 				: m_manager(manager)
 				, m_entry_it(entry_it)
 			{
@@ -58,12 +58,12 @@ namespace Vadon::Utilities
 			bool is_valid() const { return m_entry_it->active; }
 			ObjectPoolHandle get_handle() const;
 		private:
-			ObjectPoolManager& m_manager;
-			EntryVector::iterator m_entry_it;
+			const ObjectPoolManager& m_manager;
+			EntryVector::const_iterator m_entry_it;
 		};
 
-		Iterator begin() { return Iterator(*this, m_entries.begin()); }
-		Iterator end() { return Iterator(*this, m_entries.end()); }
+		Iterator begin() const { return Iterator(*this, m_entries.cbegin()); }
+		Iterator end() const { return Iterator(*this, m_entries.cend()); }
 	};
 }
 #endif

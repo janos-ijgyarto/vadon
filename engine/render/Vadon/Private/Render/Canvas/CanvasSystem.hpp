@@ -2,6 +2,7 @@
 #define VADON_PRIVATE_RENDER_CANVAS_CANVASSYSTEM_HPP
 #include <Vadon/Render/Canvas/CanvasSystem.hpp>
 
+#include <Vadon/Private/Render/Canvas/Context.hpp>
 #include <Vadon/Private/Render/Canvas/Item.hpp>
 #include <Vadon/Private/Render/Canvas/Layer.hpp>
 #include <Vadon/Private/Render/Canvas/Material.hpp>
@@ -21,10 +22,6 @@ namespace Vadon::Private::Render
 
 namespace Vadon::Private::Render::Canvas
 {
-	using Camera = Vadon::Render::Canvas::Camera;
-	using Viewport = Vadon::Render::Canvas::Viewport;
-	using RenderContext = Vadon::Render::Canvas::RenderContext;
-
 	class CanvasSystem : public Vadon::Render::Canvas::CanvasSystem
 	{
 	public:

@@ -37,7 +37,7 @@ namespace Vadon::Utilities
 		bool operator<(const TypedPoolHandle& rhs) const { return (handle < rhs.handle); }
 
 		bool is_valid() const { return handle.is_valid(); }
-		void invalidate() { handle.is_valid(); }
+		void invalidate() { handle.invalidate(); }
 	};
 }
 

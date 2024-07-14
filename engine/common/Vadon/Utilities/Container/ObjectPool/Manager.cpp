@@ -85,7 +85,7 @@ namespace Vadon::Utilities
 		ObjectPoolHandle handle;
 		if (is_valid() == true)
 		{
-			handle.index = static_cast<uint32_t>(std::distance(m_manager.m_entries.begin(), m_entry_it));
+			handle.index = static_cast<uint32_t>(std::distance(m_manager.m_entries.cbegin(), m_entry_it));
 			handle.generation = m_entry_it->generation;
 			handle.pool_generation = m_manager.m_generation;
 		}

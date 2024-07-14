@@ -2,6 +2,10 @@
 #define VADON_PRIVATE_RENDER_GRAPHICSAPI_GRAPHICSAPI_HPP
 #include <Vadon/GraphicsAPI.hpp>
 #include <Vadon/Render/GraphicsAPI/GraphicsAPI.hpp>
+namespace Vadon::Core
+{
+	struct EngineEnvironment;
+}
 namespace Vadon::Private::Render
 {
 	class GraphicsAPIBase : public Vadon::Render::GraphicsAPI
@@ -12,6 +16,8 @@ namespace Vadon::Private::Render
 		virtual bool initialize() = 0;
 		virtual void update() = 0;
 		virtual void shutdown() = 0;
+
+		static VADONGRAPHICSAPI_API void init_engine_environment(Vadon::Core::EngineEnvironment& environment);
 
 		static VADONGRAPHICSAPI_API Implementation get_graphics_api(Vadon::Core::EngineCoreInterface& core);
 		static VADONGRAPHICSAPI_API Implementation get_dummy_graphics_api(Vadon::Core::EngineCoreInterface& core);

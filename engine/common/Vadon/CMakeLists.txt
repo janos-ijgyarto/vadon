@@ -1,4 +1,5 @@
 add_subdirectory(Core)
+add_subdirectory(ECS)
 add_subdirectory(Private)
 add_subdirectory(Scene)
 add_subdirectory(Utilities)

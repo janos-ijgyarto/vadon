@@ -1,78 +1,56 @@
 #include <VadonEditor/Model/Scene/SceneTree.hpp>
 
 #include <VadonEditor/Core/Editor.hpp>
+#include <VadonEditor/Model/ModelSystem.hpp>
+#include <VadonEditor/Model/Scene/Entity.hpp>
 
-#include <Vadon/Core/Object/ObjectSystem.hpp>
+#include <Vadon/ECS/World/World.hpp>
+#include <Vadon/ECS/Component/Registry.hpp>
 
 #include <Vadon/Scene/SceneSystem.hpp>
-#include <Vadon/Scene/Node/Node.hpp>
 
-#include <Vadon/Utilities/Serialization/JSON/JSONImpl.hpp>
+#include <Vadon/Utilities/Serialization/Serializer.hpp>
 
 #include <filesystem>
 #include <fstream>
 
 namespace VadonEditor::Model
 {
-	void SceneTree::add_node(std::string_view class_id, Vadon::Scene::Node* parent)
+	void SceneTree::add_entity(Entity* parent)
 	{
-		Vadon::Core::ObjectSystem& object_system = m_editor.get_engine_core().get_system<Vadon::Core::ObjectSystem>();
-		Vadon::Core::Object* new_object = object_system.create_object(class_id);
+		Vadon::ECS::World& world = m_editor.get_system<ModelSystem>().get_ecs_world();
+		Vadon::ECS::EntityHandle new_entity_handle = world.get_entity_manager().create_entity();
 
-		Vadon::Scene::Node* new_node = object_system.get_object_as<Vadon::Scene::Node>(*new_object);
-		
-		// Initially set name to class name
-		new_node->set_name(object_system.get_class_info(class_id).name);
-		
+		Entity* new_entity = new Entity(m_editor, new_entity_handle);
+		new_entity->set_name("Entity");
+
 		if (parent != nullptr)
 		{
 			// Add to parent
-			parent->add_child(new_node);
+			parent->add_child(new_entity);
 		}
 		else
 		{
 			// Add to scene root
 			if (m_current_scene_root != nullptr)
 			{
-				m_current_scene_root->add_child(new_node);
+				m_current_scene_root->add_child(new_entity);
 			}
 			else
 			{
-				m_current_scene_root = new_node;
+				m_current_scene_root = new_entity;
 			}
 		}
 	}
 
-	Vadon::Core::ObjectPropertyList SceneTree::get_node_properties(Vadon::Scene::Node& node) const
+	void SceneTree::remove_entity(Entity* entity)
 	{
-		// TODO: filter to those that are meant to be editable?
-		return m_editor.get_engine_core().get_system<Vadon::Core::ObjectSystem>().get_object_properties(node);
-	}
-
-	Vadon::Core::Variant SceneTree::get_node_property_value(Vadon::Scene::Node& node, std::string_view property_name) const
-	{
-		return m_editor.get_engine_core().get_system<Vadon::Core::ObjectSystem>().get_property(node, property_name);
-	}
-
-	void SceneTree::edit_node_property(Vadon::Scene::Node& node, std::string_view property_name, const Vadon::Core::Variant& value)
-	{
-		m_editor.get_engine_core().get_system<Vadon::Core::ObjectSystem>().set_property(node, property_name, value);
-	}
-
-	void SceneTree::delete_node(Vadon::Scene::Node* node)
-	{
-		if (node == m_current_scene_root)
+		if (m_current_scene_root == entity)
 		{
 			m_current_scene_root = nullptr;
 		}
 
-		Vadon::Scene::Node* parent = node->get_parent();
-		if (parent != nullptr)
-		{
-			parent->remove_child(node);
-		}
-
-		delete node;
+		delete entity;
 	}
 
 	bool SceneTree::save_scene()
@@ -80,14 +58,26 @@ namespace VadonEditor::Model
 		Vadon::Scene::SceneSystem& scene_system = m_editor.get_engine_core().get_system<Vadon::Scene::SceneSystem>();
 		Vadon::Core::Logger& logger = m_editor.get_engine_core().get_logger();
 
-		// First write the node data into the scene
-		scene_system.set_scene_data(m_current_scene, *m_current_scene_root);
+		// First write the entity data into the scene
+		scene_system.set_scene_data(m_current_scene, m_editor.get_system<ModelSystem>().get_ecs_world(), m_current_scene_root->m_entity_handle);
 
 		// Save the scene to JSON
-		Vadon::Utilities::JSON scene_json;
-		if (scene_system.save_scene(m_current_scene, scene_json) == false)
+		std::vector<std::byte> scene_data_buffer;
+		Vadon::Utilities::Serializer::Instance serializer = Vadon::Utilities::Serializer::create_serializer(scene_data_buffer, Vadon::Utilities::Serializer::Type::JSON, false);
+		if (serializer->initialize() == false)
+		{
+			return false;
+		}
+
+		if (scene_system.serialize_scene(m_current_scene, *serializer) == false)
 		{
 			logger.error("Error saving scene!\n");
+			return false;
+		}
+
+		if (serializer->finalize() == false)
+		{
+			logger.error(serializer->get_last_error() + '\n');
 			return false;
 		}
 
@@ -101,7 +91,7 @@ namespace VadonEditor::Model
 			return false;
 		}
 
-		scene_file << scene_json.dump(4);
+		scene_file.write(reinterpret_cast<char*>(scene_data_buffer.data()), scene_data_buffer.size());
 		scene_file.close();
 		return true;
 	}
@@ -129,33 +119,47 @@ namespace VadonEditor::Model
 		const std::string scene_file_path = scene_info.name + ".vdsc";
 		if (std::filesystem::exists(scene_file_path) == true)
 		{
-			std::ifstream scene_file(scene_file_path);
-			if (scene_file.is_open() == false)
+			std::ifstream scene_file(scene_file_path, std::ios::binary);
+			if (scene_file.good() == false)
 			{
 				logger.error("Unable to open scene file!\n");
 				return false;
 			}
 
-			Vadon::Utilities::JSON scene_data_json;
-			try
+			std::vector<std::byte> scene_data_buffer;
 			{
-				scene_data_json = Vadon::Utilities::JSON::parse(scene_file);
-			}
-			catch (const Vadon::Utilities::JSON::exception& exception)
-			{
-				logger.error(std::string(exception.what()) + '\n');
-				return false;
+				scene_file.seekg(0, std::ios::end);
+				std::streampos file_size = scene_file.tellg();
+				scene_file.seekg(0, std::ios::beg);
+
+				scene_data_buffer.resize(file_size);
+				
+				scene_file.read(reinterpret_cast<char*>(scene_data_buffer.data()), file_size);
 			}
 
 			scene_file.close();
 
-			Vadon::Utilities::JSONReader scene_data_reader(scene_data_json);
-			if (scene_system.load_scene(m_current_scene, scene_data_reader) == false)
+			Vadon::Utilities::Serializer::Instance serializer = Vadon::Utilities::Serializer::create_serializer(scene_data_buffer, Vadon::Utilities::Serializer::Type::JSON, true);
+			if (serializer->initialize() == false)
+			{
+				logger.error(serializer->get_last_error() + '\n');
+				return false;
+			}
+
+			if (scene_system.serialize_scene(m_current_scene, *serializer) == false)
 			{
 				return false;
 			}
 
-			m_current_scene_root = scene_system.instantiate_scene(m_current_scene);
+			if (serializer->finalize() == false)
+			{
+				logger.error(serializer->get_last_error() + '\n');
+				return false;
+			}
+
+			Vadon::ECS::EntityHandle root_entity_handle = scene_system.instantiate_scene(m_current_scene, m_editor.get_system<ModelSystem>().get_ecs_world());
+			m_current_scene_root = instantiate_scene_recursive(root_entity_handle, nullptr);
+
 			if (m_current_scene_root == nullptr)
 			{
 				return false;
@@ -169,6 +173,19 @@ namespace VadonEditor::Model
 		return true;
 	}
 
+	Vadon::Utilities::TypeInfoList SceneTree::get_component_type_list() const
+	{
+		Vadon::Utilities::TypeInfoList component_type_list;
+
+		const std::vector<uint32_t> component_type_ids = Vadon::ECS::ComponentRegistry::get_component_types();
+		for(uint32_t current_type_id : component_type_ids)
+		{
+			component_type_list.push_back(Vadon::Utilities::TypeRegistry::get_type_info(current_type_id));
+		}
+
+		return component_type_list;
+	}
+
 	SceneTree::SceneTree(Core::Editor& editor) :
 		m_editor(editor)
 	{
@@ -179,5 +196,24 @@ namespace VadonEditor::Model
 	{
 		// TODO: anything?
 		return true;
+	}
+
+	Entity* SceneTree::instantiate_scene_recursive(Vadon::ECS::EntityHandle entity_handle, Entity* parent)
+	{
+		Vadon::ECS::EntityManager& entity_manager = m_editor.get_system<ModelSystem>().get_ecs_world().get_entity_manager();
+
+		Entity* new_entity = new Entity(m_editor, entity_handle, parent);
+		new_entity->m_name = entity_manager.get_entity_name(entity_handle);
+
+		const Vadon::ECS::EntityList child_entities = entity_manager.get_children(entity_handle);
+		new_entity->m_children.reserve(child_entities.size());
+
+		for (const Vadon::ECS::EntityHandle& current_child_entity : child_entities)
+		{
+			Entity* child_entity = instantiate_scene_recursive(current_child_entity, new_entity);
+			new_entity->m_children.push_back(child_entity);
+		}
+
+		return new_entity;
 	}
 }
