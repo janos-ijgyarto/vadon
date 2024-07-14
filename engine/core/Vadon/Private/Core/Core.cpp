@@ -53,8 +53,7 @@ namespace Vadon::Private::Core
     };
 
     EngineCore::EngineCore()
-        : m_object_system(*this)
-        , m_task_system(*this) 
+        : m_task_system(*this) 
         , m_render_system(*this)
         , m_scene_system(*this)
         , m_default_logger(std::make_unique<DefaultLogger>())
@@ -69,12 +68,6 @@ namespace Vadon::Private::Core
         constexpr const char* c_failure_message = "Vadon engine core initialization failed!\n";
 
         m_config = config;
-
-        if (m_object_system.initialize() == false)
-        {
-            m_logger->log(c_failure_message);
-            return false;
-        }
 
         if (m_task_system.initialize() == false)
         {

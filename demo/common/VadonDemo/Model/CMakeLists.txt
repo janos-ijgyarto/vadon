@@ -4,5 +4,4 @@ target_sources(${VADONDEMO_CURRENT_TARGET}
     Component.cpp
     Model.hpp
     Model.cpp
-    Node.hpp
-    Node.cpp)
+    )

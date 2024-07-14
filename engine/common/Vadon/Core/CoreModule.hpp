@@ -4,7 +4,7 @@
 #include <Vadon/Core/System/SystemModule.hpp>
 namespace Vadon::Core
 {
-	class CoreModule : public SystemModule<SystemModuleList, CoreModule, class ObjectSystem, class TaskSystem>
+	class CoreModule : public SystemModule<SystemModuleList, CoreModule, class TaskSystem>
 	{
 	};
 

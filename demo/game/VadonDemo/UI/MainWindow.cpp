@@ -12,7 +12,6 @@
 #include <VadonApp/UI/UISystem.hpp>
 #include <VadonApp/UI/Developer/GUI.hpp>
 
-#include <Vadon/Core/Object/ObjectSystem.hpp>
 #include <Vadon/Core/Task/TaskSystem.hpp>
 
 #include <Vadon/Render/Canvas/Context.hpp>

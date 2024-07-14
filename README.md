@@ -10,8 +10,9 @@ Vadon is a cross-platform general-purpose game engine implemented using C++ and 
 - Graphics API abstraction (currently only supports DirectX 11)
 - Render frame graphs
 - Task graph and job threads
+- Custom Entity component system (ECS, implementation details inspired in part by [EnTT](https://github.com/skypjack/entt))
 - Custom reflection and RTTI system (inspired by [Godot](https://github.com/godotengine/godot))
-- Scene system using Nodes (inspired by [Godot](https://github.com/godotengine/godot))
+- Scene system (inspired by [Godot](https://github.com/godotengine/godot))
 - Application (wrapper for platform, windows, etc.) and editor
 - Developer GUI for dev tools and debugging (currently uses [Dear ImGui](https://github.com/ocornut/imgui))
 - Serialization using JSON
@@ -25,7 +26,6 @@ Vadon is a cross-platform general-purpose game engine implemented using C++ and 
 - Options for both 2D and 3D rendering to allow creating custom pipelines
 - Basic engine update loop
 - Refined API for custom update logic, task/job based update, etc.
-- Custom Entity component system (ECS)
 - Binary serialization
 - Physics and audio support
 - File management
@@ -64,7 +64,7 @@ Core project, contains all the context-agnostic features
 Base library, provides common features for all other modules.
 - Engine core interface
 - Engine subsystem interface
-- Object API
+- ECS API
 - Scene API
 - Task system
 - Utilities
@@ -85,13 +85,13 @@ Currently only supports a single window being used as the "main window".
 
 Also provides immediate mode developer GUI.
 ### Editor
-Derived from Application, allows clients to create and edit scenes via the Node system. Custom Node types can be registered and will be available in the editor as well.
+Derived from Application, allows clients to create and edit scenes via ECS. Custom Component types can be registered and will be available in the editor as well.
 ### Demo
 Optional projects to showcase how Vadon can be used to create a game application, as well as the relevant dev tools.
 #### Common
-Shared code, e.g Node definitions.
+Shared code, e.g ECS.
 #### Editor
-Instantiates the editor, initializes with custom Node types.
+Instantiates the editor, initializes with custom Component types.
 #### Game
 Instantiates application, runs content created in the editor.
 ## Importing Vadon

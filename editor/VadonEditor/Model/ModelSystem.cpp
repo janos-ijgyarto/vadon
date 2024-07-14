@@ -5,7 +5,6 @@
 #include <VadonEditor/Model/Scene/SceneTree.hpp>
 
 #include <Vadon/ECS/World/World.hpp>
-#include <Vadon/Scene/Node/Node.hpp>
 
 namespace VadonEditor::Model
 {
