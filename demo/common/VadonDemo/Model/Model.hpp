@@ -26,7 +26,8 @@ namespace VadonDemo::Model
 
 		// FIXME: view logic should not be in model!
 		// Ideally we will have ECS systems which are initialized and run by the relevant game systems
-		VADONDEMO_API void update_simulation(Vadon::ECS::World& ecs_world);
+		VADONDEMO_API void init_simulation(Vadon::ECS::World& ecs_world);
+		VADONDEMO_API void update_simulation(Vadon::ECS::World& ecs_world, float delta_time);
 		VADONDEMO_API void update_rendering(Vadon::ECS::World& ecs_world);
 
 		VADONDEMO_API Vadon::Render::Canvas::LayerHandle get_canvas_layer() const;

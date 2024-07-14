@@ -23,5 +23,6 @@ namespace VadonDemo::Model
 		Vadon::ECS::ComponentRegistry::register_component_type<Celestial>();
 
 		Vadon::Utilities::TypeRegistry::add_property<Celestial>("is_star", Vadon::Utilities::MemberVariableBind<&Celestial::is_star>().bind_member_getter().bind_member_setter());
+		Vadon::Utilities::TypeRegistry::add_property<Celestial>("angular_velocity", Vadon::Utilities::MemberVariableBind<&Celestial::angular_velocity>().bind_member_getter().bind_member_setter());
 	}
 }

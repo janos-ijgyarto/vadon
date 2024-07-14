@@ -28,6 +28,8 @@ namespace VadonDemo::Model
 	struct Celestial
 	{
 		bool is_star = false;
+		float angular_velocity = 1.0f;
+		float radius = 0.0f;
 
 		static void register_component();
 	};

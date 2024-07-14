@@ -16,7 +16,9 @@
 #include <Vadon/Core/Environment.hpp>
 #include <Vadon/Core/Task/TaskSystem.hpp>
 
-#include <Vadon/Utilities/Data/VariantUtilities.hpp>
+#include <Vadon/ECS/World/World.hpp>
+
+#include <Vadon/Utilities/Data/Visitor.hpp>
 
 #include <iostream>
 #include <format>
@@ -39,6 +41,8 @@ namespace VadonDemo::Core
 		Render::RenderSystem m_render_system;
 		UI::MainWindow m_main_window; // FIXME: should use a UI system instead!
 		VadonApp::Core::Application::Instance m_engine_app;
+
+		Vadon::ECS::World m_ecs_world;
 
 		Internal(GameCore& game_core)
 			: m_platform_interface(game_core)
@@ -325,5 +329,15 @@ namespace VadonDemo::Core
 	UI::MainWindow& GameCore::get_main_window()
 	{
 		return m_internal->m_main_window;
+	}
+
+	Model::Model& GameCore::get_model()
+	{
+		return *m_internal->m_model;
+	}
+
+	Vadon::ECS::World& GameCore::get_ecs_world()
+	{
+		return m_internal->m_ecs_world;
 	}
 }

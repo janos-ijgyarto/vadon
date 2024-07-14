@@ -62,6 +62,14 @@ namespace VadonDemo::Model
 
 			canvas_item.scale = scale;
 		}
+
+		Vadon::Utilities::Vector2 rotate_2d_vector(const Vadon::Utilities::Vector2& vector, float angle)
+		{
+			const float sin_angle = std::sinf(angle);
+			const float cos_angle = std::cosf(angle);
+
+			return Vadon::Utilities::Vector2(cos_angle * vector.x - sin_angle * vector.y, sin_angle * vector.x + cos_angle * vector.y);
+		}
 	}
 
 	struct Model::Internal
@@ -86,9 +94,47 @@ namespace VadonDemo::Model
 			return true;
 		}
 
-		void update_simulation(Vadon::ECS::World& /*ecs_world*/)
+		void init_simulation(Vadon::ECS::World& ecs_world)
 		{
-			// TODO!!!
+			Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
+
+			// TODO: query those who don't have transform and warn about them?
+			auto model_query = component_manager.run_component_query<Transform2D&, Celestial&>();
+			auto model_it = model_query.get_iterator();
+
+			for (; model_it.is_valid() == true; model_it.next())
+			{
+				auto current_entity = model_it.get_entity();
+				auto current_component_tuple = model_it.get_tuple();
+
+				Transform2D& transform_component = std::get<Transform2D&>(current_component_tuple);
+				Celestial& celestial_component = std::get<Celestial&>(current_component_tuple);
+
+				// Radius will be equal to the offset via local transform
+				celestial_component.radius = Vadon::Utilities::length(transform_component.position);
+			}
+		}
+
+		void update_simulation(Vadon::ECS::World& ecs_world, float delta_time)
+		{
+			Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
+
+			auto model_query = component_manager.run_component_query<Transform2D&, Celestial&>();
+			auto model_it = model_query.get_iterator();
+
+			for (; model_it.is_valid() == true; model_it.next())
+			{
+				auto current_entity = model_it.get_entity();
+				auto current_component_tuple = model_it.get_tuple();
+
+				Transform2D& transform_component = std::get<Transform2D&>(current_component_tuple);
+				Celestial& celestial_component = std::get<Celestial&>(current_component_tuple);
+				
+				const Vadon::Utilities::Vector2 norm_vector = Vadon::Utilities::normalize(transform_component.position);
+				const Vadon::Utilities::Vector2 rotated_vector = Vadon::Utilities::normalize(rotate_2d_vector(norm_vector, delta_time * celestial_component.angular_velocity));
+
+				transform_component.position = rotated_vector * celestial_component.radius;
+			}
 		}
 
 		void update_rendering(Vadon::ECS::World& ecs_world)
@@ -98,13 +144,13 @@ namespace VadonDemo::Model
 
 			Vadon::Render::Canvas::CanvasSystem& canvas_system = m_engine_core.get_system<Vadon::Render::Canvas::CanvasSystem>();
 
-			auto canvas_item_query = component_manager.run_component_query<CanvasItem*, Transform2D&, Celestial*>();
-			auto canvas_item_it = canvas_item_query.get_iterator();
+			auto render_query = component_manager.run_component_query<CanvasItem*, Transform2D&, Celestial*>();
+			auto render_it = render_query.get_iterator();
 
-			for (; canvas_item_it.is_valid() == true; canvas_item_it.next())
+			for (; render_it.is_valid() == true; render_it.next())
 			{
-				auto current_entity = canvas_item_it.get_entity();
-				auto current_component_tuple = canvas_item_it.get_tuple();
+				auto current_entity = render_it.get_entity();
+				auto current_component_tuple = render_it.get_tuple();
 				Transform2D& transform_component = std::get<Transform2D&>(current_component_tuple);
 
 				{
@@ -146,6 +192,9 @@ namespace VadonDemo::Model
 
 		void component_event(Vadon::ECS::World& ecs_world, const Vadon::ECS::ComponentEvent& event)
 		{
+			// FIXME: this is just to get it working
+			// Ideally client code will define model and view entities as needed
+			// e.g model entities will spawn editor-specific entities to use for visualization, drag & drop, etc.
 			switch (event.event_type)
 			{
 			case Vadon::ECS::ComponentEventType::ADDED:
@@ -218,13 +267,18 @@ namespace VadonDemo::Model
 	{
 		return m_internal->initialize();
 	}
-
-	VADONDEMO_API void Model::update_simulation(Vadon::ECS::World& ecs_world)
+	
+	void Model::init_simulation(Vadon::ECS::World& ecs_world)
 	{
-		m_internal->update_simulation(ecs_world);
+		m_internal->init_simulation(ecs_world);
 	}
 
-	VADONDEMO_API void Model::update_rendering(Vadon::ECS::World& ecs_world)
+	void Model::update_simulation(Vadon::ECS::World& ecs_world, float delta_time)
+	{
+		m_internal->update_simulation(ecs_world, delta_time);
+	}
+
+	void Model::update_rendering(Vadon::ECS::World& ecs_world)
 	{
 		m_internal->update_rendering(ecs_world);
 	}
