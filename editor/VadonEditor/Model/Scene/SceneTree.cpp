@@ -77,7 +77,7 @@ namespace VadonEditor::Model
 
 		if (serializer->finalize() == false)
 		{
-			Logger::log_error(serializer->get_last_error() + '\n');
+			Logger::log_error("Failed to serialize scene data!\n");
 			return false;
 		}
 
@@ -143,7 +143,7 @@ namespace VadonEditor::Model
 			Vadon::Utilities::Serializer::Instance serializer = Vadon::Utilities::Serializer::create_serializer(scene_data_buffer, Vadon::Utilities::Serializer::Type::JSON, true);
 			if (serializer->initialize() == false)
 			{
-				Logger::log_error(serializer->get_last_error() + '\n');
+				Logger::log_error("Failed to load scene file!\n");
 				return false;
 			}
 
@@ -154,7 +154,7 @@ namespace VadonEditor::Model
 
 			if (serializer->finalize() == false)
 			{
-				Logger::log_error(serializer->get_last_error() + '\n');
+				Logger::log_error("Failed to deserialize scene data!\n");
 				return false;
 			}
 

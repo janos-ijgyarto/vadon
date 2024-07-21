@@ -4,6 +4,8 @@
 #include <Vadon/Utilities/TypeInfo/TypeList.hpp>
 #include <Vadon/Utilities/Data/Visitor.hpp>
 
+#include <Vadon/Core/Logger.hpp>
+
 #include <format>
 
 namespace Vadon::Utilities
@@ -152,7 +154,7 @@ namespace Vadon::Utilities
 					}
 					catch (JSON::parse_error& exception)
 					{
-						m_last_error = std::format("Error parsing JSON data: {}\nException ID: {}\nError byte position: {}\n", exception.what(), exception.id, exception.byte);
+						Vadon::Core::Logger::log_error(std::format("Error parsing JSON data: {}\nException ID: {}\nError byte position: {}\n", exception.what(), exception.id, exception.byte));
 						return false;
 					}
 				}

@@ -24,12 +24,6 @@ namespace Vadon::Utilities
 
 		bool is_reading() const { return m_read; }
 
-		// FIXME: implement a more effective interface (possibly via std::optional or std::expected)
-		// which can both replace the bool return values AND decouple logging
-		// NOTE: may need to attach a logger to keep the API less verbose?
-		// Best approach will be to make the logger global
-		const std::string& get_last_error() const { return m_last_error; }
-
 		virtual bool initialize() = 0;
 		virtual bool finalize() = 0;
 
@@ -92,7 +86,6 @@ namespace Vadon::Utilities
 
 		std::vector<std::byte>& m_buffer;
 		bool m_read;
-		std::string m_last_error;
 	};
 }
 #endif

@@ -87,6 +87,6 @@ namespace Vadon::Private::Core
             m_graphics_api->shutdown();
         }
 
-        log_error("Vadon shut down successfully.\n");
+        log_message("Vadon shut down successfully.\n");
     }
 }
