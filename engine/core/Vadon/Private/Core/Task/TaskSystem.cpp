@@ -54,7 +54,7 @@ namespace Vadon::Private::Core
 		if (m_thread_pool.empty())
 		{
 			// No task threads have been added
-			error("Task system has no running task threads!\n");
+			log_error("Task system has no running task threads!\n");
 			return;
 		}
 
@@ -74,19 +74,19 @@ namespace Vadon::Private::Core
 	{
 		if (!m_thread_pool.empty() && !stop_requested())
 		{
-			error("Task system is already running!\n");
+			log_error("Task system is already running!\n");
 			return false;
 		}
 
-		log("Initializing Task System\n");
+		log_message("Initializing Task System\n");
 
 		if (task_config.thread_count <= 0)
 		{
-			error("Invalid task thread count!\n");
+			log_error("Invalid task thread count!\n");
 			return true;
 		}
 
-		log(std::format("Creating {} task threads\n", task_config.thread_count));
+		log_message(std::format("Creating {} task threads\n", task_config.thread_count));
 
 		// Reset stop source
 		m_stop_source = std::stop_source();
@@ -99,7 +99,7 @@ namespace Vadon::Private::Core
 			m_thread_pool.emplace_back(*this);
 		}
 
-		log("Task System initialized successfully!\n");
+		log_message("Task System initialized successfully!\n");
 		return true;
 	}
 
@@ -128,12 +128,12 @@ namespace Vadon::Private::Core
 
 	void TaskSystem::shutdown()
 	{
-		log("Shutting down Task System\n");
+		log_message("Shutting down Task System\n");
 
 		// Make sure we stopped, clear the thread pool
 		request_stop();
 		m_thread_pool.clear();
 
-		log("Task System shut down successfully!\n");
+		log_message("Task System shut down successfully!\n");
 	}
 }

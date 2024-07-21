@@ -23,16 +23,8 @@ namespace Vadon::Private::Core
 		void shutdown() override;
 
 		const Vadon::Core::Configuration& get_config() const override { return m_config; }
-
-		void set_logger(Vadon::Core::Logger* logger) override;
-		Vadon::Core::Logger& get_logger() override { return *m_logger; }
 	private:
-		class DefaultLogger;
-
 		Vadon::Core::Configuration m_config;
-
-		std::unique_ptr<DefaultLogger> m_default_logger;
-		Vadon::Core::Logger* m_logger;
 
 		TaskSystem m_task_system;
 

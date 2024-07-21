@@ -22,12 +22,12 @@ namespace VadonApp::Private::Platform::Dummy
 		// TODO!!!
 		m_main_window_info.window = m_application.get_config().platform_config.main_window_info;
 
-		log("Dummy GUI initialized successfully!\n");
+		log_message("Dummy GUI initialized successfully!\n");
 		return true;
 	}
 
 	void PlatformInterface::shutdown()
 	{
-		log("Dummy GUI shut down successfully.\n");
+		log_message("Dummy GUI shut down successfully.\n");
 	}
 }

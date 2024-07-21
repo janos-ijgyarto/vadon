@@ -92,7 +92,7 @@ namespace Vadon::Private::Render::DirectX
 		HRESULT result = dxgi_factory->CreateSwapChain(d3d_device, &swap_chain_desc, swap_chain.ReleaseAndGetAddressOf());
 		if (FAILED(result))
 		{
-			error("Unable to create window!");
+			log_error("Unable to create window!");
 			return WindowHandle();
 		}
 
@@ -311,11 +311,11 @@ namespace Vadon::Private::Render::DirectX
 
 	bool RenderTargetSystem::initialize()
 	{
-		log("Initializing Render Target system (DirectX).\n");
+		log_message("Initializing Render Target system (DirectX).\n");
 
 		// TODO!!!
 
-		log("Render Target system (DirectX) initialized successfully.\n");
+		log_message("Render Target system (DirectX) initialized successfully.\n");
 		return true;
 	}
 
@@ -326,14 +326,14 @@ namespace Vadon::Private::Render::DirectX
 
 	void RenderTargetSystem::shutdown()
 	{
-		log("Shutting down Render Target system (DirectX).\n");
+		log_message("Shutting down Render Target system (DirectX).\n");
 
 		// Clear resources
 		// TODO: add warning in case of leftover resources?
 		m_rt_pool.reset();
 		m_window_pool.reset();
 
-		log("Render Target system (DirectX) shut down successfully.\n");
+		log_message("Render Target system (DirectX) shut down successfully.\n");
 	}
 
 	bool RenderTargetSystem::update_back_buffer_view(DXGISwapChain& swap_chain, D3DRenderTargetView& back_buffer_view)
@@ -353,12 +353,12 @@ namespace Vadon::Private::Render::DirectX
 			}
 			else
 			{
-				error("Unable to create window render target view!");
+				log_error("Unable to create window render target view!");
 			}
 		}
 		else
 		{
-			error("Unable to get window back buffer!");
+			log_error("Unable to get window back buffer!");
 		}
 		return false;
 	}

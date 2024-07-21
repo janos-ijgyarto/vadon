@@ -174,8 +174,9 @@ namespace VadonEditor::Model
 		return component_manager.get_component_list(m_entity_handle);
 	}
 
-	Entity::Entity(Core::Editor& editor, Vadon::ECS::EntityHandle entity_handle, Entity* parent)
+	Entity::Entity(Core::Editor& editor, Vadon::ECS::EntityHandle entity_handle, EntityID id, Entity* parent)
 		: m_editor(editor)
+		, m_id(id)
 		, m_parent(parent)
 		, m_entity_handle(entity_handle)
 	{

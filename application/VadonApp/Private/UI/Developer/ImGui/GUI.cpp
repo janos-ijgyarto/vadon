@@ -612,7 +612,7 @@ float4 main(PS_INPUT input) : SV_Target
         //ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
         //IM_ASSERT(font != NULL);
 
-        log("ImGui initialized successfully!\n");
+        log_message("ImGui initialized successfully!\n");
         return true;
     }
 
@@ -620,7 +620,7 @@ float4 main(PS_INPUT input) : SV_Target
     {
         ImGui::DestroyContext();
         dev_gui_instance = nullptr;
-        log("ImGui shut down successfully!\n");
+        log_message("ImGui shut down successfully!\n");
     }
 
     GUISystem::IOFlags GUISystem::get_io_flags() const

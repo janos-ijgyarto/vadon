@@ -4,17 +4,18 @@
 #include <VadonApp/Core/Configuration.hpp>
 #include <VadonApp/Core/SystemRegistry.hpp>
 
+#include <Vadon/Core/CoreInterface.hpp>
+
 namespace Vadon::Core
 {
-	class EngineCoreInterface;
-	struct EngineEnvironment;
+	class EngineEnvironment;
 }
 
 namespace VadonApp::Core
 {
 	class SystemBase;
 
-	class Application : public SystemRegistry
+	class Application : public SystemRegistry, public Vadon::Core::LoggerInterface
 	{
 	public:
 		using Instance = std::unique_ptr<Application>;
@@ -28,6 +29,10 @@ namespace VadonApp::Core
 		virtual Vadon::Core::EngineCoreInterface& get_engine_core() = 0;
 
 		virtual const Configuration& get_config() const = 0;
+
+		void log_message(std::string_view message) override { get_engine_core().log_message(message); }
+		void log_warning(std::string_view message) override { get_engine_core().log_warning(message); }
+		void log_error(std::string_view message) override { get_engine_core().log_error(message); }
 
 		// TODO: make environment extended for app?
 		static VADONAPP_API void init_application_environment(Vadon::Core::EngineEnvironment& environment);

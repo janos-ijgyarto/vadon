@@ -17,10 +17,14 @@ namespace VadonEditor::Model
 	class Entity;
 	using EntityList = std::vector<Entity*>;
 
+	using EntityID = uint32_t;
+
 	class Entity final
 	{
 	public:
 		~Entity();
+
+		EntityID get_id() const { return m_id; }
 
 		Entity* get_parent() const { return m_parent; }
 		const EntityList& get_children() const { return m_children; }
@@ -44,7 +48,7 @@ namespace VadonEditor::Model
 
 		Vadon::ECS::ComponentIDList get_component_types();
 	private:
-		Entity(Core::Editor& editor, Vadon::ECS::EntityHandle entity_handle, Entity* parent = nullptr);
+		Entity(Core::Editor& editor, Vadon::ECS::EntityHandle entity_handle, EntityID id, Entity* parent = nullptr);
 		Vadon::ECS::World& get_ecs_world();
 
 		void internal_set_name(std::string_view name);
@@ -55,6 +59,7 @@ namespace VadonEditor::Model
 
 		Core::Editor& m_editor;
 
+		EntityID m_id;
 		Entity* m_parent;
 
 		EntityList m_children;

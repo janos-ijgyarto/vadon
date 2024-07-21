@@ -390,7 +390,7 @@ namespace Vadon::Private::Render::DirectX
 
 	void PipelineSystem::shutdown()
 	{
-		log("Shutting down Pipeline system (DirectX).\n");
+		log_message("Shutting down Pipeline system (DirectX).\n");
 
 		// Clear pools
 		// TODO: add warning in case of leftover resources?
@@ -398,6 +398,6 @@ namespace Vadon::Private::Render::DirectX
 		m_rasterizer_state_pool.reset();
 		m_depth_stencil_state_pool.reset();
 
-		log("Pipeline system (DirectX) shut down successfully.\n");
+		log_message("Pipeline system (DirectX) shut down successfully.\n");
 	}
 }

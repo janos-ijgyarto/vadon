@@ -9,4 +9,5 @@ target_sources(${VADON_CURRENT_TARGET}
         Environment.hpp
         Environment.cpp
         Logger.hpp
+        Logger.cpp
    )

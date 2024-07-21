@@ -12,7 +12,7 @@ namespace VadonApp::Core
 namespace Vadon::Core
 {
 	class EngineCoreInterface;
-	struct EngineEnvironment;
+	class EngineEnvironment;
 }
 
 namespace VadonEditor::Core

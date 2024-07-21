@@ -20,7 +20,6 @@
 
 #include <Vadon/Utilities/Data/Visitor.hpp>
 
-#include <iostream>
 #include <format>
 
 namespace VadonDemo::Core
@@ -56,7 +55,7 @@ namespace VadonDemo::Core
 		{
 			if (init_engine_application(argc, argv) == false)
 			{
-				std::cout << "Failed to initialize engine application!" << std::endl;
+				Vadon::Core::Logger::log_error("Failed to initialize engine application!\n");
 				return false;
 			}
 
@@ -85,8 +84,7 @@ namespace VadonDemo::Core
 
 			register_app_event_handlers();
 
-			auto& console = m_engine_app->get_system<VadonApp::UI::UISystem>().get_console();
-			console.log("Vadon Demo app initialized.\n");
+			Vadon::Core::Logger::log_message("Vadon Demo app initialized.\n");
 
 			return true;
 		}
@@ -166,7 +164,7 @@ namespace VadonDemo::Core
 					[this, &console](const VadonApp::UI::ConsoleCommandEvent& command_event)
 					{
 						// TODO: parse command
-						console.error(std::format("Command not recognized: \"{}\"\n", command_event.text));
+						console.log_error(std::format("Command not recognized: \"{}\"\n", command_event.text));
 						return true;
 					}
 				);
@@ -177,7 +175,7 @@ namespace VadonDemo::Core
 		{
 			if (initialize(argc, argv) == false)
 			{
-				std::cout << "Vadon Demo app failed to initialize!" << std::endl;
+				Vadon::Core::Logger::log_error("Vadon Demo app failed to initialize!\n");
 				shutdown();
 				return 1;
 			}
@@ -295,7 +293,7 @@ namespace VadonDemo::Core
 			// TODO: shut down game-side systems
 			m_engine_app->shutdown();
 
-			std::cout << "Vadon Demo app successfully shut down." << std::endl;
+			Vadon::Core::Logger::log_message("Vadon Demo app successfully shut down.\n");
 		}
 	};
 

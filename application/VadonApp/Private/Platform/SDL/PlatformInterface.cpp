@@ -1,8 +1,6 @@
 #include <VadonApp/Private/PCH/VadonApp.hpp>
 #include <VadonApp/Private/Platform/SDL/PlatformInterface.hpp>
 
-#include <VadonApp/Private/Core/Application.hpp>
-
 #include <Vadon/Render/GraphicsAPI/RenderTarget/RenderTargetSystem.hpp>
 
 #include <SDL_syswm.h>
@@ -347,7 +345,7 @@ namespace VadonApp::Private::Platform::SDL
 		if (SDL_Init(SDL_INIT_VIDEO) < 0)
 		{
 			const std::string error_message = std::string("Failed to initialize SDL! SDL_Error: ") + SDL_GetError();
-			error(error_message);
+			log_error(error_message);
 			return false;
 		}
 
@@ -364,7 +362,7 @@ namespace VadonApp::Private::Platform::SDL
 		if (!m_main_window.sdl_window)
 		{
 			// Something went wrong
-			error("Failed to create SDL main window!");
+			log_error("Failed to create SDL main window!");
 			return false;
 		}
 
@@ -381,7 +379,7 @@ namespace VadonApp::Private::Platform::SDL
 		if (!m_main_window.render_window.render_handle.is_valid())
 		{
 			// Something went wrong
-			error("Failed to register main render window!\n");
+			log_error("Failed to register main render window!\n");
 			return false;
 		}
 
@@ -395,7 +393,7 @@ namespace VadonApp::Private::Platform::SDL
 			m_cursors[current_cursor_index] = SDL_CreateSystemCursor(get_sdl_cursor(current_cursor));
 		}
 
-		log("SDL platform interface initialized successfully!\n");
+		log_message("SDL platform interface initialized successfully!\n");
 		return true;
 	}
 
@@ -422,7 +420,7 @@ namespace VadonApp::Private::Platform::SDL
 
 		// Quit SDL subsystems
 		SDL_Quit();
-		log("SDL shut down successfully.\n");
+		log_message("SDL shut down successfully.\n");
 	}
 
 	VadonApp::Platform::RenderWindowInfo PlatformInterface::get_window_info() const

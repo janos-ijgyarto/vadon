@@ -4,7 +4,6 @@ target_sources(${VADONAPP_CURRENT_TARGET}
         Application.cpp
         Configuration.hpp
         System.hpp
-        System.cpp
         SystemModule.hpp
         SystemRegistry.hpp
    )

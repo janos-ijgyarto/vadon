@@ -5,12 +5,12 @@
 #include <Vadon/Utilities/System/Singleton/Singleton.hpp>
 namespace Vadon::Core
 {
-	class SystemBase : public Logger
+	class SystemBase : public LoggerInterface
 	{
 	public:
-		void log(std::string_view message) override { m_engine_core.get_logger().log(message); }
-		void warning(std::string_view message) override { m_engine_core.get_logger().warning(message); }
-		void error(std::string_view message) override { m_engine_core.get_logger().error(message); }
+		void log_message(std::string_view message) override { m_engine_core.log_message(message); }
+		void log_warning(std::string_view message) override { m_engine_core.log_warning(message); }
+		void log_error(std::string_view message) override { m_engine_core.log_error(message); }
 	protected:
 		SystemBase(EngineCoreInterface& engine_core)
 			: m_engine_core(engine_core)

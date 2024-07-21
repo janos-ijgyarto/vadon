@@ -4,7 +4,7 @@
 #include <Vadon/Render/GraphicsAPI/GraphicsAPI.hpp>
 namespace Vadon::Core
 {
-	struct EngineEnvironment;
+	class EngineEnvironment;
 }
 namespace Vadon::Private::Render
 {

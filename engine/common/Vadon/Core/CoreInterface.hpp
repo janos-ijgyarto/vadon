@@ -1,12 +1,11 @@
 #ifndef VADON_CORE_COREINTERFACE_HPP
 #define VADON_CORE_COREINTERFACE_HPP
 #include <Vadon/Core/Configuration.hpp>
+#include <Vadon/Core/Logger.hpp>
 #include <Vadon/Core/System/SystemRegistry.hpp>
 namespace Vadon::Core
 {
-	class Logger;
-
-	class EngineCoreInterface : public SystemRegistry
+	class EngineCoreInterface : public SystemRegistry, public LoggerInterface
 	{
 	public:
 		virtual ~EngineCoreInterface() {}
@@ -17,8 +16,9 @@ namespace Vadon::Core
 
 		virtual const Configuration& get_config() const = 0;
 
-		virtual void set_logger(Logger* logger) = 0;
-		virtual Logger& get_logger() = 0;
+		void log_message(std::string_view message) override { Logger::log_message(message); }
+		void log_warning(std::string_view message) override { Logger::log_warning(message); }
+		void log_error(std::string_view message) override { Logger::log_error(message); }
 
 		// TODO: implement interface (similar to system registry) that allows client code to register additional modules
 		// This would allow them to access client-specific managers through the core interface

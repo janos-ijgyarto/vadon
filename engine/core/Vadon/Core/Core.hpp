@@ -4,7 +4,7 @@
 namespace Vadon::Core
 {
 	class EngineCoreInterface;
-	struct EngineEnvironment;
+	class EngineEnvironment;
 
 	using EngineCoreImpl = std::unique_ptr<EngineCoreInterface>;
 

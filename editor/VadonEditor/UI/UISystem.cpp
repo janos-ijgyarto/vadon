@@ -80,7 +80,7 @@ namespace VadonEditor::UI
 							return true;
 						}
 
-						app_console.error(std::format("Command not recognized: \"{}\"\n", command_event.text));
+						app_console.log_error(std::format("Command not recognized: \"{}\"\n", command_event.text));
 						return true;
 					}
 				);

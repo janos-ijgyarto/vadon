@@ -10,7 +10,7 @@
 
 namespace VadonApp::Private::UI
 {
-	void Console::log(std::string_view message)
+	void Console::log_message(std::string_view message)
 	{
 		std::osyncstream cout_sync(std::cout);
 		cout_sync << message;
@@ -18,7 +18,7 @@ namespace VadonApp::Private::UI
 		append(message);
 	}
 
-	void Console::warning(std::string_view message)
+	void Console::log_warning(std::string_view message)
 	{
 		const std::string warning_message = std::format("WARNING: {}", message);
 
@@ -28,7 +28,7 @@ namespace VadonApp::Private::UI
 		append(warning_message);
 	}
 
-	void Console::error(std::string_view message)
+	void Console::log_error(std::string_view message)
 	{
 		const std::string error_message = std::format("ERROR: {}", message);
 

@@ -333,7 +333,7 @@ namespace Vadon::Private::Render::DirectX
 
 	void ShaderSystem::shutdown()
 	{
-		log("Shutting down Shader system (DirectX).\n");
+		log_message("Shutting down Shader system (DirectX).\n");
 
 		// Clear resources
 		// TODO: add warning in case of leftover resources?
@@ -341,7 +341,7 @@ namespace Vadon::Private::Render::DirectX
 		m_layout_pool.reset();
 		m_resource_pool.reset();
 
-		log("Shader system (DirectX) shut down successfully.\n");
+		log_message("Shader system (DirectX) shut down successfully.\n");
 	}
 
 
@@ -428,7 +428,7 @@ namespace Vadon::Private::Render::DirectX
 		{
 			if (error_blob != nullptr)
 			{
-				error(get_d3d_error_blob_message(error_blob));
+				log_error(get_d3d_error_blob_message(error_blob));
 			}
 			return nullptr;
 		}

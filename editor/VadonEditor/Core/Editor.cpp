@@ -9,11 +9,9 @@
 #include <VadonApp/Core/Application.hpp>
 
 #include <VadonApp/UI/UISystem.hpp>
-#include <VadonApp/UI/Console.hpp>
 
 #include <Vadon/Core/Environment.hpp>
 
-#include <iostream>
 #include <format>
 #include <chrono>
 
@@ -59,7 +57,7 @@ namespace VadonEditor::Core
 
 			if (init_engine_application() == false)
 			{
-				std::cout << "Failed to initialize engine application!" << std::endl;
+				Vadon::Core::Logger::log_message("Failed to initialize engine application!\n");
 				return false;
 			}
 
@@ -90,7 +88,7 @@ namespace VadonEditor::Core
 
 			register_app_event_handlers();
 
-			m_engine_app->get_system<VadonApp::UI::UISystem>().get_console().log("Vadon Editor initialized.\n");
+			Vadon::Core::Logger::log_message("Vadon Editor initialized.\n");
 			return true;
 		}
 
@@ -228,7 +226,7 @@ namespace VadonEditor::Core
 			m_render_system.shutdown();
 			m_engine_app->shutdown();
 
-			std::cout << "Vadon Editor successfully shut down." << std::endl;
+			Vadon::Core::Logger::log_message("Vadon Editor successfully shut down.\n");
 		}
 
 		bool has_command_line_arg(std::string_view name) const
@@ -265,7 +263,7 @@ namespace VadonEditor::Core
 	{
 		if (m_internal->initialize(argc, argv) == false)
 		{
-			std::cout << "Vadon Editor failed to initialize!" << std::endl;
+			Vadon::Core::Logger::log_error("Vadon Editor failed to initialize!");
 			m_internal->shutdown();
 			return 1;
 		}

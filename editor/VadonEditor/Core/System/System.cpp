@@ -4,7 +4,7 @@
 
 namespace VadonEditor::Core
 {
-	void SystemBase::log(std::string_view message) { m_editor.get_engine_core().get_logger().log(message); }
-	void SystemBase::warning(std::string_view message) { m_editor.get_engine_core().get_logger().warning(message); }
-	void SystemBase::error(std::string_view message) { m_editor.get_engine_core().get_logger().error(message); }
+	void SystemBase::log_message(std::string_view message) { m_editor.get_engine_core().log_message(message); }
+	void SystemBase::log_warning(std::string_view message) { m_editor.get_engine_core().log_warning(message); }
+	void SystemBase::log_error(std::string_view message) { m_editor.get_engine_core().log_error(message); }
 }

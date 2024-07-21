@@ -193,11 +193,11 @@ namespace VadonDemo::UI
 
 		void init_scene()
 		{
+			using Logger = Vadon::Core::Logger;
+
 			VadonApp::Core::Application& engine_app = m_game_core.get_engine_app();
 			Vadon::Core::EngineCoreInterface& engine_core = engine_app.get_engine_core();
 			Vadon::ECS::World& ecs_world = m_game_core.get_ecs_world();
-
-			Vadon::Core::Logger& logger = engine_core.get_logger();
 
 			// Register component events
 			Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
@@ -229,7 +229,7 @@ namespace VadonDemo::UI
 					std::ifstream scene_file(scene_file_path);
 					if (scene_file.is_open() == false)
 					{
-						logger.error("Cannot open scene file!\n");
+						Logger::log_error("Cannot open scene file!\n");
 						return;
 					}
 
@@ -249,7 +249,7 @@ namespace VadonDemo::UI
 					Vadon::Utilities::Serializer::Instance serializer = Vadon::Utilities::Serializer::create_serializer(scene_data_buffer, Vadon::Utilities::Serializer::Type::JSON, true);
 					if (serializer->initialize() == false)
 					{
-						logger.error(serializer->get_last_error() + '\n');
+						Logger::log_error(serializer->get_last_error() + '\n');
 						return;
 					}
 
@@ -260,7 +260,7 @@ namespace VadonDemo::UI
 
 					if (serializer->finalize() == false)
 					{
-						logger.error(serializer->get_last_error() + '\n');
+						Logger::log_error(serializer->get_last_error() + '\n');
 						return;
 					}
 
@@ -583,6 +583,8 @@ namespace VadonDemo::UI
 
 		void test_tasks()
 		{
+			using Logger = Vadon::Core::Logger;
+
 			// First create a task group to encompass everything
 			Vadon::Core::EngineCoreInterface& engine_core = m_game_core.get_engine_app().get_engine_core();
 			Vadon::Core::TaskSystem& task_system = engine_core.get_system<Vadon::Core::TaskSystem>();
@@ -591,16 +593,16 @@ namespace VadonDemo::UI
 
 			// Add logging to know where we are
 			test_task_group->add_start_subtask(
-				[&task_system]()
+				[]()
 				{
-					task_system.log("Starting test task group...\n");
+					Logger::log_message("Starting test task group...\n");
 				}
 			);
 
 			test_task_group->add_end_subtask(
-				[&task_system]()
+				[]()
 				{
-					task_system.log("Test task group finished!\n");
+					Logger::log_message("Test task group finished!\n");
 				}
 			);
 
@@ -616,7 +618,7 @@ namespace VadonDemo::UI
 				[&task_system, test_task_group, pi_array]()
 				{
 					// Another log
-					task_system.log("Spawning additional nodes...\n");
+					Logger::log_message("Spawning additional nodes...\n");
 
 					// Test spawning tasks from within a task
 					Vadon::Core::TaskNode post_process_task = task_system.create_task_node("Vadondemo_task_test_post_process");
@@ -625,9 +627,9 @@ namespace VadonDemo::UI
 					test_task_group->add_end_dependency(post_process_task);
 
 					post_process_task->add_subtask(
-						[pi_array, &task_system]()
+						[pi_array]()
 						{
-							task_system.log("Running post-process task...\n");
+							Logger::log_message("Running post-process task...\n");
 
 							float result = 0.0f;
 							for (float pi_part : *pi_array)
@@ -635,7 +637,7 @@ namespace VadonDemo::UI
 								result += pi_part;
 							}
 
-							task_system.log(std::format("Final result: {}\n", result));
+							Logger::log_message(std::format("Final result: {}\n", result));
 						}
 					);
 
@@ -647,9 +649,9 @@ namespace VadonDemo::UI
 					for (size_t current_task_index = 0; current_task_index < pi_array->size(); ++current_task_index)
 					{
 						subtask_node->add_subtask(
-							[pi_array, current_task_index, &task_system]()
+							[pi_array, current_task_index]()
 							{
-								task_system.log(std::format("Running task node #{}\n", current_task_index));
+								Logger::log_message(std::format("Running task node #{}\n", current_task_index));
 
 								float& result = (*pi_array)[current_task_index];
 								int denominator = 1;
@@ -670,13 +672,13 @@ namespace VadonDemo::UI
 									denominator += 2;
 								}
 
-								task_system.log(std::format("Task node #{} finished, result is {}\n", current_task_index, result));
+								Logger::log_message(std::format("Task node #{} finished, result is {}\n", current_task_index, result));
 							}
 						);
 					}
 
 					// Parent task now done
-					task_system.log("Root task finished!\n");
+					Logger::log_message("Root task finished!\n");
 
 					// Kick generated node into queue
 					subtask_node->update();

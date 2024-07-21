@@ -383,6 +383,7 @@ namespace VadonEditor::View
 					return;
 				}
 
+				dev_gui.push_id(selected_entity->get_id());
 				if (dev_gui.draw_input_text(entity_name_input) == true)
 				{
 					selected_entity->set_name(entity_name_input.input);
@@ -414,6 +415,7 @@ namespace VadonEditor::View
 						reset_components(editor);
 					}
 				}
+				dev_gui.pop_id();
 			}
 
 			void set_selected_entity(Core::Editor& editor, Model::Entity* entity)

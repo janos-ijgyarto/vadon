@@ -14,9 +14,9 @@ namespace VadonApp::Private::UI
 	class Console : public VadonApp::UI::Console
 	{
 	public:
-		void log(std::string_view message) override;
-		void warning(std::string_view message) override;
-		void error(std::string_view message) override;
+		void log_message(std::string_view message) override;
+		void log_warning(std::string_view message) override;
+		void log_error(std::string_view message) override;
 
 		void show() override;
 		bool is_visible() const override { return m_window.open; }

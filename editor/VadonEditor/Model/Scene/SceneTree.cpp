@@ -21,7 +21,7 @@ namespace VadonEditor::Model
 		Vadon::ECS::World& world = m_editor.get_system<ModelSystem>().get_ecs_world();
 		Vadon::ECS::EntityHandle new_entity_handle = world.get_entity_manager().create_entity();
 
-		Entity* new_entity = new Entity(m_editor, new_entity_handle);
+		Entity* new_entity = new Entity(m_editor, new_entity_handle, ++m_entity_id_counter);
 		new_entity->set_name("Entity");
 
 		if (parent != nullptr)
@@ -55,8 +55,8 @@ namespace VadonEditor::Model
 
 	bool SceneTree::save_scene()
 	{
+		using Logger = Vadon::Core::Logger;
 		Vadon::Scene::SceneSystem& scene_system = m_editor.get_engine_core().get_system<Vadon::Scene::SceneSystem>();
-		Vadon::Core::Logger& logger = m_editor.get_engine_core().get_logger();
 
 		// First write the entity data into the scene
 		scene_system.set_scene_data(m_current_scene, m_editor.get_system<ModelSystem>().get_ecs_world(), m_current_scene_root->m_entity_handle);
@@ -71,13 +71,13 @@ namespace VadonEditor::Model
 
 		if (scene_system.serialize_scene(m_current_scene, *serializer) == false)
 		{
-			logger.error("Error saving scene!\n");
+			Logger::log_error("Error saving scene!\n");
 			return false;
 		}
 
 		if (serializer->finalize() == false)
 		{
-			logger.error(serializer->get_last_error() + '\n');
+			Logger::log_error(serializer->get_last_error() + '\n');
 			return false;
 		}
 
@@ -87,7 +87,7 @@ namespace VadonEditor::Model
 		std::ofstream scene_file(scene_info.name + ".vdsc");
 		if (scene_file.is_open() == false)
 		{
-			logger.error("Unable to open scene file!\n");
+			Logger::log_error("Unable to open scene file!\n");
 			return false;
 		}
 
@@ -98,6 +98,8 @@ namespace VadonEditor::Model
 
 	bool VadonEditor::Model::SceneTree::load_scene()
 	{
+		using Logger = Vadon::Core::Logger;
+
 		// FIXME: implement proper scene management, project file, etc.
 		Vadon::Scene::SceneInfo scene_info;
 		scene_info.name = "TestScene";
@@ -111,18 +113,17 @@ namespace VadonEditor::Model
 
 		if (m_current_scene.is_valid() == false)
 		{
-			m_editor.get_engine_core().get_logger().error("Error while creating scene!\n");
+			Logger::log_error("Error while creating scene!\n");
 			return false;
 		}
 
-		Vadon::Core::Logger& logger = m_editor.get_engine_core().get_logger();
 		const std::string scene_file_path = scene_info.name + ".vdsc";
 		if (std::filesystem::exists(scene_file_path) == true)
 		{
 			std::ifstream scene_file(scene_file_path, std::ios::binary);
 			if (scene_file.good() == false)
 			{
-				logger.error("Unable to open scene file!\n");
+				Logger::log_error("Unable to open scene file!\n");
 				return false;
 			}
 
@@ -142,7 +143,7 @@ namespace VadonEditor::Model
 			Vadon::Utilities::Serializer::Instance serializer = Vadon::Utilities::Serializer::create_serializer(scene_data_buffer, Vadon::Utilities::Serializer::Type::JSON, true);
 			if (serializer->initialize() == false)
 			{
-				logger.error(serializer->get_last_error() + '\n');
+				Logger::log_error(serializer->get_last_error() + '\n');
 				return false;
 			}
 
@@ -153,7 +154,7 @@ namespace VadonEditor::Model
 
 			if (serializer->finalize() == false)
 			{
-				logger.error(serializer->get_last_error() + '\n');
+				Logger::log_error(serializer->get_last_error() + '\n');
 				return false;
 			}
 
@@ -167,7 +168,7 @@ namespace VadonEditor::Model
 		}
 		else
 		{
-			logger.log("No scene file found, starting with empty scene.\n");
+			Logger::log_message("No scene file found, starting with empty scene.\n");
 		}
 
 		return true;
@@ -202,7 +203,7 @@ namespace VadonEditor::Model
 	{
 		Vadon::ECS::EntityManager& entity_manager = m_editor.get_system<ModelSystem>().get_ecs_world().get_entity_manager();
 
-		Entity* new_entity = new Entity(m_editor, entity_handle, parent);
+		Entity* new_entity = new Entity(m_editor, entity_handle, ++m_entity_id_counter, parent);
 		new_entity->m_name = entity_manager.get_entity_name(entity_handle);
 
 		const Vadon::ECS::EntityList child_entities = entity_manager.get_children(entity_handle);

@@ -2,8 +2,9 @@
 #include <Vadon/Utilities/TypeInfo/Registry/Registry.hpp>
 
 #include <Vadon/Core/Environment.hpp>
+#include <Vadon/Core/Logger.hpp>
 
-#include <iostream>
+#include <format>
 
 namespace Vadon::Utilities
 {
@@ -18,7 +19,7 @@ namespace Vadon::Utilities
 
 		TypeRegistry& get_registry_instance()
 		{
-			return *Vadon::Core::EngineEnvironment::s_instance->type_registry;
+			return Vadon::Core::EngineEnvironment::get_type_registry();
 		}
 
 		Variant invoke_property_getter(void* object, const MemberVariableBindBase& property)
@@ -51,7 +52,7 @@ namespace Vadon::Utilities
 	{
 		if (has_method(method_name) == true)
 		{
-			std::cerr << "Type registry error: \"" << info.name << "\" already has method registered with name \"" << method_name << "\"!\n";
+			Vadon::Core::Logger::log_error(std::format("Type registry error: \"{}\" already has method registered with name \"{}\"!\n", info.name, method_name));
 			return false;
 		}
 
@@ -63,7 +64,7 @@ namespace Vadon::Utilities
 	{
 		if (has_property(name) == true)
 		{
-			std::cerr << "Type registry error: \"" << info.name << "\" already has property registered with name \"" << name << "\"!\n";
+			Vadon::Core::Logger::log_error(std::format("Type registry error: \"{}\" already has property registered with name \"{}\"!\n", info.name, name));
 			return false;
 		}
 
@@ -101,7 +102,7 @@ namespace Vadon::Utilities
 		auto type_id_it = instance.m_id_lookup.find(type_name_str);
 		if (type_id_it == instance.m_id_lookup.end())
 		{
-			std::cerr << "Type registry error: " << type_name << " not present in registry!\n";
+			Vadon::Core::Logger::log_error(std::format("Type registry error: {} not present in registry!\n", type_name));
 			return c_invalid_type_id;
 		}
 
@@ -231,7 +232,7 @@ namespace Vadon::Utilities
 		else
 		{
 			// FIXME: more elegant error handling?
-			std::cerr << "Type registry error: " << type_name << " already exists in registry!\n";
+			Vadon::Core::Logger::log_error(std::format("Type registry error: {} already exists in registry!\n", type_name));
 			assert(false);
 			std::terminate();
 		}

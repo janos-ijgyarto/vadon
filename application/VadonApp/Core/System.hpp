@@ -8,12 +8,12 @@ namespace VadonApp::Core
 	// Utility class, makes creating app subsystems more concise
 	// All app systems are implicitly engine system extensions
 	// App systems can also access the app for additional features
-	class SystemBase : public Vadon::Core::Logger
+	class SystemBase : public Vadon::Core::LoggerInterface
 	{
 	public:
-		void log(std::string_view message) override;
-		void warning(std::string_view message) override;
-		void error(std::string_view message) override;
+		void log_message(std::string_view message) override { m_application.log_message(message); }
+		void log_warning(std::string_view message) override { m_application.log_warning(message); }
+		void log_error(std::string_view message) override { m_application.log_error(message); }
 	protected:
 		SystemBase(Application& application)
 			: m_application(application)

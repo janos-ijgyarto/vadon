@@ -7,7 +7,7 @@
 namespace Vadon::Core
 {
 	class EngineCoreInterface;
-	struct EngineEnvironment;
+	class EngineEnvironment;
 }
 namespace Vadon::ECS
 {

@@ -10,7 +10,7 @@ namespace VadonApp::UI
 	};
 
 	// Console also implements the engine logger interface
-	class Console : public Vadon::Core::Logger
+	class Console : public Vadon::Core::LoggerInterface
 	{
 	public:
 		virtual void show() = 0;

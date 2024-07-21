@@ -110,7 +110,7 @@ namespace Vadon::Private::Render::DirectX
 	bool GraphicsAPI::initialize()
 	{
 		// FIXME: should implement System interface, where they have this stuff wrapped as "system_log/error/etc."
-		log("Initializing DirectX graphics API.\n");
+		log_message("Initializing DirectX graphics API.\n");
 
 		std::array<D3D_FEATURE_LEVEL, 1> feature_levels = {
 			D3D_FEATURE_LEVEL_11_1,
@@ -138,7 +138,7 @@ namespace Vadon::Private::Render::DirectX
 			result = CreateDXGIFactory2(dxgi_flags, IID_PPV_ARGS(&m_dxgi_factory));
 			if (FAILED(result))
 			{
-				error("Failed to create DXGI factory!\n");
+				log_error("Failed to create DXGI factory!\n");
 				return false;
 			}
 		}
@@ -171,21 +171,21 @@ namespace Vadon::Private::Render::DirectX
 			HRESULT result = D3D11CreateDevice(m_dxgi_adapter.Get(), D3D_DRIVER_TYPE_UNKNOWN, NULL, device_flags, feature_levels.data(), num_feature_levels, D3D11_SDK_VERSION, device.ReleaseAndGetAddressOf(), &m_d3d_info.m_feature_level, device_context.ReleaseAndGetAddressOf());
 			if (FAILED(result))
 			{
-				error(std::format("Failed to create D3D11 device: {0}!\n", adapter_desc.data()));
+				log_error(std::format("Failed to create D3D11 device: {0}!\n", adapter_desc.data()));
 			}
 			else
 			{
-				log(std::format("Successfully created D3D11 device: {0}!\n", adapter_desc.data()));
+				log_message(std::format("Successfully created D3D11 device: {0}!\n", adapter_desc.data()));
 
 				if (FAILED(device.As(&m_device)))
 				{
-					error("Failed to cast D3D11 device to feature level!\n");
+					log_error("Failed to cast D3D11 device to feature level!\n");
 					return false;
 				}
 
 				if (FAILED(device_context.As(&m_device_context)))
 				{
-					error("Failed to cast D3D11 device context to feature level!\n");
+					log_error("Failed to cast D3D11 device context to feature level!\n");
 					return false;
 				}
 
@@ -195,7 +195,7 @@ namespace Vadon::Private::Render::DirectX
 
 		if (!m_device)
 		{
-			error("Unable to create D3D11 device!\n");
+			log_error("Unable to create D3D11 device!\n");
 			return false;
 		}
 
@@ -211,15 +211,15 @@ namespace Vadon::Private::Render::DirectX
 			}
 			else
 			{
-				warning("Unable to create D3D info queue!\n");
+				log_warning("Unable to create D3D info queue!\n");
 			}
 		}
 		else
 		{
-			warning("Unable to create D3D info queue!\n");
+			log_warning("Unable to create D3D info queue!\n");
 		}
 #endif
-		log("DirectX initialized successfully.\n");
+		log_message("DirectX initialized successfully.\n");
 
 		return m_internal->initialize();
 	}
@@ -231,7 +231,7 @@ namespace Vadon::Private::Render::DirectX
 
 	void GraphicsAPI::shutdown()
 	{
-		log("Shutting down DirectX graphics API.\n");
+		log_message("Shutting down DirectX graphics API.\n");
 
 		m_internal->shutdown();
 
@@ -263,7 +263,7 @@ namespace Vadon::Private::Render::DirectX
 			HRESULT result = m_info_queue->AddStorageFilterEntries(&filter);
 			if (FAILED(result))
 			{
-				error("Unable to add D3D info queue storage filter entries!");
+				log_error("Unable to add D3D info queue storage filter entries!");
 			}
 
 			m_info_queue.Reset();
@@ -274,7 +274,7 @@ namespace Vadon::Private::Render::DirectX
 		m_dxgi_adapter.Reset();
 		m_dxgi_factory.Reset();
 
-		log("DirectX successfully shut down.\n");
+		log_message("DirectX successfully shut down.\n");
 	}
 
 	RenderTargetSystem& GraphicsAPI::get_directx_rt_system()

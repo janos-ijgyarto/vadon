@@ -37,6 +37,8 @@ namespace VadonEditor::Model
 		Vadon::Scene::SceneHandle m_current_scene;
 		Entity* m_current_scene_root = nullptr;
 
+		uint32_t m_entity_id_counter = 0;
+
 		friend class ModelSystem;
 	};
 }

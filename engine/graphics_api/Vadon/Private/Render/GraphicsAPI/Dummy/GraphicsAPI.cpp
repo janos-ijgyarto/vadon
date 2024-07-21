@@ -21,11 +21,11 @@ namespace Vadon::Private::Render::Dummy
 
 	bool GraphicsAPI::initialize()
 	{
-		log("Initializing dummy graphics API.\n");
+		log_message("Initializing dummy graphics API.\n");
 
 		// TODO!!!
 
-		log("Dummy graphics API initialized successfully.\n");
+		log_message("Dummy graphics API initialized successfully.\n");
 		return true;
 	}
 
@@ -36,10 +36,10 @@ namespace Vadon::Private::Render::Dummy
 
 	void GraphicsAPI::shutdown()
 	{
-		log("Shutting down dummy graphics API.\n");
+		log_message("Shutting down dummy graphics API.\n");
 
 		// TODO!!!
 
-		log("Dummy graphics API successfully shut down.\n");
+		log_message("Dummy graphics API successfully shut down.\n");
 	}
 }

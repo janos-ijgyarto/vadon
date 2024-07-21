@@ -51,14 +51,14 @@ namespace VadonApp::Private::UI::Developer::Dummy
     bool GUISystem::initialize()
     {
         // TODO!!!
-        log("Dummy developer GUI initialized successfully!\n");
+        log_message("Dummy developer GUI initialized successfully!\n");
         return true;
     }
 
     void GUISystem::shutdown()
     {
         // TODO!!!
-        log("Dummy developer GUI shut down successfully!\n");
+        log_message("Dummy developer GUI shut down successfully!\n");
     }
 
     void GUISystem::push_id(std::string_view /*string_id*/)

@@ -9,7 +9,7 @@ namespace Vadon::ECS
 	{
 		ComponentRegistry& get_registry_instance()
 		{
-			return *Vadon::Core::EngineEnvironment::s_instance->component_registry;
+			return Vadon::Core::EngineEnvironment::get_component_registry();
 		}
 	}
 

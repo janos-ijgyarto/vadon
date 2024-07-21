@@ -462,13 +462,13 @@ namespace Vadon::Private::Render::DirectX
 
 	void TextureSystem::shutdown()
 	{
-		log("Shutting down Texture system (DirectX).\n");
+		log_message("Shutting down Texture system (DirectX).\n");
 
 		// Clear pools
 		// TODO: add warning in case of leftover resources?
 		m_texture_pool.reset();
 		m_sampler_pool.reset();
 
-		log("Texture system (DirectX) shut down successfully.\n");
+		log_message("Texture system (DirectX) shut down successfully.\n");
 	}
 }

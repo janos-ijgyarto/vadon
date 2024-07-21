@@ -1,8 +1,6 @@
 #include <Vadon/Private/PCH/Common.hpp>
 #include <Vadon/ECS/World/World.hpp>
 
-#include <iostream>
-
 namespace Vadon::ECS
 {
 	World::World() = default;

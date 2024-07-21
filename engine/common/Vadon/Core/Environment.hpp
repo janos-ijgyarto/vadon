@@ -12,16 +12,22 @@ namespace Vadon::Utilities
 }
 namespace Vadon::Core
 {
+	class LoggerInterface;
+
 	// Utility object that contains globals, explicitly initialized at startup
 	// Enables global data for specific use cases (e.g type registry) while 
 	// ensuring that we still keep initialization explicit
-	struct EngineEnvironment
+	class EngineEnvironment
 	{
+	public:
 		VADONCOMMON_API EngineEnvironment();
 		VADONCOMMON_API ~EngineEnvironment();
 
-		std::unique_ptr<::Vadon::ECS::ComponentRegistry> component_registry;
-		std::unique_ptr<::Vadon::Utilities::TypeRegistry> type_registry;
+		static ::Vadon::ECS::ComponentRegistry& get_component_registry();
+		static ::Vadon::Utilities::TypeRegistry& get_type_registry();
+		static LoggerInterface& get_logger();
+
+		VADONCOMMON_API static void set_logger(LoggerInterface* logger);
 
 		// NOTE: the engine expects that this object is instantiated once immediately at startup
 		// and the instance is passed to the appropriate initialization functions to ensure that
@@ -33,6 +39,9 @@ namespace Vadon::Core
 		// Multiple instances of the engine can exist and share the same environment, but only one
 		// environment instance should be registered.
 		static VADONCOMMON_API void initialize(EngineEnvironment& instance);
+	private:
+		struct Internal;
+		std::unique_ptr<Internal> m_internal;
 
 		static EngineEnvironment* s_instance;
 	};

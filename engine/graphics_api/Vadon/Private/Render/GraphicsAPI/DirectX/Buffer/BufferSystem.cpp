@@ -380,12 +380,12 @@ namespace Vadon::Private::Render::DirectX
 
 	void BufferSystem::shutdown()
 	{
-		log("Shutting down Buffer system (DirectX).\n");
+		log_message("Shutting down Buffer system (DirectX).\n");
 
 		// Clear buffers
 		// TODO: add warning in case of leftover buffers?
 		m_buffer_pool.reset();
 
-		log("Buffer system (DirectX) shut down successfully.\n");
+		log_message("Buffer system (DirectX) shut down successfully.\n");
 	}
 }
