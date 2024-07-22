@@ -3,6 +3,7 @@
 #include <Vadon/Render.hpp>
 #include <Vadon/Private/Render/Canvas/CanvasSystem.hpp>
 #include <Vadon/Private/Render/Frame/FrameSystem.hpp>
+#include <Vadon/Private/Render/Text/TextSystem.hpp>
 namespace Vadon::Core
 {
 	class EngineCoreInterface;
@@ -25,6 +26,7 @@ namespace Vadon::Private::Render
 		Vadon::Core::EngineCoreInterface& m_core;
 		Canvas::CanvasSystem m_canvas_system;
 		FrameSystem m_frame_system;
+		TextSystem m_text_system;
 	};
 }
 #endif

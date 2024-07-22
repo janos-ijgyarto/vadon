@@ -25,7 +25,7 @@ add_subdirectory(Vadon)
 target_compile_features(${VADON_CURRENT_TARGET} PRIVATE cxx_std_20)
 target_include_directories(${VADON_CURRENT_TARGET} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
-set(VADON_RENDER_LIBRARIES Vadon::Common)
+set(VADON_RENDER_LIBRARIES Vadon::Common freetype)
 target_link_libraries(${VADON_CURRENT_TARGET} PUBLIC ${VADON_RENDER_LIBRARIES})
 
 # Add link to the main DLL

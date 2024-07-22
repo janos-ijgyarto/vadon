@@ -11,6 +11,7 @@ namespace Vadon::Private::Render
 		: m_core(core)
 		, m_canvas_system(core)
 		, m_frame_system(core)
+		, m_text_system(core)
 	{
 
 	}
@@ -29,6 +30,12 @@ namespace Vadon::Private::Render
 		}
 
 		if (m_frame_system.initialize() == false)
+		{
+			Logger::log_error("Render system initialization failed.\n");
+			return false;
+		}
+
+		if (m_text_system.initialize() == false)
 		{
 			Logger::log_error("Render system initialization failed.\n");
 			return false;

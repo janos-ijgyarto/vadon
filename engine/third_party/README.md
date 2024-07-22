@@ -8,6 +8,10 @@ Below is a list of all third-party code in the engine, and the relevant license 
 - Upstream: https://github.com/cameron314/concurrentqueue
 - Version: 1.0.4
 - License: Simplified BSD
+## FreeType
+- Upstream: https://github.com/freetype/freetype
+- Version: 2.13.0
+- License: FreeType License
 ## GLM
 - Upstream: https://github.com/g-truc/glm
 - Version: 0.9.9.8

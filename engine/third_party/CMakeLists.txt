@@ -1,3 +1,4 @@
 add_subdirectory(concurrentqueue)
+add_subdirectory(freetype)
 add_subdirectory(glm)
 add_subdirectory(nlohmann_json)
