@@ -325,11 +325,16 @@ namespace Vadon::Private::Scene
 
 	SceneSystem::SceneSystem(Vadon::Core::EngineCoreInterface& core)
 		: Vadon::Scene::SceneSystem(core)
+		, m_resource_system(core)
 	{}
 
 	bool SceneSystem::initialize()
 	{
-		// TODO: anything?
+		if (m_resource_system.initialize() == false)
+		{
+			return false;
+		}
+
 		return true;
 	}
 }

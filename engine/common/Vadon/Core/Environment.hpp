@@ -6,6 +6,10 @@ namespace Vadon::ECS
 {
 	class ComponentRegistry;
 }
+namespace Vadon::Scene
+{
+	class ResourceRegistry;
+}
 namespace Vadon::Utilities
 {
 	class TypeRegistry;
@@ -24,6 +28,7 @@ namespace Vadon::Core
 		VADONCOMMON_API ~EngineEnvironment();
 
 		static ::Vadon::ECS::ComponentRegistry& get_component_registry();
+		static ::Vadon::Scene::ResourceRegistry& get_resource_registry();
 		static ::Vadon::Utilities::TypeRegistry& get_type_registry();
 		static LoggerInterface& get_logger();
 

@@ -24,7 +24,7 @@ namespace Vadon::ECS
 			register_component_type(get_component_type_id<T>(), factory_impl);
 		}
 
-		static ComponentPoolInterface* get_component_pool(uint32_t type_id);
+		static ComponentPoolInterface* get_component_pool(Vadon::Utilities::TypeID type_id);
 
 		template<typename T>
 		static uint32_t get_component_type_id()
@@ -32,9 +32,9 @@ namespace Vadon::ECS
 			return ComponentPoolInterface::get_component_type_id<T>();
 		}
 
-		VADONCOMMON_API static std::vector<uint32_t> get_component_types();
+		VADONCOMMON_API static std::vector<Vadon::Utilities::TypeID> get_component_types();
 	private:
-		VADONCOMMON_API static void register_component_type(uint32_t type_id, PoolFactoryFunction factory);
+		VADONCOMMON_API static void register_component_type(Vadon::Utilities::TypeID type_id, PoolFactoryFunction factory);
 
 		struct PoolInfo
 		{

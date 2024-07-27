@@ -3,6 +3,7 @@
 #include <Vadon/Core/CoreInterface.hpp>
 #include <Vadon/Core/Logger.hpp>
 
+#include <Vadon/Private/Core/File/FileSystem.hpp>
 #include <Vadon/Private/Core/Task/TaskSystem.hpp>
 
 #include <Vadon/Private/Render/RenderSystem.hpp>
@@ -26,6 +27,7 @@ namespace Vadon::Private::Core
 	private:
 		Vadon::Core::Configuration m_config;
 
+		FileSystem m_file_system;
 		TaskSystem m_task_system;
 
 		Render::RenderSystem m_render_system;

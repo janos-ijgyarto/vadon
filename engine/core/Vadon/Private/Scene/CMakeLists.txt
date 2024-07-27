@@ -1,3 +1,5 @@
+add_subdirectory(Resource)
+
 target_sources(${VADON_CURRENT_TARGET}
     PRIVATE
         Scene.hpp

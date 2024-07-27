@@ -6,7 +6,8 @@
 #include <Vadon/Private/ECS/Entity/Entity.hpp>
 #include <Vadon/Private/ECS/World/World.hpp>
 
-#include <Vadon/Utilities/Container/ObjectPool/Pool.hpp>
+#include <Vadon/Private/Scene/Resource/ResourceSystem.hpp>
+
 namespace Vadon::Private::Core
 {
 	class EngineCore;
@@ -34,6 +35,8 @@ namespace Vadon::Private::Scene
 		bool initialize();
 
 		ScenePool m_scene_pool;
+
+		ResourceSystem m_resource_system;
 
 		friend Core::EngineCore;
 	};

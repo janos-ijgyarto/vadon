@@ -4,12 +4,16 @@
 #include <vector>
 namespace Vadon::Utilities
 {
+	using TypeID = uint32_t;
+	constexpr TypeID c_invalid_type_id = TypeID(0);
+
 	struct TypeInfo
 	{
-		uint32_t id;
+		TypeID id;
+		TypeID base_id = c_invalid_type_id;
 		std::string name;
 
-		bool is_valid() const { return (id != 0); }
+		bool is_valid() const { return (id != c_invalid_type_id); }
 	};
 
 	using TypeInfoList = std::vector<TypeInfo>;

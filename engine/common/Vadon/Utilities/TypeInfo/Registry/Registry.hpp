@@ -14,13 +14,17 @@ namespace Vadon::Utilities
 	class TypeRegistry
 	{
 	public:
-		using TypeID = uint32_t;
-		static constexpr TypeID c_invalid_type_id = 0;
-
-		template<typename T>
+		template<typename T, typename Base = T>
 		static void register_type()
 		{
-			internal_register_type(Vadon::Utilities::TypeName<T>::trimmed());
+			if constexpr (std::is_same_v<T, Base>)
+			{
+				internal_register_type(Vadon::Utilities::TypeName<T>::trimmed());
+			}
+			else
+			{
+				internal_register_type(Vadon::Utilities::TypeName<T>::trimmed(), get_type_id<Base>());
+			}
 		}
 
 		template<typename T>
@@ -53,7 +57,7 @@ namespace Vadon::Utilities
 		}
 
 		// TODO: use std::expected so we can check for failure?
-		VADONCOMMON_API static TypeInfo get_type_info(uint32_t type_id);
+		VADONCOMMON_API static TypeInfo get_type_info(TypeID type_id);
 
 		// TODO: use std::expected so we can check for failure?
 		template<typename T>
@@ -63,18 +67,19 @@ namespace Vadon::Utilities
 		}
 
 		// TODO: use std::expected so we can check for failure?
-		VADONCOMMON_API static PropertyInfoList get_type_properties(uint32_t type_id);
+		VADONCOMMON_API static PropertyInfoList get_type_properties(TypeID type_id);
 
+		// TODO: add non-recursive version?
 		template<typename T>
 		static PropertyList get_properties(T& object)
 		{
 			return get_type_properties(&object, get_type_id<T>());
 		}
 
-		VADONCOMMON_API static PropertyList get_properties(void* object, uint32_t type_id);
+		VADONCOMMON_API static PropertyList get_properties(void* object, TypeID type_id);
 
-		VADONCOMMON_API static Variant get_property(void* object, uint32_t type_id, std::string_view property_name);
-		VADONCOMMON_API static void set_property(void* object, uint32_t type_id, std::string_view property_name, const Variant& value);
+		VADONCOMMON_API static Variant get_property(void* object, TypeID type_id, std::string_view property_name);
+		VADONCOMMON_API static void set_property(void* object, TypeID type_id, std::string_view property_name, const Variant& value);
 	protected:
 	private:
 		struct TypeData
@@ -92,15 +97,23 @@ namespace Vadon::Utilities
 			bool has_property(std::string_view name) const;
 		};
 
-		static VADONCOMMON_API void internal_register_type(std::string_view type_name);
+		static VADONCOMMON_API void internal_register_type(std::string_view type_name, TypeID base_type_id = c_invalid_type_id);
 		static VADONCOMMON_API bool internal_add_property(TypeID type_id, std::string_view name, MemberVariableBindBase property_bind);
 		static VADONCOMMON_API bool internal_bind_method(TypeID type_id, std::string_view name, MemberFunctionBind method_bind);
+		
+		void register_type_with_base(TypeID type_id, TypeData& data, TypeID base_id);
+
+		bool has_method(TypeID type_id, std::string_view method_name) const;
+		bool has_property(TypeID type_id, std::string_view property_name) const;
+
+		void internal_get_type_properties(TypeID type_id, PropertyInfoList& property_list) const;
+		void internal_get_properties(void* object, TypeID type_id, PropertyList& property_list) const;
 
 		// FIXME: hide via PIMPL?
-		std::unordered_map<std::string, uint32_t> m_id_lookup;
-		uint32_t m_id_counter = 1;
+		std::unordered_map<std::string, TypeID> m_id_lookup;
+		TypeID m_id_counter = 1;
 
-		std::unordered_map<uint32_t, TypeData> m_type_lookup;
+		std::unordered_map<TypeID, TypeData> m_type_lookup;
 	};
 }
 #endif

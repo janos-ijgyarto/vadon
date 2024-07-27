@@ -3,6 +3,7 @@
 
 #include <Vadon/Core/Logger.hpp>
 #include <Vadon/ECS/Component/Registry.hpp>
+#include <Vadon/Scene/Resource/Registry.hpp>
 #include <Vadon/Utilities/TypeInfo/Registry/Registry.hpp>
 
 #include <iostream>
@@ -43,6 +44,7 @@ namespace Vadon::Core
     struct EngineEnvironment::Internal
     {
         Vadon::ECS::ComponentRegistry m_component_registry;
+        Vadon::Scene::ResourceRegistry m_resource_registry;
         Vadon::Utilities::TypeRegistry m_type_registry;
         DefaultLogger m_default_logger;
 
@@ -76,6 +78,11 @@ namespace Vadon::Core
     ::Vadon::ECS::ComponentRegistry& EngineEnvironment::get_component_registry()
     {
         return s_instance->m_internal->m_component_registry;
+    }
+
+    ::Vadon::Scene::ResourceRegistry& EngineEnvironment::get_resource_registry()
+    {
+        return s_instance->m_internal->m_resource_registry;
     }
 
     ::Vadon::Utilities::TypeRegistry& EngineEnvironment::get_type_registry()
