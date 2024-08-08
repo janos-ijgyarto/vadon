@@ -20,6 +20,7 @@ namespace VadonEditor::View
 {
 	namespace
 	{
+		// FIXME: move scene tree editing into dedicated subsystems!
 		class PropertyEditor
 		{
 		public:
@@ -195,7 +196,200 @@ namespace VadonEditor::View
 			UI::Developer::InputText m_input;
 		};
 
-		// FIXME: move scene tree editing into dedicated subsystems!
+		struct ResourcePropertyEditor : public PropertyEditor
+		{
+		public:
+			ResourcePropertyEditor(std::string_view property_name, const Vadon::Utilities::Variant& value)
+				: PropertyEditor(property_name, value)
+			{
+				// TODO!!!
+			}
+		private:
+			std::vector<std::unique_ptr<PropertyEditor>> property_editors;
+		};
+
+		struct ErrorDialog
+		{
+			UI::Developer::Window window;
+			UI::Developer::Button ok_button;
+
+			std::string error_message;
+
+			ErrorDialog()
+			{
+				window.title = "Error";
+				ok_button.label = "Ok";
+			}
+
+			void show_error(VadonApp::UI::Developer::GUISystem& dev_gui, std::string_view message)
+			{
+				error_message = message;
+				dev_gui.open_dialog(window.title);
+			}
+
+			// FIXME: store some kind of state to indicate whether dialog code should be run at all?
+			void draw(VadonApp::UI::Developer::GUISystem& dev_gui)
+			{
+				if (dev_gui.begin_modal_dialog(window) == true)
+				{
+					dev_gui.add_text(error_message);
+					dev_gui.end_dialog();
+				}
+			}
+		};
+
+		struct NewSceneDialog
+		{
+			UI::Developer::Window window;
+
+			UI::Developer::Button new_scene_button;
+			UI::Developer::Button add_button;
+
+			UI::Developer::InputText scene_name;
+
+			NewSceneDialog()
+			{
+				window.title = "Create New Scene";
+
+				new_scene_button.label = "New scene";
+				add_button.label = "Create";
+
+				scene_name.label = "Scene name";
+			}
+
+			bool draw(VadonApp::UI::Developer::GUISystem& dev_gui)
+			{
+				if (dev_gui.draw_button(new_scene_button) == true)
+				{
+					scene_name.input.clear();
+					dev_gui.open_dialog(window.title);
+				}
+
+				bool scene_created = false;
+				if (dev_gui.begin_modal_dialog(window) == true)
+				{
+					dev_gui.draw_input_text(scene_name);
+
+					if (has_valid_name() == false)
+					{
+						dev_gui.begin_disabled();
+					}
+					if (dev_gui.draw_button(add_button) == true)
+					{
+						scene_created = true;
+						dev_gui.close_current_dialog();
+					}
+					if (has_valid_name() == false)
+					{
+						dev_gui.end_disabled();
+					}
+
+					dev_gui.end_dialog();
+				}
+
+				return scene_created;
+			}
+
+			const std::string& get_new_scene_name() const
+			{
+				return scene_name.input;
+			}
+
+			bool has_valid_name() const
+			{
+				return scene_name.input.empty() == false;
+			}
+		};
+
+		struct LoadSceneDialog
+		{
+			UI::Developer::Window window;
+
+			UI::Developer::ListBox scene_item_list;
+			VadonEditor::Model::SceneList scene_list;
+
+			UI::Developer::Button load_scene_button;
+			UI::Developer::Button load_button;
+
+			LoadSceneDialog()
+			{
+				window.title = "Load Scene";
+
+				load_scene_button.label = "Load scene";
+				load_button.label = "Load";
+
+				scene_item_list.label = "Scenes";
+			}
+
+			bool draw(Core::Editor& editor, VadonApp::UI::Developer::GUISystem& dev_gui)
+			{
+				if (dev_gui.draw_button(load_scene_button) == true)
+				{
+					// Rebuild scene list
+					Model::ModelSystem& model = editor.get_system<Model::ModelSystem>();
+					Model::SceneTree& scene_tree = model.get_scene_tree();
+
+					scene_item_list.items.clear();
+					scene_list = scene_tree.get_scene_list();
+
+					for (const Model::Scene& current_scene : scene_list)
+					{
+						scene_item_list.items.push_back(current_scene.path);
+					}
+
+					scene_item_list.selected_item = 0;
+
+					dev_gui.open_dialog(window.title);
+				}
+
+				bool scene_loaded = false;
+				if (dev_gui.begin_modal_dialog(window) == true)
+				{
+					dev_gui.draw_list_box(scene_item_list);
+					if (has_valid_option() == false)
+					{
+						dev_gui.begin_disabled();
+					}
+					if (dev_gui.draw_button(load_button) == true)
+					{
+						scene_loaded = true;
+						dev_gui.close_current_dialog();
+					}
+					if (has_valid_option() == false)
+					{
+						dev_gui.end_disabled();
+					}
+
+					dev_gui.end_dialog();
+				}
+
+				return scene_loaded;
+			}
+
+			Vadon::Scene::ResourceID get_loaded_scene() const
+			{
+				return scene_list[scene_item_list.selected_item].scene_id;
+			}
+
+			bool has_valid_option() const
+			{
+				return scene_list.empty() == false;
+			}
+		};
+
+		struct InstantiateSceneDialog : public LoadSceneDialog
+		{
+			InstantiateSceneDialog()
+			{
+				window.title = "Instantiate Sub-Scene";
+
+				load_scene_button.label = "Instantiate sub-scene";
+				load_button.label = "Instantiate";
+
+				scene_item_list.label = "Scenes";
+			}
+		};
+
 		struct AddComponentDialog
 		{
 			UI::Developer::Window window;
@@ -216,28 +410,17 @@ namespace VadonEditor::View
 				component_type_list.label = "Component types";
 			}
 
-			bool draw(Model::Entity& entity, Core::Editor& editor, VadonApp::UI::Developer::GUISystem& dev_gui)
+			bool draw(Model::Entity& entity, VadonApp::UI::Developer::GUISystem& dev_gui)
 			{
 				if (dev_gui.draw_button(add_button) == true)
 				{
 					// Rebuild component type list
 					component_type_list.items.clear();
 					component_type_ids.clear();
-					
-					Model::ModelSystem& model = editor.get_system<Model::ModelSystem>();
-					Model::SceneTree& scene_tree = model.get_scene_tree();
 
-					const Vadon::ECS::ComponentIDList added_component_ids = entity.get_component_types();
-
-					const Vadon::Utilities::TypeInfoList component_info_list = scene_tree.get_component_type_list();
+					const Vadon::Utilities::TypeInfoList component_info_list = entity.get_available_component_list();
 					for (const Vadon::Utilities::TypeInfo& current_component_type_info : component_info_list)
 					{
-						if (std::find(added_component_ids.begin(), added_component_ids.end(), current_component_type_info.id) != added_component_ids.end())
-						{
-							// Component already added
-							continue;
-						}
-
 						component_type_list.items.push_back(current_component_type_info.name);
 						component_type_ids.push_back(current_component_type_info.id);
 					}
@@ -249,10 +432,19 @@ namespace VadonEditor::View
 				if (dev_gui.begin_modal_dialog(window) == true)
 				{
 					dev_gui.draw_list_box(component_type_list);
+
+					if (has_valid_option() == false)
+					{
+						dev_gui.begin_disabled();
+					}
 					if (dev_gui.draw_button(ok_button) == true)
 					{
 						component_added = true;
 						dev_gui.close_current_dialog();
+					}
+					if (has_valid_option() == false)
+					{
+						dev_gui.end_disabled();
 					}
 
 					dev_gui.end_dialog();
@@ -261,9 +453,14 @@ namespace VadonEditor::View
 				return component_added;
 			}
 
-			uint32_t get_selected_component_type() const
+			Vadon::ECS::ComponentID get_selected_component_type() const
 			{
 				return component_type_ids[component_type_list.selected_item];
+			}
+
+			bool has_valid_option() const
+			{
+				return component_type_ids.empty() == false;
 			}
 		};
 
@@ -283,19 +480,12 @@ namespace VadonEditor::View
 				remove_button.label = "Remove component";
 			}
 
-			void initialize(Core::Editor& editor, Model::Entity& entity)
+			void initialize(Model::Entity& entity)
 			{
-				Vadon::ECS::World& ecs_world = editor.get_system<Model::ModelSystem>().get_ecs_world();
-				Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
+				const VadonEditor::Model::Component component_data = entity.get_component_data(type_id);
+				name = component_data.name;
 
-				name = Vadon::Utilities::TypeRegistry::get_type_info(type_id).name;
-
-				void* component_ptr = component_manager.get_component(entity.get_handle(), type_id);
-
-				// TODO: filter to editable properties?
-				const Vadon::Utilities::PropertyList component_properties = Vadon::Utilities::TypeRegistry::get_properties(component_ptr, type_id);
-
-				for (const Vadon::Utilities::Property& current_property : component_properties)
+				for (const Vadon::Utilities::Property& current_property : component_data.properties)
 				{
 					auto property_visitor = Vadon::Utilities::VisitorOverloadList{
 						[this, &current_property](int)
@@ -376,7 +566,7 @@ namespace VadonEditor::View
 				component_tree.border = true;
 			}
 
-			void draw(Core::Editor& editor, VadonApp::UI::Developer::GUISystem& dev_gui)
+			void draw(VadonApp::UI::Developer::GUISystem& dev_gui)
 			{
 				if (selected_entity == nullptr)
 				{
@@ -391,10 +581,10 @@ namespace VadonEditor::View
 				}
 				dev_gui.add_text(selected_entity_path);
 
-				if (add_component_dialog.draw(*selected_entity, editor, dev_gui) == true)
+				if (add_component_dialog.draw(*selected_entity, dev_gui) == true)
 				{
 					selected_entity->add_component(add_component_dialog.get_selected_component_type());
-					reset_components(editor);
+					reset_components();
 				}
 
 				if (component_editors.empty() == false)
@@ -412,13 +602,13 @@ namespace VadonEditor::View
 					dev_gui.end_child_window();
 					if (component_removed == true)
 					{
-						reset_components(editor);
+						reset_components();
 					}
 				}
 				dev_gui.pop_id();
 			}
 
-			void set_selected_entity(Core::Editor& editor, Model::Entity* entity)
+			void set_selected_entity(Model::Entity* entity)
 			{
 				if (selected_entity == entity)
 				{
@@ -432,7 +622,7 @@ namespace VadonEditor::View
 				}
 
 				update_name();
-				reset_components(editor);
+				reset_components();
 			}
 
 			void update_name()
@@ -441,22 +631,17 @@ namespace VadonEditor::View
 				selected_entity_path = "Path: " + selected_entity->get_path();
 			}
 
-			void reset_components(Core::Editor& editor)
+			void reset_components()
 			{
 				component_editors.clear();
 
-				Vadon::ECS::World& ecs_world = editor.get_system<Model::ModelSystem>().get_ecs_world();
-				Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
-
-				const Vadon::ECS::EntityHandle entity_handle = selected_entity->get_handle();
-				const std::vector<uint32_t> component_id_list = component_manager.get_component_list(entity_handle);
-
-				for (uint32_t current_component_id : component_id_list)
+				const Vadon::ECS::ComponentIDList component_id_list = selected_entity->get_component_types();
+				for (Vadon::ECS::ComponentID current_component_id : component_id_list)
 				{
 					ComponentEditor& current_component_editor = component_editors.emplace_back();
 					current_component_editor.type_id = current_component_id;
 
-					current_component_editor.initialize(editor, *selected_entity);
+					current_component_editor.initialize(*selected_entity);
 				}
 			}
 		};
@@ -482,7 +667,6 @@ namespace VadonEditor::View
 				m_remove_entity_button.label = "Remove entity";
 
 				m_save_scene_button.label = "Save scene";
-				m_load_scene_button.label = "Load scene";
 			}
 
 			void render(Core::Editor& editor)
@@ -495,8 +679,35 @@ namespace VadonEditor::View
 					Model::ModelSystem& model = editor.get_system<Model::ModelSystem>();
 					Model::SceneTree& scene_tree = model.get_scene_tree();
 
+					m_error_dialog.draw(dev_gui);
+
+					if (m_new_scene_dialog.draw(dev_gui) == true)
+					{
+						if (scene_tree.new_scene(m_new_scene_dialog.get_new_scene_name()) == false)
+						{
+							m_error_dialog.show_error(dev_gui, "Error creating scene!");
+						}
+					}
+					if (m_load_scene_dialog.draw(editor, dev_gui) == true)
+					{
+						if (scene_tree.load_scene(m_load_scene_dialog.get_loaded_scene()) == false)
+						{
+							m_error_dialog.show_error(dev_gui, "Error loading scene!");
+						}
+					}
 					if (scene_tree.get_current_scene().is_valid() == true)
 					{
+						if (m_entity_editor.selected_entity != nullptr)
+						{
+							if (m_instantiate_scene_dialog.draw(editor, dev_gui) == true)
+							{
+								if (scene_tree.instantiate_sub_scene(m_entity_editor.selected_entity, m_instantiate_scene_dialog.get_loaded_scene()) == false)
+								{
+									m_error_dialog.show_error(dev_gui, "Error instantiating sub-scene!");
+								}
+							}
+						}
+
 						const bool add_entity = dev_gui.draw_button(m_add_entity_button);
 						if (m_entity_editor.selected_entity != nullptr)
 						{
@@ -504,7 +715,7 @@ namespace VadonEditor::View
 							{
 								// TODO: prompt user for confirmation!
 								scene_tree.remove_entity(m_entity_editor.selected_entity);
-								m_entity_editor.set_selected_entity(editor, nullptr);
+								m_entity_editor.set_selected_entity(nullptr);
 							}
 							else if (add_entity == true)
 							{
@@ -526,14 +737,14 @@ namespace VadonEditor::View
 
 						if (view_state.clicked_entity != nullptr)
 						{
-							m_entity_editor.set_selected_entity(editor, view_state.clicked_entity);
+							m_entity_editor.set_selected_entity(view_state.clicked_entity);
 						}
 						else if (window_clicked == true)
 						{
-							m_entity_editor.set_selected_entity(editor, nullptr);
+							m_entity_editor.set_selected_entity(nullptr);
 						}
 
-						m_entity_editor.draw(editor, dev_gui);
+						m_entity_editor.draw(dev_gui);
 
 						Model::Entity* scene_root = scene_tree.get_root();
 						if (scene_root != nullptr)
@@ -544,13 +755,6 @@ namespace VadonEditor::View
 							}
 						}
 					}
-					else
-					{
-						if (dev_gui.draw_button(m_load_scene_button) == true)
-						{
-							scene_tree.load_scene();
-						}
-					}
 				}
 				dev_gui.end_window();
 			}
@@ -559,13 +763,12 @@ namespace VadonEditor::View
 			{
 				constexpr VadonApp::UI::Developer::GUISystem::TreeNodeFlags node_base_flags = VadonApp::UI::Developer::GUISystem::TreeNodeFlags::OPEN_ON_ARROW | VadonApp::UI::Developer::GUISystem::TreeNodeFlags::OPEN_ON_DOUBLE_CLICK;
 
-				const Model::EntityList& child_entities = entity->get_children();
 				VadonApp::UI::Developer::GUISystem::TreeNodeFlags current_node_flags = node_base_flags;
 				if (m_entity_editor.selected_entity == entity)
 				{
 					current_node_flags |= VadonApp::UI::Developer::GUISystem::TreeNodeFlags::SELECTED;
 				}
-				if (child_entities.empty() == true)
+				if (entity->has_visible_children() == false)
 				{
 					current_node_flags |= VadonApp::UI::Developer::GUISystem::TreeNodeFlags::LEAF;
 				}
@@ -578,9 +781,13 @@ namespace VadonEditor::View
 
 				if (node_open == true)
 				{
+					const Model::EntityList& child_entities = entity->get_children();
 					for (Model::Entity* current_child : child_entities)
 					{
-						render_entity_node(current_child, dev_gui, view_state);
+						if (current_child->is_scene_child() == false)
+						{
+							render_entity_node(current_child, dev_gui, view_state);
+						}
 					}
 					dev_gui.pop_tree_node();
 				}
@@ -607,6 +814,13 @@ namespace VadonEditor::View
 
 			UI::Developer::Window m_window;
 
+			ErrorDialog m_error_dialog;
+
+			NewSceneDialog m_new_scene_dialog;
+			LoadSceneDialog m_load_scene_dialog;
+			InstantiateSceneDialog m_instantiate_scene_dialog;
+			UI::Developer::Button m_save_scene_button;
+
 			Model::Entity* m_scene_root = nullptr;
 
 			UI::Developer::Button m_add_entity_button;
@@ -615,13 +829,9 @@ namespace VadonEditor::View
 			UI::Developer::ChildWindow m_tree_window;
 
 			EntityEditor m_entity_editor;
-
-			UI::Developer::Button m_save_scene_button;
-			UI::Developer::Button m_load_scene_button; // FIXME: add proper file logic!
-			UI::Developer::ListBox m_component_type_list; // TODO: add some way to categorize?
 		};
 
-		// FIXME: move to application?
+		// FIXME: move to its own subsystem!
 		class ECSDebugView
 		{
 		public:

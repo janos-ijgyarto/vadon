@@ -1,17 +1,13 @@
 #ifndef VADON_PRIVATE_SCENE_SCENE_HPP
 #define VADON_PRIVATE_SCENE_SCENE_HPP
-#include <Vadon/Scene/Scene.hpp>
+#include <Vadon/Private/Scene/Resource/Resource.hpp>
 #include <Vadon/Utilities/Data/Variant.hpp>
 namespace Vadon::Private::Scene
 {
-	using SceneInfo = Vadon::Scene::SceneInfo;
+	using SceneComponent = Vadon::Scene::SceneComponent;
 
-	using SceneHandle = Vadon::Scene::SceneHandle;
-
-	struct SceneData
+	struct SceneData : public Vadon::Scene::Scene
 	{
-		SceneInfo info;
-
 		struct ComponentData
 		{
 			struct Property
@@ -20,7 +16,7 @@ namespace Vadon::Private::Scene
 				Vadon::Utilities::Variant value;
 			};
 
-			std::string type;
+			Vadon::Utilities::TypeID type_id = Vadon::Utilities::c_invalid_type_id;
 			std::vector<Property> properties;
 		};
 
@@ -28,6 +24,7 @@ namespace Vadon::Private::Scene
 		{
 			std::string name;
 			int32_t parent = -1;
+			ResourceHandle scene;
 			std::vector<ComponentData> components;
 
 			bool has_parent() const { return (parent >= 0); }
@@ -43,9 +40,10 @@ namespace Vadon::Private::Scene
 
 		void swap(SceneData& other)
 		{
-			info.swap(other.info);
 			entities.swap(other.entities);
 		}
+
+		static void register_scene_type_info();
 	};
 }
 #endif

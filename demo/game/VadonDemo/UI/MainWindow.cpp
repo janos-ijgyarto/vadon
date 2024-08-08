@@ -12,6 +12,7 @@
 #include <VadonApp/UI/UISystem.hpp>
 #include <VadonApp/UI/Developer/GUI.hpp>
 
+#include <Vadon/Core/File/FileSystem.hpp>
 #include <Vadon/Core/Task/TaskSystem.hpp>
 
 #include <Vadon/Render/Canvas/Context.hpp>
@@ -22,13 +23,10 @@
 #include <Vadon/Render/Frame/FrameSystem.hpp>
 #include <Vadon/Render/GraphicsAPI/RenderTarget/RenderTargetSystem.hpp>
 
+#include <Vadon/Scene/Resource/ResourceSystem.hpp>
 #include <Vadon/Scene/SceneSystem.hpp>
 
 #include <Vadon/Utilities/Container/Concurrent/TripleBuffer.hpp>
-
-#include <deque>
-#include <filesystem>
-#include <fstream>
 
 namespace VadonDemo::UI
 {
@@ -201,7 +199,7 @@ namespace VadonDemo::UI
 
 			// Register component events
 			Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
-			component_manager.register_event_callback<VadonDemo::Model::CanvasItem>(
+			component_manager.register_event_callback<VadonDemo::Model::CanvasComponent>(
 				[this](const Vadon::ECS::ComponentEvent& event)
 				{
 					m_game_core.get_model().component_event(m_game_core.get_ecs_world(), event);
@@ -214,62 +212,42 @@ namespace VadonDemo::UI
 				}
 			);
 
-			Vadon::Scene::SceneSystem& scene_system = engine_core.get_system<Vadon::Scene::SceneSystem>();
-
-			// FIXME: load using project file!
+			// FIXME: load the necessary resources using project file!
 			{
-				Vadon::Scene::SceneInfo scene_info;
-				scene_info.name = "TestScene";
+				Vadon::Core::FileSystem& file_system = engine_core.get_system<Vadon::Core::FileSystem>();
+				Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
 
-				Vadon::Scene::SceneHandle scene_handle = scene_system.create_scene(scene_info);
+				Vadon::Scene::ResourceID main_scene_id;
 
-				const std::string scene_file_path = scene_info.name + ".vdsc";
-				if (std::filesystem::exists(scene_file_path) == true)
+				const std::vector<std::string> scene_files = file_system.get_files_of_type("", ".vdsc");
+				for (const std::string& current_scene_file : scene_files)
 				{
-					std::ifstream scene_file(scene_file_path);
-					if (scene_file.is_open() == false)
+					const Vadon::Scene::ResourceID current_scene_id = resource_system.import_resource(current_scene_file);
+					if (current_scene_file == "Main.vdsc")
 					{
-						Logger::log_error("Cannot open scene file!\n");
-						return;
+						main_scene_id = current_scene_id;
 					}
+				}
 
-					std::vector<std::byte> scene_data_buffer;
-					{
-						scene_file.seekg(0, std::ios::end);
-						std::streampos file_size = scene_file.tellg();
-						scene_file.seekg(0, std::ios::beg);
+				if (main_scene_id.is_valid() == false)
+				{
+					// Something went wrong
+					return;
+				}
 
-						scene_data_buffer.resize(file_size);
+				Vadon::Scene::ResourceHandle main_scene_handle = resource_system.load_resource(main_scene_id);
+				if (main_scene_handle.is_valid() == false)
+				{
+					// Something went wrong
+					return;
+				}
 
-						scene_file.read(reinterpret_cast<char*>(scene_data_buffer.data()), file_size);
-					}
-
-					scene_file.close();
-
-					Vadon::Utilities::Serializer::Instance serializer = Vadon::Utilities::Serializer::create_serializer(scene_data_buffer, Vadon::Utilities::Serializer::Type::JSON, true);
-					if (serializer->initialize() == false)
-					{
-						Logger::log_error("Failed to load scene file!\n");
-						return;
-					}
-
-					if (scene_system.serialize_scene(scene_handle, *serializer) == false)
-					{
-						return;
-					}
-
-					if (serializer->finalize() == false)
-					{
-						Logger::log_error("Failed to deserialize scene!\n");
-						return;
-					}
-
-					Vadon::ECS::EntityHandle root_entity_handle = scene_system.instantiate_scene(scene_handle, ecs_world);
-					if (root_entity_handle.is_valid() == false)
-					{
-						// Something went wrong
-						return;
-					}
+				Vadon::Scene::SceneSystem& scene_system = engine_core.get_system<Vadon::Scene::SceneSystem>();
+				Vadon::ECS::EntityHandle root_entity_handle = scene_system.instantiate_scene(main_scene_handle, ecs_world);
+				if (root_entity_handle.is_valid() == false)
+				{
+					// Something went wrong
+					return;
 				}
 			}
 

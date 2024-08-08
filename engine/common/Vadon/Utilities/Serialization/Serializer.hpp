@@ -27,15 +27,19 @@ namespace Vadon::Utilities
 		virtual bool initialize() = 0;
 		virtual bool finalize() = 0;
 
+		// TODO: should use return codes to indicate whether an error occurred, or the property was just not present!
+
 		// Object members
 		virtual bool serialize(std::string_view key, int& value) = 0;
 		virtual bool serialize(std::string_view key, float& value) = 0;
+		virtual bool serialize(std::string_view key, bool& value) = 0;
 		virtual bool serialize(std::string_view key, std::string& value) = 0;
 		virtual bool serialize(std::string_view key, Variant& value) = 0;
 
 		// Array elements
 		virtual bool serialize(size_t index, int& value) = 0;
 		virtual bool serialize(size_t index, float& value) = 0;
+		virtual bool serialize(size_t index, bool& value) = 0;
 		virtual bool serialize(size_t index, std::string& value) = 0;
 		virtual bool serialize(size_t index, Variant& value) = 0;
 

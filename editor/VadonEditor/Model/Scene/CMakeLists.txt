@@ -3,6 +3,7 @@ target_sources(${VADONEDITOR_CURRENT_TARGET}
     Component.hpp
     Entity.hpp
     Entity.cpp
+    Scene.hpp
     SceneTree.hpp
     SceneTree.cpp
    )

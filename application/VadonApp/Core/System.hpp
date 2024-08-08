@@ -11,9 +11,9 @@ namespace VadonApp::Core
 	class SystemBase : public Vadon::Core::LoggerInterface
 	{
 	public:
-		void log_message(std::string_view message) override { m_application.log_message(message); }
-		void log_warning(std::string_view message) override { m_application.log_warning(message); }
-		void log_error(std::string_view message) override { m_application.log_error(message); }
+		void log_message(std::string_view message) const override { m_application.log_message(message); }
+		void log_warning(std::string_view message) const override { m_application.log_warning(message); }
+		void log_error(std::string_view message) const override { m_application.log_error(message); }
 	protected:
 		SystemBase(Application& application)
 			: m_application(application)

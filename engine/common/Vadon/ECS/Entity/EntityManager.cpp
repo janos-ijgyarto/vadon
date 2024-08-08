@@ -5,8 +5,10 @@ namespace Vadon::ECS
 {
 	EntityHandle EntityManager::create_entity()
 	{
+		EntityHandle new_entity_handle = m_entity_pool.add();
+		dispatch_entity_event(EntityEvent{ .entity = new_entity_handle, .event_type = EntityEventType::ADDED });
 		// TODO: anything else?
-		return m_entity_pool.add();
+		return new_entity_handle;
 	}
 
 	std::string EntityManager::get_entity_name(EntityHandle entity_handle) const
@@ -120,6 +122,11 @@ namespace Vadon::ECS
 		return active_entities;
 	}
 
+	void EntityManager::register_event_callback(EntityEventCallback callback)
+	{
+		m_event_callbacks.push_back(callback);
+	}
+
 	EntityManager::EntityManager() = default;
 
 	EntityList EntityManager::remove_entity(EntityHandle entity_handle)
@@ -135,10 +142,12 @@ namespace Vadon::ECS
 		const EntityList children = EntityManager::get_children(entity_handle, true);
 		for (const EntityHandle current_child : children)
 		{
+			dispatch_entity_event(EntityEvent{ .entity = current_child, .event_type = EntityEventType::REMOVED });
 			m_entity_pool.remove(current_child);
 		}
 
 		// Remove the original entity
+		dispatch_entity_event(EntityEvent{ .entity = entity_handle, .event_type = EntityEventType::REMOVED });
 		m_entity_pool.remove(entity_handle);
 
 		// Return child list (used by World to clear components)
@@ -155,5 +164,13 @@ namespace Vadon::ECS
 	{
 		EntityData& parent_data = m_entity_pool.get(parent);
 		parent_data.children.erase(std::remove(parent_data.children.begin(), parent_data.children.end(), child), parent_data.children.end());
+	}
+
+	void EntityManager::dispatch_entity_event(const EntityEvent& event)
+	{
+		for (const EntityEventCallback& callback : m_event_callbacks)
+		{
+			callback(event);
+		}
 	}
 }

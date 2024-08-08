@@ -87,6 +87,7 @@ namespace Vadon::Private::Core
     {
         log_message("Vadon shutting down.\n");
 
+        m_scene_system.shutdown();
         m_task_system.shutdown();
         m_render_system.shutdown();
         if (m_graphics_api != nullptr)

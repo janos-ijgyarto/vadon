@@ -4,7 +4,11 @@
 
 #include <VadonEditor/Model/Scene/SceneTree.hpp>
 
+#include <Vadon/Core/File/FileSystem.hpp>
+
 #include <Vadon/ECS/World/World.hpp>
+
+#include <Vadon/Scene/Resource/ResourceSystem.hpp>
 
 namespace VadonEditor::Model
 {
@@ -20,8 +24,19 @@ namespace VadonEditor::Model
 		{
 		}
 
-		bool initialize()
+		bool initialize(Core::Editor& editor)
 		{
+			Vadon::Core::EngineCoreInterface& engine_core = editor.get_engine_core();
+
+			Vadon::Core::FileSystem& file_system = engine_core.get_system<Vadon::Core::FileSystem>();
+			Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
+
+			const std::vector<std::string> scene_files = file_system.get_files_of_type("", ".vdsc");
+			for (const std::string& current_scene_file : scene_files)
+			{
+				resource_system.import_resource(current_scene_file);
+			}
+
 			if (m_scene_tree.initialize() == false)
 			{
 				return false;
@@ -66,7 +81,7 @@ namespace VadonEditor::Model
 
 	bool ModelSystem::initialize()
 	{
-		return m_internal->initialize();
+		return m_internal->initialize(m_editor);
 	}
 
 	void ModelSystem::update()

@@ -13,7 +13,7 @@ namespace VadonDemo::Model
 {
 	namespace
 	{
-		void draw_canvas_item(Vadon::Render::Canvas::CanvasSystem& canvas_system, const Transform2D* transform, CanvasItem& canvas_item, const Celestial* celestial)
+		void draw_canvas_item(Vadon::Render::Canvas::CanvasSystem& canvas_system, const Transform2D* transform, CanvasComponent& canvas_item, const Celestial* celestial)
 		{
 			canvas_system.clear_item(canvas_item.canvas_handle);
 
@@ -85,7 +85,7 @@ namespace VadonDemo::Model
 		bool initialize()
 		{
 			Transform2D::register_component();
-			CanvasItem::register_component();
+			CanvasComponent::register_component();
 			Celestial::register_component();
 
 			Vadon::Render::Canvas::CanvasSystem& canvas_system = m_engine_core.get_system<Vadon::Render::Canvas::CanvasSystem>();
@@ -129,6 +129,12 @@ namespace VadonDemo::Model
 
 				Transform2D& transform_component = std::get<Transform2D&>(current_component_tuple);
 				Celestial& celestial_component = std::get<Celestial&>(current_component_tuple);
+
+				// If radius or angular velocity too small, we skip update
+				if ((Vadon::Utilities::abs(celestial_component.angular_velocity) < 0.001f) || (Vadon::Utilities::dot(transform_component.position, transform_component.position) < 0.001f))
+				{
+					continue;
+				}
 				
 				const Vadon::Utilities::Vector2 norm_vector = Vadon::Utilities::normalize(transform_component.position);
 				const Vadon::Utilities::Vector2 rotated_vector = Vadon::Utilities::normalize(rotate_2d_vector(norm_vector, delta_time * celestial_component.angular_velocity));
@@ -144,7 +150,7 @@ namespace VadonDemo::Model
 
 			Vadon::Render::Canvas::CanvasSystem& canvas_system = m_engine_core.get_system<Vadon::Render::Canvas::CanvasSystem>();
 
-			auto render_query = component_manager.run_component_query<CanvasItem*, Transform2D&, Celestial*>();
+			auto render_query = component_manager.run_component_query<CanvasComponent*, Transform2D&, Celestial*>();
 			auto render_it = render_query.get_iterator();
 
 			for (; render_it.is_valid() == true; render_it.next())
@@ -171,7 +177,7 @@ namespace VadonDemo::Model
 					}
 				}
 
-				CanvasItem* canvas_item = std::get<CanvasItem*>(current_component_tuple);
+				CanvasComponent* canvas_item = std::get<CanvasComponent*>(current_component_tuple);
 				if (canvas_item != nullptr)
 				{
 					if (canvas_item->canvas_handle.is_valid() == true)
@@ -199,11 +205,11 @@ namespace VadonDemo::Model
 			{
 			case Vadon::ECS::ComponentEventType::ADDED:
 			{
-				if (event.type_id == Vadon::ECS::ComponentManager::get_component_type_id<CanvasItem>())
+				if (event.type_id == Vadon::ECS::ComponentManager::get_component_type_id<CanvasComponent>())
 				{
 					// Create canvas item
-					auto component_tuple = ecs_world.get_component_manager().get_component_tuple<Transform2D, CanvasItem, Celestial>(event.owner);
-					CanvasItem* canvas_component = std::get<CanvasItem*>(component_tuple);
+					auto component_tuple = ecs_world.get_component_manager().get_component_tuple<Transform2D, CanvasComponent, Celestial>(event.owner);
+					CanvasComponent* canvas_component = std::get<CanvasComponent*>(component_tuple);
 
 					Vadon::Render::Canvas::CanvasSystem& canvas_system = m_engine_core.get_system<Vadon::Render::Canvas::CanvasSystem>();
 
@@ -217,8 +223,8 @@ namespace VadonDemo::Model
 				else if (event.type_id == Vadon::ECS::ComponentManager::get_component_type_id<Celestial>())
 				{
 					// Redraw canvas item (if present)
-					auto component_tuple = ecs_world.get_component_manager().get_component_tuple<Transform2D, CanvasItem, Celestial>(event.owner);
-					CanvasItem* canvas_component = std::get<CanvasItem*>(component_tuple);
+					auto component_tuple = ecs_world.get_component_manager().get_component_tuple<Transform2D, CanvasComponent, Celestial>(event.owner);
+					CanvasComponent* canvas_component = std::get<CanvasComponent*>(component_tuple);
 					if (canvas_component != nullptr)
 					{
 						Vadon::Render::Canvas::CanvasSystem& canvas_system = m_engine_core.get_system<Vadon::Render::Canvas::CanvasSystem>();
@@ -229,10 +235,10 @@ namespace VadonDemo::Model
 			}
 			case Vadon::ECS::ComponentEventType::REMOVED:
 			{
-				if (event.type_id == Vadon::ECS::ComponentManager::get_component_type_id<CanvasItem>())
+				if (event.type_id == Vadon::ECS::ComponentManager::get_component_type_id<CanvasComponent>())
 				{
 					// Remove canvas item
-					CanvasItem* canvas_component = ecs_world.get_component_manager().get_component<CanvasItem>(event.owner);
+					CanvasComponent* canvas_component = ecs_world.get_component_manager().get_component<CanvasComponent>(event.owner);
 					if (canvas_component->canvas_handle.is_valid() == true)
 					{
 						Vadon::Render::Canvas::CanvasSystem& canvas_system = m_engine_core.get_system<Vadon::Render::Canvas::CanvasSystem>();
@@ -242,8 +248,8 @@ namespace VadonDemo::Model
 				else if (event.type_id == Vadon::ECS::ComponentManager::get_component_type_id<Celestial>())
 				{
 					// Redraw canvas item (if present)
-					auto component_tuple = ecs_world.get_component_manager().get_component_tuple<Transform2D, CanvasItem, Celestial>(event.owner);
-					CanvasItem* canvas_component = std::get<CanvasItem*>(component_tuple);
+					auto component_tuple = ecs_world.get_component_manager().get_component_tuple<Transform2D, CanvasComponent, Celestial>(event.owner);
+					CanvasComponent* canvas_component = std::get<CanvasComponent*>(component_tuple);
 					if (canvas_component != nullptr)
 					{
 						Vadon::Render::Canvas::CanvasSystem& canvas_system = m_engine_core.get_system<Vadon::Render::Canvas::CanvasSystem>();

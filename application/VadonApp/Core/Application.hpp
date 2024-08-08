@@ -26,13 +26,14 @@ namespace VadonApp::Core
 		virtual void update() = 0; // FIXME: currently just updates the platform, might want to revise and use tasks & event buffering
 		virtual void shutdown() = 0;
 
-		virtual Vadon::Core::EngineCoreInterface& get_engine_core() = 0;
+		virtual const Vadon::Core::EngineCoreInterface& get_engine_core() const = 0;
+		Vadon::Core::EngineCoreInterface& get_engine_core() { return const_cast<Vadon::Core::EngineCoreInterface&>(std::as_const(*this).get_engine_core()); }
 
 		virtual const Configuration& get_config() const = 0;
 
-		void log_message(std::string_view message) override { get_engine_core().log_message(message); }
-		void log_warning(std::string_view message) override { get_engine_core().log_warning(message); }
-		void log_error(std::string_view message) override { get_engine_core().log_error(message); }
+		void log_message(std::string_view message) const override { get_engine_core().log_message(message); }
+		void log_warning(std::string_view message) const override { get_engine_core().log_warning(message); }
+		void log_error(std::string_view message) const override { get_engine_core().log_error(message); }
 
 		// TODO: make environment extended for app?
 		static VADONAPP_API void init_application_environment(Vadon::Core::EngineEnvironment& environment);

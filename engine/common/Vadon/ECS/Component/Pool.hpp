@@ -6,6 +6,7 @@
 
 #include <Vadon/Utilities/TypeInfo/Registry/Registry.hpp>
 
+#include <optional>
 #include <vector>
 namespace Vadon::ECS
 {
@@ -28,7 +29,9 @@ namespace Vadon::ECS
 
 		template<typename T>
 		static ComponentID get_component_type_id();
-	private:
+	protected:
+		VADONCOMMON_API void dispatch_component_event(const ComponentEvent& event);
+
 		std::vector<ComponentEventCallback> m_event_callbacks;
 
 		friend class ComponentManager;
@@ -50,7 +53,7 @@ namespace Vadon::ECS
 	class DefaultComponentPoolBase
 	{
 	protected:
-		VADONCOMMON_API void add_entity(EntityHandle entity);
+		VADONCOMMON_API std::optional<EntityList::const_iterator> add_entity(EntityHandle entity);
 		VADONCOMMON_API EntityList::const_iterator find_entity(EntityHandle entity) const;
 		VADONCOMMON_API void remove_entity(EntityList::const_iterator entity_iterator);
 
@@ -71,8 +74,17 @@ namespace Vadon::ECS
 
 		T& typed_add_component(EntityHandle entity) override
 		{
-			add_entity(entity);
+			auto entity_it = add_entity(entity);
+			if (entity_it)
+			{
+				// Entity already present
+				// FIXME: move to shared utility function!
+				const uint32_t component_offset = m_component_offsets[std::distance(m_entity_lookup.cbegin(), entity_it.value())];
+				return m_components[component_offset];
+			}
+
 			m_components.emplace_back();
+			ComponentPoolInterface::dispatch_component_event(ComponentEvent{ .owner = entity, .type_id = ComponentPoolInterface::get_component_type_id<T>(), .event_type = ComponentEventType::ADDED });
 
 			return m_components.back();
 		}
@@ -94,6 +106,8 @@ namespace Vadon::ECS
 			auto entity_it = find_entity(entity);
 			if (entity_it != m_entity_lookup.end())
 			{
+				ComponentPoolInterface::dispatch_component_event(ComponentEvent{ .owner = entity, .type_id = ComponentPoolInterface::get_component_type_id<T>(), .event_type = ComponentEventType::REMOVED });
+
 				const uint32_t component_offset = m_component_offsets[std::distance(m_entity_lookup.cbegin(), entity_it)];
 				auto removed_it = m_components.begin() + component_offset;
 				auto back_it = m_components.end() - 1;

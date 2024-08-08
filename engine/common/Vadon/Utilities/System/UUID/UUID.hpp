@@ -11,13 +11,20 @@ namespace Vadon::Utilities
 
 	struct UUID
 	{
-		UUIDData data = {};
+		static constexpr UUIDData c_invalid_uuid_data = {};
+
+		UUIDData data = c_invalid_uuid_data;
 
 		VADONCOMMON_API static UUID generate();
 
 		bool operator==(const UUID& other) const
 		{
 			return std::memcmp(data.data(), other.data.data(), data.size()) == 0;
+		}
+
+		bool is_valid() const
+		{
+			return std::memcmp(data.data(), c_invalid_uuid_data.data(), data.size()) != 0;
 		}
 
 		VADONCOMMON_API std::string to_base64_string() const;

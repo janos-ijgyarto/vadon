@@ -11,7 +11,7 @@ namespace Vadon::Private::Core
 		return internal_get_absolute_path(relative_path).string();
 	}
 
-	std::vector<std::string> Vadon::Private::Core::FileSystem::get_files_of_type(std::string_view path, std::string_view type, bool recursive) const
+	std::vector<std::string> FileSystem::get_files_of_type(std::string_view path, std::string_view type, bool recursive) const
 	{
 		std::vector<std::string> result;
 
@@ -40,24 +40,50 @@ namespace Vadon::Private::Core
 		return result;
 	}
 
+	size_t FileSystem::get_file_size(std::string_view relative_path) const
+	{
+		return internal_get_file_size(get_absolute_path(relative_path));
+	}
+
+	bool FileSystem::does_file_exist(std::string_view relative_path) const
+	{
+		const std::filesystem::path absolute_path = internal_get_absolute_path(relative_path);
+		return std::filesystem::exists(absolute_path);
+	}
+
+	bool FileSystem::save_file(std::string_view relative_path, const RawFileDataBuffer& file_data)
+	{
+		const std::filesystem::path absolute_path = internal_get_absolute_path(relative_path);
+
+		std::ofstream file_stream(absolute_path, std::ios::binary);
+		if (file_stream.good() == false)
+		{
+			log_error(std::format("File system error: unable to write file \"{}\"!\n", absolute_path.string()));
+			return false;
+		}
+
+		file_stream.write(reinterpret_cast<const char*>(file_data.data()), file_data.size());
+		file_stream.close();
+
+		return true;
+	}
+
 	bool FileSystem::load_file(std::string_view relative_path, RawFileDataBuffer& file_data)
 	{
 		const std::filesystem::path absolute_path = internal_get_absolute_path(relative_path);
 		if (std::filesystem::exists(absolute_path) != true)
 		{
-			return false;
-		}
-		
-		std::ifstream file_stream(absolute_path, std::ios::binary);
-		if (file_stream.good() == false)
-		{
-			Vadon::Core::Logger::log_error(std::format("File system error: unable to open file \"{}\"!\n", absolute_path.string()));
+			log_error(std::format("File system error: file \"{}\" does not exist!\n", absolute_path.string()));
 			return false;
 		}
 
-		file_stream.seekg(0, std::ios::end);
-		std::streampos file_size = file_stream.tellg();
-		file_stream.seekg(0, std::ios::beg);
+		const size_t file_size = internal_get_file_size(absolute_path);
+		std::ifstream file_stream(absolute_path, std::ios::binary);
+		if (file_stream.good() == false)
+		{
+			log_error(std::format("File system error: unable to read file \"{}\"!\n", absolute_path.string()));
+			return false;
+		}
 
 		const size_t buffer_prev_size = file_data.size();
 		file_data.resize(buffer_prev_size + file_size);
@@ -85,5 +111,19 @@ namespace Vadon::Private::Core
 	std::filesystem::path FileSystem::internal_get_absolute_path(std::string_view relative_path) const
 	{
 		return m_root_path / std::filesystem::path(relative_path);
+	}
+
+	size_t FileSystem::internal_get_file_size(const std::filesystem::path& absolute_path) const
+	{
+		try
+		{
+			const auto file_size = std::filesystem::file_size(absolute_path);
+			return static_cast<size_t>(file_size);
+		}
+		catch (std::filesystem::filesystem_error& e)
+		{
+			log_error(std::format("File system error: \"{}\"\n", e.what()));
+		}
+		return 0;
 	}
 }

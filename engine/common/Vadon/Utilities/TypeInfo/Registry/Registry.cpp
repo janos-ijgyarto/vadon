@@ -114,6 +114,36 @@ namespace Vadon::Utilities
 		return type_id_it->second;
 	}
 
+	bool TypeRegistry::is_base_of(TypeID base_id, TypeID type_id)
+	{
+		if (base_id == type_id)
+		{
+			return true;
+		}
+
+		const TypeRegistry& instance = get_registry_instance();
+		TypeID current_type_id = type_id;
+		while (current_type_id != c_invalid_type_id)
+		{
+			auto current_data_it = instance.m_type_lookup.find(current_type_id);
+			if (current_data_it == instance.m_type_lookup.end())
+			{
+				type_not_found_error(type_id);
+				return false;
+			}
+
+			const TypeData& current_type_data = current_data_it->second;
+			if (current_type_data.info.id == base_id)
+			{
+				return true;
+			}
+
+			current_type_id = current_type_data.info.base_id;
+		}
+
+		return false;
+	}
+
 	TypeInfo TypeRegistry::get_type_info(TypeID type_id)
 	{
 		TypeRegistry& instance = get_registry_instance();
@@ -181,15 +211,14 @@ namespace Vadon::Utilities
 		}
 
 		const TypeData& type_data = type_data_it->second;
-		auto type_property_it = type_data.properties.find(std::string(property_name));
-		if (type_property_it == type_data.properties.end())
+		const MemberVariableBindBase* property_bind = instance.internal_find_property(type_data, property_name);
+		if (property_bind == nullptr)
 		{
 			Vadon::Core::Logger::log_error(std::format("Type registry error: property \"{}\" not found in type \"{}\"!\n", property_name, type_data.info.name));
 			return;
 		}
 
-		const MemberVariableBindBase& property_bind = type_property_it->second;
-		invoke_property_setter(object, property_bind, value);
+		invoke_property_setter(object, *property_bind, value);
 	}
 
 	void TypeRegistry::internal_register_type(std::string_view type_name, TypeID base_type_id)
@@ -355,5 +384,32 @@ namespace Vadon::Utilities
 
 			property_list.emplace_back(current_property.first, invoke_property_getter(object, property_bind));
 		}
+	}
+
+	const MemberVariableBindBase* TypeRegistry::internal_find_property(const TypeData& type_data, std::string_view name) const
+	{
+		auto property_it = type_data.properties.find(std::string(name));
+		if (property_it != type_data.properties.end())
+		{
+			return &property_it->second;
+		}
+
+		if (type_data.info.base_id != c_invalid_type_id)
+		{
+			auto base_data_it = m_type_lookup.find(type_data.info.base_id);
+			if (base_data_it == m_type_lookup.end())
+			{
+				type_not_found_error(type_data.info.base_id);
+				return nullptr;
+			}
+
+			const MemberVariableBindBase* base_property = internal_find_property(base_data_it->second, name);
+			if (base_property != nullptr)
+			{
+				return base_property;
+			}
+		}
+
+		return nullptr;
 	}
 }

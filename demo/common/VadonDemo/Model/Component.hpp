@@ -15,7 +15,7 @@ namespace VadonDemo::Model
 		static void register_component();
 	};
 
-	struct CanvasItem
+	struct CanvasComponent
 	{
 		Vadon::Utilities::Vector3 color = Vadon::Utilities::Vector3_One;
 		float scale = 0.0f;

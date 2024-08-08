@@ -33,6 +33,9 @@ namespace VadonApp::Private::UI::Developer::Dummy
 		ID get_id(std::string_view string_id) override;
 		ID get_id(const void* pointer_id) override;
 
+		void begin_disabled(bool disabled) override;
+		void end_disabled() override;
+
 		bool begin_window(Window& window) override;
 		void end_window() override;
 

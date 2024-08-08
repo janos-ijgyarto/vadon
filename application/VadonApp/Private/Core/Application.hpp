@@ -19,7 +19,7 @@ namespace VadonApp::Private::Core
 		void update() override;
 		void shutdown() override;
 
-		Vadon::Core::EngineCoreInterface& get_engine_core() override { return *m_engine; }
+		const Vadon::Core::EngineCoreInterface& get_engine_core() const override { return *m_engine; }
 
 		const VadonApp::Core::Configuration& get_config() const override { return m_config; }
 	private:

@@ -15,9 +15,9 @@ namespace Vadon::Core
 	class LoggerInterface
 	{
 	public:
-		virtual void log_message(std::string_view message) = 0;
-		virtual void log_warning(std::string_view message) = 0;
-		virtual void log_error(std::string_view message) = 0;
+		virtual void log_message(std::string_view message) const = 0;
+		virtual void log_warning(std::string_view message) const = 0;
+		virtual void log_error(std::string_view message) const = 0;
 	};
 }
 #endif

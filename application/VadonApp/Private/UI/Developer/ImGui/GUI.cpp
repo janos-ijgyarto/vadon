@@ -806,6 +806,16 @@ float4 main(PS_INPUT input) : SV_Target
         return ImGui::GetID(pointer_id);
     }
 
+    void GUISystem::begin_disabled(bool disabled)
+    {
+        ImGui::BeginDisabled(disabled);
+    }
+
+    void GUISystem::end_disabled()
+    {
+        ImGui::EndDisabled();
+    }
+
     bool GUISystem::begin_window(Window& window)
     {
         // TODO: add window initialization?

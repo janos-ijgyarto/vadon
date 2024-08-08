@@ -5,14 +5,33 @@
 
 namespace Vadon::ECS
 {
-	void DefaultComponentPoolBase::add_entity(EntityHandle entity)
+	void ComponentPoolInterface::dispatch_component_event(const ComponentEvent& event)
 	{
+		for (auto& current_callback : m_event_callbacks)
+		{
+			current_callback(event);
+		}
+	}
+
+	std::optional<EntityList::const_iterator> DefaultComponentPoolBase::add_entity(EntityHandle entity)
+	{
+		auto entity_it = std::lower_bound(m_entity_lookup.begin(), m_entity_lookup.end(), entity);
+		if (entity_it != m_entity_lookup.end())
+		{
+			if (entity == *entity_it)
+			{
+				// Entity already has this component
+				// FIXME: do we allow one entity to own more than one of the same component?
+				return entity_it;
+			}
+		}
 		uint32_t component_offset = static_cast<uint32_t>(m_component_offsets.size());
 
 		// Insert into lookup while keeping it ordered
-		auto entity_it = std::lower_bound(m_entity_lookup.begin(), m_entity_lookup.end(), entity);
 		m_component_offsets.insert(m_component_offsets.begin() + std::distance(m_entity_lookup.begin(), entity_it), component_offset);
 		m_entity_lookup.insert(entity_it, entity);
+
+		return std::nullopt;
 	}
 
 	EntityList::const_iterator DefaultComponentPoolBase::find_entity(EntityHandle entity) const

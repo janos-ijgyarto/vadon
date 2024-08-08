@@ -59,6 +59,9 @@ namespace VadonApp::UI::Developer
 		virtual ID get_id(std::string_view string_id) = 0; // Calculate unique ID for string
 		virtual ID get_id(const void* pointer_id) = 0;
 
+		virtual void begin_disabled(bool disabled = true) = 0;
+		virtual void end_disabled() = 0;
+
 		virtual bool begin_window(Window& window) = 0;
 		virtual void end_window() = 0;
 

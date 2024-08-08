@@ -67,7 +67,7 @@ namespace
             );
 
             Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
-            component_manager.register_event_callback<VadonDemo::Model::CanvasItem>(
+            component_manager.register_event_callback<VadonDemo::Model::CanvasComponent>(
                 [this, &ecs_world](const Vadon::ECS::ComponentEvent& event)
                 {
                     m_model->component_event(ecs_world, event);

@@ -19,10 +19,6 @@ namespace Vadon::ECS
 		if (pool != nullptr)
 		{
 			void* new_component_ptr = pool->add_component(entity);
-			if (new_component_ptr != nullptr)
-			{
-				dispatch_component_event(*pool, ComponentEvent{ .owner = entity, .type_id = type_id, .event_type = ComponentEventType::ADDED });
-			}
 			return new_component_ptr;
 		}
 
@@ -56,7 +52,6 @@ namespace Vadon::ECS
 		ComponentPoolInterface* pool = find_component_pool(type_id);
 		if (pool != nullptr)
 		{
-			dispatch_component_event(*pool, ComponentEvent{ .owner = entity, .type_id = type_id, .event_type = ComponentEventType::REMOVED });
 			pool->remove_component(entity);
 		}
 	}
@@ -93,26 +88,13 @@ namespace Vadon::ECS
 
 	void ComponentManager::remove_entity_batch(const EntityList& entity_batch)
 	{
-		ComponentEvent remove_event;
-		remove_event.event_type = ComponentEventType::REMOVED;
 		for (auto& current_pool_pair : m_component_pools)
 		{
-			remove_event.type_id = current_pool_pair.first;
 			ComponentPoolInterface* component_pool = current_pool_pair.second;
 			for (const EntityHandle& current_entity : entity_batch)
 			{
-				remove_event.owner = current_entity;
-				dispatch_component_event(*component_pool, remove_event);
 				component_pool->remove_component(current_entity);
 			}
-		}
-	}
-
-	void ComponentManager::dispatch_component_event(const ComponentPoolInterface& pool, const ComponentEvent& event)
-	{
-		for (auto& current_callback : pool.m_event_callbacks)
-		{
-			current_callback(event);
 		}
 	}
 

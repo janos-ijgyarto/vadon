@@ -17,24 +17,21 @@ namespace Vadon::Private::Scene
 	class SceneSystem final : public Vadon::Scene::SceneSystem
 	{
 	public:
-		SceneHandle create_scene(SceneInfo scene_info) override;
-		bool is_scene_valid(SceneHandle scene_handle) const override { return m_scene_pool.is_handle_valid(scene_handle); }
-		void remove_scene(SceneHandle scene_handle) override;
+		ResourceHandle create_scene() override;
+		bool set_scene_data(ResourceHandle scene_handle, ECS::World& ecs_world, ECS::EntityHandle root_entity) override;
+		ECS::EntityHandle instantiate_scene(ResourceHandle scene_handle, ECS::World& ecs_world, bool is_sub_scene) override;
 
-		SceneInfo get_scene_info(SceneHandle scene_handle) const override;
-
-		bool set_scene_data(SceneHandle scene_handle, ECS::World& ecs_world, ECS::EntityHandle root_entity) override;
-		ECS::EntityHandle instantiate_scene(SceneHandle scene_handle, ECS::World& ecs_world) override;
-
-		bool serialize_scene(SceneHandle scene_handle, Vadon::Utilities::Serializer& serializer) override;
+		bool is_scene_dependent(ResourceHandle scene_handle, ResourceHandle dependent_scene_handle) const override;
 	protected:
-		using ScenePool = Vadon::Utilities::ObjectPool<Vadon::Scene::Scene, SceneData>;
-
 		SceneSystem(Vadon::Core::EngineCoreInterface& core);
 
 		bool initialize();
+		void shutdown();
 
-		ScenePool m_scene_pool;
+		bool parse_scene_entity(ECS::World& ecs_world, ECS::EntityHandle entity, int32_t parent_index, SceneData& scene_data, std::vector<ResourceHandle>& dependency_stack);
+		bool internal_is_scene_dependent(ResourceHandle scene_handle, std::vector<ResourceHandle>& dependency_stack) const;
+
+		static bool serialize_scene(Vadon::Scene::ResourceSystemInterface& context, Vadon::Utilities::Serializer& serializer, ResourceBase& resource);
 
 		ResourceSystem m_resource_system;
 

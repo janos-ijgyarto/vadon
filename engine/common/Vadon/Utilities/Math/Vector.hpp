@@ -29,5 +29,7 @@ namespace Vadon::Utilities
 	using glm::distance;
 	using glm::length;
 	using glm::normalize;
+	using glm::abs;
+	using glm::dot;
 }
 #endif

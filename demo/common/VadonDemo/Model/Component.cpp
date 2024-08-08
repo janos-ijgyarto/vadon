@@ -1,4 +1,5 @@
 #include <VadonDemo/Model/Component.hpp>
+#include <Vadon/ECS/Component/Registry.hpp>
 
 namespace VadonDemo::Model
 {
@@ -11,11 +12,11 @@ namespace VadonDemo::Model
 		Vadon::Utilities::TypeRegistry::add_property<Transform2D>("scale", Vadon::Utilities::MemberVariableBind<&Transform2D::scale>().bind_member_getter().bind_member_setter());
 	}
 
-	void CanvasItem::register_component()
+	void CanvasComponent::register_component()
 	{
-		Vadon::ECS::ComponentRegistry::register_component_type<CanvasItem>();
+		Vadon::ECS::ComponentRegistry::register_component_type<CanvasComponent>();
 
-		Vadon::Utilities::TypeRegistry::add_property<CanvasItem>("color", Vadon::Utilities::MemberVariableBind<&CanvasItem::color>().bind_member_getter().bind_member_setter());
+		Vadon::Utilities::TypeRegistry::add_property<CanvasComponent>("color", Vadon::Utilities::MemberVariableBind<&CanvasComponent::color>().bind_member_getter().bind_member_setter());
 	}
 
 	void Celestial::register_component()

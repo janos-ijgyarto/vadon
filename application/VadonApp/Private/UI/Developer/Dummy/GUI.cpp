@@ -93,6 +93,16 @@ namespace VadonApp::Private::UI::Developer::Dummy
         return 0;
     }
 
+    void GUISystem::begin_disabled(bool /*disabled*/)
+    {
+        // TODO
+    }
+
+    void GUISystem::end_disabled()
+    {
+        // TODO
+    }
+
     bool GUISystem::begin_window(Window& /*window*/)
     {
         // TODO!!!

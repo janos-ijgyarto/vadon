@@ -19,9 +19,13 @@ namespace Vadon::ECS
 			TypedComponentPool<T>* typed_pool = get_component_pool<T>();
 			T& new_component = typed_pool->typed_add_component(entity);
 
-			dispatch_component_event(*typed_pool, ComponentEvent{ .owner = entity, .type_id = get_component_type_id<T>(), .event_type = ComponentEventType::ADDED });
-
 			return new_component;
+		}
+
+		template<typename T>
+		bool has_component(EntityHandle entity) const
+		{
+			return has_component(entity, get_component_type_id<T>());
 		}
 
 		template<typename T>
@@ -60,17 +64,17 @@ namespace Vadon::ECS
 
 		VADONCOMMON_API ComponentIDList get_component_list(EntityHandle entity) const;
 
+		// FIXME: when removing, we do not check whether the component was there in the first place
+		// might want to implement a "shortcut" to removing component once we already queried it
 		template<typename T>
-		bool remove_component(EntityHandle entity)
+		void remove_component(EntityHandle entity)
 		{
 			const TypedComponentPool<T>* typed_pool = find_component_pool<T>();
 			if (typed_pool != nullptr)
 			{
 				dispatch_component_event(*typed_pool, ComponentEvent{ .owner = entity, .type_id = get_component_type_id<T>(), .event_type = ComponentEventType::REMOVED });
-				return typed_pool->remove_component(entity);
+				typed_pool->remove_component(entity);
 			}
-
-			return false;
 		}
 
 		template<typename T>
@@ -92,10 +96,6 @@ namespace Vadon::ECS
 		void remove_entity(EntityHandle entity);
 		void remove_entity_batch(const EntityList& entity_batch);
 
-		// FIXME: when removing, we do not check whether the component was there in the first place
-		// might want to implement a "shortcut" to removing component once we already queried it
-		void dispatch_component_event(const ComponentPoolInterface& pool, const ComponentEvent& event);
-
 		template<typename T>
 		const TypedComponentPool<T>* find_component_pool() const
 		{
@@ -115,7 +115,7 @@ namespace Vadon::ECS
 		VADONCOMMON_API const ComponentPoolInterface* find_component_pool(ComponentID type_id) const;
 		ComponentPoolInterface* find_component_pool(ComponentID type_id) { return const_cast<ComponentPoolInterface*>(std::as_const(*this).find_component_pool(type_id)); }
 
-		ComponentPoolInterface* get_component_pool(ComponentID type_id);
+		VADONCOMMON_API ComponentPoolInterface* get_component_pool(ComponentID type_id);
 
 		VADONCOMMON_API void internal_get_component_tuple(EntityHandle entity, ComponentIDSpan component_ids, ComponentSpan components);
 

@@ -1,6 +1,6 @@
 #ifndef VADON_ECS_ENTITY_ENTITYMANAGER_HPP
 #define VADON_ECS_ENTITY_ENTITYMANAGER_HPP
-#include <Vadon/ECS/Entity/Entity.hpp>
+#include <Vadon/ECS/Entity/Event.hpp>
 #include <Vadon/Utilities/Container/ObjectPool/Pool.hpp>
 namespace Vadon::ECS
 {
@@ -22,6 +22,8 @@ namespace Vadon::ECS
 		VADONCOMMON_API EntityList get_children(EntityHandle entity, bool recursive = false) const;
 
 		VADONCOMMON_API EntityList get_active_entities() const;
+
+		VADONCOMMON_API void register_event_callback(EntityEventCallback callback);
 	private:
 		struct EntityData
 		{
@@ -37,8 +39,12 @@ namespace Vadon::ECS
 		void internal_add_child_entity(EntityHandle parent, EntityHandle child);
 		void internal_remove_child_entity(EntityHandle parent, EntityHandle child);
 
+		VADONCOMMON_API void dispatch_entity_event(const EntityEvent& event);
+
 		using EntityPool = Vadon::Utilities::ObjectPool<Vadon::ECS::Entity, EntityData>;
 		EntityPool m_entity_pool;
+
+		std::vector<EntityEventCallback> m_event_callbacks;
 
 		friend class World;
 	};

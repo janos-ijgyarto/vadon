@@ -9,10 +9,10 @@ namespace Vadon::ECS
 	public:
 		using PoolFactoryFunction = ComponentPoolInterface* (*)();
 
-		template<typename T>
+		template<typename T, typename Base = T>
 		static void register_component_type(PoolFactoryFunction factory = nullptr)
 		{
-			Vadon::Utilities::TypeRegistry::register_type<T>();
+			Vadon::Utilities::TypeRegistry::register_type<T, Base>();
 			
 			PoolFactoryFunction factory_impl = factory;
 			if (factory_impl == nullptr)

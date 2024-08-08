@@ -130,6 +130,7 @@ namespace Vadon::Utilities
 			}
 		}
 
+		// FIXME: replace with ECS query iterator-style API
 		class ConstIterator
 		{
 		public:
@@ -154,13 +155,7 @@ namespace Vadon::Utilities
 				++m_manager_it;
 				++m_pool_it;
 
-				const ObjectPoolManager::Iterator manager_end = m_manager.end();
-
-				while ((m_manager_it != manager_end) && !m_manager_it.is_valid())
-				{
-					++m_manager_it;
-					++m_pool_it;
-				}
+				advance();
 
 				return *this;
 			}
@@ -170,7 +165,21 @@ namespace Vadon::Utilities
 			bool operator==(const ConstIterator& rhs) const { return m_pool_it == rhs.m_pool_it; }
 			bool operator!=(const ConstIterator& rhs) const { return m_pool_it != rhs.m_pool_it; }
 		protected:
-			ConstIterator(const ObjectPoolManager& manager, ObjectPoolManager::Iterator manager_it, _PoolConstIterator pool_it) : m_manager(manager), m_manager_it(manager_it), m_pool_it(pool_it) {}
+			ConstIterator(const ObjectPoolManager& manager, ObjectPoolManager::Iterator manager_it, _PoolConstIterator pool_it) : m_manager(manager), m_manager_it(manager_it), m_pool_it(pool_it) { advance(); }
+
+			void advance()
+			{
+				const ObjectPoolManager::Iterator manager_end = m_manager.end();
+				while (m_manager_it != manager_end)
+				{
+					if (m_manager_it.is_valid() == true)
+					{
+						break;
+					}
+					++m_manager_it;
+					++m_pool_it;
+				}
+			}
 
 			const ObjectPoolManager& m_manager;
 			ObjectPoolManager::Iterator m_manager_it;
@@ -179,6 +188,7 @@ namespace Vadon::Utilities
 			friend _Pool;
 		};
 
+		// FIXME: replace with ECS query iterator-style API
 		class Iterator : public ConstIterator
 		{
 		public:

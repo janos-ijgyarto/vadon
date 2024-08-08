@@ -8,9 +8,9 @@ namespace Vadon::Core
 	class SystemBase : public LoggerInterface
 	{
 	public:
-		void log_message(std::string_view message) override { m_engine_core.log_message(message); }
-		void log_warning(std::string_view message) override { m_engine_core.log_warning(message); }
-		void log_error(std::string_view message) override { m_engine_core.log_error(message); }
+		void log_message(std::string_view message) const override { m_engine_core.log_message(message); }
+		void log_warning(std::string_view message) const override { m_engine_core.log_warning(message); }
+		void log_error(std::string_view message) const override { m_engine_core.log_error(message); }
 	protected:
 		SystemBase(EngineCoreInterface& engine_core)
 			: m_engine_core(engine_core)

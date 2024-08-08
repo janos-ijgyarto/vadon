@@ -16,9 +16,9 @@ namespace Vadon::Core
 
 		virtual const Configuration& get_config() const = 0;
 
-		void log_message(std::string_view message) override { Logger::log_message(message); }
-		void log_warning(std::string_view message) override { Logger::log_warning(message); }
-		void log_error(std::string_view message) override { Logger::log_error(message); }
+		void log_message(std::string_view message) const override { Logger::log_message(message); }
+		void log_warning(std::string_view message) const override { Logger::log_warning(message); }
+		void log_error(std::string_view message) const override { Logger::log_error(message); }
 
 		// TODO: implement interface (similar to system registry) that allows client code to register additional modules
 		// This would allow them to access client-specific managers through the core interface

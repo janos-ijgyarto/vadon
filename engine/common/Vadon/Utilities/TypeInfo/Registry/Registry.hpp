@@ -36,6 +36,8 @@ namespace Vadon::Utilities
 
 		VADONCOMMON_API static TypeID get_type_id(std::string_view type_name);
 
+		VADONCOMMON_API static bool is_base_of(TypeID base_id, TypeID type_id);
+
 		template<typename T>
 		static bool add_property(std::string_view name, MemberVariableBindBase property_bind)
 		{
@@ -108,11 +110,13 @@ namespace Vadon::Utilities
 
 		void internal_get_type_properties(TypeID type_id, PropertyInfoList& property_list) const;
 		void internal_get_properties(void* object, TypeID type_id, PropertyList& property_list) const;
+		const MemberVariableBindBase* internal_find_property(const TypeData& data, std::string_view name) const;
 
 		// FIXME: hide via PIMPL?
 		std::unordered_map<std::string, TypeID> m_id_lookup;
 		TypeID m_id_counter = 1;
 
+		// FIXME: use vector to improve lookup times?
 		std::unordered_map<TypeID, TypeData> m_type_lookup;
 	};
 }

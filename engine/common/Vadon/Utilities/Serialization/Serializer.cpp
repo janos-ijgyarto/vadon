@@ -55,6 +55,12 @@ namespace Vadon::Utilities
 				return false;
 			}
 
+			bool serialize(std::string_view /*key*/, bool& /*value*/) override
+			{
+				// TODO
+				return false;
+			}
+
 			bool serialize(std::string_view /*key*/, std::string& /*value*/) override
 			{
 				// TODO
@@ -74,6 +80,12 @@ namespace Vadon::Utilities
 			}
 
 			bool serialize(size_t /*index*/, float& /*value*/) override
+			{
+				// TODO
+				return false;
+			}
+
+			bool serialize(size_t /*index*/, bool& /*value*/) override
 			{
 				// TODO
 				return false;
@@ -194,6 +206,11 @@ namespace Vadon::Utilities
 				return serialize_trivial(key, value);
 			}
 
+			bool serialize(std::string_view key, bool& value)override
+			{
+				return serialize_trivial(key, value);
+			}
+
 			bool serialize(std::string_view key, std::string& value) override
 			{
 				return serialize_trivial(key, value);
@@ -210,6 +227,11 @@ namespace Vadon::Utilities
 			}
 
 			bool serialize(size_t index, float& value) override
+			{
+				return serialize_trivial(index, value);
+			}
+
+			bool serialize(size_t index, bool& value) override
 			{
 				return serialize_trivial(index, value);
 			}
@@ -500,7 +522,18 @@ namespace Vadon::Utilities
 				{
 					// FIXME: proper lookup system!
 					const std::string& type_string = json_value[0];
-					if (type_string == "Vector2")
+					if (type_string == "UUID")
+					{
+						// FIXME: better UUID serialization, maybe string with a certain prefix?
+						Vadon::Utilities::UUID uuid;
+						if (uuid.from_base64_string(json_value[1].get<std::string>()) == true)
+						{
+							variant_value = uuid;
+							return true;
+						}
+						return false;
+					}
+					else if (type_string == "Vector2")
 					{
 						variant_value = Vadon::Utilities::Vector2(json_value[1].get<float>(), json_value[2].get<float>());
 						return true;
@@ -547,6 +580,12 @@ namespace Vadon::Utilities
 						if constexpr (IsTrivialJSONWrite<decltype(value)>)
 						{
 							get_current_object()[key] = value;
+						}
+						if constexpr (std::is_same_v<decltype(value), Vadon::Utilities::UUID> == true)
+						{
+							// FIXME: have a lookup for the keys!
+							// FIXME2: better UUID serialization, maybe string with a certain prefix?
+							get_current_object()[key] = Vadon::Utilities::JSON::array({ "UUID", value.to_base64_string() });
 						}
 						if constexpr (std::is_same_v<decltype(value), Vadon::Utilities::Vector2> == true)
 						{
