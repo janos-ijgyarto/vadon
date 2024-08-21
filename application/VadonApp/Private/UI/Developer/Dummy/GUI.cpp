@@ -13,6 +13,8 @@ namespace VadonApp::Private::UI::Developer::Dummy
 
     }
 
+    // TODO: implement some kind of "dummy GUI stack" so we can see what the app is trying to draw, even if the dev GUI is disabled?
+
     void GUISystem::dispatch_platform_events(const VadonApp::Platform::PlatformEventList& /*platform_events*/)
     {
         // TODO!!!
@@ -153,6 +155,45 @@ namespace VadonApp::Private::UI::Developer::Dummy
         // TODO
     }
 
+    bool GUISystem::begin_main_menu_bar()
+    {
+        // TODO
+        return false;
+    }
+
+    void GUISystem::end_main_menu_bar()
+    {
+        // TODO
+    }
+
+    bool GUISystem::begin_menu_bar()
+    {
+        // TODO
+        return false;
+    }
+
+    void GUISystem::end_menu_bar()
+    {
+        // TODO
+    }
+
+    bool GUISystem::begin_menu(std::string_view /*label*/, bool /*enabled*/)
+    {
+        // TODO
+        return false;
+    }
+
+    void GUISystem::end_menu()
+    {
+        // TODO
+    }
+
+    bool GUISystem::add_menu_item(const MenuItem& /*menu_item*/)
+    {
+        // TODO
+        return false;
+    }
+
     bool GUISystem::push_tree_node(std::string_view /*label*/, TreeNodeFlags /*flags*/)
     {
         return false;
@@ -262,11 +303,6 @@ namespace VadonApp::Private::UI::Developer::Dummy
     void GUISystem::end_table()
     {
         // TODO
-    }
-
-    bool GUISystem::add_menu_item(const MenuItem& /*menu_item*/)
-    {
-        return false;
     }
 
     void GUISystem::add_text(std::string_view /*text*/)

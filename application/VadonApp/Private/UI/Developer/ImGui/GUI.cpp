@@ -879,6 +879,41 @@ float4 main(PS_INPUT input) : SV_Target
         ImGui::EndPopup();
     }
 
+    bool GUISystem::begin_main_menu_bar()
+    {
+        return ::ImGui::BeginMainMenuBar();
+    }
+
+    void GUISystem::end_main_menu_bar()
+    {
+        ::ImGui::EndMainMenuBar();
+    }
+
+    bool GUISystem::begin_menu_bar()
+    {
+        return ::ImGui::BeginMenuBar();
+    }
+
+    void GUISystem::end_menu_bar()
+    {
+        ::ImGui::EndMenuBar();
+    }
+
+    bool GUISystem::begin_menu(std::string_view label, bool enabled)
+    {
+        return ::ImGui::BeginMenu(label.data(), enabled);
+    }
+
+    void GUISystem::end_menu()
+    {
+        ::ImGui::EndMenu();
+    }
+
+    bool GUISystem::add_menu_item(const MenuItem& menu_item)
+    {
+        return ImGui::MenuItem(menu_item.label.c_str(), nullptr, menu_item.selected, menu_item.enabled);
+    }
+
     bool GUISystem::push_tree_node(std::string_view label, TreeNodeFlags flags)
     {
         return ImGui::TreeNodeEx(label.data(), get_imgui_treenode_flags(flags));
@@ -1038,11 +1073,6 @@ float4 main(PS_INPUT input) : SV_Target
     void GUISystem::end_table()
     {
         ImGui::EndTable();
-    }
-
-    bool GUISystem::add_menu_item(const MenuItem& menu_item)
-    {
-        return ImGui::MenuItem(menu_item.label.c_str(), nullptr, menu_item.selected, menu_item.enabled);
     }
 
     void GUISystem::add_text(std::string_view text)

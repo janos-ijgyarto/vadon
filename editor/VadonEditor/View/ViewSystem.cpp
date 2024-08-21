@@ -676,6 +676,37 @@ namespace VadonEditor::View
 
 				if (dev_gui.begin_window(m_window) == true)
 				{
+					if (dev_gui.begin_main_menu_bar() == true)
+					{
+						if (dev_gui.begin_menu("Scene") == true)
+						{
+							if (dev_gui.add_menu_item(VadonApp::UI::Developer::MenuItem{ .label = "New Scene" }) == true)
+							{
+								// TODO
+							}
+							if (dev_gui.add_menu_item(VadonApp::UI::Developer::MenuItem{ .label = "Load Scene" }) == true)
+							{
+								// TODO
+							}
+							dev_gui.end_menu();
+						}
+
+						if (dev_gui.begin_menu("Project") == true)
+						{
+							if (dev_gui.add_menu_item(VadonApp::UI::Developer::MenuItem{ .label = "Project Settings" }) == true)
+							{
+								// TODO
+							}
+							if (dev_gui.add_menu_item(VadonApp::UI::Developer::MenuItem{ .label = "Close Project" }) == true)
+							{
+								// TODO
+							}
+							dev_gui.end_menu();
+						}
+
+						dev_gui.end_main_menu_bar();
+					}
+
 					Model::ModelSystem& model = editor.get_system<Model::ModelSystem>();
 					Model::SceneTree& scene_tree = model.get_scene_tree();
 
