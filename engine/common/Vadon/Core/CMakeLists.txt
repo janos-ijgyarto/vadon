@@ -1,4 +1,5 @@
 add_subdirectory(File)
+add_subdirectory(Project)
 add_subdirectory(System)
 add_subdirectory(Task)
 

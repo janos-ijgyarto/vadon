@@ -15,20 +15,20 @@ Vadon is a cross-platform general-purpose game engine implemented using C++ and 
 - Scene system (inspired by [Godot](https://github.com/godotengine/godot))
 - Application (wrapper for platform, windows, etc.) and editor
 - Developer GUI for dev tools and debugging (currently uses [Dear ImGui](https://github.com/ocornut/imgui))
+- 2D rendering via Canvas API
+- File management
 - Serialization using JSON
 - Demo application to showcase features
 - Modular structure, allowing client code to only use the engine features they require
 
 ## Planned features
 
-- 2D rendering via Canvas API
 - Basic 3D rendering pipeline
 - Options for both 2D and 3D rendering to allow creating custom pipelines
 - Basic engine update loop
 - Refined API for custom update logic, task/job based update, etc.
 - Binary serialization
 - Physics and audio support
-- File management
 
 ## Building Vadon
 

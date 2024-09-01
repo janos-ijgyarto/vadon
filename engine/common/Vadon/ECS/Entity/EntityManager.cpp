@@ -173,4 +173,9 @@ namespace Vadon::ECS
 			callback(event);
 		}
 	}
+
+	void EntityManager::clear()
+	{
+		m_entity_pool.reset();
+	}
 }

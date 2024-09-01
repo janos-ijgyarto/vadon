@@ -70,4 +70,10 @@ namespace Vadon::ECS
 		m_entity_lookup.erase(entity_iterator);
 		m_component_offsets.erase(m_component_offsets.begin() + entity_index);
 	}
+
+	void DefaultComponentPoolBase::default_pool_clear()
+	{
+		m_entity_lookup.clear();
+		m_component_offsets.clear();
+	}
 }

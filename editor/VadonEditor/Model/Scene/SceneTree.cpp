@@ -1,6 +1,8 @@
 #include <VadonEditor/Model/Scene/SceneTree.hpp>
 
 #include <VadonEditor/Core/Editor.hpp>
+#include <VadonEditor/Core/Project/ProjectManager.hpp>
+
 #include <VadonEditor/Model/ModelSystem.hpp>
 #include <VadonEditor/Model/Scene/Entity.hpp>
 
@@ -100,10 +102,12 @@ namespace VadonEditor::Model
 		Vadon::Core::EngineCoreInterface& engine_core = m_editor.get_engine_core();
 		Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
 
-		const std::string scene_path = std::string(name) + ".vdsc";
+		Vadon::Scene::ResourcePath scene_path;
+		scene_path.path = std::string(name) + ".vdsc";
+		scene_path.root_directory = m_editor.get_system<Core::ProjectManager>().get_active_project().root_dir_handle;
 		if (resource_system.find_resource(scene_path).is_valid() == true)
 		{
-			Vadon::Core::Logger::log_error(std::format("Scene tree error: cannot create new scene at \"{}\" as it already exists!\n", scene_path));
+			Vadon::Core::Logger::log_error(std::format("Scene tree error: cannot create new scene at \"{}\" as it already exists!\n", scene_path.path));
 			return false;
 		}
 

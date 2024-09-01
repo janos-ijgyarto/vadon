@@ -29,6 +29,8 @@ namespace Vadon::ECS
 
 		template<typename T>
 		static ComponentID get_component_type_id();
+
+		virtual void clear() = 0;
 	protected:
 		VADONCOMMON_API void dispatch_component_event(const ComponentEvent& event);
 
@@ -56,6 +58,8 @@ namespace Vadon::ECS
 		VADONCOMMON_API std::optional<EntityList::const_iterator> add_entity(EntityHandle entity);
 		VADONCOMMON_API EntityList::const_iterator find_entity(EntityHandle entity) const;
 		VADONCOMMON_API void remove_entity(EntityList::const_iterator entity_iterator);
+
+		VADONCOMMON_API void default_pool_clear();
 
 		EntityList m_entity_lookup;
 		std::vector<uint32_t> m_component_offsets;
@@ -128,6 +132,12 @@ namespace Vadon::ECS
 		EntityList get_entities() const override
 		{
 			return m_entity_lookup;
+		}
+
+		void clear() override
+		{
+			DefaultComponentPoolBase::default_pool_clear();
+			m_components.clear();
 		}
 	private:
 		std::vector<T> m_components;

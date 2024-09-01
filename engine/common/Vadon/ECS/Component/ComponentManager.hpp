@@ -119,6 +119,8 @@ namespace Vadon::ECS
 
 		VADONCOMMON_API void internal_get_component_tuple(EntityHandle entity, ComponentIDSpan component_ids, ComponentSpan components);
 
+		void clear();
+
 		std::unordered_map<ComponentID, ComponentPoolInterface*> m_component_pools;
 
 		friend class World;

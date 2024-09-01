@@ -1,5 +1,5 @@
 target_sources(${VADON_CURRENT_TARGET}
     PRIVATE
-        FileSystem.hpp
-        RootDirectory.hpp
+    Project.hpp
+    Project.cpp
    )

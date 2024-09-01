@@ -131,4 +131,12 @@ namespace Vadon::ECS
 			++component_ptr_it;
 		}
 	}
+
+	void ComponentManager::clear()
+	{
+		for (auto& current_pool_pair : m_component_pools)
+		{
+			current_pool_pair.second->clear();
+		}
+	}
 }

@@ -13,6 +13,7 @@
 #include <VadonApp/UI/Developer/GUI.hpp>
 
 #include <Vadon/Core/File/FileSystem.hpp>
+#include <Vadon/Core/Project/Project.hpp>
 #include <Vadon/Core/Task/TaskSystem.hpp>
 
 #include <Vadon/Render/Canvas/Context.hpp>
@@ -27,6 +28,8 @@
 #include <Vadon/Scene/SceneSystem.hpp>
 
 #include <Vadon/Utilities/Container/Concurrent/TripleBuffer.hpp>
+
+#include <filesystem>
 
 namespace VadonDemo::UI
 {
@@ -168,6 +171,9 @@ namespace VadonDemo::UI
 
 		MainWindowDevGUI m_dev_gui;
 
+		// FIXME: move these to subsystems!
+		Vadon::Core::Project m_project_info;
+		Vadon::Core::RootDirectoryHandle m_root_directory;
 		Vadon::Render::Canvas::RenderContext m_canvas_context;
 
 		Internal(Core::GameCore& game_core)
@@ -189,8 +195,80 @@ namespace VadonDemo::UI
 			return true;
 		}
 
+		bool load_project()
+		{
+			// First validate the path
+			VadonApp::Core::Application& engine_app = m_game_core.get_engine_app();
+			Vadon::Core::EngineCoreInterface& engine_core = engine_app.get_engine_core();
+
+			// Check command line arg, load startup project if requested
+			constexpr const char c_startup_project_arg[] = "project";
+			if (m_game_core.has_command_line_arg(c_startup_project_arg) == false)
+			{
+				// TODO: error message!
+				return false;
+			}
+			
+			std::filesystem::path fs_root_path(m_game_core.get_command_line_arg(c_startup_project_arg));
+			if (Vadon::Core::Project::is_valid_project_path(fs_root_path.string()) == false)
+			{
+				constexpr const char c_invalid_path_error[] = "Game demo: invalid project path!\n";
+
+				// Assume we gave a path to the folder with the project file
+				if (std::filesystem::is_directory(fs_root_path) == true)
+				{
+					fs_root_path /= Vadon::Core::Project::c_project_file_name;
+					if (Vadon::Core::Project::is_valid_project_path(fs_root_path.string()) == false)
+					{
+						Vadon::Core::Logger::log_error(c_invalid_path_error);
+						return false;
+					}
+				}
+				else
+				{
+					Vadon::Core::Logger::log_error(c_invalid_path_error);
+					return false;
+				}
+			}
+
+			const std::string project_file_path = fs_root_path.string();
+			if (m_project_info.load_project_file(engine_core, project_file_path) == false)
+			{
+				Vadon::Core::Logger::log_error(std::format("Invalid project file at \"{}\"!\n", project_file_path));
+				return false;
+			}
+
+			if (m_project_info.startup_scene.is_valid() == false)
+			{
+				// TODO: error!
+				return false;
+			}
+
+			{
+				Vadon::Core::RootDirectoryInfo project_dir_info;
+				project_dir_info.path = m_project_info.root_path;
+
+				// Add project root directory
+				Vadon::Core::FileSystem& file_system = engine_core.get_system<Vadon::Core::FileSystem>();
+				m_root_directory = file_system.add_root_directory(project_dir_info);
+				if (m_root_directory.is_valid() == false)
+				{
+					Vadon::Core::Logger::log_error("Failed to register project root directory!\n");
+					return false;
+				}
+			}
+
+			// Everything loaded successfully
+			return true;
+		}
+
 		void init_scene()
 		{
+			if (load_project() == false)
+			{
+				return;
+			}
+
 			using Logger = Vadon::Core::Logger;
 
 			VadonApp::Core::Application& engine_app = m_game_core.get_engine_app();
@@ -212,30 +290,25 @@ namespace VadonDemo::UI
 				}
 			);
 
-			// FIXME: load the necessary resources using project file!
 			{
 				Vadon::Core::FileSystem& file_system = engine_core.get_system<Vadon::Core::FileSystem>();
 				Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
 
-				Vadon::Scene::ResourceID main_scene_id;
+				const Vadon::Core::FileSystem::Path root_path{ .path = "", .root = m_root_directory };
+				const std::vector<std::string> scene_files = file_system.get_files_of_type(root_path, ".vdsc");
 
-				const std::vector<std::string> scene_files = file_system.get_files_of_type("", ".vdsc");
 				for (const std::string& current_scene_file : scene_files)
 				{
-					const Vadon::Scene::ResourceID current_scene_id = resource_system.import_resource(current_scene_file);
-					if (current_scene_file == "Main.vdsc")
+					const Vadon::Scene::ResourcePath current_scene_path{ .path = current_scene_file, .root_directory = m_root_directory };
+					const Vadon::Scene::ResourceID current_scene_id = resource_system.import_resource(current_scene_path);
+					if (current_scene_id.is_valid() == false)
 					{
-						main_scene_id = current_scene_id;
+						// TODO: warning!
+						continue;
 					}
 				}
 
-				if (main_scene_id.is_valid() == false)
-				{
-					// Something went wrong
-					return;
-				}
-
-				Vadon::Scene::ResourceHandle main_scene_handle = resource_system.load_resource(main_scene_id);
+				Vadon::Scene::ResourceHandle main_scene_handle = resource_system.load_resource(m_project_info.startup_scene);
 				if (main_scene_handle.is_valid() == false)
 				{
 					// Something went wrong

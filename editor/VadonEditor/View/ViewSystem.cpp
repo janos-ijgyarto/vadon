@@ -334,7 +334,7 @@ namespace VadonEditor::View
 
 					for (const Model::Scene& current_scene : scene_list)
 					{
-						scene_item_list.items.push_back(current_scene.path);
+						scene_item_list.items.push_back(current_scene.path.path);
 					}
 
 					scene_item_list.selected_item = 0;

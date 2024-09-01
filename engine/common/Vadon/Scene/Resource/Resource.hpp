@@ -1,6 +1,6 @@
 #ifndef VADON_SCENE_RESOURCE_RESOURCE_HPP
 #define VADON_SCENE_RESOURCE_RESOURCE_HPP
-#include <Vadon/Utilities/Container/ObjectPool/Handle.hpp>
+#include <Vadon/Core/File/RootDirectory.hpp>
 #include <Vadon/Utilities/System/UUID/UUID.hpp>
 #include <Vadon/Utilities/TypeInfo/TypeInfo.hpp>
 namespace Vadon::Scene
@@ -15,6 +15,16 @@ namespace Vadon::Scene
 		std::string name;
 
 		virtual ~ResourceBase() {}
+	};
+
+	struct ResourcePath
+	{
+		std::string path;
+		Vadon::Core::RootDirectoryHandle root_directory;
+
+		bool is_valid() const { return path.empty() == false; }
+
+		bool operator==(const ResourcePath& other) const { return (path == other.path) && (root_directory == other.root_directory); }
 	};
 }
 #endif
