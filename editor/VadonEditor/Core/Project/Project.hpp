@@ -10,6 +10,6 @@ namespace VadonEditor::Core
 		Vadon::Core::RootDirectoryHandle root_dir_handle;
 	};
 
-	using ProjectList = std::vector<Project>;
+	using ProjectList = std::vector<Vadon::Core::Project>;
 }
 #endif

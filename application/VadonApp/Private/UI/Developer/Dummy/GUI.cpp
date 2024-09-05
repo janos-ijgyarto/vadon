@@ -305,12 +305,22 @@ namespace VadonApp::Private::UI::Developer::Dummy
         // TODO
     }
 
+    void GUISystem::add_separator()
+    {
+        // TODO
+    }
+
     void GUISystem::add_text(std::string_view /*text*/)
     {
         // TODO
     }
 
     void GUISystem::add_text_unformatted(std::string_view /*text*/)
+    {
+        // TODO
+    }
+
+    void GUISystem::add_separator_text(std::string_view /*text*/)
     {
         // TODO
     }

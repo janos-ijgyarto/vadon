@@ -57,7 +57,7 @@ namespace VadonEditor::Model
 	{
 		for (const Entity* current_child : m_children)
 		{
-			if (current_child->m_scene_child == false)
+			if (current_child->is_sub_scene_child() == false)
 			{
 				return true;
 			}
@@ -263,6 +263,7 @@ namespace VadonEditor::Model
 		, m_id(id)
 		, m_parent(parent)
 		, m_entity_handle(entity_handle)
+		, m_sub_scene_child(false)
 	{
 	}
 

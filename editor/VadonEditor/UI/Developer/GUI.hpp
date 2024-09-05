@@ -3,10 +3,14 @@
 #include <VadonApp/UI/Developer/GUI.hpp>
 namespace VadonEditor::UI::Developer
 {
+	using GUISystem = VadonApp::UI::Developer::GUISystem;
+
 	using WindowFlags = VadonApp::UI::Developer::WindowFlags;
 
 	using Window = VadonApp::UI::Developer::Window;
 	using ChildWindow = VadonApp::UI::Developer::ChildWindow;
+
+	using MenuItem = VadonApp::UI::Developer::MenuItem;
 
 	using InputInt = VadonApp::UI::Developer::InputInt;
 	using InputInt2 = VadonApp::UI::Developer::InputInt2;

@@ -1,5 +1,5 @@
 target_sources(${VADONEDITOR_CURRENT_TARGET}
     PRIVATE
-        GUI.hpp
-        Widgets.hpp
+    Property.hpp
+    Property.cpp
    )

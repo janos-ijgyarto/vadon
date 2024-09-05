@@ -121,8 +121,10 @@ namespace VadonApp::UI::Developer
 		virtual void next_table_column() = 0;
 		virtual void end_table() = 0;
 
+		virtual void add_separator() = 0;
 		virtual void add_text(std::string_view text) = 0;
 		virtual void add_text_unformatted(std::string_view text) = 0;
+		virtual void add_separator_text(std::string_view text) = 0;
 
 		virtual void same_line() = 0;
 		virtual void set_scroll_x(float ratio = 0.5f) = 0;

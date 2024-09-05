@@ -7,6 +7,14 @@
 
 namespace VadonEditor::Core
 {
+	bool ProjectManager::create_project(std::string_view /*name*/, std::string_view /*path*/)
+	{
+		// TODO: check folder to make sure it will actually work
+		// TODO2: create project file, add to cache
+		m_state = State::PROJECT_OPENED;
+		return true;
+	}
+
 	bool ProjectManager::open_project(std::string_view /*root_path*/)
 	{
 		// Should only be used if we don't have an active project

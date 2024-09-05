@@ -324,6 +324,46 @@
                 "UUID",
                 "SU9LAvF3Tq2+7Cs9FbmKDg=="
             ]
+        },
+        {
+            "components": [
+                {
+                    "properties": {
+                        "color": [
+                            "Vector3",
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "type": "VadonDemo::Model::CanvasComponent"
+                },
+                {
+                    "properties": {
+                        "angular_velocity": 1.0,
+                        "is_star": true
+                    },
+                    "type": "VadonDemo::Model::Celestial"
+                },
+                {
+                    "properties": {
+                        "position": [
+                            "Vector2",
+                            0.0,
+                            200.0
+                        ],
+                        "rotation": 0.0,
+                        "scale": 10.0
+                    },
+                    "type": "VadonDemo::Model::Transform2D"
+                }
+            ],
+            "name": "Orb",
+            "parent": 1,
+            "scene": [
+                "UUID",
+                "cP4wj0BLTe2VPf/1YWPpFg=="
+            ]
         }
     ],
     "id": "9s97q0IFSWO9a0PyI4rLPg==",

@@ -33,6 +33,7 @@ namespace VadonEditor::Model
 		void notify_scene_modified() { m_current_scene.is_modified = true; }
 		bool is_scene_modified() const { return m_current_scene.is_modified; }
 
+		Scene get_scene_info(Vadon::Scene::ResourceHandle scene_handle) const;
 		SceneList get_scene_list() const;
 	private:
 		struct SceneData

@@ -171,8 +171,19 @@ namespace VadonEditor::Model
 		using Logger = Vadon::Core::Logger;
 
 		Vadon::Core::EngineCoreInterface& engine_core = m_editor.get_engine_core();
+		Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
 
-		Vadon::Scene::ResourceHandle loaded_scene_handle = engine_core.get_system<Vadon::Scene::ResourceSystem>().load_resource(scene_id);
+		// Prevent loading scene that is already loaded
+		if (m_current_scene.scene.is_valid() == true)
+		{
+			if (resource_system.get_resource_id(m_current_scene.scene) == scene_id)
+			{
+				Logger::log_error("Scene already loaded!\n");
+				return false;
+			}
+		}
+
+		Vadon::Scene::ResourceHandle loaded_scene_handle = resource_system.load_resource(scene_id);
 		if (loaded_scene_handle.is_valid() == false)
 		{
 			Logger::log_error("Unable to load scene!\n");
@@ -198,6 +209,17 @@ namespace VadonEditor::Model
 		return true;
 	}
 
+	Scene SceneTree::get_scene_info(Vadon::Scene::ResourceHandle scene_handle) const
+	{
+		Scene scene_info;
+		Vadon::Scene::ResourceSystem& resource_system = m_editor.get_engine_core().get_system<Vadon::Scene::ResourceSystem>();
+
+		scene_info.scene_id = resource_system.get_resource_id(scene_handle);
+		scene_info.resource_path = resource_system.get_resource_path(scene_handle);
+
+		return scene_info;
+	}
+
 	SceneList SceneTree::get_scene_list() const
 	{
 		SceneList result;
@@ -206,7 +228,7 @@ namespace VadonEditor::Model
 		{
 			Scene& added_scene = result.emplace_back();
 			added_scene.scene_id = scene_id;
-			added_scene.path = resource_system.get_resource_path(scene_id);
+			added_scene.resource_path = resource_system.get_resource_path(scene_id);
 		}
 
 		return result;
@@ -239,10 +261,12 @@ namespace VadonEditor::Model
 		const Vadon::Scene::SceneComponent* scene_component = ecs_world.get_component_manager().get_component<Vadon::Scene::SceneComponent>(new_entity->get_handle());
 		if (scene_component != nullptr)
 		{
-			if (scene_component->parent_scene.is_valid() == true)
+			if (scene_component->root_scene.is_valid())
 			{
-				new_entity->m_scene_child = true;
+				new_entity->m_sub_scene = get_scene_info(scene_component->root_scene);
 			}
+			
+			new_entity->m_sub_scene_child = scene_component->parent_scene.is_valid();
 		}
 
 		for (const Vadon::ECS::EntityHandle& current_child_entity : child_entities)

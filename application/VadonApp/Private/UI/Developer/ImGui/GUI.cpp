@@ -869,9 +869,8 @@ float4 main(PS_INPUT input) : SV_Target
 
     bool GUISystem::begin_modal_dialog(Window& dialog)
     {
-        dialog.open = true; // Always set to true (only needed for close button)
         // TODO: flags to set whether to pass in pointer to open flag
-        return ImGui::BeginPopupModal(dialog.title.c_str(), &dialog.open);
+        return ImGui::BeginPopupModal(dialog.title.c_str(), nullptr);
     }
 
     void GUISystem::end_dialog()
@@ -1010,7 +1009,7 @@ float4 main(PS_INPUT input) : SV_Target
     {
         if (ImGui::BeginListBox(list_box.label.c_str()))
         {
-            size_t current_item_index = 0;
+            int32_t current_item_index = 0;
             for (const std::string& current_item : list_box.items)
             {
                 const bool is_selected = (current_item_index == list_box.selected_item);
@@ -1038,7 +1037,7 @@ float4 main(PS_INPUT input) : SV_Target
         const char* preview_item = combo_box.items.empty() ? nullptr : combo_box.items[combo_box.selected_item].c_str();
         if (ImGui::BeginCombo(combo_box.label.c_str(), preview_item) == true)
         {
-            size_t current_item_index = 0;
+            int32_t current_item_index = 0;
             for (const std::string& current_item : combo_box.items)
             {
                 const bool is_selected = (current_item_index == combo_box.selected_item);
@@ -1075,6 +1074,11 @@ float4 main(PS_INPUT input) : SV_Target
         ImGui::EndTable();
     }
 
+    void GUISystem::add_separator()
+    {
+        ImGui::Separator();
+    }
+
     void GUISystem::add_text(std::string_view text)
     {
         ImGui::Text(text.data());
@@ -1083,6 +1087,11 @@ float4 main(PS_INPUT input) : SV_Target
     void GUISystem::add_text_unformatted(std::string_view text)
     {
         ImGui::TextUnformatted(text.data());
+    }
+
+    void GUISystem::add_separator_text(std::string_view text)
+    {
+        ImGui::SeparatorText(text.data());
     }
 
     void GUISystem::same_line()

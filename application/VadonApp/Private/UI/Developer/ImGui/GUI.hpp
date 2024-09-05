@@ -99,8 +99,10 @@ namespace VadonApp::Private::UI::Developer::ImGUI
 		void next_table_column() override;
 		void end_table() override;
 
+		void add_separator() override;
 		void add_text(std::string_view text) override;
 		void add_text_unformatted(std::string_view text) override;
+		void add_separator_text(std::string_view text) override;
 		
 		void same_line() override;
 		void set_scroll_x(float ratio = 0.5f) override;

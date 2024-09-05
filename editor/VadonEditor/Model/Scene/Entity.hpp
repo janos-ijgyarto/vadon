@@ -1,6 +1,7 @@
 #ifndef VADONEDITOR_MODEL_SCENE_ENTITY_HPP
 #define VADONEDITOR_MODEL_SCENE_ENTITY_HPP
 #include <VadonEditor/Model/Scene/Component.hpp>
+#include <VadonEditor/Model/Scene/Scene.hpp>
 #include <Vadon/ECS/Entity/Entity.hpp>
 #include <Vadon/ECS/Component/Component.hpp>
 #include <set>
@@ -29,12 +30,15 @@ namespace VadonEditor::Model
 		Entity* get_parent() const { return m_parent; }
 		const EntityList& get_children() const { return m_children; }
 
-		bool has_visible_children() const;
+		bool has_visible_children() const; // FIXME: "visible" implies View, make this view-agnostic?
 
-		std::string get_name() const { return m_name; }
+		const std::string& get_name() const { return m_name; }
 		void set_name(std::string_view name);
 
-		bool is_scene_child() const { return m_scene_child; }
+		bool is_sub_scene() const { return m_sub_scene.scene_id.is_valid() == true; }
+		const Scene& get_sub_scene_info() const { return m_sub_scene; }
+
+		bool is_sub_scene_child() const { return m_sub_scene_child; }
 
 		Vadon::ECS::EntityHandle get_handle() const { return m_entity_handle; }
 
@@ -74,8 +78,8 @@ namespace VadonEditor::Model
 
 		std::string m_name;
 
-		// FIXME: use reference to "scene" object so this can also be displayed in the View!
-		bool m_scene_child = false;
+		Scene m_sub_scene;
+		bool m_sub_scene_child; // FIXME: have a more elegant way to deduce this?
 
 		Vadon::ECS::EntityHandle m_entity_handle;
 

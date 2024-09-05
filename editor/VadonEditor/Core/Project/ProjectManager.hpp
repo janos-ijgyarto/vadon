@@ -21,6 +21,7 @@ namespace VadonEditor::Core
 		
 		const Project& get_active_project() const { return m_active_project; }
 
+		bool create_project(std::string_view name, std::string_view path); // FIXME: provide other params!
 		bool open_project(std::string_view path);
 		void close_project();
 	private:
