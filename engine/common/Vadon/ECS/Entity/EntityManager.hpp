@@ -41,6 +41,8 @@ namespace Vadon::ECS
 
 		VADONCOMMON_API void dispatch_entity_event(const EntityEvent& event);
 
+		void clear();
+
 		using EntityPool = Vadon::Utilities::ObjectPool<Vadon::ECS::Entity, EntityData>;
 		EntityPool m_entity_pool;
 

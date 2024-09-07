@@ -52,6 +52,10 @@ namespace VadonDemo::Core
 		Model::Model& get_model();
 
 		Vadon::ECS::World& get_ecs_world();
+
+		// FIXME: implement a proper CLI parser!
+		bool has_command_line_arg(std::string_view name) const;
+		std::string get_command_line_arg(std::string_view name) const;
 	private:
 		struct Internal;
 		std::unique_ptr<Internal> m_internal;

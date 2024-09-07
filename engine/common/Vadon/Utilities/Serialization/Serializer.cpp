@@ -26,8 +26,8 @@ namespace Vadon::Utilities
 			// - Only push to raw data once we are actually writing raw values, otherwise push to field tables (hierarchical)
 			//		- This should enable streaming
 			// - Use a string table to save on size
-			BinarySerializer(std::vector<std::byte>& buffer, bool read)
-				: Serializer(buffer, read)
+			BinarySerializer(std::vector<std::byte>& buffer, Mode mode)
+				: Serializer(buffer, mode)
 			{
 			}
 
@@ -151,8 +151,8 @@ namespace Vadon::Utilities
 		public:
 			using Iterator = JSON::iterator;
 
-			JSONSerializer(std::vector<std::byte>& buffer, bool read)
-				: Serializer(buffer, read)
+			JSONSerializer(std::vector<std::byte>& buffer, Mode mode)
+				: Serializer(buffer, mode)
 			{
 			}
 
@@ -180,17 +180,17 @@ namespace Vadon::Utilities
 
 			bool finalize() override
 			{
-				if (is_reading() == false)
+				if (is_reading() == true)
+				{
+					// TODO: clear memory?
+				}
+				else
 				{
 					// Dump JSON to buffer
 					// FIXME: is this the right way to do it?
 					const std::string json_dump = m_json_root.dump(4);
 					m_buffer.resize(json_dump.size());
 					memcpy(m_buffer.data(), json_dump.data(), json_dump.size());
-				}
-				else
-				{
-					// TODO: clear memory?
 				}
 
 				return true;
@@ -651,20 +651,20 @@ namespace Vadon::Utilities
 		};
 	}
 
-	Serializer::Instance Serializer::create_serializer(std::vector<std::byte>& buffer, Type type, bool read)
+	Serializer::Instance Serializer::create_serializer(std::vector<std::byte>& buffer, Type type, Mode mode)
 	{
 		switch (type)
 		{
 		case Type::BINARY:
-			return Serializer::Instance(new BinarySerializer(buffer, read));
+			return Serializer::Instance(new BinarySerializer(buffer, mode));
 		case Type::JSON:
-			return Serializer::Instance(new JSONSerializer(buffer, read));
+			return Serializer::Instance(new JSONSerializer(buffer, mode));
 		}
 		return nullptr;
 	}
 
-	Serializer::Serializer(std::vector<std::byte>& buffer, bool read)
-		: m_read(read)
+	Serializer::Serializer(std::vector<std::byte>& buffer, Mode mode)
+		: m_mode(mode)
 		, m_buffer(buffer)
 	{
 	}

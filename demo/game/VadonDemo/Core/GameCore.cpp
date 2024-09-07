@@ -43,6 +43,10 @@ namespace VadonDemo::Core
 
 		Vadon::ECS::World m_ecs_world;
 
+		// FIXME: implement a proper CLI parser!
+		std::string m_program_name;
+		std::unordered_map<std::string, std::string> m_command_line_args;
+
 		Internal(GameCore& game_core)
 			: m_platform_interface(game_core)
 			, m_render_system(game_core)
@@ -53,6 +57,9 @@ namespace VadonDemo::Core
 
 		bool initialize(int argc, char* argv[])
 		{
+			// FIXME: implement a proper CLI parser!
+			parse_command_line(argc, argv);
+
 			if (init_engine_application(argc, argv) == false)
 			{
 				Vadon::Core::Logger::log_error("Failed to initialize engine application!\n");
@@ -87,6 +94,38 @@ namespace VadonDemo::Core
 			Vadon::Core::Logger::log_message("Vadon Demo app initialized.\n");
 
 			return true;
+		}
+
+		void parse_command_line(int argc, char* argv[])
+		{
+			m_program_name = argv[0];
+
+			for (int32_t current_arg_index = 1; current_arg_index < argc; ++current_arg_index)
+			{
+				parse_command_line_argument(argv[current_arg_index]);
+			}
+		}
+
+		void parse_command_line_argument(const char* argument_ptr)
+		{
+			const std::string argument_string(argument_ptr);
+
+			const size_t equals_char_offset = argument_string.find('=');
+
+			// TODO: check that the arg isn't just whitespace
+
+			if (equals_char_offset == std::string::npos)
+			{
+				// No equals char found, assume it's a command
+				m_command_line_args.emplace(argument_string, "");
+				return;
+			}
+
+			// Emplace the argument name and value
+			const std::string arg_name = argument_string.substr(0, equals_char_offset);
+			const std::string arg_value = argument_string.substr(equals_char_offset + 1);
+
+			m_command_line_args.emplace(arg_name, arg_value);
 		}
 
 		bool init_engine_application(int /*argc*/, char* argv[])
@@ -295,6 +334,30 @@ namespace VadonDemo::Core
 
 			Vadon::Core::Logger::log_message("Vadon Demo app successfully shut down.\n");
 		}
+
+		bool has_command_line_arg(std::string_view name) const
+		{
+			auto arg_it = m_command_line_args.find(name.data());
+			if (arg_it == m_command_line_args.end())
+			{
+				return false;
+			}
+
+
+
+			return true;
+		}
+
+		std::string get_command_line_arg(std::string_view name) const
+		{
+			auto arg_it = m_command_line_args.find(name.data());
+			if (arg_it == m_command_line_args.end())
+			{
+				return std::string();
+			}
+
+			return arg_it->second;
+		}
 	};
 
 	GameCore::GameCore()
@@ -337,5 +400,15 @@ namespace VadonDemo::Core
 	Vadon::ECS::World& GameCore::get_ecs_world()
 	{
 		return m_internal->m_ecs_world;
+	}
+
+	bool GameCore::has_command_line_arg(std::string_view name) const
+	{
+		return m_internal->has_command_line_arg(name);
+	}
+
+	std::string GameCore::get_command_line_arg(std::string_view name) const
+	{
+		return m_internal->get_command_line_arg(name);
 	}
 }

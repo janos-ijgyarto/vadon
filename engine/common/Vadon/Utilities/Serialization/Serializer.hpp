@@ -16,13 +16,19 @@ namespace Vadon::Utilities
 			JSON
 		};
 
+		enum class Mode : uint8_t
+		{
+			READ,
+			WRITE
+		};
+
 		using Instance = std::unique_ptr<Serializer>;
 
-		VADONCOMMON_API static Instance create_serializer(std::vector<std::byte>& buffer, Type type, bool read = true);
+		VADONCOMMON_API static Instance create_serializer(std::vector<std::byte>& buffer, Type type, Mode mode);
 
 		virtual ~Serializer() {}
 
-		bool is_reading() const { return m_read; }
+		bool is_reading() const { return m_mode == Mode::READ; }
 
 		virtual bool initialize() = 0;
 		virtual bool finalize() = 0;
@@ -86,10 +92,10 @@ namespace Vadon::Utilities
 			return false;
 		}
 	protected:
-		Serializer(std::vector<std::byte>& buffer, bool read);
+		Serializer(std::vector<std::byte>& buffer, Mode mode);
 
 		std::vector<std::byte>& m_buffer;
-		bool m_read;
+		Mode m_mode;
 	};
 }
 #endif

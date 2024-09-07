@@ -1,5 +1,7 @@
 #include <VadonEditor/Core/Editor.hpp>
 
+#include <VadonEditor/Core/Project/ProjectManager.hpp>
+
 #include <VadonEditor/Model/ModelSystem.hpp>
 #include <VadonEditor/Platform/PlatformInterface.hpp>
 #include <VadonEditor/Render/RenderSystem.hpp>
@@ -26,6 +28,8 @@ namespace VadonEditor::Core
 
 	struct Editor::Internal
 	{
+		ProjectManager m_project_manager;
+
 		Model::ModelSystem m_model_system;
 		Platform::PlatformInterface m_platform_interface;
 		Render::RenderSystem m_render_system;
@@ -42,7 +46,8 @@ namespace VadonEditor::Core
 		std::unordered_map<std::string, std::string> m_command_line_args;
 
 		Internal(Editor& editor)
-			: m_model_system(editor)
+			: m_project_manager(editor)
+			, m_model_system(editor)
 			, m_platform_interface(editor)
 			, m_render_system(editor)
 			, m_ui_system(editor)
@@ -61,7 +66,7 @@ namespace VadonEditor::Core
 				return false;
 			}
 
-			if (m_model_system.initialize() == false)
+			if (m_project_manager.initialize() == false)
 			{
 				return false;
 			}
@@ -82,6 +87,11 @@ namespace VadonEditor::Core
 			}
 
 			if (m_view_system.initialize() == false)
+			{
+				return false;
+			}
+
+			if (m_model_system.initialize() == false)
 			{
 				return false;
 			}
@@ -201,11 +211,32 @@ namespace VadonEditor::Core
 
 				// TODO: update engine?
 
-				// First dispatch platform events
+				// Dispatch platform events
 				m_platform_interface.update();
 
-				// Update model
-				m_model_system.update();
+				// Check project state
+				switch (m_project_manager.get_state())
+				{
+				case ProjectManager::State::PROJECT_LOADED:
+				{
+					if (m_model_system.load_project() == true)
+					{
+						m_project_manager.m_state = ProjectManager::State::PROJECT_OPEN;
+					}
+					else
+					{
+						// TODO: handle error!
+					}
+				}
+					break;
+				case ProjectManager::State::PROJECT_OPEN:
+					// Update model for active project
+					m_model_system.update();
+					break;
+				case ProjectManager::State::PROJECT_CLOSED:
+					m_running = false;
+					break;
+				}
 
 				// Update view
 				m_view_system.update();

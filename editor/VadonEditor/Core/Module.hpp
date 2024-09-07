@@ -4,7 +4,7 @@
 #include <VadonEditor/Core/System/Module.hpp>
 namespace VadonEditor::Core
 {
-	class CoreModule : public Core::SystemModule<Core::SystemModuleList, CoreModule>
+	class CoreModule : public Core::SystemModule<Core::SystemModuleList, CoreModule, class ProjectManager>
 	{
 	};
 

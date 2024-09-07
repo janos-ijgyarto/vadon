@@ -99,7 +99,22 @@ namespace VadonApp::UI::Developer
 	{
 		std::string label;
 		std::vector<std::string> items;
-		size_t selected_item = 0;
+		int32_t selected_item = -1;
+
+		bool has_valid_selection() const
+		{
+			if ((selected_item >= 0) && (selected_item < items.size()))
+			{
+				return true;
+			}
+			
+			return false;
+		}
+
+		void deselect()
+		{
+			selected_item = -1;
+		}
 	};
 
 	struct ComboBox
@@ -107,7 +122,12 @@ namespace VadonApp::UI::Developer
 		// TODO: flags!
 		std::string label;
 		std::vector<std::string> items;
-		size_t selected_item = 0;
+		int32_t selected_item = -1;
+
+		void deselect()
+		{
+			selected_item = -1;
+		}
 	};
 
 	struct Table

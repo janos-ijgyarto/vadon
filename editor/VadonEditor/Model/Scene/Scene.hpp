@@ -6,7 +6,7 @@ namespace VadonEditor::Model
 	struct Scene
 	{
 		Vadon::Scene::ResourceID scene_id;
-		std::string path;
+		Vadon::Scene::ResourcePath resource_path;
 	};
 
 	using SceneList = std::vector<Scene>;

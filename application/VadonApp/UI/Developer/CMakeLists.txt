@@ -1,3 +1,5 @@
+add_subdirectory(Widgets)
+
 target_sources(${VADONAPP_CURRENT_TARGET}
     PRIVATE
     Configuration.hpp

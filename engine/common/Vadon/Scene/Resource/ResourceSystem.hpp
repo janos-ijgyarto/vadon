@@ -34,11 +34,11 @@ namespace Vadon::Scene
 
 		virtual ResourceID get_resource_id(ResourceHandle resource_handle) const = 0;
 
-		std::string get_resource_path(ResourceHandle resource_handle) const { return get_resource_path(get_resource_id(resource_handle)); }
-		void set_resource_path(ResourceHandle resource_handle, std::string_view path) { set_resource_path(get_resource_id(resource_handle), path); }
+		ResourcePath get_resource_path(ResourceHandle resource_handle) const { return get_resource_path(get_resource_id(resource_handle)); }
+		void set_resource_path(ResourceHandle resource_handle, ResourcePath path) { set_resource_path(get_resource_id(resource_handle), path); }
 
-		virtual std::string get_resource_path(ResourceID resource_id) const = 0;
-		virtual void set_resource_path(ResourceID resource_id, std::string_view path) = 0;
+		virtual ResourcePath get_resource_path(ResourceID resource_id) const = 0;
+		virtual void set_resource_path(ResourceID resource_id, ResourcePath path) = 0;
 
 		virtual ResourceHandle find_resource(ResourceID resource_id) const = 0;
 		virtual ResourceHandle load_resource(ResourceID resource_id) = 0;
@@ -54,8 +54,8 @@ namespace Vadon::Scene
 
 		// FIXME: we should not be loading the resource yet, merely registering the path
 		// Need some way to associate paths with IDs and store that metadata somehow
-		virtual ResourceID find_resource(std::string_view resource_path) const = 0;
-		virtual ResourceID import_resource(std::string_view resource_path) = 0;
+		virtual ResourceID find_resource(ResourcePath resource_path) const = 0;
+		virtual ResourceID import_resource(ResourcePath resource_path) = 0;
 		virtual bool export_resource(ResourceID resource_id) = 0;
 
 		// NOTE: this expecting to serialize between a resource handle property and resource ID data

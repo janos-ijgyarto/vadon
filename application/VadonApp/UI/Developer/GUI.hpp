@@ -77,6 +77,17 @@ namespace VadonApp::UI::Developer
 		virtual bool begin_modal_dialog(Window& dialog) = 0;
 		virtual void end_dialog() = 0;
 
+		virtual bool begin_main_menu_bar() = 0;
+		virtual void end_main_menu_bar() = 0;
+
+		virtual bool begin_menu_bar() = 0;
+		virtual void end_menu_bar() = 0;
+
+		virtual bool begin_menu(std::string_view label, bool enabled = true) = 0;
+		virtual void end_menu() = 0;
+
+		virtual bool add_menu_item(const MenuItem& menu_item) = 0;
+
 		virtual bool push_tree_node(std::string_view label, TreeNodeFlags flags = TreeNodeFlags::NONE) = 0;
 		virtual bool push_tree_node(std::string_view id, std::string_view label, TreeNodeFlags flags = TreeNodeFlags::NONE) = 0;
 		virtual bool push_tree_node(const void* id, std::string_view label, TreeNodeFlags flags = TreeNodeFlags::NONE) = 0;
@@ -110,10 +121,10 @@ namespace VadonApp::UI::Developer
 		virtual void next_table_column() = 0;
 		virtual void end_table() = 0;
 
-		virtual bool add_menu_item(const MenuItem& menu_item) = 0;
-
+		virtual void add_separator() = 0;
 		virtual void add_text(std::string_view text) = 0;
 		virtual void add_text_unformatted(std::string_view text) = 0;
+		virtual void add_separator_text(std::string_view text) = 0;
 
 		virtual void same_line() = 0;
 		virtual void set_scroll_x(float ratio = 0.5f) = 0;

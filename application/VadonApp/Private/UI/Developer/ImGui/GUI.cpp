@@ -869,14 +869,48 @@ float4 main(PS_INPUT input) : SV_Target
 
     bool GUISystem::begin_modal_dialog(Window& dialog)
     {
-        dialog.open = true; // Always set to true (only needed for close button)
         // TODO: flags to set whether to pass in pointer to open flag
-        return ImGui::BeginPopupModal(dialog.title.c_str(), &dialog.open);
+        return ImGui::BeginPopupModal(dialog.title.c_str(), nullptr);
     }
 
     void GUISystem::end_dialog()
     {
         ImGui::EndPopup();
+    }
+
+    bool GUISystem::begin_main_menu_bar()
+    {
+        return ::ImGui::BeginMainMenuBar();
+    }
+
+    void GUISystem::end_main_menu_bar()
+    {
+        ::ImGui::EndMainMenuBar();
+    }
+
+    bool GUISystem::begin_menu_bar()
+    {
+        return ::ImGui::BeginMenuBar();
+    }
+
+    void GUISystem::end_menu_bar()
+    {
+        ::ImGui::EndMenuBar();
+    }
+
+    bool GUISystem::begin_menu(std::string_view label, bool enabled)
+    {
+        return ::ImGui::BeginMenu(label.data(), enabled);
+    }
+
+    void GUISystem::end_menu()
+    {
+        ::ImGui::EndMenu();
+    }
+
+    bool GUISystem::add_menu_item(const MenuItem& menu_item)
+    {
+        return ImGui::MenuItem(menu_item.label.c_str(), nullptr, menu_item.selected, menu_item.enabled);
     }
 
     bool GUISystem::push_tree_node(std::string_view label, TreeNodeFlags flags)
@@ -975,7 +1009,7 @@ float4 main(PS_INPUT input) : SV_Target
     {
         if (ImGui::BeginListBox(list_box.label.c_str()))
         {
-            size_t current_item_index = 0;
+            int32_t current_item_index = 0;
             for (const std::string& current_item : list_box.items)
             {
                 const bool is_selected = (current_item_index == list_box.selected_item);
@@ -1003,7 +1037,7 @@ float4 main(PS_INPUT input) : SV_Target
         const char* preview_item = combo_box.items.empty() ? nullptr : combo_box.items[combo_box.selected_item].c_str();
         if (ImGui::BeginCombo(combo_box.label.c_str(), preview_item) == true)
         {
-            size_t current_item_index = 0;
+            int32_t current_item_index = 0;
             for (const std::string& current_item : combo_box.items)
             {
                 const bool is_selected = (current_item_index == combo_box.selected_item);
@@ -1040,9 +1074,9 @@ float4 main(PS_INPUT input) : SV_Target
         ImGui::EndTable();
     }
 
-    bool GUISystem::add_menu_item(const MenuItem& menu_item)
+    void GUISystem::add_separator()
     {
-        return ImGui::MenuItem(menu_item.label.c_str(), nullptr, menu_item.selected, menu_item.enabled);
+        ImGui::Separator();
     }
 
     void GUISystem::add_text(std::string_view text)
@@ -1053,6 +1087,11 @@ float4 main(PS_INPUT input) : SV_Target
     void GUISystem::add_text_unformatted(std::string_view text)
     {
         ImGui::TextUnformatted(text.data());
+    }
+
+    void GUISystem::add_separator_text(std::string_view text)
+    {
+        ImGui::SeparatorText(text.data());
     }
 
     void GUISystem::same_line()

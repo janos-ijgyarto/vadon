@@ -12,16 +12,16 @@ namespace Vadon::Private::Scene
 		const ResourceBase* get_resource_base(ResourceHandle resource_handle) const override;
 		ResourceID get_resource_id(ResourceHandle resource_handle) const override;
 
-		std::string get_resource_path(ResourceID resource_id) const override;
-		void set_resource_path(ResourceID resource_id, std::string_view path) override;
+		ResourcePath get_resource_path(ResourceID resource_id) const override;
+		void set_resource_path(ResourceID resource_id, ResourcePath path) override;
 
 		ResourceHandle find_resource(ResourceID resource_id) const override;
 		ResourceHandle load_resource(ResourceID resource_id) override;
 
 		std::vector<ResourceID> find_resources_of_type(Vadon::Utilities::TypeID type_id) const override;
 
-		ResourceID find_resource(std::string_view resource_path) const override;
-		ResourceID import_resource(std::string_view resource_path) override;
+		ResourceID find_resource(ResourcePath resource_path) const override;
+		ResourceID import_resource(ResourcePath resource_path) override;
 		bool export_resource(ResourceID resource_id) override;
 
 		bool serialize_resource_property(Vadon::Utilities::Serializer& serializer, std::string_view property_name, Vadon::Utilities::Variant& property_value) override;
@@ -39,7 +39,7 @@ namespace Vadon::Private::Scene
 		struct ResourceInfo
 		{
 			Vadon::Utilities::TypeID type_id;
-			std::string path;
+			ResourcePath path;
 			ResourceHandle handle;
 		};
 

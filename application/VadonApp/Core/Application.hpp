@@ -6,6 +6,8 @@
 
 #include <Vadon/Core/CoreInterface.hpp>
 
+#include <memory>
+
 namespace Vadon::Core
 {
 	class EngineEnvironment;
