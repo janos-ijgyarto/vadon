@@ -30,6 +30,7 @@ namespace VadonEditor::Model
 		ModelSystem(Core::Editor& editor);
 
 		bool initialize();
+		bool load_project();
 		void update();
 
 		struct Internal;

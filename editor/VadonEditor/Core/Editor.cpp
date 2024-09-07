@@ -66,6 +66,11 @@ namespace VadonEditor::Core
 				return false;
 			}
 
+			if (m_project_manager.initialize() == false)
+			{
+				return false;
+			}
+
 			if (m_platform_interface.initialize() == false)
 			{
 				return false;
@@ -86,20 +91,9 @@ namespace VadonEditor::Core
 				return false;
 			}
 
-			if (m_project_manager.initialize() == false)
+			if (m_model_system.initialize() == false)
 			{
 				return false;
-			}
-			else
-			{
-				// Only initialize model if we have an active project!
-				if (m_project_manager.get_state() == ProjectManager::State::PROJECT_ACTIVE)
-				{
-					if (m_model_system.initialize() == false)
-					{
-						return false;
-					}
-				}
 			}
 
 			register_app_event_handlers();
@@ -223,13 +217,24 @@ namespace VadonEditor::Core
 				// Check project state
 				switch (m_project_manager.get_state())
 				{
-				case ProjectManager::State::PROJECT_OPENED:
-				case ProjectManager::State::PROJECT_CLOSED:
-					m_running = false;
+				case ProjectManager::State::PROJECT_LOADED:
+				{
+					if (m_model_system.load_project() == true)
+					{
+						m_project_manager.m_state = ProjectManager::State::PROJECT_OPEN;
+					}
+					else
+					{
+						// TODO: handle error!
+					}
+				}
 					break;
-				case ProjectManager::State::PROJECT_ACTIVE:
+				case ProjectManager::State::PROJECT_OPEN:
 					// Update model for active project
 					m_model_system.update();
+					break;
+				case ProjectManager::State::PROJECT_CLOSED:
+					m_running = false;
 					break;
 				}
 

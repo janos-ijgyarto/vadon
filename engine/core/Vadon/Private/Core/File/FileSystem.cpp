@@ -89,6 +89,20 @@ namespace Vadon::Private::Core
 	{
 		const std::filesystem::path absolute_path = internal_get_absolute_path(path);
 
+		// Create directories as necessary
+		const std::filesystem::path parent_path = absolute_path.parent_path();
+		std::error_code fs_error;
+		if (std::filesystem::create_directories(parent_path, fs_error) == false)
+		{
+			// Check error code
+			if (fs_error)
+			{
+				// TODO: log the specific error?
+				log_error(std::format("File system error: unable to create path to file \"{}\"!\n", absolute_path.string()));
+				return false;
+			}
+		}
+
 		std::ofstream file_stream(absolute_path, std::ios::binary);
 		if (file_stream.good() == false)
 		{

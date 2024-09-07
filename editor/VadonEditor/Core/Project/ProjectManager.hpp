@@ -10,30 +10,32 @@ namespace VadonEditor::Core
 		enum class State
 		{
 			LAUNCHER,
-			PROJECT_OPENED,
-			PROJECT_ACTIVE,
+			PROJECT_LOADED,
+			PROJECT_OPEN,
 			PROJECT_CLOSED
 		};
 
 		State get_state() const { return m_state; }
 
-		const ProjectList& get_project_cache() const { return m_project_cache; }
+		const ProjectInfoList& get_project_cache() const { return m_project_cache; }
 		
 		const Project& get_active_project() const { return m_active_project; }
 
-		bool create_project(std::string_view name, std::string_view path); // FIXME: provide other params!
+		bool create_project(std::string_view project_name, std::string_view root_path); // FIXME: provide other params!
 		bool open_project(std::string_view path);
 		void close_project();
 	private:
 		ProjectManager(Editor& editor);
 
 		bool initialize();
+		void load_project_cache();
 		bool open_startup_project();
 
 		bool load_project(std::string_view root_path);
+		void add_project_to_cache(const ProjectInfo& project);
 
 		State m_state;
-		ProjectList m_project_cache;
+		ProjectInfoList m_project_cache;
 		Project m_active_project;
 
 		friend Editor;

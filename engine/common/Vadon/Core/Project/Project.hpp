@@ -17,7 +17,7 @@ namespace Vadon::Core
 		// FIXME: use properties?
 		VADONCOMMON_API static bool is_valid_project_path(std::string_view path);
 
-		VADONCOMMON_API bool save_project_file(EngineCoreInterface& engine_core, std::string_view path);
+		VADONCOMMON_API bool save_project_file(EngineCoreInterface& engine_core);
 		VADONCOMMON_API bool load_project_file(EngineCoreInterface& engine_core, std::string_view path);
 	};
 

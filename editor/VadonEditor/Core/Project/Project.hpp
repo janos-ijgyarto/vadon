@@ -4,12 +4,19 @@
 #include <Vadon/Core/File/RootDirectory.hpp>
 namespace VadonEditor::Core
 {
+	struct ProjectInfo
+	{
+		std::string name;
+		std::string root_path;
+		// TODO: any other info?
+	};
+
+	using ProjectInfoList = std::vector<ProjectInfo>;
+
 	struct Project
 	{
 		Vadon::Core::Project info;
 		Vadon::Core::RootDirectoryHandle root_dir_handle;
 	};
-
-	using ProjectList = std::vector<Vadon::Core::Project>;
 }
 #endif

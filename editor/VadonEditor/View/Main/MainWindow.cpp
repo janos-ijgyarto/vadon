@@ -54,7 +54,7 @@ namespace VadonEditor::View
 		{
 			Core::ProjectManager& project_manager = m_editor.get_system<Core::ProjectManager>();
 
-			if (project_manager.get_state() == Core::ProjectManager::State::PROJECT_ACTIVE)
+			if (project_manager.get_state() == Core::ProjectManager::State::PROJECT_OPEN)
 			{
 				draw_project_widgets(dev_gui);
 			}
@@ -105,7 +105,9 @@ namespace VadonEditor::View
 					}
 					if (dev_gui.add_menu_item(m_close_project_menu) == true)
 					{
-						// TODO
+						// FIXME: check for unsaved changes, etc!
+						Core::ProjectManager& project_manager = m_editor.get_system<Core::ProjectManager>();
+						project_manager.close_project();
 					}
 					dev_gui.end_menu();
 				}

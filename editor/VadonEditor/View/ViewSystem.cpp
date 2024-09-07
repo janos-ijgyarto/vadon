@@ -34,7 +34,7 @@ namespace VadonEditor::View
 			void draw(Core::Editor& editor)
 			{
 				// Only draw if we have an active project
-				if (editor.get_system<Core::ProjectManager>().get_state() != Core::ProjectManager::State::PROJECT_ACTIVE)
+				if (editor.get_system<Core::ProjectManager>().get_state() != Core::ProjectManager::State::PROJECT_OPEN)
 				{
 					return;
 				}

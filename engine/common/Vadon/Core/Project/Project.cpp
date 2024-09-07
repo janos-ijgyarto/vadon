@@ -6,6 +6,7 @@
 #include <Vadon/Utilities/Serialization/Serializer.hpp>
 
 #include <filesystem>
+#include <format>
 
 namespace Vadon::Core
 {
@@ -32,18 +33,65 @@ namespace Vadon::Core
 		return true;
 	}
 
-	bool Project::save_project_file(EngineCoreInterface& /*engine_core*/, std::string_view /*path*/)
-	{
-		// TODO!
-		return false;
-	}
-
-	bool Project::load_project_file(EngineCoreInterface& engine_core, std::string_view path)
+	bool Project::save_project_file(EngineCoreInterface& engine_core)
 	{
 		Vadon::Core::FileSystem& file_system = engine_core.get_system<Vadon::Core::FileSystem>();
 
 		Vadon::Core::FileSystem::RawFileDataBuffer project_file_buffer;
-		file_system.load_file(Vadon::Core::FileSystem::Path{ .path = path }, project_file_buffer);
+		Vadon::Utilities::Serializer::Instance serializer = Vadon::Utilities::Serializer::create_serializer(project_file_buffer, Vadon::Utilities::Serializer::Type::JSON, Vadon::Utilities::Serializer::Mode::WRITE);
+
+		if (serializer->initialize() == false)
+		{
+			// TODO: error?
+			return false;
+		}
+
+		if (serializer->serialize("name", name) == false)
+		{
+			// TODO: error?
+			return false;
+		}
+		if(startup_scene.is_valid() == true)
+		{
+			if (startup_scene.serialize(*serializer, "startup_scene") == false)
+			{
+				// TODO: error?
+				return false;
+			}
+		}
+
+		// TODO: any other data?
+
+		if (serializer->finalize() == false)
+		{
+			// TODO: error?
+			return false;
+		}
+
+		const std::string file_path = (std::filesystem::path(root_path) / c_project_file_name).string();
+
+		Vadon::Core::Logger::log_message(std::format("Saving project file at \"{}\".\n", file_path));
+
+		if (file_system.save_file(Vadon::Core::FileSystem::Path{ .path = file_path }, project_file_buffer) == false)
+		{
+			// TODO: error?
+			return false;
+		}
+
+		return true;
+	}
+
+	bool Project::load_project_file(EngineCoreInterface& engine_core, std::string_view path)
+	{
+		Vadon::Core::Logger::log_message(std::format("Loading project file at \"{}\".\n", path));
+
+		Vadon::Core::FileSystem& file_system = engine_core.get_system<Vadon::Core::FileSystem>();
+
+		Vadon::Core::FileSystem::RawFileDataBuffer project_file_buffer;
+		if (file_system.load_file(Vadon::Core::FileSystem::Path{ .path = path }, project_file_buffer) == false)
+		{
+			return false;
+		}
 
 		Vadon::Utilities::Serializer::Instance serializer = Vadon::Utilities::Serializer::create_serializer(project_file_buffer, Vadon::Utilities::Serializer::Type::JSON, Vadon::Utilities::Serializer::Mode::READ);
 

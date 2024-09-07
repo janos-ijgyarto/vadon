@@ -145,7 +145,7 @@ namespace VadonEditor::View
 
 	bool ImportProjectDialog::validate() const
 	{
-		return false;
+		return true;
 	}
 
 	ProjectLauncher::ProjectLauncher(Core::Editor& editor)
@@ -170,11 +170,11 @@ namespace VadonEditor::View
 		m_project_list.items.clear();
 
 		Core::ProjectManager& project_manager = m_editor.get_system<Core::ProjectManager>();
-		const Core::ProjectList& available_projects = project_manager.get_project_cache();
+		const Core::ProjectInfoList& available_projects = project_manager.get_project_cache();
 
 		m_project_list.items.reserve(available_projects.size());
 
-		for (const Vadon::Core::Project& current_project : available_projects)
+		for (const Core::ProjectInfo& current_project : available_projects)
 		{
 			m_project_list.items.push_back(std::format("{} ({})", current_project.name, current_project.root_path));
 		}
@@ -222,9 +222,9 @@ namespace VadonEditor::View
 
 			if (dev_gui.draw_button(m_open_project_button) == true)
 			{
-				const Core::ProjectList& project_cache = project_manager.get_project_cache();
+				const Core::ProjectInfoList& project_cache = project_manager.get_project_cache();
 
-				const Vadon::Core::Project& selected_project = project_cache[m_project_list.selected_item];
+				const Core::ProjectInfo& selected_project = project_cache[m_project_list.selected_item];
 
 				// TODO: perform this asynchronously?
 				if (project_manager.open_project(selected_project.root_path) == false)
