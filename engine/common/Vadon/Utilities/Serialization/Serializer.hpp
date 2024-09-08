@@ -73,7 +73,7 @@ namespace Vadon::Utilities
 				{
 					const size_t array_size = get_array_size();
 					T value;
-					for (size_t current_index = 0; current_index < array_size; ++array_size)
+					for (size_t current_index = 0; current_index < array_size; ++current_index)
 					{
 						serialize("", value);
 						vector.push_back(value);
