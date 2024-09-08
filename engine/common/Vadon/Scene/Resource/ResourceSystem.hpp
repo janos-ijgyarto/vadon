@@ -33,33 +33,31 @@ namespace Vadon::Scene
 		ResourceBase* get_resource_base(ResourceHandle resource_handle) { return const_cast<ResourceBase*>(std::as_const(*this).get_resource_base(resource_handle)); }
 
 		virtual ResourceID get_resource_id(ResourceHandle resource_handle) const = 0;
+		virtual Vadon::Utilities::TypeID get_resource_type_id(ResourceHandle resource_handle) const = 0;
 
-		ResourcePath get_resource_path(ResourceHandle resource_handle) const { return get_resource_path(get_resource_id(resource_handle)); }
-		void set_resource_path(ResourceHandle resource_handle, ResourcePath path) { set_resource_path(get_resource_id(resource_handle), path); }
-
-		virtual ResourcePath get_resource_path(ResourceID resource_id) const = 0;
-		virtual void set_resource_path(ResourceID resource_id, ResourcePath path) = 0;
+		virtual ResourcePath get_resource_path(ResourceHandle resource_handle) const = 0;
+		virtual void set_resource_path(ResourceHandle resource_handle, ResourcePath path) = 0;
 
 		virtual ResourceHandle find_resource(ResourceID resource_id) const = 0;
-		virtual ResourceHandle load_resource(ResourceID resource_id) = 0;
+		virtual bool load_resource(ResourceHandle resource_handle) = 0;
 
 		template<typename T>
-		std::vector<ResourceID> find_resources_of_type() const
+		std::vector<ResourceHandle> find_resources_of_type() const
 		{
 			static_assert(std::is_base_of_v<ResourceBase, T>);
 			return find_resources_of_type(Vadon::Utilities::TypeRegistry::get_type_id<T>());
 		}
 
-		virtual std::vector<ResourceID> find_resources_of_type(Vadon::Utilities::TypeID type_id) const = 0;
+		virtual std::vector<ResourceHandle> find_resources_of_type(Vadon::Utilities::TypeID type_id) const = 0;
 
 		// FIXME: we should not be loading the resource yet, merely registering the path
 		// Need some way to associate paths with IDs and store that metadata somehow
-		virtual ResourceID find_resource(ResourcePath resource_path) const = 0;
-		virtual ResourceID import_resource(ResourcePath resource_path) = 0;
-		virtual bool export_resource(ResourceID resource_id) = 0;
+		virtual ResourceHandle find_resource(ResourcePath resource_path) const = 0;
+		virtual ResourceHandle import_resource(ResourcePath resource_path) = 0;
+		virtual bool export_resource(ResourceHandle resource_handle) = 0;
 
 		// NOTE: this expecting to serialize between a resource handle property and resource ID data
-		virtual bool serialize_resource_property(Vadon::Utilities::Serializer& serializer, std::string_view property_name, Vadon::Utilities::Variant& property_value) = 0;
+		virtual bool serialize_resource_property(Vadon::Utilities::Serializer& serializer, std::string_view property_name, ResourceHandle& property_value) = 0;
 	protected:
 		virtual ResourceHandle internal_create_resource(ResourceBase* resource, Vadon::Utilities::TypeID type_id) = 0;
 	};

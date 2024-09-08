@@ -56,9 +56,9 @@ namespace VadonEditor::View
 	private:
 		LoadSceneDialog(Core::Editor& editor);
 
-		Vadon::Scene::ResourceID get_loaded_scene() const
+		Vadon::Scene::ResourceHandle get_loaded_scene() const
 		{
-			return m_scene_list[m_scene_item_list.selected_item].scene_id;
+			return m_scene_list[m_scene_item_list.selected_item].scene_handle;
 		}
 
 		bool has_valid_option() const

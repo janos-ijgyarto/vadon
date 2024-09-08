@@ -86,12 +86,14 @@ namespace Vadon::Private::Scene
 				{
 					if (current_property.type_index == Vadon::Utilities::type_list_index_v<ResourceHandle, Vadon::Utilities::Variant>)
 					{
-						if (context.serialize_resource_property(serializer, current_property.name, property_data.value) == false)
+						ResourceHandle temp_resource_handle;
+						if (context.serialize_resource_property(serializer, current_property.name, temp_resource_handle) == false)
 						{
 							return false;
 						}
 ;
 						property_data.name = current_property.name;
+						property_data.value = temp_resource_handle;
 						component_data.properties.push_back(property_data);
 						continue;
 					}
@@ -109,11 +111,12 @@ namespace Vadon::Private::Scene
 				{
 					if (current_property.value.index() == Vadon::Utilities::type_list_index_v<ResourceHandle, Vadon::Utilities::Variant>)
 					{
-						if (context.serialize_resource_property(serializer, current_property.name, current_property.value) == false)
+						ResourceHandle temp_resource_handle = std::get<ResourceHandle>(current_property.value);
+						if (context.serialize_resource_property(serializer, current_property.name, temp_resource_handle) == false)
 						{
+							// FIXME: this shouldn't always be an error, we should check whether the property is missing, or if the data is invalid
 							return false;
 						}
-
 						continue;
 					}
 
@@ -153,28 +156,9 @@ namespace Vadon::Private::Scene
 			serializer.serialize("name", entity_data.name);
 			serializer.serialize("parent", entity_data.parent);
 			// NOTE: scene needs to be handled separately because it may or may not be set
+			if ((serializer.is_reading() == true) || ((serializer.is_reading() == false) && (entity_data.scene.is_valid() == true)))
 			{
-				Vadon::Utilities::Variant scene_handle_variant;
-				if (serializer.is_reading() == true)
-				{
-					Vadon::Utilities::Variant scene_id_variant;
-					if (serializer.serialize("scene", scene_id_variant) == true)
-					{
-						entity_data.scene = context.load_resource(std::get<ResourceID>(scene_id_variant));
-						if (entity_data.scene.is_valid() == false)
-						{
-							return false;
-						}
-					}
-				}
-				else
-				{
-					if (entity_data.scene.is_valid() == true)
-					{
-						scene_handle_variant = entity_data.scene;
-						context.serialize_resource_property(serializer, "scene", scene_handle_variant);
-					}
-				}
+				context.serialize_resource_property(serializer, "scene", entity_data.scene);
 			}
 
 			if(serializer.open_array("components") == false)
@@ -245,6 +229,14 @@ namespace Vadon::Private::Scene
 	{
 		// FIXME: should we perform circular dependency validation?
 		// In principle we cannot have an invalid scene by this stage
+
+		// Make sure the scene is loaded
+		if (m_resource_system.load_resource(scene_handle) == false)
+		{
+			log_error("Scene system: unable to instantiate scene!\n");
+			return ECS::EntityHandle();
+		}
+
 		const SceneData* scene_data = m_resource_system.get_resource<SceneData>(scene_handle);
 
 		std::vector<Vadon::ECS::EntityHandle> entity_lookup;

@@ -5,7 +5,7 @@ namespace VadonEditor::Model
 {
 	struct Scene
 	{
-		Vadon::Scene::ResourceID scene_id;
+		Vadon::Scene::ResourceHandle scene_handle;
 		Vadon::Scene::ResourcePath resource_path;
 	};
 

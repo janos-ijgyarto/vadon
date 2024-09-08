@@ -11,7 +11,6 @@ namespace Vadon::Scene
 	struct ResourceBase
 	{
 		ResourceID id;
-		Vadon::Utilities::TypeID type_id;
 		std::string name;
 
 		virtual ~ResourceBase() {}

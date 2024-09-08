@@ -300,16 +300,22 @@ namespace VadonDemo::UI
 				for (const std::string& current_scene_file : scene_files)
 				{
 					const Vadon::Scene::ResourcePath current_scene_path{ .path = current_scene_file, .root_directory = m_root_directory };
-					const Vadon::Scene::ResourceID current_scene_id = resource_system.import_resource(current_scene_path);
-					if (current_scene_id.is_valid() == false)
+					const Vadon::Scene::ResourceHandle current_scene_handle = resource_system.import_resource(current_scene_path);
+					if (current_scene_handle.is_valid() == false)
 					{
 						// TODO: warning!
 						continue;
 					}
 				}
 
-				Vadon::Scene::ResourceHandle main_scene_handle = resource_system.load_resource(m_project_info.startup_scene);
+				const Vadon::Scene::ResourceHandle main_scene_handle = resource_system.find_resource(m_project_info.startup_scene);
 				if (main_scene_handle.is_valid() == false)
+				{
+					// Something went wrong
+					return;
+				}
+
+				if (resource_system.load_resource(main_scene_handle) == false)
 				{
 					// Something went wrong
 					return;

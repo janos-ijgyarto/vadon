@@ -35,7 +35,7 @@ namespace VadonEditor::Model
 		const std::string& get_name() const { return m_name; }
 		void set_name(std::string_view name);
 
-		bool is_sub_scene() const { return m_sub_scene.scene_id.is_valid() == true; }
+		bool is_sub_scene() const { return m_sub_scene.scene_handle.is_valid() == true; }
 		const Scene& get_sub_scene_info() const { return m_sub_scene; }
 
 		bool is_sub_scene_child() const { return m_sub_scene_child; }

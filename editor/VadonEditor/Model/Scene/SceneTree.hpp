@@ -23,11 +23,11 @@ namespace VadonEditor::Model
 		void add_entity(Entity* parent = nullptr);
 		void remove_entity(Entity* entity);
 
-		bool instantiate_sub_scene(Entity* parent, Vadon::Scene::ResourceID scene_id);
+		bool instantiate_sub_scene(Entity* parent, Vadon::Scene::ResourceHandle scene_handle);
 
 		bool new_scene(std::string_view name);
 		bool save_scene();
-		bool load_scene(Vadon::Scene::ResourceID scene_id);
+		bool load_scene(Vadon::Scene::ResourceHandle scene_handle);
 
 		// TODO: undo/redo?
 		void notify_scene_modified() { m_current_scene.is_modified = true; }

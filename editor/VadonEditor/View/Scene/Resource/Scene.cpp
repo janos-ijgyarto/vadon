@@ -95,16 +95,10 @@ namespace VadonEditor::View
 		m_scene_list = scene_tree.get_scene_list();
 
 		// Exclude current scene
-		Vadon::Scene::ResourceID current_scene_id;
-		if (scene_tree.get_current_scene().is_valid() == true)
-		{
-			Vadon::Scene::ResourceSystem& resource_system = m_editor.get_engine_core().get_system<Vadon::Scene::ResourceSystem>();
-			current_scene_id = resource_system.get_resource_id(scene_tree.get_current_scene());
-		}
-
+		const Vadon::Scene::ResourceHandle current_scene_handle = scene_tree.get_current_scene();
 		for (auto scene_it = m_scene_list.begin(); scene_it != m_scene_list.end(); ++scene_it)
 		{
-			if (scene_it->scene_id == current_scene_id)
+			if (scene_it->scene_handle == current_scene_handle)
 			{
 				m_scene_list.erase(scene_it);
 				break;
