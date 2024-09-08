@@ -89,11 +89,11 @@ Derived from Application, allows clients to create and edit scenes via ECS. Cust
 ### Demo
 Optional projects to showcase how Vadon can be used to create a game application, as well as the relevant dev tools.
 #### Common
-Shared code, e.g ECS.
+Shared code, including the custom Component types for the ECS and the logic of the game model.
 #### Editor
-Instantiates the editor, initializes with custom Component types.
+This project derives from the Editor library and combines it with the Demo game model in Common. It also runs custom logic (e.g rendering) while editing based on the scene contents.
 #### Game
-Instantiates application, runs content created in the editor.
+This project derives from the Application library and combines with the Demo game model in Common to create a game instance. It loads content created in the editor and runs the game simulation.
 ## Importing Vadon
 
 The included demo projects illustrate how Vadon can be used to create a game. Set up an executable target, then import the engine as a library.
