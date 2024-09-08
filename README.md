@@ -93,7 +93,7 @@ Shared code, including the custom Component types for the ECS and the logic of t
 #### Editor
 This project derives from the Editor library and combines it with the Demo game model in Common. It also runs custom logic (e.g rendering) while editing based on the scene contents.
 #### Game
-This project derives from the Application library and combined with the Demo game model in Common to create a game instance. It loads content created in the editor and runs the game simulation.
+This project derives from the Application library and combines with the Demo game model in Common to create a game instance. It loads content created in the editor and runs the game simulation.
 ## Importing Vadon
 
 The included demo projects illustrate how Vadon can be used to create a game. Set up an executable target, then import the engine as a library.
