@@ -20,7 +20,7 @@ namespace VadonEditor::Core
 	class Editor : public SystemRegistry
 	{
 	public:
-		VADONEDITOR_API Editor();
+		VADONEDITOR_API Editor(Vadon::Core::EngineEnvironment& environment);
 		VADONEDITOR_API ~Editor();
 
 		VADONEDITOR_API int execute(int argc, char* argv[]);
@@ -33,10 +33,8 @@ namespace VadonEditor::Core
 		// FIXME: implement a proper CLI parser!
 		bool has_command_line_arg(std::string_view name) const;
 		std::string get_command_line_arg(std::string_view name) const;
-
-		VADONEDITOR_API static void init_editor_environment(Vadon::Core::EngineEnvironment& environment);
 	protected:
-		virtual bool post_init() { return true; }
+		VADONEDITOR_API virtual bool initialize(int argc, char* argv[]);
 	private:
 		struct Internal;
 		std::unique_ptr<Internal> m_internal;

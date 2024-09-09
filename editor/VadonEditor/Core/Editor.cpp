@@ -283,27 +283,22 @@ namespace VadonEditor::Core
 		}
 	};
 
-	Editor::Editor()
+	Editor::Editor(Vadon::Core::EngineEnvironment& environment)
 		: m_internal(std::make_unique<Internal>(*this))
 	{
+		VadonApp::Core::Application::init_application_environment(environment);
+		Vadon::Core::EngineEnvironment::initialize(environment);
 	}
 
 	Editor::~Editor() = default;
 
 	int Editor::execute(int argc, char* argv[])
 	{
-		if (m_internal->initialize(argc, argv) == false)
+		if (initialize(argc, argv) == false)
 		{
 			Vadon::Core::Logger::log_error("Vadon Editor failed to initialize!");
 			m_internal->shutdown();
 			return 1;
-		}
-
-		// Run the initialization that the user can override
-		if (post_init() == false)
-		{
-			m_internal->shutdown();
-			return 2;
 		}
 
 		return m_internal->execute();
@@ -333,10 +328,9 @@ namespace VadonEditor::Core
 	{
 		return m_internal->get_command_line_arg(name);
 	}
-
-	VADONEDITOR_API void Editor::init_editor_environment(Vadon::Core::EngineEnvironment& environment)
+	
+	bool Editor::initialize(int argc, char* argv[])
 	{
-		VadonApp::Core::Application::init_application_environment(environment);
-		Vadon::Core::EngineEnvironment::initialize(environment);
+		return m_internal->initialize(argc, argv);
 	}
 }

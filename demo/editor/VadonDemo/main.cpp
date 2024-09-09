@@ -21,25 +21,45 @@ namespace
     class Editor : public VadonEditor::Core::Editor
     {
     public:
-        static void init_editor_environment_impl(Vadon::Core::EngineEnvironment& environment)
+        Editor(Vadon::Core::EngineEnvironment& environment)
+            : VadonEditor::Core::Editor(environment)
         {
             // Initialize both for editor library and the game-specific model
-            VadonEditor::Core::Editor::init_editor_environment(environment);
             VadonDemo::Model::Model::init_engine_environment(environment);
         }
     protected:
-        bool post_init() override
+        bool initialize(int argc, char* argv[]) override
         {
-            // FIXME: need to do this because app and engine only start to exist after initialization
-            // Might want to be able to decouple this?
+            // Run the parent initialization
+            if (VadonEditor::Core::Editor::initialize(argc, argv) == false)
+            {
+                return false;
+            }
+
+            // Initialize Demo-specific systems
             m_model = std::make_unique<VadonDemo::Model::Model>(get_engine_core());
             if (m_model->initialize() == false)
             {
                 return false;
             }
 
+            if (init_renderer() == false)
+            {
+                return false;
+            }
+
+            if (init_ecs() == false)
+            {
+                return false;
+            }
+
+            return true;
+        }
+    private:
+        bool init_renderer()
+        {
             const VadonApp::Platform::RenderWindowInfo main_window_info = get_engine_app().get_system<VadonApp::Platform::PlatformInterface>().get_window_info();
- 
+
             m_canvas_context.camera.view_rectangle.size = main_window_info.window.size;
             m_canvas_context.layers.push_back(m_model->get_canvas_layer());
 
@@ -66,6 +86,14 @@ namespace
                 }
             );
 
+            return true;
+        }
+
+        bool init_ecs()
+        {
+            VadonEditor::Model::ModelSystem& editor_model = get_system<VadonEditor::Model::ModelSystem>();
+            Vadon::ECS::World& ecs_world = editor_model.get_ecs_world();
+
             Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
             component_manager.register_event_callback<VadonDemo::Model::CanvasComponent>(
                 [this, &ecs_world](const Vadon::ECS::ComponentEvent& event)
@@ -82,7 +110,7 @@ namespace
 
             return true;
         }
-    private:
+
         std::unique_ptr<VadonDemo::Model::Model> m_model;
         Vadon::Render::Canvas::RenderContext m_canvas_context;
     };
@@ -92,8 +120,6 @@ int main(int argc, char* argv[])
 {
     Vadon::Core::EngineEnvironment engine_environment;
 
-    Editor::init_editor_environment_impl(engine_environment);
-
-    Editor editor;
+    Editor editor(engine_environment);
     return editor.execute(argc, argv);
 }

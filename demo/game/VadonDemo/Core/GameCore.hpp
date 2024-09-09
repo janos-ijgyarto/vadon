@@ -27,6 +27,11 @@ namespace VadonDemo::UI
 	class MainWindow;
 }
 
+namespace Vadon::Core
+{
+	class EngineEnvironment;
+}
+
 namespace Vadon::ECS
 {
 	class World;
@@ -38,7 +43,7 @@ namespace VadonDemo::Core
 	class GameCore
 	{
 	public:
-		GameCore();
+		GameCore(Vadon::Core::EngineEnvironment& environment);
 		~GameCore();
 
 		int execute(int argc, char* argv[]);

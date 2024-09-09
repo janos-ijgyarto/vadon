@@ -33,8 +33,6 @@ namespace VadonDemo::Core
 
 	struct GameCore::Internal
 	{
-		Vadon::Core::EngineEnvironment m_engine_environment;
-
 		std::unique_ptr<Model::Model> m_model;
 		Platform::PlatformInterface m_platform_interface;
 		Render::RenderSystem m_render_system;
@@ -130,9 +128,6 @@ namespace VadonDemo::Core
 
 		bool init_engine_application(int /*argc*/, char* argv[])
 		{
-			VadonApp::Core::Application::init_application_environment(m_engine_environment);
-			VadonDemo::Model::Model::init_engine_environment(m_engine_environment);
-
 			// Prepare app config
 			// TODO: move to a dedicated subsystem!
 			VadonApp::Core::Configuration app_configuration;
@@ -343,8 +338,6 @@ namespace VadonDemo::Core
 				return false;
 			}
 
-
-
 			return true;
 		}
 
@@ -360,9 +353,11 @@ namespace VadonDemo::Core
 		}
 	};
 
-	GameCore::GameCore()
+	GameCore::GameCore(Vadon::Core::EngineEnvironment& environment)
 		: m_internal(std::make_unique<Internal>(*this))
 	{
+		VadonApp::Core::Application::init_application_environment(environment);
+		VadonDemo::Model::Model::init_engine_environment(environment);
 	}
 
 	GameCore::~GameCore() = default;
