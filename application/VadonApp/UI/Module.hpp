@@ -1,5 +1,5 @@
-#ifndef VADONAPP_UI_UIMODULE_HPP
-#define VADONAPP_UI_UIMODULE_HPP
+#ifndef VADONAPP_UI_MODULE_HPP
+#define VADONAPP_UI_MODULE_HPP
 #include <VadonApp/Core/System.hpp>
 #include <VadonApp/Core/SystemModule.hpp>
 namespace VadonApp::UI::Developer

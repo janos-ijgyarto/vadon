@@ -27,7 +27,6 @@ namespace VadonDemo::Platform
 	{
 		Core::GameCore& m_game_core;
 
-		std::vector<PlatformEventCallback> m_event_callbacks;
 		std::array<VadonApp::Platform::InputActionHandle, Vadon::Utilities::to_integral(InputAction::ACTION_COUNT)> m_input_actions;
 
 		Internal(Core::GameCore& game_core)
@@ -79,30 +78,11 @@ namespace VadonDemo::Platform
 			VadonApp::Core::Application& engine_app = m_game_core.get_engine_app();
 
 			VadonApp::Platform::PlatformInterface& platform_interface = engine_app.get_system<VadonApp::Platform::PlatformInterface>();
-			const VadonApp::Platform::PlatformEventList platform_events = platform_interface.read_events();
-
-			VadonApp::Platform::InputSystem& input_system = engine_app.get_system<VadonApp::Platform::InputSystem>();
-			input_system.dispatch_platform_events(platform_events);
-
-			if (platform_events.empty())
-			{
-				return;
-			}
-
-			// Propagate to all callbacks (it's their responsibility to manage data races, if needed)
-			for (const PlatformEventCallback& current_callback : m_event_callbacks)
-			{
-				current_callback(platform_events);
-			}
+			platform_interface.dispatch_events();
 		}
 	};
 
 	PlatformInterface::~PlatformInterface() = default;
-
-	void PlatformInterface::register_event_callback(const PlatformEventCallback& callback)
-	{
-		m_internal->m_event_callbacks.push_back(callback);
-	}
 
 	void PlatformInterface::move_window(Vadon::Utilities::Vector2i position)
 	{

@@ -17,8 +17,8 @@ namespace VadonApp::Private::Platform
 	protected:
 		PlatformInterface(VadonApp::Core::Application& application);
 
-		virtual bool initialize_internal() = 0;
-		virtual void shutdown_internal() = 0;
+		virtual bool internal_initialize() = 0;
+		virtual void internal_shutdown() = 0;
 
 		InputSystem m_input_system;
 	};

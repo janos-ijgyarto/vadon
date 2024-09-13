@@ -15,11 +15,6 @@ namespace VadonApp::Private::UI::Developer::Dummy
 
     // TODO: implement some kind of "dummy GUI stack" so we can see what the app is trying to draw, even if the dev GUI is disabled?
 
-    void GUISystem::dispatch_platform_events(const VadonApp::Platform::PlatformEventList& /*platform_events*/)
-    {
-        // TODO!!!
-    }
-
     void GUISystem::start_frame()
     {
         // TODO!!!

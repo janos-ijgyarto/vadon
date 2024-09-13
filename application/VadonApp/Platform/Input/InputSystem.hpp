@@ -1,7 +1,8 @@
 #ifndef VADONAPP_PLATFORM_INPUT_INPUTSYSTEM_HPP
 #define VADONAPP_PLATFORM_INPUT_INPUTSYSTEM_HPP
 #include <VadonApp/Platform/Module.hpp>
-#include <VadonApp/Platform/Event/Event.hpp>
+#include <VadonApp/Platform/Input/Mouse.hpp>
+#include <VadonApp/Platform/Input/Keyboard.hpp>
 #include <VadonApp/Platform/Input/Input.hpp>
 namespace VadonApp::Platform
 {
@@ -19,8 +20,6 @@ namespace VadonApp::Platform
 
 		virtual float get_action_strength(InputActionHandle action_handle) const = 0;
 		virtual bool is_action_pressed(InputActionHandle action_handle) const = 0;
-
-		virtual void dispatch_platform_events(const PlatformEventList& platform_events) = 0;
 	protected:
 		InputSystem(Core::Application& application)
 			: System(application)

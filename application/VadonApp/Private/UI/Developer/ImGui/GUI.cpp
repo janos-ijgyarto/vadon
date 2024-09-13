@@ -646,78 +646,6 @@ float4 main(PS_INPUT input) : SV_Target
         return flags;
     }
 
-    void GUISystem::dispatch_platform_events(const VadonApp::Platform::PlatformEventList& platform_events)
-    {
-        auto platform_event_visitor = Vadon::Utilities::VisitorOverloadList{
-            [this](const VadonApp::Platform::WindowEvent& window_event)
-            {
-                if (window_event.type == VadonApp::Platform::WindowEventType::ENTER)
-                {
-                    m_platform_data.pending_mouse_leave_frame = 0;
-                }
-                else if (window_event.type == VadonApp::Platform::WindowEventType::LEAVE)
-                {
-                    m_platform_data.pending_mouse_leave_frame = ImGui::GetFrameCount() + 1;
-                }
-
-                ImGuiIO& io = ImGui::GetIO();
-                if (window_event.type == VadonApp::Platform::WindowEventType::FOCUS_GAINED)
-                {
-                    io.AddFocusEvent(true);
-                }
-                else if (window_event.type == VadonApp::Platform::WindowEventType::FOCUS_LOST)
-                {
-                    io.AddFocusEvent(false);
-                }
-            },
-            [](const VadonApp::Platform::MouseMotionEvent& mouse_motion)
-            {
-                ImGuiIO& io = ImGui::GetIO();
-                io.AddMousePosEvent(static_cast<float>(mouse_motion.position.x), static_cast<float>(mouse_motion.position.y));
-            },
-            [this](const VadonApp::Platform::MouseButtonEvent& mouse_button)
-            {
-                ImGuiIO& io = ImGui::GetIO();
-                const int imgui_mouse_button = get_imgui_mouse_button(mouse_button.button);
-
-                io.AddMouseButtonEvent(imgui_mouse_button, mouse_button.down); // TODO: map application button code to ImGui button code!
-                m_platform_data.mouse_buttons_down = mouse_button.down ? (m_platform_data.mouse_buttons_down | (1 << imgui_mouse_button)) : (m_platform_data.mouse_buttons_down & ~(1 << imgui_mouse_button));
-            },
-            [](const VadonApp::Platform::MouseWheelEvent& mouse_wheel)
-            {
-                const float wheel_x = -mouse_wheel.precise_x;
-                const float wheel_y = mouse_wheel.precise_y;
-
-                ImGuiIO& io = ImGui::GetIO();
-                io.AddMouseWheelEvent(wheel_x, wheel_y);
-            },
-            [](const VadonApp::Platform::KeyboardEvent& keyboard_event)
-            {
-                ImGuiIO& io = ImGui::GetIO();
-                io.AddKeyEvent(ImGuiMod_Ctrl, Vadon::Utilities::to_bool(keyboard_event.modifiers & VadonApp::Platform::KeyModifiers::CTRL));
-                io.AddKeyEvent(ImGuiMod_Shift, Vadon::Utilities::to_bool(keyboard_event.modifiers & VadonApp::Platform::KeyModifiers::SHIFT));
-                io.AddKeyEvent(ImGuiMod_Alt, Vadon::Utilities::to_bool(keyboard_event.modifiers & VadonApp::Platform::KeyModifiers::ALT));
-                io.AddKeyEvent(ImGuiMod_Super, Vadon::Utilities::to_bool(keyboard_event.modifiers & VadonApp::Platform::KeyModifiers::GUI));
-
-                ImGuiKey key = get_imgui_key(keyboard_event.key);
-                io.AddKeyEvent(key, keyboard_event.down);
-
-                io.SetKeyEventNativeData(key, keyboard_event.native_code, keyboard_event.native_scancode, keyboard_event.native_scancode); // To support legacy indexing (<1.87 user code).
-            },
-            [](const VadonApp::Platform::TextInputEvent& text_event)
-            {
-                ImGuiIO& io = ImGui::GetIO();
-                io.AddInputCharactersUTF8(text_event.text.c_str());
-            },
-            [](auto) { /* Default, do nothing */}
-        };
-
-        for (const VadonApp::Platform::PlatformEvent& current_event : platform_events)
-        {
-            std::visit(platform_event_visitor, current_event);
-        }
-    }
-
     void GUISystem::start_frame()
     {
         update_platform();
@@ -1176,6 +1104,13 @@ float4 main(PS_INPUT input) : SV_Target
 
         VadonApp::Platform::PlatformInterface& platform_interface = m_application.get_system<VadonApp::Platform::PlatformInterface>();
 
+        platform_interface.register_event_callback(
+            [this](const VadonApp::Platform::PlatformEventList& platform_events)
+            {
+                process_platform_events(platform_events);
+            }
+        );
+
         // Setup backend capabilities flags
         io.BackendPlatformUserData = nullptr;
         io.BackendPlatformName = "imgui_impl_platform_engineapp";
@@ -1454,6 +1389,78 @@ float4 main(PS_INPUT input) : SV_Target
 
         // Update game controllers (if enabled and available)
         update_gamepads();
+    }
+
+    void GUISystem::process_platform_events(const VadonApp::Platform::PlatformEventList& platform_events)
+    {
+        auto platform_event_visitor = Vadon::Utilities::VisitorOverloadList{
+            [this](const VadonApp::Platform::WindowEvent& window_event)
+            {
+                if (window_event.type == VadonApp::Platform::WindowEventType::ENTER)
+                {
+                    m_platform_data.pending_mouse_leave_frame = 0;
+                }
+                else if (window_event.type == VadonApp::Platform::WindowEventType::LEAVE)
+                {
+                    m_platform_data.pending_mouse_leave_frame = ImGui::GetFrameCount() + 1;
+                }
+
+                ImGuiIO& io = ImGui::GetIO();
+                if (window_event.type == VadonApp::Platform::WindowEventType::FOCUS_GAINED)
+                {
+                    io.AddFocusEvent(true);
+                }
+                else if (window_event.type == VadonApp::Platform::WindowEventType::FOCUS_LOST)
+                {
+                    io.AddFocusEvent(false);
+                }
+            },
+            [](const VadonApp::Platform::MouseMotionEvent& mouse_motion)
+            {
+                ImGuiIO& io = ImGui::GetIO();
+                io.AddMousePosEvent(static_cast<float>(mouse_motion.position.x), static_cast<float>(mouse_motion.position.y));
+            },
+            [this](const VadonApp::Platform::MouseButtonEvent& mouse_button)
+            {
+                ImGuiIO& io = ImGui::GetIO();
+                const int imgui_mouse_button = get_imgui_mouse_button(mouse_button.button);
+
+                io.AddMouseButtonEvent(imgui_mouse_button, mouse_button.down); // TODO: map application button code to ImGui button code!
+                m_platform_data.mouse_buttons_down = mouse_button.down ? (m_platform_data.mouse_buttons_down | (1 << imgui_mouse_button)) : (m_platform_data.mouse_buttons_down & ~(1 << imgui_mouse_button));
+            },
+            [](const VadonApp::Platform::MouseWheelEvent& mouse_wheel)
+            {
+                const float wheel_x = -mouse_wheel.precise_x;
+                const float wheel_y = mouse_wheel.precise_y;
+
+                ImGuiIO& io = ImGui::GetIO();
+                io.AddMouseWheelEvent(wheel_x, wheel_y);
+            },
+            [](const VadonApp::Platform::KeyboardEvent& keyboard_event)
+            {
+                ImGuiIO& io = ImGui::GetIO();
+                io.AddKeyEvent(ImGuiMod_Ctrl, Vadon::Utilities::to_bool(keyboard_event.modifiers & VadonApp::Platform::KeyModifiers::CTRL));
+                io.AddKeyEvent(ImGuiMod_Shift, Vadon::Utilities::to_bool(keyboard_event.modifiers & VadonApp::Platform::KeyModifiers::SHIFT));
+                io.AddKeyEvent(ImGuiMod_Alt, Vadon::Utilities::to_bool(keyboard_event.modifiers & VadonApp::Platform::KeyModifiers::ALT));
+                io.AddKeyEvent(ImGuiMod_Super, Vadon::Utilities::to_bool(keyboard_event.modifiers & VadonApp::Platform::KeyModifiers::GUI));
+
+                ImGuiKey key = get_imgui_key(keyboard_event.key);
+                io.AddKeyEvent(key, keyboard_event.down);
+
+                io.SetKeyEventNativeData(key, keyboard_event.native_code, keyboard_event.native_scancode, keyboard_event.native_scancode); // To support legacy indexing (<1.87 user code).
+            },
+            [](const VadonApp::Platform::TextInputEvent& text_event)
+            {
+                ImGuiIO& io = ImGui::GetIO();
+                io.AddInputCharactersUTF8(text_event.text.c_str());
+            },
+            [](auto) { /* Default, do nothing */}
+        };
+
+        for (const VadonApp::Platform::PlatformEvent& current_event : platform_events)
+        {
+            std::visit(platform_event_visitor, current_event);
+        }
     }
 
     void GUISystem::update_mouse_data()

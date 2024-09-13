@@ -1,6 +1,6 @@
 #ifndef VADONAPP_UI_UISYSTEM_HPP
 #define VADONAPP_UI_UISYSTEM_HPP
-#include <VadonApp/UI/UIModule.hpp>
+#include <VadonApp/UI/Module.hpp>
 namespace VadonApp::UI::Developer
 {
 	class GUISystem;

@@ -162,11 +162,7 @@ namespace VadonDemo::UI
 
 		bool m_dev_gui_enabled = false;
 
-		Vadon::Utilities::TripleBuffer<int32_t> m_dev_gui_buffer;
-		std::array<VadonApp::Platform::PlatformEventList, 2> m_dev_gui_event_buffer;
-		VadonApp::Platform::PlatformEventList* m_dev_gui_event_write_buffer;
-		VadonApp::Platform::PlatformEventList* m_dev_gui_event_read_buffer;
-		std::mutex m_dev_gui_event_mutex;
+		Vadon::Utilities::TripleBuffer<int32_t> m_dev_gui_render_buffer;
 
 		MainWindowDevGUI m_dev_gui;
 
@@ -179,10 +175,8 @@ namespace VadonDemo::UI
 
 		Internal(Core::GameCore& game_core)
 			: m_game_core(game_core)
-			, m_dev_gui_buffer({0, 1, 2})
+			, m_dev_gui_render_buffer({0, 1, 2})
 		{
-			m_dev_gui_event_write_buffer = &m_dev_gui_event_buffer[0];
-			m_dev_gui_event_read_buffer = &m_dev_gui_event_buffer[1];
 		}
 
 		bool initialize()
@@ -422,7 +416,7 @@ namespace VadonDemo::UI
 						return;
 					}
 
-					const int32_t* read_frame_index = m_dev_gui_buffer.get_read_buffer();
+					const int32_t* read_frame_index = m_dev_gui_render_buffer.get_read_buffer();
 					if (read_frame_index)
 					{
 						// Read frame ready, swap with the ready frame
@@ -441,16 +435,6 @@ namespace VadonDemo::UI
 		void init_dev_gui()
 		{
 			m_dev_gui.initialize();
-
-			VadonDemo::Platform::PlatformInterface& platform_interface = m_game_core.get_platform_interface();
-			platform_interface.register_event_callback(
-				[this](const VadonApp::Platform::PlatformEventList& event_list)
-				{
-					std::lock_guard lock(m_dev_gui_event_mutex);
-					VadonApp::Platform::PlatformEventList& write_buffer = *m_dev_gui_event_write_buffer;
-					write_buffer.insert(write_buffer.end(), event_list.begin(), event_list.end());
-				}
-			);
 		}
 
 		Vadon::Core::TaskGroup update()
@@ -519,18 +503,6 @@ namespace VadonDemo::UI
 				gui_start_node->add_subtask(
 					[this, &dev_gui]()
 					{
-						{
-							std::lock_guard lock(m_dev_gui_event_mutex);
-							VadonApp::Platform::PlatformEventList& read_buffer = *m_dev_gui_event_read_buffer;
-							dev_gui.dispatch_platform_events(read_buffer);
-							read_buffer.clear();
-
-							// Swap the read and write buffer pointers
-							VadonApp::Platform::PlatformEventList* read_buffer_temp = m_dev_gui_event_read_buffer;
-							m_dev_gui_event_read_buffer = m_dev_gui_event_write_buffer;
-							m_dev_gui_event_write_buffer = read_buffer_temp;
-						}
-
 						dev_gui.start_frame();
 					}
 				);
@@ -658,9 +630,9 @@ namespace VadonDemo::UI
 					{
 						dev_gui.end_frame();
 
-						const int32_t* write_frame_index = m_dev_gui_buffer.get_write_buffer();
+						const int32_t* write_frame_index = m_dev_gui_render_buffer.get_write_buffer();
 						dev_gui.cache_frame(*write_frame_index);
-						m_dev_gui_buffer.set_write_complete();
+						m_dev_gui_render_buffer.set_write_complete();
 					}
 				);
 

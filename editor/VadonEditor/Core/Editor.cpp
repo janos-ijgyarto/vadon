@@ -9,6 +9,7 @@
 #include <VadonEditor/View/ViewSystem.hpp>
 
 #include <VadonApp/Core/Application.hpp>
+#include <VadonApp/Platform/PlatformInterface.hpp>
 
 #include <VadonApp/UI/UISystem.hpp>
 
@@ -174,7 +175,7 @@ namespace VadonEditor::Core
 		void register_app_event_handlers()
 		{
 			// Register callback in platform interface
-			m_platform_interface.register_event_callback(
+			m_engine_app->get_system<VadonApp::Platform::PlatformInterface>().register_event_callback(
 				[this](const VadonApp::Platform::PlatformEventList& platform_events)
 				{
 					// FIXME: make this more concise using std::visit?

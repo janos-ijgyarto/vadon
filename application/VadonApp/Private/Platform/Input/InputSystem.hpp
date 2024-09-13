@@ -2,6 +2,8 @@
 #define VADONAPP_PRIVATE_PLATFORM_INPUT_INPUTSYSTEM_HPP
 #include <VadonApp/Platform/Input/InputSystem.hpp>
 #include <VadonApp/Private/Platform/Input/Input.hpp>
+#include <VadonApp/Platform/Event/Event.hpp>
+
 #include <Vadon/Utilities/Container/ObjectPool/Pool.hpp>
 namespace VadonApp::Private::Platform
 {
@@ -19,8 +21,6 @@ namespace VadonApp::Private::Platform
 
 		float get_action_strength(InputActionHandle action_handle) const override;
 		bool is_action_pressed(InputActionHandle action_handle) const override;
-
-		void dispatch_platform_events(const VadonApp::Platform::PlatformEventList& platform_events) override;
 	private:
 		enum class InputType
 		{
@@ -55,6 +55,7 @@ namespace VadonApp::Private::Platform
 		void shutdown();
 		void reset_states();
 
+		void process_platform_events(const VadonApp::Platform::PlatformEventList& platform_events);
 		static InputActionValue parse_input_event(const VadonApp::Platform::PlatformEvent& input_event);
 
 		Vadon::Utilities::ObjectPool<VadonApp::Platform::InputAction, InputActionData> m_action_pool;

@@ -1,7 +1,5 @@
 #include <VadonEditor/Render/RenderSystem.hpp>
 
-#include <VadonEditor/Platform/PlatformInterface.hpp>
-
 #include <VadonEditor/UI/UISystem.hpp>
 
 #include <VadonApp/Core/Application.hpp>
@@ -118,9 +116,11 @@ namespace VadonEditor::Render
 		void register_events()
 		{
 			// Add event handler for window move & resize (affects rendering so it has to happen at the appropriate time)
-			Platform::PlatformInterface& platform_interface = m_editor.get_system<Platform::PlatformInterface>();
+			VadonApp::Core::Application& engine_app = m_editor.get_engine_app();
+			VadonApp::Platform::PlatformInterface& platform_interface = engine_app.get_system<VadonApp::Platform::PlatformInterface>();
+
 			platform_interface.register_event_callback(
-				[this](const VadonApp::Platform::PlatformEventList& platform_events)
+				[this, &engine_app, &platform_interface](const VadonApp::Platform::PlatformEventList& platform_events)
 				{
 					for (const VadonApp::Platform::PlatformEvent& current_event : platform_events)
 					{
@@ -135,9 +135,6 @@ namespace VadonEditor::Render
 							case VadonApp::Platform::WindowEventType::RESIZED:
 							{
 								// Resize the render window
-								VadonApp::Core::Application& engine_app = m_editor.get_engine_app();
-
-								VadonApp::Platform::PlatformInterface& platform_interface = engine_app.get_system<VadonApp::Platform::PlatformInterface>();
 								const VadonApp::Platform::RenderWindowInfo main_window_info = platform_interface.get_window_info();
 
 								Vadon::Render::RenderTargetSystem& rt_system = engine_app.get_engine_core().get_system<Vadon::Render::RenderTargetSystem>();

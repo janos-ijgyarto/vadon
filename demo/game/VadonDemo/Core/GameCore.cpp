@@ -170,8 +170,8 @@ namespace VadonDemo::Core
 
 		void register_app_event_handlers()
 		{
-			// Register callback in platform interface
-			m_platform_interface.register_event_callback(
+			// Register callback in platform interface			
+			m_engine_app->get_system<VadonApp::Platform::PlatformInterface>().register_event_callback(
 				[this](const VadonApp::Platform::PlatformEventList& platform_events)
 				{
 					auto platform_event_visitor = Vadon::Utilities::VisitorOverloadList{

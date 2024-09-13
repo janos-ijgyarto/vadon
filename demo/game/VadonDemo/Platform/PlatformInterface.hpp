@@ -10,8 +10,6 @@ namespace VadonDemo::Core
 }
 namespace VadonDemo::Platform
 {
-	using PlatformEventCallback = std::function<void(const VadonApp::Platform::PlatformEventList&)>;
-
 	class PlatformInterface
 	{
 	public:
@@ -25,8 +23,6 @@ namespace VadonDemo::Platform
 		};
 
 		~PlatformInterface();
-
-		void register_event_callback(const PlatformEventCallback& callback);
 
 		void move_window(Vadon::Utilities::Vector2i position);
 		void resize_window(Vadon::Utilities::Vector2i size);

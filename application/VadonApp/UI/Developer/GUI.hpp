@@ -1,8 +1,10 @@
 #ifndef VADONAPP_UI_DEVELOPER_GUI_HPP
 #define VADONAPP_UI_DEVELOPER_GUI_HPP
-#include <VadonApp/UI/UIModule.hpp>
+#include <VadonApp/UI/Module.hpp>
 #include <VadonApp/UI/Developer/GUIElements.hpp>
-#include <VadonApp/Platform/Event/Event.hpp>
+
+#include <VadonApp/Platform/Input/Keyboard.hpp>
+#include <VadonApp/Platform/Input/Mouse.hpp>
 #include <Vadon/Utilities/Enum/EnumClassBitFlag.hpp>
 namespace VadonApp::UI::Developer
 {
@@ -40,7 +42,6 @@ namespace VadonApp::UI::Developer
 		// - Decouple from specific window
 		// - Allow rendering to arbitrary target
 		// - Just generate draw commands, have client code render it?
-		virtual void dispatch_platform_events(const Platform::PlatformEventList& platform_events) = 0;
 
 		virtual void start_frame() = 0; // Start the frame (must be called before any GUI objects are drawn)
 		virtual void end_frame() = 0; // End the frame (must be called to prepare for rendering)

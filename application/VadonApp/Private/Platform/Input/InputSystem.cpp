@@ -1,6 +1,8 @@
 #include <VadonApp/Private/PCH/VadonApp.hpp>
 #include <VadonApp/Private/Platform/Input/InputSystem.hpp>
 
+#include <VadonApp/Platform/PlatformInterface.hpp>
+
 #include <Vadon/Utilities/Data/Visitor.hpp>
 
 #include <format>
@@ -128,7 +130,35 @@ namespace VadonApp::Private::Platform
 		return false;
 	}
 
-	void InputSystem::dispatch_platform_events(const VadonApp::Platform::PlatformEventList& platform_events)
+	InputSystem::InputSystem(VadonApp::Core::Application& application)
+		: VadonApp::Platform::InputSystem(application)
+	{}
+
+	bool InputSystem::initialize()
+	{
+		// Register callback to receive input events from platform interface
+		m_application.get_system<VadonApp::Platform::PlatformInterface>().register_event_callback(
+			[this](const VadonApp::Platform::PlatformEventList& platform_events)
+			{
+				process_platform_events(platform_events);
+			}
+		);
+
+		return true;
+	}
+
+	void InputSystem::shutdown()
+	{
+		// TODO: anything?
+	}
+
+	void InputSystem::reset_states()
+	{
+		// FIXME: should we reset any other states?
+		m_mouse_wheel_state = 0.0f;
+	}
+
+	void InputSystem::process_platform_events(const VadonApp::Platform::PlatformEventList& platform_events)
 	{
 		reset_states();
 
@@ -148,27 +178,6 @@ namespace VadonApp::Private::Platform
 				break;
 			}
 		}
-	}
-
-	InputSystem::InputSystem(VadonApp::Core::Application& application)
-		: VadonApp::Platform::InputSystem(application)
-	{}
-
-	bool InputSystem::initialize()
-	{
-		// TODO: anything?
-		return true;
-	}
-
-	void InputSystem::shutdown()
-	{
-		// TODO: anything?
-	}
-
-	void InputSystem::reset_states()
-	{
-		// FIXME: should we reset any other states?
-		m_mouse_wheel_state = 0.0f;
 	}
 
 	InputSystem::InputActionValue InputSystem::parse_input_event(const VadonApp::Platform::PlatformEvent& input_event)

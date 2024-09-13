@@ -221,7 +221,7 @@ namespace Vadon::Utilities
 		invoke_property_setter(object, *property_bind, value);
 	}
 
-	void TypeRegistry::internal_register_type(std::string_view type_name, TypeID base_type_id)
+	void TypeRegistry::internal_register_type(std::string_view type_name, size_t size, size_t alignment, TypeID base_type_id)
 	{
 		const std::string type_name_str(type_name);
 		TypeRegistry& instance = get_registry_instance();
@@ -233,6 +233,8 @@ namespace Vadon::Utilities
 			TypeData& new_type_data = instance.m_type_lookup.insert(std::make_pair(new_type_id, TypeData{})).first->second;
 			new_type_data.info.id = new_type_id;
 			new_type_data.info.name = type_name;
+			new_type_data.info.size = size;
+			new_type_data.info.alignment = alignment;
 
 			if (base_type_id != c_invalid_type_id)
 			{

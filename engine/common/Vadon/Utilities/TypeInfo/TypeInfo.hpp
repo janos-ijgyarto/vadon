@@ -12,6 +12,8 @@ namespace Vadon::Utilities
 		TypeID id;
 		TypeID base_id = c_invalid_type_id;
 		std::string name;
+		size_t size;
+		size_t alignment;
 
 		bool is_valid() const { return (id != c_invalid_type_id); }
 	};

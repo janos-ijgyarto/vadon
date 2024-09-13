@@ -232,11 +232,9 @@ namespace VadonApp::Private::Platform::SDL
 		, m_clipboard(nullptr)
 	{}
 
-	VadonApp::Platform::PlatformEventList PlatformInterface::read_events()
+	void PlatformInterface::dispatch_events()
 	{
-		// Use static so we don't keep reallocating
-		static VadonApp::Platform::PlatformEventList platform_events;
-		platform_events.clear();
+		m_platform_events.clear();
 
 		SDL_Event sdl_event;
 		while (SDL_PollEvent(&sdl_event) != 0)
@@ -244,12 +242,12 @@ namespace VadonApp::Private::Platform::SDL
 			switch (sdl_event.type)
 			{
 			case SDL_QUIT:
-				platform_events.emplace_back(VadonApp::Platform::QuitEvent{});
+				m_platform_events.emplace_back(VadonApp::Platform::QuitEvent{});
 				break;
 			case SDL_WINDOWEVENT:
 			{
 				VadonApp::Platform::WindowEvent window_event = handle_window_event(sdl_event);
-				platform_events.emplace_back(window_event);
+				m_platform_events.emplace_back(window_event);
 			}
 			break;
 			case SDL_TEXTINPUT:
@@ -257,7 +255,7 @@ namespace VadonApp::Private::Platform::SDL
 				VadonApp::Platform::TextInputEvent text_input;
 				text_input.text = sdl_event.text.text;
 
-				platform_events.emplace_back(text_input);
+				m_platform_events.emplace_back(text_input);
 			}
 			break;
 			case SDL_KEYDOWN:
@@ -270,7 +268,7 @@ namespace VadonApp::Private::Platform::SDL
 				keyboard_event.native_scancode = sdl_event.key.keysym.scancode;
 				keyboard_event.down = (sdl_event.type == SDL_KEYDOWN);
 
-				platform_events.emplace_back(keyboard_event);
+				m_platform_events.emplace_back(keyboard_event);
 			}
 			break;
 			case SDL_MOUSEMOTION:
@@ -281,7 +279,7 @@ namespace VadonApp::Private::Platform::SDL
 				motion_event.relative_motion.x = sdl_event.motion.xrel;
 				motion_event.relative_motion.y = sdl_event.motion.yrel;
 
-				platform_events.emplace_back(motion_event);
+				m_platform_events.emplace_back(motion_event);
 			}
 			break;
 			case SDL_MOUSEBUTTONDOWN:
@@ -314,7 +312,7 @@ namespace VadonApp::Private::Platform::SDL
 					break;
 				}
 
-				platform_events.emplace_back(button_event);
+				m_platform_events.emplace_back(button_event);
 			}
 			break;
 			case SDL_MOUSEWHEEL:
@@ -330,13 +328,22 @@ namespace VadonApp::Private::Platform::SDL
 				wheel_event.precise_y = sdl_event.wheel.y;
 #endif
 
-				platform_events.emplace_back(wheel_event);
+				m_platform_events.emplace_back(wheel_event);
 			}
 			break;
 			}
 		}
 
-		return platform_events;
+		// Dispatch to callbacks
+		for (const EventCallback& current_callback : m_event_callbacks)
+		{
+			current_callback(m_platform_events);
+		}
+	}
+
+	void PlatformInterface::register_event_callback(EventCallback callback)
+	{
+		m_event_callbacks.push_back(callback);
 	}
 
 	VadonApp::Platform::RenderWindowInfo PlatformInterface::get_window_info() const
@@ -452,7 +459,7 @@ namespace VadonApp::Private::Platform::SDL
 		return m_clipboard;
 	}
 
-	bool PlatformInterface::initialize_internal()
+	bool PlatformInterface::internal_initialize()
 	{
 		// Initialize SDL
 		if (SDL_Init(SDL_INIT_VIDEO) < 0)
@@ -510,7 +517,7 @@ namespace VadonApp::Private::Platform::SDL
 		return true;
 	}
 
-	void PlatformInterface::shutdown_internal()
+	void PlatformInterface::internal_shutdown()
 	{
 		// Clean up cursors
 		for (SDL_Cursor* current_cursor : m_cursors)

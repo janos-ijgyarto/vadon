@@ -19,11 +19,11 @@ namespace Vadon::Utilities
 		{
 			if constexpr (std::is_same_v<T, Base>)
 			{
-				internal_register_type(Vadon::Utilities::TypeName<T>::trimmed());
+				internal_register_type(Vadon::Utilities::TypeName<T>::trimmed(), sizeof(T), alignof(T));
 			}
 			else
 			{
-				internal_register_type(Vadon::Utilities::TypeName<T>::trimmed(), get_type_id<Base>());
+				internal_register_type(Vadon::Utilities::TypeName<T>::trimmed(), sizeof(T), alignof(T), get_type_id<Base>());
 			}
 		}
 
@@ -99,7 +99,7 @@ namespace Vadon::Utilities
 			bool has_property(std::string_view name) const;
 		};
 
-		static VADONCOMMON_API void internal_register_type(std::string_view type_name, TypeID base_type_id = c_invalid_type_id);
+		static VADONCOMMON_API void internal_register_type(std::string_view type_name, size_t size, size_t alignment, TypeID base_type_id = c_invalid_type_id);
 		static VADONCOMMON_API bool internal_add_property(TypeID type_id, std::string_view name, MemberVariableBindBase property_bind);
 		static VADONCOMMON_API bool internal_bind_method(TypeID type_id, std::string_view name, MemberFunctionBind method_bind);
 		

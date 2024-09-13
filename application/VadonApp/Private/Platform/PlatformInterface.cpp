@@ -24,7 +24,7 @@ namespace VadonApp::Private::Platform
 
 	bool PlatformInterface::initialize()
 	{
-		if (initialize_internal() == false)
+		if (internal_initialize() == false)
 		{
 			return false;
 		}
@@ -40,7 +40,7 @@ namespace VadonApp::Private::Platform
 	void PlatformInterface::shutdown()
 	{
 		m_input_system.shutdown();
-		shutdown_internal();
+		internal_shutdown();
 	}
 
 	PlatformInterface::PlatformInterface(VadonApp::Core::Application& application) 
