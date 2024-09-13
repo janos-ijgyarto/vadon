@@ -28,7 +28,7 @@ namespace VadonEditor::Core
 		VADONEDITOR_API VadonApp::Core::Application& get_engine_app();
 		VADONEDITOR_API Vadon::Core::EngineCoreInterface& get_engine_core();
 
-		float get_delta_time() const;
+		VADONEDITOR_API float get_delta_time() const;
 
 		// FIXME: implement a proper CLI parser!
 		bool has_command_line_arg(std::string_view name) const;

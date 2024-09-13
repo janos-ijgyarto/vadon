@@ -339,90 +339,6 @@ namespace VadonApp::Private::Platform::SDL
 		return platform_events;
 	}
 
-	bool PlatformInterface::initialize()
-	{
-		// Initialize SDL
-		if (SDL_Init(SDL_INIT_VIDEO) < 0)
-		{
-			const std::string error_message = std::string("Failed to initialize SDL! SDL_Error: ") + SDL_GetError();
-			log_error(error_message);
-			return false;
-		}
-
-		const VadonApp::Platform::Configuration& platform_config = m_application.get_config().platform_config;
-		const VadonApp::Platform::WindowInfo& main_window_info = platform_config.main_window_info;
-		working_dir = SDL_GetBasePath();
-
-		// Prepare arguments
-		const int pos_x = (main_window_info.position.x >= 0) ? main_window_info.position.x : SDL_WINDOWPOS_UNDEFINED;
-		const int pos_y = (main_window_info.position.y >= 0) ? main_window_info.position.y : SDL_WINDOWPOS_UNDEFINED;
-
-		// Attempt to create the SDL window
-		m_main_window.sdl_window = SDL_CreateWindow(main_window_info.title.c_str(), pos_x, pos_y, main_window_info.size.x, main_window_info.size.y, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
-		if (!m_main_window.sdl_window)
-		{
-			// Something went wrong
-			log_error("Failed to create SDL main window!");
-			return false;
-		}
-
-		m_main_window.render_window.window = main_window_info;
-		m_main_window.render_window.window.position = get_sdl_window_position(m_main_window.sdl_window); // Cache the actual starting position
-
-		Vadon::Render::WindowInfo window_info;
-		window_info.dimensions = get_sdl_window_size(m_main_window.sdl_window);
-		window_info.platform_handle = get_window_handle();
-
-		Vadon::Render::RenderTargetSystem& rt_system = m_application.get_engine_core().get_system<Vadon::Render::RenderTargetSystem>();
-		m_main_window.render_window.render_handle = rt_system.add_window(window_info);
-
-		if (!m_main_window.render_window.render_handle.is_valid())
-		{
-			// Something went wrong
-			log_error("Failed to register main render window!\n");
-			return false;
-		}
-
-		cache_window_drawable_size();
-
-		// Register cursors
-		m_cursors.fill(nullptr);
-		for (int current_cursor_index = 0; current_cursor_index < Vadon::Utilities::to_integral(VadonApp::Platform::Cursor::CURSOR_COUNT); ++current_cursor_index)
-		{
-			const VadonApp::Platform::Cursor current_cursor = Vadon::Utilities::to_enum<VadonApp::Platform::Cursor>(current_cursor_index);
-			m_cursors[current_cursor_index] = SDL_CreateSystemCursor(get_sdl_cursor(current_cursor));
-		}
-
-		log_message("SDL platform interface initialized successfully!\n");
-		return true;
-	}
-
-	void PlatformInterface::shutdown()
-	{
-		// Clean up cursors
-		for (SDL_Cursor* current_cursor : m_cursors)
-		{
-			if (current_cursor)
-			{
-				SDL_FreeCursor(current_cursor);
-			}
-		}
-		m_cursors.fill(nullptr);
-
-		free_clipboard();
-
-		if (m_main_window.sdl_window)
-		{
-			// Destroy window
-			SDL_DestroyWindow(m_main_window.sdl_window);
-			m_main_window.sdl_window = nullptr;
-		}
-
-		// Quit SDL subsystems
-		SDL_Quit();
-		log_message("SDL shut down successfully.\n");
-	}
-
 	VadonApp::Platform::RenderWindowInfo PlatformInterface::get_window_info() const
 	{
 		// FIXME: need to make sure our flags are up to date!
@@ -534,6 +450,90 @@ namespace VadonApp::Private::Platform::SDL
 
 		m_clipboard = SDL_GetClipboardText();
 		return m_clipboard;
+	}
+
+	bool PlatformInterface::initialize_internal()
+	{
+		// Initialize SDL
+		if (SDL_Init(SDL_INIT_VIDEO) < 0)
+		{
+			const std::string error_message = std::string("Failed to initialize SDL! SDL_Error: ") + SDL_GetError();
+			log_error(error_message);
+			return false;
+		}
+
+		const VadonApp::Platform::Configuration& platform_config = m_application.get_config().platform_config;
+		const VadonApp::Platform::WindowInfo& main_window_info = platform_config.main_window_info;
+		working_dir = SDL_GetBasePath();
+
+		// Prepare arguments
+		const int pos_x = (main_window_info.position.x >= 0) ? main_window_info.position.x : SDL_WINDOWPOS_UNDEFINED;
+		const int pos_y = (main_window_info.position.y >= 0) ? main_window_info.position.y : SDL_WINDOWPOS_UNDEFINED;
+
+		// Attempt to create the SDL window
+		m_main_window.sdl_window = SDL_CreateWindow(main_window_info.title.c_str(), pos_x, pos_y, main_window_info.size.x, main_window_info.size.y, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
+		if (!m_main_window.sdl_window)
+		{
+			// Something went wrong
+			log_error("Failed to create SDL main window!");
+			return false;
+		}
+
+		m_main_window.render_window.window = main_window_info;
+		m_main_window.render_window.window.position = get_sdl_window_position(m_main_window.sdl_window); // Cache the actual starting position
+
+		Vadon::Render::WindowInfo window_info;
+		window_info.dimensions = get_sdl_window_size(m_main_window.sdl_window);
+		window_info.platform_handle = get_window_handle();
+
+		Vadon::Render::RenderTargetSystem& rt_system = m_application.get_engine_core().get_system<Vadon::Render::RenderTargetSystem>();
+		m_main_window.render_window.render_handle = rt_system.add_window(window_info);
+
+		if (!m_main_window.render_window.render_handle.is_valid())
+		{
+			// Something went wrong
+			log_error("Failed to register main render window!\n");
+			return false;
+		}
+
+		cache_window_drawable_size();
+
+		// Register cursors
+		m_cursors.fill(nullptr);
+		for (int current_cursor_index = 0; current_cursor_index < Vadon::Utilities::to_integral(VadonApp::Platform::Cursor::CURSOR_COUNT); ++current_cursor_index)
+		{
+			const VadonApp::Platform::Cursor current_cursor = Vadon::Utilities::to_enum<VadonApp::Platform::Cursor>(current_cursor_index);
+			m_cursors[current_cursor_index] = SDL_CreateSystemCursor(get_sdl_cursor(current_cursor));
+		}
+
+		log_message("SDL platform interface initialized successfully!\n");
+		return true;
+	}
+
+	void PlatformInterface::shutdown_internal()
+	{
+		// Clean up cursors
+		for (SDL_Cursor* current_cursor : m_cursors)
+		{
+			if (current_cursor)
+			{
+				SDL_FreeCursor(current_cursor);
+			}
+		}
+		m_cursors.fill(nullptr);
+
+		free_clipboard();
+
+		if (m_main_window.sdl_window)
+		{
+			// Destroy window
+			SDL_DestroyWindow(m_main_window.sdl_window);
+			m_main_window.sdl_window = nullptr;
+		}
+
+		// Quit SDL subsystems
+		SDL_Quit();
+		log_message("SDL shut down successfully.\n");
 	}
 
 	VadonApp::Platform::WindowEvent PlatformInterface::handle_window_event(const SDL_Event& sdl_event)

@@ -11,7 +11,7 @@ namespace VadonEditor::Platform
 	public:
 		~PlatformInterface();
 
-		void register_event_callback(const PlatformEventCallback& callback);
+		VADONEDITOR_API void register_event_callback(const PlatformEventCallback& callback);
 	private:
 		PlatformInterface(Core::Editor& editor);
 

@@ -1,9 +1,8 @@
 #ifndef VADONAPP_PLATFORM_PLATFORMINTERFACE_HPP
 #define VADONAPP_PLATFORM_PLATFORMINTERFACE_HPP
-#include <VadonApp/Platform/PlatformModule.hpp>
+#include <VadonApp/Platform/Module.hpp>
 
 #include <VadonApp/Platform/Event/Event.hpp>
-#include <VadonApp/Platform/Input/Mouse.hpp>
 #include <VadonApp/Platform/Window/Window.hpp>
 
 #include <Vadon/Utilities/Enum/EnumClassBitFlag.hpp>

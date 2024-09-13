@@ -654,18 +654,20 @@ namespace Vadon::Private::Render::Canvas
 		{
 			constexpr Vector2 c_projection_near_far = { -100.0f, 100.0f };
 			ShaderCanvasView canvas_view;
-			{
-				const Vector2 zoomed_view_size = context.camera.view_rectangle.size * context.camera.zoom;
 
-				const Vector2 view_bottom_left = context.camera.view_rectangle.position - (zoomed_view_size * 0.5f);
-				const Vector2 view_top_right = context.camera.view_rectangle.position + (zoomed_view_size * 0.5f);
+			const Vector2 bottom_left = -(context.camera.view_rectangle.size * 0.5f);
+			const Vector2 top_right = context.camera.view_rectangle.size * 0.5f;
 
-				canvas_view.view_projection = Vadon::Render::create_directx_orthographic_projection_matrix(view_bottom_left.x, view_top_right.x, view_bottom_left.y, view_top_right.y, c_projection_near_far.x, c_projection_near_far.y, Vadon::Render::CoordinateSystem::RIGHT_HAND);
-			}
+			canvas_view.projection = Vadon::Render::create_directx_orthographic_projection_matrix(bottom_left.x, top_right.x, bottom_left.y, top_right.y, c_projection_near_far.x, c_projection_near_far.y, Vadon::Render::CoordinateSystem::RIGHT_HAND);
 			{
-				const Vector2 bottom_left = -(context.camera.view_rectangle.size * 0.5f);
-				const Vector2 top_right = context.camera.view_rectangle.size * 0.5f;
-				canvas_view.projection = Vadon::Render::create_directx_orthographic_projection_matrix(bottom_left.x, top_right.x, bottom_left.y, top_right.y, c_projection_near_far.x, c_projection_near_far.y, Vadon::Render::CoordinateSystem::RIGHT_HAND);
+				const Matrix4 view = {
+					context.camera.zoom, 0, 0, -context.camera.view_rectangle.position.x * context.camera.zoom,
+					0, context.camera.zoom, 0, -context.camera.view_rectangle.position.y * context.camera.zoom,
+					0, 0, 1, 0,
+					0, 0, 0, 1
+				};
+
+				canvas_view.view_projection = view * canvas_view.projection;
 			}
 
 			buffer_system.buffer_data(m_view_cbuffer.buffer_handle,

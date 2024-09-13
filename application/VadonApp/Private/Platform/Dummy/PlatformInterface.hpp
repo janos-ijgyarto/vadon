@@ -10,9 +10,6 @@ namespace VadonApp::Private::Platform::Dummy
 
 		VadonApp::Platform::PlatformEventList read_events() override;
 
-		bool initialize() override;
-		void shutdown() override;
-
 		VadonApp::Platform::RenderWindowInfo get_window_info() const override { return m_main_window_info; }
 		VadonApp::Platform::WindowHandle get_window_handle() const override { return nullptr; }
 
@@ -35,6 +32,9 @@ namespace VadonApp::Private::Platform::Dummy
 
 		void set_clipboard_text(const char* /*text*/) override {}
 		const char* get_clipboard_text() override { return nullptr; }
+	protected:
+		bool initialize_internal() override;
+		void shutdown_internal() override;
 	private:
 		VadonApp::Platform::RenderWindowInfo m_main_window_info;
 	};

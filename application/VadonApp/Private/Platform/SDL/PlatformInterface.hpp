@@ -16,9 +16,6 @@ namespace VadonApp::Private::Platform::SDL
 
 		VadonApp::Platform::PlatformEventList read_events() override;
 
-		bool initialize() override;
-		void shutdown() override;
-
 		VadonApp::Platform::RenderWindowInfo get_window_info() const override;
 		VadonApp::Platform::WindowHandle get_window_handle() const override;
 
@@ -40,6 +37,9 @@ namespace VadonApp::Private::Platform::SDL
 
 		void set_clipboard_text(const char* text) override;
 		const char* get_clipboard_text() override;
+	protected:
+		bool initialize_internal() override;
+		void shutdown_internal() override;
 	private:
 		VadonApp::Platform::WindowEvent handle_window_event(const SDL_Event& sdl_event);
 		void window_moved(const Vadon::Utilities::Vector2i& position);

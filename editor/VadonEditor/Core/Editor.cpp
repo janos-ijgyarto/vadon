@@ -16,6 +16,7 @@
 
 #include <format>
 #include <chrono>
+#include <thread>
 
 namespace VadonEditor::Core
 {
@@ -206,6 +207,12 @@ namespace VadonEditor::Core
 			{
 				TimePoint current_time = Clock::now();
 				m_delta_time = std::chrono::duration_cast<Duration>(current_time - last_frame_time).count();
+
+				if (m_delta_time < (1.0f / 60.0f))
+				{
+					std::this_thread::yield();
+					continue;
+				}
 
 				last_frame_time = current_time;
 

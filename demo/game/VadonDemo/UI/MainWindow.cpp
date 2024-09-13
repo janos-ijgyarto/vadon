@@ -39,8 +39,6 @@ namespace VadonDemo::UI
 		using TimePoint = std::chrono::time_point<Clock>;
 		using Duration = std::chrono::duration<float>;
 
-		TimePoint last_frame_time = Clock::now();
-
 		struct MainWindowDevGUI
 		{
 			VadonApp::UI::Developer::Window window;
@@ -159,7 +157,8 @@ namespace VadonDemo::UI
 	{
 		Core::GameCore& m_game_core;
 
-		TimePoint m_last_time_point;
+		// FIXME: hacky solution, should only update model and provide data to view!
+		TimePoint m_last_render_time_point;
 
 		bool m_dev_gui_enabled = false;
 
@@ -175,6 +174,8 @@ namespace VadonDemo::UI
 		Vadon::Core::Project m_project_info;
 		Vadon::Core::RootDirectoryHandle m_root_directory;
 		Vadon::Render::Canvas::RenderContext m_canvas_context;
+		Vadon::Render::Canvas::Camera m_canvas_camera;
+		std::mutex m_camera_mutex;
 
 		Internal(Core::GameCore& game_core)
 			: m_game_core(game_core)
@@ -190,7 +191,7 @@ namespace VadonDemo::UI
 			init_renderer();
 			init_dev_gui();
 
-			m_last_time_point = Clock::now();
+			m_last_render_time_point = Clock::now();
 
 			return true;
 		}
@@ -336,7 +337,8 @@ namespace VadonDemo::UI
 				VadonApp::Platform::PlatformInterface& platform_interface = engine_app.get_system<VadonApp::Platform::PlatformInterface>();
 				const VadonApp::Platform::RenderWindowInfo main_window_info = platform_interface.get_window_info();
 
-				m_canvas_context.camera.view_rectangle.size = main_window_info.window.size;
+				m_canvas_camera.view_rectangle.size = main_window_info.window.size;
+				m_canvas_context.camera = m_canvas_camera;
 
 				{
 					Vadon::Render::RenderTargetSystem& rt_system = engine_core.get_system<Vadon::Render::RenderTargetSystem>();
@@ -394,6 +396,11 @@ namespace VadonDemo::UI
 
 				canvas_pass.execution = [this]()
 					{
+						{
+							std::lock_guard lock(m_camera_mutex);
+							m_canvas_context.camera = m_canvas_camera;
+						}
+
 						Vadon::Render::Canvas::CanvasSystem& canvas_system = m_game_core.get_engine_app().get_engine_core().get_system<Vadon::Render::Canvas::CanvasSystem>();
 						canvas_system.render(m_canvas_context);
 					};
@@ -454,6 +461,47 @@ namespace VadonDemo::UI
 			Vadon::Core::TaskSystem& task_system = engine_core.get_system<Vadon::Core::TaskSystem>();
 
 			Vadon::Core::TaskGroup main_window_task_group = task_system.create_task_group("Vadondemo_main_window");
+			Vadon::Core::TaskNode camera_update_node = main_window_task_group->create_start_dependent("Vadondemo_camera_update");
+
+			VadonApp::UI::Developer::GUISystem& dev_gui = engine_app.get_system<VadonApp::UI::Developer::GUISystem>();
+
+			camera_update_node->add_subtask([this, &engine_app, &dev_gui]()
+				{
+					const Platform::PlatformInterface::InputValues input_values = m_game_core.get_platform_interface().get_input_values();
+
+					Vadon::Utilities::Vector2 camera_velocity = Vadon::Utilities::Vector2_Zero;
+					float camera_zoom = 0.0f;
+
+					if ((m_dev_gui_enabled == false) || (Vadon::Utilities::to_bool(dev_gui.get_io_flags() & VadonApp::UI::Developer::GUISystem::IOFlags::KEYBOARD_CAPTURE) == false))
+					{
+						if (input_values.camera_left == true)
+						{
+							camera_velocity.x = -1.0f;
+						}
+						else if (input_values.camera_right == true)
+						{
+							camera_velocity.x = 1.0f;
+						}
+
+						if (input_values.camera_up == true)
+						{
+							camera_velocity.y = 1.0f;
+						}
+						else if (input_values.camera_down == true)
+						{
+							camera_velocity.y = -1.0f;
+						}
+
+						camera_zoom = input_values.camera_zoom;
+					}
+
+					{
+						std::lock_guard lock(m_camera_mutex);
+						m_canvas_camera.view_rectangle.position += m_game_core.get_delta_time() * 200 * camera_velocity;
+						m_canvas_camera.zoom = std::clamp(m_canvas_camera.zoom + m_game_core.get_delta_time() * camera_zoom * 10.0f, 0.1f, 10.0f);
+					}
+				}
+			);
 
 			// Render dev GUI (if enabled)
 			// FIXME: extract to function?
@@ -466,10 +514,8 @@ namespace VadonDemo::UI
 					return main_window_task_group;
 				}
 
-				VadonApp::UI::Developer::GUISystem& dev_gui = engine_app.get_system<VadonApp::UI::Developer::GUISystem>();
-
 				// Add a node to start the dev GUI frame				
-				Vadon::Core::TaskNode gui_start_node = main_window_task_group->create_start_dependent("Vadondemo_dev_gui_start");
+				Vadon::Core::TaskNode gui_start_node = camera_update_node->create_dependent("Vadondemo_dev_gui_start");
 				gui_start_node->add_subtask(
 					[this, &dev_gui]()
 					{
@@ -628,9 +674,9 @@ namespace VadonDemo::UI
 		void render()
 		{
 			TimePoint current_time = Clock::now();
-			const float delta_time = std::chrono::duration_cast<Duration>(current_time - m_last_time_point).count();
 
-			m_last_time_point = current_time;
+			const float delta_time = std::chrono::duration_cast<Duration>(current_time - m_last_render_time_point).count();
+			m_last_render_time_point = current_time;
 
 			// Update model
 			// FIXME: have separate view, sync with model thread!

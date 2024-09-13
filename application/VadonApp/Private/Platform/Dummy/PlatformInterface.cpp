@@ -17,7 +17,7 @@ namespace VadonApp::Private::Platform::Dummy
 		return VadonApp::Platform::PlatformEventList();
 	}
 
-	bool PlatformInterface::initialize()
+	bool PlatformInterface::initialize_internal()
 	{
 		// TODO!!!
 		m_main_window_info.window = m_application.get_config().platform_config.main_window_info;
@@ -26,7 +26,7 @@ namespace VadonApp::Private::Platform::Dummy
 		return true;
 	}
 
-	void PlatformInterface::shutdown()
+	void PlatformInterface::shutdown_internal()
 	{
 		log_message("Dummy GUI shut down successfully.\n");
 	}

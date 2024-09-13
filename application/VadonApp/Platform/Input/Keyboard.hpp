@@ -58,7 +58,8 @@ namespace VadonApp::Platform
         DOWN,
         UP,
         LEFT_CTRL,
-        LEFT_SHIFT
+        LEFT_SHIFT,
+        KEY_COUNT
     };
 
     enum class KeyModifiers

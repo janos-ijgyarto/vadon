@@ -54,6 +54,8 @@ namespace VadonDemo::Core
 		Render::RenderSystem& get_render_system();
 		UI::MainWindow& get_main_window();
 
+		float get_delta_time() const;
+
 		Model::Model& get_model();
 
 		Vadon::ECS::World& get_ecs_world();
