@@ -39,6 +39,7 @@ namespace Vadon::Private::Render::Canvas
 
 		void clear_item(ItemHandle item_handle) override;
 		void set_item_position(ItemHandle item_handle, Vector2 position) override;
+		void set_item_scale(ItemHandle item_handle, float scale) override;
 
 		MaterialHandle create_material(MaterialInfo info) override;
 		bool is_material_valid(MaterialHandle material_handle) const override { return m_material_pool.is_handle_valid(material_handle); }

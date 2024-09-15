@@ -233,6 +233,21 @@ namespace VadonEditor::Model
 
 		return result;
 	}
+	
+	void SceneTree::register_edit_callback(EditCallback callback)
+	{
+		m_edit_callbacks.push_back(callback);
+	}
+
+	void SceneTree::entity_edited(Vadon::ECS::EntityHandle entity, Vadon::Utilities::TypeID component_id)
+	{
+		notify_scene_modified();
+
+		for (const EditCallback& current_callback : m_edit_callbacks)
+		{
+			current_callback(entity, component_id);
+		}
+	}
 
 	SceneTree::SceneTree(Core::Editor& editor) :
 		m_editor(editor)

@@ -89,7 +89,8 @@ namespace VadonEditor::View
 					}
 					else
 					{
-
+						// Reset editor to make sure we're not getting properties from an invalid entity
+						m_entity_editor.reset();
 					}
 				}
 

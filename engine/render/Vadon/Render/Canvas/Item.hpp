@@ -7,6 +7,7 @@ namespace Vadon::Render::Canvas
 	{
 		LayerHandle layer;
 		Vector2 position = { 0, 0 };
+		float scale = 1.0f;
 		// TODO: proper 2D transform?
 	};
 

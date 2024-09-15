@@ -5,6 +5,7 @@
 #include <VadonEditor/Core/Editor.hpp>
 
 #include <VadonEditor/Model/ModelSystem.hpp>
+#include <VadonEditor/Model/Scene/SceneTree.hpp>
 #include <VadonEditor/Platform/PlatformInterface.hpp>
 #include <VadonEditor/Render/RenderSystem.hpp>
 
@@ -19,7 +20,7 @@
 #include <Vadon/Render/Canvas/Context.hpp>
 #include <Vadon/Render/GraphicsAPI/RenderTarget/RenderTargetSystem.hpp>
 
-#include <Vadon/Utilities/Data/Visitor.hpp>
+#include <Vadon/Utilities/Container/Queue/PacketQueue.hpp>
 
 namespace
 {
@@ -123,7 +124,10 @@ namespace
                     m_canvas_context.camera.view_rectangle.position += get_delta_time() * 200 * camera_velocity;
                     m_canvas_context.camera.zoom = std::clamp(m_canvas_context.camera.zoom + get_delta_time() * camera_zoom * 10.0f, 0.1f, 10.0f);
 
-                    m_model->update_rendering(ecs_world);
+                    // No multithreading here, just pass queue directly
+                    m_model->update_view(ecs_world, m_view_queue, true);
+                    m_model->render_view(m_view_queue);
+
                     editor_render.enqueue_canvas(m_canvas_context);
                 }
             );
@@ -147,6 +151,12 @@ namespace
                 [this, &ecs_world](const Vadon::ECS::ComponentEvent& event)
                 {
                     m_model->component_event(ecs_world, event);
+                }
+            );
+
+            editor_model.get_scene_tree().register_edit_callback([this, &ecs_world](Vadon::ECS::EntityHandle entity, Vadon::Utilities::TypeID component)
+                {
+                    m_model->component_updated(ecs_world, entity, component);
                 }
             );
 
@@ -205,6 +215,7 @@ namespace
 
         std::unique_ptr<VadonDemo::Model::Model> m_model;
         Vadon::Render::Canvas::RenderContext m_canvas_context;
+        Vadon::Utilities::PacketQueue m_view_queue;
     };
 }
 

@@ -244,6 +244,12 @@ namespace Vadon::Private::Render::Canvas
 		item.info.position = position;
 	}
 
+	void CanvasSystem::set_item_scale(ItemHandle item_handle, float scale)
+	{
+		ItemData& item = m_item_pool.get(item_handle);
+		item.info.scale = scale;
+	}
+
 	MaterialHandle CanvasSystem::create_material(MaterialInfo info)
 	{
 		MaterialHandle new_material_handle = m_material_pool.add();
@@ -738,9 +744,9 @@ namespace Vadon::Private::Render::Canvas
 						TrianglePrimitiveData triangle_primitive;
 						triangle_primitive.info = get_primitive_info(current_item_data, PrimitiveType::TRIANGLE);
 						triangle_primitive.material = get_material_index(triangle);
-						triangle_primitive.point_a = PrimitiveVertex{ .position = triangle.point_a.position + current_item_data.info.position, .uv = triangle.point_a.uv };
-						triangle_primitive.point_b = PrimitiveVertex{ .position = triangle.point_b.position + current_item_data.info.position, .uv = triangle.point_b.uv };
-						triangle_primitive.point_c = PrimitiveVertex{ .position = triangle.point_c.position + current_item_data.info.position, .uv = triangle.point_c.uv };
+						triangle_primitive.point_a = PrimitiveVertex{ .position = (triangle.point_a.position * current_item_data.info.scale) + current_item_data.info.position, .uv = triangle.point_a.uv };
+						triangle_primitive.point_b = PrimitiveVertex{ .position = (triangle.point_b.position * current_item_data.info.scale) + current_item_data.info.position, .uv = triangle.point_b.uv };
+						triangle_primitive.point_c = PrimitiveVertex{ .position = (triangle.point_c.position * current_item_data.info.scale) + current_item_data.info.position, .uv = triangle.point_c.uv };
 						triangle_primitive.depth = 0.0f; // TODO: depth?
 						triangle_primitive.color = triangle.color;
 
@@ -763,7 +769,7 @@ namespace Vadon::Private::Render::Canvas
 						rectangle_primitive.info = get_primitive_info(current_item_data, rectangle_type);
 						rectangle_primitive.material = get_material_index(rectangle);
 						rectangle_primitive.dimensions.position = rectangle.dimensions.position + current_item_data.info.position;
-						rectangle_primitive.dimensions.size = rectangle.dimensions.size;
+						rectangle_primitive.dimensions.size = rectangle.dimensions.size * current_item_data.info.scale;
 						rectangle_primitive.uv_dimensions.position = { 0, 0 };
 						rectangle_primitive.uv_dimensions.size = { 1, 1 };
 						rectangle_primitive.depth = 0.0f; // TODO: depth?
@@ -787,7 +793,7 @@ namespace Vadon::Private::Render::Canvas
 						rectangle_primitive.info = get_primitive_info(current_item_data, PrimitiveType::RECTANGLE_FILL);
 						rectangle_primitive.material = get_material_index(sprite);
 						rectangle_primitive.dimensions.position = sprite.dimensions.position + current_item_data.info.position;
-						rectangle_primitive.dimensions.size = sprite.dimensions.size;
+						rectangle_primitive.dimensions.size = sprite.dimensions.size * current_item_data.info.scale;
 						rectangle_primitive.uv_dimensions.position = sprite.uv_dimensions.position;
 						rectangle_primitive.uv_dimensions.size = sprite.uv_dimensions.size;
 						rectangle_primitive.depth = 0.0f; // TODO: depth?

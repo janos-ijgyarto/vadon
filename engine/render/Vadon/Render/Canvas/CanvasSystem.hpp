@@ -27,6 +27,7 @@ namespace Vadon::Render::Canvas
 
 		virtual void clear_item(ItemHandle item_handle) = 0;
 		virtual void set_item_position(ItemHandle item_handle, Vector2 position) = 0;
+		virtual void set_item_scale(ItemHandle item_handle, float scale) = 0; // FIXME: use unified transform!
 
 		virtual MaterialHandle create_material(MaterialInfo info) = 0;
 		virtual bool is_material_valid(MaterialHandle material_handle) const = 0;

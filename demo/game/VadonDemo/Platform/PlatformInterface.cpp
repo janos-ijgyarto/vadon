@@ -19,6 +19,8 @@ namespace
 		CAMERA_ZOOM,
 		ACTION_COUNT
 	};
+
+	constexpr float c_platform_dispatch_interval = 1.0f / 60.0f;
 }
 
 namespace VadonDemo::Platform
@@ -28,6 +30,7 @@ namespace VadonDemo::Platform
 		Core::GameCore& m_game_core;
 
 		std::array<VadonApp::Platform::InputActionHandle, Vadon::Utilities::to_integral(InputAction::ACTION_COUNT)> m_input_actions;
+		float m_dispatch_timer = 0.0f;
 
 		Internal(Core::GameCore& game_core)
 			: m_game_core(game_core)
@@ -75,10 +78,17 @@ namespace VadonDemo::Platform
 
 		void update()
 		{
-			VadonApp::Core::Application& engine_app = m_game_core.get_engine_app();
+			m_dispatch_timer += m_game_core.get_delta_time();
 
-			VadonApp::Platform::PlatformInterface& platform_interface = engine_app.get_system<VadonApp::Platform::PlatformInterface>();
-			platform_interface.dispatch_events();
+			if (m_dispatch_timer > c_platform_dispatch_interval)
+			{
+				VadonApp::Core::Application& engine_app = m_game_core.get_engine_app();
+
+				VadonApp::Platform::PlatformInterface& platform_interface = engine_app.get_system<VadonApp::Platform::PlatformInterface>();
+				platform_interface.dispatch_events();
+
+				m_dispatch_timer = 0.0f;
+			}
 		}
 	};
 

@@ -255,7 +255,7 @@ namespace VadonEditor::Model
 		void* component = component_manager.get_component(m_entity_handle, component_type_id);
 		Vadon::Utilities::TypeRegistry::set_property(component, component_type_id, property_name, value);
 
-		notify_modified();
+		m_editor.get_system<ModelSystem>().get_scene_tree().entity_edited(m_entity_handle, component_type_id);
 	}
 
 	Entity::Entity(Core::Editor& editor, Vadon::ECS::EntityHandle entity_handle, EntityID id, Entity* parent)

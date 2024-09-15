@@ -16,6 +16,7 @@ namespace VadonDemo::Model
 	{
 		Vadon::ECS::ComponentRegistry::register_component_type<CanvasComponent>();
 
+		Vadon::Utilities::TypeRegistry::add_property<CanvasComponent>("type", Vadon::Utilities::MemberVariableBind<&CanvasComponent::type>().bind_member_getter().bind_member_setter());
 		Vadon::Utilities::TypeRegistry::add_property<CanvasComponent>("color", Vadon::Utilities::MemberVariableBind<&CanvasComponent::color>().bind_member_getter().bind_member_setter());
 	}
 

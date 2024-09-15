@@ -259,11 +259,6 @@ namespace VadonDemo::Core
 					TimePoint current_time = Clock::now();
 
 					m_delta_time = std::chrono::duration_cast<Duration>(current_time - m_last_time_point).count();
-					if (m_delta_time < (1.0f / 60.0f))
-					{
-						std::this_thread::yield();
-						continue;
-					}
 					m_last_time_point = current_time;
 
 					frame_completed = false;

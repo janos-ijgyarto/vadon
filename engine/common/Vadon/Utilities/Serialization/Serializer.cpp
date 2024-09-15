@@ -553,7 +553,9 @@ namespace Vadon::Utilities
 				{
 					switch (json_value.type())
 					{
+						// FIXME: support unsigned in variant!
 					case Vadon::Utilities::JSONValueType::number_integer:
+					case Vadon::Utilities::JSONValueType::number_unsigned:
 						variant_value = json_value.get<int>();
 						return true;
 					case Vadon::Utilities::JSONValueType::number_float:

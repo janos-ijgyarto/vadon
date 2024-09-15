@@ -28,6 +28,7 @@
 #include <Vadon/Scene/SceneSystem.hpp>
 
 #include <Vadon/Utilities/Container/Concurrent/TripleBuffer.hpp>
+#include <Vadon/Utilities/Container/Queue/PacketQueue.hpp>
 
 #include <filesystem>
 
@@ -35,9 +36,8 @@ namespace VadonDemo::UI
 {
 	namespace
 	{
-		using Clock = std::chrono::steady_clock;
-		using TimePoint = std::chrono::time_point<Clock>;
-		using Duration = std::chrono::duration<float>;
+		constexpr float c_sim_timestep = 1.0f / 15.0f;
+		constexpr float c_frame_limit = 0.25f;
 
 		struct MainWindowDevGUI
 		{
@@ -151,15 +151,18 @@ namespace VadonDemo::UI
 				}
 			}
 		};
+
+		struct CameraData
+		{
+			Vadon::Utilities::Vector2 camera_position = Vadon::Utilities::Vector2_Zero;
+			float camera_zoom = 1.0f;
+		};
 	}
 
 	struct MainWindow::Internal
 	{
 		Core::GameCore& m_game_core;
-
-		// FIXME: hacky solution, should only update model and provide data to view!
-		TimePoint m_last_render_time_point;
-
+				
 		bool m_dev_gui_enabled = false;
 
 		Vadon::Utilities::TripleBuffer<int32_t> m_dev_gui_render_buffer;
@@ -170,8 +173,15 @@ namespace VadonDemo::UI
 		Vadon::Core::Project m_project_info;
 		Vadon::Core::RootDirectoryHandle m_root_directory;
 		Vadon::Render::Canvas::RenderContext m_canvas_context;
-		Vadon::Render::Canvas::Camera m_canvas_camera;
-		std::mutex m_camera_mutex;
+
+		Vadon::Utilities::TripleBuffer<Vadon::Utilities::PacketQueue> m_render_data_buffer;
+		Vadon::Utilities::TripleBuffer<CameraData> m_camera_data_buffer;
+		Vadon::Render::Canvas::Camera m_model_camera;
+
+		float m_model_accumulator = 0.0f;
+		int m_model_frame_count = 0;
+		int m_view_frame_count = 0;
+		int m_render_frame_count = 0;
 
 		Internal(Core::GameCore& game_core)
 			: m_game_core(game_core)
@@ -184,8 +194,6 @@ namespace VadonDemo::UI
 			init_scene();
 			init_renderer();
 			init_dev_gui();
-
-			m_last_render_time_point = Clock::now();
 
 			return true;
 		}
@@ -331,8 +339,8 @@ namespace VadonDemo::UI
 				VadonApp::Platform::PlatformInterface& platform_interface = engine_app.get_system<VadonApp::Platform::PlatformInterface>();
 				const VadonApp::Platform::RenderWindowInfo main_window_info = platform_interface.get_window_info();
 
-				m_canvas_camera.view_rectangle.size = main_window_info.window.size;
-				m_canvas_context.camera = m_canvas_camera;
+				m_model_camera.view_rectangle.size = main_window_info.window.size;
+				m_canvas_context.camera = m_model_camera;
 
 				{
 					Vadon::Render::RenderTargetSystem& rt_system = engine_core.get_system<Vadon::Render::RenderTargetSystem>();
@@ -390,11 +398,6 @@ namespace VadonDemo::UI
 
 				canvas_pass.execution = [this]()
 					{
-						{
-							std::lock_guard lock(m_camera_mutex);
-							m_canvas_context.camera = m_canvas_camera;
-						}
-
 						Vadon::Render::Canvas::CanvasSystem& canvas_system = m_game_core.get_engine_app().get_engine_core().get_system<Vadon::Render::Canvas::CanvasSystem>();
 						canvas_system.render(m_canvas_context);
 					};
@@ -444,18 +447,52 @@ namespace VadonDemo::UI
 
 			Vadon::Core::TaskSystem& task_system = engine_core.get_system<Vadon::Core::TaskSystem>();
 
-			Vadon::Core::TaskGroup main_window_task_group = task_system.create_task_group("Vadondemo_main_window");
-			Vadon::Core::TaskNode camera_update_node = main_window_task_group->create_start_dependent("Vadondemo_camera_update");
+			Vadon::Core::TaskGroup main_window_task_group = task_system.create_task_group("Vadondemo_main_window_model");
+			Vadon::Core::TaskNode model_update_node = main_window_task_group->create_start_dependent("Vadondemo_model_update");
 
-			VadonApp::UI::Developer::GUISystem& dev_gui = engine_app.get_system<VadonApp::UI::Developer::GUISystem>();
+			const float delta_time = std::min(m_game_core.get_delta_time(), c_frame_limit);
 
-			camera_update_node->add_subtask([this, &engine_app, &dev_gui]()
+			model_update_node->add_subtask(
+				[this, delta_time]()
 				{
-					const Platform::PlatformInterface::InputValues input_values = m_game_core.get_platform_interface().get_input_values();
+					// Model update logic inspired by the "Fix Your Timestep!" blog by Gaffer on Games: https://gafferongames.com/post/fix_your_timestep/
+					float model_accumulator = m_model_accumulator;
+					model_accumulator += delta_time;
+					bool model_updated = false;
 
+					while (model_accumulator >= c_sim_timestep)
+					{
+						m_game_core.get_model().update_simulation(m_game_core.get_ecs_world(), c_sim_timestep);
+						model_accumulator -= c_sim_timestep;
+						model_updated = true;
+						++m_model_frame_count;
+					}
+
+					m_model_accumulator = model_accumulator;
+
+					if(model_updated == true)
+					{
+						Vadon::Utilities::PacketQueue* render_queue = m_render_data_buffer.get_write_buffer();
+						m_game_core.get_model().update_view(m_game_core.get_ecs_world(), *render_queue);
+
+						m_render_data_buffer.set_write_complete();
+					}
+				}
+			);
+
+			Vadon::Core::TaskNode view_update_node = model_update_node->create_dependent("Vadondemo_view_update");
+			view_update_node->add_subtask(
+				[this, &engine_app, delta_time]()
+				{
+					++m_view_frame_count;
+
+					// Update camera
 					Vadon::Utilities::Vector2 camera_velocity = Vadon::Utilities::Vector2_Zero;
 					float camera_zoom = 0.0f;
 
+					const Platform::PlatformInterface::InputValues input_values = m_game_core.get_platform_interface().get_input_values();
+
+					VadonApp::UI::Developer::GUISystem& dev_gui = engine_app.get_system<VadonApp::UI::Developer::GUISystem>();
 					if ((m_dev_gui_enabled == false) || (Vadon::Utilities::to_bool(dev_gui.get_io_flags() & VadonApp::UI::Developer::GUISystem::IOFlags::KEYBOARD_CAPTURE) == false))
 					{
 						if (input_values.camera_left == true)
@@ -479,10 +516,15 @@ namespace VadonDemo::UI
 						camera_zoom = input_values.camera_zoom;
 					}
 
+					m_model_camera.view_rectangle.position += delta_time * 200 * camera_velocity;
+					m_model_camera.zoom = std::clamp(m_model_camera.zoom + delta_time * camera_zoom * 10.0f, 0.01f, 10.0f);
+
 					{
-						std::lock_guard lock(m_camera_mutex);
-						m_canvas_camera.view_rectangle.position += m_game_core.get_delta_time() * 200 * camera_velocity;
-						m_canvas_camera.zoom = std::clamp(m_canvas_camera.zoom + m_game_core.get_delta_time() * camera_zoom * 10.0f, 0.1f, 10.0f);
+						CameraData* camera_data = m_camera_data_buffer.get_write_buffer();
+						camera_data->camera_position = m_model_camera.view_rectangle.position;
+						camera_data->camera_zoom = m_model_camera.zoom;
+
+						m_camera_data_buffer.set_write_complete();
 					}
 				}
 			);
@@ -491,6 +533,7 @@ namespace VadonDemo::UI
 			// FIXME: extract to function?
 			if(m_dev_gui_enabled)
 			{
+				VadonApp::UI::Developer::GUISystem& dev_gui = engine_app.get_system<VadonApp::UI::Developer::GUISystem>();
 				if (!m_dev_gui.window.open)
 				{
 					// Window was closed, disable dev GUI
@@ -499,7 +542,7 @@ namespace VadonDemo::UI
 				}
 
 				// Add a node to start the dev GUI frame				
-				Vadon::Core::TaskNode gui_start_node = camera_update_node->create_dependent("Vadondemo_dev_gui_start");
+				Vadon::Core::TaskNode gui_start_node = view_update_node->create_dependent("Vadondemo_dev_gui_start");
 				gui_start_node->add_subtask(
 					[this, &dev_gui]()
 					{
@@ -524,6 +567,10 @@ namespace VadonDemo::UI
 					{
 						if (dev_gui.begin_window(m_dev_gui.window))
 						{
+							dev_gui.add_text(std::format("Model frames: {}", m_model_frame_count));
+							dev_gui.add_text(std::format("View frames: {}", m_view_frame_count));
+							dev_gui.add_text(std::format("Render frames: {}", m_render_frame_count));
+
 							if (dev_gui.push_tree_node("Numeric Inputs"))
 							{
 								dev_gui.draw_input_int(m_dev_gui.input_int);
@@ -636,24 +683,30 @@ namespace VadonDemo::UI
 					}
 				);
 
-				// Wait for dev GUI before the main window group is done
 				main_window_task_group->add_end_dependency(gui_end_node);
 			}
-
+			
 			return main_window_task_group;
 		}
 
 		void render()
 		{
-			TimePoint current_time = Clock::now();
+			// Update using data from model
+			Vadon::Utilities::PacketQueue* render_packets = m_render_data_buffer.get_read_buffer();
+			if (render_packets != nullptr)
+			{
+				m_game_core.get_model().render_view(*render_packets);
+			}
 
-			const float delta_time = std::chrono::duration_cast<Duration>(current_time - m_last_render_time_point).count();
-			m_last_render_time_point = current_time;
+			CameraData* camera_data = m_camera_data_buffer.get_read_buffer();
+			if (camera_data != nullptr)
+			{
+				m_canvas_context.camera.view_rectangle.position = camera_data->camera_position;
+				m_canvas_context.camera.zoom = camera_data->camera_zoom;
+			}
 
-			// Update model
-			// FIXME: have separate view, sync with model thread!
-			m_game_core.get_model().update_simulation(m_game_core.get_ecs_world(), delta_time);
-			m_game_core.get_model().update_rendering(m_game_core.get_ecs_world());
+			++m_render_frame_count;
+			m_game_core.get_model().lerp_view_state(m_model_accumulator / c_sim_timestep);
 		}
 
 		void test_tasks()
