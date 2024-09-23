@@ -159,6 +159,12 @@ namespace VadonEditor::Model
 
 	bool Entity::add_component(Vadon::ECS::ComponentID type_id)
 	{
+		if (is_sub_scene() == true)
+		{
+			// TODO: error!
+			return false;
+		}
+
 		Vadon::ECS::World& world = get_ecs_world();
 		Vadon::ECS::ComponentManager& component_manager = world.get_component_manager();
 
@@ -172,6 +178,12 @@ namespace VadonEditor::Model
 
 	void Entity::remove_component(Vadon::ECS::ComponentID type_id)
 	{
+		if (is_sub_scene() == true)
+		{
+			// TODO: error!
+			return;
+		}
+
 		Vadon::ECS::World& world = get_ecs_world();
 		Vadon::ECS::ComponentManager& component_manager = world.get_component_manager();
 		

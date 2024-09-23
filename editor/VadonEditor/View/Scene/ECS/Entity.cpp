@@ -44,10 +44,14 @@ namespace VadonEditor::View
 					dev_gui.add_text(m_sub_scene_label);
 				}
 
-				if (dev_gui.draw_button(m_add_component_button) == true)
+				// Can only add or remove components on entities that are not sub-scenes
+				if (m_entity->is_sub_scene() == false)
 				{
-					m_add_component_dialog.initialize(*m_entity);
-					m_add_component_dialog.open();
+					if (dev_gui.draw_button(m_add_component_button) == true)
+					{
+						m_add_component_dialog.initialize(*m_entity);
+						m_add_component_dialog.open();
+					}
 				}
 
 				if (m_add_component_dialog.draw(dev_gui) == VadonApp::UI::Developer::Dialog::Result::ACCEPTED)
