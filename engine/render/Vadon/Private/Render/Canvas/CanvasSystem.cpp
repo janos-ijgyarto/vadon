@@ -29,16 +29,16 @@ namespace Vadon::Private::Render::Canvas
 
 		struct alignas(16) ShaderCanvasLayer
 		{
-			Vector2 offset = { 0, 0 };
+			Vector2 offset = Vadon::Render::Vector2_Zero;
+			float scale = 1.0f;
 			uint32_t flags = 0;
-			uint32_t _padding = 0;
 			// TODO: any other info?
 
 			void initialize(const LayerData& data)
 			{
-				offset = data.info.offset;
+				offset = data.info.transform.position;
+				scale = data.info.transform.scale;
 				flags = Vadon::Utilities::to_integral(data.info.flags);
-				_padding = 0;
 				// TODO: other data?
 			}
 		};
@@ -123,6 +123,10 @@ namespace Vadon::Private::Render::Canvas
 		{
 			return PrimitiveInfo{ .type = type, .layer = item.info.layer.handle.index }.to_index();
 		}
+
+		using ItemTriangleCommand = ItemDirectDrawCommand<Triangle, BatchCommandType::TRIANGLE>;
+		using ItemRectangleCommand = ItemDirectDrawCommand<Rectangle, BatchCommandType::RECTANGLE>;
+		using ItemSpriteCommand = ItemDirectDrawCommand<Sprite, BatchCommandType::SPRITE>;
 	}
 
 	void CanvasSystem::FrameData::add_command(PrimitiveType primitive_type, Vadon::Render::ResourceViewHandle texture)
@@ -188,10 +192,10 @@ namespace Vadon::Private::Render::Canvas
 		m_layer_pool.remove(layer_handle);
 	}
 
-	void CanvasSystem::set_layer_offset(LayerHandle layer_handle, Vector2 offset)
+	void CanvasSystem::set_layer_transform(LayerHandle layer_handle, const Transform& transform)
 	{
 		LayerData& layer = m_layer_pool.get(layer_handle);
-		layer.info.offset = offset;
+		layer.info.transform = transform;
 
 		m_shared_data.add_dirty_layer(layer_handle);
 	}
@@ -232,22 +236,46 @@ namespace Vadon::Private::Render::Canvas
 		m_item_pool.remove(item_handle);
 	}
 
+	void CanvasSystem::set_item_transform(ItemHandle item_handle, const Transform& transform)
+	{
+		ItemData& item = m_item_pool.get(item_handle);
+		item.info.transform = transform;
+	}
+
+	size_t CanvasSystem::get_item_buffer_size(ItemHandle item_handle) const
+	{
+		const ItemData& item = m_item_pool.get(item_handle);
+		return item.command_buffer.get_size();
+	}
+
 	void CanvasSystem::clear_item(ItemHandle item_handle)
 	{
 		ItemData& item = m_item_pool.get(item_handle);
 		item.command_buffer.clear();
 	}
 
-	void CanvasSystem::set_item_position(ItemHandle item_handle, Vector2 position)
+	void CanvasSystem::add_item_batch_draw(ItemHandle item_handle, const BatchDrawCommand& batch_command)
 	{
 		ItemData& item = m_item_pool.get(item_handle);
-		item.info.position = position;
+		item.command_buffer.write_packet(Vadon::Utilities::to_integral(ItemCommandType::DRAW_BATCH), batch_command);
 	}
 
-	void CanvasSystem::set_item_scale(ItemHandle item_handle, float scale)
+	void CanvasSystem::draw_item_triangle(ItemHandle item_handle, const Triangle& triangle)
 	{
 		ItemData& item = m_item_pool.get(item_handle);
-		item.info.scale = scale;
+		item.command_buffer.write_packet(Vadon::Utilities::to_integral(ItemCommandType::DRAW_DIRECT), ItemTriangleCommand(triangle));
+	}
+
+	void CanvasSystem::draw_item_rectangle(ItemHandle item_handle, const Rectangle& rectangle)
+	{
+		ItemData& item = m_item_pool.get(item_handle);
+		item.command_buffer.write_packet(Vadon::Utilities::to_integral(ItemCommandType::DRAW_DIRECT), ItemRectangleCommand(rectangle));
+	}
+
+	void CanvasSystem::draw_item_sprite(ItemHandle item_handle, const Sprite& sprite)
+	{
+		ItemData& item = m_item_pool.get(item_handle);
+		item.command_buffer.write_packet(Vadon::Utilities::to_integral(ItemCommandType::DRAW_DIRECT), ItemSpriteCommand(sprite));
 	}
 
 	MaterialHandle CanvasSystem::create_material(MaterialInfo info)
@@ -281,22 +309,46 @@ namespace Vadon::Private::Render::Canvas
 		m_shared_data.add_dirty_material(material_handle);
 	}
 
-	void CanvasSystem::draw_triangle(ItemHandle item_handle, const Triangle& triangle)
+	BatchHandle CanvasSystem::create_batch()
 	{
-		ItemData& item = m_item_pool.get(item_handle);
-		item.command_buffer.add_primitive(CommandType::TRIANGLE, triangle);
+		// TODO: anything else?
+		return m_batch_pool.add();
 	}
 
-	void CanvasSystem::draw_rectangle(ItemHandle item_handle, const Rectangle& rectangle)
+	void CanvasSystem::remove_batch(BatchHandle batch_handle)
 	{
-		ItemData& item = m_item_pool.get(item_handle);
-		item.command_buffer.add_primitive(CommandType::RECTANGLE, rectangle);
+		// TODO: any cleanup?
+		m_batch_pool.remove(batch_handle);
 	}
 
-	void CanvasSystem::draw_sprite(ItemHandle item_handle, const Sprite& sprite)
+	size_t CanvasSystem::get_batch_buffer_size(BatchHandle batch_handle) const
 	{
-		ItemData& item = m_item_pool.get(item_handle);
-		item.command_buffer.add_primitive(CommandType::SPRITE, sprite);
+		const BatchData& batch = m_batch_pool.get(batch_handle);
+		return batch.command_buffer.get_size();
+	}
+
+	void CanvasSystem::clear_batch(BatchHandle batch_handle)
+	{
+		BatchData& batch = m_batch_pool.get(batch_handle);
+		batch.command_buffer.clear();
+	}
+
+	void CanvasSystem::draw_batch_triangle(BatchHandle batch_handle, const Triangle& triangle)
+	{
+		BatchData& batch = m_batch_pool.get(batch_handle);
+		batch.command_buffer.write_packet(Vadon::Utilities::to_integral(BatchCommandType::TRIANGLE), triangle);
+	}
+
+	void CanvasSystem::draw_batch_rectangle(BatchHandle batch_handle, const Rectangle& rectangle)
+	{
+		BatchData& batch = m_batch_pool.get(batch_handle);
+		batch.command_buffer.write_packet(Vadon::Utilities::to_integral(BatchCommandType::RECTANGLE), rectangle);
+	}
+
+	void CanvasSystem::draw_batch_sprite(BatchHandle batch_handle, const Sprite& sprite)
+	{
+		BatchData& batch = m_batch_pool.get(batch_handle);
+		batch.command_buffer.write_packet(Vadon::Utilities::to_integral(BatchCommandType::SPRITE), sprite);
 	}
 
 	void CanvasSystem::render(const RenderContext& context)
@@ -713,6 +765,91 @@ namespace Vadon::Private::Render::Canvas
 		// Reset frame buffers
 		m_frame_data.clear();
 
+		constexpr static auto parse_batch_command = +[](CanvasSystem& canvas_system, const ItemData& item_data, const Transform& transform, BatchCommandType command_type, const std::byte* data) {
+			// FIXME: transforms are currently computed on CPU
+			// Could shift all of this work to GPU?
+			// Either we generate primitives at final position, or we can make it so we only upload the variable data (either transform or primitives)
+			switch (command_type)
+			{
+			case BatchCommandType::TRIANGLE:
+			{
+				const Triangle& triangle = *reinterpret_cast<const Triangle*>(data);
+
+				// Add command
+				canvas_system.m_frame_data.add_command(PrimitiveType::TRIANGLE, Vadon::Render::ResourceViewHandle());
+
+				// Generate primitive data, offset with position
+				TrianglePrimitiveData triangle_primitive;
+				triangle_primitive.info = get_primitive_info(item_data, PrimitiveType::TRIANGLE);
+				triangle_primitive.material = canvas_system.get_material_index(triangle);
+				triangle_primitive.point_a = PrimitiveVertex{ .position = (triangle.point_a.position * transform.scale) + transform.position, .uv = triangle.point_a.uv };
+				triangle_primitive.point_b = PrimitiveVertex{ .position = (triangle.point_b.position * transform.scale) + transform.position, .uv = triangle.point_b.uv };
+				triangle_primitive.point_c = PrimitiveVertex{ .position = (triangle.point_c.position * transform.scale) + transform.position, .uv = triangle.point_c.uv };
+				triangle_primitive.depth = 0.0f; // TODO: depth?
+				triangle_primitive.color = triangle.color;
+
+				canvas_system.m_frame_data.add_primitive_data(triangle_primitive);
+			}
+			break;
+			case BatchCommandType::RECTANGLE:
+			{
+				const Rectangle& rectangle = *reinterpret_cast<const Rectangle*>(data);
+
+				// Add command
+				const PrimitiveType rectangle_type = rectangle.filled ? PrimitiveType::RECTANGLE_FILL : PrimitiveType::RECTANGLE_OUTLINE;
+				canvas_system.m_frame_data.add_command(rectangle_type, Vadon::Render::ResourceViewHandle());
+
+				RectanglePrimitiveData rectangle_primitive;
+				rectangle_primitive.info = get_primitive_info(item_data, rectangle_type);
+				rectangle_primitive.material = canvas_system.get_material_index(rectangle);
+				rectangle_primitive.dimensions.position = rectangle.dimensions.position + transform.position;
+				rectangle_primitive.dimensions.size = rectangle.dimensions.size * transform.scale;
+				rectangle_primitive.uv_dimensions.position = { 0, 0 };
+				rectangle_primitive.uv_dimensions.size = { 1, 1 };
+				rectangle_primitive.depth = 0.0f; // TODO: depth?
+				rectangle_primitive.thickness = rectangle.thickness;
+				rectangle_primitive.color = rectangle.color;
+
+				canvas_system.m_frame_data.add_primitive_data(rectangle_primitive);
+			}
+			break;
+			case BatchCommandType::SPRITE:
+			{
+				const Sprite& sprite = *reinterpret_cast<const Sprite*>(data);
+
+				canvas_system.m_frame_data.add_command(PrimitiveType::RECTANGLE_FILL, sprite.texture_handle);
+
+				RectanglePrimitiveData rectangle_primitive;
+				rectangle_primitive.info = get_primitive_info(item_data, PrimitiveType::RECTANGLE_FILL);
+				rectangle_primitive.material = canvas_system.get_material_index(sprite);
+				rectangle_primitive.dimensions.position = sprite.dimensions.position + transform.position;
+				rectangle_primitive.dimensions.size = sprite.dimensions.size * transform.scale;
+				rectangle_primitive.uv_dimensions.position = sprite.uv_dimensions.position;
+				rectangle_primitive.uv_dimensions.size = sprite.uv_dimensions.size;
+				rectangle_primitive.depth = 0.0f; // TODO: depth?
+				rectangle_primitive.thickness = 0.0f;
+				rectangle_primitive.color = sprite.color;
+
+				canvas_system.m_frame_data.add_primitive_data(rectangle_primitive);
+			}
+			break;
+			}
+		};
+
+		constexpr static auto draw_batch = +[](CanvasSystem& canvas_system, const ItemData& item_data, const BatchDrawCommand& batch_draw, const BatchData& batch_data)
+			{
+				const Transform batch_transform = Transform::combine(item_data.info.transform, batch_draw.transform);
+				BatchCommandBuffer::Iterator command_it = batch_data.command_buffer.get_iterator(batch_draw.range.offset);
+
+				int32_t command_count = 0;
+				for (; (command_it.is_valid() == true) && (command_count < batch_draw.range.count); command_it.next())
+				{
+					const BatchCommandType command_type = Vadon::Utilities::to_enum<BatchCommandType>(command_it.get_header_id());
+					parse_batch_command(canvas_system, item_data, batch_transform, command_type, command_it.get_packet_data());
+					++command_count;
+				}
+			};
+
 		// Gather frame data
 		PrimitiveInfo primitive_info;
 		// FIXME: some kind of ordering for layers? Or assume provided order is intended?
@@ -723,88 +860,29 @@ namespace Vadon::Private::Render::Canvas
 			for (ItemHandle item_handle : current_layer_data.items)
 			{
 				const ItemData& current_item_data = m_item_pool.get(item_handle);
-				const CommandBuffer& primitive_command_buffer = current_item_data.command_buffer;
-
-				auto command_iterator = primitive_command_buffer.data.begin();
-				while (command_iterator != primitive_command_buffer.data.end())
+				if (current_item_data.command_buffer.is_empty() == true)
 				{
-					const CommandType current_command_type = reinterpret_cast<const CommandType&>(*command_iterator);
-					command_iterator += sizeof(CommandType);
-
+					continue;
+				}
+				
+				ItemCommandBuffer::Iterator item_command_it = current_item_data.command_buffer.get_iterator();
+				for (; item_command_it.is_valid() == true; item_command_it.next())
+				{
+					const ItemCommandType current_command_type = Vadon::Utilities::to_enum<ItemCommandType>(item_command_it.get_header_id());
 					switch (current_command_type)
 					{
-					case CommandType::TRIANGLE:
+					case ItemCommandType::DRAW_BATCH:
 					{
-						const Triangle& triangle = reinterpret_cast<const Triangle&>(*command_iterator);
-
-						// Add command
-						m_frame_data.add_command(PrimitiveType::TRIANGLE, Vadon::Render::ResourceViewHandle());
-
-						// Generate primitive data, offset with position
-						TrianglePrimitiveData triangle_primitive;
-						triangle_primitive.info = get_primitive_info(current_item_data, PrimitiveType::TRIANGLE);
-						triangle_primitive.material = get_material_index(triangle);
-						triangle_primitive.point_a = PrimitiveVertex{ .position = (triangle.point_a.position * current_item_data.info.scale) + current_item_data.info.position, .uv = triangle.point_a.uv };
-						triangle_primitive.point_b = PrimitiveVertex{ .position = (triangle.point_b.position * current_item_data.info.scale) + current_item_data.info.position, .uv = triangle.point_b.uv };
-						triangle_primitive.point_c = PrimitiveVertex{ .position = (triangle.point_c.position * current_item_data.info.scale) + current_item_data.info.position, .uv = triangle.point_c.uv };
-						triangle_primitive.depth = 0.0f; // TODO: depth?
-						triangle_primitive.color = triangle.color;
-
-						m_frame_data.add_primitive_data(triangle_primitive);
-
-						// Update command iterator
-						// FIXME: unify this so we never forget to do it!
-						command_iterator += sizeof(Triangle);
+						const BatchDrawCommand* batch_draw = reinterpret_cast<const BatchDrawCommand*>(item_command_it.get_packet_data());
+						const BatchData& batch_data = m_batch_pool.get(batch_draw->batch);
+						draw_batch(*this, current_item_data, *batch_draw, batch_data);
 					}
 					break;
-					case CommandType::RECTANGLE:
+					case ItemCommandType::DRAW_DIRECT:
 					{
-						const Rectangle& rectangle = reinterpret_cast<const Rectangle&>(*command_iterator);
-
-						// Add command
-						const PrimitiveType rectangle_type = rectangle.filled ? PrimitiveType::RECTANGLE_FILL : PrimitiveType::RECTANGLE_OUTLINE;
-						m_frame_data.add_command(rectangle_type, Vadon::Render::ResourceViewHandle());
-
-						RectanglePrimitiveData rectangle_primitive;
-						rectangle_primitive.info = get_primitive_info(current_item_data, rectangle_type);
-						rectangle_primitive.material = get_material_index(rectangle);
-						rectangle_primitive.dimensions.position = rectangle.dimensions.position + current_item_data.info.position;
-						rectangle_primitive.dimensions.size = rectangle.dimensions.size * current_item_data.info.scale;
-						rectangle_primitive.uv_dimensions.position = { 0, 0 };
-						rectangle_primitive.uv_dimensions.size = { 1, 1 };
-						rectangle_primitive.depth = 0.0f; // TODO: depth?
-						rectangle_primitive.thickness = rectangle.thickness;
-						rectangle_primitive.color = rectangle.color;
-
-						m_frame_data.add_primitive_data(rectangle_primitive);
-
-						// Update command iterator
-						// FIXME: unify this so we never forget to do it!
-						command_iterator += sizeof(Rectangle);
-					}
-					break;
-					case CommandType::SPRITE:
-					{
-						const Sprite& sprite = reinterpret_cast<const Sprite&>(*command_iterator);
-
-						m_frame_data.add_command(PrimitiveType::RECTANGLE_FILL, sprite.texture_handle);
-
-						RectanglePrimitiveData rectangle_primitive;
-						rectangle_primitive.info = get_primitive_info(current_item_data, PrimitiveType::RECTANGLE_FILL);
-						rectangle_primitive.material = get_material_index(sprite);
-						rectangle_primitive.dimensions.position = sprite.dimensions.position + current_item_data.info.position;
-						rectangle_primitive.dimensions.size = sprite.dimensions.size * current_item_data.info.scale;
-						rectangle_primitive.uv_dimensions.position = sprite.uv_dimensions.position;
-						rectangle_primitive.uv_dimensions.size = sprite.uv_dimensions.size;
-						rectangle_primitive.depth = 0.0f; // TODO: depth?
-						rectangle_primitive.thickness = 0.0f;
-						rectangle_primitive.color = sprite.color;
-
-						m_frame_data.add_primitive_data(rectangle_primitive);
-
-						// Update command iterator
-						// FIXME: unify this so we never forget to do it!
-						command_iterator += sizeof(Sprite);
+						// First value is the command type
+						const uint32_t command_type_int = *reinterpret_cast<const uint32_t*>(item_command_it.get_packet_data());
+						parse_batch_command(*this, current_item_data, current_item_data.info.transform, Vadon::Utilities::to_enum<BatchCommandType>(command_type_int), item_command_it.get_packet_data() + sizeof(uint32_t));
 					}
 					break;
 					}

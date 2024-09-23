@@ -24,6 +24,7 @@
 
 namespace
 {
+    // FIXME: should split this up into subsystems!
     class Editor : public VadonEditor::Core::Editor
     {
     public:
@@ -95,7 +96,6 @@ namespace
                     Vadon::Utilities::Vector2 camera_velocity = Vadon::Utilities::Vector2_Zero;
                     float camera_zoom = 0.0f;
 
-
                     VadonApp::Core::Application& engine_app = get_engine_app();
                     if (Vadon::Utilities::to_bool(engine_app.get_system<VadonApp::UI::Developer::GUISystem>().get_io_flags() & VadonApp::UI::Developer::GUISystem::IOFlags::KEYBOARD_CAPTURE) == false)
                     {
@@ -124,9 +124,14 @@ namespace
                     m_canvas_context.camera.view_rectangle.position += get_delta_time() * 200 * camera_velocity;
                     m_canvas_context.camera.zoom = std::clamp(m_canvas_context.camera.zoom + get_delta_time() * camera_zoom * 10.0f, 0.1f, 10.0f);
 
-                    // No multithreading here, just pass queue directly
-                    m_model->update_view(ecs_world, m_view_queue, true);
-                    m_model->render_view(m_view_queue);
+                    if (m_transforms_dirty == true)
+                    {
+                        m_transforms_dirty = false;
+                        m_model->reset_transforms(ecs_world);
+                    }
+
+                    // No multithreading here, so we render without any async
+                    m_model->render_sync(ecs_world);
 
                     editor_render.enqueue_canvas(m_canvas_context);
                 }
@@ -138,25 +143,26 @@ namespace
         bool init_ecs()
         {
             VadonEditor::Model::ModelSystem& editor_model = get_system<VadonEditor::Model::ModelSystem>();
-            Vadon::ECS::World& ecs_world = editor_model.get_ecs_world();
 
+            Vadon::ECS::World& ecs_world = editor_model.get_ecs_world();
             Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
-            component_manager.register_event_callback<VadonDemo::Model::CanvasComponent>(
-                [this, &ecs_world](const Vadon::ECS::ComponentEvent& event)
+
+            component_manager.register_event_callback<VadonDemo::Model::Transform2D>(
+                [this](const Vadon::ECS::ComponentEvent& event)
                 {
-                    m_model->component_event(ecs_world, event);
+                    component_event(event);
                 }
             );
-            component_manager.register_event_callback<VadonDemo::Model::Celestial>(
-                [this, &ecs_world](const Vadon::ECS::ComponentEvent& event)
+            component_manager.register_event_callback<VadonDemo::Model::CanvasComponent>(
+                [this](const Vadon::ECS::ComponentEvent& event)
                 {
-                    m_model->component_event(ecs_world, event);
+                    component_event(event);
                 }
             );
 
             editor_model.get_scene_tree().register_edit_callback([this, &ecs_world](Vadon::ECS::EntityHandle entity, Vadon::Utilities::TypeID component)
                 {
-                    m_model->component_updated(ecs_world, entity, component);
+                    component_edited(entity, component);
                 }
             );
 
@@ -201,6 +207,51 @@ namespace
             return true;
         }
 
+        void component_event(const Vadon::ECS::ComponentEvent& event)
+        {
+            VadonEditor::Model::ModelSystem& editor_model = get_system<VadonEditor::Model::ModelSystem>();
+            Vadon::ECS::World& ecs_world = editor_model.get_ecs_world();
+
+            switch (event.event_type)
+            {
+            case Vadon::ECS::ComponentEventType::ADDED:
+            {
+                if (event.type_id == Vadon::ECS::ComponentManager::get_component_type_id<VadonDemo::Model::Transform2D>())
+                {
+                    m_transforms_dirty = true;
+                }
+            }
+            break;
+            case Vadon::ECS::ComponentEventType::REMOVED:
+            {
+                if (event.type_id == Vadon::ECS::ComponentManager::get_component_type_id<VadonDemo::Model::Transform2D>())
+                {
+                    m_transforms_dirty = true;
+                }
+                else if (event.type_id == Vadon::ECS::ComponentManager::get_component_type_id<VadonDemo::Model::CanvasComponent>())
+                {
+                    m_model->remove_canvas_item(ecs_world, event.owner);
+                }
+                break;
+            }
+            }
+        }
+
+        void component_edited(Vadon::ECS::EntityHandle entity, Vadon::ECS::ComponentID component)
+        {
+            VadonEditor::Model::ModelSystem& editor_model = get_system<VadonEditor::Model::ModelSystem>();
+            Vadon::ECS::World& ecs_world = editor_model.get_ecs_world();
+
+            if (component == Vadon::ECS::ComponentManager::get_component_type_id<VadonDemo::Model::Transform2D>())
+            {
+                m_transforms_dirty = true;
+            }
+            else if (component == Vadon::ECS::ComponentManager::get_component_type_id<VadonDemo::Model::CanvasComponent>())
+            {
+                m_model->update_canvas_item(ecs_world, entity);
+            }
+        }
+
         enum class InputAction
         {
             CAMERA_UP,
@@ -216,6 +267,9 @@ namespace
         std::unique_ptr<VadonDemo::Model::Model> m_model;
         Vadon::Render::Canvas::RenderContext m_canvas_context;
         Vadon::Utilities::PacketQueue m_view_queue;
+
+        // FIXME: have a system for this!
+        bool m_transforms_dirty = false;
     };
 }
 

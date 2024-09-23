@@ -33,15 +33,19 @@ namespace VadonDemo::Model
 		// Ideally we will have ECS systems which are initialized and run by the relevant game systems
 		VADONDEMO_API void init_simulation(Vadon::ECS::World& ecs_world);
 		VADONDEMO_API void update_simulation(Vadon::ECS::World& ecs_world, float delta_time);
-		VADONDEMO_API void update_view(Vadon::ECS::World& ecs_world, Vadon::Utilities::PacketQueue& render_queue, bool update_transforms = false);
 
-		VADONDEMO_API void render_view(const Vadon::Utilities::PacketQueue& render_queue);
+		VADONDEMO_API void render_sync(Vadon::ECS::World& ecs_world);
+
+		VADONDEMO_API void update_view_async(Vadon::ECS::World& ecs_world, Vadon::Utilities::PacketQueue& view_update_queue);
+		VADONDEMO_API void render_async(const Vadon::Utilities::PacketQueue& render_queue);
 		VADONDEMO_API void lerp_view_state(float lerp_weight);
 
-		VADONDEMO_API Vadon::Render::Canvas::LayerHandle get_canvas_layer() const;
+		VADONDEMO_API void reset_transforms(Vadon::ECS::World& ecs_world);
 
-		VADONDEMO_API void component_event(Vadon::ECS::World& ecs_world, const Vadon::ECS::ComponentEvent& event);
-		VADONDEMO_API void component_updated(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle entity, Vadon::ECS::ComponentID component);
+		VADONDEMO_API void update_canvas_item(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle entity);
+		VADONDEMO_API void remove_canvas_item(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle entity);
+
+		VADONDEMO_API Vadon::Render::Canvas::LayerHandle get_canvas_layer() const;
 
 		VADONDEMO_API static void init_engine_environment(Vadon::Core::EngineEnvironment& environment);
 	private:

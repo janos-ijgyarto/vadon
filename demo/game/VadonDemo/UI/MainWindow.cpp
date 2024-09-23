@@ -277,22 +277,7 @@ namespace VadonDemo::UI
 			VadonApp::Core::Application& engine_app = m_game_core.get_engine_app();
 			Vadon::Core::EngineCoreInterface& engine_core = engine_app.get_engine_core();
 			Vadon::ECS::World& ecs_world = m_game_core.get_ecs_world();
-
-			// Register component events
-			Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
-			component_manager.register_event_callback<VadonDemo::Model::CanvasComponent>(
-				[this](const Vadon::ECS::ComponentEvent& event)
-				{
-					m_game_core.get_model().component_event(m_game_core.get_ecs_world(), event);
-				}
-			);
-			component_manager.register_event_callback<VadonDemo::Model::Celestial>(
-				[this, &ecs_world](const Vadon::ECS::ComponentEvent& event)
-				{
-					m_game_core.get_model().component_event(m_game_core.get_ecs_world(), event);
-				}
-			);
-
+			
 			{
 				Vadon::Core::FileSystem& file_system = engine_core.get_system<Vadon::Core::FileSystem>();
 				Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
@@ -331,6 +316,8 @@ namespace VadonDemo::UI
 					// Something went wrong
 					return;
 				}
+
+
 			}
 
 			m_game_core.get_model().init_simulation(ecs_world);
@@ -473,7 +460,7 @@ namespace VadonDemo::UI
 					if(model_updated == true)
 					{
 						Vadon::Utilities::PacketQueue* render_queue = m_render_data_buffer.get_write_buffer();
-						m_game_core.get_model().update_view(m_game_core.get_ecs_world(), *render_queue);
+						m_game_core.get_model().update_view_async(m_game_core.get_ecs_world(), *render_queue);
 
 						m_render_data_buffer.set_write_complete();
 					}
@@ -695,7 +682,7 @@ namespace VadonDemo::UI
 			Vadon::Utilities::PacketQueue* render_packets = m_render_data_buffer.get_read_buffer();
 			if (render_packets != nullptr)
 			{
-				m_game_core.get_model().render_view(*render_packets);
+				m_game_core.get_model().render_async(*render_packets);
 			}
 
 			CameraData* camera_data = m_camera_data_buffer.get_read_buffer();

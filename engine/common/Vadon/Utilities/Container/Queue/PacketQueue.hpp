@@ -22,7 +22,7 @@ namespace Vadon::Utilities
 			VADONCOMMON_API const std::byte* get_packet_data() const;
 			// TODO: add utility function to cast the data pointer?
 		private:
-			Iterator(const PacketQueue& queue) : m_data_it(queue.m_data.cbegin()), m_data_end(queue.m_data.cend()) {}
+			Iterator(const PacketQueue& queue, size_t start_offset) : m_data_it(queue.m_data.cbegin() + start_offset), m_data_end(queue.m_data.cend()) {}
 			BufferIterator m_data_it;
 			BufferIterator m_data_end;
 
@@ -30,6 +30,7 @@ namespace Vadon::Utilities
 		};
 
 		bool is_empty() const { return m_data.empty(); }
+		size_t get_size() const { return m_data.size(); }
 
 		template<typename T>
 		void write_packet(uint32_t id, const T& data)
@@ -40,7 +41,7 @@ namespace Vadon::Utilities
 
 		void append_queue(const PacketQueue& other) { m_data.insert(m_data.end(), other.m_data.begin(), other.m_data.end()); }
 
-		Iterator get_iterator() const { return Iterator(*this); }
+		Iterator get_iterator(size_t start_offset = 0) const { return Iterator(*this, start_offset); }
 
 		void clear() { m_data.clear(); }
 	private:
