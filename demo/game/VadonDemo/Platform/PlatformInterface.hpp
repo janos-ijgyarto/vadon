@@ -15,11 +15,11 @@ namespace VadonDemo::Platform
 	public:
 		struct InputValues
 		{
-			bool camera_up = false;
-			bool camera_down = false;
-			bool camera_left = false;
-			bool camera_right = false;
-			float camera_zoom = 0.0f;
+			bool move_up = false;
+			bool move_down = false;
+			bool move_left = false;
+			bool move_right = false;
+			bool fire = false;
 		};
 
 		~PlatformInterface();

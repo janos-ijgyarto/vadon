@@ -80,6 +80,11 @@ namespace VadonEditor::View
 					{
 						show_error("Scene Error", "Error creating scene!");
 					}
+					else
+					{
+						// Reset editor to make sure we're not getting properties from an invalid entity
+						m_entity_editor.reset();
+					}
 				}
 				if (m_load_scene_dialog.draw(dev_gui) == VadonApp::UI::Developer::Dialog::Result::ACCEPTED)
 				{

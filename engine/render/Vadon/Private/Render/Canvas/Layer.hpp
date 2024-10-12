@@ -11,6 +11,7 @@ namespace Vadon::Private::Render::Canvas
 	{
 		LayerInfo info;
 		std::vector<Vadon::Render::Canvas::ItemHandle> items;
+		bool items_dirty = false;
 		// TODO: anything else?
 	};
 }

@@ -7,6 +7,7 @@ namespace Vadon::Render::Canvas
 	{
 		LayerHandle layer;
 		Transform transform;
+		float z_order = 0.0f;
 	};
 
 	VADON_DECLARE_TYPED_POOL_HANDLE(Item, ItemHandle);

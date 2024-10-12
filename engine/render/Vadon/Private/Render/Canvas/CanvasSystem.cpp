@@ -211,6 +211,8 @@ namespace Vadon::Private::Render::Canvas
 		ItemData& new_item = m_item_pool.get(new_item_handle);
 		new_item.info = info;
 
+		set_item_layer_dirty(new_item);
+
 		return new_item_handle;
 	}
 
@@ -230,6 +232,8 @@ namespace Vadon::Private::Render::Canvas
 			// TODO: move this to Layer implementation!
 			LayerData& layer = m_layer_pool.get(item.info.layer);
 			layer.items.erase(std::remove(layer.items.begin(), layer.items.end(), item_handle), layer.items.end());
+
+			set_item_layer_dirty(item);
 		}
 
 		// TODO: any other cleanup?
@@ -240,6 +244,17 @@ namespace Vadon::Private::Render::Canvas
 	{
 		ItemData& item = m_item_pool.get(item_handle);
 		item.info.transform = transform;
+	}
+
+	void CanvasSystem::set_item_z_order(ItemHandle item_handle, float z_order)
+	{
+		ItemData& item = m_item_pool.get(item_handle);
+		item.info.z_order = z_order;
+
+		if (item.info.layer.is_valid() == true)
+		{
+			set_item_layer_dirty(item);
+		}
 	}
 
 	size_t CanvasSystem::get_item_buffer_size(ItemHandle item_handle) const
@@ -257,25 +272,25 @@ namespace Vadon::Private::Render::Canvas
 	void CanvasSystem::add_item_batch_draw(ItemHandle item_handle, const BatchDrawCommand& batch_command)
 	{
 		ItemData& item = m_item_pool.get(item_handle);
-		item.command_buffer.write_packet(Vadon::Utilities::to_integral(ItemCommandType::DRAW_BATCH), batch_command);
+		item.command_buffer.write_object<BatchDrawCommand>(Vadon::Utilities::to_integral(ItemCommandType::DRAW_BATCH), batch_command);
 	}
 
 	void CanvasSystem::draw_item_triangle(ItemHandle item_handle, const Triangle& triangle)
 	{
 		ItemData& item = m_item_pool.get(item_handle);
-		item.command_buffer.write_packet(Vadon::Utilities::to_integral(ItemCommandType::DRAW_DIRECT), ItemTriangleCommand(triangle));
+		item.command_buffer.write_object(Vadon::Utilities::to_integral(ItemCommandType::DRAW_DIRECT), ItemTriangleCommand(triangle));
 	}
 
 	void CanvasSystem::draw_item_rectangle(ItemHandle item_handle, const Rectangle& rectangle)
 	{
 		ItemData& item = m_item_pool.get(item_handle);
-		item.command_buffer.write_packet(Vadon::Utilities::to_integral(ItemCommandType::DRAW_DIRECT), ItemRectangleCommand(rectangle));
+		item.command_buffer.write_object(Vadon::Utilities::to_integral(ItemCommandType::DRAW_DIRECT), ItemRectangleCommand(rectangle));
 	}
 
 	void CanvasSystem::draw_item_sprite(ItemHandle item_handle, const Sprite& sprite)
 	{
 		ItemData& item = m_item_pool.get(item_handle);
-		item.command_buffer.write_packet(Vadon::Utilities::to_integral(ItemCommandType::DRAW_DIRECT), ItemSpriteCommand(sprite));
+		item.command_buffer.write_object(Vadon::Utilities::to_integral(ItemCommandType::DRAW_DIRECT), ItemSpriteCommand(sprite));
 	}
 
 	MaterialHandle CanvasSystem::create_material(MaterialInfo info)
@@ -336,19 +351,19 @@ namespace Vadon::Private::Render::Canvas
 	void CanvasSystem::draw_batch_triangle(BatchHandle batch_handle, const Triangle& triangle)
 	{
 		BatchData& batch = m_batch_pool.get(batch_handle);
-		batch.command_buffer.write_packet(Vadon::Utilities::to_integral(BatchCommandType::TRIANGLE), triangle);
+		batch.command_buffer.write_object(Vadon::Utilities::to_integral(BatchCommandType::TRIANGLE), triangle);
 	}
 
 	void CanvasSystem::draw_batch_rectangle(BatchHandle batch_handle, const Rectangle& rectangle)
 	{
 		BatchData& batch = m_batch_pool.get(batch_handle);
-		batch.command_buffer.write_packet(Vadon::Utilities::to_integral(BatchCommandType::RECTANGLE), rectangle);
+		batch.command_buffer.write_object(Vadon::Utilities::to_integral(BatchCommandType::RECTANGLE), rectangle);
 	}
 
 	void CanvasSystem::draw_batch_sprite(BatchHandle batch_handle, const Sprite& sprite)
 	{
 		BatchData& batch = m_batch_pool.get(batch_handle);
-		batch.command_buffer.write_packet(Vadon::Utilities::to_integral(BatchCommandType::SPRITE), sprite);
+		batch.command_buffer.write_object(Vadon::Utilities::to_integral(BatchCommandType::SPRITE), sprite);
 	}
 
 	void CanvasSystem::render(const RenderContext& context)
@@ -789,6 +804,8 @@ namespace Vadon::Private::Render::Canvas
 				triangle_primitive.color = triangle.color;
 
 				canvas_system.m_frame_data.add_primitive_data(triangle_primitive);
+
+				return sizeof(Triangle);
 			}
 			break;
 			case BatchCommandType::RECTANGLE:
@@ -811,6 +828,8 @@ namespace Vadon::Private::Render::Canvas
 				rectangle_primitive.color = rectangle.color;
 
 				canvas_system.m_frame_data.add_primitive_data(rectangle_primitive);
+
+				return sizeof(Rectangle);
 			}
 			break;
 			case BatchCommandType::SPRITE:
@@ -831,9 +850,13 @@ namespace Vadon::Private::Render::Canvas
 				rectangle_primitive.color = sprite.color;
 
 				canvas_system.m_frame_data.add_primitive_data(rectangle_primitive);
+
+				return sizeof(Sprite);
 			}
 			break;
 			}
+
+			return size_t(0);
 		};
 
 		constexpr static auto draw_batch = +[](CanvasSystem& canvas_system, const ItemData& item_data, const BatchDrawCommand& batch_draw, const BatchData& batch_data)
@@ -842,10 +865,11 @@ namespace Vadon::Private::Render::Canvas
 				BatchCommandBuffer::Iterator command_it = batch_data.command_buffer.get_iterator(batch_draw.range.offset);
 
 				int32_t command_count = 0;
-				for (; (command_it.is_valid() == true) && (command_count < batch_draw.range.count); command_it.next())
+				while ((command_it.is_valid() == true) && (command_count < batch_draw.range.count))
 				{
 					const BatchCommandType command_type = Vadon::Utilities::to_enum<BatchCommandType>(command_it.get_header_id());
-					parse_batch_command(canvas_system, item_data, batch_transform, command_type, command_it.get_packet_data());
+					const size_t packet_size = parse_batch_command(canvas_system, item_data, batch_transform, command_type, command_it.get_packet_data());
+					command_it.advance(packet_size);
 					++command_count;
 				}
 			};
@@ -855,7 +879,9 @@ namespace Vadon::Private::Render::Canvas
 		// FIXME: some kind of ordering for layers? Or assume provided order is intended?
 		for (LayerHandle layer_handle : context.layers)
 		{
-			const LayerData& current_layer_data = m_layer_pool.get(layer_handle);
+			LayerData& current_layer_data = m_layer_pool.get(layer_handle);
+			update_layer_items(current_layer_data);
+
 			// FIXME: should sort primitives based on layer and Z order, for now just do them in whatever order they are in
 			for (ItemHandle item_handle : current_layer_data.items)
 			{
@@ -866,7 +892,7 @@ namespace Vadon::Private::Render::Canvas
 				}
 				
 				ItemCommandBuffer::Iterator item_command_it = current_item_data.command_buffer.get_iterator();
-				for (; item_command_it.is_valid() == true; item_command_it.next())
+				while(item_command_it.is_valid() == true)
 				{
 					const ItemCommandType current_command_type = Vadon::Utilities::to_enum<ItemCommandType>(item_command_it.get_header_id());
 					switch (current_command_type)
@@ -876,13 +902,15 @@ namespace Vadon::Private::Render::Canvas
 						const BatchDrawCommand* batch_draw = reinterpret_cast<const BatchDrawCommand*>(item_command_it.get_packet_data());
 						const BatchData& batch_data = m_batch_pool.get(batch_draw->batch);
 						draw_batch(*this, current_item_data, *batch_draw, batch_data);
+						item_command_it.advance(sizeof(BatchDrawCommand));
 					}
 					break;
 					case ItemCommandType::DRAW_DIRECT:
 					{
 						// First value is the command type
 						const uint32_t command_type_int = *reinterpret_cast<const uint32_t*>(item_command_it.get_packet_data());
-						parse_batch_command(*this, current_item_data, current_item_data.info.transform, Vadon::Utilities::to_enum<BatchCommandType>(command_type_int), item_command_it.get_packet_data() + sizeof(uint32_t));
+						const size_t packet_size = parse_batch_command(*this, current_item_data, current_item_data.info.transform, Vadon::Utilities::to_enum<BatchCommandType>(command_type_int), item_command_it.get_packet_data() + sizeof(uint32_t));
+						item_command_it.advance(packet_size + sizeof(uint32_t));
 					}
 					break;
 					}
@@ -1010,5 +1038,34 @@ namespace Vadon::Private::Render::Canvas
 	uint32_t CanvasSystem::get_material_index(const PrimitiveBase& primitive)
 	{
 		return primitive.material.is_valid() == true ? primitive.material.handle.index : m_default_material.handle.index;
+	}
+
+	void CanvasSystem::set_item_layer_dirty(const ItemData& item)
+	{
+		if (item.info.layer.is_valid() == true)
+		{
+			LayerData& layer = m_layer_pool.get(item.info.layer);
+			layer.items_dirty = true;
+		}
+	}
+
+	void CanvasSystem::update_layer_items(LayerData& layer)
+	{
+		if (layer.items_dirty == false)
+		{
+			return;
+		}
+
+		layer.items_dirty = false;
+
+		std::sort(layer.items.begin(), layer.items.end(),
+			[this](ItemHandle lhs, ItemHandle rhs)
+			{
+				const ItemData& left_item = m_item_pool.get(lhs);
+				const ItemData& right_item = m_item_pool.get(rhs);
+
+				return left_item.info.z_order < right_item.info.z_order;
+			}
+		);
 	}
 }

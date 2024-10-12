@@ -39,6 +39,7 @@ namespace Vadon::Private::Render::Canvas
 		void remove_item(ItemHandle item_handle) override;
 
 		void set_item_transform(ItemHandle item_handle, const Transform& transform) override;
+		void set_item_z_order(ItemHandle item_handle, float z_order) override;
 
 		size_t get_item_buffer_size(ItemHandle item_handle) const override;
 		void clear_item(ItemHandle item_handle) override;
@@ -82,6 +83,9 @@ namespace Vadon::Private::Render::Canvas
 		void buffer_frame_data();
 
 		uint32_t get_material_index(const PrimitiveBase& primitive);
+
+		void set_item_layer_dirty(const ItemData& item);
+		void update_layer_items(LayerData& layer);
 
 		// Data shared across render passes (layers, materials, etc.)
 		struct SharedData

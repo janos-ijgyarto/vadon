@@ -124,12 +124,6 @@ namespace
                     m_canvas_context.camera.view_rectangle.position += get_delta_time() * 200 * camera_velocity;
                     m_canvas_context.camera.zoom = std::clamp(m_canvas_context.camera.zoom + get_delta_time() * camera_zoom * 10.0f, 0.1f, 10.0f);
 
-                    if (m_transforms_dirty == true)
-                    {
-                        m_transforms_dirty = false;
-                        m_model->reset_transforms(ecs_world);
-                    }
-
                     // No multithreading here, so we render without any async
                     m_model->render_sync(ecs_world);
 
@@ -214,21 +208,9 @@ namespace
 
             switch (event.event_type)
             {
-            case Vadon::ECS::ComponentEventType::ADDED:
-            {
-                if (event.type_id == Vadon::ECS::ComponentManager::get_component_type_id<VadonDemo::Model::Transform2D>())
-                {
-                    m_transforms_dirty = true;
-                }
-            }
-            break;
             case Vadon::ECS::ComponentEventType::REMOVED:
             {
-                if (event.type_id == Vadon::ECS::ComponentManager::get_component_type_id<VadonDemo::Model::Transform2D>())
-                {
-                    m_transforms_dirty = true;
-                }
-                else if (event.type_id == Vadon::ECS::ComponentManager::get_component_type_id<VadonDemo::Model::CanvasComponent>())
+                if (event.type_id == Vadon::ECS::ComponentManager::get_component_type_id<VadonDemo::Model::CanvasComponent>())
                 {
                     m_model->remove_canvas_item(ecs_world, event.owner);
                 }
@@ -242,11 +224,7 @@ namespace
             VadonEditor::Model::ModelSystem& editor_model = get_system<VadonEditor::Model::ModelSystem>();
             Vadon::ECS::World& ecs_world = editor_model.get_ecs_world();
 
-            if (component == Vadon::ECS::ComponentManager::get_component_type_id<VadonDemo::Model::Transform2D>())
-            {
-                m_transforms_dirty = true;
-            }
-            else if (component == Vadon::ECS::ComponentManager::get_component_type_id<VadonDemo::Model::CanvasComponent>())
+            if (component == Vadon::ECS::ComponentManager::get_component_type_id<VadonDemo::Model::CanvasComponent>())
             {
                 m_model->update_canvas_item(ecs_world, entity);
             }
@@ -267,9 +245,6 @@ namespace
         std::unique_ptr<VadonDemo::Model::Model> m_model;
         Vadon::Render::Canvas::RenderContext m_canvas_context;
         Vadon::Utilities::PacketQueue m_view_queue;
-
-        // FIXME: have a system for this!
-        bool m_transforms_dirty = false;
     };
 }
 

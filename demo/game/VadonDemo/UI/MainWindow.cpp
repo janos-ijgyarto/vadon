@@ -36,7 +36,7 @@ namespace VadonDemo::UI
 {
 	namespace
 	{
-		constexpr float c_sim_timestep = 1.0f / 15.0f;
+		constexpr float c_sim_timestep = 1.0f / 30.0f;
 		constexpr float c_frame_limit = 0.25f;
 
 		struct MainWindowDevGUI
@@ -191,7 +191,10 @@ namespace VadonDemo::UI
 
 		bool initialize()
 		{
-			init_scene();
+			if (init_scene() == false)
+			{
+				return false;
+			}
 			init_renderer();
 			init_dev_gui();
 
@@ -265,11 +268,11 @@ namespace VadonDemo::UI
 			return true;
 		}
 
-		void init_scene()
+		bool init_scene()
 		{
 			if (load_project() == false)
 			{
-				return;
+				return false;
 			}
 
 			using Logger = Vadon::Core::Logger;
@@ -300,13 +303,13 @@ namespace VadonDemo::UI
 				if (main_scene_handle.is_valid() == false)
 				{
 					// Something went wrong
-					return;
+					return false;
 				}
 
 				if (resource_system.load_resource(main_scene_handle) == false)
 				{
 					// Something went wrong
-					return;
+					return false;
 				}
 
 				Vadon::Scene::SceneSystem& scene_system = engine_core.get_system<Vadon::Scene::SceneSystem>();
@@ -314,13 +317,15 @@ namespace VadonDemo::UI
 				if (root_entity_handle.is_valid() == false)
 				{
 					// Something went wrong
-					return;
+					return false;
 				}
-
-
 			}
 
-			m_game_core.get_model().init_simulation(ecs_world);
+			if (m_game_core.get_model().init_simulation(ecs_world) == false)
+			{
+				// TODO: error?
+				return false;
+			}
 
 			{
 				VadonApp::Platform::PlatformInterface& platform_interface = engine_app.get_system<VadonApp::Platform::PlatformInterface>();
@@ -341,6 +346,8 @@ namespace VadonDemo::UI
 					m_canvas_context.layers.push_back(m_game_core.get_model().get_canvas_layer());
 				}
 			}
+
+			return true;
 		}
 
 		void init_renderer()
@@ -473,38 +480,44 @@ namespace VadonDemo::UI
 				{
 					++m_view_frame_count;
 
-					// Update camera
-					Vadon::Utilities::Vector2 camera_velocity = Vadon::Utilities::Vector2_Zero;
-					float camera_zoom = 0.0f;
+					// Update movement
+					VadonDemo::Model::PlayerInput player_input;
 
 					const Platform::PlatformInterface::InputValues input_values = m_game_core.get_platform_interface().get_input_values();
 
 					VadonApp::UI::Developer::GUISystem& dev_gui = engine_app.get_system<VadonApp::UI::Developer::GUISystem>();
 					if ((m_dev_gui_enabled == false) || (Vadon::Utilities::to_bool(dev_gui.get_io_flags() & VadonApp::UI::Developer::GUISystem::IOFlags::KEYBOARD_CAPTURE) == false))
 					{
-						if (input_values.camera_left == true)
+						if (input_values.move_left == true)
 						{
-							camera_velocity.x = -1.0f;
+							player_input.move_dir.x = -1.0f;
 						}
-						else if (input_values.camera_right == true)
+						else if (input_values.move_right == true)
 						{
-							camera_velocity.x = 1.0f;
-						}
-
-						if (input_values.camera_up == true)
-						{
-							camera_velocity.y = 1.0f;
-						}
-						else if (input_values.camera_down == true)
-						{
-							camera_velocity.y = -1.0f;
+							player_input.move_dir.x = 1.0f;
 						}
 
-						camera_zoom = input_values.camera_zoom;
+						if (input_values.move_up == true)
+						{
+							player_input.move_dir.y = 1.0f;
+						}
+						else if (input_values.move_down == true)
+						{
+							player_input.move_dir.y = -1.0f;
+						}
+
+						player_input.fire = input_values.fire;
 					}
 
-					m_model_camera.view_rectangle.position += delta_time * 200 * camera_velocity;
-					m_model_camera.zoom = std::clamp(m_model_camera.zoom + delta_time * camera_zoom * 10.0f, 0.01f, 10.0f);
+					m_game_core.get_model().set_player_input(m_game_core.get_ecs_world(), player_input);
+
+					auto player_query = m_game_core.get_ecs_world().get_component_manager().run_component_query<VadonDemo::Model::Transform2D&, VadonDemo::Model::Player&>();
+					for (auto player_it = player_query.get_iterator(); player_it.is_valid() == true; player_it.next())
+					{
+						auto player_components = player_it.get_tuple();
+						m_model_camera.view_rectangle.position = std::get<VadonDemo::Model::Transform2D&>(player_components).position;
+					}
+					// TODO: camera zoom?
 
 					{
 						CameraData* camera_data = m_camera_data_buffer.get_write_buffer();

@@ -3,11 +3,9 @@
 
 namespace Vadon::Utilities
 {
-	void PacketQueue::Iterator::next()
+	void PacketQueue::Iterator::advance(size_t block_size)
 	{
-		// TODO: assert if invalid!
-		const size_t size = get_packet_size();
-		m_data_it += size + sizeof(uint32_t) + sizeof(size_t);
+		m_data_it += sizeof(uint32_t) + block_size;
 	}
 
 	uint32_t PacketQueue::Iterator::get_header_id() const
@@ -19,39 +17,23 @@ namespace Vadon::Utilities
 		return id;
 	}
 
-	size_t PacketQueue::Iterator::get_packet_size() const
-	{
-		// TODO: assert if invalid!
-		size_t size = 0;
-		memcpy(&size, std::to_address(m_data_it) + sizeof(uint32_t), sizeof(size_t));
-
-		return size;
-	}
-
 	const std::byte* PacketQueue::Iterator::get_packet_data() const
 	{
 		// TODO: assert if invalid!
-		return std::to_address(m_data_it) + sizeof(uint32_t) + sizeof(size_t);
+		return std::to_address(m_data_it) + sizeof(uint32_t);
 	}
 
-	void PacketQueue::internal_write_data(uint32_t id, const std::byte* data, size_t size)
+	std::byte* PacketQueue::allocate_raw_data(uint32_t id, size_t size)
 	{
+		// FIXME: optimize this!
 		{
 			const std::byte* id_begin = reinterpret_cast<const std::byte*>(&id);
 			const std::byte* id_end = id_begin + sizeof(uint32_t);
  			m_data.insert(m_data.end(), id_begin, id_end);
 		}
 
-		{
-			const std::byte* size_begin = reinterpret_cast<const std::byte*>(&size);
-			const std::byte* size_end = size_begin + sizeof(size_t);
-			m_data.insert(m_data.end(), size_begin, size_end);
-		}
-
-		{
-			const std::byte* data_begin = reinterpret_cast<const std::byte*>(data);
-			const std::byte* data_end = data_begin + size;
-			m_data.insert(m_data.end(), data_begin, data_end);
-		}
+		const size_t data_offset = m_data.size();
+		m_data.insert(m_data.end(), size, std::byte(0));
+		return m_data.data() + data_offset;
 	}
 }

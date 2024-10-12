@@ -173,7 +173,13 @@ namespace VadonEditor::Model
 			return false;
 		}
 
-		return world.get_component_manager().add_component(m_entity_handle, type_id) != nullptr;
+		if (world.get_component_manager().add_component(m_entity_handle, type_id) == nullptr)
+		{
+			return false;
+		}
+
+		notify_modified();
+		return true;
 	}
 
 	void Entity::remove_component(Vadon::ECS::ComponentID type_id)
@@ -188,6 +194,7 @@ namespace VadonEditor::Model
 		Vadon::ECS::ComponentManager& component_manager = world.get_component_manager();
 		
 		component_manager.remove_component(m_entity_handle, type_id);
+		notify_modified();
 	}
 
 	Vadon::ECS::ComponentIDList Entity::get_component_types() const
