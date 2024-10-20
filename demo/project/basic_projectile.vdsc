@@ -30,7 +30,7 @@
                 {
                     "properties": {
                         "acceleration": 0.0,
-                        "top_speed": 150.0
+                        "top_speed": 300.0
                     },
                     "type": "VadonDemo::Model::Velocity2D"
                 },

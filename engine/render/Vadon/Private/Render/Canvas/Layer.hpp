@@ -13,6 +13,8 @@ namespace Vadon::Private::Render::Canvas
 		std::vector<Vadon::Render::Canvas::ItemHandle> items;
 		bool items_dirty = false;
 		// TODO: anything else?
+
+		void set_items_dirty() { items_dirty = true; }
 	};
 }
 #endif

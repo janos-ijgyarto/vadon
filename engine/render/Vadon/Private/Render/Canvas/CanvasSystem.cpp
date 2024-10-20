@@ -208,10 +208,10 @@ namespace Vadon::Private::Render::Canvas
 		LayerData& layer = m_layer_pool.get(info.layer);
 		layer.items.push_back(new_item_handle);
 
+		layer.set_items_dirty();
+
 		ItemData& new_item = m_item_pool.get(new_item_handle);
 		new_item.info = info;
-
-		set_item_layer_dirty(new_item);
 
 		return new_item_handle;
 	}
@@ -232,8 +232,8 @@ namespace Vadon::Private::Render::Canvas
 			// TODO: move this to Layer implementation!
 			LayerData& layer = m_layer_pool.get(item.info.layer);
 			layer.items.erase(std::remove(layer.items.begin(), layer.items.end(), item_handle), layer.items.end());
-
-			set_item_layer_dirty(item);
+			
+			layer.set_items_dirty();
 		}
 
 		// TODO: any other cleanup?
@@ -251,10 +251,7 @@ namespace Vadon::Private::Render::Canvas
 		ItemData& item = m_item_pool.get(item_handle);
 		item.info.z_order = z_order;
 
-		if (item.info.layer.is_valid() == true)
-		{
-			set_item_layer_dirty(item);
-		}
+		set_item_layer_dirty(item);
 	}
 
 	size_t CanvasSystem::get_item_buffer_size(ItemHandle item_handle) const
@@ -780,7 +777,7 @@ namespace Vadon::Private::Render::Canvas
 		// Reset frame buffers
 		m_frame_data.clear();
 
-		constexpr static auto parse_batch_command = +[](CanvasSystem& canvas_system, const ItemData& item_data, const Transform& transform, BatchCommandType command_type, const std::byte* data) {
+		constexpr static auto parse_batch_command = +[](CanvasSystem& canvas_system, const ItemData& item_data, const Transform& transform, BatchCommandType command_type, const std::byte* command_data) {
 			// FIXME: transforms are currently computed on CPU
 			// Could shift all of this work to GPU?
 			// Either we generate primitives at final position, or we can make it so we only upload the variable data (either transform or primitives)
@@ -788,7 +785,7 @@ namespace Vadon::Private::Render::Canvas
 			{
 			case BatchCommandType::TRIANGLE:
 			{
-				const Triangle& triangle = *reinterpret_cast<const Triangle*>(data);
+				const Triangle& triangle = *reinterpret_cast<const Triangle*>(command_data);
 
 				// Add command
 				canvas_system.m_frame_data.add_command(PrimitiveType::TRIANGLE, Vadon::Render::ResourceViewHandle());
@@ -804,13 +801,11 @@ namespace Vadon::Private::Render::Canvas
 				triangle_primitive.color = triangle.color;
 
 				canvas_system.m_frame_data.add_primitive_data(triangle_primitive);
-
-				return sizeof(Triangle);
 			}
 			break;
 			case BatchCommandType::RECTANGLE:
 			{
-				const Rectangle& rectangle = *reinterpret_cast<const Rectangle*>(data);
+				const Rectangle& rectangle = *reinterpret_cast<const Rectangle*>(command_data);
 
 				// Add command
 				const PrimitiveType rectangle_type = rectangle.filled ? PrimitiveType::RECTANGLE_FILL : PrimitiveType::RECTANGLE_OUTLINE;
@@ -828,13 +823,11 @@ namespace Vadon::Private::Render::Canvas
 				rectangle_primitive.color = rectangle.color;
 
 				canvas_system.m_frame_data.add_primitive_data(rectangle_primitive);
-
-				return sizeof(Rectangle);
 			}
 			break;
 			case BatchCommandType::SPRITE:
 			{
-				const Sprite& sprite = *reinterpret_cast<const Sprite*>(data);
+				const Sprite& sprite = *reinterpret_cast<const Sprite*>(command_data);
 
 				canvas_system.m_frame_data.add_command(PrimitiveType::RECTANGLE_FILL, sprite.texture_handle);
 
@@ -850,13 +843,9 @@ namespace Vadon::Private::Render::Canvas
 				rectangle_primitive.color = sprite.color;
 
 				canvas_system.m_frame_data.add_primitive_data(rectangle_primitive);
-
-				return sizeof(Sprite);
 			}
 			break;
 			}
-
-			return size_t(0);
 		};
 
 		constexpr static auto draw_batch = +[](CanvasSystem& canvas_system, const ItemData& item_data, const BatchDrawCommand& batch_draw, const BatchData& batch_data)
@@ -867,9 +856,8 @@ namespace Vadon::Private::Render::Canvas
 				int32_t command_count = 0;
 				while ((command_it.is_valid() == true) && (command_count < batch_draw.range.count))
 				{
-					const BatchCommandType command_type = Vadon::Utilities::to_enum<BatchCommandType>(command_it.get_header_id());
-					const size_t packet_size = parse_batch_command(canvas_system, item_data, batch_transform, command_type, command_it.get_packet_data());
-					command_it.advance(packet_size);
+					parse_batch_command(canvas_system, item_data, batch_transform, Vadon::Utilities::to_enum<BatchCommandType>(command_it.get_header().packet_id), command_it.get_packet_data());
+					command_it.advance();
 					++command_count;
 				}
 			};
@@ -892,9 +880,9 @@ namespace Vadon::Private::Render::Canvas
 				}
 				
 				ItemCommandBuffer::Iterator item_command_it = current_item_data.command_buffer.get_iterator();
-				while(item_command_it.is_valid() == true)
+				for(item_command_it; item_command_it.is_valid() == true; item_command_it.advance())
 				{
-					const ItemCommandType current_command_type = Vadon::Utilities::to_enum<ItemCommandType>(item_command_it.get_header_id());
+					const ItemCommandType current_command_type = Vadon::Utilities::to_enum<ItemCommandType>(item_command_it.get_header().packet_id);
 					switch (current_command_type)
 					{
 					case ItemCommandType::DRAW_BATCH:
@@ -902,15 +890,14 @@ namespace Vadon::Private::Render::Canvas
 						const BatchDrawCommand* batch_draw = reinterpret_cast<const BatchDrawCommand*>(item_command_it.get_packet_data());
 						const BatchData& batch_data = m_batch_pool.get(batch_draw->batch);
 						draw_batch(*this, current_item_data, *batch_draw, batch_data);
-						item_command_it.advance(sizeof(BatchDrawCommand));
 					}
 					break;
 					case ItemCommandType::DRAW_DIRECT:
 					{
+						const std::byte* batch_command_ptr = item_command_it.get_packet_data();
 						// First value is the command type
-						const uint32_t command_type_int = *reinterpret_cast<const uint32_t*>(item_command_it.get_packet_data());
-						const size_t packet_size = parse_batch_command(*this, current_item_data, current_item_data.info.transform, Vadon::Utilities::to_enum<BatchCommandType>(command_type_int), item_command_it.get_packet_data() + sizeof(uint32_t));
-						item_command_it.advance(packet_size + sizeof(uint32_t));
+						const uint32_t command_type_int = *reinterpret_cast<const uint32_t*>(batch_command_ptr);
+						parse_batch_command(*this, current_item_data, current_item_data.info.transform, Vadon::Utilities::to_enum<BatchCommandType>(command_type_int), batch_command_ptr + sizeof(uint32_t));
 					}
 					break;
 					}
@@ -1045,7 +1032,7 @@ namespace Vadon::Private::Render::Canvas
 		if (item.info.layer.is_valid() == true)
 		{
 			LayerData& layer = m_layer_pool.get(item.info.layer);
-			layer.items_dirty = true;
+			layer.set_items_dirty();
 		}
 	}
 

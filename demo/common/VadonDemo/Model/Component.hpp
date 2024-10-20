@@ -94,8 +94,6 @@ namespace VadonDemo::Model
 		int32_t score_reward = 0;
 		float damage = 0.0f;
 
-		int32_t prefab = -1;
-
 		static void register_component();
 	};
 

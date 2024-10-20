@@ -11,17 +11,33 @@ namespace Vadon::Utilities
 		using Buffer = std::vector<std::byte>;
 		using BufferIterator = Buffer::const_iterator;
 	public:
+		struct Header
+		{
+			uint32_t packet_id;
+			uint32_t data_size;
+			// TODO: anything else?
+		};
+
 		class Iterator
 		{		
 		public:
 			bool is_valid() const { return m_data_it != m_data_end; }
 
-			// FIXME: implement template function that advances with size of type
-			VADONCOMMON_API void advance(size_t block_size);
+			void advance() { m_data_it += get_header().data_size + sizeof(Header); }
 
-			VADONCOMMON_API uint32_t get_header_id() const;
-			VADONCOMMON_API const std::byte* get_packet_data() const;
-			// TODO: add utility function to cast the data pointer?
+			const Header& get_header() const { return *reinterpret_cast<const Header*>(std::to_address(m_data_it)); }
+			const std::byte* get_packet_data() const
+			{
+				// TODO: assert if invalid!
+				return std::to_address(m_data_it) + sizeof(Header);
+			}
+
+			template<typename T>
+			const T* get_packet() const
+			{
+				// FIXME: could this be static_cast?
+				return reinterpret_cast<const T*>(get_packet_data());
+			}
 		private:
 			Iterator(const PacketQueue& queue, size_t start_offset) : m_data_it(queue.m_data.cbegin() + start_offset), m_data_end(queue.m_data.cend()) {}
 			BufferIterator m_data_it;

@@ -114,23 +114,31 @@ namespace VadonDemo::Model
 			int32_t handle;
 		};
 
+		struct EnemyPrefab
+		{
+			float size = 1.0f;
+			float speed = 1.0f; // FIXME: used reference to shared data!
+			float max_health = 1.0f;
+		};
+
 		struct EnemyData
 		{
 			int32_t handle;
+			int32_t prefab; // FIXME: use Entity handle instead?
 			Vadon::Utilities::Vector2 position = Vadon::Utilities::Vector2_Zero;
 			Vadon::Utilities::Vector2 velocity = Vadon::Utilities::Vector2_Zero;
-			float speed = 1.0f; // FIXME: used reference to shared data!
 			float health = 0.0f;
 		};
 
 		struct EnemyPool
 		{
+			std::vector<EnemyPrefab> prefabs;
+			std::unordered_map<uint64_t, int32_t> prefab_lookup;
+
 			std::vector<EnemyData> enemies;
 
 			std::vector<size_t> sparse_set;
 			std::vector<size_t> free_list;
-
-			int32_t prefab_counter = 0;
 
 			int32_t add_enemy(const EnemyData& new_enemy)
 			{
@@ -189,13 +197,21 @@ namespace VadonDemo::Model
 		{
 			Vadon::Render::Canvas::BatchHandle enemy_canvas_batch;
 			std::vector<EnemyRenderPrefab> prefabs;
-			int32_t prefab_count = 0;
 
 			std::vector<EnemyRenderObject> objects;
 		};
 
+		struct ProjectilePrefab
+		{
+			float speed = 1.0f;
+			float radius = 1.0f;
+			float range = 1.0f;
+			float damage = 1.0f;
+		};
+
 		struct ProjectileData
 		{
+			int32_t prefab;
 			Vadon::Utilities::Vector2 position = Vadon::Utilities::Vector2_Zero;
 			Vadon::Utilities::Vector2 velocity = Vadon::Utilities::Vector2_Zero;
 			float remaining_lifetime = -1.0f;
@@ -229,6 +245,9 @@ namespace VadonDemo::Model
 		{
 			std::vector<std::unique_ptr<ProjectileRingBuffer>> ring_buffers;
 			size_t active_buffer_index = 0;
+
+			std::unordered_map<uint64_t, int32_t> prefab_lookup;
+			std::vector<ProjectilePrefab> prefabs;
 
 			CreateProjectile add_projectile(const ProjectileData& projectile_data, int32_t prefab)
 			{
@@ -300,7 +319,6 @@ namespace VadonDemo::Model
 		{
 			Vadon::Render::Canvas::BatchHandle projectile_canvas_batch;
 			std::vector<ProjectileRenderPrefab> prefabs;
-			int32_t prefab_count = 0;
 
 			std::vector<std::unique_ptr<RenderProjectileRingBuffer>> ring_buffers;
 
@@ -441,6 +459,75 @@ namespace VadonDemo::Model
 			m_canvas_layer = canvas_system.create_layer(Vadon::Render::Canvas::LayerInfo{});
 
 			return true;
+		}
+
+		// FIXME: refactor this!
+		int32_t get_enemy_prefab_index(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle prefab_entity)
+		{
+			auto prefab_index_it = m_enemy_pool.prefab_lookup.find(prefab_entity.handle.to_uint());
+			if (prefab_index_it == m_enemy_pool.prefab_lookup.end())
+			{
+				prefab_index_it = m_enemy_pool.prefab_lookup.emplace(prefab_entity.handle.to_uint(), static_cast<int32_t>(m_enemy_pool.prefabs.size())).first;
+
+				EnemyPrefab& new_prefab = m_enemy_pool.prefabs.emplace_back();
+
+				Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
+				auto enemy_prefab_components = component_manager.get_component_tuple<Transform2D, Velocity2D, CanvasComponent, Health, Enemy>(prefab_entity);
+				const Transform2D* enemy_transform = std::get<Transform2D*>(enemy_prefab_components);
+				const Velocity2D* enemy_velocity = std::get<Velocity2D*>(enemy_prefab_components);
+				const Health* enemy_health = std::get<Health*>(enemy_prefab_components);
+
+				// FIXME: use other measure for scale!
+				new_prefab.size = enemy_transform->scale;
+				new_prefab.speed = enemy_velocity->top_speed;
+				new_prefab.max_health = enemy_health->max_health;
+
+				const CanvasComponent* enemy_canvas = std::get<CanvasComponent*>(enemy_prefab_components);
+
+				CreateEnemyPrefab* create_enemy_prefab = m_event_queue.allocate_object<CreateEnemyPrefab>(Vadon::Utilities::to_integral(PacketType::CREATE_ENEMY_PREFAB));
+				create_enemy_prefab->type = enemy_canvas->type;
+				create_enemy_prefab->color = enemy_canvas->color;
+				create_enemy_prefab->z_order = enemy_canvas->z_order;
+				create_enemy_prefab->scale = enemy_transform->scale;
+			}
+
+			return prefab_index_it->second;
+		}
+
+		// FIXME: refactor this!
+		int32_t get_projectile_prefab_index(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle prefab_entity)
+		{
+			auto prefab_index_it = m_projectile_pool.prefab_lookup.find(prefab_entity.handle.to_uint());
+			if (prefab_index_it == m_projectile_pool.prefab_lookup.end())
+			{
+				prefab_index_it = m_projectile_pool.prefab_lookup.emplace(prefab_entity.handle.to_uint(), static_cast<int32_t>(m_projectile_pool.prefabs.size())).first;
+
+				ProjectilePrefab& new_prefab = m_projectile_pool.prefabs.emplace_back();
+
+				Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
+				auto projectile_prefab_components = component_manager.get_component_tuple<Transform2D, Velocity2D, CanvasComponent, Projectile>(prefab_entity);
+
+				// FIXME: revise how we can set dimensions for different contexts (e.g collisions), Transform should be applied on top
+				const Transform2D* projectile_transform = std::get<Transform2D*>(projectile_prefab_components);
+				const Velocity2D* projectile_velocity = std::get<Velocity2D*>(projectile_prefab_components);
+				const Projectile* projectile_component = std::get<Projectile*>(projectile_prefab_components);
+
+				// FIXME: use other measure for scale!
+				new_prefab.radius = projectile_transform->scale;
+				new_prefab.speed = projectile_velocity->top_speed;
+				new_prefab.range = projectile_component->range;
+				new_prefab.damage = projectile_component->damage;
+
+				const CanvasComponent* projectile_canvas = std::get<CanvasComponent*>(projectile_prefab_components);
+
+				CreateProjectilePrefab* create_proj_prefab = m_event_queue.allocate_object<CreateProjectilePrefab>(Vadon::Utilities::to_integral(PacketType::CREATE_PROJECTILE_PREFAB));
+				create_proj_prefab->type = projectile_canvas->type;
+				create_proj_prefab->color = projectile_canvas->color;
+				create_proj_prefab->z_order = projectile_canvas->z_order;
+				create_proj_prefab->scale = projectile_transform->scale;
+			}
+
+			return prefab_index_it->second;
 		}
 
 		bool init_simulation(Vadon::ECS::World& ecs_world)
@@ -634,8 +721,7 @@ namespace VadonDemo::Model
 			Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
 			auto projectile_prefab_components = component_manager.get_component_tuple<Transform2D, Velocity2D, CanvasComponent, Projectile>(weapon_component.projectile_prefab_entity);
 
-			Transform2D* transform = std::get<Transform2D*>(projectile_prefab_components);
-			if (transform == nullptr)
+			if (std::get<Transform2D*>(projectile_prefab_components) == nullptr)
 			{
 				// TODO: error!
 				return false;
@@ -645,8 +731,8 @@ namespace VadonDemo::Model
 				// TODO: error!
 				return false;
 			}
-			CanvasComponent* canvas_component = std::get<CanvasComponent*>(projectile_prefab_components);
-			if (canvas_component == nullptr)
+
+			if (std::get<CanvasComponent*>(projectile_prefab_components) == nullptr)
 			{
 				// TODO: error!
 				return false;
@@ -657,12 +743,6 @@ namespace VadonDemo::Model
 				// TODO: error!
 				return false;
 			}
-
-			CreateProjectilePrefab* create_proj_prefab = m_event_queue.allocate_object<CreateProjectilePrefab>(Vadon::Utilities::to_integral(PacketType::CREATE_PROJECTILE_PREFAB));
-			create_proj_prefab->type = canvas_component->type;
-			create_proj_prefab->color = canvas_component->color;
-			create_proj_prefab->z_order = canvas_component->z_order;
-			create_proj_prefab->scale = transform->scale;
 
 			return true;
 		}
@@ -704,8 +784,7 @@ namespace VadonDemo::Model
 			Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
 			auto enemy_prefab_components = component_manager.get_component_tuple<Transform2D, Velocity2D, CanvasComponent, Health, Enemy>(spawner.enemy_prefab_entity);
 
-			Transform2D* transform = std::get<Transform2D*>(enemy_prefab_components);
-			if (transform == nullptr)
+			if (std::get<Transform2D*>(enemy_prefab_components) == nullptr)
 			{
 				// TODO: error!
 				return false;
@@ -716,8 +795,7 @@ namespace VadonDemo::Model
 				return false;
 			}
 
-			CanvasComponent* canvas_component = std::get<CanvasComponent*>(enemy_prefab_components);
-			if (canvas_component == nullptr)
+			if (std::get<CanvasComponent*>(enemy_prefab_components) == nullptr)
 			{
 				// TODO: error!
 				return false;
@@ -733,16 +811,6 @@ namespace VadonDemo::Model
 				// TODO: error!
 				return false;
 			}
-
-			// FIXME: this means Enemy component can only ever be used with spawner!
-			enemy_component->prefab = m_enemy_pool.prefab_counter;
-			++m_enemy_pool.prefab_counter;
-
-			CreateEnemyPrefab* create_enemy_prefab = m_event_queue.allocate_object<CreateEnemyPrefab>(Vadon::Utilities::to_integral(PacketType::CREATE_ENEMY_PREFAB));
-			create_enemy_prefab->type = canvas_component->type;
-			create_enemy_prefab->color = canvas_component->color;
-			create_enemy_prefab->z_order = canvas_component->z_order;
-			create_enemy_prefab->scale = transform->scale;
 
 			return true;
 		}
@@ -766,20 +834,35 @@ namespace VadonDemo::Model
 				player_component->facing = Vadon::Utilities::normalize(player_component->input.move_dir);
 			}
 
-			for(EnemyData& current_enemy : m_enemy_pool.enemies)
+			size_t current_enemy_index = 0;
+			while(current_enemy_index < m_enemy_pool.enemies.size())
 			{
-				const Vadon::Utilities::Vector2 enemy_to_player = player_transform->position - current_enemy.position;
-				if (Vadon::Utilities::dot(enemy_to_player, enemy_to_player) > 0.01f)
+				EnemyData& current_enemy = m_enemy_pool.enemies[current_enemy_index];
+				if (current_enemy.health > 0)
 				{
-					current_enemy.velocity = Vadon::Utilities::normalize(enemy_to_player) * current_enemy.speed;
+					const Vadon::Utilities::Vector2 enemy_to_player = player_transform->position - current_enemy.position;
+					if (Vadon::Utilities::dot(enemy_to_player, enemy_to_player) > 0.01f)
+					{
+						const EnemyPrefab& enemy_prefab = m_enemy_pool.prefabs[current_enemy.prefab];
+						current_enemy.velocity = Vadon::Utilities::normalize(enemy_to_player) * enemy_prefab.speed;
+					}
+					else
+					{
+						current_enemy.velocity = Vadon::Utilities::Vector2_Zero;
+					}
+					current_enemy.position += current_enemy.velocity * delta_time;
+
+					++current_enemy_index;
 				}
 				else
 				{
-					current_enemy.velocity = Vadon::Utilities::Vector2_Zero;
+					// Remove dead enemy
+					m_enemy_pool.remove_enemy(current_enemy.handle);
+					const DestroyEnemy destroy_enemy_data{
+						.index = static_cast<int32_t>(current_enemy_index)
+					};
+					m_event_queue.write_object(Vadon::Utilities::to_integral(PacketType::DESTROY_ENEMY), destroy_enemy_data);
 				}
-				current_enemy.position += current_enemy.velocity * delta_time;
-
-				// TODO: enemies dying!
 			}
 
 			update_projectiles(ecs_world, delta_time);
@@ -805,28 +888,26 @@ namespace VadonDemo::Model
 					{
 						current_spawner.spawn_timer = std::max(current_spawner.spawn_timer + current_spawner.min_spawn_delay, 0.0f);
 
-						auto enemy_prefab_components = component_manager.get_component_tuple<Velocity2D, Health, Enemy>(current_spawner.enemy_prefab_entity);
-						const Velocity2D* enemy_velocity = std::get<Velocity2D*>(enemy_prefab_components);
-						const Health* enemy_health = std::get<Health*>(enemy_prefab_components);
-						const Enemy* enemy_component = std::get<Enemy*>(enemy_prefab_components);
-
 						constexpr float spawn_radius = 350.0f;
+
+						const int32_t prefab_handle = get_enemy_prefab_index(ecs_world, current_spawner.enemy_prefab_entity);
+						const EnemyPrefab& enemy_prefab = m_enemy_pool.prefabs[prefab_handle];
 
 						for (int32_t spawned_enemy_index = 0; spawned_enemy_index < current_spawner.current_spawn_count; ++spawned_enemy_index)
 						{
 							const float rand_angle = m_enemy_dist(m_random_engine);
 
 							const EnemyData new_enemy{
-								.position = Vadon::Utilities::Vector2(std::cosf(rand_angle), std::sinf(rand_angle)) * spawn_radius,
+								.prefab = prefab_handle,
+								.position = player_transform->position + Vadon::Utilities::Vector2(std::cosf(rand_angle), std::sinf(rand_angle)) * spawn_radius,
 								.velocity = Vadon::Utilities::Vector2_Zero,
-								.speed = enemy_velocity->top_speed,
-								.health = enemy_health->max_health
+								.health = enemy_prefab.max_health
 							};
 
 							m_enemy_pool.add_enemy(new_enemy);
 							const CreateEnemy create_enemy_data{
 								.position = new_enemy.position,
-								.prefab = enemy_component->prefab
+								.prefab = prefab_handle
 							};
 							m_event_queue.write_object(Vadon::Utilities::to_integral(PacketType::CREATE_ENEMY), create_enemy_data);
 						}
@@ -860,16 +941,15 @@ namespace VadonDemo::Model
 			{
 				// Reset timer and fire projectile
 				player_weapon->firing_timer = 60.0f / player_weapon->rate_of_fire;
-
-				auto projectile_components = component_manager.get_component_tuple<Velocity2D, Projectile>(player_weapon->projectile_prefab_entity);
-
-				const Velocity2D* projectile_velocity = std::get<Velocity2D*>(projectile_components);
-				const Projectile* projectile_component = std::get<Projectile*>(projectile_components);
+				
+				const int32_t prefab_handle = get_projectile_prefab_index(ecs_world, player_weapon->projectile_prefab_entity);
+				const ProjectilePrefab& projectile_prefab = m_projectile_pool.prefabs[prefab_handle];
 
 				const ProjectileData new_projectile{
+					.prefab = prefab_handle,
 					.position = player_transform->position,
-					.velocity = player_component->facing * projectile_velocity->top_speed,
-					.remaining_lifetime = projectile_component->range / projectile_velocity->top_speed
+					.velocity = player_component->facing * projectile_prefab.speed,
+					.remaining_lifetime = projectile_prefab.range / projectile_prefab.speed
 				};
 
 				// FIXME: create lookup for projectile prefabs!
@@ -906,6 +986,30 @@ namespace VadonDemo::Model
 						}
 						--current_buffer->active_count;
 						continue;
+					}
+					else
+					{
+						const ProjectilePrefab& projectile_prefab = m_projectile_pool.prefabs[current_projectile.prefab];
+
+						// FIXME: proper collision system!
+						for (EnemyData& current_enemy : m_enemy_pool.enemies)
+						{
+							const EnemyPrefab& enemy_prefab = m_enemy_pool.prefabs[current_enemy.prefab];
+
+							const float hit_radius = projectile_prefab.radius + enemy_prefab.size;
+							const float hit_radius_sq = hit_radius * hit_radius;
+
+							const Vadon::Utilities::Vector2 enemy_to_projectile = current_projectile.position - current_enemy.position;
+							const float dist_sq = Vadon::Utilities::dot(enemy_to_projectile, enemy_to_projectile);
+
+							// FIXME: also use enemy hitbox!
+							if (dist_sq < hit_radius_sq)
+							{
+								current_enemy.health -= 10.0f;
+								current_projectile.remaining_lifetime = -1.0f;
+								break;
+							}
+						}
 					}
 					++current_index;
 				}
@@ -1033,14 +1137,14 @@ namespace VadonDemo::Model
 			// FIXME: properly decouple view from model!
 			Vadon::Utilities::PacketQueue::Iterator queue_iterator = render_queue.get_iterator();
 			Vadon::Render::Canvas::CanvasSystem& canvas_system = m_engine_core.get_system<Vadon::Render::Canvas::CanvasSystem>();
-			while(queue_iterator.is_valid() == true)
+			for(queue_iterator; queue_iterator.is_valid() == true; queue_iterator.advance())
 			{
-				const PacketType packet_type = Vadon::Utilities::to_enum<PacketType>(queue_iterator.get_header_id());
+				const PacketType packet_type = Vadon::Utilities::to_enum<PacketType>(queue_iterator.get_header().packet_id);
 				switch (packet_type)
 				{
 				case PacketType::CREATE_ENEMY_PREFAB:
 				{
-					const CreateEnemyPrefab* create_prefab = reinterpret_cast<const CreateEnemyPrefab*>(queue_iterator.get_packet_data());
+					const CreateEnemyPrefab* create_prefab = queue_iterator.get_packet<CreateEnemyPrefab>();
 
 					EnemyRenderPrefab& new_prefab = m_enemy_render_pool.prefabs.emplace_back();
 
@@ -1052,38 +1156,35 @@ namespace VadonDemo::Model
 
 					const int32_t render_type = std::clamp(create_prefab->type, 0, Vadon::Utilities::to_integral(RenderObjectType::DIAMOND));
 					new_prefab.batch_range = prepare_canvas_batch(new_prefab.canvas_item, m_enemy_render_pool.enemy_canvas_batch, Vadon::Utilities::to_enum<RenderObjectType>(render_type), create_prefab->color, create_prefab->scale);
-
-					queue_iterator.advance(sizeof(CreateEnemyPrefab));
 				}
 					break;
 				case PacketType::CREATE_ENEMY:
 				{
-					const CreateEnemy* create_enemy = reinterpret_cast<const CreateEnemy*>(queue_iterator.get_packet_data());
+					const CreateEnemy* create_enemy = queue_iterator.get_packet<CreateEnemy>();
 
 					EnemyRenderObject& render_obj =	m_enemy_render_pool.objects.emplace_back();
 					render_obj.position = create_enemy->position;
 					render_obj.prev_position = create_enemy->position;
 					render_obj.prefab = create_enemy->prefab;
-
-					queue_iterator.advance(sizeof(CreateEnemy));
 				}
 					break;
 				case PacketType::BULK_UPDATE_ENEMIES:
 				{
-					const UpdateEnemy* update_ptr = reinterpret_cast<const UpdateEnemy*>(queue_iterator.get_packet_data());
-					for(EnemyRenderObject& current_object : m_enemy_render_pool.objects)
+					const UpdateEnemy* update_array = reinterpret_cast<const UpdateEnemy*>(queue_iterator.get_packet_data());
+					const size_t obj_count = queue_iterator.get_header().data_size / sizeof(UpdateEnemy);
+					for(size_t current_index = 0; current_index < obj_count; ++current_index)
 					{
-						current_object.prev_position = current_object.position;
-						current_object.position = update_ptr->position;
-						++update_ptr;
-					}
+						EnemyRenderObject& current_object = m_enemy_render_pool.objects[current_index];
+						const UpdateEnemy& current_update = update_array[current_index];
 
-					queue_iterator.advance(sizeof(UpdateEnemy) * m_enemy_render_pool.objects.size());
+						current_object.prev_position = current_object.position;
+						current_object.position = current_update.position;
+					}
 				}
 					break;
 				case PacketType::DESTROY_ENEMY:
 				{
-					const DestroyEnemy* destroy_data = reinterpret_cast<const DestroyEnemy*>(queue_iterator.get_packet_data());
+					const DestroyEnemy* destroy_data = queue_iterator.get_packet<DestroyEnemy>();
 
 					// TODO: check to make sure we don't get this message if no objects existed to begin with!
 					if (destroy_data->index < m_enemy_render_pool.objects.size() - 1)
@@ -1091,13 +1192,11 @@ namespace VadonDemo::Model
 						m_enemy_render_pool.objects[destroy_data->index] = m_enemy_render_pool.objects.back();
 						m_enemy_render_pool.objects.pop_back();
 					}
-
-					queue_iterator.advance(sizeof(DestroyEnemy));
 				}
 					break;
 				case PacketType::CREATE_PROJECTILE_PREFAB:
 				{
-					const CreateProjectilePrefab* create_prefab = reinterpret_cast<const CreateProjectilePrefab*>(queue_iterator.get_packet_data());
+					const CreateProjectilePrefab* create_prefab = queue_iterator.get_packet<CreateProjectilePrefab>();
 
 					ProjectileRenderPrefab& new_prefab = m_projectile_render_pool.prefabs.emplace_back();
 
@@ -1109,13 +1208,11 @@ namespace VadonDemo::Model
 
 					const int32_t render_type = std::clamp(create_prefab->type, 0, Vadon::Utilities::to_integral(RenderObjectType::DIAMOND));
 					new_prefab.batch_range = prepare_canvas_batch(new_prefab.canvas_item, m_projectile_render_pool.projectile_canvas_batch, Vadon::Utilities::to_enum<RenderObjectType>(render_type), create_prefab->color, create_prefab->scale);
-
-					queue_iterator.advance(sizeof(CreateProjectilePrefab));
 				}
 				break;
 				case PacketType::CREATE_PROJECTILE:
 				{
-					const CreateProjectile* create_projectile = reinterpret_cast<const CreateProjectile*>(queue_iterator.get_packet_data());
+					const CreateProjectile* create_projectile = queue_iterator.get_packet<CreateProjectile>();
 
 					if (create_projectile->buffer >= static_cast<int32_t>(m_projectile_render_pool.ring_buffers.size()))
 					{
@@ -1130,33 +1227,31 @@ namespace VadonDemo::Model
 					render_obj.prefab = create_projectile->prefab;
 
 					++buffer.active_count;
-
-					queue_iterator.advance(sizeof(CreateProjectile));
 				}
 					break;
 				case PacketType::BULK_UPDATE_PROJECTILES:
 				{
-					const UpdateProjectile* update_ptr = reinterpret_cast<const UpdateProjectile*>(queue_iterator.get_packet_data());
-					size_t total_projectile_count = 0;
+					const UpdateProjectile* update_array = reinterpret_cast<const UpdateProjectile*>(queue_iterator.get_packet_data());
+					size_t update_offset = 0;
+
 					for (auto& current_buffer : m_projectile_render_pool.ring_buffers)
 					{
 						for (int32_t current_projectile_index = 0; current_projectile_index < current_buffer->active_count; ++current_projectile_index)
 						{
 							ProjectileRenderObject& current_projectile = current_buffer->projectiles[current_projectile_index];
-							current_projectile.prev_position = current_projectile.position;
-							current_projectile.position = update_ptr->position;
+							const UpdateProjectile& current_update = update_array[update_offset];
 
-							++total_projectile_count;
-							++update_ptr;
+							current_projectile.prev_position = current_projectile.position;
+							current_projectile.position = current_update.position;
+
+							++update_offset;
 						}
 					}
-
-					queue_iterator.advance(sizeof(UpdateProjectile) * total_projectile_count);
 				}
 					break;
 				case PacketType::DESTROY_PROJECTILE:
 				{
-					const DestroyProjectile* destroy_data = reinterpret_cast<const DestroyProjectile*>(queue_iterator.get_packet_data());
+					const DestroyProjectile* destroy_data = queue_iterator.get_packet<DestroyProjectile>();
 
 					// TODO: check to make sure we don't get this message if no objects existed to begin with!
 					RenderProjectileRingBuffer& buffer = *m_projectile_render_pool.ring_buffers[destroy_data->buffer];
@@ -1165,13 +1260,11 @@ namespace VadonDemo::Model
 						buffer.projectiles[destroy_data->offset] = buffer.projectiles[buffer.active_count - 1];
 					}
 					--buffer.active_count;
-
-					queue_iterator.advance(sizeof(DestroyProjectile));
 				}
 					break;
 				case PacketType::CREATE_GENERIC:
 				{
-					const CreateGeneric* create_generic = reinterpret_cast<const CreateGeneric*>(queue_iterator.get_packet_data());
+					const CreateGeneric* create_generic = queue_iterator.get_packet<CreateGeneric>();
 
 					m_generic_render_pool.add_object(create_generic->handle);
 
@@ -1181,13 +1274,11 @@ namespace VadonDemo::Model
 					new_item_info.layer = m_canvas_layer;
 
 					render_obj.canvas_item = canvas_system.create_item(new_item_info);
-
-					queue_iterator.advance(sizeof(CreateGeneric));
 				}
 					break;
 				case PacketType::MODIFY_GENERIC:
 				{
-					const ModifyGeneric* modify_generic = reinterpret_cast<const ModifyGeneric*>(queue_iterator.get_packet_data());
+					const ModifyGeneric* modify_generic = queue_iterator.get_packet<ModifyGeneric>();
 
 					GenericRenderObject& render_obj = m_generic_render_pool.objects[modify_generic->handle];
 
@@ -1195,25 +1286,21 @@ namespace VadonDemo::Model
 					prepare_canvas_item(render_obj.canvas_item, Vadon::Utilities::to_enum<RenderObjectType>(render_type), modify_generic->color);
 
 					canvas_system.set_item_z_order(render_obj.canvas_item, modify_generic->z_order);
-
-					queue_iterator.advance(sizeof(ModifyGeneric));
 				}
 					break;
 				case PacketType::UPDATE_GENERIC:
 				{
-					const UpdateGeneric* update_generic = reinterpret_cast<const UpdateGeneric*>(queue_iterator.get_packet_data());
+					const UpdateGeneric* update_generic = queue_iterator.get_packet<UpdateGeneric>();
 
 					GenericRenderObject& render_obj = m_generic_render_pool.objects[update_generic->handle];
 					render_obj.prev_position = render_obj.position;
 					render_obj.position = update_generic->position;
 					render_obj.scale = update_generic->scale;
-
-					queue_iterator.advance(sizeof(UpdateGeneric));
 				}
 					break;
 				case PacketType::DESTROY_GENERIC:
 				{
-					const DestroyGeneric* destroy_generic = reinterpret_cast<const DestroyGeneric*>(queue_iterator.get_packet_data());
+					const DestroyGeneric* destroy_generic = queue_iterator.get_packet<DestroyGeneric>();
 
 					// TODO: make sure handle is within bounds!
 					GenericRenderObject& render_obj = m_generic_render_pool.objects[destroy_generic->handle];
@@ -1224,8 +1311,6 @@ namespace VadonDemo::Model
 
 						render_obj.canvas_item.invalidate();
 					}
-
-					queue_iterator.advance(sizeof(DestroyGeneric));
 				}
 					break;
 				}
