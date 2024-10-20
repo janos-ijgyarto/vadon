@@ -14,10 +14,8 @@ namespace VadonApp::Private::Platform::SDL
 	public:
 		PlatformInterface(VadonApp::Core::Application& application);
 
-		VadonApp::Platform::PlatformEventList read_events() override;
-
-		bool initialize() override;
-		void shutdown() override;
+		void dispatch_events() override;
+		void register_event_callback(EventCallback callback) override;
 
 		VadonApp::Platform::RenderWindowInfo get_window_info() const override;
 		VadonApp::Platform::WindowHandle get_window_handle() const override;
@@ -40,6 +38,9 @@ namespace VadonApp::Private::Platform::SDL
 
 		void set_clipboard_text(const char* text) override;
 		const char* get_clipboard_text() override;
+	protected:
+		bool internal_initialize() override;
+		void internal_shutdown() override;
 	private:
 		VadonApp::Platform::WindowEvent handle_window_event(const SDL_Event& sdl_event);
 		void window_moved(const Vadon::Utilities::Vector2i& position);
@@ -58,6 +59,9 @@ namespace VadonApp::Private::Platform::SDL
 		char* m_clipboard;
 
 		std::array<SDL_Cursor*, Vadon::Utilities::to_integral(VadonApp::Platform::Cursor::CURSOR_COUNT)> m_cursors;
+
+		std::vector<EventCallback> m_event_callbacks;
+		VadonApp::Platform::PlatformEventList m_platform_events;
 	};
 }
 #endif

@@ -27,6 +27,11 @@ namespace VadonDemo::UI
 	class MainWindow;
 }
 
+namespace Vadon::Core
+{
+	class EngineEnvironment;
+}
+
 namespace Vadon::ECS
 {
 	class World;
@@ -38,7 +43,7 @@ namespace VadonDemo::Core
 	class GameCore
 	{
 	public:
-		GameCore();
+		GameCore(Vadon::Core::EngineEnvironment& environment);
 		~GameCore();
 
 		int execute(int argc, char* argv[]);
@@ -48,6 +53,8 @@ namespace VadonDemo::Core
 		Platform::PlatformInterface& get_platform_interface();
 		Render::RenderSystem& get_render_system();
 		UI::MainWindow& get_main_window();
+
+		float get_delta_time() const;
 
 		Model::Model& get_model();
 

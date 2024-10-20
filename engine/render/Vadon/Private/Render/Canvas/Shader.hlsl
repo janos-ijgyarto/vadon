@@ -28,8 +28,8 @@ static const uint c_layer_view_agnostic = 1 << 0;
 struct LayerData
 {
     float2 offset;
+    float scale;
     uint flags;
-    uint _padding;
 };
 
 static const uint c_sdf_flags_enabled = 1 << 0;
@@ -274,6 +274,7 @@ PS_INPUT vs_main(uint vertex_index : SV_VertexID)
     const LayerData layer_data = LayerBuffer.layers[primitive_info.layer];
     
     output.pos.xy += layer_data.offset;
+    output.pos.xy *= layer_data.scale;
     if(layer_data.flags & c_layer_view_agnostic)
     {
         output.pos.xy = mul(output.pos, View.projection);

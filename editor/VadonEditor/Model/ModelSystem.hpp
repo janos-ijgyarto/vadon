@@ -22,7 +22,7 @@ namespace VadonEditor::Model
 		~ModelSystem();
 
 		VADONEDITOR_API Vadon::ECS::World& get_ecs_world();
-		SceneTree& get_scene_tree();
+		VADONEDITOR_API SceneTree& get_scene_tree();
 
 		// FIXME: have a more flexible approach, where this systems runs ECS systems tagged to run in the editor?
 		VADONEDITOR_API void add_callback(std::function<void()> callback);

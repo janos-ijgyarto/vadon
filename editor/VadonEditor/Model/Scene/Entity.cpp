@@ -159,6 +159,12 @@ namespace VadonEditor::Model
 
 	bool Entity::add_component(Vadon::ECS::ComponentID type_id)
 	{
+		if (is_sub_scene() == true)
+		{
+			// TODO: error!
+			return false;
+		}
+
 		Vadon::ECS::World& world = get_ecs_world();
 		Vadon::ECS::ComponentManager& component_manager = world.get_component_manager();
 
@@ -167,15 +173,28 @@ namespace VadonEditor::Model
 			return false;
 		}
 
-		return world.get_component_manager().add_component(m_entity_handle, type_id) != nullptr;
+		if (world.get_component_manager().add_component(m_entity_handle, type_id) == nullptr)
+		{
+			return false;
+		}
+
+		notify_modified();
+		return true;
 	}
 
 	void Entity::remove_component(Vadon::ECS::ComponentID type_id)
 	{
+		if (is_sub_scene() == true)
+		{
+			// TODO: error!
+			return;
+		}
+
 		Vadon::ECS::World& world = get_ecs_world();
 		Vadon::ECS::ComponentManager& component_manager = world.get_component_manager();
 		
 		component_manager.remove_component(m_entity_handle, type_id);
+		notify_modified();
 	}
 
 	Vadon::ECS::ComponentIDList Entity::get_component_types() const
@@ -255,7 +274,7 @@ namespace VadonEditor::Model
 		void* component = component_manager.get_component(m_entity_handle, component_type_id);
 		Vadon::Utilities::TypeRegistry::set_property(component, component_type_id, property_name, value);
 
-		notify_modified();
+		m_editor.get_system<ModelSystem>().get_scene_tree().entity_edited(m_entity_handle, component_type_id);
 	}
 
 	Entity::Entity(Core::Editor& editor, Vadon::ECS::EntityHandle entity_handle, EntityID id, Entity* parent)

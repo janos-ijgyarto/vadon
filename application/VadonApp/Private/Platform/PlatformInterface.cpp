@@ -21,4 +21,30 @@ namespace VadonApp::Private::Platform
 	{
 		return std::make_unique<Dummy::PlatformInterface>(application);
 	}
+
+	bool PlatformInterface::initialize()
+	{
+		if (internal_initialize() == false)
+		{
+			return false;
+		}
+
+		if (m_input_system.initialize() == false)
+		{
+			return false;
+		}
+
+		return true;
+	}
+
+	void PlatformInterface::shutdown()
+	{
+		m_input_system.shutdown();
+		internal_shutdown();
+	}
+
+	PlatformInterface::PlatformInterface(VadonApp::Core::Application& application) 
+		: VadonApp::Platform::PlatformInterface(application)
+		, m_input_system(application)
+	{}
 }

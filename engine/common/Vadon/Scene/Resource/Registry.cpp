@@ -23,10 +23,7 @@ namespace Vadon::Scene
 			return nullptr;
 		}
 
-		ResourceBase* resource = resource_info_it->second.factory_function();
-		resource->type_id = type_id;
-
-		return resource;
+		return resource_info_it->second.factory_function();
 	}
 
 	ResourceRegistry::SerializerFunction ResourceRegistry::get_serializer(Vadon::Utilities::TypeID type_id)

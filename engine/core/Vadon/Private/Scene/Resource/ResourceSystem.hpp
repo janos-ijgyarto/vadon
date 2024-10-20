@@ -11,20 +11,21 @@ namespace Vadon::Private::Scene
 	public:
 		const ResourceBase* get_resource_base(ResourceHandle resource_handle) const override;
 		ResourceID get_resource_id(ResourceHandle resource_handle) const override;
+		Vadon::Utilities::TypeID get_resource_type_id(ResourceHandle resource_handle) const override;
 
-		ResourcePath get_resource_path(ResourceID resource_id) const override;
-		void set_resource_path(ResourceID resource_id, ResourcePath path) override;
+		ResourcePath get_resource_path(ResourceHandle resource_handle) const override;
+		void set_resource_path(ResourceHandle resource_handle, ResourcePath path) override;
 
 		ResourceHandle find_resource(ResourceID resource_id) const override;
-		ResourceHandle load_resource(ResourceID resource_id) override;
+		bool load_resource(ResourceHandle resource_handle) override;
 
-		std::vector<ResourceID> find_resources_of_type(Vadon::Utilities::TypeID type_id) const override;
+		std::vector<ResourceHandle> find_resources_of_type(Vadon::Utilities::TypeID type_id) const override;
 
-		ResourceID find_resource(ResourcePath resource_path) const override;
-		ResourceID import_resource(ResourcePath resource_path) override;
-		bool export_resource(ResourceID resource_id) override;
+		ResourceHandle find_resource(ResourcePath resource_path) const override;
+		ResourceHandle import_resource(ResourcePath resource_path) override;
+		bool export_resource(ResourceHandle resource_handle) override;
 
-		bool serialize_resource_property(Vadon::Utilities::Serializer& serializer, std::string_view property_name, Vadon::Utilities::Variant& property_value) override;
+		bool serialize_resource_property(Vadon::Utilities::Serializer& serializer, std::string_view property_name, ResourceHandle& property_value) override;
 	protected:
 		ResourceHandle internal_create_resource(ResourceBase* resource, Vadon::Utilities::TypeID type_id) override;
 	private:
@@ -32,15 +33,12 @@ namespace Vadon::Private::Scene
 
 		struct ResourceData
 		{
-			ResourceID id;
-			ResourceBase* resource = nullptr;
-		};
-
-		struct ResourceInfo
-		{
-			Vadon::Utilities::TypeID type_id;
 			ResourcePath path;
-			ResourceHandle handle;
+			ResourceID id;
+			Vadon::Utilities::TypeID type_id;
+			ResourceBase* resource = nullptr;
+
+			bool is_loaded() const { return resource != nullptr; }
 		};
 
 		ResourceSystem(Vadon::Core::EngineCoreInterface& core);
@@ -48,19 +46,16 @@ namespace Vadon::Private::Scene
 		bool initialize();
 		void shutdown();
 
-		const ResourceInfo* internal_find_resource(ResourceID resource_id) const;
-		ResourceInfo* internal_find_resource(ResourceID resource_id) { return const_cast<ResourceInfo*>(std::as_const(*this).internal_find_resource(resource_id)); }
-		ResourceHandle internal_create_resource(ResourceID resource_id, ResourceInfo& info, ResourceBase* resource);
+		ResourceHandle create_resource_data(ResourceID resource_id, Vadon::Utilities::TypeID type_id);
+		bool load_resource(Vadon::Scene::ResourceSystemInterface& context, ResourceHandle resource_handle);
+		bool internal_load_resource(Vadon::Scene::ResourceSystemInterface& context, ResourceData& resource_data);
 
-		ResourceHandle load_resource(Vadon::Scene::ResourceSystemInterface& context, ResourceID resource_id);
-		ResourceHandle internal_load_resource(Vadon::Scene::ResourceSystemInterface& context, ResourceID resource_id, ResourceInfo& info);
-
-		bool serialize_resource_data(Vadon::Scene::ResourceSystemInterface& context, Vadon::Utilities::Serializer& serializer, ResourceBase& resource, const ResourceInfo& info);
+		bool serialize_resource_data(Vadon::Scene::ResourceSystemInterface& context, Vadon::Utilities::Serializer& serializer, const ResourceData& resource_data);
 
 		using ResourcePool = Vadon::Utilities::ObjectPool<Vadon::Scene::Resource, ResourceData>;
 		ResourcePool m_resource_pool;
 
-		std::unordered_map<ResourceID, ResourceInfo> m_resource_lookup;
+		std::unordered_map<ResourceID, ResourceHandle> m_resource_lookup;
 
 		friend class SceneSystem;
 	};

@@ -28,6 +28,7 @@
 #include <Vadon/Scene/SceneSystem.hpp>
 
 #include <Vadon/Utilities/Container/Concurrent/TripleBuffer.hpp>
+#include <Vadon/Utilities/Container/Queue/PacketQueue.hpp>
 
 #include <filesystem>
 
@@ -35,11 +36,8 @@ namespace VadonDemo::UI
 {
 	namespace
 	{
-		using Clock = std::chrono::steady_clock;
-		using TimePoint = std::chrono::time_point<Clock>;
-		using Duration = std::chrono::duration<float>;
-
-		TimePoint last_frame_time = Clock::now();
+		constexpr float c_sim_timestep = 1.0f / 30.0f;
+		constexpr float c_frame_limit = 0.25f;
 
 		struct MainWindowDevGUI
 		{
@@ -153,21 +151,21 @@ namespace VadonDemo::UI
 				}
 			}
 		};
+
+		struct CameraData
+		{
+			Vadon::Utilities::Vector2 camera_position = Vadon::Utilities::Vector2_Zero;
+			float camera_zoom = 1.0f;
+		};
 	}
 
 	struct MainWindow::Internal
 	{
 		Core::GameCore& m_game_core;
-
-		TimePoint m_last_time_point;
-
+				
 		bool m_dev_gui_enabled = false;
 
-		Vadon::Utilities::TripleBuffer<int32_t> m_dev_gui_buffer;
-		std::array<VadonApp::Platform::PlatformEventList, 2> m_dev_gui_event_buffer;
-		VadonApp::Platform::PlatformEventList* m_dev_gui_event_write_buffer;
-		VadonApp::Platform::PlatformEventList* m_dev_gui_event_read_buffer;
-		std::mutex m_dev_gui_event_mutex;
+		Vadon::Utilities::TripleBuffer<int32_t> m_dev_gui_render_buffer;
 
 		MainWindowDevGUI m_dev_gui;
 
@@ -176,21 +174,29 @@ namespace VadonDemo::UI
 		Vadon::Core::RootDirectoryHandle m_root_directory;
 		Vadon::Render::Canvas::RenderContext m_canvas_context;
 
+		Vadon::Utilities::TripleBuffer<Vadon::Utilities::PacketQueue> m_render_data_buffer;
+		Vadon::Utilities::TripleBuffer<CameraData> m_camera_data_buffer;
+		Vadon::Render::Canvas::Camera m_model_camera;
+
+		float m_model_accumulator = 0.0f;
+		int m_model_frame_count = 0;
+		int m_view_frame_count = 0;
+		int m_render_frame_count = 0;
+
 		Internal(Core::GameCore& game_core)
 			: m_game_core(game_core)
-			, m_dev_gui_buffer({0, 1, 2})
+			, m_dev_gui_render_buffer({0, 1, 2})
 		{
-			m_dev_gui_event_write_buffer = &m_dev_gui_event_buffer[0];
-			m_dev_gui_event_read_buffer = &m_dev_gui_event_buffer[1];
 		}
 
 		bool initialize()
 		{
-			init_scene();
+			if (init_scene() == false)
+			{
+				return false;
+			}
 			init_renderer();
 			init_dev_gui();
-
-			m_last_time_point = Clock::now();
 
 			return true;
 		}
@@ -262,11 +268,11 @@ namespace VadonDemo::UI
 			return true;
 		}
 
-		void init_scene()
+		bool init_scene()
 		{
 			if (load_project() == false)
 			{
-				return;
+				return false;
 			}
 
 			using Logger = Vadon::Core::Logger;
@@ -274,22 +280,7 @@ namespace VadonDemo::UI
 			VadonApp::Core::Application& engine_app = m_game_core.get_engine_app();
 			Vadon::Core::EngineCoreInterface& engine_core = engine_app.get_engine_core();
 			Vadon::ECS::World& ecs_world = m_game_core.get_ecs_world();
-
-			// Register component events
-			Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
-			component_manager.register_event_callback<VadonDemo::Model::CanvasComponent>(
-				[this](const Vadon::ECS::ComponentEvent& event)
-				{
-					m_game_core.get_model().component_event(m_game_core.get_ecs_world(), event);
-				}
-			);
-			component_manager.register_event_callback<VadonDemo::Model::Celestial>(
-				[this, &ecs_world](const Vadon::ECS::ComponentEvent& event)
-				{
-					m_game_core.get_model().component_event(m_game_core.get_ecs_world(), event);
-				}
-			);
-
+			
 			{
 				Vadon::Core::FileSystem& file_system = engine_core.get_system<Vadon::Core::FileSystem>();
 				Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
@@ -300,19 +291,25 @@ namespace VadonDemo::UI
 				for (const std::string& current_scene_file : scene_files)
 				{
 					const Vadon::Scene::ResourcePath current_scene_path{ .path = current_scene_file, .root_directory = m_root_directory };
-					const Vadon::Scene::ResourceID current_scene_id = resource_system.import_resource(current_scene_path);
-					if (current_scene_id.is_valid() == false)
+					const Vadon::Scene::ResourceHandle current_scene_handle = resource_system.import_resource(current_scene_path);
+					if (current_scene_handle.is_valid() == false)
 					{
 						// TODO: warning!
 						continue;
 					}
 				}
 
-				Vadon::Scene::ResourceHandle main_scene_handle = resource_system.load_resource(m_project_info.startup_scene);
+				const Vadon::Scene::ResourceHandle main_scene_handle = resource_system.find_resource(m_project_info.startup_scene);
 				if (main_scene_handle.is_valid() == false)
 				{
 					// Something went wrong
-					return;
+					return false;
+				}
+
+				if (resource_system.load_resource(main_scene_handle) == false)
+				{
+					// Something went wrong
+					return false;
 				}
 
 				Vadon::Scene::SceneSystem& scene_system = engine_core.get_system<Vadon::Scene::SceneSystem>();
@@ -320,17 +317,22 @@ namespace VadonDemo::UI
 				if (root_entity_handle.is_valid() == false)
 				{
 					// Something went wrong
-					return;
+					return false;
 				}
 			}
 
-			m_game_core.get_model().init_simulation(ecs_world);
+			if (m_game_core.get_model().init_simulation(ecs_world) == false)
+			{
+				// TODO: error?
+				return false;
+			}
 
 			{
 				VadonApp::Platform::PlatformInterface& platform_interface = engine_app.get_system<VadonApp::Platform::PlatformInterface>();
 				const VadonApp::Platform::RenderWindowInfo main_window_info = platform_interface.get_window_info();
 
-				m_canvas_context.camera.view_rectangle.size = main_window_info.window.size;
+				m_model_camera.view_rectangle.size = main_window_info.window.size;
+				m_canvas_context.camera = m_model_camera;
 
 				{
 					Vadon::Render::RenderTargetSystem& rt_system = engine_core.get_system<Vadon::Render::RenderTargetSystem>();
@@ -344,6 +346,8 @@ namespace VadonDemo::UI
 					m_canvas_context.layers.push_back(m_game_core.get_model().get_canvas_layer());
 				}
 			}
+
+			return true;
 		}
 
 		void init_renderer()
@@ -409,7 +413,7 @@ namespace VadonDemo::UI
 						return;
 					}
 
-					const int32_t* read_frame_index = m_dev_gui_buffer.get_read_buffer();
+					const int32_t* read_frame_index = m_dev_gui_render_buffer.get_read_buffer();
 					if (read_frame_index)
 					{
 						// Read frame ready, swap with the ready frame
@@ -428,16 +432,6 @@ namespace VadonDemo::UI
 		void init_dev_gui()
 		{
 			m_dev_gui.initialize();
-
-			VadonDemo::Platform::PlatformInterface& platform_interface = m_game_core.get_platform_interface();
-			platform_interface.register_event_callback(
-				[this](const VadonApp::Platform::PlatformEventList& event_list)
-				{
-					std::lock_guard lock(m_dev_gui_event_mutex);
-					VadonApp::Platform::PlatformEventList& write_buffer = *m_dev_gui_event_write_buffer;
-					write_buffer.insert(write_buffer.end(), event_list.begin(), event_list.end());
-				}
-			);
 		}
 
 		Vadon::Core::TaskGroup update()
@@ -447,12 +441,99 @@ namespace VadonDemo::UI
 
 			Vadon::Core::TaskSystem& task_system = engine_core.get_system<Vadon::Core::TaskSystem>();
 
-			Vadon::Core::TaskGroup main_window_task_group = task_system.create_task_group("Vadondemo_main_window");
+			Vadon::Core::TaskGroup main_window_task_group = task_system.create_task_group("Vadondemo_main_window_model");
+			Vadon::Core::TaskNode model_update_node = main_window_task_group->create_start_dependent("Vadondemo_model_update");
+
+			const float delta_time = std::min(m_game_core.get_delta_time(), c_frame_limit);
+
+			model_update_node->add_subtask(
+				[this, delta_time]()
+				{
+					// Model update logic inspired by the "Fix Your Timestep!" blog by Gaffer on Games: https://gafferongames.com/post/fix_your_timestep/
+					float model_accumulator = m_model_accumulator;
+					model_accumulator += delta_time;
+					bool model_updated = false;
+
+					while (model_accumulator >= c_sim_timestep)
+					{
+						m_game_core.get_model().update_simulation(m_game_core.get_ecs_world(), c_sim_timestep);
+						model_accumulator -= c_sim_timestep;
+						model_updated = true;
+						++m_model_frame_count;
+					}
+
+					m_model_accumulator = model_accumulator;
+
+					if(model_updated == true)
+					{
+						Vadon::Utilities::PacketQueue* render_queue = m_render_data_buffer.get_write_buffer();
+						m_game_core.get_model().update_view_async(m_game_core.get_ecs_world(), *render_queue);
+
+						m_render_data_buffer.set_write_complete();
+					}
+				}
+			);
+
+			Vadon::Core::TaskNode view_update_node = model_update_node->create_dependent("Vadondemo_view_update");
+			view_update_node->add_subtask(
+				[this, &engine_app, delta_time]()
+				{
+					++m_view_frame_count;
+
+					// Update movement
+					VadonDemo::Model::PlayerInput player_input;
+
+					const Platform::PlatformInterface::InputValues input_values = m_game_core.get_platform_interface().get_input_values();
+
+					VadonApp::UI::Developer::GUISystem& dev_gui = engine_app.get_system<VadonApp::UI::Developer::GUISystem>();
+					if ((m_dev_gui_enabled == false) || (Vadon::Utilities::to_bool(dev_gui.get_io_flags() & VadonApp::UI::Developer::GUISystem::IOFlags::KEYBOARD_CAPTURE) == false))
+					{
+						if (input_values.move_left == true)
+						{
+							player_input.move_dir.x = -1.0f;
+						}
+						else if (input_values.move_right == true)
+						{
+							player_input.move_dir.x = 1.0f;
+						}
+
+						if (input_values.move_up == true)
+						{
+							player_input.move_dir.y = 1.0f;
+						}
+						else if (input_values.move_down == true)
+						{
+							player_input.move_dir.y = -1.0f;
+						}
+
+						player_input.fire = input_values.fire;
+					}
+
+					m_game_core.get_model().set_player_input(m_game_core.get_ecs_world(), player_input);
+
+					auto player_query = m_game_core.get_ecs_world().get_component_manager().run_component_query<VadonDemo::Model::Transform2D&, VadonDemo::Model::Player&>();
+					for (auto player_it = player_query.get_iterator(); player_it.is_valid() == true; player_it.next())
+					{
+						auto player_components = player_it.get_tuple();
+						m_model_camera.view_rectangle.position = std::get<VadonDemo::Model::Transform2D&>(player_components).position;
+					}
+					// TODO: camera zoom?
+
+					{
+						CameraData* camera_data = m_camera_data_buffer.get_write_buffer();
+						camera_data->camera_position = m_model_camera.view_rectangle.position;
+						camera_data->camera_zoom = m_model_camera.zoom;
+
+						m_camera_data_buffer.set_write_complete();
+					}
+				}
+			);
 
 			// Render dev GUI (if enabled)
 			// FIXME: extract to function?
 			if(m_dev_gui_enabled)
 			{
+				VadonApp::UI::Developer::GUISystem& dev_gui = engine_app.get_system<VadonApp::UI::Developer::GUISystem>();
 				if (!m_dev_gui.window.open)
 				{
 					// Window was closed, disable dev GUI
@@ -460,25 +541,11 @@ namespace VadonDemo::UI
 					return main_window_task_group;
 				}
 
-				VadonApp::UI::Developer::GUISystem& dev_gui = engine_app.get_system<VadonApp::UI::Developer::GUISystem>();
-
 				// Add a node to start the dev GUI frame				
-				Vadon::Core::TaskNode gui_start_node = main_window_task_group->create_start_dependent("Vadondemo_dev_gui_start");
+				Vadon::Core::TaskNode gui_start_node = view_update_node->create_dependent("Vadondemo_dev_gui_start");
 				gui_start_node->add_subtask(
 					[this, &dev_gui]()
 					{
-						{
-							std::lock_guard lock(m_dev_gui_event_mutex);
-							VadonApp::Platform::PlatformEventList& read_buffer = *m_dev_gui_event_read_buffer;
-							dev_gui.dispatch_platform_events(read_buffer);
-							read_buffer.clear();
-
-							// Swap the read and write buffer pointers
-							VadonApp::Platform::PlatformEventList* read_buffer_temp = m_dev_gui_event_read_buffer;
-							m_dev_gui_event_read_buffer = m_dev_gui_event_write_buffer;
-							m_dev_gui_event_write_buffer = read_buffer_temp;
-						}
-
 						dev_gui.start_frame();
 					}
 				);
@@ -500,6 +567,10 @@ namespace VadonDemo::UI
 					{
 						if (dev_gui.begin_window(m_dev_gui.window))
 						{
+							dev_gui.add_text(std::format("Model frames: {}", m_model_frame_count));
+							dev_gui.add_text(std::format("View frames: {}", m_view_frame_count));
+							dev_gui.add_text(std::format("Render frames: {}", m_render_frame_count));
+
 							if (dev_gui.push_tree_node("Numeric Inputs"))
 							{
 								dev_gui.draw_input_int(m_dev_gui.input_int);
@@ -606,30 +677,36 @@ namespace VadonDemo::UI
 					{
 						dev_gui.end_frame();
 
-						const int32_t* write_frame_index = m_dev_gui_buffer.get_write_buffer();
+						const int32_t* write_frame_index = m_dev_gui_render_buffer.get_write_buffer();
 						dev_gui.cache_frame(*write_frame_index);
-						m_dev_gui_buffer.set_write_complete();
+						m_dev_gui_render_buffer.set_write_complete();
 					}
 				);
 
-				// Wait for dev GUI before the main window group is done
 				main_window_task_group->add_end_dependency(gui_end_node);
 			}
-
+			
 			return main_window_task_group;
 		}
 
 		void render()
 		{
-			TimePoint current_time = Clock::now();
-			const float delta_time = std::chrono::duration_cast<Duration>(current_time - m_last_time_point).count();
+			// Update using data from model
+			Vadon::Utilities::PacketQueue* render_packets = m_render_data_buffer.get_read_buffer();
+			if (render_packets != nullptr)
+			{
+				m_game_core.get_model().render_async(*render_packets);
+			}
 
-			m_last_time_point = current_time;
+			CameraData* camera_data = m_camera_data_buffer.get_read_buffer();
+			if (camera_data != nullptr)
+			{
+				m_canvas_context.camera.view_rectangle.position = camera_data->camera_position;
+				m_canvas_context.camera.zoom = camera_data->camera_zoom;
+			}
 
-			// Update model
-			// FIXME: have separate view, sync with model thread!
-			m_game_core.get_model().update_simulation(m_game_core.get_ecs_world(), delta_time);
-			m_game_core.get_model().update_rendering(m_game_core.get_ecs_world());
+			++m_render_frame_count;
+			m_game_core.get_model().lerp_view_state(m_model_accumulator / c_sim_timestep);
 		}
 
 		void test_tasks()

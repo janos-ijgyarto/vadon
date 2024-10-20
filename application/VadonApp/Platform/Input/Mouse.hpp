@@ -9,6 +9,7 @@ namespace VadonApp::Platform
 		RIGHT,
 		X1,
 		X2,
+		BUTTON_COUNT,
 		INVALID = -1
 	};
 

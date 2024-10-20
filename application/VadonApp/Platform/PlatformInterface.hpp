@@ -1,9 +1,8 @@
 #ifndef VADONAPP_PLATFORM_PLATFORMINTERFACE_HPP
 #define VADONAPP_PLATFORM_PLATFORMINTERFACE_HPP
-#include <VadonApp/Platform/PlatformModule.hpp>
+#include <VadonApp/Platform/Module.hpp>
 
 #include <VadonApp/Platform/Event/Event.hpp>
-#include <VadonApp/Platform/Input/Mouse.hpp>
 #include <VadonApp/Platform/Window/Window.hpp>
 
 #include <Vadon/Utilities/Enum/EnumClassBitFlag.hpp>
@@ -20,10 +19,13 @@ namespace VadonApp::Platform
 	class PlatformInterface : public PlatformSystem<PlatformInterface>
 	{
 	public:
+		using EventCallback = std::function<void(const PlatformEventList&)>;
+
 		virtual ~PlatformInterface() {}
 
-		// FIXME: might be better to register callbacks, cache in system, etc?
-		virtual PlatformEventList read_events() = 0;
+		// NOTE: this will dispatch to all registered callbacks!
+		virtual void dispatch_events() = 0;
+		virtual void register_event_callback(EventCallback callback) = 0;
 
 		// TODO: allow creating multiple windows!
 		virtual RenderWindowInfo get_window_info() const = 0;

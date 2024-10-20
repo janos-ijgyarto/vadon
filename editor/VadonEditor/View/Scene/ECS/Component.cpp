@@ -89,11 +89,16 @@ namespace VadonEditor::View
 					current_property->set_value(entity.get_component_property(m_type_id, current_property->get_name()));
 				}
 			}
-			// FIXME: use a closeable child window instead?
-			if (dev_gui.draw_button(m_remove_button) == true)
+
+			// Can only add or remove components on entities that are not sub-scenes
+			if (entity.is_sub_scene() == false)
 			{
-				entity.remove_component(m_type_id);
-				removed = true;
+				// FIXME: use a closeable child window instead?
+				if (dev_gui.draw_button(m_remove_button) == true)
+				{
+					entity.remove_component(m_type_id);
+					removed = true;
+				}
 			}
 			dev_gui.pop_tree_node();
 		}

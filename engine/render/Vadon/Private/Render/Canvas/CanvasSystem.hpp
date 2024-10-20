@@ -7,6 +7,7 @@
 #include <Vadon/Private/Render/Canvas/Layer.hpp>
 #include <Vadon/Private/Render/Canvas/Material.hpp>
 #include <Vadon/Private/Render/Canvas/Primitive.hpp>
+#include <Vadon/Private/Render/Canvas/Transform.hpp>
 
 #include <Vadon/Render/GraphicsAPI/Buffer/Buffer.hpp>
 #include <Vadon/Render/GraphicsAPI/Pipeline/Pipeline.hpp>
@@ -30,15 +31,22 @@ namespace Vadon::Private::Render::Canvas
 		LayerInfo get_layer_info(LayerHandle layer_handle) const override;
 		void remove_layer(LayerHandle layer_handle) override;
 
-		void set_layer_offset(LayerHandle layer_handle, Vector2 offset) override;
+		void set_layer_transform(LayerHandle layer_handle, const Transform& transform) override;
 
 		ItemHandle create_item(ItemInfo info) override;
 		bool is_item_valid(ItemHandle item_handle) const override { return m_item_pool.is_handle_valid(item_handle); }
 		ItemInfo get_item_info(ItemHandle item_handle) const override;
 		void remove_item(ItemHandle item_handle) override;
 
+		void set_item_transform(ItemHandle item_handle, const Transform& transform) override;
+		void set_item_z_order(ItemHandle item_handle, float z_order) override;
+
+		size_t get_item_buffer_size(ItemHandle item_handle) const override;
 		void clear_item(ItemHandle item_handle) override;
-		void set_item_position(ItemHandle item_handle, Vector2 position) override;
+		void add_item_batch_draw(ItemHandle item_handle, const BatchDrawCommand& batch_command) override;
+		void draw_item_triangle(ItemHandle item_handle, const Triangle& triangle) override;
+		void draw_item_rectangle(ItemHandle item_handle, const Rectangle& rectangle) override;
+		void draw_item_sprite(ItemHandle item_handle, const Sprite& sprite) override;
 
 		MaterialHandle create_material(MaterialInfo info) override;
 		bool is_material_valid(MaterialHandle material_handle) const override { return m_material_pool.is_handle_valid(material_handle); }
@@ -47,9 +55,15 @@ namespace Vadon::Private::Render::Canvas
 
 		void set_material_sdf(MaterialHandle material_handle, SDFParameters parameters) override;
 
-		void draw_triangle(ItemHandle item_handle, const Triangle& triangle) override;
-		void draw_rectangle(ItemHandle item_handle, const Rectangle& rectangle) override;
-		void draw_sprite(ItemHandle item_handle, const Sprite& sprite) override;
+		BatchHandle create_batch() override;
+		bool is_batch_valid(BatchHandle batch_handle) const override { return m_batch_pool.is_handle_valid(batch_handle); }
+		void remove_batch(BatchHandle batch_handle) override;
+
+		size_t get_batch_buffer_size(BatchHandle batch_handle) const override;
+		void clear_batch(BatchHandle batch_handle) override;
+		void draw_batch_triangle(BatchHandle batch_handle, const Triangle& triangle) override;
+		void draw_batch_rectangle(BatchHandle batch_handle, const Rectangle& rectangle) override;
+		void draw_batch_sprite(BatchHandle batch_handle, const Sprite& sprite) override;
 
 		void render(const RenderContext& context) override;
 	protected:
@@ -69,6 +83,9 @@ namespace Vadon::Private::Render::Canvas
 		void buffer_frame_data();
 
 		uint32_t get_material_index(const PrimitiveBase& primitive);
+
+		void set_item_layer_dirty(const ItemData& item);
+		void update_layer_items(LayerData& layer);
 
 		// Data shared across render passes (layers, materials, etc.)
 		struct SharedData
@@ -122,10 +139,12 @@ namespace Vadon::Private::Render::Canvas
 			}
 		};
 
+		Vadon::Utilities::ObjectPool<Vadon::Render::Canvas::Batch, BatchData> m_batch_pool;
 		Vadon::Utilities::ObjectPool<Vadon::Render::Canvas::Item, ItemData> m_item_pool;
 		Vadon::Utilities::ObjectPool<Vadon::Render::Canvas::Layer, LayerData> m_layer_pool;
 		Vadon::Utilities::ObjectPool<Vadon::Render::Canvas::Material, MaterialData> m_material_pool;
 
+		// FIXME: create array of these so we can process in parallel?
 		SharedData m_shared_data;
 		FrameData m_frame_data;
 

@@ -29,12 +29,14 @@ namespace VadonDemo::Core
 		// TODO: implement systems for setting this up based on command line, serialized config, etc.
 		constexpr int c_screen_width = 1024;
 		constexpr int c_screen_height = 768;
+
+		using Clock = std::chrono::steady_clock;
+		using TimePoint = std::chrono::time_point<Clock>;
+		using Duration = std::chrono::duration<float>;
 	}
 
 	struct GameCore::Internal
 	{
-		Vadon::Core::EngineEnvironment m_engine_environment;
-
 		std::unique_ptr<Model::Model> m_model;
 		Platform::PlatformInterface m_platform_interface;
 		Render::RenderSystem m_render_system;
@@ -46,6 +48,9 @@ namespace VadonDemo::Core
 		// FIXME: implement a proper CLI parser!
 		std::string m_program_name;
 		std::unordered_map<std::string, std::string> m_command_line_args;
+
+		TimePoint m_last_time_point;
+		float m_delta_time = 0.0f;
 
 		Internal(GameCore& game_core)
 			: m_platform_interface(game_core)
@@ -93,6 +98,8 @@ namespace VadonDemo::Core
 
 			Vadon::Core::Logger::log_message("Vadon Demo app initialized.\n");
 
+			m_last_time_point = Clock::now();
+
 			return true;
 		}
 
@@ -130,9 +137,6 @@ namespace VadonDemo::Core
 
 		bool init_engine_application(int /*argc*/, char* argv[])
 		{
-			VadonApp::Core::Application::init_application_environment(m_engine_environment);
-			VadonDemo::Model::Model::init_engine_environment(m_engine_environment);
-
 			// Prepare app config
 			// TODO: move to a dedicated subsystem!
 			VadonApp::Core::Configuration app_configuration;
@@ -166,8 +170,8 @@ namespace VadonDemo::Core
 
 		void register_app_event_handlers()
 		{
-			// Register callback in platform interface
-			m_platform_interface.register_event_callback(
+			// Register callback in platform interface			
+			m_engine_app->get_system<VadonApp::Platform::PlatformInterface>().register_event_callback(
 				[this](const VadonApp::Platform::PlatformEventList& platform_events)
 				{
 					auto platform_event_visitor = Vadon::Utilities::VisitorOverloadList{
@@ -231,11 +235,6 @@ namespace VadonDemo::Core
 				return 1;
 			}
 
-			VadonApp::Platform::PlatformInterface& platform_interface = m_engine_app->get_system<VadonApp::Platform::PlatformInterface>();
-
-			// Start main task loop
-			game_loop(task_system, platform_interface);
-
 			// Start render task loop
 			render_loop(task_system);
 
@@ -250,40 +249,41 @@ namespace VadonDemo::Core
 		{
 			Vadon::Core::TaskSystem& task_system = m_engine_app->get_engine_core().get_system<Vadon::Core::TaskSystem>();
 
+			bool frame_completed = true;
+
 			// Keep looping until the task system tells us to stop
 			while (!task_system.stop_requested())
 			{
-				// Use main thread to process platform events
-				// NOTE: this may be only a Windows-specific requirement
-				m_platform_interface.update();
+				if (frame_completed == true)
+				{
+					TimePoint current_time = Clock::now();
+
+					m_delta_time = std::chrono::duration_cast<Duration>(current_time - m_last_time_point).count();
+					m_last_time_point = current_time;
+
+					frame_completed = false;
+
+					// Use main thread to process platform events
+					// NOTE: this may be only a Windows-specific requirement
+					m_platform_interface.update();
+
+					// Update main window once we have the platform events
+					Vadon::Core::TaskGroup main_window_group = m_main_window.update();
+
+					Vadon::Core::TaskNode frame_end_node = main_window_group->create_end_dependent("Vadondemo_frame_end");
+					frame_end_node->add_subtask([&frame_completed]()
+						{
+							frame_completed = true;
+						}
+					);
+
+					// Run the main window node (will kick everything else afterward)
+					main_window_group->update();
+				}
 
 				// Try to steal some tasks as well
 				task_system.consume_task();
 			}
-		}
-
-		void game_loop(Vadon::Core::TaskSystem& task_system, VadonApp::Platform::PlatformInterface& platform_interface)
-		{
-			// Check whether we need to exit
-			if (task_system.stop_requested())
-			{
-				return;
-			}
-
-			// Update main window once we have the platform events
-			Vadon::Core::TaskGroup main_window_group = m_main_window.update();
-
-			// Create a recursive task that will re-run this same function
-			Vadon::Core::TaskNode recursive_main_loop_node = main_window_group->create_end_dependent("Vadondemo_recursive_main_loop");
-			recursive_main_loop_node->add_subtask(
-				[this, &task_system, &platform_interface]()
-				{
-					game_loop(task_system, platform_interface);
-				}
-			);
-
-			// Run the main window node (will kick everything else afterward)
-			main_window_group->update();
 		}
 
 		void render_loop(Vadon::Core::TaskSystem& task_system)
@@ -343,8 +343,6 @@ namespace VadonDemo::Core
 				return false;
 			}
 
-
-
 			return true;
 		}
 
@@ -360,9 +358,11 @@ namespace VadonDemo::Core
 		}
 	};
 
-	GameCore::GameCore()
+	GameCore::GameCore(Vadon::Core::EngineEnvironment& environment)
 		: m_internal(std::make_unique<Internal>(*this))
 	{
+		VadonApp::Core::Application::init_application_environment(environment);
+		VadonDemo::Model::Model::init_engine_environment(environment);
 	}
 
 	GameCore::~GameCore() = default;
@@ -390,6 +390,11 @@ namespace VadonDemo::Core
 	UI::MainWindow& GameCore::get_main_window()
 	{
 		return m_internal->m_main_window;
+	}
+
+	float GameCore::get_delta_time() const
+	{
+		return m_internal->m_delta_time;
 	}
 
 	Model::Model& GameCore::get_model()

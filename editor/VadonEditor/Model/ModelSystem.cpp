@@ -59,8 +59,8 @@ namespace VadonEditor::Model
 			for (const std::string& current_scene_file : scene_files)
 			{
 				const Vadon::Scene::ResourcePath current_scene_path{ .path = current_scene_file, .root_directory = project_manager.get_active_project().root_dir_handle };
-				const Vadon::Scene::ResourceID imported_resource_id = resource_system.import_resource(current_scene_path);
-				if (imported_resource_id.is_valid() == false)
+				const Vadon::Scene::ResourceHandle imported_resource_handle = resource_system.import_resource(current_scene_path);
+				if (imported_resource_handle.is_valid() == false)
 				{
 					Vadon::Core::Logger::log_warning(std::format("Model system: unable to load scene at \"{}\"!\n", current_scene_file));
 				}

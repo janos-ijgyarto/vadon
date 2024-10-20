@@ -13,7 +13,8 @@ Vadon is a cross-platform general-purpose game engine implemented using C++ and 
 - Custom Entity component system (ECS, implementation details inspired in part by [EnTT](https://github.com/skypjack/entt))
 - Custom reflection and RTTI system (inspired by [Godot](https://github.com/godotengine/godot))
 - Scene system (inspired by [Godot](https://github.com/godotengine/godot))
-- Application (wrapper for platform, windows, etc.) and editor
+- Application API (wrapper for platform, windows, etc.)
+- Editor API (provides basic editing functionality, can be customized for projects)
 - Developer GUI for dev tools and debugging (currently uses [Dear ImGui](https://github.com/ocornut/imgui))
 - 2D rendering via Canvas API
 - File management

@@ -9,21 +9,14 @@
             "components": [
                 {
                     "properties": {
-                        "color": [
-                            "Vector3",
-                            1.0,
-                            1.0,
-                            0.0
-                        ]
+                        "dimensions": [
+                            "Vector2",
+                            500.0,
+                            500.0
+                        ],
+                        "display_name": "Start Level"
                     },
-                    "type": "VadonDemo::Model::CanvasComponent"
-                },
-                {
-                    "properties": {
-                        "angular_velocity": 0.0,
-                        "is_star": true
-                    },
-                    "type": "VadonDemo::Model::Celestial"
+                    "type": "VadonDemo::Model::Map"
                 },
                 {
                     "properties": {
@@ -33,340 +26,110 @@
                             0.0
                         ],
                         "rotation": 0.0,
-                        "scale": 100.0
+                        "scale": 1000.0
                     },
                     "type": "VadonDemo::Model::Transform2D"
+                },
+                {
+                    "properties": {
+                        "color": [
+                            "Vector3",
+                            0.0,
+                            0.41803276538848877,
+                            0.0
+                        ],
+                        "type": 1,
+                        "z_order": 0.0
+                    },
+                    "type": "VadonDemo::Model::CanvasComponent"
                 }
             ],
-            "name": "Sun",
+            "name": "Map",
             "parent": 0,
             "scene": [
                 "UUID",
-                "1CWOcvGLQh+gM5rfei+D4Q=="
+                "tCnU2yQ7Q2qG/EAaOpw87A=="
             ]
         },
         {
             "components": [
-                {
-                    "properties": {
-                        "color": [
-                            "Vector3",
-                            0.36994218826293945,
-                            0.36994218826293945,
-                            0.36994218826293945
-                        ]
-                    },
-                    "type": "VadonDemo::Model::CanvasComponent"
-                },
-                {
-                    "properties": {
-                        "angular_velocity": 3.0,
-                        "is_star": false
-                    },
-                    "type": "VadonDemo::Model::Celestial"
-                },
                 {
                     "properties": {
                         "position": [
                             "Vector2",
-                            150.0,
-                            0.0
-                        ],
-                        "rotation": 0.0,
-                        "scale": 10.0
-                    },
-                    "type": "VadonDemo::Model::Transform2D"
-                }
-            ],
-            "name": "Mercury",
-            "parent": 1,
-            "scene": [
-                "UUID",
-                "2HnP9u+zTJaM9HNWU7YMpg=="
-            ]
-        },
-        {
-            "components": [
-                {
-                    "properties": {
-                        "color": [
-                            "Vector3",
-                            0.8150289058685303,
-                            0.7208058834075928,
-                            0.0
-                        ]
-                    },
-                    "type": "VadonDemo::Model::CanvasComponent"
-                },
-                {
-                    "properties": {
-                        "angular_velocity": -1.5,
-                        "is_star": false
-                    },
-                    "type": "VadonDemo::Model::Celestial"
-                },
-                {
-                    "properties": {
-                        "position": [
-                            "Vector2",
-                            200.0,
-                            0.0
-                        ],
-                        "rotation": 0.0,
-                        "scale": 20.0
-                    },
-                    "type": "VadonDemo::Model::Transform2D"
-                }
-            ],
-            "name": "Venus",
-            "parent": 1,
-            "scene": [
-                "UUID",
-                "2HnP9u+zTJaM9HNWU7YMpg=="
-            ]
-        },
-        {
-            "components": [
-                {
-                    "properties": {
-                        "color": [
-                            "Vector3",
                             0.0,
-                            0.0,
-                            1.0
-                        ]
-                    },
-                    "type": "VadonDemo::Model::CanvasComponent"
-                },
-                {
-                    "properties": {
-                        "angular_velocity": 1.0,
-                        "is_star": false
-                    },
-                    "type": "VadonDemo::Model::Celestial"
-                },
-                {
-                    "properties": {
-                        "position": [
-                            "Vector2",
-                            275.0,
                             0.0
                         ],
                         "rotation": 0.0,
                         "scale": 25.0
                     },
                     "type": "VadonDemo::Model::Transform2D"
-                }
-            ],
-            "name": "Earth",
-            "parent": 1,
-            "scene": [
-                "UUID",
-                "2HnP9u+zTJaM9HNWU7YMpg=="
-            ]
-        },
-        {
-            "components": [
+                },
                 {
                     "properties": {
                         "color": [
                             "Vector3",
-                            0.9017341136932373,
-                            0.9017341136932373,
-                            0.9017341136932373
-                        ]
-                    },
-                    "type": "VadonDemo::Model::CanvasComponent"
-                },
-                {
-                    "properties": {
-                        "angular_velocity": 1.0,
-                        "is_star": false
-                    },
-                    "type": "VadonDemo::Model::Celestial"
-                },
-                {
-                    "properties": {
-                        "position": [
-                            "Vector2",
-                            30.0,
-                            0.0
-                        ],
-                        "rotation": 0.0,
-                        "scale": 8.0
-                    },
-                    "type": "VadonDemo::Model::Transform2D"
-                }
-            ],
-            "name": "Moon",
-            "parent": 4,
-            "scene": [
-                "UUID",
-                "SU9LAvF3Tq2+7Cs9FbmKDg=="
-            ]
-        },
-        {
-            "components": [
-                {
-                    "properties": {
-                        "color": [
-                            "Vector3",
-                            1.0,
                             0.0,
-                            0.0
-                        ]
-                    },
-                    "type": "VadonDemo::Model::CanvasComponent"
-                },
-                {
-                    "properties": {
-                        "angular_velocity": 0.800000011920929,
-                        "is_star": false
-                    },
-                    "type": "VadonDemo::Model::Celestial"
-                },
-                {
-                    "properties": {
-                        "position": [
-                            "Vector2",
-                            350.0,
-                            0.0
-                        ],
-                        "rotation": 0.0,
-                        "scale": 18.0
-                    },
-                    "type": "VadonDemo::Model::Transform2D"
-                }
-            ],
-            "name": "Mars",
-            "parent": 1,
-            "scene": [
-                "UUID",
-                "2HnP9u+zTJaM9HNWU7YMpg=="
-            ]
-        },
-        {
-            "components": [
-                {
-                    "properties": {
-                        "color": [
-                            "Vector3",
-                            0.2803468108177185,
-                            0.2803468108177185,
-                            0.2803468108177185
-                        ]
-                    },
-                    "type": "VadonDemo::Model::CanvasComponent"
-                },
-                {
-                    "properties": {
-                        "angular_velocity": 2.0,
-                        "is_star": false
-                    },
-                    "type": "VadonDemo::Model::Celestial"
-                },
-                {
-                    "properties": {
-                        "position": [
-                            "Vector2",
-                            30.0,
-                            0.0
-                        ],
-                        "rotation": 0.0,
-                        "scale": 6.0
-                    },
-                    "type": "VadonDemo::Model::Transform2D"
-                }
-            ],
-            "name": "Phobos",
-            "parent": 6,
-            "scene": [
-                "UUID",
-                "SU9LAvF3Tq2+7Cs9FbmKDg=="
-            ]
-        },
-        {
-            "components": [
-                {
-                    "properties": {
-                        "color": [
-                            "Vector3",
-                            0.4901960790157318,
-                            0.4901960790157318,
-                            0.4901960790157318
-                        ]
-                    },
-                    "type": "VadonDemo::Model::CanvasComponent"
-                },
-                {
-                    "properties": {
-                        "angular_velocity": -1.6180000305175781,
-                        "is_star": false
-                    },
-                    "type": "VadonDemo::Model::Celestial"
-                },
-                {
-                    "properties": {
-                        "position": [
-                            "Vector2",
-                            0.0,
-                            20.0
-                        ],
-                        "rotation": 0.0,
-                        "scale": 6.0
-                    },
-                    "type": "VadonDemo::Model::Transform2D"
-                }
-            ],
-            "name": "Deimos",
-            "parent": 6,
-            "scene": [
-                "UUID",
-                "SU9LAvF3Tq2+7Cs9FbmKDg=="
-            ]
-        },
-        {
-            "components": [
-                {
-                    "properties": {
-                        "color": [
-                            "Vector3",
-                            1.0,
-                            1.0,
+                            2.384185791015625e-07,
                             1.0
-                        ]
+                        ],
+                        "type": 2,
+                        "z_order": 3.0
                     },
                     "type": "VadonDemo::Model::CanvasComponent"
                 },
                 {
                     "properties": {
-                        "angular_velocity": 1.0,
-                        "is_star": true
+                        "acceleration": 0.0,
+                        "top_speed": 100.0
                     },
-                    "type": "VadonDemo::Model::Celestial"
+                    "type": "VadonDemo::Model::Velocity2D"
                 },
                 {
                     "properties": {
-                        "position": [
-                            "Vector2",
-                            0.0,
-                            200.0
-                        ],
-                        "rotation": 0.0,
-                        "scale": 10.0
+                        "max_health": 100.0
                     },
-                    "type": "VadonDemo::Model::Transform2D"
+                    "type": "VadonDemo::Model::Health"
+                },
+                {
+                    "properties": {
+                        "projectile_prefab": "3H6VocmcRwW2IT9ydrciGw==",
+                        "rate_of_fire": 180.0
+                    },
+                    "type": "VadonDemo::Model::Weapon"
+                },
+                {
+                    "properties": {},
+                    "type": "VadonDemo::Model::Player"
                 }
             ],
-            "name": "Orb",
-            "parent": 1,
+            "name": "Player",
+            "parent": 0,
             "scene": [
                 "UUID",
-                "cP4wj0BLTe2VPf/1YWPpFg=="
+                "3jEZkjlDQ62nHldMBSdxyQ=="
             ]
+        },
+        {
+            "components": [
+                {
+                    "properties": {
+                        "activation_delay": 1.0,
+                        "enemy_prefab": "BTBugoNpQKaERCGYdb167A==",
+                        "level_multiplier": 2.0,
+                        "level_up_delay": 10.0,
+                        "max_level": 3,
+                        "min_spawn_delay": 5.0,
+                        "start_spawn_count": 1
+                    },
+                    "type": "VadonDemo::Model::Spawner"
+                }
+            ],
+            "name": "BasicEnemySpawner",
+            "parent": 0
         }
     ],
-    "id": "9s97q0IFSWO9a0PyI4rLPg==",
+    "id": "pqx3JLWgToe3k9DZ45lgzQ==",
     "name": "main",
     "type": "Vadon::Private::Scene::SceneData"
 }

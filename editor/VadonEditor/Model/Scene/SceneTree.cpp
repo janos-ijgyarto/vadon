@@ -60,27 +60,26 @@ namespace VadonEditor::Model
 		notify_scene_modified();
 	}
 
-	bool SceneTree::instantiate_sub_scene(Entity* parent, Vadon::Scene::ResourceID scene_id)
+	bool SceneTree::instantiate_sub_scene(Entity* parent, Vadon::Scene::ResourceHandle scene_handle)
 	{
 		using Logger = Vadon::Core::Logger;
 		
 		Vadon::Core::EngineCoreInterface& engine_core = m_editor.get_engine_core();
 
-		Vadon::Scene::ResourceHandle loaded_scene_handle = engine_core.get_system<Vadon::Scene::ResourceSystem>().load_resource(scene_id);
-		if (loaded_scene_handle.is_valid() == false)
+		if (engine_core.get_system<Vadon::Scene::ResourceSystem>().load_resource(scene_handle) == false)
 		{
 			Logger::log_error("Unable to load scene!\n");
 			return false;
 		}
 
 		Vadon::Scene::SceneSystem& scene_system = engine_core.get_system<Vadon::Scene::SceneSystem>();
-		if (scene_system.is_scene_dependent(m_current_scene.scene, loaded_scene_handle) == true)
+		if (scene_system.is_scene_dependent(m_current_scene.scene, scene_handle) == true)
 		{
 			Logger::log_error("Cannot instantiate sub-scene that has dependency toward current scene!\n");
 			return false;
 		}
 
-		Vadon::ECS::EntityHandle root_entity_handle = scene_system.instantiate_scene(loaded_scene_handle, m_editor.get_system<ModelSystem>().get_ecs_world(), true);
+		Vadon::ECS::EntityHandle root_entity_handle = scene_system.instantiate_scene(scene_handle, m_editor.get_system<ModelSystem>().get_ecs_world(), true);
 
 		Entity* root_entity = instantiate_scene_recursive(root_entity_handle, nullptr);
 
@@ -157,7 +156,7 @@ namespace VadonEditor::Model
 		scene_system.set_scene_data(m_current_scene.scene, m_editor.get_system<ModelSystem>().get_ecs_world(), m_current_scene.root_entity->m_entity_handle);
 
 		Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
-		if (resource_system.export_resource(resource_system.get_resource_id(m_current_scene.scene)) == false)
+		if (resource_system.export_resource(m_current_scene.scene) == false)
 		{
 			return false;
 		}
@@ -166,25 +165,26 @@ namespace VadonEditor::Model
 		return true;
 	}
 
-	bool SceneTree::load_scene(Vadon::Scene::ResourceID scene_id)
+	bool SceneTree::load_scene(Vadon::Scene::ResourceHandle scene_handle)
 	{
 		using Logger = Vadon::Core::Logger;
+		if (scene_handle.is_valid() == false)
+		{
+			Logger::log_error("Invalid scene handle!\n");
+			return false;
+		}
 
 		Vadon::Core::EngineCoreInterface& engine_core = m_editor.get_engine_core();
 		Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
 
 		// Prevent loading scene that is already loaded
-		if (m_current_scene.scene.is_valid() == true)
+		if (m_current_scene.scene == scene_handle)
 		{
-			if (resource_system.get_resource_id(m_current_scene.scene) == scene_id)
-			{
-				Logger::log_error("Scene already loaded!\n");
-				return false;
-			}
+			Logger::log_error("Scene already loaded!\n");
+			return false;
 		}
 
-		Vadon::Scene::ResourceHandle loaded_scene_handle = resource_system.load_resource(scene_id);
-		if (loaded_scene_handle.is_valid() == false)
+		if (resource_system.load_resource(scene_handle) == false)
 		{
 			Logger::log_error("Unable to load scene!\n");
 			return false;
@@ -194,7 +194,7 @@ namespace VadonEditor::Model
 		clear_scene();
 
 		Vadon::Scene::SceneSystem& scene_system = engine_core.get_system<Vadon::Scene::SceneSystem>();
-		Vadon::ECS::EntityHandle root_entity_handle = scene_system.instantiate_scene(loaded_scene_handle, m_editor.get_system<ModelSystem>().get_ecs_world(), false);
+		Vadon::ECS::EntityHandle root_entity_handle = scene_system.instantiate_scene(scene_handle, m_editor.get_system<ModelSystem>().get_ecs_world(), false);
 		m_current_scene.root_entity = instantiate_scene_recursive(root_entity_handle, nullptr);
 
 		if (m_current_scene.root_entity == nullptr)
@@ -203,7 +203,7 @@ namespace VadonEditor::Model
 			return false;
 		}
 
-		m_current_scene.scene = loaded_scene_handle;
+		m_current_scene.scene = scene_handle;
 		scene_changes_cleared();
 
 		return true;
@@ -214,7 +214,7 @@ namespace VadonEditor::Model
 		Scene scene_info;
 		Vadon::Scene::ResourceSystem& resource_system = m_editor.get_engine_core().get_system<Vadon::Scene::ResourceSystem>();
 
-		scene_info.scene_id = resource_system.get_resource_id(scene_handle);
+		scene_info.scene_handle = scene_handle;
 		scene_info.resource_path = resource_system.get_resource_path(scene_handle);
 
 		return scene_info;
@@ -224,14 +224,29 @@ namespace VadonEditor::Model
 	{
 		SceneList result;
 		Vadon::Scene::ResourceSystem& resource_system = m_editor.get_engine_core().get_system<Vadon::Scene::ResourceSystem>();
-		for (const Vadon::Scene::ResourceID& scene_id : resource_system.find_resources_of_type<Vadon::Scene::Scene>())
+		for (Vadon::Scene::ResourceHandle scene_handle : resource_system.find_resources_of_type<Vadon::Scene::Scene>())
 		{
 			Scene& added_scene = result.emplace_back();
-			added_scene.scene_id = scene_id;
-			added_scene.resource_path = resource_system.get_resource_path(scene_id);
+			added_scene.scene_handle = scene_handle;
+			added_scene.resource_path = resource_system.get_resource_path(scene_handle);
 		}
 
 		return result;
+	}
+	
+	void SceneTree::register_edit_callback(EditCallback callback)
+	{
+		m_edit_callbacks.push_back(callback);
+	}
+
+	void SceneTree::entity_edited(Vadon::ECS::EntityHandle entity, Vadon::Utilities::TypeID component_id)
+	{
+		notify_scene_modified();
+
+		for (const EditCallback& current_callback : m_edit_callbacks)
+		{
+			current_callback(entity, component_id);
+		}
 	}
 
 	SceneTree::SceneTree(Core::Editor& editor) :

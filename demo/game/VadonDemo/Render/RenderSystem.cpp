@@ -1,7 +1,6 @@
 #include <VadonDemo/Render/RenderSystem.hpp>
 
 #include <VadonDemo/Core/GameCore.hpp>
-#include <VadonDemo/Platform/PlatformInterface.hpp>
 
 #include <VadonApp/Core/Application.hpp>
 #include <VadonApp/Platform/PlatformInterface.hpp>
@@ -40,7 +39,7 @@ namespace VadonDemo::Render
 		bool initialize()
 		{
 			// Add event handler for window move & resize (affects rendering so it has to happen at the appropriate time)
-			VadonDemo::Platform::PlatformInterface& platform_interface = m_game_core.get_platform_interface();
+			VadonApp::Platform::PlatformInterface& platform_interface = m_game_core.get_engine_app().get_system<VadonApp::Platform::PlatformInterface>();
 			platform_interface.register_event_callback(
 				[this](const VadonApp::Platform::PlatformEventList& platform_events)
 				{

@@ -1,41 +1,36 @@
 #ifndef VADON_PRIVATE_RENDER_CANVAS_ITEM_HPP
 #define VADON_PRIVATE_RENDER_CANVAS_ITEM_HPP
 #include <Vadon/Render/Canvas/Item.hpp>
+#include <Vadon/Private/Render/Canvas/Batch.hpp>
 namespace Vadon::Private::Render::Canvas
 {
 	using ItemInfo = Vadon::Render::Canvas::ItemInfo;
 	using ItemHandle = Vadon::Render::Canvas::ItemHandle;
 
-	enum class CommandType : unsigned char
+	enum class ItemCommandType
 	{
-		TRIANGLE,
-		RECTANGLE,
-		SPRITE
+		DRAW_BATCH,
+		DRAW_DIRECT
 	};
 
-	struct CommandBuffer
+	using ItemCommandBuffer = Vadon::Utilities::PacketQueue;
+
+	template<typename T, BatchCommandType BATCH_COMMAND>
+	struct ItemDirectDrawCommand
 	{
-		std::vector<std::byte> data;
+		ItemDirectDrawCommand(const T& data = T{})
+			: batch_type(Vadon::Utilities::to_integral(BATCH_COMMAND))
+			, command_data(data)
+		{}
 
-		template<typename T>
-		void add_primitive(CommandType type, const T& primitive_data)
-		{
-			const std::byte* type_ptr = (const std::byte*)&type;
-			const std::byte* data_ptr = (const std::byte*)&primitive_data;
-			data.insert(data.end(), type_ptr, type_ptr + sizeof(CommandType));
-			data.insert(data.end(), data_ptr, data_ptr + sizeof(T));
-		}
-
-		void clear()
-		{
-			data.clear();
-		}
+		uint32_t batch_type;
+		T command_data;
 	};
 
 	struct ItemData
 	{
 		ItemInfo info;
-		CommandBuffer command_buffer;
+		ItemCommandBuffer command_buffer;
 	};
 }
 #endif

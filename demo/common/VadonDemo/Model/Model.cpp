@@ -9,59 +9,400 @@
 
 #include <Vadon/Render/Canvas/CanvasSystem.hpp>
 
+#include <Vadon/Scene/Resource/ResourceSystem.hpp>
+#include <Vadon/Scene/SceneSystem.hpp>
+
+#include <Vadon/Utilities/Container/Queue/PacketQueue.hpp>
+
+#include <numbers>
+#include <random>
+
 namespace VadonDemo::Model
 {
 	namespace
 	{
-		void draw_canvas_item(Vadon::Render::Canvas::CanvasSystem& canvas_system, const Transform2D* transform, CanvasComponent& canvas_item, const Celestial* celestial)
+		enum class PacketType : uint32_t
 		{
-			canvas_system.clear_item(canvas_item.canvas_handle);
+			CREATE_ENEMY_PREFAB,
+			CREATE_ENEMY,
+			BULK_UPDATE_ENEMIES,
+			DESTROY_ENEMY,
+			CREATE_PROJECTILE_PREFAB,
+			CREATE_PROJECTILE,
+			BULK_UPDATE_PROJECTILES,
+			DESTROY_PROJECTILE,
+			CREATE_GENERIC,
+			MODIFY_GENERIC,
+			UPDATE_GENERIC,
+			DESTROY_GENERIC
+		};
+		
+		struct CreateEnemyPrefab
+		{
+			int32_t type;
+			Vadon::Utilities::Vector3 color;
+			float z_order;
+			float scale;
+		};
 
-			const float scale = (transform != nullptr) ? transform->scale : 1.0f;
+		struct CreateEnemy
+		{
+			Vadon::Utilities::Vector2 position;
+			int32_t prefab;
+		};
 
-			if (celestial != nullptr)
+		// NOTE: passed in the same order as object pool contents
+		struct UpdateEnemy
+		{
+			Vadon::Utilities::Vector2 position;
+		};
+
+		struct DestroyEnemy
+		{
+			int32_t index;
+		};
+
+		struct CreateProjectilePrefab
+		{
+			int32_t type;
+			Vadon::Utilities::Vector3 color;
+			float z_order;
+			float scale;
+		};
+
+		struct CreateProjectile
+		{
+			int32_t buffer;
+			Vadon::Utilities::Vector2 position;
+			int32_t prefab;
+		};
+
+		// NOTE: passed in the same order as object pool contents
+		struct UpdateProjectile
+		{
+			Vadon::Utilities::Vector2 position;
+		};
+
+		struct DestroyProjectile
+		{
+			int32_t buffer;
+			int32_t offset;
+		};
+
+		struct CreateGeneric
+		{
+			int32_t handle;
+		};
+
+		struct ModifyGeneric
+		{
+			int32_t handle;
+			int32_t type;
+			Vadon::Utilities::Vector3 color;
+			float z_order;
+		};
+
+		struct UpdateGeneric
+		{
+			int32_t handle;
+			Vadon::Utilities::Vector2 position;
+			float scale;
+		};
+
+		struct DestroyGeneric
+		{
+			int32_t handle;
+		};
+
+		struct EnemyPrefab
+		{
+			float size = 1.0f;
+			float speed = 1.0f; // FIXME: used reference to shared data!
+			float max_health = 1.0f;
+		};
+
+		struct EnemyData
+		{
+			int32_t handle;
+			int32_t prefab; // FIXME: use Entity handle instead?
+			Vadon::Utilities::Vector2 position = Vadon::Utilities::Vector2_Zero;
+			Vadon::Utilities::Vector2 velocity = Vadon::Utilities::Vector2_Zero;
+			float health = 0.0f;
+		};
+
+		struct EnemyPool
+		{
+			std::vector<EnemyPrefab> prefabs;
+			std::unordered_map<uint64_t, int32_t> prefab_lookup;
+
+			std::vector<EnemyData> enemies;
+
+			std::vector<size_t> sparse_set;
+			std::vector<size_t> free_list;
+
+			int32_t add_enemy(const EnemyData& new_enemy)
 			{
-				if (celestial->is_star == true)
+				const size_t handle_index = free_list.empty() == false ? free_list.back() : sparse_set.size();
+				const size_t dense_index = enemies.size();
+				if (free_list.empty() == false)
 				{
-					Vadon::Render::Canvas::Triangle star_triangle;
-					star_triangle.color = Vadon::Render::Canvas::ColorRGBA(canvas_item.color, 1.0f);
-
-					star_triangle.point_a.position = { 0, scale };
-					star_triangle.point_b.position = { scale, 0 };
-					star_triangle.point_c.position = { -scale, 0 };
-
-					canvas_system.draw_triangle(canvas_item.canvas_handle, star_triangle);
-
-					star_triangle.point_a.position = { -scale, 0 };
-					star_triangle.point_b.position = { scale, 0 };
-					star_triangle.point_c.position = { 0, -scale };
-
-					canvas_system.draw_triangle(canvas_item.canvas_handle, star_triangle);
+					free_list.pop_back();
+					sparse_set[handle_index] = dense_index;
 				}
 				else
 				{
-					Vadon::Render::Canvas::Rectangle planet_rectangle;
-					planet_rectangle.color = Vadon::Render::Canvas::ColorRGBA(canvas_item.color, 1.0f);
-					planet_rectangle.dimensions.size = { scale, scale };
-					planet_rectangle.filled = true;
+					// Add to end of sparse set
+					sparse_set.push_back(dense_index);
+				}
 
-					canvas_system.draw_rectangle(canvas_item.canvas_handle, planet_rectangle);
+				enemies.push_back(new_enemy);
+				enemies.back().handle = static_cast<int32_t>(handle_index);
+
+				return static_cast<int32_t>(handle_index);
+			}
+
+			EnemyData& get_enemy(int32_t handle)
+			{
+				return enemies[sparse_set[handle]];
+			}
+
+			void remove_enemy(int32_t handle)
+			{
+				free_list.push_back(handle);
+
+				const size_t dense_index = sparse_set[handle];
+				if (dense_index != (enemies.size() - 1))
+				{
+					sparse_set[enemies.back().handle] = dense_index;
+					enemies[dense_index] = enemies.back();
+				}
+				enemies.pop_back();
+			}
+		};
+
+		struct EnemyRenderObject
+		{
+			Vadon::Utilities::Vector2 position = Vadon::Utilities::Vector2_Zero;
+			Vadon::Utilities::Vector2 prev_position = Vadon::Utilities::Vector2_Zero;
+			int32_t prefab = -1;
+		};
+
+		struct EnemyRenderPrefab
+		{
+			Vadon::Render::Canvas::ItemHandle canvas_item;
+			Vadon::Utilities::DataRange batch_range;
+		};
+
+		struct EnemyRenderPool
+		{
+			Vadon::Render::Canvas::BatchHandle enemy_canvas_batch;
+			std::vector<EnemyRenderPrefab> prefabs;
+
+			std::vector<EnemyRenderObject> objects;
+		};
+
+		struct ProjectilePrefab
+		{
+			float speed = 1.0f;
+			float radius = 1.0f;
+			float range = 1.0f;
+			float damage = 1.0f;
+		};
+
+		struct ProjectileData
+		{
+			int32_t prefab;
+			Vadon::Utilities::Vector2 position = Vadon::Utilities::Vector2_Zero;
+			Vadon::Utilities::Vector2 velocity = Vadon::Utilities::Vector2_Zero;
+			float remaining_lifetime = -1.0f;
+
+			bool is_active() const { return remaining_lifetime > 0.0f; }
+		};
+
+		struct ProjectileRingBuffer
+		{
+			static constexpr size_t c_buffer_capacity = 1024;
+			std::array<ProjectileData, c_buffer_capacity> projectiles;
+			size_t active_count = 0;
+
+			void add_projectile(const ProjectileData& projectile_data)
+			{
+				// TODO: assert to make sure we can't add more than the capacity!
+				projectiles[active_count] = projectile_data;
+				++active_count;
+			}
+
+			void projectile_expired(size_t index)
+			{
+				projectiles[index].remaining_lifetime = -1.0f;
+			}
+
+			bool is_free() const { return active_count == 0; }
+			bool is_full() const { return active_count >= c_buffer_capacity; }
+		};
+
+		struct ProjectilePool
+		{
+			std::vector<std::unique_ptr<ProjectileRingBuffer>> ring_buffers;
+			size_t active_buffer_index = 0;
+
+			std::unordered_map<uint64_t, int32_t> prefab_lookup;
+			std::vector<ProjectilePrefab> prefabs;
+
+			CreateProjectile add_projectile(const ProjectileData& projectile_data, int32_t prefab)
+			{
+				ensure_available_buffer();
+
+				const CreateProjectile projectile_event{
+					.buffer = static_cast<int32_t>(active_buffer_index),
+					.position = projectile_data.position,
+					.prefab = prefab
+				};
+
+				ProjectileRingBuffer& active_buffer = *ring_buffers[active_buffer_index];
+				active_buffer.add_projectile(projectile_data);
+
+				if (active_buffer.is_full() == true)
+				{
+					active_buffer_index = ring_buffers.size();
+				}
+
+				return projectile_event;
+			}
+
+			void ensure_available_buffer()
+			{
+				if (active_buffer_index < ring_buffers.size())
+				{
+					return;
+				}
+
+				for (size_t current_buffer_index = 0; current_buffer_index < ring_buffers.size(); ++current_buffer_index)
+				{
+					if (ring_buffers[current_buffer_index]->is_free() == true)
+					{
+						active_buffer_index = current_buffer_index;
+						return;
+					}
+				}
+
+				active_buffer_index = ring_buffers.size();
+				ring_buffers.emplace_back(new ProjectileRingBuffer());
+			}
+		};
+
+		struct ProjectileRenderObject
+		{
+			Vadon::Utilities::Vector2 position = Vadon::Utilities::Vector2_Zero;
+			Vadon::Utilities::Vector2 prev_position = Vadon::Utilities::Vector2_Zero;
+			int32_t prefab = -1;
+
+			bool is_active() const { return prefab >= 0; }
+		};
+
+		struct ProjectileRenderPrefab
+		{
+			Vadon::Render::Canvas::ItemHandle canvas_item;
+			Vadon::Utilities::DataRange batch_range;
+		};
+
+		struct RenderProjectileRingBuffer
+		{
+			static constexpr size_t c_buffer_capacity = 1024;
+			std::array<ProjectileRenderObject, c_buffer_capacity> projectiles;
+			int32_t active_count = 0;
+
+			bool is_empty() const { return projectiles.front().is_active() == false; }
+		};
+
+		struct ProjectileRenderPool
+		{
+			Vadon::Render::Canvas::BatchHandle projectile_canvas_batch;
+			std::vector<ProjectileRenderPrefab> prefabs;
+
+			std::vector<std::unique_ptr<RenderProjectileRingBuffer>> ring_buffers;
+
+			void update(std::span<UpdateProjectile> projectile_data)
+			{
+				// NOTE: by this stage we expect we already added/removed all projectiles for this frame
+				size_t current_buffer_index = 0;
+				size_t data_offset = 0;
+				while (current_buffer_index < ring_buffers.size())
+				{
+					RenderProjectileRingBuffer& current_buffer = *ring_buffers[current_buffer_index];					
+					if (current_buffer.is_empty() == false)
+					{
+						for (ProjectileRenderObject& current_projectile : current_buffer.projectiles)
+						{
+							if (current_projectile.is_active() == false)
+							{
+								break;
+							}
+
+							const UpdateProjectile& update_data = projectile_data[data_offset];
+							current_projectile.prev_position = current_projectile.position;
+							current_projectile.position = update_data.position;
+							++data_offset;
+						}
+					}
+					++current_buffer_index;
+
 				}
 			}
-			else
+		};
+
+		struct GenericRenderObject
+		{
+			Vadon::Utilities::Vector2 position = Vadon::Utilities::Vector2_Zero;
+			Vadon::Utilities::Vector2 prev_position = Vadon::Utilities::Vector2_Zero;
+			float scale = 1.0f;
+
+			Vadon::Render::Canvas::ItemHandle canvas_item;
+		};
+
+		struct GenericRenderPool
+		{
+			std::vector<GenericRenderObject> objects;
+			std::vector<size_t> free_list;
+			int32_t active_object_count = 0;
+
+			int32_t register_object()
 			{
-				Vadon::Render::Canvas::Triangle placeholder_triangle;
-				placeholder_triangle.color = Vadon::Render::Canvas::ColorRGBA(canvas_item.color, 1.0f);
+				int32_t new_handle = -1;
+				if (free_list.empty() == false)
+				{
+					new_handle = static_cast<int32_t>(free_list.back());
+					free_list.pop_back();
+				}
+				else
+				{
+					new_handle = active_object_count;
+				}
 
-				placeholder_triangle.point_a.position = { 0, scale * 0.5f };
-				placeholder_triangle.point_b.position = { scale * 0.5f, - scale * 0.5f };
-				placeholder_triangle.point_c.position = { -scale * 0.5f, -scale * 0.5f };
-
-				canvas_system.draw_triangle(canvas_item.canvas_handle, placeholder_triangle);
+				++active_object_count;
+				return new_handle;
 			}
 
-			canvas_item.scale = scale;
-		}
+			void unregister_object(int32_t handle)
+			{
+				free_list.push_back(handle);
+				--active_object_count;
+			}
+
+			void add_object(int32_t handle)
+			{
+				if (handle >= static_cast<int32_t>(objects.size()))
+				{
+					objects.emplace_back();
+				}
+			}
+		};
+
+		struct SpawnData
+		{
+			Vadon::ECS::EntityHandle prefab_entity;
+			float spawn_delay = 0.0f;
+		};
 
 		Vadon::Utilities::Vector2 rotate_2d_vector(const Vadon::Utilities::Vector2& vector, float angle)
 		{
@@ -77,16 +418,42 @@ namespace VadonDemo::Model
 		Vadon::Core::EngineCoreInterface& m_engine_core;
 		Vadon::Render::Canvas::LayerHandle m_canvas_layer; // FIXME: should not embed this in model!
 
+		float m_interpolation_weight = 1.0f;
+
+		EnemyPool m_enemy_pool;
+		ProjectilePool m_projectile_pool;
+
+		EnemyRenderPool m_enemy_render_pool;
+		ProjectileRenderPool m_projectile_render_pool;
+		GenericRenderPool m_generic_render_pool;
+
+		Vadon::ECS::EntityHandle m_player_entity;
+		Vadon::ECS::EntityHandle m_map_entity;
+
+		Vadon::Utilities::PacketQueue m_event_queue;
+ 
+		std::mt19937 m_random_engine;
+		std::uniform_real_distribution<float> m_enemy_dist;
+
 		Internal(Vadon::Core::EngineCoreInterface& engine_core)
 			: m_engine_core(engine_core)
+			, m_random_engine(std::random_device{}())
+			, m_enemy_dist(0.0f, 2 * std::numbers::pi_v<float>)
 		{
 		}
 
 		bool initialize()
 		{
 			Transform2D::register_component();
+			Velocity2D::register_component();
 			CanvasComponent::register_component();
-			Celestial::register_component();
+			Health::register_component();
+			Player::register_component();
+			Weapon::register_component();
+			Projectile::register_component();
+			Enemy::register_component();
+			Map::register_component();
+			Spawner::register_component();
 
 			Vadon::Render::Canvas::CanvasSystem& canvas_system = m_engine_core.get_system<Vadon::Render::Canvas::CanvasSystem>();
 			m_canvas_layer = canvas_system.create_layer(Vadon::Render::Canvas::LayerInfo{});
@@ -94,171 +461,1105 @@ namespace VadonDemo::Model
 			return true;
 		}
 
-		void init_simulation(Vadon::ECS::World& ecs_world)
+		// FIXME: refactor this!
+		int32_t get_enemy_prefab_index(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle prefab_entity)
+		{
+			auto prefab_index_it = m_enemy_pool.prefab_lookup.find(prefab_entity.handle.to_uint());
+			if (prefab_index_it == m_enemy_pool.prefab_lookup.end())
+			{
+				prefab_index_it = m_enemy_pool.prefab_lookup.emplace(prefab_entity.handle.to_uint(), static_cast<int32_t>(m_enemy_pool.prefabs.size())).first;
+
+				EnemyPrefab& new_prefab = m_enemy_pool.prefabs.emplace_back();
+
+				Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
+				auto enemy_prefab_components = component_manager.get_component_tuple<Transform2D, Velocity2D, CanvasComponent, Health, Enemy>(prefab_entity);
+				const Transform2D* enemy_transform = std::get<Transform2D*>(enemy_prefab_components);
+				const Velocity2D* enemy_velocity = std::get<Velocity2D*>(enemy_prefab_components);
+				const Health* enemy_health = std::get<Health*>(enemy_prefab_components);
+
+				// FIXME: use other measure for scale!
+				new_prefab.size = enemy_transform->scale;
+				new_prefab.speed = enemy_velocity->top_speed;
+				new_prefab.max_health = enemy_health->max_health;
+
+				const CanvasComponent* enemy_canvas = std::get<CanvasComponent*>(enemy_prefab_components);
+
+				CreateEnemyPrefab* create_enemy_prefab = m_event_queue.allocate_object<CreateEnemyPrefab>(Vadon::Utilities::to_integral(PacketType::CREATE_ENEMY_PREFAB));
+				create_enemy_prefab->type = enemy_canvas->type;
+				create_enemy_prefab->color = enemy_canvas->color;
+				create_enemy_prefab->z_order = enemy_canvas->z_order;
+				create_enemy_prefab->scale = enemy_transform->scale;
+			}
+
+			return prefab_index_it->second;
+		}
+
+		// FIXME: refactor this!
+		int32_t get_projectile_prefab_index(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle prefab_entity)
+		{
+			auto prefab_index_it = m_projectile_pool.prefab_lookup.find(prefab_entity.handle.to_uint());
+			if (prefab_index_it == m_projectile_pool.prefab_lookup.end())
+			{
+				prefab_index_it = m_projectile_pool.prefab_lookup.emplace(prefab_entity.handle.to_uint(), static_cast<int32_t>(m_projectile_pool.prefabs.size())).first;
+
+				ProjectilePrefab& new_prefab = m_projectile_pool.prefabs.emplace_back();
+
+				Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
+				auto projectile_prefab_components = component_manager.get_component_tuple<Transform2D, Velocity2D, CanvasComponent, Projectile>(prefab_entity);
+
+				// FIXME: revise how we can set dimensions for different contexts (e.g collisions), Transform should be applied on top
+				const Transform2D* projectile_transform = std::get<Transform2D*>(projectile_prefab_components);
+				const Velocity2D* projectile_velocity = std::get<Velocity2D*>(projectile_prefab_components);
+				const Projectile* projectile_component = std::get<Projectile*>(projectile_prefab_components);
+
+				// FIXME: use other measure for scale!
+				new_prefab.radius = projectile_transform->scale;
+				new_prefab.speed = projectile_velocity->top_speed;
+				new_prefab.range = projectile_component->range;
+				new_prefab.damage = projectile_component->damage;
+
+				const CanvasComponent* projectile_canvas = std::get<CanvasComponent*>(projectile_prefab_components);
+
+				CreateProjectilePrefab* create_proj_prefab = m_event_queue.allocate_object<CreateProjectilePrefab>(Vadon::Utilities::to_integral(PacketType::CREATE_PROJECTILE_PREFAB));
+				create_proj_prefab->type = projectile_canvas->type;
+				create_proj_prefab->color = projectile_canvas->color;
+				create_proj_prefab->z_order = projectile_canvas->z_order;
+				create_proj_prefab->scale = projectile_transform->scale;
+			}
+
+			return prefab_index_it->second;
+		}
+
+		bool init_simulation(Vadon::ECS::World& ecs_world)
 		{
 			Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
 
-			// TODO: query those who don't have transform and warn about them?
-			auto model_query = component_manager.run_component_query<Transform2D&, Celestial&>();
-			auto model_it = model_query.get_iterator();
-
-			for (; model_it.is_valid() == true; model_it.next())
+			// Validate player and map
+			// TODO: alterantively, could make it a required setting in the scene?
+			// Some kind of special scene which spawns a player and map?
 			{
-				auto current_entity = model_it.get_entity();
-				auto current_component_tuple = model_it.get_tuple();
+				auto player_query = component_manager.run_component_query<Player&>();
+				for (auto player_it = player_query.get_iterator(); player_it.is_valid() == true; player_it.next())
+				{
+					if (m_player_entity.is_valid() == true)
+					{
+						// TODO: error!
+						return false;
+					}
 
-				Transform2D& transform_component = std::get<Transform2D&>(current_component_tuple);
-				Celestial& celestial_component = std::get<Celestial&>(current_component_tuple);
+					m_player_entity = player_it.get_entity();
+					auto player_components = component_manager.get_component_tuple<Transform2D, Velocity2D, Health, Weapon>(m_player_entity);
+					if (std::get<Transform2D*>(player_components) == nullptr)
+					{
+						// TODO: error!
+						return false;
+					}
+					if (std::get<Velocity2D*>(player_components) == nullptr)
+					{
+						// TODO: error!
+						return false;
+					}
+					if (std::get<Health*>(player_components) == nullptr)
+					{
+						// TODO: error!
+						return false;
+					}
+					Weapon* player_weapon = std::get<Weapon*>(player_components);
+					if (player_weapon == nullptr)
+					{
+						// TODO: error!
+						return false;
+					}
 
-				// Radius will be equal to the offset via local transform
-				celestial_component.radius = Vadon::Utilities::length(transform_component.position);
+					if (load_weapon(ecs_world, *player_weapon) == false)
+					{
+						// TODO: error!
+						return false;
+					}
+				}
+
+				if (m_player_entity.is_valid() == false)
+				{
+					// TODO: error!
+					return false;
+				}
+
+				CanvasComponent* player_canvas_component = component_manager.get_component<CanvasComponent>(m_player_entity);
+				if (player_canvas_component != nullptr)
+				{
+					player_canvas_component->render_handle = m_generic_render_pool.register_object();
+
+					CreateGeneric* create_player_render_obj = m_event_queue.allocate_object<CreateGeneric>(Vadon::Utilities::to_integral(PacketType::CREATE_GENERIC));
+					create_player_render_obj->handle = player_canvas_component->render_handle;
+
+					ModifyGeneric* modify_player_render_obj = m_event_queue.allocate_object<ModifyGeneric>(Vadon::Utilities::to_integral(PacketType::MODIFY_GENERIC));
+					modify_player_render_obj->handle = player_canvas_component->render_handle;
+					modify_player_render_obj->type = player_canvas_component->type;
+					modify_player_render_obj->color = player_canvas_component->color;
+					modify_player_render_obj->z_order = player_canvas_component->z_order;
+				}				
 			}
+
+			{
+				auto map_query = component_manager.run_component_query<Map&>();
+
+				for (auto map_it = map_query.get_iterator(); map_it.is_valid() == true; map_it.next())
+				{
+					if (m_map_entity.is_valid() == true)
+					{
+						// TODO: error!
+						return false;
+					}
+
+					m_map_entity = map_it.get_entity();
+
+					auto map_components = component_manager.get_component_tuple<Transform2D, Map>(m_map_entity);
+					if (std::get<Transform2D*>(map_components) == nullptr)
+					{
+						// TODO: error!
+						return false;
+					}
+					if (std::get<Map*>(map_components) == nullptr)
+					{
+						// TODO: error!
+						return false;
+					}
+				}
+
+				if (m_map_entity.is_valid() == false)
+				{
+					// TODO: error!
+					return false;
+				}
+
+				CanvasComponent* map_canvas_component = component_manager.get_component<CanvasComponent>(m_map_entity);
+				if (map_canvas_component != nullptr)
+				{
+					map_canvas_component->render_handle = m_generic_render_pool.register_object();
+
+					CreateGeneric* create_map_render_obj = m_event_queue.allocate_object<CreateGeneric>(Vadon::Utilities::to_integral(PacketType::CREATE_GENERIC));
+					create_map_render_obj->handle = map_canvas_component->render_handle;
+
+					ModifyGeneric* modify_map_render_obj = m_event_queue.allocate_object<ModifyGeneric>(Vadon::Utilities::to_integral(PacketType::MODIFY_GENERIC));
+					modify_map_render_obj->handle = map_canvas_component->render_handle;
+					modify_map_render_obj->type = map_canvas_component->type;
+					modify_map_render_obj->color = map_canvas_component->color;
+					modify_map_render_obj->z_order = map_canvas_component->z_order;
+				}
+			}
+
+			{
+				auto spawner_query = component_manager.run_component_query<Spawner&>();
+				bool spawner_loaded = false;
+
+				for (auto spawner_it = spawner_query.get_iterator(); spawner_it.is_valid() == true; spawner_it.next())
+				{
+					auto spawner_tuple = spawner_it.get_tuple();
+					Spawner& current_spawner = std::get<Spawner&>(spawner_tuple);
+
+					if (load_spawner_prefab(ecs_world, current_spawner) == false)
+					{
+						// TODO: error message about incorrectly configured spawner!
+						return false;
+					}
+
+					spawner_loaded = true;
+				}
+				if (spawner_loaded == false)
+				{
+					// TODO: error!
+					return false;
+				}
+			}
+
+			Vadon::Render::Canvas::CanvasSystem& canvas_system = m_engine_core.get_system<Vadon::Render::Canvas::CanvasSystem>();
+			m_enemy_render_pool.enemy_canvas_batch = canvas_system.create_batch();
+			m_projectile_render_pool.projectile_canvas_batch = canvas_system.create_batch();
+	
+			// TODO2: implement system where presence of component will prompt processing of sub-scene with specific logic
+			// For example, creating renderable with multiple pieces using Entities, then "condensing" at runtime
+
+			// TODO: logic to unload render resources! (to clean up on shutdown)
+
+			return true;
+		}
+
+		bool load_weapon(Vadon::ECS::World& ecs_world, Weapon& weapon_component)
+		{
+			if (weapon_component.projectile_prefab.empty() == true)
+			{
+				// TODO: error!
+				return false;
+			}
+
+			Vadon::Scene::ResourceID projectile_prefab_id;
+			if (projectile_prefab_id.from_base64_string(weapon_component.projectile_prefab) == false)
+			{
+				// TODO: error!
+				return false;
+			}
+
+			if (projectile_prefab_id.is_valid() == false)
+			{
+				// TODO: error!
+				return false;
+			}
+
+			Vadon::Scene::ResourceSystem& resource_system = m_engine_core.get_system<Vadon::Scene::ResourceSystem>();
+			Vadon::Scene::ResourceHandle projectile_prefab_scene = resource_system.find_resource(projectile_prefab_id);
+
+			if (projectile_prefab_scene.is_valid() == false)
+			{
+				// TODO: error!
+				return false;
+			}
+
+			// FIXME: check to make sure we haven't already loaded this?
+			Vadon::Scene::SceneSystem& scene_system = m_engine_core.get_system<Vadon::Scene::SceneSystem>();
+			weapon_component.projectile_prefab_entity = scene_system.instantiate_scene(projectile_prefab_scene, ecs_world);
+
+			Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
+			auto projectile_prefab_components = component_manager.get_component_tuple<Transform2D, Velocity2D, CanvasComponent, Projectile>(weapon_component.projectile_prefab_entity);
+
+			if (std::get<Transform2D*>(projectile_prefab_components) == nullptr)
+			{
+				// TODO: error!
+				return false;
+			}
+			if (std::get<Velocity2D*>(projectile_prefab_components) == nullptr)
+			{
+				// TODO: error!
+				return false;
+			}
+
+			if (std::get<CanvasComponent*>(projectile_prefab_components) == nullptr)
+			{
+				// TODO: error!
+				return false;
+			}
+
+			if (std::get<Projectile*>(projectile_prefab_components) == nullptr)
+			{
+				// TODO: error!
+				return false;
+			}
+
+			return true;
+		}
+
+		bool load_spawner_prefab(Vadon::ECS::World& ecs_world, Spawner& spawner)
+		{
+			if (spawner.enemy_prefab.empty() == true)
+			{
+				// TODO: error!
+				return false;
+			}
+
+			Vadon::Scene::ResourceID enemy_prefab_id;
+			if (enemy_prefab_id.from_base64_string(spawner.enemy_prefab) == false)
+			{
+				// TODO: error!
+				return false;
+			}
+
+			if (enemy_prefab_id.is_valid() == false)
+			{
+				// TODO: error!
+				return false;
+			}
+
+			Vadon::Scene::ResourceSystem& resource_system = m_engine_core.get_system<Vadon::Scene::ResourceSystem>();
+			Vadon::Scene::ResourceHandle enemy_prefab_scene = resource_system.find_resource(enemy_prefab_id);
+
+			if (enemy_prefab_scene.is_valid() == false)
+			{
+				// TODO: error!
+				return false;
+			}
+
+			// FIXME: check to make sure we haven't already loaded this?
+			Vadon::Scene::SceneSystem& scene_system = m_engine_core.get_system<Vadon::Scene::SceneSystem>();
+			spawner.enemy_prefab_entity = scene_system.instantiate_scene(enemy_prefab_scene, ecs_world);
+
+			Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
+			auto enemy_prefab_components = component_manager.get_component_tuple<Transform2D, Velocity2D, CanvasComponent, Health, Enemy>(spawner.enemy_prefab_entity);
+
+			if (std::get<Transform2D*>(enemy_prefab_components) == nullptr)
+			{
+				// TODO: error!
+				return false;
+			}
+			if (std::get<Velocity2D*>(enemy_prefab_components) == nullptr)
+			{
+				// TODO: error!
+				return false;
+			}
+
+			if (std::get<CanvasComponent*>(enemy_prefab_components) == nullptr)
+			{
+				// TODO: error!
+				return false;
+			}
+			if (std::get<Health*>(enemy_prefab_components) == nullptr)
+			{
+				// TODO: error!
+				return false;
+			}
+			Enemy* enemy_component = std::get<Enemy*>(enemy_prefab_components);
+			if (enemy_component == nullptr)
+			{
+				// TODO: error!
+				return false;
+			}
+
+			return true;
 		}
 
 		void update_simulation(Vadon::ECS::World& ecs_world, float delta_time)
 		{
 			Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
 
-			auto model_query = component_manager.run_component_query<Transform2D&, Celestial&>();
-			auto model_it = model_query.get_iterator();
+			auto player_components = component_manager.get_component_tuple<Transform2D, Velocity2D, Player>(m_player_entity);
 
-			for (; model_it.is_valid() == true; model_it.next())
+			Transform2D* player_transform = std::get<Transform2D*>(player_components);
+			Velocity2D* player_velocity = std::get<Velocity2D*>(player_components);
+			Player* player_component = std::get<Player*>(player_components);
+
+			// TODO: use acceleration!
+			player_velocity->velocity = player_component->input.move_dir * player_velocity->top_speed;
+			player_transform->position += player_velocity->velocity * delta_time;
+
+			if (player_component->input.move_dir != Vadon::Utilities::Vector2_Zero)
 			{
-				auto current_entity = model_it.get_entity();
-				auto current_component_tuple = model_it.get_tuple();
+				player_component->facing = Vadon::Utilities::normalize(player_component->input.move_dir);
+			}
 
-				Transform2D& transform_component = std::get<Transform2D&>(current_component_tuple);
-				Celestial& celestial_component = std::get<Celestial&>(current_component_tuple);
-
-				// If radius or angular velocity too small, we skip update
-				if ((Vadon::Utilities::abs(celestial_component.angular_velocity) < 0.001f) || (Vadon::Utilities::dot(transform_component.position, transform_component.position) < 0.001f))
+			size_t current_enemy_index = 0;
+			while(current_enemy_index < m_enemy_pool.enemies.size())
+			{
+				EnemyData& current_enemy = m_enemy_pool.enemies[current_enemy_index];
+				if (current_enemy.health > 0)
 				{
-					continue;
-				}
-				
-				const Vadon::Utilities::Vector2 norm_vector = Vadon::Utilities::normalize(transform_component.position);
-				const Vadon::Utilities::Vector2 rotated_vector = Vadon::Utilities::normalize(rotate_2d_vector(norm_vector, delta_time * celestial_component.angular_velocity));
+					const Vadon::Utilities::Vector2 enemy_to_player = player_transform->position - current_enemy.position;
+					if (Vadon::Utilities::dot(enemy_to_player, enemy_to_player) > 0.01f)
+					{
+						const EnemyPrefab& enemy_prefab = m_enemy_pool.prefabs[current_enemy.prefab];
+						current_enemy.velocity = Vadon::Utilities::normalize(enemy_to_player) * enemy_prefab.speed;
+					}
+					else
+					{
+						current_enemy.velocity = Vadon::Utilities::Vector2_Zero;
+					}
+					current_enemy.position += current_enemy.velocity * delta_time;
 
-				transform_component.position = rotated_vector * celestial_component.radius;
+					++current_enemy_index;
+				}
+				else
+				{
+					// Remove dead enemy
+					m_enemy_pool.remove_enemy(current_enemy.handle);
+					const DestroyEnemy destroy_enemy_data{
+						.index = static_cast<int32_t>(current_enemy_index)
+					};
+					m_event_queue.write_object(Vadon::Utilities::to_integral(PacketType::DESTROY_ENEMY), destroy_enemy_data);
+				}
+			}
+
+			update_projectiles(ecs_world, delta_time);
+
+			// Update spawners
+			// NOTE: currently all spawners just keep spawning once the delay counts down
+			// Need to implement limits on enemy numbers and a priority system
+			// Can put all spawners that timed out into a FIFO list
+			auto spawner_query = component_manager.run_component_query<Spawner&>();
+			for (auto spawner_it = spawner_query.get_iterator(); spawner_it.is_valid() == true; spawner_it.next())
+			{
+				auto spawner_tuple = spawner_it.get_tuple();
+				Spawner& current_spawner = std::get<Spawner&>(spawner_tuple);
+
+				if (current_spawner.activation_delay > 0.0f)
+				{
+					current_spawner.activation_delay -= delta_time;
+				}
+				else
+				{
+					current_spawner.spawn_timer -= delta_time;
+					if (current_spawner.spawn_timer <= 0.0f)
+					{
+						current_spawner.spawn_timer = std::max(current_spawner.spawn_timer + current_spawner.min_spawn_delay, 0.0f);
+
+						constexpr float spawn_radius = 350.0f;
+
+						const int32_t prefab_handle = get_enemy_prefab_index(ecs_world, current_spawner.enemy_prefab_entity);
+						const EnemyPrefab& enemy_prefab = m_enemy_pool.prefabs[prefab_handle];
+
+						for (int32_t spawned_enemy_index = 0; spawned_enemy_index < current_spawner.current_spawn_count; ++spawned_enemy_index)
+						{
+							const float rand_angle = m_enemy_dist(m_random_engine);
+
+							const EnemyData new_enemy{
+								.prefab = prefab_handle,
+								.position = player_transform->position + Vadon::Utilities::Vector2(std::cosf(rand_angle), std::sinf(rand_angle)) * spawn_radius,
+								.velocity = Vadon::Utilities::Vector2_Zero,
+								.health = enemy_prefab.max_health
+							};
+
+							m_enemy_pool.add_enemy(new_enemy);
+							const CreateEnemy create_enemy_data{
+								.position = new_enemy.position,
+								.prefab = prefab_handle
+							};
+							m_event_queue.write_object(Vadon::Utilities::to_integral(PacketType::CREATE_ENEMY), create_enemy_data);
+						}
+					}
+
+					if (current_spawner.current_level < current_spawner.max_level)
+					{
+						current_spawner.level_up_timer -= delta_time;
+						if (current_spawner.level_up_timer <= 0.0f)
+						{
+							++current_spawner.current_level;
+							current_spawner.level_up_timer = std::max(current_spawner.level_up_timer + current_spawner.level_up_delay, 0.0f);
+						}
+					}
+				}
 			}
 		}
 
-		void update_rendering(Vadon::ECS::World& ecs_world)
+		void update_projectiles(Vadon::ECS::World& ecs_world, float delta_time)
 		{
-			Vadon::ECS::EntityManager& entity_manager = ecs_world.get_entity_manager();
 			Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
+			auto player_components = component_manager.get_component_tuple<Transform2D, Player, Weapon>(m_player_entity);
+
+			const Transform2D* player_transform = std::get<Transform2D*>(player_components);
+			const Player* player_component = std::get<Player*>(player_components);
+			Weapon* player_weapon = std::get<Weapon*>(player_components);
+
+			player_weapon->firing_timer = std::max(player_weapon->firing_timer - delta_time, 0.0f);
+
+			if ((player_weapon->firing_timer <= 0.0f) && (player_component->input.fire == true))
+			{
+				// Reset timer and fire projectile
+				player_weapon->firing_timer = 60.0f / player_weapon->rate_of_fire;
+				
+				const int32_t prefab_handle = get_projectile_prefab_index(ecs_world, player_weapon->projectile_prefab_entity);
+				const ProjectilePrefab& projectile_prefab = m_projectile_pool.prefabs[prefab_handle];
+
+				const ProjectileData new_projectile{
+					.prefab = prefab_handle,
+					.position = player_transform->position,
+					.velocity = player_component->facing * projectile_prefab.speed,
+					.remaining_lifetime = projectile_prefab.range / projectile_prefab.speed
+				};
+
+				// FIXME: create lookup for projectile prefabs!
+				const CreateProjectile proj_event_data = m_projectile_pool.add_projectile(new_projectile, 0);
+				m_event_queue.write_object(Vadon::Utilities::to_integral(PacketType::CREATE_PROJECTILE), proj_event_data);
+			}
+
+			// FIXME: could separate the queues and first process creation/destruction
+			// This would allow queuing the updates in the same loop
+			for (size_t current_buffer_index = 0; current_buffer_index < m_projectile_pool.ring_buffers.size(); ++current_buffer_index)
+			{
+				auto& current_buffer = m_projectile_pool.ring_buffers[current_buffer_index];
+				// Update projectiles 
+				if (current_buffer->is_free() == true)
+				{
+					return;
+				}
+
+				size_t current_index = 0;
+				while (current_index < current_buffer->active_count)
+				{
+					ProjectileData& current_projectile = current_buffer->projectiles[current_index];
+					if (current_projectile.is_active() == true)
+					{
+						current_projectile.position += delta_time * current_projectile.velocity;
+						current_projectile.remaining_lifetime -= delta_time;
+					}
+					if (current_projectile.is_active() == false)
+					{
+						m_event_queue.write_object(Vadon::Utilities::to_integral(PacketType::DESTROY_PROJECTILE), DestroyProjectile{ .buffer = static_cast<int32_t>(current_buffer_index), .offset = static_cast<int32_t>(current_index) });
+						if (current_index < current_buffer->active_count - 1)
+						{
+							current_buffer->projectiles[current_index] = current_buffer->projectiles[current_buffer->active_count - 1];
+						}
+						--current_buffer->active_count;
+						continue;
+					}
+					else
+					{
+						const ProjectilePrefab& projectile_prefab = m_projectile_pool.prefabs[current_projectile.prefab];
+
+						// FIXME: proper collision system!
+						for (EnemyData& current_enemy : m_enemy_pool.enemies)
+						{
+							const EnemyPrefab& enemy_prefab = m_enemy_pool.prefabs[current_enemy.prefab];
+
+							const float hit_radius = projectile_prefab.radius + enemy_prefab.size;
+							const float hit_radius_sq = hit_radius * hit_radius;
+
+							const Vadon::Utilities::Vector2 enemy_to_projectile = current_projectile.position - current_enemy.position;
+							const float dist_sq = Vadon::Utilities::dot(enemy_to_projectile, enemy_to_projectile);
+
+							// FIXME: also use enemy hitbox!
+							if (dist_sq < hit_radius_sq)
+							{
+								current_enemy.health -= 10.0f;
+								current_projectile.remaining_lifetime = -1.0f;
+								break;
+							}
+						}
+					}
+					++current_index;
+				}
+			}
+		}
+
+		void render_sync(Vadon::ECS::World& ecs_world)
+		{
+			Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
+
+			auto render_query = component_manager.run_component_query<CanvasComponent&, Transform2D*>();
+			auto render_it = render_query.get_iterator();
 
 			Vadon::Render::Canvas::CanvasSystem& canvas_system = m_engine_core.get_system<Vadon::Render::Canvas::CanvasSystem>();
 
-			auto render_query = component_manager.run_component_query<CanvasComponent*, Transform2D&, Celestial*>();
+			for (; render_it.is_valid() == true; render_it.next())
+			{
+				auto current_entity = render_it.get_entity();
+				auto current_component_tuple = render_it.get_tuple();
+
+				Transform2D* transform_component = std::get<Transform2D*>(current_component_tuple);
+				CanvasComponent& canvas_component = std::get<CanvasComponent&>(current_component_tuple);
+
+				if (canvas_component.render_handle < 0)
+				{
+					internal_update_canvas_item(canvas_component);
+					assert(canvas_component.render_handle >= 0);
+				}
+
+				GenericRenderObject& render_object = m_generic_render_pool.objects[canvas_component.render_handle];
+				float scale = 1.0f;
+				if (transform_component != nullptr)
+				{
+					render_object.position = transform_component->position;
+					scale = transform_component->scale;
+				}
+				else
+				{
+					render_object.position = Vadon::Utilities::Vector2_Zero;
+				}
+
+				canvas_system.set_item_transform(render_object.canvas_item, Vadon::Render::Canvas::Transform{ .position = render_object.position, .scale = scale });
+			}
+
+			// TODO: synchronous rendering of projectiles and enemies!
+		}
+
+		void update_view_async(Vadon::ECS::World& ecs_world, Vadon::Utilities::PacketQueue& render_queue)
+		{
+			render_queue.clear();
+
+			if (m_event_queue.is_empty() == false)
+			{
+				render_queue.append_queue(m_event_queue);
+				m_event_queue.clear();
+			}
+
+			Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
+
+			auto render_query = component_manager.run_component_query<CanvasComponent&, Transform2D*>();
 			auto render_it = render_query.get_iterator();
 
 			for (; render_it.is_valid() == true; render_it.next())
 			{
 				auto current_entity = render_it.get_entity();
 				auto current_component_tuple = render_it.get_tuple();
-				Transform2D& transform_component = std::get<Transform2D&>(current_component_tuple);
 
+				Transform2D* transform_component = std::get<Transform2D*>(current_component_tuple);
+				CanvasComponent& canvas_component = std::get<CanvasComponent&>(current_component_tuple);
+
+				if (canvas_component.render_handle < 0)
 				{
-					// Update transform global position
-					// FIXME: have a system which handles this more efficiently!
-					auto parent_entity = entity_manager.get_entity_parent(current_entity);
-					if (parent_entity.is_valid() == true)
-					{
-						Transform2D* parent_transform = component_manager.get_component<Transform2D>(parent_entity);
-						if (parent_transform != nullptr)
-						{
-							transform_component.global_position = parent_transform->global_position + transform_component.position;
-						}
-						else
-						{
-							transform_component.global_position = transform_component.position;
-						}
-					}
+					continue;
 				}
 
-				CanvasComponent* canvas_item = std::get<CanvasComponent*>(current_component_tuple);
-				if (canvas_item != nullptr)
+				UpdateGeneric* update_data = render_queue.allocate_object<UpdateGeneric>(Vadon::Utilities::to_integral(PacketType::UPDATE_GENERIC));
+				update_data->handle = canvas_component.render_handle;
+
+				if (transform_component != nullptr)
 				{
-					if (canvas_item->canvas_handle.is_valid() == true)
+					update_data->position = transform_component->position;
+					update_data->scale = transform_component->scale;
+				}
+				else
+				{
+					update_data->position = Vadon::Utilities::Vector2_Zero;
+					update_data->scale = 1.0f;
+				}
+			}
+
+			if(m_enemy_pool.enemies.empty() == false)
+			{
+				UpdateEnemy* update_ptr = reinterpret_cast<UpdateEnemy*>(render_queue.allocate_raw_data(Vadon::Utilities::to_integral(PacketType::BULK_UPDATE_ENEMIES), m_enemy_pool.enemies.size() * sizeof(UpdateEnemy)));
+				for (const EnemyData& current_object : m_enemy_pool.enemies)
+				{
+					update_ptr->position = current_object.position;
+					++update_ptr;
+				}
+			}
+
+			{
+				size_t total_projectile_count = 0;
+				for (const auto& current_buffer : m_projectile_pool.ring_buffers)
+				{
+					total_projectile_count += current_buffer->active_count;
+				}
+
+				if (total_projectile_count > 0)
+				{
+					UpdateProjectile* update_ptr = reinterpret_cast<UpdateProjectile*>(render_queue.allocate_raw_data(Vadon::Utilities::to_integral(PacketType::BULK_UPDATE_PROJECTILES), total_projectile_count * sizeof(UpdateProjectile)));
+					for (const auto& current_buffer : m_projectile_pool.ring_buffers)
 					{
-						// Update position
-						canvas_system.set_item_position(canvas_item->canvas_handle, transform_component.global_position);
-						Celestial* celestial = std::get<Celestial*>(current_component_tuple);
-						if (canvas_item->scale != transform_component.scale)
+						for (size_t current_projectile_index = 0; current_projectile_index < current_buffer->active_count; ++current_projectile_index)
 						{
-							// Scale updated, redraw
-							// FIXME: should be able to scale independently!
-							draw_canvas_item(canvas_system, &transform_component, *canvas_item, celestial);
+							update_ptr->position = current_buffer->projectiles[current_projectile_index].position;
+							++update_ptr;
 						}
 					}
 				}
 			}
 		}
 
-		void component_event(Vadon::ECS::World& ecs_world, const Vadon::ECS::ComponentEvent& event)
+		void render_async(const Vadon::Utilities::PacketQueue& render_queue)
 		{
-			// FIXME: this is just to get it working
-			// Ideally client code will define model and view entities as needed
-			// e.g model entities will spawn editor-specific entities to use for visualization, drag & drop, etc.
-			switch (event.event_type)
+			// FIXME: properly decouple view from model!
+			Vadon::Utilities::PacketQueue::Iterator queue_iterator = render_queue.get_iterator();
+			Vadon::Render::Canvas::CanvasSystem& canvas_system = m_engine_core.get_system<Vadon::Render::Canvas::CanvasSystem>();
+			for(queue_iterator; queue_iterator.is_valid() == true; queue_iterator.advance())
 			{
-			case Vadon::ECS::ComponentEventType::ADDED:
-			{
-				if (event.type_id == Vadon::ECS::ComponentManager::get_component_type_id<CanvasComponent>())
+				const PacketType packet_type = Vadon::Utilities::to_enum<PacketType>(queue_iterator.get_header().packet_id);
+				switch (packet_type)
 				{
-					// Create canvas item
-					auto component_tuple = ecs_world.get_component_manager().get_component_tuple<Transform2D, CanvasComponent, Celestial>(event.owner);
-					CanvasComponent* canvas_component = std::get<CanvasComponent*>(component_tuple);
+				case PacketType::CREATE_ENEMY_PREFAB:
+				{
+					const CreateEnemyPrefab* create_prefab = queue_iterator.get_packet<CreateEnemyPrefab>();
 
-					Vadon::Render::Canvas::CanvasSystem& canvas_system = m_engine_core.get_system<Vadon::Render::Canvas::CanvasSystem>();
+					EnemyRenderPrefab& new_prefab = m_enemy_render_pool.prefabs.emplace_back();
 
 					Vadon::Render::Canvas::ItemInfo new_item_info;
 					new_item_info.layer = m_canvas_layer;
+					new_item_info.z_order = create_prefab->z_order;
 
-					canvas_component->canvas_handle = canvas_system.create_item(new_item_info);
+					new_prefab.canvas_item = canvas_system.create_item(new_item_info);
 
-					draw_canvas_item(canvas_system, std::get<Transform2D*>(component_tuple), *canvas_component, std::get<Celestial*>(component_tuple));
+					const int32_t render_type = std::clamp(create_prefab->type, 0, Vadon::Utilities::to_integral(RenderObjectType::DIAMOND));
+					new_prefab.batch_range = prepare_canvas_batch(new_prefab.canvas_item, m_enemy_render_pool.enemy_canvas_batch, Vadon::Utilities::to_enum<RenderObjectType>(render_type), create_prefab->color, create_prefab->scale);
 				}
-				else if (event.type_id == Vadon::ECS::ComponentManager::get_component_type_id<Celestial>())
+					break;
+				case PacketType::CREATE_ENEMY:
 				{
-					// Redraw canvas item (if present)
-					auto component_tuple = ecs_world.get_component_manager().get_component_tuple<Transform2D, CanvasComponent, Celestial>(event.owner);
-					CanvasComponent* canvas_component = std::get<CanvasComponent*>(component_tuple);
-					if (canvas_component != nullptr)
+					const CreateEnemy* create_enemy = queue_iterator.get_packet<CreateEnemy>();
+
+					EnemyRenderObject& render_obj =	m_enemy_render_pool.objects.emplace_back();
+					render_obj.position = create_enemy->position;
+					render_obj.prev_position = create_enemy->position;
+					render_obj.prefab = create_enemy->prefab;
+				}
+					break;
+				case PacketType::BULK_UPDATE_ENEMIES:
+				{
+					const UpdateEnemy* update_array = reinterpret_cast<const UpdateEnemy*>(queue_iterator.get_packet_data());
+					const size_t obj_count = queue_iterator.get_header().data_size / sizeof(UpdateEnemy);
+					for(size_t current_index = 0; current_index < obj_count; ++current_index)
 					{
-						Vadon::Render::Canvas::CanvasSystem& canvas_system = m_engine_core.get_system<Vadon::Render::Canvas::CanvasSystem>();
-						draw_canvas_item(canvas_system, std::get<Transform2D*>(component_tuple), *canvas_component, std::get<Celestial*>(component_tuple));
+						EnemyRenderObject& current_object = m_enemy_render_pool.objects[current_index];
+						const UpdateEnemy& current_update = update_array[current_index];
+
+						current_object.prev_position = current_object.position;
+						current_object.position = current_update.position;
 					}
 				}
+					break;
+				case PacketType::DESTROY_ENEMY:
+				{
+					const DestroyEnemy* destroy_data = queue_iterator.get_packet<DestroyEnemy>();
+
+					// TODO: check to make sure we don't get this message if no objects existed to begin with!
+					if (destroy_data->index < m_enemy_render_pool.objects.size() - 1)
+					{
+						m_enemy_render_pool.objects[destroy_data->index] = m_enemy_render_pool.objects.back();
+						m_enemy_render_pool.objects.pop_back();
+					}
+				}
+					break;
+				case PacketType::CREATE_PROJECTILE_PREFAB:
+				{
+					const CreateProjectilePrefab* create_prefab = queue_iterator.get_packet<CreateProjectilePrefab>();
+
+					ProjectileRenderPrefab& new_prefab = m_projectile_render_pool.prefabs.emplace_back();
+
+					Vadon::Render::Canvas::ItemInfo new_item_info;
+					new_item_info.layer = m_canvas_layer;
+					new_item_info.z_order = create_prefab->z_order;
+
+					new_prefab.canvas_item = canvas_system.create_item(new_item_info);
+
+					const int32_t render_type = std::clamp(create_prefab->type, 0, Vadon::Utilities::to_integral(RenderObjectType::DIAMOND));
+					new_prefab.batch_range = prepare_canvas_batch(new_prefab.canvas_item, m_projectile_render_pool.projectile_canvas_batch, Vadon::Utilities::to_enum<RenderObjectType>(render_type), create_prefab->color, create_prefab->scale);
+				}
 				break;
+				case PacketType::CREATE_PROJECTILE:
+				{
+					const CreateProjectile* create_projectile = queue_iterator.get_packet<CreateProjectile>();
+
+					if (create_projectile->buffer >= static_cast<int32_t>(m_projectile_render_pool.ring_buffers.size()))
+					{
+						m_projectile_render_pool.ring_buffers.emplace_back(new RenderProjectileRingBuffer);
+					}
+
+					RenderProjectileRingBuffer& buffer = *m_projectile_render_pool.ring_buffers[create_projectile->buffer];
+
+					ProjectileRenderObject& render_obj = buffer.projectiles[buffer.active_count];
+					render_obj.position = create_projectile->position;
+					render_obj.prev_position = create_projectile->position;
+					render_obj.prefab = create_projectile->prefab;
+
+					++buffer.active_count;
+				}
+					break;
+				case PacketType::BULK_UPDATE_PROJECTILES:
+				{
+					const UpdateProjectile* update_array = reinterpret_cast<const UpdateProjectile*>(queue_iterator.get_packet_data());
+					size_t update_offset = 0;
+
+					for (auto& current_buffer : m_projectile_render_pool.ring_buffers)
+					{
+						for (int32_t current_projectile_index = 0; current_projectile_index < current_buffer->active_count; ++current_projectile_index)
+						{
+							ProjectileRenderObject& current_projectile = current_buffer->projectiles[current_projectile_index];
+							const UpdateProjectile& current_update = update_array[update_offset];
+
+							current_projectile.prev_position = current_projectile.position;
+							current_projectile.position = current_update.position;
+
+							++update_offset;
+						}
+					}
+				}
+					break;
+				case PacketType::DESTROY_PROJECTILE:
+				{
+					const DestroyProjectile* destroy_data = queue_iterator.get_packet<DestroyProjectile>();
+
+					// TODO: check to make sure we don't get this message if no objects existed to begin with!
+					RenderProjectileRingBuffer& buffer = *m_projectile_render_pool.ring_buffers[destroy_data->buffer];
+					if (destroy_data->offset < buffer.active_count - 1)
+					{
+						buffer.projectiles[destroy_data->offset] = buffer.projectiles[buffer.active_count - 1];
+					}
+					--buffer.active_count;
+				}
+					break;
+				case PacketType::CREATE_GENERIC:
+				{
+					const CreateGeneric* create_generic = queue_iterator.get_packet<CreateGeneric>();
+
+					m_generic_render_pool.add_object(create_generic->handle);
+
+					GenericRenderObject& render_obj = m_generic_render_pool.objects[create_generic->handle];
+					
+					Vadon::Render::Canvas::ItemInfo new_item_info;
+					new_item_info.layer = m_canvas_layer;
+
+					render_obj.canvas_item = canvas_system.create_item(new_item_info);
+				}
+					break;
+				case PacketType::MODIFY_GENERIC:
+				{
+					const ModifyGeneric* modify_generic = queue_iterator.get_packet<ModifyGeneric>();
+
+					GenericRenderObject& render_obj = m_generic_render_pool.objects[modify_generic->handle];
+
+					const int32_t render_type = std::clamp(modify_generic->type, 0, Vadon::Utilities::to_integral(RenderObjectType::DIAMOND));
+					prepare_canvas_item(render_obj.canvas_item, Vadon::Utilities::to_enum<RenderObjectType>(render_type), modify_generic->color);
+
+					canvas_system.set_item_z_order(render_obj.canvas_item, modify_generic->z_order);
+				}
+					break;
+				case PacketType::UPDATE_GENERIC:
+				{
+					const UpdateGeneric* update_generic = queue_iterator.get_packet<UpdateGeneric>();
+
+					GenericRenderObject& render_obj = m_generic_render_pool.objects[update_generic->handle];
+					render_obj.prev_position = render_obj.position;
+					render_obj.position = update_generic->position;
+					render_obj.scale = update_generic->scale;
+				}
+					break;
+				case PacketType::DESTROY_GENERIC:
+				{
+					const DestroyGeneric* destroy_generic = queue_iterator.get_packet<DestroyGeneric>();
+
+					// TODO: make sure handle is within bounds!
+					GenericRenderObject& render_obj = m_generic_render_pool.objects[destroy_generic->handle];
+
+					if (render_obj.canvas_item.is_valid() == true)
+					{
+						canvas_system.remove_item(render_obj.canvas_item);
+
+						render_obj.canvas_item.invalidate();
+					}
+				}
+					break;
+				}
 			}
-			case Vadon::ECS::ComponentEventType::REMOVED:
+		}
+
+		void lerp_view_state(float lerp_weight)
+		{
+			Vadon::Render::Canvas::CanvasSystem& canvas_system = m_engine_core.get_system<Vadon::Render::Canvas::CanvasSystem>();
+			const float neg_lerp_weight = 1.0f - lerp_weight;
+			
+			// First clear all prefabs
+			for (const EnemyRenderPrefab& current_prefab : m_enemy_render_pool.prefabs)
 			{
-				if (event.type_id == Vadon::ECS::ComponentManager::get_component_type_id<CanvasComponent>())
-				{
-					// Remove canvas item
-					CanvasComponent* canvas_component = ecs_world.get_component_manager().get_component<CanvasComponent>(event.owner);
-					if (canvas_component->canvas_handle.is_valid() == true)
-					{
-						Vadon::Render::Canvas::CanvasSystem& canvas_system = m_engine_core.get_system<Vadon::Render::Canvas::CanvasSystem>();
-						canvas_system.remove_item(canvas_component->canvas_handle);
-					}
-				}
-				else if (event.type_id == Vadon::ECS::ComponentManager::get_component_type_id<Celestial>())
-				{
-					// Redraw canvas item (if present)
-					auto component_tuple = ecs_world.get_component_manager().get_component_tuple<Transform2D, CanvasComponent, Celestial>(event.owner);
-					CanvasComponent* canvas_component = std::get<CanvasComponent*>(component_tuple);
-					if (canvas_component != nullptr)
-					{
-						Vadon::Render::Canvas::CanvasSystem& canvas_system = m_engine_core.get_system<Vadon::Render::Canvas::CanvasSystem>();
-						draw_canvas_item(canvas_system, std::get<Transform2D*>(component_tuple), *canvas_component, std::get<Celestial*>(component_tuple));
-					}
-				}
-				break;
+				canvas_system.clear_item(current_prefab.canvas_item);
 			}
+
+			for (const ProjectileRenderPrefab& current_prefab : m_projectile_render_pool.prefabs)
+			{
+				canvas_system.clear_item(current_prefab.canvas_item);
 			}
+
+			Vadon::Render::Canvas::BatchDrawCommand batch_command;
+			batch_command.batch = m_enemy_render_pool.enemy_canvas_batch;
+			for (EnemyRenderObject& enemy_obj : m_enemy_render_pool.objects)
+			{
+				batch_command.transform.position = (enemy_obj.position * lerp_weight) + (enemy_obj.prev_position * neg_lerp_weight);
+				batch_command.transform.scale = 1.0f;
+
+				const EnemyRenderPrefab& prefab = m_enemy_render_pool.prefabs[enemy_obj.prefab];
+				batch_command.range = prefab.batch_range;
+
+				canvas_system.add_item_batch_draw(prefab.canvas_item, batch_command);
+			}
+
+			batch_command.batch = m_projectile_render_pool.projectile_canvas_batch;
+			for (const auto& current_buffer : m_projectile_render_pool.ring_buffers)
+			{
+				for (int32_t current_projectile_index = 0; current_projectile_index < current_buffer->active_count; ++current_projectile_index)
+				{
+					const ProjectileRenderObject& current_projectile = current_buffer->projectiles[current_projectile_index];
+
+					batch_command.transform.position = (current_projectile.position * lerp_weight) + (current_projectile.prev_position * neg_lerp_weight);
+					batch_command.transform.scale = 1.0f;
+
+					const ProjectileRenderPrefab& prefab = m_projectile_render_pool.prefabs[current_projectile.prefab];
+					batch_command.range = prefab.batch_range;
+
+					canvas_system.add_item_batch_draw(prefab.canvas_item, batch_command);
+				}
+			}
+
+			for (const GenericRenderObject& current_obj : m_generic_render_pool.objects)
+			{
+				if (current_obj.canvas_item.is_valid() == false)
+				{
+					continue;
+				}
+
+				Vadon::Render::Canvas::Transform new_transform;
+				new_transform.position = (current_obj.position * lerp_weight) + (current_obj.prev_position * neg_lerp_weight);
+				new_transform.scale = current_obj.scale;
+
+				canvas_system.set_item_transform(current_obj.canvas_item, new_transform);
+			}
+		}
+
+		Vadon::Utilities::DataRange prepare_canvas_batch(Vadon::Render::Canvas::ItemHandle canvas_item, Vadon::Render::Canvas::BatchHandle canvas_batch, RenderObjectType type, const Vadon::Utilities::Vector3& color, float scale)
+		{
+			Vadon::Render::Canvas::CanvasSystem& canvas_system = m_engine_core.get_system<Vadon::Render::Canvas::CanvasSystem>();
+			canvas_system.clear_item(canvas_item);
+
+			Vadon::Utilities::DataRange batch_range;
+			batch_range.offset = static_cast<int32_t>(canvas_system.get_batch_buffer_size(canvas_batch));
+				
+			switch (type)
+			{
+			case RenderObjectType::TRIANGLE:
+			{
+				Vadon::Render::Canvas::Triangle triangle;
+				triangle.color = Vadon::Render::Canvas::ColorRGBA(color, 1.0f);
+
+				triangle.point_a.position = { 0, 0.5f * scale };
+				triangle.point_b.position = { 0.5f * scale, -0.5f * scale };
+				triangle.point_c.position = { -0.5f * scale, -0.5f * scale };
+
+				canvas_system.draw_batch_triangle(canvas_batch, triangle);
+				batch_range.count = 1;
+			}
+			break;
+			case RenderObjectType::BOX:
+			{
+				Vadon::Render::Canvas::Rectangle box_rectangle;
+				box_rectangle.color = Vadon::Render::Canvas::ColorRGBA(color, 1.0f);
+				box_rectangle.dimensions.size = { 1.0f * scale, 1.0f * scale };
+				box_rectangle.filled = true;
+
+				canvas_system.draw_batch_rectangle(canvas_batch, box_rectangle);
+				batch_range.count = 1;
+			}
+			break;
+			case RenderObjectType::DIAMOND:
+			{
+				Vadon::Render::Canvas::Triangle diamond_half_triangle;
+				diamond_half_triangle.color = Vadon::Render::Canvas::ColorRGBA(color, 1.0f);
+
+				diamond_half_triangle.point_a.position = { 0, 1.0f * scale };
+				diamond_half_triangle.point_b.position = { 1.0f * scale, 0 };
+				diamond_half_triangle.point_c.position = { -1.0f * scale, 0 };
+
+				canvas_system.draw_batch_triangle(canvas_batch, diamond_half_triangle);
+
+				diamond_half_triangle.point_a.position = { -1.0f * scale, 0 };
+				diamond_half_triangle.point_b.position = { 1.0f * scale, 0 };
+				diamond_half_triangle.point_c.position = { 0, -1.0f * scale };
+
+				canvas_system.draw_batch_triangle(canvas_batch, diamond_half_triangle);
+				batch_range.count = 2;
+			}
+			break;
+			}
+
+			return batch_range;
+		}
+
+		void prepare_canvas_item(Vadon::Render::Canvas::ItemHandle canvas_item, RenderObjectType type, const Vadon::Utilities::Vector3& color)
+		{
+			Vadon::Render::Canvas::CanvasSystem& canvas_system = m_engine_core.get_system<Vadon::Render::Canvas::CanvasSystem>();
+			canvas_system.clear_item(canvas_item);
+
+			switch (type)
+			{
+			case RenderObjectType::TRIANGLE:
+			{
+				Vadon::Render::Canvas::Triangle triangle;
+				triangle.color = Vadon::Render::Canvas::ColorRGBA(color, 1.0f);
+
+				triangle.point_a.position = { 0, 0.5f };
+				triangle.point_b.position = { 0.5f, -0.5f };
+				triangle.point_c.position = { -0.5f, -0.5f };
+
+				canvas_system.draw_item_triangle(canvas_item, triangle);
+			}
+			break;
+			case RenderObjectType::BOX:
+			{
+				Vadon::Render::Canvas::Rectangle box_rectangle;
+				box_rectangle.color = Vadon::Render::Canvas::ColorRGBA(color, 1.0f);
+				box_rectangle.dimensions.size = { 1.0f, 1.0f };
+				box_rectangle.filled = true;
+
+				canvas_system.draw_item_rectangle(canvas_item, box_rectangle);
+			}
+			break;
+			case RenderObjectType::DIAMOND:
+			{
+				Vadon::Render::Canvas::Triangle diamond_half_triangle;
+				diamond_half_triangle.color = Vadon::Render::Canvas::ColorRGBA(color, 1.0f);
+
+				diamond_half_triangle.point_a.position = { 0, 1.0f };
+				diamond_half_triangle.point_b.position = { 1.0f, 0 };
+				diamond_half_triangle.point_c.position = { -1.0f, 0 };
+
+				canvas_system.draw_item_triangle(canvas_item, diamond_half_triangle);
+
+				diamond_half_triangle.point_a.position = { -1.0f, 0 };
+				diamond_half_triangle.point_b.position = { 1.0f, 0 };
+				diamond_half_triangle.point_c.position = { 0, -1.0f };
+
+				canvas_system.draw_item_triangle(canvas_item, diamond_half_triangle);
+			}
+			break;
+			}
+		}
+
+		void update_canvas_item(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle entity)
+		{
+			// NOTE: this function assumes we are in a single-threaded context (i.e editor)
+			CanvasComponent* canvas_component = ecs_world.get_component_manager().get_component<CanvasComponent>(entity);
+			if (canvas_component == nullptr)
+			{
+				// TODO: error!
+				return;
+			}
+
+			internal_update_canvas_item(*canvas_component);
+		}
+
+		void internal_update_canvas_item(CanvasComponent& canvas_component)
+		{
+			Vadon::Render::Canvas::CanvasSystem& canvas_system = m_engine_core.get_system<Vadon::Render::Canvas::CanvasSystem>();
+			if (canvas_component.render_handle < 0)
+			{
+				// TODO: create canvas item
+				canvas_component.render_handle = m_generic_render_pool.register_object();
+				m_generic_render_pool.add_object(canvas_component.render_handle);
+
+				GenericRenderObject& render_obj = m_generic_render_pool.objects[canvas_component.render_handle];
+
+				Vadon::Render::Canvas::ItemInfo new_item_info;
+				new_item_info.layer = m_canvas_layer;
+
+				render_obj.canvas_item = canvas_system.create_item(new_item_info);
+			}
+
+			GenericRenderObject& render_obj = m_generic_render_pool.objects[canvas_component.render_handle];
+
+			const int32_t render_type = std::clamp(canvas_component.type, 0, Vadon::Utilities::to_integral(RenderObjectType::DIAMOND));
+
+			prepare_canvas_item(render_obj.canvas_item, Vadon::Utilities::to_enum<RenderObjectType>(render_type), canvas_component.color);
+
+			canvas_system.set_item_z_order(render_obj.canvas_item, canvas_component.z_order);
+		}
+
+		void remove_canvas_item(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle entity)
+		{
+			CanvasComponent* canvas_component = ecs_world.get_component_manager().get_component<CanvasComponent>(entity);
+			if (canvas_component == nullptr)
+			{
+				// TODO: error!
+				return;
+			}
+
+			if (canvas_component->render_handle < 0)
+			{
+				return;
+			}
+
+			GenericRenderObject& generic_obj = m_generic_render_pool.objects[canvas_component->render_handle];
+			if (generic_obj.canvas_item.is_valid() == false)
+			{
+				return;
+			}
+
+			Vadon::Render::Canvas::CanvasSystem& canvas_system = m_engine_core.get_system<Vadon::Render::Canvas::CanvasSystem>();
+			canvas_system.remove_item(generic_obj.canvas_item);
+
+			generic_obj.canvas_item.invalidate();
+
+			m_generic_render_pool.unregister_object(canvas_component->render_handle);
+			canvas_component->render_handle = -1;
+		}
+
+		void set_player_input(Vadon::ECS::World& ecs_world, const PlayerInput& input)
+		{
+			Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
+			Player* player_component = component_manager.get_component<Player>(m_player_entity);
+
+			player_component->input = input;
 		}
 	};
 
@@ -274,9 +1575,9 @@ namespace VadonDemo::Model
 		return m_internal->initialize();
 	}
 	
-	void Model::init_simulation(Vadon::ECS::World& ecs_world)
+	bool Model::init_simulation(Vadon::ECS::World& ecs_world)
 	{
-		m_internal->init_simulation(ecs_world);
+		return m_internal->init_simulation(ecs_world);
 	}
 
 	void Model::update_simulation(Vadon::ECS::World& ecs_world, float delta_time)
@@ -284,9 +1585,39 @@ namespace VadonDemo::Model
 		m_internal->update_simulation(ecs_world, delta_time);
 	}
 
-	void Model::update_rendering(Vadon::ECS::World& ecs_world)
+	void Model::render_sync(Vadon::ECS::World& ecs_world)
 	{
-		m_internal->update_rendering(ecs_world);
+		m_internal->render_sync(ecs_world);
+	}
+
+	void Model::update_view_async(Vadon::ECS::World& ecs_world, Vadon::Utilities::PacketQueue& render_queue)
+	{
+		m_internal->update_view_async(ecs_world, render_queue);
+	}
+
+	void Model::render_async(const Vadon::Utilities::PacketQueue& render_queue)
+	{
+		m_internal->render_async(render_queue);
+	}
+
+	void Model::lerp_view_state(float lerp_weight)
+	{
+		m_internal->lerp_view_state(lerp_weight);
+	}
+
+	void Model::update_canvas_item(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle entity)
+	{
+		m_internal->update_canvas_item(ecs_world, entity);
+	}
+
+	void Model::remove_canvas_item(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle entity)
+	{
+		m_internal->remove_canvas_item(ecs_world, entity);
+	}
+
+	void Model::set_player_input(Vadon::ECS::World& ecs_world, const PlayerInput& input)
+	{
+		m_internal->set_player_input(ecs_world, input);
 	}
 
 	Vadon::Render::Canvas::LayerHandle Model::get_canvas_layer() const
@@ -294,12 +1625,7 @@ namespace VadonDemo::Model
 		return m_internal->m_canvas_layer;
 	}
 
-	VADONDEMO_API void Model::component_event(Vadon::ECS::World& ecs_world, const Vadon::ECS::ComponentEvent& event)
-	{
-		m_internal->component_event(ecs_world, event);
-	}
-
-	VADONDEMO_API void Model::init_engine_environment(Vadon::Core::EngineEnvironment& environment)
+	void Model::init_engine_environment(Vadon::Core::EngineEnvironment& environment)
 	{
 		Vadon::Core::EngineEnvironment::initialize(environment);
 

@@ -3,6 +3,8 @@
 #include <VadonApp/Private/UI/Developer/GUI.hpp>
 #include <VadonApp/Private/UI/Developer/ImGui/GUIElements.hpp>
 
+#include <VadonApp/Platform/Event/Event.hpp>
+
 #include <Vadon/Render/GraphicsAPI/Buffer/Buffer.hpp>
 #include <Vadon/Render/GraphicsAPI/Pipeline/Pipeline.hpp>
 #include <Vadon/Render/GraphicsAPI/Shader/Shader.hpp>
@@ -20,8 +22,6 @@ namespace VadonApp::Private::UI::Developer::ImGUI
 		void shutdown() override;
 
 		IOFlags get_io_flags() const override;
-
-		void dispatch_platform_events(const VadonApp::Platform::PlatformEventList& platform_events) override;
 
 		void start_frame() override;
 		void end_frame() override;
@@ -144,6 +144,7 @@ namespace VadonApp::Private::UI::Developer::ImGUI
 		bool init_renderer();
 
 		void update_platform();
+		void process_platform_events(const VadonApp::Platform::PlatformEventList& platform_events);
 
 		void update_mouse_data();
 		void update_mouse_cursor();

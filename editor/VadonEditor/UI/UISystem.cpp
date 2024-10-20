@@ -1,11 +1,11 @@
 #include <VadonEditor/UI/UISystem.hpp>
 
 #include <VadonEditor/Core/Editor.hpp>
-#include <VadonEditor/Platform/PlatformInterface.hpp>
 
 #include <VadonEditor/UI/Developer/GUI.hpp>
 
 #include <VadonApp/Core/Application.hpp>
+#include <VadonApp/Platform/PlatformInterface.hpp>
 
 #include <VadonApp/UI/UISystem.hpp>
 #include <VadonApp/UI/Console.hpp>
@@ -35,16 +35,16 @@ namespace VadonEditor::UI
 
 		bool initialize()
 		{
-			Platform::PlatformInterface& platform_interface = m_editor.get_system<Platform::PlatformInterface>();
+			VadonApp::Core::Application& engine_app = m_editor.get_engine_app();
+			VadonApp::Platform::PlatformInterface& platform_interface = engine_app.get_system<VadonApp::Platform::PlatformInterface>();
 			platform_interface.register_event_callback(
-				[this](const VadonApp::Platform::PlatformEventList& platform_events)
+				[this, &engine_app](const VadonApp::Platform::PlatformEventList& platform_events)
 				{
 					auto event_handler = Vadon::Utilities::VisitorOverloadList{
-						[this](const VadonApp::Platform::KeyboardEvent& keyboard_event)
+						[this, &engine_app](const VadonApp::Platform::KeyboardEvent& keyboard_event)
 						{
 							if (keyboard_event.key == VadonApp::Platform::KeyCode::BACKQUOTE)
 							{
-								VadonApp::Core::Application& engine_app = m_editor.get_engine_app();
 								VadonApp::UI::UISystem& ui_system = engine_app.get_system<VadonApp::UI::UISystem>();
 								VadonApp::UI::Console& app_console = ui_system.get_console();
 								app_console.show();
@@ -57,16 +57,10 @@ namespace VadonEditor::UI
 					{
 						std::visit(event_handler, current_event);
 					}
-
-					// Dispatch events to dev GUI
-					VadonApp::Core::Application& engine_app = m_editor.get_engine_app();
-					VadonApp::UI::Developer::GUISystem& dev_gui = engine_app.get_system<VadonApp::UI::Developer::GUISystem>();
-					dev_gui.dispatch_platform_events(platform_events);
 				}
 			);
 
 			// App console
-			VadonApp::Core::Application& engine_app = m_editor.get_engine_app();
 			{
 				// Handle console events
 				VadonApp::UI::UISystem& ui_system = engine_app.get_system<VadonApp::UI::UISystem>();

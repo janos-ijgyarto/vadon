@@ -11,8 +11,6 @@ namespace VadonApp::Private::UI::Developer::Dummy
 
 		IOFlags get_io_flags() const override { return IOFlags::NONE; }
 
-		void dispatch_platform_events(const VadonApp::Platform::PlatformEventList& platform_events) override;
-
 		void start_frame() override;
 		void end_frame() override;
 

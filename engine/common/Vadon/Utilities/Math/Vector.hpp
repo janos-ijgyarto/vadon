@@ -31,5 +31,6 @@ namespace Vadon::Utilities
 	using glm::normalize;
 	using glm::abs;
 	using glm::dot;
+	using glm::clamp;
 }
 #endif

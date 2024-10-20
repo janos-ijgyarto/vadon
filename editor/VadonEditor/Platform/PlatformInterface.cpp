@@ -7,8 +7,6 @@ namespace VadonEditor::Platform
 {
 	struct PlatformInterface::Internal
 	{
-		std::vector<PlatformEventCallback> m_event_callbacks;
-
 		bool initialize()
 		{
 			return true;
@@ -17,27 +15,11 @@ namespace VadonEditor::Platform
 		void update(Core::Editor& editor)
 		{
 			VadonApp::Platform::PlatformInterface& platform_interface = editor.get_engine_app().get_system<VadonApp::Platform::PlatformInterface>();
-			const VadonApp::Platform::PlatformEventList platform_events = platform_interface.read_events();
-
-			if (platform_events.empty())
-			{
-				return;
-			}
-
-			// Propagate to all callbacks (it's their responsibility to manage data races, if needed)
-			for (const PlatformEventCallback& current_callback : m_event_callbacks)
-			{
-				current_callback(platform_events);
-			}
+			platform_interface.dispatch_events();
 		}
 	};
 
 	PlatformInterface::~PlatformInterface() = default;
-
-	void PlatformInterface::register_event_callback(const PlatformEventCallback& callback)
-	{
-		m_internal->m_event_callbacks.push_back(callback);
-	}
 
 	PlatformInterface::PlatformInterface(Core::Editor& editor)
 		: System(editor)

@@ -1,7 +1,6 @@
 #ifndef VADON_UTILITIES_CONTAINER_OBJECTPOOL_POOL_HPP
 #define VADON_UTILITIES_CONTAINER_OBJECTPOOL_POOL_HPP
 #include <Vadon/Utilities/Container/ObjectPool/Manager.hpp>
-#include <Vadon/Utilities/Enum/EnumClass.hpp>
 namespace Vadon::Utilities
 {
 	template<typename HandleType, typename PoolType>

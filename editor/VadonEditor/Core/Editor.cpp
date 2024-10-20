@@ -9,6 +9,7 @@
 #include <VadonEditor/View/ViewSystem.hpp>
 
 #include <VadonApp/Core/Application.hpp>
+#include <VadonApp/Platform/PlatformInterface.hpp>
 
 #include <VadonApp/UI/UISystem.hpp>
 
@@ -16,6 +17,7 @@
 
 #include <format>
 #include <chrono>
+#include <thread>
 
 namespace VadonEditor::Core
 {
@@ -173,7 +175,7 @@ namespace VadonEditor::Core
 		void register_app_event_handlers()
 		{
 			// Register callback in platform interface
-			m_platform_interface.register_event_callback(
+			m_engine_app->get_system<VadonApp::Platform::PlatformInterface>().register_event_callback(
 				[this](const VadonApp::Platform::PlatformEventList& platform_events)
 				{
 					// FIXME: make this more concise using std::visit?
@@ -206,6 +208,12 @@ namespace VadonEditor::Core
 			{
 				TimePoint current_time = Clock::now();
 				m_delta_time = std::chrono::duration_cast<Duration>(current_time - last_frame_time).count();
+
+				if (m_delta_time < (1.0f / 60.0f))
+				{
+					std::this_thread::yield();
+					continue;
+				}
 
 				last_frame_time = current_time;
 
@@ -283,27 +291,22 @@ namespace VadonEditor::Core
 		}
 	};
 
-	Editor::Editor()
+	Editor::Editor(Vadon::Core::EngineEnvironment& environment)
 		: m_internal(std::make_unique<Internal>(*this))
 	{
+		VadonApp::Core::Application::init_application_environment(environment);
+		Vadon::Core::EngineEnvironment::initialize(environment);
 	}
 
 	Editor::~Editor() = default;
 
 	int Editor::execute(int argc, char* argv[])
 	{
-		if (m_internal->initialize(argc, argv) == false)
+		if (initialize(argc, argv) == false)
 		{
 			Vadon::Core::Logger::log_error("Vadon Editor failed to initialize!");
 			m_internal->shutdown();
 			return 1;
-		}
-
-		// Run the initialization that the user can override
-		if (post_init() == false)
-		{
-			m_internal->shutdown();
-			return 2;
 		}
 
 		return m_internal->execute();
@@ -333,10 +336,9 @@ namespace VadonEditor::Core
 	{
 		return m_internal->get_command_line_arg(name);
 	}
-
-	VADONEDITOR_API void Editor::init_editor_environment(Vadon::Core::EngineEnvironment& environment)
+	
+	bool Editor::initialize(int argc, char* argv[])
 	{
-		VadonApp::Core::Application::init_application_environment(environment);
-		Vadon::Core::EngineEnvironment::initialize(environment);
+		return m_internal->initialize(argc, argv);
 	}
 }
