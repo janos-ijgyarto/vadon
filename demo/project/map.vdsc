@@ -5,7 +5,6 @@
                 {
                     "properties": {
                         "dimensions": [
-                            "Vector2",
                             500.0,
                             500.0
                         ],
@@ -16,7 +15,6 @@
                 {
                     "properties": {
                         "position": [
-                            "Vector2",
                             0.0,
                             0.0
                         ],
@@ -28,7 +26,6 @@
                 {
                     "properties": {
                         "color": [
-                            "Vector3",
                             0.0,
                             0.41803276538848877,
                             0.0

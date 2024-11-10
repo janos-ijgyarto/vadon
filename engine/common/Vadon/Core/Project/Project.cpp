@@ -40,20 +40,22 @@ namespace Vadon::Core
 		Vadon::Core::FileSystem::RawFileDataBuffer project_file_buffer;
 		Vadon::Utilities::Serializer::Instance serializer = Vadon::Utilities::Serializer::create_serializer(project_file_buffer, Vadon::Utilities::Serializer::Type::JSON, Vadon::Utilities::Serializer::Mode::WRITE);
 
+		using SerializerResult = Vadon::Utilities::Serializer::Result;
+
 		if (serializer->initialize() == false)
 		{
 			// TODO: error?
 			return false;
 		}
 
-		if (serializer->serialize("name", name) == false)
+		if (serializer->serialize("name", name) != SerializerResult::SUCCESSFUL)
 		{
 			// TODO: error?
 			return false;
 		}
 		if(startup_scene.is_valid() == true)
 		{
-			if (startup_scene.serialize(*serializer, "startup_scene") == false)
+			if (serializer->serialize("startup_scene", startup_scene) != SerializerResult::SUCCESSFUL)
 			{
 				// TODO: error?
 				return false;
@@ -87,6 +89,8 @@ namespace Vadon::Core
 
 		Vadon::Core::FileSystem& file_system = engine_core.get_system<Vadon::Core::FileSystem>();
 
+		using SerializerResult = Vadon::Utilities::Serializer::Result;
+
 		Vadon::Core::FileSystem::RawFileDataBuffer project_file_buffer;
 		if (file_system.load_file(Vadon::Core::FileSystem::Path{ .path = path }, project_file_buffer) == false)
 		{
@@ -100,12 +104,14 @@ namespace Vadon::Core
 			return false;
 		}
 
-		if (serializer->serialize("name", name) == false)
+		if (serializer->serialize("name", name) != SerializerResult::SUCCESSFUL)
 		{
 			// TODO: notify about missing attribute?
 			return false;
 		}
-		startup_scene.serialize(*serializer, "startup_scene");
+
+		// TODO: notify on failed serialization?
+		serializer->serialize("startup_scene", startup_scene);
 
 		// TODO: any other data?
 

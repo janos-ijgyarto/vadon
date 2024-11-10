@@ -150,7 +150,9 @@ namespace VadonEditor::Core
 			return;
 		}
 
-		if (serializer->open_array("projects") == false)
+		// TODO: use the return value for more elaborate parsing and error reporting?
+		using SerializerResult = Vadon::Utilities::Serializer::Result;
+		if (serializer->open_array("projects") != SerializerResult::SUCCESSFUL)
 		{
 			log_error(c_cache_file_data_error);
 			return;
@@ -161,26 +163,26 @@ namespace VadonEditor::Core
 
 		for (size_t current_project_index = 0; current_project_index < project_count; ++current_project_index)
 		{
-			if (serializer->open_object(current_project_index) == false)
+			if (serializer->open_object(current_project_index) != SerializerResult::SUCCESSFUL)
 			{
 				log_error(c_cache_file_data_error);
 				return;
 			}
 
 			ProjectInfo current_project_info;
-			if (serializer->serialize("name", current_project_info.name) == false)
+			if (serializer->serialize("name", current_project_info.name) != SerializerResult::SUCCESSFUL)
 			{
 				log_error(c_cache_file_data_error);
 				return;
 			}
 
-			if (serializer->serialize("path", current_project_info.root_path) == false)
+			if (serializer->serialize("path", current_project_info.root_path) != SerializerResult::SUCCESSFUL)
 			{
 				log_error(c_cache_file_data_error);
 				return;
 			}
 
-			if (serializer->close_object() == false)
+			if (serializer->close_object() != SerializerResult::SUCCESSFUL)
 			{
 				log_error(c_cache_file_data_error);
 				return;
@@ -189,7 +191,7 @@ namespace VadonEditor::Core
 			m_project_cache.push_back(current_project_info);
 		}
 
-		if (serializer->close_array() == false)
+		if (serializer->close_array() != SerializerResult::SUCCESSFUL)
 		{
 			log_error(c_cache_file_data_error);
 			return;
@@ -307,7 +309,9 @@ namespace VadonEditor::Core
 				return;
 			}
 
-			if (serializer->open_array("projects") == false)
+			// TODO: use the return value for more elaborate parsing and error reporting?
+			using SerializerResult = Vadon::Utilities::Serializer::Result;
+			if (serializer->open_array("projects") != SerializerResult::SUCCESSFUL)
 			{
 				log_error(c_cache_file_data_error);
 				return;
@@ -315,33 +319,33 @@ namespace VadonEditor::Core
 
 			for (size_t current_project_index = 0; current_project_index < m_project_cache.size(); ++current_project_index)
 			{
-				if (serializer->open_object(current_project_index) == false)
+				if (serializer->open_object(current_project_index) != SerializerResult::SUCCESSFUL)
 				{
 					log_error(c_cache_file_data_error);
 					return;
 				}
 
 				ProjectInfo& current_project_info = m_project_cache[current_project_index];
-				if (serializer->serialize("name", current_project_info.name) == false)
+				if (serializer->serialize("name", current_project_info.name) != SerializerResult::SUCCESSFUL)
 				{
 					log_error(c_cache_file_data_error);
 					return;
 				}
 
-				if (serializer->serialize("path", current_project_info.root_path) == false)
+				if (serializer->serialize("path", current_project_info.root_path) != SerializerResult::SUCCESSFUL)
 				{
 					log_error(c_cache_file_data_error);
 					return;
 				}
 
-				if (serializer->close_object() == false)
+				if (serializer->close_object() != SerializerResult::SUCCESSFUL)
 				{
 					log_error(c_cache_file_data_error);
 					return;
 				}
 			}
 
-			if (serializer->close_array() == false)
+			if (serializer->close_array() != SerializerResult::SUCCESSFUL)
 			{
 				log_error(c_cache_file_data_error);
 				return;

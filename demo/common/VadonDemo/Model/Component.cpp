@@ -1,6 +1,8 @@
 #include <VadonDemo/Model/Component.hpp>
 #include <Vadon/ECS/Component/Registry.hpp>
 
+#include <Vadon/Utilities/TypeInfo/Registry/MemberBind.hpp>
+
 namespace VadonDemo::Model
 {
 	void Transform2D::register_component()

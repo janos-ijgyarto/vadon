@@ -45,5 +45,11 @@ namespace Vadon::Utilities
 	{
 		using _Type = std::string;
 	};
+
+	template<typename T>
+	struct VariantTypeMapping<Vadon::Scene::TypedResourceHandle<T>>
+	{
+		using _Type = Vadon::Scene::ResourceHandle;
+	};
 }
 #endif

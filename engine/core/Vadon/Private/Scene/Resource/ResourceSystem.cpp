@@ -5,6 +5,8 @@
 #include <Vadon/Scene/Resource/Registry.hpp>
 #include <Vadon/Utilities/Serialization/Serializer.hpp>
 
+#include <Vadon/Utilities/TypeInfo/Registry/MemberBind.hpp>
+
 #include <format>
 
 namespace
@@ -19,6 +21,56 @@ namespace
 	{
 		// TODO: print resource UUID!
 		Vadon::Core::Logger::log_error("Resource system: failed to serialize resource data!\n");
+	}
+
+	template<typename T>
+	constexpr size_t variant_type_list_index_v = Vadon::Utilities::type_list_index_v<T, Vadon::Utilities::Variant>;
+
+	// FIXME: deduplicate between this and SceneSystem!
+	// TODO: default value?
+	template<typename T>
+	bool serialize_trivial_property(Vadon::Utilities::Serializer& serializer, std::string_view property_name, Vadon::Utilities::Variant& property_value, Vadon::Utilities::Serializer::Result& result, Vadon::Utilities::ErasedDataTypeID data_type)
+	{
+		if (data_type.id != variant_type_list_index_v<T>)
+		{
+			return false;
+		}
+
+		if (serializer.is_reading() == true)
+		{
+			// TODO: allow setting default value if not found?
+			T value;
+			result = serializer.serialize(property_name, value);
+			if (result == Vadon::Utilities::Serializer::Result::SUCCESSFUL)
+			{
+				property_value = value;
+			}
+		}
+		else
+		{
+			T& value = std::get<T>(property_value);
+			result = serializer.serialize(property_name, value);
+		}
+
+		return true;
+	}
+
+	template <typename... Types>
+	Vadon::Utilities::Serializer::Result serialize_trivial_property_fold(Vadon::Utilities::Serializer& serializer, std::string_view property_name, Vadon::Utilities::Variant& property_value, Vadon::Utilities::ErasedDataTypeID data_type)
+	{
+		Vadon::Utilities::Serializer::Result result;
+		const bool fold_result = (serialize_trivial_property<Types>(serializer, property_name, property_value, result, data_type) || ...);
+		if (fold_result == false)
+		{
+			result = Vadon::Utilities::Serializer::Result::NOT_IMPLEMENTED;
+		}
+
+		return result;
+	}
+
+	Vadon::Utilities::Serializer::Result process_trivial_property(Vadon::Utilities::Serializer& serializer, std::string_view property_name, Vadon::Utilities::Variant& property_value, Vadon::Utilities::ErasedDataTypeID data_type)
+	{
+		return serialize_trivial_property_fold<int, float, bool, std::string, Vadon::Utilities::Vector2, Vadon::Utilities::Vector2i, Vadon::Utilities::Vector3, Vadon::Utilities::UUID>(serializer, property_name, property_value, data_type);
 	}
 }
 
@@ -179,11 +231,13 @@ namespace Vadon::Private::Scene
 			return imported_resource_handle;
 		}
 
+		using SerializerResult = Vadon::Utilities::Serializer::Result;
+
 		// FIXME: should not have to load entire resource file just to register ID
 		// FIXME2: use properties to serialize ResourceBase directly, which would allow deserializing a dummy object to get metadata
 		// Need to allow TypeIDs to be serialized as string and deserialized to the ID number
 		ResourceID resource_id;
-		if (resource_id.serialize(*serializer, "id") == false)
+		if (serializer->serialize("id", resource_id) != SerializerResult::SUCCESSFUL)
 		{
 			invalid_resource_data_error(resource_path);
 			return imported_resource_handle;
@@ -191,7 +245,7 @@ namespace Vadon::Private::Scene
 
 		// Get type
 		std::string resource_type;
-		if (serializer->serialize("type", resource_type) == false)
+		if (serializer->serialize("type", resource_type) != SerializerResult::SUCCESSFUL)
 		{
 			invalid_resource_data_error(resource_path);
 			return imported_resource_handle;
@@ -246,7 +300,8 @@ namespace Vadon::Private::Scene
 		}
 
 		// Save ID and type
-		if (resource_data.id.serialize(*serializer, "id") == false)
+		using SerializerResult = Vadon::Utilities::Serializer::Result;
+		if (serializer->serialize("id", resource_data.id) != SerializerResult::SUCCESSFUL)
 		{
 			resource_failed_to_serialize();
 			return false;
@@ -254,7 +309,7 @@ namespace Vadon::Private::Scene
 
 		{
 			std::string resource_type = Vadon::Utilities::TypeRegistry::get_type_info(resource_data.type_id).name;
-			if (serializer->serialize("type", resource_type) == false)
+			if (serializer->serialize("type", resource_type) != SerializerResult::SUCCESSFUL)
 			{
 				resource_failed_to_serialize();
 				return false;
@@ -263,6 +318,7 @@ namespace Vadon::Private::Scene
 
 		if (serialize_resource_data(*this, *serializer, resource_data) == false)
 		{
+			// TODO: error?
 			return false;
 		}
 
@@ -282,12 +338,12 @@ namespace Vadon::Private::Scene
 
 	bool ResourceSystem::serialize_resource_property(Vadon::Utilities::Serializer& serializer, std::string_view property_name, ResourceHandle& property_value)
 	{
+		using SerializerResult = Vadon::Utilities::Serializer::Result;
 		if (serializer.is_reading() == true)
 		{
-			Vadon::Utilities::Variant resource_id_variant;
-			if (serializer.serialize(property_name, resource_id_variant) == true)
+			ResourceID resource_id;
+			if (serializer.serialize(property_name, resource_id) != SerializerResult::SUCCESSFUL)
 			{
-				const ResourceID resource_id = std::get<ResourceID>(resource_id_variant);
 				const ResourceHandle resource_handle = find_resource(resource_id);
 				if (resource_handle.is_valid() == false)
 				{
@@ -304,8 +360,8 @@ namespace Vadon::Private::Scene
 		}
 		else
 		{
-			Vadon::Utilities::Variant resource_id_variant = property_value.is_valid() ? get_resource_id(property_value) : ResourceID();
-			if (serializer.serialize(property_name, resource_id_variant) == false)
+			ResourceID resource_id = property_value.is_valid() ? get_resource_id(property_value) : ResourceID();
+			if (serializer.serialize(property_name, resource_id) != SerializerResult::SUCCESSFUL)
 			{
 				log_error(std::format("Resource system: unable to serialize resource property \"{}\"!\n", property_name));
 				return false;
@@ -451,23 +507,46 @@ namespace Vadon::Private::Scene
 	bool ResourceSystem::serialize_resource_data(Vadon::Scene::ResourceSystemInterface& context, Vadon::Utilities::Serializer& serializer, const ResourceData& resource_data)
 	{
 		Vadon::Scene::ResourceRegistry::SerializerFunction serializer_function = Vadon::Scene::ResourceRegistry::get_serializer(resource_data.type_id);
+		using SerializerResult = Vadon::Utilities::Serializer::Result;
+		using ErasedDataType = Vadon::Utilities::ErasedDataType;
 		if (serializer.is_reading() == true)
 		{
 			// Get list of properties to load (if using custom serializer, only load the base properties)
 			const Vadon::Utilities::PropertyInfoList resource_properties = (serializer_function == nullptr) ?
 				Vadon::Utilities::TypeRegistry::get_type_properties(resource_data.type_id) : Vadon::Utilities::TypeRegistry::get_type_properties<ResourceBase>();
 
+			Vadon::Utilities::Variant current_property_value;
 			for (const Vadon::Utilities::PropertyInfo& current_property_info : resource_properties)
 			{
-				Vadon::Utilities::Variant current_property_value;
-				if (serializer.serialize(current_property_info.name, current_property_value) == true)
+				switch (current_property_info.data_type.type)
 				{
-					Vadon::Utilities::TypeRegistry::set_property(resource_data.resource, resource_data.type_id, current_property_info.name, current_property_value);
+				case ErasedDataType::TRIVIAL:
+				{
+					const SerializerResult result = process_trivial_property(serializer, current_property_info.name, current_property_value, current_property_info.data_type);
+					if (result == SerializerResult::SUCCESSFUL)
+					{
+						Vadon::Utilities::TypeRegistry::set_property(resource_data.resource, resource_data.type_id, current_property_info.name, current_property_value);
+					}
+					else
+					{
+						invalid_resource_data_error(resource_data.path);
+					}
 				}
-				else
+					break;
+				case ErasedDataType::RESOURCE_HANDLE:
 				{
-					invalid_resource_data_error(resource_data.path);
-					return false;
+					ResourceHandle temp_resource_handle;
+					if (context.serialize_resource_property(serializer, current_property_info.name, temp_resource_handle) == true)
+					{
+						current_property_value = temp_resource_handle;
+						Vadon::Utilities::TypeRegistry::set_property(resource_data.resource, resource_data.type_id, current_property_info.name, current_property_value);
+					}
+					else
+					{
+						invalid_resource_data_error(resource_data.path);
+					}
+				}
+					break;
 				}
 			}
 		}
@@ -479,10 +558,28 @@ namespace Vadon::Private::Scene
 
 			for (Vadon::Utilities::Property& current_property : resource_properties)
 			{
-				if (serializer.serialize(current_property.name, current_property.value) == false)
+				switch (current_property.data_type.type)
 				{
-					invalid_resource_data_error(resource_data.path);
-					return false;
+				case ErasedDataType::TRIVIAL:
+				{
+					const SerializerResult result = process_trivial_property(serializer, current_property.name, current_property.value, current_property.data_type);
+					if (result != SerializerResult::SUCCESSFUL)
+					{
+						// TODO: log error?
+						invalid_resource_data_error(resource_data.path);
+					}
+				}
+				break;
+				case ErasedDataType::RESOURCE_HANDLE:
+				{
+					ResourceHandle temp_resource_handle = std::get<ResourceHandle>(current_property.value);
+					if (context.serialize_resource_property(serializer, current_property.name, temp_resource_handle) == false)
+					{
+						// TODO: log error?
+						invalid_resource_data_error(resource_data.path);
+					}
+				}
+				break;
 				}
 			}
 		}

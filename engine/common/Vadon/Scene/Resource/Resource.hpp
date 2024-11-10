@@ -25,5 +25,13 @@ namespace Vadon::Scene
 
 		bool operator==(const ResourcePath& other) const { return (path == other.path) && (root_directory == other.root_directory); }
 	};
+
+	template<typename T>
+	struct TypedResourceHandle : public ResourceHandle
+	{
+		using _ResourceType = T;
+	};
 }
+
+#define VADON_DECLARE_TYPED_RESOURCE_HANDLE(_resource, _name) using _name = Vadon::Scene::TypedResourceHandle<_resource>
 #endif

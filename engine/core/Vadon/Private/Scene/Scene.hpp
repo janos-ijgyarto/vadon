@@ -2,6 +2,7 @@
 #define VADON_PRIVATE_SCENE_SCENE_HPP
 #include <Vadon/Private/Scene/Resource/Resource.hpp>
 #include <Vadon/Utilities/Data/Variant.hpp>
+#include <Vadon/Utilities/TypeInfo/Registry/ErasedDataType.hpp>
 namespace Vadon::Private::Scene
 {
 	using SceneComponent = Vadon::Scene::SceneComponent;
@@ -14,6 +15,7 @@ namespace Vadon::Private::Scene
 			{
 				std::string name;
 				Vadon::Utilities::Variant value;
+				Vadon::Utilities::ErasedDataTypeID data_type;
 			};
 
 			Vadon::Utilities::TypeID type_id = Vadon::Utilities::c_invalid_type_id;

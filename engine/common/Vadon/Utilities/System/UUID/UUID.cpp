@@ -3,8 +3,6 @@
 
 #include <Vadon/Utilities/Data/Encoding/Base64.hpp>
 
-#include <Vadon/Utilities/Serialization/Serializer.hpp>
-
 // UUID generation implementation taken from: http://graemehill.ca/minimalist-cross-platform-uuid-guid-generation-in-c++/
 #ifdef VADON_PLATFORM_WIN32
 #include <objbase.h>
@@ -89,43 +87,5 @@ namespace Vadon::Utilities
         assert(decoded_data.size() == data.size());
         std::copy(decoded_data.begin(), decoded_data.end(), data.begin());
         return true;
-    }
-
-    bool UUID::serialize(Serializer& serializer, std::string_view key)
-    {
-        std::string base64_uuid;
-        if (serializer.is_reading() == true)
-        {
-            if (serializer.serialize(key, base64_uuid) == true)
-            {
-                return from_base64_string(base64_uuid);
-            }
-        }
-        else
-        {
-            base64_uuid = to_base64_string();
-            return serializer.serialize(key, base64_uuid);
-        }
-
-        return false;
-    }
-
-    bool UUID::serialize(Serializer& serializer, size_t index)
-    {
-        std::string base64_uuid;
-        if (serializer.is_reading() == true)
-        {
-            if (serializer.serialize(index, base64_uuid) == true)
-            {
-                return from_base64_string(base64_uuid);
-            }
-        }
-        else
-        {
-            base64_uuid = to_base64_string();
-            return serializer.serialize(index, base64_uuid);
-        }
-
-        return false;
     }
 }

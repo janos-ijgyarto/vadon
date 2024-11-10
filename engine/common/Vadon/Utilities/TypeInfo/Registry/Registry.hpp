@@ -1,10 +1,10 @@
 #ifndef VADON_UTILITIES_TYPE_REGISTRY_REGISTRY_HPP
 #define VADON_UTILITIES_TYPE_REGISTRY_REGISTRY_HPP
 #include <Vadon/Common.hpp>
-#include <Vadon/Utilities/TypeInfo/TypeInfo.hpp>
 #include <Vadon/Utilities/TypeInfo/TypeName.hpp>
 
-#include <Vadon/Utilities/TypeInfo/Registry/MemberBind.hpp>
+#include <Vadon/Utilities/TypeInfo/Registry/FunctionBindBase.hpp>
+#include <Vadon/Utilities/TypeInfo/Registry/MemberBindBase.hpp>
 #include <Vadon/Utilities/TypeInfo/Registry/Property.hpp>
 
 #include <unordered_map>

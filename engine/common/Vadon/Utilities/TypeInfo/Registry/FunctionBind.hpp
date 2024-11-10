@@ -1,9 +1,7 @@
 #ifndef VADON_UTILITIES_TYPEINFO_FUNCTIONBIND_HPP
 #define VADON_UTILITIES_TYPEINFO_FUNCTIONBIND_HPP
-#include <Vadon/Utilities/Data/Variant.hpp>
+#include <Vadon/Utilities/TypeInfo/Registry/Registry.hpp>
 #include <Vadon/Utilities/TypeInfo/TypeList.hpp>
-
-#include <span>
 
 namespace Vadon::Utilities
 {
@@ -17,52 +15,70 @@ namespace Vadon::Utilities
 	template <typename T, typename Ret, typename... Args>
 	using ConstMemberFunction = Ret(T::*)(Args...) const;
 
-	using VariantArgumentList = std::span<Variant>;
-
-	using ErasedMemberFunction = Variant(*)(void*, VariantArgumentList args);
-
-	// FIXME: for some reason I cannot use the one that's in the Utilities namespace?
 	template <typename T, typename... Alts>
 	static constexpr size_t type_list_index_v = Utilities::TypeList<Alts...>::template get_type_id<T>();
 
 	template <typename T, typename... Alts>
 	static constexpr size_t type_list_index_v<T, std::variant<Alts...>> = Utilities::TypeList<Alts...>::template get_type_id<T>();
 
-	template <typename T, typename Ret, typename... Args>
-	static constexpr std::vector<size_t> make_argument_type_index_list(MemberFunction<T, Ret, Args...>)
-	{
-		return std::vector<size_t> {type_list_index_v<variant_type_mapping_t<Args>, Variant>...};
-	}
+	template<typename T, typename... Alts>
+	static constexpr bool type_list_has_type_v = Utilities::TypeList<Alts...>::template has_type<T>();
 
-	template <typename T, typename Ret, typename... Args>
-	static constexpr std::vector<size_t> make_argument_type_index_list(ConstMemberFunction<T, Ret, Args...>)
-	{
-		return std::vector<size_t> {type_list_index_v<variant_type_mapping_t<Args>, Variant>...};
-	}
+	template <typename T, typename... Alts>
+	static constexpr bool type_list_has_type_v<T, std::variant<Alts...>> = Utilities::TypeList<Alts...>::template has_type<T>();
 
-	template <typename T, typename Ret, typename... Args>
-	static constexpr size_t get_return_type_index(MemberFunction<T, Ret, Args...>)
+	template<typename T>
+	static constexpr ErasedDataTypeID get_erased_data_type_id()
 	{
-		if constexpr (std::is_void_v<Ret>)
+		if constexpr (type_list_has_type_v<variant_type_mapping_t<T>, Variant>)
 		{
-			return type_list_index_v<NoReturnValue, Variant>;
+			return ErasedDataTypeID{ .type = ErasedDataType::TRIVIAL, .id = type_list_index_v<variant_type_mapping_t<T>, Variant> };
+		}
+		else if constexpr (std::is_base_of_v<Vadon::Scene::ResourceHandle, T> && (std::is_same_v<Vadon::Scene::ResourceHandle, T> == false))
+		{
+			return ErasedDataTypeID{ .type = ErasedDataType::RESOURCE_HANDLE, .id = Vadon::Utilities::TypeRegistry::get_type_id<T::_ResourceType>() };
 		}
 		else
 		{
-			return type_list_index_v<variant_type_mapping_t<Ret>, Variant>;
+			static_assert(false, "Type not supported!");
 		}
 	}
 
 	template <typename T, typename Ret, typename... Args>
-	static constexpr size_t get_return_type_index(ConstMemberFunction<T, Ret, Args...>)
+	static constexpr std::vector<ErasedDataTypeID> make_argument_type_index_list(MemberFunction<T, Ret, Args...>)
+	{
+		return std::vector<ErasedDataTypeID> { get_erased_data_type_id<Args>()...};
+	}
+
+	template <typename T, typename Ret, typename... Args>
+	static constexpr std::vector<ErasedDataTypeID> make_argument_type_index_list(ConstMemberFunction<T, Ret, Args...>)
+	{
+		return std::vector<ErasedDataTypeID> { get_erased_data_type_id<Args>()...};
+	}
+
+	template <typename T, typename Ret, typename... Args>
+	static constexpr ErasedDataTypeID get_return_type_index(MemberFunction<T, Ret, Args...>)
 	{
 		if constexpr (std::is_void_v<Ret>)
 		{
-			return type_list_index_v<NoReturnValue, Variant>;
+			return get_erased_data_type_id<NoReturnValue>();
 		}
 		else
 		{
-			return type_list_index_v<variant_type_mapping_t<Ret>, Variant>;
+			return get_erased_data_type_id<Ret>();
+		}
+	}
+
+	template <typename T, typename Ret, typename... Args>
+	static constexpr ErasedDataTypeID get_return_type_index(ConstMemberFunction<T, Ret, Args...>)
+	{
+		if constexpr (std::is_void_v<Ret>)
+		{
+			return get_erased_data_type_id<NoReturnValue>();
+		}
+		else
+		{
+			return get_erased_data_type_id<Ret>();
 		}
 	}
 
@@ -87,7 +103,7 @@ namespace Vadon::Utilities
 		{
 			struct Invoker
 			{
-				using _ReturnType = std::conditional_t<std::is_void_v<Ret>, std::byte, Ret>;
+				using _ReturnType = std::conditional_t<std::is_void_v<Ret>, NoReturnValue, Ret>;
 
 				Invoker(void* object, MemberFunction<T, Ret, Args...> function, Args&&... args)
 				{
@@ -118,7 +134,8 @@ namespace Vadon::Utilities
 			}
 			else
 			{
-				return Variant(Invoker{ object, function, std::forward<Args>(std::get<variant_type_mapping_t<Args>>(args[index++]))... }.return_value);
+				const variant_type_mapping_t<Invoker::_ReturnType> mapped_return_value = Invoker{ object, function, std::forward<Args>(std::get<variant_type_mapping_t<Args>>(args[index++]))... }.return_value;
+				return Variant(mapped_return_value);
 			}
 		}
 
@@ -127,7 +144,7 @@ namespace Vadon::Utilities
 		{
 			struct Invoker
 			{
-				using _ReturnType = std::conditional_t<std::is_void_v<Ret>, std::byte, Ret>;
+				using _ReturnType = std::conditional_t<std::is_void_v<Ret>, NoReturnValue, Ret>;
 
 				Invoker(void* object, ConstMemberFunction<T, Ret, Args...> function, Args&&... args)
 				{
@@ -158,7 +175,8 @@ namespace Vadon::Utilities
 			}
 			else
 			{
-				return Variant(Invoker{ object, function, std::forward<Args>(std::get<variant_type_mapping_t<Args>>(args[index++]))... }.return_value);
+				const variant_type_mapping_t<Invoker::_ReturnType> mapped_return_value = Invoker{ object, function, std::forward<Args>(std::get<variant_type_mapping_t<Args>>(args[index++]))... }.return_value;
+				return Variant(mapped_return_value);
 			}
 		}
 	};
@@ -178,13 +196,6 @@ namespace Vadon::Utilities
 				return FunctionInfo::invoke(obj, FPtr, args);
 			};
 	}
-
-	struct MemberFunctionBind
-	{
-		ErasedMemberFunction function;
-		std::vector<size_t> argument_types;
-		size_t return_type;
-	};
 
 	template <auto FPtr>
 	MemberFunctionBind create_member_function_bind()

@@ -2,6 +2,7 @@
 #include <Vadon/Private/Scene/SceneSystem.hpp>
 
 #include <Vadon/ECS/Component/Registry.hpp>
+#include <Vadon/Utilities/TypeInfo/Registry/FunctionBind.hpp>
 
 #include <format>
 
@@ -36,12 +37,62 @@ namespace Vadon::Private::Scene
 
 			return path;
 		}
+		
+		template<typename T>
+		constexpr size_t variant_type_list_index_v = Vadon::Utilities::type_list_index_v<T, Vadon::Utilities::Variant>;
+
+		// TODO: default value?
+		template<typename T>
+		bool serialize_trivial_property(Vadon::Utilities::Serializer& serializer, std::string_view property_name, Vadon::Utilities::Variant& property_value, Vadon::Utilities::Serializer::Result& result, Vadon::Utilities::ErasedDataTypeID data_type)
+		{
+			if (data_type.id != variant_type_list_index_v<T>)
+			{
+				return false;
+			}
+
+			if (serializer.is_reading() == true)
+			{
+				// TODO: allow setting default value if not found?
+				T value;
+				result = serializer.serialize(property_name, value);
+				if (result == Vadon::Utilities::Serializer::Result::SUCCESSFUL)
+				{
+					property_value = value;
+				}
+			}
+			else
+			{
+				T& value = std::get<T>(property_value);
+				result = serializer.serialize(property_name, value);
+			}
+
+			return true;
+		}
+
+		template <typename... Types>
+		Vadon::Utilities::Serializer::Result serialize_trivial_property_fold(Vadon::Utilities::Serializer& serializer, std::string_view property_name, Vadon::Utilities::Variant& property_value, Vadon::Utilities::ErasedDataTypeID data_type)
+		{
+			Vadon::Utilities::Serializer::Result result;
+			const bool fold_result = (serialize_trivial_property<Types>(serializer, property_name, property_value, result, data_type) || ...);
+			if (fold_result == false)
+			{
+				result = Vadon::Utilities::Serializer::Result::NOT_IMPLEMENTED;
+			}
+
+			return result;
+		}
+
+		Vadon::Utilities::Serializer::Result process_trivial_property(Vadon::Utilities::Serializer& serializer, std::string_view property_name, Vadon::Utilities::Variant& property_value, Vadon::Utilities::ErasedDataTypeID data_type)
+		{
+			return serialize_trivial_property_fold<int, float, bool, std::string, Utilities::Vector2, Utilities::Vector2i, Utilities::Vector3, Utilities::UUID>(serializer, property_name, property_value, data_type);
+		}
 
 		bool serialize_component(Vadon::Scene::ResourceSystemInterface& context, Vadon::Utilities::Serializer& serializer, size_t index, SceneData::ComponentData& component_data)
 		{
 			constexpr const char* c_component_obj_error_message = "Scene system: unable to serialize component object!\n";
 
-			if (serializer.open_object(index) == false)
+			using SerializerResult = Vadon::Utilities::Serializer::Result;
+			if (serializer.open_object(index) != SerializerResult::SUCCESSFUL)
 			{
 				Vadon::Core::Logger::log_error(c_component_obj_error_message);
 				return false;
@@ -53,7 +104,7 @@ namespace Vadon::Private::Scene
 				{
 					type_name = Vadon::Utilities::TypeRegistry::get_type_info(component_data.type_id).name;
 				}
-				if (serializer.serialize("type", type_name) == false)
+				if (serializer.serialize("type", type_name) != SerializerResult::SUCCESSFUL)
 				{
 					log_property_serialization_error("type");
 					return false;
@@ -69,12 +120,13 @@ namespace Vadon::Private::Scene
 				}
 			}
 
-			if (serializer.open_object("properties") == false)
+			if (serializer.open_object("properties") != SerializerResult::SUCCESSFUL)
 			{
 				log_property_serialization_error("properties");
 				return false;
 			}
 
+			using ErasedDataType = Vadon::Utilities::ErasedDataType;
 			if (serializer.is_reading() == true)
 			{				
 				// FIXME: this forces us to iterate over all properties, instead of just reading the ones present in the object
@@ -84,24 +136,39 @@ namespace Vadon::Private::Scene
 				SceneData::ComponentData::Property property_data;
 				for (const Vadon::Utilities::PropertyInfo& current_property : component_properties)
 				{
-					if (current_property.type_index == Vadon::Utilities::type_list_index_v<ResourceHandle, Vadon::Utilities::Variant>)
+					switch (current_property.data_type.type)
+					{
+					case ErasedDataType::TRIVIAL:
+					{
+						const SerializerResult result = process_trivial_property(serializer, current_property.name, property_data.value, current_property.data_type);
+						if (result == SerializerResult::SUCCESSFUL)
+						{
+							property_data.name = current_property.name;
+							property_data.data_type = current_property.data_type;
+							component_data.properties.push_back(property_data);
+						}
+						else
+						{
+							// TODO: log error?
+						}
+					}
+						break;
+					case ErasedDataType::RESOURCE_HANDLE:
 					{
 						ResourceHandle temp_resource_handle;
-						if (context.serialize_resource_property(serializer, current_property.name, temp_resource_handle) == false)
+						if (context.serialize_resource_property(serializer, current_property.name, temp_resource_handle) == true)
 						{
-							return false;
+							property_data.name = current_property.name;
+							property_data.data_type = current_property.data_type;
+							property_data.value = temp_resource_handle;
+							component_data.properties.push_back(property_data);
 						}
-;
-						property_data.name = current_property.name;
-						property_data.value = temp_resource_handle;
-						component_data.properties.push_back(property_data);
-						continue;
+						else
+						{
+							// TODO: log error?
+						}
 					}
-
-					if (serializer.serialize(current_property.name, property_data.value) == true)
-					{
-						property_data.name = current_property.name;
-						component_data.properties.push_back(property_data);
+						break;
 					}
 				}
 			}
@@ -109,32 +176,37 @@ namespace Vadon::Private::Scene
 			{
 				for (SceneData::ComponentData::Property& current_property : component_data.properties)
 				{
-					if (current_property.value.index() == Vadon::Utilities::type_list_index_v<ResourceHandle, Vadon::Utilities::Variant>)
+					switch (current_property.data_type.type)
+					{
+					case ErasedDataType::TRIVIAL:
+					{
+						const SerializerResult result = process_trivial_property(serializer, current_property.name, current_property.value, current_property.data_type);
+						if (result != SerializerResult::SUCCESSFUL)
+						{
+							// TODO: log error?
+						}
+					}
+					break;
+					case ErasedDataType::RESOURCE_HANDLE:
 					{
 						ResourceHandle temp_resource_handle = std::get<ResourceHandle>(current_property.value);
 						if (context.serialize_resource_property(serializer, current_property.name, temp_resource_handle) == false)
 						{
-							// FIXME: this shouldn't always be an error, we should check whether the property is missing, or if the data is invalid
-							return false;
+							// TODO: log error?
 						}
-						continue;
 					}
-
-					if (serializer.serialize(current_property.name, current_property.value) == false)
-					{
-						log_property_serialization_error(current_property.name);
-						return false;
+					break;
 					}
 				}
 			}
 
-			if (serializer.close_object() == false)
+			if (serializer.close_object() != SerializerResult::SUCCESSFUL)
 			{
 				log_property_serialization_error("properties");
 				return false;
 			}
 
-			if (serializer.close_object() == false)
+			if (serializer.close_object() != SerializerResult::SUCCESSFUL)
 			{
 				Vadon::Core::Logger::log_error(c_component_obj_error_message);
 				return false;
@@ -148,7 +220,8 @@ namespace Vadon::Private::Scene
 			constexpr const char* c_entity_obj_error_message = "Scene system: unable to serialize entity object!\n";
 			constexpr const char* c_component_array_error_message = "Scene system: unable to serialize component array!\n";
 
-			if (serializer.open_object(index) == false)
+			using SerializerResult = Vadon::Utilities::Serializer::Result;
+			if (serializer.open_object(index) != SerializerResult::SUCCESSFUL)
 			{
 				Vadon::Core::Logger::log_error(c_entity_obj_error_message);
 				return false;
@@ -161,7 +234,7 @@ namespace Vadon::Private::Scene
 				context.serialize_resource_property(serializer, "scene", entity_data.scene);
 			}
 
-			if(serializer.open_array("components") == false)
+			if(serializer.open_array("components") != SerializerResult::SUCCESSFUL)
 			{
 				Vadon::Core::Logger::log_error(c_component_array_error_message);
 				return false;
@@ -177,12 +250,12 @@ namespace Vadon::Private::Scene
 				}
 			}
 
-			if (serializer.close_array() == false)
+			if (serializer.close_array() != SerializerResult::SUCCESSFUL)
 			{
 				Vadon::Core::Logger::log_error(c_component_array_error_message);
 				return false;
 			}
-			if (serializer.close_object() == false)
+			if (serializer.close_object() != SerializerResult::SUCCESSFUL)
 			{
 				Vadon::Core::Logger::log_error(c_entity_obj_error_message);
 				return false;
@@ -331,7 +404,8 @@ namespace Vadon::Private::Scene
 		constexpr const char* c_entity_array_error_log = "Scene system: unable to serialize component object!\n";
 		SceneData& scene_data = static_cast<SceneData&>(resource);
 
-		if (serializer.open_array("entities") == false)
+		using SerializerResult = Vadon::Utilities::Serializer::Result;
+		if (serializer.open_array("entities") != SerializerResult::SUCCESSFUL)
 		{
 			Vadon::Core::Logger::log_error(c_entity_array_error_log);
 			return false;
@@ -362,7 +436,7 @@ namespace Vadon::Private::Scene
 			}
 		}
 
-		if (serializer.close_array() == false)
+		if (serializer.close_array() != SerializerResult::SUCCESSFUL)
 		{
 			Vadon::Core::Logger::log_error(c_entity_array_error_log);
 			return false;
@@ -460,6 +534,7 @@ namespace Vadon::Private::Scene
 				SceneData::ComponentData::Property& current_property_data = current_component_data.properties.emplace_back();
 				current_property_data.name = current_component_property.name;
 				current_property_data.value = current_component_property.value;
+				current_property_data.data_type = current_component_property.data_type;
 			}
 		}
 

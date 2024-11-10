@@ -12,7 +12,7 @@ namespace Vadon::Utilities
 	{
 		PropertyInfo make_property_info(std::string_view name, const MemberVariableBindBase& property)
 		{
-			return PropertyInfo{ .name = std::string(name), .type_index = property.type,
+			return PropertyInfo{ .name = std::string(name), .data_type = property.data_type,
 				.has_getter = property.member_getter || property.getter_function,
 				.has_setter = property.member_setter || property.setter_function };
 		}
@@ -384,7 +384,7 @@ namespace Vadon::Utilities
 				continue;
 			}
 
-			property_list.emplace_back(current_property.first, invoke_property_getter(object, property_bind));
+			property_list.emplace_back(current_property.first, current_property.second.data_type, invoke_property_getter(object, property_bind));
 		}
 	}
 

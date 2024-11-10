@@ -1,6 +1,7 @@
 #ifndef VADON_UTILITIES_TYPEINFO_MEMBERBIND_HPP
 #define VADON_UTILITIES_TYPEINFO_MEMBERBIND_HPP
 #include <Vadon/Utilities/TypeInfo/Registry/FunctionBind.hpp>
+#include <Vadon/Utilities/TypeInfo/Registry/MemberBindBase.hpp>
 namespace Vadon::Utilities
 {
 	template <typename T, typename TMember>
@@ -29,9 +30,6 @@ namespace Vadon::Utilities
 		return MemberPointerInfo<T, TMember>{};
 	}
 
-	using ErasedMemberGetter = Variant(*)(void*);
-	using ErasedMemberSetter = void(*)(void*, const Variant&);
-
 	template<auto MemberPtr>
 	ErasedMemberGetter erase_member_getter()
 	{
@@ -52,27 +50,13 @@ namespace Vadon::Utilities
 			};
 	}
 
-	struct MemberVariableBindBase
-	{
-		size_t type;
-
-		ErasedMemberGetter member_getter = nullptr;
-		ErasedMemberFunction getter_function = nullptr;
-
-		ErasedMemberSetter member_setter = nullptr;
-		ErasedMemberFunction setter_function = nullptr;
-
-		bool has_getter() const { return member_getter || getter_function; }
-		bool has_setter() const { return member_setter || setter_function; }
-	};
-
 	template<auto MemberPtr>
 	struct MemberVariableBind : public MemberVariableBindBase
 	{
 		constexpr MemberVariableBind()
 		{
 			using MemberInfo = decltype(get_member_pointer_info(MemberPtr));
-			type = type_list_index_v<MemberInfo::_MemberType, Variant>;
+			data_type = get_erased_data_type_id<MemberInfo::_MemberType>();
 		}
 
 		MemberVariableBind& bind_member_getter()

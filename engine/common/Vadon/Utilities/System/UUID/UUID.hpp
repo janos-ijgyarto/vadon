@@ -2,10 +2,9 @@
 #define VADON_UTILITIES_SYSTEM_UUID_UUID_HPP
 #include <Vadon/Common.hpp>
 #include <array>
+#include <string>
 namespace Vadon::Utilities
 {
-	class Serializer;
-
 	// FIXME: use std::byte?
 	using UUIDData = std::array<unsigned char, 16>;
 
@@ -29,9 +28,6 @@ namespace Vadon::Utilities
 
 		VADONCOMMON_API std::string to_base64_string() const;
 		VADONCOMMON_API bool from_base64_string(std::string_view data_string);
-
-		VADONCOMMON_API bool serialize(Serializer& serializer, std::string_view key);
-		VADONCOMMON_API bool serialize(Serializer& serializer, size_t index);
 	};
 }
 

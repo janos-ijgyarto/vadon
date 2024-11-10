@@ -1,10 +1,10 @@
 #include <Vadon/Utilities/Serialization/Serializer.hpp>
-#include <Vadon/Utilities/Serialization/JSON/JSONImpl.hpp>
-
-#include <Vadon/Utilities/TypeInfo/TypeList.hpp>
-#include <Vadon/Utilities/Data/Visitor.hpp>
 
 #include <Vadon/Core/Logger.hpp>
+
+#include <Vadon/Utilities/TypeInfo/TypeList.hpp>
+#include <Vadon/Utilities/Serialization/JSON/JSONImpl.hpp>
+#include <Vadon/Utilities/System/UUID/UUID.hpp>
 
 #include <format>
 
@@ -43,102 +43,20 @@ namespace Vadon::Utilities
 				return false;
 			}
 
-			bool serialize(std::string_view /*key*/, int& /*value*/) override
-			{
-				// TODO
-				return false;
-			}
-
-			bool serialize(std::string_view /*key*/, float& /*value*/) override
-			{
-				// TODO
-				return false;
-			}
-
-			bool serialize(std::string_view /*key*/, bool& /*value*/) override
-			{
-				// TODO
-				return false;
-			}
-
-			bool serialize(std::string_view /*key*/, std::string& /*value*/) override
-			{
-				// TODO
-				return false;
-			}
-
-			bool serialize(std::string_view /*key*/, Variant& /*value*/) override
-			{
-				// TODO
-				return false;
-			}
-
-			bool serialize(size_t /*index*/, int& /*value*/) override
-			{
-				// TODO
-				return false;
-			}
-
-			bool serialize(size_t /*index*/, float& /*value*/) override
-			{
-				// TODO
-				return false;
-			}
-
-			bool serialize(size_t /*index*/, bool& /*value*/) override
-			{
-				// TODO
-				return false;
-			}
-
-			bool serialize(size_t /*index*/, std::string& /*value*/) override
-			{
-				// TODO
-				return false;
-			}
-
-			bool serialize(size_t /*index*/, Variant& /*value*/) override
-			{
-				// TODO
-				return false;
-			}
-
-			bool open_array(std::string_view /*key*/) override
-			{
-				// TODO
-				return false;
-			}
-
-			bool open_array(size_t /*index*/) override
-			{
-				// TODO
-				return false;
-			}
-
-			bool close_array() override
-			{
-				// TODO
-				return false;
-			}
-
-			bool open_object(std::string_view /*key*/) override
-			{
-				// TODO
-				return false;
-			}
-
-			bool open_object(size_t /*index*/) override
-			{
-				// TODO
-				return false;
-			}
-
-			bool close_object() override
-			{
-				// TODO
-				return false;
-			}
+			Result close_array() override { return Result::NOT_IMPLEMENTED; }
+			Result close_object() override { return Result::NOT_IMPLEMENTED; }
 		protected:
+			Result serialize_int(int& /*value*/) override { return Result::NOT_IMPLEMENTED; }
+			Result serialize_float(float& /*value*/) override { return Result::NOT_IMPLEMENTED; }
+			Result serialize_bool(bool& /*value*/) override { return Result::NOT_IMPLEMENTED; }
+			Result serialize_string(std::string& /*value*/) override { return Result::NOT_IMPLEMENTED; }
+
+			Result set_value_reference(std::string_view /*key*/) override { return Result::NOT_IMPLEMENTED; }
+			Result set_value_reference(size_t /*index*/) override { return Result::NOT_IMPLEMENTED; }
+
+			Result internal_open_object() override { return Result::NOT_IMPLEMENTED; }
+			Result internal_open_array() override { return Result::NOT_IMPLEMENTED; }
+
 			size_t get_array_size() const override
 			{
 				// TODO
@@ -195,441 +113,168 @@ namespace Vadon::Utilities
 
 				return true;
 			}
-
-			bool serialize(std::string_view key, int& value) override
-			{
-				return serialize_trivial(key, value);
-			}
-
-			bool serialize(std::string_view key, float& value)override
-			{
-				return serialize_trivial(key, value);
-			}
-
-			bool serialize(std::string_view key, bool& value)override
-			{
-				return serialize_trivial(key, value);
-			}
-
-			bool serialize(std::string_view key, std::string& value) override
-			{
-				return serialize_trivial(key, value);
-			}
-
-			bool serialize(std::string_view key, Variant& value) override
-			{
-				return serialize_variant(key, value);
-			}
-
-			bool serialize(size_t index, int& value) override
-			{
-				return serialize_trivial(index, value);
-			}
-
-			bool serialize(size_t index, float& value) override
-			{
-				return serialize_trivial(index, value);
-			}
-
-			bool serialize(size_t index, bool& value) override
-			{
-				return serialize_trivial(index, value);
-			}
-
-			bool serialize(size_t index, std::string& value) override
-			{
-				return serialize_trivial(index, value);
-			}
-
-			bool serialize(size_t index, Variant& value) override
-			{
-				return serialize_variant(index, value);
-			}
-
-			bool open_array(std::string_view key) override
-			{
-				// Can only open array with key within an object
-				JSON& current_object = get_current_object();
-				if (current_object.is_object() == true)
-				{
-					Iterator array_it = current_object.find(key);
-					if (is_reading() == true)
-					{
-						if ((array_it != current_object.end()) && (array_it->is_array() == true))
-						{
-							push_iterator_stack(array_it);
-							return true;
-						}
-					}
-					else
-					{
-						// Make sure key is unique
-						if (array_it == current_object.end())
-						{
-							array_it = current_object.emplace(key, JSON::array()).first;
-							push_iterator_stack(array_it);
-							return true;
-						}
-					}
-				}
-
-				return false;
-			}
-
-			bool open_array(size_t index) override
-			{
-				// Can only open array with index within an array
-				JSON& current_object = get_current_object();
-				if (current_object.is_array() == true)
-				{
-					if (is_reading() == true)
-					{
-						// Can read anywhere in the array
-						if (index < current_object.size())
-						{
-							Iterator array_it = current_object.begin() + index;
-							if (array_it->is_array() == true)
-							{
-								push_iterator_stack(array_it);
-								return true;
-							}
-						}
-					}
-					else
-					{
-						// Must always be adding to the end of the array
-						if (index == current_object.size())
-						{
-							current_object.push_back(JSON::array());
-							push_iterator_stack(current_object.begin() + index);
-							return true;
-						}
-					}
-				}
-
-				return false;
-			}
-
-			bool close_array() override
+			
+			Result close_array() override
 			{
 				// Only allow if we were in an array to begin with
-				JSON& current_object = get_current_object();
-				if (current_object.is_array() == true)
+				JSON& current_object = get_current_value();
+				if (current_object.is_array() == false)
 				{
-					return pop_iterator_stack();
+					return Result::INVALID_CONTAINER;
 				}
-				return false;
+				if (pop_iterator_stack() == false)
+				{
+					return Result::INVALID_CONTAINER;
+				}
+				return Result::SUCCESSFUL;
 			}
 
-			bool open_object(std::string_view key) override
-			{
-				// Can only open object with key within an object
-				JSON& current_object = get_current_object();
-				if (current_object.is_object() == true)
-				{
-					Iterator object_it = current_object.find(key);
-					if (is_reading() == true)
-					{
-						if ((object_it != current_object.end()) && (object_it->is_object() == true))
-						{
-							push_iterator_stack(object_it);
-							return true;
-						}
-					}
-					else
-					{
-						// Make sure key is unique
-						if (object_it == current_object.end())
-						{
-							object_it = current_object.emplace(key, JSON::object()).first;
-							push_iterator_stack(object_it);
-							return true;
-						}
-					}
-				}
-				return false;
-			}
-
-			bool open_object(size_t index) override
-			{
-				// Can only open object with index within an array
-				JSON& current_object = get_current_object();
-				if (current_object.is_array() == true)
-				{
-					if (is_reading() == true)
-					{
-						// Can read anywhere in the array
-						if (index < current_object.size())
-						{
-							Iterator object_it = current_object.begin() + index;
-							if (object_it->is_object() == true)
-							{
-								push_iterator_stack(object_it);
-								return true;
-							}
-						}
-					}
-					else
-					{
-						// Must always be adding to the end of the array
-						if (index == current_object.size())
-						{
-							current_object.push_back(JSON::object());
-							push_iterator_stack(current_object.begin() + index);
-							return true;
-						}
-					}
-				}
-				return false;
-			}
-
-			bool close_object() override
+			Result close_object() override
 			{
 				// Only allow if we were in an object to begin with
-				JSON& current_object = get_current_object();
-				if (current_object.is_object() == true)
+				JSON& current_object = get_current_value();
+				if (current_object.is_object() == false)
 				{
-					return pop_iterator_stack();
+					return Result::INVALID_CONTAINER;
 				}
-				return false;
+				if (pop_iterator_stack() == false)
+				{
+					return Result::INVALID_CONTAINER;
+				}
+				return Result::SUCCESSFUL;
 			}
 		protected:
-			template<typename T>
-			bool serialize_trivial(std::string_view key, T& value)
+			Result set_value_reference(std::string_view key) override
 			{
-				// Can only serialize with key in an object
-				JSON& current_object = get_current_object();
-				if (current_object.is_object() == true)
+				// Can only set by string key in an object
+				JSON& current_value = get_current_value();
+				if (current_value.is_object() == false)
 				{
-					Iterator value_it = current_object.find(key);
+					return Result::INVALID_CONTAINER;
+				}
+
+				m_value_it = current_value.find(key);
+				if (m_value_it == current_value.end())
+				{
+					// When reading, make sure key exists!
 					if (is_reading() == true)
 					{
-						// FIXME: ensure that type matches?
-						if ((value_it != current_object.end()) && value_it->is_primitive())
-						{
-							value = value_it.value().get<T>();
-							return true;
-						}
+						return Result::INVALID_KEY;
 					}
 					else
 					{
-						if (value_it == current_object.end())
-						{
-							current_object[key] = value;
-							return true;
-						}
+						m_value_it = current_value.emplace(key, 0).first;
 					}
-				}
-				return false;
+				}				
+
+				return Result::SUCCESSFUL;
 			}
 
-			bool serialize_variant(std::string_view key, Variant& value)
+			Result set_value_reference(size_t index) override
 			{
-				// Can only serialize with key in an object
-				JSON& current_object = get_current_object();
-				if (current_object.is_object() == true)
+				// Can only set by index in an array
+				JSON& current_value = get_current_value();
+				if (current_value.is_array() == false)
 				{
-					Iterator value_it = current_object.find(key);
-					if (is_reading() == true)
-					{
-						if (value_it != current_object.end())
-						{
-							return read_json_to_variant(value_it.value(), value);
-						}
-					}
-					else
-					{
-						if (value_it == current_object.end())
-						{
-							return write_variant_to_json(key, value);
-						}
-					}
+					return Result::INVALID_CONTAINER;
 				}
-				return false;
-			}
 
-			template<typename T>
-			bool serialize_trivial(size_t index, T& value)
-			{
-				// Can only serialize with index in an array
-				JSON& current_object = get_current_object();
-				if (current_object.is_array() == true)
+				// Check bounds
+				if (is_reading() == true)
 				{
-					if (is_reading() == true)
+					if (index >= current_value.size())
 					{
-						// Can read anywhere in the array
-						if (index < current_object.size())
-						{
-							JSON& value_it = current_object.at(index);
-							// FIXME: ensure that type matches?
-							if (value_it.is_primitive())
-							{
-								value = value_it.get<T>();
-								return true;
-							}
-						}
-					}
-					else
-					{
-						// Must add to end of array
-						if (index == current_object.size())
-						{
-							current_object.push_back(value);
-							return true;
-						}
-					}
-				}
-				return false;
-			}
-
-			bool serialize_variant(size_t index, Variant& value)
-			{
-				// Can only serialize with index in an array
-				JSON& current_object = get_current_object();
-				if (current_object.is_array() == true)
-				{
-					if (is_reading() == true)
-					{
-						// Can read anywhere in the array
-						if (index < current_object.size())
-						{
-							JSON& value_it = current_object.at(index);
-							return read_json_to_variant(value_it, value);
-						}
-					}
-					else
-					{
-						// Must add to end of array
-						if (index == current_object.size())
-						{
-							JSON& json_value = current_object.emplace_back();							
-							return write_variant_to_json(json_value, value);
-						}
-					}
-				}
-				return false;
-			}
-
-			bool read_json_to_variant(const JSON& json_value, Variant& variant_value)
-			{
-				// FIXME: better way to do this?
-				// FIXME2: support double separately?
-				if (json_value.is_object() == true)
-				{
-					// TODO!!!
-				}
-				else if (json_value.is_array() == true)
-				{
-					// FIXME: proper lookup system!
-					const std::string& type_string = json_value[0];
-					if (type_string == "UUID")
-					{
-						// FIXME: better UUID serialization, maybe string with a certain prefix?
-						Vadon::Utilities::UUID uuid;
-						if (uuid.from_base64_string(json_value[1].get<std::string>()) == true)
-						{
-							variant_value = uuid;
-							return true;
-						}
-						return false;
-					}
-					else if (type_string == "Vector2")
-					{
-						variant_value = Vadon::Utilities::Vector2(json_value[1].get<float>(), json_value[2].get<float>());
-						return true;
-					}
-					else if (type_string == "Vector3")
-					{
-						variant_value = Vadon::Utilities::Vector3(json_value[1].get<float>(), json_value[2].get<float>(), json_value[3].get<float>());
-						return true;
-					}
-					else if (type_string == "Vector4")
-					{
-						variant_value = Vadon::Utilities::Vector4(json_value[1].get<float>(), json_value[2].get<float>(), json_value[3].get<float>(), json_value[4].get<float>());
-						return true;
+						return Result::INVALID_KEY;
 					}
 				}
 				else
 				{
-					switch (json_value.type())
+					// When writing, setting the end index is equal to "push back"
+					if (index == current_value.size())
 					{
-						// FIXME: support unsigned in variant!
-					case Vadon::Utilities::JSONValueType::number_integer:
-					case Vadon::Utilities::JSONValueType::number_unsigned:
-						variant_value = json_value.get<int>();
-						return true;
-					case Vadon::Utilities::JSONValueType::number_float:
-						variant_value = json_value.get<float>();
-						return true;
-					case Vadon::Utilities::JSONValueType::boolean:
-						variant_value = json_value.get<bool>();
-						return true;
-					case Vadon::Utilities::JSONValueType::string:
-						variant_value = json_value.get<std::string>();
-						return true;
-						// TODO: default?
+						current_value.emplace_back();
+					}
+					else if (index > current_value.size())
+					{
+						return Result::INVALID_KEY;
 					}
 				}
-				return false;
+
+				m_value_it = current_value.begin() + index;
+				return Result::SUCCESSFUL;
 			}
 
-			bool write_variant_to_json(std::string_view key, const Variant& value)
-			{
-				// FIXME: check whether we can write the value?
-				auto variant_visitor = Vadon::Utilities::VisitorOverloadList{
-					[&](auto value)
+			Result internal_open_object() override 
+			{ 
+				if (is_reading() == true)
+				{
+					if (m_value_it->is_object() == false)
 					{
-						if constexpr (IsTrivialJSONWrite<decltype(value)>)
-						{
-							get_current_object()[key] = value;
-						}
-						if constexpr (std::is_same_v<decltype(value), Vadon::Utilities::UUID> == true)
-						{
-							// FIXME: have a lookup for the keys!
-							// FIXME2: better UUID serialization, maybe string with a certain prefix?
-							get_current_object()[key] = Vadon::Utilities::JSON::array({ "UUID", value.to_base64_string() });
-						}
-						if constexpr (std::is_same_v<decltype(value), Vadon::Utilities::Vector2> == true)
-						{
-							// FIXME: have a lookup for the keys!
-							get_current_object()[key] = Vadon::Utilities::JSON::array({ "Vector2", value.x, value.y });
-						}
-						if constexpr (std::is_same_v<decltype(value), Vadon::Utilities::Vector3> == true)
-						{
-							// FIXME: have a lookup for the keys!
-							get_current_object()[key] = Vadon::Utilities::JSON::array({ "Vector3", value.x, value.y, value.z });
-						}
-						if constexpr (std::is_same_v<decltype(value), Vadon::Utilities::Vector4> == true)
-						{
-							// FIXME: have a lookup for the keys!
-							get_current_object()[key] = Vadon::Utilities::JSON::array({ "Vector4", value.x, value.y, value.z, value.w });
-						}
-						// TODO: other overloads?
+						return Result::INVALID_CONTAINER;
 					}
-				};
+				}
+				else
+				{
+					*m_value_it = JSON::object();
+				}
+				push_iterator_stack(m_value_it);
+				return Result::SUCCESSFUL;			
+			}
+			Result internal_open_array() override 
+			{
+				if (is_reading() == true)
+				{
+					if (m_value_it->is_array() == false)
+					{
+						return Result::INVALID_CONTAINER;
+					}
+				}
+				else
+				{
+					*m_value_it = JSON::array();
+				}
+				push_iterator_stack(m_value_it);
+				return Result::SUCCESSFUL;
+			}
 
-				std::visit(variant_visitor, value);
-				return true;
+			Result serialize_int(int& value) override { return serialize_trivial(value); }
+			Result serialize_float(float& value) override { return serialize_trivial(value); }
+			Result serialize_bool(bool& value) override { return serialize_trivial(value); }
+			Result serialize_string(std::string& value) override { return serialize_trivial(value); }
+
+			template<typename T>
+			Result serialize_trivial(T& value)
+			{
+				// TODO: have some way to catch if parsing was incorrect?
+				if (is_reading() == true)
+				{
+					value = m_value_it->get<T>();
+				}
+				else
+				{
+					*m_value_it = value;
+				}
+				return Result::SUCCESSFUL;
 			}
 
 			size_t get_array_size() const override
 			{
-				const JSON& current_object = get_current_object();
-				if (current_object.is_array() == true)
+				const JSON& current_value = get_current_value();
+				if (current_value.is_array() == true)
 				{
-					return current_object.size();
+					return current_value.size();
 				}
 				return 0;
 			}
 
-			const JSON& get_current_object() const
+			const JSON& get_current_value() const
 			{
 				return m_iterator_stack.empty() ? m_json_root : *m_iterator_stack.back();
 			}
 
-			JSON& get_current_object()
+			JSON& get_current_value()
 			{
-				return const_cast<JSON&>(std::as_const(*this).get_current_object());
+				return const_cast<JSON&>(std::as_const(*this).get_current_value());
 			}
 
 			void push_iterator_stack(Iterator iterator)
@@ -650,6 +295,7 @@ namespace Vadon::Utilities
 
 			JSON m_json_root;
 			std::vector<Iterator> m_iterator_stack;
+			Iterator m_value_it;
 		};
 	}
 
@@ -663,6 +309,74 @@ namespace Vadon::Utilities
 			return Serializer::Instance(new JSONSerializer(buffer, mode));
 		}
 		return nullptr;
+	}
+
+	Serializer::Result Serializer::open_array(std::string_view key)
+	{
+		const Result key_result = set_value_reference(key);
+		if (key_result == Result::SUCCESSFUL)
+		{
+			return internal_open_array();
+		}
+
+		return key_result;
+	}
+
+	Serializer::Result Serializer::open_array(size_t index)
+	{
+		const Result index_result = set_value_reference(index);
+		if (index_result == Result::SUCCESSFUL)
+		{
+			return internal_open_array();
+		}
+
+		return index_result;
+	}
+
+	Serializer::Result Serializer::open_object(std::string_view key)
+	{
+		const Result key_result = set_value_reference(key);
+		if (key_result == Result::SUCCESSFUL)
+		{
+			return internal_open_object();
+		}
+
+		return key_result;
+	}
+
+	Serializer::Result Serializer::open_object(size_t index)
+	{
+		const Result index_result = set_value_reference(index);
+		if (index_result == Result::SUCCESSFUL)
+		{
+			return internal_open_object();
+		}
+
+		return index_result;
+	}
+
+	Serializer::Result Serializer::serialize_uuid(Vadon::Utilities::UUID& value)
+	{
+		std::string base64_uuid;
+		if (is_reading() == true)
+		{
+			const Result index_result = internal_serialize_value(base64_uuid);
+			if (index_result != Result::SUCCESSFUL)
+			{
+				return index_result;
+			}
+			if (value.from_base64_string(base64_uuid) == false)
+			{
+				return Result::INVALID_DATA;
+			}
+		}
+		else
+		{
+			base64_uuid = value.to_base64_string();
+			return internal_serialize_value(base64_uuid);
+		}
+
+		return Result::SUCCESSFUL;
 	}
 
 	Serializer::Serializer(std::vector<std::byte>& buffer, Mode mode)
