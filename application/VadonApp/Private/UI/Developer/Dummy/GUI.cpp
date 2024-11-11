@@ -100,6 +100,28 @@ namespace VadonApp::Private::UI::Developer::Dummy
         // TODO
     }
 
+    Vadon::Utilities::Vector2 GUISystem::get_available_content_region() const
+    {
+        return Vadon::Utilities::Vector2_Zero;
+    }
+
+    Vadon::Utilities::Vector2 GUISystem::calculate_text_size(std::string_view /*text*/, std::string_view /*text_end*/, bool /*hide_after_double_hash*/, float /*wrap_width*/) const
+    {
+        return Vadon::Utilities::Vector2_Zero;
+    }
+
+    void GUISystem::push_item_width(float /*item_width*/)
+    {
+    }
+
+    void GUISystem::pop_item_width()
+    {
+    }
+
+    void GUISystem::set_next_item_width(float /*item_width*/)
+    {
+    }
+
     bool GUISystem::begin_window(Window& /*window*/)
     {
         // TODO!!!
@@ -275,7 +297,7 @@ namespace VadonApp::Private::UI::Developer::Dummy
         return false;
     }
 
-    bool GUISystem::draw_list_box(ListBox& /*list_box*/)
+    bool GUISystem::draw_list_box(ListBox& /*list_box*/, bool* /*double_clicked*/)
     {
         return false;
     }
@@ -356,6 +378,11 @@ namespace VadonApp::Private::UI::Developer::Dummy
     }
 
     bool GUISystem::is_item_toggled_open() const
+    {
+        return false;
+    }
+
+    bool GUISystem::is_item_edited() const
     {
         return false;
     }

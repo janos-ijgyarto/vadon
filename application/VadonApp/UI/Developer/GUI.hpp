@@ -8,6 +8,12 @@
 #include <Vadon/Utilities/Enum/EnumClassBitFlag.hpp>
 namespace VadonApp::UI::Developer
 {
+	struct GUIStyle
+	{
+		// TODO: any other relevant style params?
+		Vadon::Utilities::Vector2 frame_padding = Vadon::Utilities::Vector2_Zero;
+	};
+
 	// Developer GUI, primarily based on ImGui
 	class GUISystem : public UISystemBase<GUISystem>
 	{
@@ -37,6 +43,7 @@ namespace VadonApp::UI::Developer
 		virtual ~GUISystem() {}
 
 		virtual IOFlags get_io_flags() const = 0;
+		virtual GUIStyle get_style() const = 0;
 
 		// FIXME:
 		// - Decouple from specific window
@@ -62,6 +69,13 @@ namespace VadonApp::UI::Developer
 
 		virtual void begin_disabled(bool disabled = true) = 0;
 		virtual void end_disabled() = 0;
+
+		virtual Vadon::Utilities::Vector2 get_available_content_region() const = 0;
+		virtual Vadon::Utilities::Vector2 calculate_text_size(std::string_view text, std::string_view text_end = "", bool hide_after_double_hash = false, float wrap_width = -1.0f) const = 0;
+
+		virtual void push_item_width(float item_width) = 0;
+		virtual void pop_item_width() = 0;
+		virtual void set_next_item_width(float item_width) = 0;
 
 		virtual bool begin_window(Window& window) = 0;
 		virtual void end_window() = 0;
@@ -114,7 +128,8 @@ namespace VadonApp::UI::Developer
 
 		virtual bool draw_checkbox(Checkbox& checkbox) = 0;
 
-		virtual bool draw_list_box(ListBox& list_box) = 0;
+		// FIXME: implement flags and more flexible API
+		virtual bool draw_list_box(ListBox& list_box, bool* double_clicked = nullptr) = 0;
 		virtual bool draw_combo_box(ComboBox& combo_box) = 0;
 
 		// NOTE: use in combination with add_text to enter the cell contents
@@ -136,6 +151,7 @@ namespace VadonApp::UI::Developer
 		virtual bool is_item_focused() const = 0;
 		virtual bool is_item_clicked(Platform::MouseButton mouse_button = Platform::MouseButton::LEFT) const = 0;
 		virtual bool is_item_toggled_open() const = 0;
+		virtual bool is_item_edited() const = 0;
 
 		virtual bool is_key_down(Platform::KeyCode key) const = 0;
 		virtual bool is_key_pressed(Platform::KeyCode key, bool repeat = true) const = 0;

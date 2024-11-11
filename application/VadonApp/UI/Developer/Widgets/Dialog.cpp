@@ -60,7 +60,7 @@ namespace VadonApp::UI::Developer
 		{
 			if (m_state != State::CLOSED)
 			{
-
+				// TODO!
 			}
 		}
 

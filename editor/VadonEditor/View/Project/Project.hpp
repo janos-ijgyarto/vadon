@@ -3,6 +3,7 @@
 #include <VadonEditor/Core/Project/Project.hpp>
 #include <VadonEditor/UI/Developer/GUI.hpp>
 #include <VadonEditor/UI/Developer/Widgets.hpp>
+#include <VadonApp/UI/Developer/Widgets/FileBrowser.hpp>
 namespace VadonEditor::Core
 {
 	class Editor;
@@ -33,27 +34,6 @@ namespace VadonEditor::View
 		friend class ProjectLauncher;
 	};
 
-	class ImportProjectDialog : public UI::Developer::Dialog
-	{
-	protected:
-		Result internal_draw(UI::Developer::GUISystem& dev_gui) override;
-
-		void on_open() override;
-	private:
-		ImportProjectDialog(Core::Editor& editor);
-
-		bool has_valid_input() const;
-		bool validate() const;
-
-		Core::Editor& m_editor;
-
-		UI::Developer::InputText m_project_path; // FIXME: implement file browser!
-		UI::Developer::Button m_import_button;
-		UI::Developer::Button m_cancel_button;
-
-		friend class ProjectLauncher;
-	};
-
 	class ProjectLauncher
 	{
 	private:
@@ -67,7 +47,7 @@ namespace VadonEditor::View
 		Core::Project m_selected_project_info;
 
 		NewProjectDialog m_new_project_dialog;
-		ImportProjectDialog m_import_project_dialog;
+		VadonApp::UI::Developer::FileBrowserDialog m_import_project_dialog;
 
 		UI::Developer::Button m_new_project_button;
 		UI::Developer::Button m_import_project_button;

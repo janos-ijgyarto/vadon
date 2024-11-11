@@ -81,77 +81,10 @@ namespace VadonEditor::View
 		return true;
 	}
 
-	UI::Developer::Dialog::Result ImportProjectDialog::internal_draw(UI::Developer::GUISystem& dev_gui)
-	{
-		Result result = Result::NONE;
-
-		dev_gui.draw_input_text(m_project_path); // FIXME: implement a file browser widget!
-
-		const bool input_valid = has_valid_input();
-		if (input_valid == false)
-		{
-			dev_gui.begin_disabled();
-		}
-		if (dev_gui.draw_button(m_import_button) == true)
-		{
-			if (validate() == true)
-			{
-				result = Result::ACCEPTED;
-				close();
-			}
-			else
-			{
-				// TODO: show error!
-			}
-		}
-		if (input_valid == false)
-		{
-			dev_gui.end_disabled();
-		}
-		dev_gui.same_line();
-		if (dev_gui.draw_button(m_cancel_button) == true)
-		{
-			result = Result::CANCELLED;
-			close();
-		}
-
-		return result;
-	}
-
-	void ImportProjectDialog::on_open()
-	{
-		m_project_path.input.clear();
-	}
-
-	ImportProjectDialog::ImportProjectDialog(Core::Editor& editor)
-		: Dialog("Import Project")
-		, m_editor(editor)
-	{
-		m_project_path.label = "Project path";
-
-		m_import_button.label = "Import";
-		m_cancel_button.label = "Cancel";
-	}
-
-	bool ImportProjectDialog::has_valid_input() const
-	{
-		if (m_project_path.input.empty() == true)
-		{
-			return false;
-		}
-
-		return true;
-	}
-
-	bool ImportProjectDialog::validate() const
-	{
-		return true;
-	}
-
 	ProjectLauncher::ProjectLauncher(Core::Editor& editor)
 		: m_editor(editor)
 		, m_new_project_dialog(editor)
-		, m_import_project_dialog(editor)
+		, m_import_project_dialog("Import Project")
 	{
 		m_window.title = "Project Launcher";
 
@@ -197,7 +130,7 @@ namespace VadonEditor::View
 			{
 				// TODO: import the project!
 				// TODO: perform this asynchronously?
-				if (project_manager.open_project(m_import_project_dialog.m_project_path.input) == false)
+				if (project_manager.open_project(m_import_project_dialog.get_selected_file().path) == false)
 				{
 					// TODO: show error dialog!
 				}

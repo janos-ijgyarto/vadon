@@ -100,6 +100,7 @@ namespace VadonApp::UI::Developer
 		std::string label;
 		std::vector<std::string> items;
 		int32_t selected_item = -1;
+		Vadon::Utilities::Vector2 size = { 0, 0 };
 
 		bool has_valid_selection() const
 		{
