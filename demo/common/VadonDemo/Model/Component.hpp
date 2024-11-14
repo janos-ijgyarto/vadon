@@ -3,8 +3,11 @@
 #include <Vadon/ECS/Component/Registry.hpp>
 #include <Vadon/Render/Canvas/Item.hpp>
 #include <Vadon/Utilities/Enum/EnumClass.hpp>
+
+#include <Vadon/Scene/Scene.hpp>
+
 namespace VadonDemo::Model
-{	
+{
 	struct Transform2D
 	{
 		Vadon::Utilities::Vector2 position = Vadon::Utilities::Vector2_Zero;
@@ -72,7 +75,7 @@ namespace VadonDemo::Model
 	// TODO: should weapon also be its own entity?
 	struct Weapon
 	{
-		std::string projectile_prefab; // TODO: implement Resource property instead of the raw ID string!
+		Vadon::Scene::SceneHandle projectile_prefab;
 		float rate_of_fire = 1.0f;
 
 		float firing_timer = 0.0f;
@@ -108,9 +111,7 @@ namespace VadonDemo::Model
 
 	struct Spawner
 	{
-		// NOTE: this will be the Base64 encoding of the resource ID
-		// FIXME: replace with resource property!
-		std::string enemy_prefab;
+		Vadon::Scene::SceneHandle enemy_prefab;
 		Vadon::ECS::EntityHandle enemy_prefab_entity;
 
 		float activation_delay = 60.0f;

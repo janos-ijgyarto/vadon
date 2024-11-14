@@ -15,5 +15,7 @@ namespace Vadon::Scene
 		// FIXME: should we use "owner", similar to Godot?
 		// TODO: flags and other metadata (e.g indicate that we override certain elements)
 	};
+
+	VADON_DECLARE_TYPED_RESOURCE_HANDLE(Scene, SceneHandle);
 }
 #endif

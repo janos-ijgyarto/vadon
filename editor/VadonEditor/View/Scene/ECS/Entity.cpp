@@ -128,7 +128,7 @@ namespace VadonEditor::View
 			ComponentEditor& current_component_editor = m_component_editors.emplace_back();
 			current_component_editor.m_type_id = current_component_id;
 
-			current_component_editor.initialize(*m_entity);
+			current_component_editor.initialize(m_editor, *m_entity);
 		}
 	}
 }

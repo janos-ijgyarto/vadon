@@ -30,6 +30,8 @@ namespace Vadon::Scene
 	struct TypedResourceHandle : public ResourceHandle
 	{
 		using _ResourceType = T;
+
+		TypedResourceHandle<T>& operator=(const ResourceHandle& h) { handle = h.handle; return *this; }
 	};
 }
 

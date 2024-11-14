@@ -4,7 +4,6 @@
 #include <VadonEditor/Model/Scene/Scene.hpp>
 #include <Vadon/ECS/Entity/Entity.hpp>
 #include <Vadon/ECS/Component/Component.hpp>
-#include <set>
 namespace Vadon::ECS
 {
 	class World;
@@ -56,7 +55,7 @@ namespace VadonEditor::Model
 
 		Vadon::Utilities::TypeInfoList get_available_component_list() const;
 
-		Vadon::Utilities::Variant get_component_property(Vadon::ECS::ComponentID component_type_id, std::string_view property_name);
+		Vadon::Utilities::Variant get_component_property(Vadon::ECS::ComponentID component_type_id, std::string_view property_name) const;
 		void edit_component_property(Vadon::ECS::ComponentID component_type_id, std::string_view property_name, const Vadon::Utilities::Variant& value);
 	private:
 		Entity(Core::Editor& editor, Vadon::ECS::EntityHandle entity_handle, EntityID id, Entity* parent = nullptr);

@@ -3,6 +3,7 @@
 #include <VadonEditor/Core/Editor.hpp>
 #include <VadonEditor/Core/Project/ProjectManager.hpp>
 
+#include <VadonEditor/Model/Resource/ResourceSystem.hpp>
 #include <VadonEditor/Model/Scene/SceneTree.hpp>
 
 #include <Vadon/Core/File/FileSystem.hpp>
@@ -18,17 +19,25 @@ namespace VadonEditor::Model
 	struct ModelSystem::Internal
 	{
 		Vadon::ECS::World m_ecs_world;
+
+		ResourceSystem m_resource_system;
 		SceneTree m_scene_tree;
 
 		std::vector<std::function<void()>> m_callbacks;
 
 		Internal(Core::Editor& editor)
-			: m_scene_tree(editor)
+			: m_resource_system(editor)
+			, m_scene_tree(editor)
 		{
 		}
 
 		bool initialize()
 		{
+			if (m_resource_system.initialize() == false)
+			{
+				return false;
+			}
+
 			if (m_scene_tree.initialize() == false)
 			{
 				return false;
@@ -84,6 +93,11 @@ namespace VadonEditor::Model
 	Vadon::ECS::World& ModelSystem::get_ecs_world()
 	{
 		return m_internal->m_ecs_world;
+	}
+
+	ResourceSystem& ModelSystem::get_resource_system()
+	{
+		return m_internal->m_resource_system;
 	}
 
 	SceneTree& ModelSystem::get_scene_tree()

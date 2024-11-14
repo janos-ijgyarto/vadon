@@ -56,8 +56,11 @@ namespace VadonEditor::Model
 
 		bool initialize();
 		Entity* instantiate_scene_recursive(Vadon::ECS::EntityHandle entity_handle, Entity* parent);
+		
 		void clear_scene();
 		void scene_changes_cleared() { m_current_scene.is_modified = false; }
+
+		void internal_remove_entity(Entity* entity);
 
 		Core::Editor& m_editor;
 

@@ -342,7 +342,7 @@ namespace Vadon::Private::Scene
 		if (serializer.is_reading() == true)
 		{
 			ResourceID resource_id;
-			if (serializer.serialize(property_name, resource_id) != SerializerResult::SUCCESSFUL)
+			if (serializer.serialize(property_name, resource_id) == SerializerResult::SUCCESSFUL)
 			{
 				const ResourceHandle resource_handle = find_resource(resource_id);
 				if (resource_handle.is_valid() == false)

@@ -686,37 +686,15 @@ namespace VadonDemo::Model
 
 		bool load_weapon(Vadon::ECS::World& ecs_world, Weapon& weapon_component)
 		{
-			if (weapon_component.projectile_prefab.empty() == true)
+			if (weapon_component.projectile_prefab.is_valid() == false)
 			{
 				// TODO: error!
 				return false;
 			}
-
-			Vadon::Scene::ResourceID projectile_prefab_id;
-			if (projectile_prefab_id.from_base64_string(weapon_component.projectile_prefab) == false)
-			{
-				// TODO: error!
-				return false;
-			}
-
-			if (projectile_prefab_id.is_valid() == false)
-			{
-				// TODO: error!
-				return false;
-			}
-
-			Vadon::Scene::ResourceSystem& resource_system = m_engine_core.get_system<Vadon::Scene::ResourceSystem>();
-			Vadon::Scene::ResourceHandle projectile_prefab_scene = resource_system.find_resource(projectile_prefab_id);
-
-			if (projectile_prefab_scene.is_valid() == false)
-			{
-				// TODO: error!
-				return false;
-			}
-
+			
 			// FIXME: check to make sure we haven't already loaded this?
 			Vadon::Scene::SceneSystem& scene_system = m_engine_core.get_system<Vadon::Scene::SceneSystem>();
-			weapon_component.projectile_prefab_entity = scene_system.instantiate_scene(projectile_prefab_scene, ecs_world);
+			weapon_component.projectile_prefab_entity = scene_system.instantiate_scene(weapon_component.projectile_prefab, ecs_world);
 
 			Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
 			auto projectile_prefab_components = component_manager.get_component_tuple<Transform2D, Velocity2D, CanvasComponent, Projectile>(weapon_component.projectile_prefab_entity);
@@ -749,29 +727,7 @@ namespace VadonDemo::Model
 
 		bool load_spawner_prefab(Vadon::ECS::World& ecs_world, Spawner& spawner)
 		{
-			if (spawner.enemy_prefab.empty() == true)
-			{
-				// TODO: error!
-				return false;
-			}
-
-			Vadon::Scene::ResourceID enemy_prefab_id;
-			if (enemy_prefab_id.from_base64_string(spawner.enemy_prefab) == false)
-			{
-				// TODO: error!
-				return false;
-			}
-
-			if (enemy_prefab_id.is_valid() == false)
-			{
-				// TODO: error!
-				return false;
-			}
-
-			Vadon::Scene::ResourceSystem& resource_system = m_engine_core.get_system<Vadon::Scene::ResourceSystem>();
-			Vadon::Scene::ResourceHandle enemy_prefab_scene = resource_system.find_resource(enemy_prefab_id);
-
-			if (enemy_prefab_scene.is_valid() == false)
+			if (spawner.enemy_prefab.is_valid() == false)
 			{
 				// TODO: error!
 				return false;
@@ -779,7 +735,7 @@ namespace VadonDemo::Model
 
 			// FIXME: check to make sure we haven't already loaded this?
 			Vadon::Scene::SceneSystem& scene_system = m_engine_core.get_system<Vadon::Scene::SceneSystem>();
-			spawner.enemy_prefab_entity = scene_system.instantiate_scene(enemy_prefab_scene, ecs_world);
+			spawner.enemy_prefab_entity = scene_system.instantiate_scene(spawner.enemy_prefab, ecs_world);
 
 			Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
 			auto enemy_prefab_components = component_manager.get_component_tuple<Transform2D, Velocity2D, CanvasComponent, Health, Enemy>(spawner.enemy_prefab_entity);

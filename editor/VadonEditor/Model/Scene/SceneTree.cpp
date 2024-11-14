@@ -51,12 +51,7 @@ namespace VadonEditor::Model
 
 	void SceneTree::remove_entity(Entity* entity)
 	{
-		if (m_current_scene.root_entity == entity)
-		{
-			m_current_scene.root_entity = nullptr;
-		}
-
-		delete entity;
+		internal_remove_entity(entity);
 		notify_scene_modified();
 	}
 
@@ -297,8 +292,18 @@ namespace VadonEditor::Model
 	{
 		if (m_current_scene.root_entity != nullptr)
 		{
-			delete m_current_scene.root_entity;
+			internal_remove_entity(m_current_scene.root_entity);
+		}
+	}
+
+	void SceneTree::internal_remove_entity(Entity* entity)
+	{
+		m_editor.get_system<ModelSystem>().get_ecs_world().remove_entity(entity->m_entity_handle);
+		if (m_current_scene.root_entity == entity)
+		{
 			m_current_scene.root_entity = nullptr;
 		}
+
+		delete entity;
 	}
 }

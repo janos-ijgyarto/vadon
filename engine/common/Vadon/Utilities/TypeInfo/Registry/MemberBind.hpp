@@ -10,17 +10,19 @@ namespace Vadon::Utilities
 		using _ObjectType = T;
 		using _MemberType = TMember;
 
+		using _MappedMemberType = variant_type_mapping_t<_MemberType>;
+
 		static Variant invoke_getter(void* object, TMember T::* member_ptr)
 		{
 			T* cast_object = static_cast<T*>(object);
-			return Variant(cast_object->*member_ptr);
+			return Variant((_MappedMemberType&)(cast_object->*member_ptr));
 		}
 
 		template <typename T, typename TMember>
 		static void invoke_setter(void* object, TMember T::* member_ptr, const Variant& value)
 		{
 			T* cast_object = static_cast<T*>(object);
-			cast_object->*member_ptr = std::get<TMember>(value);
+			cast_object->*member_ptr = std::get<_MappedMemberType>(value);
 		}
 	};
 

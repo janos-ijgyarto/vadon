@@ -189,15 +189,14 @@ namespace Vadon::Utilities
 		}
 
 		const TypeData& type_data = type_data_it->second;
-		auto type_property_it = type_data.properties.find(std::string(property_name));
-		if (type_property_it == type_data.properties.end())
+		const MemberVariableBindBase* property_bind = instance.internal_find_property(type_data, property_name);
+		if (property_bind == nullptr)
 		{
 			Vadon::Core::Logger::log_error(std::format("Type registry error: property \"{}\" not found in type \"{}\"!\n", property_name, type_data.info.name));
 			return Variant();
 		}
 
-		const MemberVariableBindBase& property_bind = type_property_it->second;
-		return invoke_property_getter(object, property_bind);
+		return invoke_property_getter(object, *property_bind);
 	}
 
 	void TypeRegistry::set_property(void* object, TypeID type_id, std::string_view property_name, const Variant& value)

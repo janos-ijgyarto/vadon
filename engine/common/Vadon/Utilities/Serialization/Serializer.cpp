@@ -360,10 +360,10 @@ namespace Vadon::Utilities
 		std::string base64_uuid;
 		if (is_reading() == true)
 		{
-			const Result index_result = internal_serialize_value(base64_uuid);
-			if (index_result != Result::SUCCESSFUL)
+			const Result parse_result = internal_serialize_value(base64_uuid);
+			if (parse_result != Result::SUCCESSFUL)
 			{
-				return index_result;
+				return parse_result;
 			}
 			if (value.from_base64_string(base64_uuid) == false)
 			{

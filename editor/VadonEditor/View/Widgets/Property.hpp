@@ -2,6 +2,10 @@
 #define VADONEDITOR_VIEW_WIDGETS_PROPERTY_HPP
 #include <VadonEditor/UI/Developer/GUI.hpp>
 #include <Vadon/Utilities/TypeInfo/Registry/Property.hpp>
+namespace VadonEditor::Core
+{
+	class Editor;
+}
 namespace VadonEditor::View
 {
 	class PropertyEditor
@@ -12,21 +16,19 @@ namespace VadonEditor::View
 		virtual ~PropertyEditor() {}
 		virtual bool render(UI::Developer::GUISystem& dev_gui) = 0;
 
-		const std::string& get_name() const { return m_name; }
-		const Vadon::Utilities::Variant& get_value() const { return m_value; }
-		void set_value(const Vadon::Utilities::Variant& value) { m_value = value; value_updated(); }
+		const std::string& get_name() const { return m_property.name; }
+		const Vadon::Utilities::Variant& get_value() const { return m_property.value; }
+		void set_value(const Vadon::Utilities::Variant& value) { m_property.value = value; value_updated(); }
 
-		static Instance create_property_editor(const Vadon::Utilities::Property& model_property);
+		static Instance create_property_editor(Core::Editor& editor, const Vadon::Utilities::Property& model_property);
 	protected:
-		PropertyEditor(std::string_view property_name, const Vadon::Utilities::Variant& value)
-			: m_name(property_name)
-			, m_value(value)
+		PropertyEditor(const Vadon::Utilities::Property& model_property)
+			: m_property(model_property)
 		{}
 
 		virtual void value_updated() = 0;
 
-		std::string m_name;
-		Vadon::Utilities::Variant m_value;
+		Vadon::Utilities::Property m_property;
 	};
 }
 #endif

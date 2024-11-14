@@ -30,25 +30,16 @@ namespace VadonEditor::Model
 {
 	Entity::~Entity()
 	{
+		// Remove self from parent
 		if (m_parent != nullptr)
 		{
 			m_parent->internal_remove_child(this, true);
-		}
-
-		if (m_entity_handle.is_valid() == true)
-		{
-			// Remove ECS entity, this will also remove all of its children
-			Vadon::ECS::World& world = get_ecs_world();
-			world.remove_entity(m_entity_handle);
 		}
 
 		for (Entity* current_child : m_children)
 		{
 			// Unset parent in children so they don't redundantly remove themselves
 			current_child->m_parent = nullptr;
-
-			// Invalidate entity handle in child so we don't try to redundantly delete entities
-			current_child->m_entity_handle.invalidate();
 			delete current_child;
 		}
 	}
@@ -255,7 +246,7 @@ namespace VadonEditor::Model
 		return component_type_list;
 	}
 
-	Vadon::Utilities::Variant Entity::get_component_property(Vadon::ECS::ComponentID component_type_id, std::string_view property_name)
+	Vadon::Utilities::Variant Entity::get_component_property(Vadon::ECS::ComponentID component_type_id, std::string_view property_name) const
 	{
 		Vadon::ECS::World& world = get_ecs_world();
 		Vadon::ECS::ComponentManager& component_manager = world.get_component_manager();

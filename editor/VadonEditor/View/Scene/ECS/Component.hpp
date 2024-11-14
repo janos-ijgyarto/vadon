@@ -42,7 +42,7 @@ namespace VadonEditor::View
 	public:
 		ComponentEditor();
 	private:
-		void initialize(Model::Entity& entity);
+		void initialize(Core::Editor& editor, Model::Entity& entity);
 		bool draw(VadonApp::UI::Developer::GUISystem& dev_gui, Model::Entity& entity);
 
 		Vadon::ECS::ComponentID m_type_id;

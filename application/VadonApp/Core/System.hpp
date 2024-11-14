@@ -14,6 +14,8 @@ namespace VadonApp::Core
 		void log_message(std::string_view message) const override { m_application.log_message(message); }
 		void log_warning(std::string_view message) const override { m_application.log_warning(message); }
 		void log_error(std::string_view message) const override { m_application.log_error(message); }
+
+		Application& get_application() { return m_application; }
 	protected:
 		SystemBase(Application& application)
 			: m_application(application)

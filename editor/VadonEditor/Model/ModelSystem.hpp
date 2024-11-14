@@ -14,6 +14,7 @@ namespace VadonEditor::Core
 }
 namespace VadonEditor::Model
 {
+	class ResourceSystem;
 	class SceneTree;
 
 	class ModelSystem : public ModelSystemBase<ModelSystem>
@@ -22,6 +23,7 @@ namespace VadonEditor::Model
 		~ModelSystem();
 
 		VADONEDITOR_API Vadon::ECS::World& get_ecs_world();
+		VADONEDITOR_API ResourceSystem& get_resource_system();
 		VADONEDITOR_API SceneTree& get_scene_tree();
 
 		// FIXME: have a more flexible approach, where this systems runs ECS systems tagged to run in the editor?
