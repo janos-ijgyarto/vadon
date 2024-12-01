@@ -8,136 +8,72 @@
 
 namespace VadonApp::UI::Developer
 {
-    FileBrowserDialog::FileBrowserDialog(std::string_view title)
-        : Dialog(title)
+    FileBrowserWidget::FileBrowserWidget(std::string_view label)
     {
-        m_file_list_box.label = "Browser";
+        m_file_list_box.label = label;
         m_file_list_box.size = { -1, -1 };
 
         m_up_button.label = ICON_FA_ARROW_UP;
-
-        m_open_button.label = "Open";
-        m_cancel_button.label = "Cancel";
     }
 
-    void FileBrowserDialog::set_current_path(std::string_view path)
+    void FileBrowserWidget::navigate_to_path(std::string_view path)
     {
-        m_current_path = path;
-    }
-
-    FileBrowserDialog::File FileBrowserDialog::get_selected_file() const
-    {
-        if (m_file_list_box.has_valid_selection() == true)
+        if (std::filesystem::is_directory(path) == false)
         {
-            std::filesystem::path path = m_current_path;
-            path /= m_current_dir_files[m_file_list_box.selected_item];
-
-            File selected_file;
-            selected_file.path = path.string();
-
-            if (std::filesystem::is_regular_file(path) == true)
-            {
-                selected_file.type = Type::FILE;
-            }
-            else if (std::filesystem::is_directory(path) == true)
-            {
-                selected_file.type = Type::DIRECTORY;
-            }
-
-            return selected_file;
+            internal_navigate_to_path(std::filesystem::path(path).parent_path().string());
         }
-
-        return File();
-    }
-
-    void FileBrowserDialog::on_open()
-    {
-        if (m_current_path.empty() == true)
+        else
         {
-            navigate_to_path(std::filesystem::current_path().string());
+            internal_navigate_to_path(path);
         }
-
-        navigate_to_path(m_current_path);
     }
 
-	Dialog::Result FileBrowserDialog::internal_draw(GUISystem& dev_gui)
+    void FileBrowserWidget::reset_selection()
+    {
+        m_selected_file.type = Type::NONE;
+        m_selected_file.path.clear();
+        m_selected_file.double_clicked = false;
+    }
+
+    void FileBrowserWidget::draw(GUISystem& dev_gui, const Vadon::Utilities::Vector2& size)
 	{
-        Result result = Result::NONE;
-
-        dev_gui.add_text(m_current_path);
-
         if (dev_gui.draw_button(m_up_button) == true)
         {
             navigate_up();
         }
-
-        Vadon::Utilities::Vector2 file_list_area = dev_gui.get_available_content_region();
-        const GUIStyle gui_style = dev_gui.get_style();
-        file_list_area.y -= dev_gui.calculate_text_size(m_open_button.label).y + gui_style.frame_padding.y * 2 + 5.0f;
-
-        m_file_list_box.size = file_list_area;
-
-        bool file_double_clicked = false;
-        dev_gui.draw_list_box(m_file_list_box, &file_double_clicked);
-
-        const bool file_selected = m_file_list_box.has_valid_selection();
-        if (file_selected && file_double_clicked)
-        {
-            open_selection();
-        }
-        if (file_selected == false)
-        {
-            dev_gui.begin_disabled(true);
-        }
-        if (dev_gui.draw_button(m_open_button) == true)
-        {
-            result = Result::ACCEPTED;
-        }
-        if (file_selected == false)
-        {
-            dev_gui.end_disabled();
-        }
         dev_gui.same_line();
-        if (dev_gui.draw_button(m_cancel_button) == true)
+        dev_gui.add_text(m_current_path);
+
+        m_file_list_box.size = size;
+
+        const GUIStyle gui_style = dev_gui.get_style();
+        m_file_list_box.size.y -= dev_gui.calculate_text_size(m_up_button.label).y + gui_style.frame_padding.y * 2;
+        m_file_list_box.size.y -= dev_gui.calculate_text_size(m_current_path).y + gui_style.frame_padding.y * 2;
+
+        const int32_t prev_selection = m_file_list_box.selected_item;
+        dev_gui.draw_list_box(m_file_list_box, &m_selected_file.double_clicked);
+
+        if (prev_selection != m_file_list_box.selected_item)
         {
-            result = Result::CANCELLED;
+            update_selection();
         }
 
-        if (result != Result::NONE)
+        if ((m_selected_file.type == Type::DIRECTORY) && (m_selected_file.double_clicked == true))
         {
-            close();
+            navigate_to_path(m_selected_file.path);
         }
-
-        return result;
 	}
 
-    void FileBrowserDialog::navigate_to_path(std::string_view path)
+    void FileBrowserWidget::refresh_current_directory_view()
     {
-        if (path.empty() == true)
-        {
-            // TODO: error?
-            return;
-        }
-
-        if (path == m_current_path)
-        {
-            return;
-        }
-
-        if (std::filesystem::is_directory(path) == false)
-        {
-            // TODO: error!
-            return;
-        }
-
-        m_current_path = path;
         m_current_dir_files.clear();
 
+        reset_selection();
         m_file_list_box.deselect();
         m_file_list_box.items.clear();
 
         std::vector<std::filesystem::path> sorted_path_list;
-        for (const auto& entry : std::filesystem::directory_iterator(path))
+        for (const auto& entry : std::filesystem::directory_iterator(m_current_path))
         {
             if (entry.is_directory() == true)
             {
@@ -188,25 +124,100 @@ namespace VadonApp::UI::Developer
         }
     }
 
-    bool FileBrowserDialog::open_selection()
+    void FileBrowserWidget::internal_navigate_to_path(std::string_view path)
     {
-        std::filesystem::path current_path = m_current_path;
-        current_path /= m_current_dir_files[m_file_list_box.selected_item];
-
-        if (std::filesystem::is_directory(current_path) == true)
+        if (path.empty() == true)
         {
-            navigate_to_path(current_path.string());
+            Vadon::Core::Logger::log_error("File browser error: invalid path!\n");
+            return;
         }
 
-        return false;
+        if (path == m_current_path)
+        {
+            return;
+        }
+
+        m_current_path = path;
+
+        refresh_current_directory_view();
     }
 
-    void FileBrowserDialog::navigate_up()
+    void FileBrowserWidget::navigate_up()
     {
         std::filesystem::path current_path = m_current_path;
         if (current_path.has_parent_path())
         {
             navigate_to_path(current_path.parent_path().string());
         }
+    }
+
+    void FileBrowserWidget::update_selection()
+    {
+        if (m_file_list_box.has_valid_selection() == true)
+        {
+            std::filesystem::path path = m_current_path;
+            path /= m_current_dir_files[m_file_list_box.selected_item];
+
+            m_selected_file.path = path.string();
+            if (std::filesystem::is_directory(path) == true)
+            {
+                m_selected_file.type = Type::DIRECTORY;
+            }
+            else
+            {
+                m_selected_file.type = Type::FILE;
+            }
+        }
+        else
+        {
+            reset_selection();
+        }
+    }
+
+    FileBrowserDialog::FileBrowserDialog(std::string_view title)
+        : Dialog(title)
+    {
+        m_select_button.label = "Select";
+        m_cancel_button.label = "Cancel";
+    }
+
+    void FileBrowserDialog::open_at(std::string_view path)
+    {
+        if (path.empty() == true)
+        {
+            Vadon::Core::Logger::log_error("File browser error: invalid path!\n");
+            return;
+        }
+
+        m_file_browser.navigate_to_path(path);
+        open();
+    }
+
+    Dialog::Result FileBrowserDialog::internal_draw(GUISystem& dev_gui)
+    {
+        Result result = Result::NONE;
+
+        Vadon::Utilities::Vector2 file_browser_area = dev_gui.get_available_content_region();
+        const GUIStyle gui_style = dev_gui.get_style();
+        file_browser_area.y -= dev_gui.calculate_text_size(m_select_button.label).y + gui_style.frame_padding.y * 2 + 5.0f;
+
+        m_file_browser.draw(dev_gui, file_browser_area);
+
+        if (dev_gui.draw_button(m_select_button) == true)
+        {
+            result = Result::ACCEPTED;
+        }
+        dev_gui.same_line();
+        if (dev_gui.draw_button(m_cancel_button) == true)
+        {
+            result = Result::CANCELLED;
+        }
+
+        if (result != Result::NONE)
+        {
+            close();
+        }
+
+        return result;
     }
 }

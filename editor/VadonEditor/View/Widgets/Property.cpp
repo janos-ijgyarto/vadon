@@ -186,7 +186,7 @@ namespace VadonEditor::View
 			m_select_resource_button.label = "Select";
 			m_clear_button.label = "Clear";
 
-			m_select_resource_dialog.set_resource_type(model_property.data_type.id);
+			m_select_resource_dialog.set_resource_type(Vadon::Utilities::to_enum<Vadon::Utilities::TypeID>(model_property.data_type.id));
 		}
 
 		bool render(VadonApp::UI::Developer::GUISystem& dev_gui) override
@@ -194,13 +194,13 @@ namespace VadonEditor::View
 			bool edited = false;
 			if (m_select_resource_dialog.draw(dev_gui) == VadonApp::UI::Developer::Dialog::Result::ACCEPTED)
 			{
-				m_property.value = m_select_resource_dialog.get_selected_resource().handle;
+				m_property.value = m_select_resource_dialog.get_selected_resource();
 				edited = true;
 			}
 
 			dev_gui.add_text(m_label);
 			dev_gui.same_line();
-			dev_gui.add_text(m_resource ? m_resource->get_name() : "<NONE>");
+			dev_gui.add_text(m_resource ? m_resource->get_info().path.path : "<NONE>");
 			dev_gui.same_line();
 			if (dev_gui.draw_button(m_select_resource_button) == true)
 			{
@@ -209,7 +209,8 @@ namespace VadonEditor::View
 			dev_gui.same_line();
 			if (dev_gui.draw_button(m_clear_button) == true)
 			{
-				set_value(Vadon::Scene::ResourceHandle());
+				m_property.value = Vadon::Scene::ResourceHandle();
+				edited = true;
 			}
 
 			return edited;
@@ -271,7 +272,7 @@ namespace VadonEditor::View
 			return Instance(new ResourcePropertyEditor(editor, model_property));
 		}
 
-		// TODO: error?
+		Vadon::Core::Logger::log_error("Property editor: no matching property editor available for data type!\n");
 		return Instance();
 	}
 }

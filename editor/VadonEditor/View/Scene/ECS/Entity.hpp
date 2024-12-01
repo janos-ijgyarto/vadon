@@ -13,15 +13,15 @@ namespace VadonEditor::View
 		EntityEditor(Core::Editor& editor);
 
 		void draw(UI::Developer::GUISystem& dev_gui);
-		void set_selected_entity(Model::Entity* entity);
-		void reset();
 
-		void update_labels();
-		void reset_components();
+		void update_selected_entity(Model::Entity* entity);
+		void update_labels(Model::Entity* entity);
+		void reset_components(Model::Entity* entity);
 
 		Core::Editor& m_editor;
 
-		Model::Entity* m_entity = nullptr;
+		Model::Entity* m_last_entity = nullptr;
+
 		std::string m_sub_scene_label;
 		std::string m_entity_path;
 
@@ -35,7 +35,7 @@ namespace VadonEditor::View
 		UI::Developer::Button m_add_component_button;
 		AddComponentDialog m_add_component_dialog;
 
-		friend class SceneTreeWindow;
+		friend class MainWindow;
 	};
 }
 #endif

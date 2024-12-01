@@ -99,7 +99,7 @@ namespace Vadon::Utilities
 			bool has_property(std::string_view name) const;
 		};
 
-		static VADONCOMMON_API void internal_register_type(std::string_view type_name, size_t size, size_t alignment, TypeID base_type_id = c_invalid_type_id);
+		static VADONCOMMON_API void internal_register_type(std::string_view type_name, size_t size, size_t alignment, TypeID base_type_id = TypeID::INVALID);
 		static VADONCOMMON_API bool internal_add_property(TypeID type_id, std::string_view name, MemberVariableBindBase property_bind);
 		static VADONCOMMON_API bool internal_bind_method(TypeID type_id, std::string_view name, MemberFunctionBind method_bind);
 		
@@ -114,7 +114,7 @@ namespace Vadon::Utilities
 
 		// FIXME: hide via PIMPL?
 		std::unordered_map<std::string, TypeID> m_id_lookup;
-		TypeID m_id_counter = 1;
+		std::underlying_type_t<TypeID> m_id_counter = 1;
 
 		// FIXME: use vector to improve lookup times?
 		std::unordered_map<TypeID, TypeData> m_type_lookup;

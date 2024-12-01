@@ -5,6 +5,7 @@ add_subdirectory(Widgets)
 
 target_sources(${VADONEDITOR_CURRENT_TARGET}
     PRIVATE
+    Module.hpp
     ViewSystem.hpp
     ViewSystem.cpp
    )

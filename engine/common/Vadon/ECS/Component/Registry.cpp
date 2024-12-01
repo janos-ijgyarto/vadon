@@ -13,7 +13,7 @@ namespace Vadon::ECS
 		}
 	}
 
-	ComponentPoolInterface* ComponentRegistry::get_component_pool(uint32_t type_id)
+	ComponentPoolInterface* ComponentRegistry::get_component_pool(Vadon::Utilities::TypeID type_id)
 	{
 		ComponentRegistry& registry_instance = get_registry_instance();
 
@@ -26,10 +26,10 @@ namespace Vadon::ECS
 		return pool_info_it->second.factory_function();
 	}
 
-	std::vector<uint32_t> ComponentRegistry::get_component_types()
+	std::vector<Vadon::Utilities::TypeID> ComponentRegistry::get_component_types()
 	{
 		const ComponentRegistry& registry_instance = get_registry_instance();
-		std::vector<uint32_t> type_id_list;
+		std::vector<Vadon::Utilities::TypeID> type_id_list;
 
 		type_id_list.reserve(registry_instance.m_pool_info_lookup.size());
 
@@ -41,7 +41,7 @@ namespace Vadon::ECS
 		return type_id_list;
 	}
 
-	void ComponentRegistry::register_component_type(uint32_t type_id, PoolFactoryFunction factory)
+	void ComponentRegistry::register_component_type(Vadon::Utilities::TypeID type_id, PoolFactoryFunction factory)
 	{
 		ComponentRegistry& registry_instance = get_registry_instance();
 

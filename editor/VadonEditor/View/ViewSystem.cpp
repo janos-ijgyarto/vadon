@@ -4,6 +4,7 @@
 #include <VadonEditor/Core/Project/ProjectManager.hpp>
 
 #include <VadonEditor/Model/ModelSystem.hpp>
+#include <VadonEditor/Model/Scene/SceneSystem.hpp>
 
 #include <VadonEditor/UI/UISystem.hpp>
 #include <VadonEditor/UI/Developer/GUI.hpp>
@@ -77,6 +78,35 @@ namespace VadonEditor::View
 		};
 	}
 
+	void ViewModel::set_active_scene(Model::Scene* scene)
+	{
+		if (m_active_scene != scene)
+		{
+			m_active_entity = nullptr;
+			m_active_scene = scene;
+		}
+	}
+
+	void ViewModel::set_active_entity(Model::Entity* entity)
+	{
+		if (entity != nullptr)
+		{
+			if (entity->get_owning_scene() != m_active_scene)
+			{
+				m_editor.get_engine_core().log_error("View model: activated entity not from current active scene!\n");
+				return;
+			}
+		}
+
+		m_active_entity = entity;
+	}
+
+	ViewModel::ViewModel(Core::Editor& editor)
+		: m_editor(editor)
+		, m_active_scene(nullptr)
+		, m_active_entity(nullptr)
+	{}
+
 	struct ViewSystem::Internal
 	{
 		Core::Editor& m_editor;
@@ -84,9 +114,12 @@ namespace VadonEditor::View
 		MainWindow m_main_window;
 		ECSDebugView m_ecs_debug_view;
 
+		ViewModel m_view_model;
+
 		Internal(Core::Editor& editor)
 			: m_editor(editor)
 			, m_main_window(editor)
+			, m_view_model(editor)
 		{
 		}
 
@@ -116,8 +149,14 @@ namespace VadonEditor::View
 
 	ViewSystem::~ViewSystem() = default;
 
+	ViewModel& ViewSystem::get_view_model()
+	{
+		return m_internal->m_view_model;
+	}
+
 	ViewSystem::ViewSystem(Core::Editor& editor)
-		: m_internal(std::make_unique<Internal>(editor))
+		: System(editor)
+		, m_internal(std::make_unique<Internal>(editor))
 	{
 
 	}

@@ -27,7 +27,7 @@ namespace Vadon::ECS
 		static ComponentPoolInterface* get_component_pool(Vadon::Utilities::TypeID type_id);
 
 		template<typename T>
-		static uint32_t get_component_type_id()
+		static Vadon::Utilities::TypeID get_component_type_id()
 		{
 			return ComponentPoolInterface::get_component_type_id<T>();
 		}
@@ -42,7 +42,7 @@ namespace Vadon::ECS
 			// TODO: anything else?
 		};
 
-		std::unordered_map<uint32_t, PoolInfo> m_pool_info_lookup;
+		std::unordered_map<Vadon::Utilities::TypeID, PoolInfo> m_pool_info_lookup;
 	};
 }
 #endif

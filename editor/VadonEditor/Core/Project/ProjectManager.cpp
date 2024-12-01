@@ -81,7 +81,7 @@ namespace VadonEditor::Core
 
 		if (load_project(root_path) == false)
 		{
-			// TODO: error!
+			log_error("Project manager: invalid path!\n");
 			return false;
 		}
 
@@ -126,7 +126,7 @@ namespace VadonEditor::Core
 		Vadon::Core::EngineCoreInterface& engine_core = m_editor.get_engine_core();
 		Vadon::Core::FileSystem& file_system = engine_core.get_system<Vadon::Core::FileSystem>();
 
-		const Vadon::Core::FileSystem::Path project_path{ .path = c_project_cache_file_name };
+		const Vadon::Core::FileSystemPath project_path{ .path = c_project_cache_file_name };
 
 		if (file_system.does_file_exist(project_path) == false)
 		{
@@ -137,7 +137,7 @@ namespace VadonEditor::Core
 		Vadon::Core::FileSystem::RawFileDataBuffer project_cache_buffer;
 		if (file_system.load_file(project_path, project_cache_buffer) == false)
 		{
-			// TODO: error!
+			log_error("Project manager: unable to load file!\n");
 			return;
 		}
 
@@ -361,10 +361,10 @@ namespace VadonEditor::Core
 		Vadon::Core::EngineCoreInterface& engine_core = m_editor.get_engine_core();
 		Vadon::Core::FileSystem& file_system = engine_core.get_system<Vadon::Core::FileSystem>();
 
-		const Vadon::Core::FileSystem::Path project_path{ .path = c_project_cache_file_name };
+		const Vadon::Core::FileSystemPath project_path{ .path = c_project_cache_file_name };
 		if (file_system.save_file(project_path, project_cache_buffer) == false)
 		{
-			// TODO: error!
+			log_error("Project manager: unable to save file!\n");
 			return;
 		}
 	}

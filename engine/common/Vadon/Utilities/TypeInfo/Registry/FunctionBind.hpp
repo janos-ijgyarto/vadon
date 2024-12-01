@@ -1,5 +1,6 @@
 #ifndef VADON_UTILITIES_TYPEINFO_FUNCTIONBIND_HPP
 #define VADON_UTILITIES_TYPEINFO_FUNCTIONBIND_HPP
+#include <Vadon/Utilities/Enum/EnumClass.hpp>
 #include <Vadon/Utilities/TypeInfo/Registry/Registry.hpp>
 #include <Vadon/Utilities/TypeInfo/TypeList.hpp>
 
@@ -32,11 +33,13 @@ namespace Vadon::Utilities
 	{
 		if constexpr (std::is_base_of_v<Vadon::Scene::ResourceHandle, T> && (std::is_same_v<Vadon::Scene::ResourceHandle, T> == false))
 		{
-			return ErasedDataTypeID{ .type = ErasedDataType::RESOURCE_HANDLE, .id = Vadon::Utilities::TypeRegistry::get_type_id<typename T::_ResourceType>() };
+			return ErasedDataTypeID{ .type = ErasedDataType::RESOURCE_HANDLE, 
+				.id = Vadon::Utilities::to_integral(Vadon::Utilities::TypeRegistry::get_type_id<typename T::_ResourceType>()) };
 		}
 		else if constexpr (type_list_has_type_v<variant_type_mapping_t<T>, Variant>)
 		{
-			return ErasedDataTypeID{ .type = ErasedDataType::TRIVIAL, .id = type_list_index_v<variant_type_mapping_t<T>, Variant> };
+			return ErasedDataTypeID{ .type = ErasedDataType::TRIVIAL, 
+				.id = type_list_index_v<variant_type_mapping_t<T>, Variant> };
 		}
 		else
 		{

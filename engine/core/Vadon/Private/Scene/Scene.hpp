@@ -1,13 +1,18 @@
 #ifndef VADON_PRIVATE_SCENE_SCENE_HPP
 #define VADON_PRIVATE_SCENE_SCENE_HPP
 #include <Vadon/Private/Scene/Resource/Resource.hpp>
+#include <Vadon/Scene/Scene.hpp>
 #include <Vadon/Utilities/Data/Variant.hpp>
 #include <Vadon/Utilities/TypeInfo/Registry/ErasedDataType.hpp>
 namespace Vadon::Private::Scene
 {
+	using Scene = Vadon::Scene::Scene;
+
+	using SceneHandle = Vadon::Scene::SceneHandle;
+
 	using SceneComponent = Vadon::Scene::SceneComponent;
 
-	struct SceneData : public Vadon::Scene::Scene
+	struct SceneData
 	{
 		struct ComponentData
 		{
@@ -18,7 +23,7 @@ namespace Vadon::Private::Scene
 				Vadon::Utilities::ErasedDataTypeID data_type;
 			};
 
-			Vadon::Utilities::TypeID type_id = Vadon::Utilities::c_invalid_type_id;
+			Vadon::Utilities::TypeID type_id = Vadon::Utilities::TypeID::INVALID;
 			std::vector<Property> properties;
 		};
 
@@ -26,7 +31,7 @@ namespace Vadon::Private::Scene
 		{
 			std::string name;
 			int32_t parent = -1;
-			ResourceHandle scene;
+			SceneHandle scene;
 			std::vector<ComponentData> components;
 
 			bool has_parent() const { return (parent >= 0); }

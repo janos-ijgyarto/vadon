@@ -4,7 +4,7 @@
 #include <VadonEditor/Core/Project/ProjectManager.hpp>
 
 #include <VadonEditor/Model/Resource/ResourceSystem.hpp>
-#include <VadonEditor/Model/Scene/SceneTree.hpp>
+#include <VadonEditor/Model/Scene/SceneSystem.hpp>
 
 #include <Vadon/Core/File/FileSystem.hpp>
 
@@ -21,13 +21,13 @@ namespace VadonEditor::Model
 		Vadon::ECS::World m_ecs_world;
 
 		ResourceSystem m_resource_system;
-		SceneTree m_scene_tree;
+		SceneSystem m_scene_system;
 
 		std::vector<std::function<void()>> m_callbacks;
 
 		Internal(Core::Editor& editor)
 			: m_resource_system(editor)
-			, m_scene_tree(editor)
+			, m_scene_system(editor)
 		{
 		}
 
@@ -38,7 +38,7 @@ namespace VadonEditor::Model
 				return false;
 			}
 
-			if (m_scene_tree.initialize() == false)
+			if (m_scene_system.initialize() == false)
 			{
 				return false;
 			}
@@ -52,27 +52,14 @@ namespace VadonEditor::Model
 
 			if (project_manager.get_state() != Core::ProjectManager::State::PROJECT_LOADED)
 			{
-				// TODO: error!
+				editor.get_engine_core().log_error("Model system: unable to load project!\n");
 				return false;
 			}
 
-			// Load all resources from project root
-			Vadon::Core::EngineCoreInterface& engine_core = editor.get_engine_core();
-
-			Vadon::Core::FileSystem& file_system = engine_core.get_system<Vadon::Core::FileSystem>();
-			Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
-
-			// FIXME: implement resource cache, recursively look up all resources, check whether anything changed
-			const Vadon::Core::FileSystem::Path root_path{ .path = "", .root = project_manager.get_active_project().root_dir_handle };
-			const std::vector<std::string> scene_files = file_system.get_files_of_type(root_path, ".vdsc");
-			for (const std::string& current_scene_file : scene_files)
+			if (m_resource_system.load_project_resources() == false)
 			{
-				const Vadon::Scene::ResourcePath current_scene_path{ .path = current_scene_file, .root_directory = project_manager.get_active_project().root_dir_handle };
-				const Vadon::Scene::ResourceHandle imported_resource_handle = resource_system.import_resource(current_scene_path);
-				if (imported_resource_handle.is_valid() == false)
-				{
-					Vadon::Core::Logger::log_warning(std::format("Model system: unable to load scene at \"{}\"!\n", current_scene_file));
-				}
+				editor.get_engine_core().log_error("Model system: unable to load project!\n");
+				return false;
 			}
 
 			return true;
@@ -99,10 +86,10 @@ namespace VadonEditor::Model
 	{
 		return m_internal->m_resource_system;
 	}
-
-	SceneTree& ModelSystem::get_scene_tree()
+	
+	SceneSystem& ModelSystem::get_scene_system()
 	{
-		return m_internal->m_scene_tree;
+		return m_internal->m_scene_system;
 	}
 
 	void ModelSystem::add_callback(std::function<void()> callback)

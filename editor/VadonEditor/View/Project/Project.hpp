@@ -26,7 +26,10 @@ namespace VadonEditor::View
 
 		// TODO: other configurable parameters?
 		UI::Developer::InputText m_input_name;
-		UI::Developer::InputText m_input_path; // FIXME: implement file browser!
+		UI::Developer::Button m_browse_button;
+		std::string m_root_path;
+
+		UI::Developer::FileBrowserDialog m_file_browser;
 
 		UI::Developer::Button m_create_button;
 		UI::Developer::Button m_cancel_button;

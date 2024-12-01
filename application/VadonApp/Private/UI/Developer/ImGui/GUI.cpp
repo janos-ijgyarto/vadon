@@ -989,6 +989,11 @@ float4 main(PS_INPUT input) : SV_Target
 
     bool GUISystem::draw_list_box(ListBox& list_box, bool* double_clicked)
     {
+        if (double_clicked)
+        {
+            *double_clicked = false;
+        }
+
         if (ImGui::BeginListBox(list_box.label.c_str(), ImVec2{ list_box.size.x, list_box.size.y }))
         {
             int32_t current_item_index = 0;

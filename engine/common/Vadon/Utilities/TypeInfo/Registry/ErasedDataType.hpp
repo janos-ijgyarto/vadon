@@ -12,7 +12,7 @@ namespace Vadon::Utilities
 	struct ErasedDataTypeID
 	{
 		ErasedDataType type;
-		Vadon::Utilities::TypeID id;
+		std::underlying_type_t<TypeID> id; // NOTE: have to use underlying_type for simplicity in type erasure API
 	};
 }
 #endif

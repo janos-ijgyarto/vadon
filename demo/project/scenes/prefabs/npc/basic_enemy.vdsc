@@ -1,0 +1,60 @@
+{
+    "id": "pkAqPxdbTJ2nT3leq61HeA==",
+    "properties": {
+        "name": ""
+    },
+    "scene_data": {
+        "entities": [
+            {
+                "components": [
+                    {
+                        "properties": {
+                            "position": [
+                                0.0,
+                                0.0
+                            ],
+                            "rotation": 0.0,
+                            "scale": 20.0
+                        },
+                        "type": "VadonDemo::Model::Transform2D"
+                    },
+                    {
+                        "properties": {
+                            "color": [
+                                1.0,
+                                0.0,
+                                0.0
+                            ],
+                            "type": 0,
+                            "z_order": 0.0
+                        },
+                        "type": "VadonDemo::Model::CanvasComponent"
+                    },
+                    {
+                        "properties": {
+                            "max_health": 100.0
+                        },
+                        "type": "VadonDemo::Model::Health"
+                    },
+                    {
+                        "properties": {
+                            "acceleration": 1.0,
+                            "top_speed": 10.0
+                        },
+                        "type": "VadonDemo::Model::Velocity2D"
+                    },
+                    {
+                        "properties": {
+                            "damage": 5.0,
+                            "score_reward": 100
+                        },
+                        "type": "VadonDemo::Model::Enemy"
+                    }
+                ],
+                "name": "Enemy",
+                "parent": -1
+            }
+        ]
+    },
+    "type": "Vadon::Scene::Scene"
+}

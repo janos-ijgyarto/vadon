@@ -1,0 +1,54 @@
+{
+    "id": "ZD8zDlZ3TYepiZwi7hxGkA==",
+    "properties": {
+        "name": ""
+    },
+    "scene_data": {
+        "entities": [
+            {
+                "components": [
+                    {
+                        "properties": {
+                            "position": [
+                                0.0,
+                                0.0
+                            ],
+                            "rotation": 0.0,
+                            "scale": 9.0
+                        },
+                        "type": "VadonDemo::Model::Transform2D"
+                    },
+                    {
+                        "properties": {
+                            "color": [
+                                1.0,
+                                1.0,
+                                0.0
+                            ],
+                            "type": 2,
+                            "z_order": 0.0
+                        },
+                        "type": "VadonDemo::Model::CanvasComponent"
+                    },
+                    {
+                        "properties": {
+                            "acceleration": 0.0,
+                            "top_speed": 300.0
+                        },
+                        "type": "VadonDemo::Model::Velocity2D"
+                    },
+                    {
+                        "properties": {
+                            "damage": 10.0,
+                            "range": 300.0
+                        },
+                        "type": "VadonDemo::Model::Projectile"
+                    }
+                ],
+                "name": "Projectile",
+                "parent": -1
+            }
+        ]
+    },
+    "type": "Vadon::Scene::Scene"
+}

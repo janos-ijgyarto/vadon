@@ -18,10 +18,6 @@ namespace VadonEditor::View
 	private:
 		SceneTreeWindow(Core::Editor& editor);
 
-		void on_new_scene_action();
-		void on_load_scene_action();
-		void on_save_scene_action();
-
 		void draw(VadonApp::UI::Developer::GUISystem& dev_gui);
 
 		Core::Editor& m_editor;

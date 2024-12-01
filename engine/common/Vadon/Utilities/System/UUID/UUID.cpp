@@ -1,6 +1,7 @@
 #include <Vadon/Private/PCH/Common.hpp>
 #include <Vadon/Utilities/System/UUID/UUID.hpp>
 
+#include <Vadon/Core/Logger.hpp>
 #include <Vadon/Utilities/Data/Encoding/Base64.hpp>
 
 // UUID generation implementation taken from: http://graemehill.ca/minimalist-cross-platform-uuid-guid-generation-in-c++/
@@ -21,7 +22,7 @@ namespace
 
         if (FAILED(result))
         {
-            // TODO: error message?
+            Vadon::Core::Logger::log_error("UUID: failed to generate GUID!\n");
             return Vadon::Utilities::UUID{};
         }
 
@@ -73,11 +74,17 @@ namespace Vadon::Utilities
 
     std::string UUID::to_base64_string() const
     {
-        return Base64::encode(data);
+        return is_valid() ? Base64::encode(data) : "";
     }
 
     bool UUID::from_base64_string(std::string_view data_string)
     {
+        if (data_string.empty())
+        {
+            invalidate();
+            return true;
+        }
+
         std::vector<unsigned char> decoded_data;
         if (Base64::decode(data_string, decoded_data) == false)
         {

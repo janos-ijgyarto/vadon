@@ -26,6 +26,8 @@ namespace Vadon::Utilities
 			return std::memcmp(data.data(), c_invalid_uuid_data.data(), data.size()) != 0;
 		}
 
+		void invalidate() { data = c_invalid_uuid_data; }
+
 		VADONCOMMON_API std::string to_base64_string() const;
 		VADONCOMMON_API bool from_base64_string(std::string_view data_string);
 	};

@@ -6,7 +6,7 @@
 
 namespace Vadon::Private::Core
 {
-	RootDirectoryHandle FileSystem::add_root_directory(RootDirectoryInfo info)
+	RootDirectoryHandle FileSystem::add_root_directory(const RootDirectoryInfo& info)
 	{
 		// TODO: allow relative path from executable?
 		const std::filesystem::path root_path(info.path);
@@ -41,33 +41,40 @@ namespace Vadon::Private::Core
 		m_root_pool.remove(root_handle);
 	}
 
-	std::string FileSystem::get_absolute_path(Path path) const
+	std::string FileSystem::get_absolute_path(const FileSystemPath& path) const
 	{
 		return internal_get_absolute_path(path).string();
 	}
 
-	std::vector<std::string> FileSystem::get_files_of_type(Path path, std::string_view type, bool recursive) const
+	std::string FileSystem::get_relative_path(std::string_view path, RootDirectoryHandle root_handle) const
 	{
-		std::vector<std::string> result;
+		const RootDirectoryData& root_dir = m_root_pool.get(root_handle.is_valid() ? root_handle : m_default_root);
+		return std::filesystem::relative(path, root_dir.path).string();
+	}
 
-		const std::filesystem::path root_path = internal_get_absolute_path(path);
+	std::vector<FileSystemPath> FileSystem::get_files_of_type(const FileSystemPath& root_path, std::string_view type, bool recursive) const
+	{
+		std::vector<FileSystemPath> result;
+
+		const std::filesystem::path root_fs_path = internal_get_absolute_path(root_path);
 		if(recursive == true)
 		{
-			for (const auto& directory_entry : std::filesystem::recursive_directory_iterator(root_path))
+			for (const auto& directory_entry : std::filesystem::recursive_directory_iterator(root_fs_path))
 			{
-				if ((directory_entry.is_regular_file() == true) && (directory_entry.path().extension() == type))
-				{
-					result.push_back(std::filesystem::relative(directory_entry.path(), root_path).string());
+				// FIXME: the extension check is super cursed, should split and check equality with each entry!
+				if ((directory_entry.is_regular_file() == true) && (type.find(directory_entry.path().extension().string()) != std::string::npos))
+				{					
+					result.push_back(FileSystemPath{ .root_directory = root_path.root_directory, .path = std::filesystem::relative(directory_entry.path(), root_fs_path).string() });
 				}
 			}
 		}
 		else
 		{
-			for (const auto& directory_entry : std::filesystem::directory_iterator(root_path))
+			for (const auto& directory_entry : std::filesystem::directory_iterator(root_fs_path))
 			{
 				if ((directory_entry.is_regular_file() == true) && (directory_entry.path().extension() == type))
 				{
-					result.push_back(std::filesystem::relative(directory_entry.path(), root_path).string());
+					result.push_back(FileSystemPath{ .root_directory = root_path.root_directory, .path = std::filesystem::relative(directory_entry.path(), root_fs_path).string() });
 				}
 			}
 		}
@@ -75,17 +82,17 @@ namespace Vadon::Private::Core
 		return result;
 	}
 
-	size_t FileSystem::get_file_size(Path path) const
+	size_t FileSystem::get_file_size(const FileSystemPath& path) const
 	{
 		return internal_get_file_size(get_absolute_path(path));
 	}
 
-	bool FileSystem::does_file_exist(Path path) const
+	bool FileSystem::does_file_exist(const FileSystemPath& path) const
 	{
 		return std::filesystem::exists(internal_get_absolute_path(path));
 	}
 
-	bool FileSystem::save_file(Path path, const RawFileDataBuffer& file_data)
+	bool FileSystem::save_file(const FileSystemPath& path, const RawFileDataBuffer& file_data)
 	{
 		const std::filesystem::path absolute_path = internal_get_absolute_path(path);
 
@@ -116,7 +123,7 @@ namespace Vadon::Private::Core
 		return true;
 	}
 
-	bool FileSystem::load_file(Path path, RawFileDataBuffer& file_data)
+	bool FileSystem::load_file(const FileSystemPath& path, RawFileDataBuffer& file_data)
 	{
 		const std::filesystem::path absolute_path = internal_get_absolute_path(path);
 		if (std::filesystem::exists(absolute_path) != true)
@@ -164,7 +171,7 @@ namespace Vadon::Private::Core
 		return true;
 	}
 
-	std::filesystem::path FileSystem::internal_get_absolute_path(Path path) const
+	std::filesystem::path FileSystem::internal_get_absolute_path(const FileSystemPath& path) const
 	{
 		std::filesystem::path fs_path(path.path);
 		if (fs_path.is_absolute() == true)
@@ -174,10 +181,10 @@ namespace Vadon::Private::Core
 		}
 
 		// Append to root path
-		const RootDirectoryHandle root_dir_handle = path.root.is_valid() ? path.root : m_default_root;
+		const RootDirectoryHandle root_dir_handle = path.root_directory.is_valid() ? path.root_directory : m_default_root;
 		const RootDirectoryData& root_dir = m_root_pool.get(root_dir_handle);
 
-		return root_dir.path / fs_path;
+		return path.path.empty() == false ? root_dir.path / fs_path : root_dir.path;
 	}
 
 	size_t FileSystem::internal_get_file_size(const std::filesystem::path& absolute_path) const

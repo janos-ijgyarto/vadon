@@ -1,0 +1,50 @@
+{
+    "id": "TqsMmMToSB6ND9daJ92XHw==",
+    "properties": {
+        "name": ""
+    },
+    "scene_data": {
+        "entities": [
+            {
+                "components": [
+                    {
+                        "properties": {
+                            "dimensions": [
+                                500.0,
+                                500.0
+                            ],
+                            "display_name": ""
+                        },
+                        "type": "VadonDemo::Model::Map"
+                    },
+                    {
+                        "properties": {
+                            "position": [
+                                0.0,
+                                0.0
+                            ],
+                            "rotation": 0.0,
+                            "scale": 1000.0
+                        },
+                        "type": "VadonDemo::Model::Transform2D"
+                    },
+                    {
+                        "properties": {
+                            "color": [
+                                0.0,
+                                0.48235294222831726,
+                                0.0
+                            ],
+                            "type": 1,
+                            "z_order": 0.0
+                        },
+                        "type": "VadonDemo::Model::CanvasComponent"
+                    }
+                ],
+                "name": "Map",
+                "parent": -1
+            }
+        ]
+    },
+    "type": "Vadon::Scene::Scene"
+}

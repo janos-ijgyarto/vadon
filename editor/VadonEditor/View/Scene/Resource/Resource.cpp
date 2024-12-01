@@ -16,14 +16,14 @@ namespace VadonEditor::View
 		m_resource_list_box.label = "Resources";
 	}
 
-	Model::ResourceInfo SelectResourceDialog::get_selected_resource()
+	Vadon::Scene::ResourceHandle SelectResourceDialog::get_selected_resource()
 	{
 		if (m_resource_list_box.has_valid_selection() == true)
 		{
 			return m_resource_list[m_resource_list_box.selected_item];
 		}
 
-		return Model::ResourceInfo();
+		return Vadon::Scene::ResourceHandle();
 	}
 
 	UI::Developer::Dialog::Result SelectResourceDialog::internal_draw(UI::Developer::GUISystem& dev_gui)
@@ -63,11 +63,17 @@ namespace VadonEditor::View
 		m_resource_list_box.deselect();
 
 		Model::ResourceSystem& resource_system = m_editor.get_system<Model::ModelSystem>().get_resource_system();
-		m_resource_list = resource_system.get_resource_list(m_resource_type);
+		std::vector<Model::ResourceInfo> resource_info_list = resource_system.get_resource_list(m_resource_type);
 
-		for (const Model::ResourceInfo& resource_info : m_resource_list)
+		for (const Model::ResourceInfo& current_resource_info : resource_info_list)
 		{
-			m_resource_list_box.items.push_back(resource_info.path);
+			if (current_resource_info.info.path.is_valid() == false)
+			{
+				continue;
+			}
+
+			m_resource_list_box.items.push_back(current_resource_info.info.path.path);
+			m_resource_list.push_back(current_resource_info.handle);
 		}
 	}
 }

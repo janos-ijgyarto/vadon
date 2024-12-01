@@ -8,15 +8,12 @@ namespace Vadon::Utilities
 }
 namespace Vadon::Scene
 {
-	class ResourceSystemInterface;
-
 	// FIXME: very similar to Component registry
 	// Find some way to deduplicate?
 	class ResourceRegistry
 	{
 	public:
 		using FactoryFunction = ResourceBase*(*)();
-		using SerializerFunction = bool(*)(ResourceSystemInterface&, Vadon::Utilities::Serializer&, ResourceBase&);
 
 		template<typename T, typename Base = T>
 		static void register_resource_type(FactoryFunction factory = nullptr)
@@ -34,28 +31,13 @@ namespace Vadon::Scene
 			register_resource_type(Vadon::Utilities::TypeRegistry::get_type_id<T>(), factory_impl);
 		}
 
-		template<typename T>
-		static void register_serializer(SerializerFunction serializer)
-		{
-			register_serializer(Vadon::Utilities::TypeRegistry::get_type_id<T>(), serializer);
-		}
-
-		template<typename T>
-		static SerializerFunction get_serializer()
-		{
-			get_serializer(Vadon::Utilities::TypeRegistry::get_type_id<T>());
-		}
-
 		VADONCOMMON_API static ResourceBase* create_resource(Vadon::Utilities::TypeID type_id);
-		VADONCOMMON_API static SerializerFunction get_serializer(Vadon::Utilities::TypeID type_id);
 	private:
 		VADONCOMMON_API static void register_resource_type(Vadon::Utilities::TypeID type_id, FactoryFunction factory);
-		VADONCOMMON_API static void register_serializer(Vadon::Utilities::TypeID type_id, SerializerFunction serializer);
 
 		struct ResourceTypeInfo
 		{
 			FactoryFunction factory_function;
-			SerializerFunction serializer = nullptr;
 			// TODO: anything else?
 		};
 

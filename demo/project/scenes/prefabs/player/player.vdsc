@@ -1,0 +1,64 @@
+{
+    "id": "Uw8C1hKZRsmH4sEQRuvUlA==",
+    "properties": {
+        "name": ""
+    },
+    "scene_data": {
+        "entities": [
+            {
+                "components": [
+                    {
+                        "properties": {
+                            "position": [
+                                0.0,
+                                0.0
+                            ],
+                            "rotation": 0.0,
+                            "scale": 25.0
+                        },
+                        "type": "VadonDemo::Model::Transform2D"
+                    },
+                    {
+                        "properties": {
+                            "color": [
+                                0.0,
+                                0.0,
+                                1.0
+                            ],
+                            "type": 2,
+                            "z_order": 3.0
+                        },
+                        "type": "VadonDemo::Model::CanvasComponent"
+                    },
+                    {
+                        "properties": {
+                            "acceleration": 0.0,
+                            "top_speed": 100.0
+                        },
+                        "type": "VadonDemo::Model::Velocity2D"
+                    },
+                    {
+                        "properties": {
+                            "max_health": 100.0
+                        },
+                        "type": "VadonDemo::Model::Health"
+                    },
+                    {
+                        "properties": {
+                            "projectile_prefab": "ZD8zDlZ3TYepiZwi7hxGkA==",
+                            "rate_of_fire": 180.0
+                        },
+                        "type": "VadonDemo::Model::Weapon"
+                    },
+                    {
+                        "properties": {},
+                        "type": "VadonDemo::Model::Player"
+                    }
+                ],
+                "name": "Player",
+                "parent": -1
+            }
+        ]
+    },
+    "type": "Vadon::Scene::Scene"
+}

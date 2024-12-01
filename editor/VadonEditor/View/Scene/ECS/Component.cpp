@@ -57,7 +57,7 @@ namespace VadonEditor::View
 	}
 
 	ComponentEditor::ComponentEditor()
-		: m_type_id(0)
+		: m_type_id(Vadon::Utilities::TypeID::INVALID)
 	{
 		m_remove_button.label = "Remove component";
 	}

@@ -1,13 +1,13 @@
 #include <VadonEditor/Model/Scene/Entity.hpp>
 
 #include <VadonEditor/Core/Editor.hpp>
+
 #include <VadonEditor/Model/ModelSystem.hpp>
-#include <VadonEditor/Model/Scene/SceneTree.hpp>
+#include <VadonEditor/Model/Scene/Scene.hpp>
+#include <VadonEditor/Model/Scene/SceneSystem.hpp>
 
 #include <Vadon/ECS/World/World.hpp>
 #include <Vadon/ECS/Component/Registry.hpp>
-
-#include <Vadon/Scene/Scene.hpp>
 
 #include <format>
 
@@ -148,11 +148,21 @@ namespace VadonEditor::Model
 		world.get_entity_manager().remove_child_entity(m_entity_handle, entity->m_entity_handle);
 	}
 
+	Entity* Entity::create_new_child()
+	{
+		return m_owning_scene->add_new_entity(*this);
+	}
+
+	Entity* Entity::instantiate_child_scene(Vadon::Scene::SceneHandle scene_handle)
+	{
+		return m_owning_scene->instantiate_sub_scene(scene_handle, *this);
+	}
+
 	bool Entity::add_component(Vadon::ECS::ComponentID type_id)
 	{
 		if (is_sub_scene() == true)
 		{
-			// TODO: error!
+			m_editor.get_engine_core().log_error("Cannot modify component structure of sub-scene Entity!\n");
 			return false;
 		}
 
@@ -177,7 +187,7 @@ namespace VadonEditor::Model
 	{
 		if (is_sub_scene() == true)
 		{
-			// TODO: error!
+			m_editor.get_engine_core().log_error("Cannot modify component structure of sub-scene Entity!\n");
 			return;
 		}
 
@@ -265,15 +275,17 @@ namespace VadonEditor::Model
 		void* component = component_manager.get_component(m_entity_handle, component_type_id);
 		Vadon::Utilities::TypeRegistry::set_property(component, component_type_id, property_name, value);
 
-		m_editor.get_system<ModelSystem>().get_scene_tree().entity_edited(m_entity_handle, component_type_id);
+		m_editor.get_system<ModelSystem>().get_scene_system().entity_edited(*this, component_type_id);
+		notify_modified();
 	}
 
-	Entity::Entity(Core::Editor& editor, Vadon::ECS::EntityHandle entity_handle, EntityID id, Entity* parent)
+	Entity::Entity(Core::Editor& editor, Vadon::ECS::EntityHandle entity_handle, EntityID id, Scene* owning_scene)
 		: m_editor(editor)
 		, m_id(id)
-		, m_parent(parent)
+		, m_parent(nullptr)
 		, m_entity_handle(entity_handle)
-		, m_sub_scene_child(false)
+		, m_owning_scene(owning_scene)
+		, m_sub_scene(nullptr)
 	{
 	}
 
@@ -284,7 +296,7 @@ namespace VadonEditor::Model
 
 	void Entity::notify_modified()
 	{
-		m_editor.get_system<ModelSystem>().get_scene_tree().notify_scene_modified();
+		m_owning_scene->notify_modified();
 	}
 
 	void Entity::internal_set_name(std::string_view name)

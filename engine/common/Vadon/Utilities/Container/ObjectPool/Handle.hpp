@@ -24,6 +24,13 @@ namespace Vadon::Utilities
 
 			return value;
 		}
+
+		void from_uint(uint64_t value)
+		{
+			index = value & ((1ull << 32) - 1);
+			generation = (value >> 32) & ((1ull << 16) - 1);
+			pool_generation = (value >> 48) & ((1ull << 16) - 1);
+		}
 	};
 
 	template<typename T>

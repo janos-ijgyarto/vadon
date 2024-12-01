@@ -282,37 +282,18 @@ namespace VadonDemo::UI
 			Vadon::ECS::World& ecs_world = m_game_core.get_ecs_world();
 			
 			{
-				Vadon::Core::FileSystem& file_system = engine_core.get_system<Vadon::Core::FileSystem>();
 				Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
 
-				const Vadon::Core::FileSystem::Path root_path{ .path = "", .root = m_root_directory };
-				const std::vector<std::string> scene_files = file_system.get_files_of_type(root_path, ".vdsc");
+				resource_system.import_resource_library(m_root_directory);
 
-				for (const std::string& current_scene_file : scene_files)
-				{
-					const Vadon::Scene::ResourcePath current_scene_path{ .path = current_scene_file, .root_directory = m_root_directory };
-					const Vadon::Scene::ResourceHandle current_scene_handle = resource_system.import_resource(current_scene_path);
-					if (current_scene_handle.is_valid() == false)
-					{
-						// TODO: warning!
-						continue;
-					}
-				}
-
-				const Vadon::Scene::ResourceHandle main_scene_handle = resource_system.find_resource(m_project_info.startup_scene);
+				Vadon::Scene::SceneSystem& scene_system = engine_core.get_system<Vadon::Scene::SceneSystem>();
+				const Vadon::Scene::SceneHandle main_scene_handle = scene_system.find_scene(m_project_info.startup_scene);
 				if (main_scene_handle.is_valid() == false)
 				{
 					// Something went wrong
 					return false;
 				}
 
-				if (resource_system.load_resource(main_scene_handle) == false)
-				{
-					// Something went wrong
-					return false;
-				}
-
-				Vadon::Scene::SceneSystem& scene_system = engine_core.get_system<Vadon::Scene::SceneSystem>();
 				Vadon::ECS::EntityHandle root_entity_handle = scene_system.instantiate_scene(main_scene_handle, ecs_world);
 				if (root_entity_handle.is_valid() == false)
 				{
