@@ -16,7 +16,7 @@ namespace VadonEditor::View
 		m_resource_list_box.label = "Resources";
 	}
 
-	Vadon::Scene::ResourceHandle SelectResourceDialog::get_selected_resource()
+	Vadon::Scene::ResourceHandle SelectResourceDialog::get_selected_resource() const
 	{
 		if (m_resource_list_box.has_valid_selection() == true)
 		{

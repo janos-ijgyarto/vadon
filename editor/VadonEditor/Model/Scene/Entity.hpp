@@ -1,7 +1,6 @@
 #ifndef VADONEDITOR_MODEL_SCENE_ENTITY_HPP
 #define VADONEDITOR_MODEL_SCENE_ENTITY_HPP
 #include <VadonEditor/Model/Scene/Component.hpp>
-#include <VadonEditor/Model/Scene/Scene.hpp>
 #include <Vadon/ECS/Entity/Entity.hpp>
 #include <Vadon/ECS/Component/Component.hpp>
 namespace Vadon::ECS
@@ -18,6 +17,8 @@ namespace VadonEditor::Model
 	using EntityList = std::vector<Entity*>;
 
 	using EntityID = uint32_t;
+
+	class Scene;
 
 	class Entity final
 	{
@@ -51,7 +52,7 @@ namespace VadonEditor::Model
 
 		// TODO: "archetypes" which automatically add certain components?
 		Entity* create_new_child();
-		Entity* instantiate_child_scene(Vadon::Scene::SceneHandle scene_handle);
+		Entity* instantiate_child_scene(Scene* scene);
 
 		bool add_component(Vadon::ECS::ComponentID type_id);
 		void remove_component(Vadon::ECS::ComponentID type_id);

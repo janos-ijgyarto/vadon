@@ -1,8 +1,9 @@
 #ifndef VADONEDITOR_MODEL_SCENE_SCENESYSTEM_HPP
 #define VADONEDITOR_MODEL_SCENE_SCENESYSTEM_HPP
 #include <VadonEditor/VadonEditor.hpp>
-#include <VadonEditor/Model/Scene/Scene.hpp>
 #include <VadonEditor/Model/Scene/Entity.hpp>
+#include <VadonEditor/Model/Resource/Resource.hpp>
+#include <VadonEditor/Model/Scene/Scene.hpp>
 #include <functional>
 namespace VadonEditor::Core
 {
@@ -10,6 +11,8 @@ namespace VadonEditor::Core
 }
 namespace VadonEditor::Model
 {
+	class Scene;
+
 	struct SceneInfo
 	{
 		Vadon::Scene::ResourceInfo info;
@@ -25,11 +28,15 @@ namespace VadonEditor::Model
 		// TODO: API for creating scene local resource!
 		// TODO2: API for opening a scene from a file (e.g selected in the asset browser)
 		Scene* create_scene();
+
 		Scene* get_scene(Vadon::Scene::SceneHandle scene_handle);
-		void remove_scene(Scene* scene);
+
+		Scene* import_scene(const ResourcePath& path);
 
 		void open_scene(Scene* scene);
 		void close_scene(Scene* scene);
+
+		void remove_scene(Scene* scene);
 
 		std::vector<SceneInfo> get_scene_list() const;
 
@@ -42,13 +49,13 @@ namespace VadonEditor::Model
 
 		VADONEDITOR_API bool initialize();
 
-		Scene* find_scene(Vadon::Scene::SceneHandle scene_handle);
-		Scene* internal_create_scene(Vadon::Scene::SceneHandle scene_handle);
+		Scene* find_scene(Resource* resource);
+		Scene* internal_create_scene(Resource* resource);
 		void internal_remove_scene(Scene* scene);
 
 		Core::Editor& m_editor;
 
-		std::unordered_map<uint64_t, Scene> m_scene_lookup;
+		std::unordered_map<Resource*, Scene> m_scene_lookup;
 		EntityID m_entity_id_counter;
 
 		std::vector<EditCallback> m_edit_callbacks;

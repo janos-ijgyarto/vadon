@@ -3,7 +3,7 @@
     "properties": {
         "name": ""
     },
-    "scene_data": {
+    "data": {
         "entities": [
             {
                 "components": [],

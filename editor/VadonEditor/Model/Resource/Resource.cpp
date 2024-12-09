@@ -12,15 +12,16 @@
 
 namespace VadonEditor::Model
 {
-	void Resource::set_path(const Vadon::Scene::ResourcePath& path)
+	Vadon::Scene::ResourceInfo VadonEditor::Model::Resource::get_info() const
 	{
-		// TODO: should we check here whether we are trying to overwrite an existing file?
-		// TODO2: validate extension?
+		Vadon::Scene::ResourceSystem& resource_system = m_editor.get_engine_core().get_system<Vadon::Scene::ResourceSystem>();
+		return resource_system.get_resource_info(m_handle);
+	}
+
+	void Resource::set_path(const ResourcePath& path)
+	{
 		Vadon::Scene::ResourceSystem& resource_system = m_editor.get_engine_core().get_system<Vadon::Scene::ResourceSystem>();
 		resource_system.set_resource_path(m_handle, path);
-
-		notify_modified();
-		update_info();
 	}
 
 	bool Resource::save()
@@ -28,25 +29,36 @@ namespace VadonEditor::Model
 		Vadon::Scene::ResourceSystem& resource_system = m_editor.get_engine_core().get_system<Vadon::Scene::ResourceSystem>();
 		if (resource_system.save_resource(m_handle) == false)
 		{
-			resource_system.log_error("Unable to save resource!\n");
+			resource_system.log_error("Editor resource: failed to save resource!\n");
 			return false;
 		}
 
-		m_modified = false;
+		clear_modified();
 		return true;
 	}
 
 	bool Resource::load()
 	{
 		Vadon::Scene::ResourceSystem& resource_system = m_editor.get_engine_core().get_system<Vadon::Scene::ResourceSystem>();
+		if (resource_system.is_resource_loaded(m_handle) == true)
+		{
+			return true;
+		}
+
 		if (resource_system.load_resource(m_handle) == false)
 		{
-			resource_system.log_error("Unable to load resource!\n");
+			resource_system.log_error("Editor resource: failed to load resource!\n");
 			return false;
 		}
 
-		update_info();
+		clear_modified();
 		return true;
+	}
+
+	bool Resource::is_loaded() const
+	{
+		Vadon::Scene::ResourceSystem& resource_system = m_editor.get_engine_core().get_system<Vadon::Scene::ResourceSystem>();
+		return resource_system.is_resource_loaded(m_handle);
 	}
 
 	Vadon::Utilities::Variant Resource::get_property(std::string_view property_name) const
@@ -54,7 +66,7 @@ namespace VadonEditor::Model
 		Vadon::Scene::ResourceSystem& resource_system = m_editor.get_engine_core().get_system<Vadon::Scene::ResourceSystem>();
 
 		Vadon::Scene::ResourceBase* resource_base = resource_system.get_resource_base(m_handle);
-		return Vadon::Utilities::TypeRegistry::get_property(resource_base, m_info.type_id, property_name);
+		return Vadon::Utilities::TypeRegistry::get_property(resource_base, get_info().type_id, property_name);
 	}
 
 	void Resource::edit_property(std::string_view property_name, const Vadon::Utilities::Variant& value)
@@ -62,7 +74,7 @@ namespace VadonEditor::Model
 		Vadon::Scene::ResourceSystem& resource_system = m_editor.get_engine_core().get_system<Vadon::Scene::ResourceSystem>();
 
 		Vadon::Scene::ResourceBase* resource_base = resource_system.get_resource_base(m_handle);
-		Vadon::Utilities::TypeRegistry::set_property(resource_base, m_info.type_id, property_name, value);
+		Vadon::Utilities::TypeRegistry::set_property(resource_base, get_info().type_id, property_name, value);
 
 		notify_modified();
 	}
@@ -73,18 +85,5 @@ namespace VadonEditor::Model
 		, m_modified(false)
 	{
 
-	}
-
-	bool Resource::initialize()
-	{
-		// TODO: anything else?
-		update_info();
-		return true;
-	}
-
-	void Resource::update_info()
-	{
-		Vadon::Scene::ResourceSystem& resource_system = m_editor.get_engine_core().get_system<Vadon::Scene::ResourceSystem>();
-		m_info = resource_system.get_resource_info(m_handle);
 	}
 }

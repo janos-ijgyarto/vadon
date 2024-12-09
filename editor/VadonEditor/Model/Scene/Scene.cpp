@@ -3,6 +3,7 @@
 #include <VadonEditor/Core/Editor.hpp>
 
 #include <VadonEditor/Model/ModelSystem.hpp>
+#include <VadonEditor/Model/Resource/Resource.hpp>
 #include <VadonEditor/Model/Scene/SceneSystem.hpp>
 #include <VadonEditor/Model/Scene/Entity.hpp>
 
@@ -12,53 +13,61 @@
 
 namespace VadonEditor::Model
 {
-	void Scene::set_path(const Vadon::Scene::ResourcePath& path)
+	Vadon::Scene::SceneHandle Scene::get_handle() const
 	{
-		Vadon::Scene::ResourceSystem& resource_system = m_editor.get_engine_core().get_system<Vadon::Scene::ResourceSystem>();
-		resource_system.set_resource_path(m_handle, path);
+		return Vadon::Scene::SceneHandle().from_resource_handle(m_resource->get_handle());
+	}
 
-		notify_modified();
-		update_info();
+	Vadon::Scene::ResourceInfo Scene::get_info() const
+	{
+		return m_resource->get_info();
+	}
+
+	void Scene::set_path(const Vadon::Core::FileSystemPath& path)
+	{
+		m_resource->set_path(path);
 	}
 
 	bool Scene::save()
 	{
-		if(m_modified == false)
+		if(is_modified() == false)
 		{
 			// Nothing to do
 			return true;
 		}
 
-		// Must have a valid root entity to save
-		if (is_open() == false)
-		{
-			m_editor.get_engine_core().log_error("Cannot save Scene that is not opened!\n");
-			return false;
-		}
-
+		// First package the scene data
 		Vadon::Scene::SceneSystem& scene_system = m_editor.get_engine_core().get_system<Vadon::Scene::SceneSystem>();
 		Vadon::ECS::World& ecs_world = m_editor.get_system<ModelSystem>().get_ecs_world();
 
-		if (scene_system.package_scene_data(m_handle, ecs_world, m_root_entity->get_handle()) == false)
+		if (scene_system.package_scene_data(get_handle(), ecs_world, m_root_entity->get_handle()) == false)
 		{
-			m_editor.get_engine_core().log_error("Failed to package Scene data!\n");
+			m_editor.get_engine_core().log_error("Editor scene: failed to package Scene data!\n");
 			return false;
 		}
 
-		if (scene_system.save_scene(m_handle) == false)
+		if (m_resource->save() == false)
 		{
-			m_editor.get_engine_core().log_error("Failed to save Scene!\n");
+			m_editor.get_engine_core().log_error("Editor scene: failed to save Scene!\n");
 			return false;
 		}
 
-		clear_modified();
 		return true;
 	}
 
 	bool Scene::load()
 	{
-		Vadon::Scene::SceneSystem& scene_system = m_editor.get_engine_core().get_system<Vadon::Scene::SceneSystem>();
-		return scene_system.load_scene(m_handle);
+		if (is_loaded() == true)
+		{
+			// Nothing to do
+			return true;
+		}
+		return m_resource->load();
+	}
+
+	bool Scene::is_loaded() const
+	{
+		return m_resource->is_loaded();
 	}
 
 	Entity* Scene::add_new_entity(Entity& parent)
@@ -66,49 +75,39 @@ namespace VadonEditor::Model
 		// Scene can only modify its own contents
 		if (is_owner_of_entity(parent) == false)
 		{
-			m_editor.get_engine_core().log_error("Scene cannot modify Entities of other scenes!\n");
+			m_editor.get_engine_core().log_error("Editor scene: cannot modify Entities of other scenes!\n");
 			return nullptr;
 		}
 
 		return internal_add_new_entity(&parent);
 	}
 
-	Entity* Scene::instantiate_sub_scene(Vadon::Scene::SceneHandle scene_handle, Entity& parent)
+	Entity* Scene::instantiate_sub_scene(Scene* scene, Entity& parent)
 	{
 		// Should not try to instantiate itself within itself!
-		if (scene_handle == m_handle)
+		if (scene->get_handle() == get_handle())
 		{
-			m_editor.get_engine_core().log_error("Scene cannot add itself as sub-scene!\n");
-			return nullptr;
-		}
-
-		Vadon::Scene::SceneSystem& scene_system = m_editor.get_engine_core().get_system<Vadon::Scene::SceneSystem>();
-		if (scene_system.is_scene_dependent(m_handle, scene_handle) == true)
-		{
-			m_editor.get_engine_core().log_error("Cannot instantiate sub-scene that is dependent on this scene!\n");
+			m_editor.get_engine_core().log_error("Editor scene: cannot add itself as sub-scene!\n");
 			return nullptr;
 		}
 
 		// Scene can only modify its own contents
 		if (is_owner_of_entity(parent) == false)
 		{
-			m_editor.get_engine_core().log_error("Cannot add sub-scene to Entity not owned by this scene!\n");
+			m_editor.get_engine_core().log_error("Editor scene: cannot add sub-scene to Entity not owned by this scene!\n");
 			return nullptr;
 		}
 
-		SceneSystem& model_scene_system = m_editor.get_system<Model::ModelSystem>().get_scene_system();
-		Scene* sub_scene = model_scene_system.get_scene(scene_handle);
-
-		if (sub_scene == nullptr)
+		if (is_scene_dependent(scene->get_handle()) == true)
 		{
-			m_editor.get_engine_core().log_error("Cannot find Scene object for sub-scene!\n");
+			m_editor.get_engine_core().log_error("Editor scene: cannot instantiate sub-scene that is dependent on this scene!\n");
 			return nullptr;
 		}
 
-		Vadon::ECS::EntityHandle sub_scene_root_handle = sub_scene->instantiate(true);
+		Vadon::ECS::EntityHandle sub_scene_root_handle = scene->instantiate(true);
 		if (sub_scene_root_handle.is_valid() == false)
 		{
-			m_editor.get_engine_core().log_error("Failed to instantiate sub-scene!\n");
+			m_editor.get_engine_core().log_error("Editor scene: failed to instantiate sub-scene!\n");
 			return nullptr;
 		}
 
@@ -119,7 +118,7 @@ namespace VadonEditor::Model
 	{
 		if (is_owner_of_entity(entity) == false)
 		{
-			m_editor.get_engine_core().log_error("Scene cannot modify Entities of other scenes!\n");
+			m_editor.get_engine_core().log_error("Editor scene: cannot modify Entities of other scenes!\n");
 			return false;
 		}
 
@@ -136,31 +135,44 @@ namespace VadonEditor::Model
 
 	Vadon::ECS::EntityHandle Scene::instantiate(bool is_sub_scene)
 	{
-		// Make sure scene is loaded
-		if (load() == false)
-		{
-			return Vadon::ECS::EntityHandle();
-		}
-
 		Vadon::ECS::World& ecs_world = m_editor.get_system<ModelSystem>().get_ecs_world();
 		Vadon::Scene::SceneSystem& scene_system = m_editor.get_engine_core().get_system<Vadon::Scene::SceneSystem>();
-		return scene_system.instantiate_scene(m_handle, ecs_world, is_sub_scene);
+
+		Vadon::ECS::EntityHandle instantiated_entity_handle = scene_system.instantiate_scene(get_handle(), ecs_world, is_sub_scene);
+		if (instantiated_entity_handle.is_valid() == false)
+		{
+			m_editor.get_engine_core().log_error("Editor scene: failed to instantiate scene!\n");
+		}
+
+		return instantiated_entity_handle;
 	}
 
-	Scene::Scene(Core::Editor& editor, Vadon::Scene::SceneHandle scene_handle)
+	bool Scene::is_modified() const
+	{
+		return m_resource->is_modified();
+	}
+
+	void Scene::notify_modified()
+	{
+		m_resource->notify_modified();
+	}
+
+	void Scene::clear_modified()
+	{
+		m_resource->clear_modified();
+	}
+
+	Scene::Scene(Core::Editor& editor, Resource* scene_resource)
 		: m_editor(editor)
-		, m_handle(scene_handle)
+		, m_resource(scene_resource)
 		, m_root_entity(nullptr)
-		, m_modified(false)
 	{
 
 	}
 
 	bool Scene::initialize()
 	{
-		update_info();
-
-		if (m_info.path.is_valid() == false)
+		if (m_resource->get_info().path.is_valid() == false)
 		{
 			init_empty_scene();
 		}
@@ -172,12 +184,6 @@ namespace VadonEditor::Model
 	{
 		// Replace root with a new empty entity
 		m_root_entity = internal_add_new_entity(nullptr);
-	}
-
-	void Scene::update_info()
-	{
-		Vadon::Scene::ResourceSystem& resource_system = m_editor.get_engine_core().get_system<Vadon::Scene::ResourceSystem>();
-		m_info = resource_system.get_resource_info(m_handle);
 	}
 
 	Entity* Scene::internal_add_new_entity(Entity* parent)
@@ -223,6 +229,12 @@ namespace VadonEditor::Model
 		return entity.get_owning_scene() == this;
 	}
 
+	bool Scene::is_scene_dependent(Vadon::Scene::SceneHandle scene_handle) const
+	{
+		Vadon::Scene::SceneSystem& scene_system = m_editor.get_engine_core().get_system<Vadon::Scene::SceneSystem>();
+		return scene_system.is_scene_dependent(get_handle(), scene_handle);
+	}
+
 	Entity* Scene::instantiate_scene_recursive(Vadon::ECS::EntityHandle entity_handle, Entity* parent)
 	{
 		Vadon::ECS::World& ecs_world = m_editor.get_system<ModelSystem>().get_ecs_world();
@@ -256,11 +268,6 @@ namespace VadonEditor::Model
 
 	void Scene::instantiate_from_root()
 	{
-		if (m_root_entity != nullptr)
-		{
-			m_editor.get_engine_core().log_error("Scene already has root Entity!\n");
-			return;
-		}
 		Vadon::ECS::EntityHandle root_entity_handle = instantiate(false);
 		m_root_entity = instantiate_scene_recursive(root_entity_handle);
 	}

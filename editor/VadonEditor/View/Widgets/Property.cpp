@@ -3,7 +3,7 @@
 #include <VadonEditor/Core/Editor.hpp>
 
 #include <VadonEditor/Model/ModelSystem.hpp>
-#include <VadonEditor/Model/Resource/ResourceSystem.hpp>
+#include <VadonEditor/Model/Resource/Resource.hpp>
 
 #include <VadonEditor/View/Scene/Resource/Resource.hpp>
 

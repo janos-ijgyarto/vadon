@@ -1,7 +1,6 @@
 #ifndef VADONEDITOR_MODEL_MODELSYSTEM_HPP
 #define VADONEDITOR_MODEL_MODELSYSTEM_HPP
 #include <VadonEditor/Model/Module.hpp>
-#include <Vadon/ECS/Component/Component.hpp>
 #include <memory>
 #include <functional>
 namespace Vadon::ECS

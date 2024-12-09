@@ -3,6 +3,7 @@
 #include <VadonEditor/Model/ModelSystem.hpp>
 
 #include <VadonEditor/Model/Scene/Entity.hpp>
+#include <VadonEditor/Model/Scene/Scene.hpp>
 
 #include <VadonEditor/View/ViewSystem.hpp>
 

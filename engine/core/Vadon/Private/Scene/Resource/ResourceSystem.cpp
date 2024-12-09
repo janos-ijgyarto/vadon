@@ -12,16 +12,70 @@
 
 namespace
 {
+	struct ResourceLoader
+	{
+		Vadon::Utilities::Serializer::Instance serializer_instance;
+
+		bool initialize(Vadon::Core::EngineCoreInterface& engine_core, const Vadon::Scene::ResourcePath& path)
+		{
+			if (path.is_valid() == false)
+			{
+				engine_core.log_error("Resource system: cannot load a resource without a valid path!\n");
+				return false;
+			}
+
+			Vadon::Core::FileSystem& file_system = engine_core.get_system<Vadon::Core::FileSystem>();
+			Vadon::Core::FileSystem::RawFileDataBuffer resource_file_buffer;
+			if (file_system.load_file(path, resource_file_buffer) == false)
+			{
+				engine_core.log_error("Resource system: failed to load resource file!\n");
+				return false;
+			}
+
+			// FIXME: support binary file serialization!
+			// Solution: have file system create the appropriate serializer!
+			serializer_instance = Vadon::Utilities::Serializer::create_serializer(resource_file_buffer, Vadon::Utilities::Serializer::Type::JSON, Vadon::Utilities::Serializer::Mode::READ);
+
+			if (serializer_instance->initialize() == false)
+			{
+				engine_core.log_error("Resource system: failed to initialize serializer while loading resource!\n");
+				return false;
+			}
+
+			return true;
+		}
+
+		void finalize(Vadon::Core::EngineCoreInterface& engine_core)
+		{
+			if (serializer_instance->finalize() == false)
+			{
+				engine_core.log_error("Resource system: failed to finalize serializer after loading resource!\n");
+			}
+		}
+	};
+
 	void invalid_resource_data_error()
 	{
 		// TODO: print absolute path!
 		Vadon::Core::Logger::log_error("Resource system error: invalid resource data!\n");
 	}
 
-	void resource_failed_to_serialize()
+	void resource_info_failed_to_serialize()
+	{
+		// TODO: print resource UUID!
+		Vadon::Core::Logger::log_error("Resource system: failed to serialize resource info!\n");
+	}
+
+	void resource_data_failed_to_serialize()
 	{
 		// TODO: print resource UUID!
 		Vadon::Core::Logger::log_error("Resource system: failed to serialize resource data!\n");
+	}
+
+	void resource_custom_data_failed_to_serialize()
+	{
+		// TODO: print resource UUID!
+		Vadon::Core::Logger::log_error("Resource system: failed to serialize resource custom data!\n");
 	}
 
 	template<typename T>
@@ -77,9 +131,27 @@ namespace
 
 namespace Vadon::Private::Scene
 {
-	const ResourceBase* ResourceSystem::get_resource_base(ResourceHandle resource_handle) const
+	ResourceHandle ResourceSystem::create_resource(Vadon::Utilities::TypeID type_id)
 	{
-		return m_resource_pool.get(resource_handle).resource;
+		ResourceBase* resource = internal_create_resource(type_id);
+		if (resource == nullptr)
+		{
+			return ResourceHandle();
+		}
+
+		// Generate UUID, checking to make sure it doesn't collide
+		// TODO: have a cutoff where we stop trying again?
+		ResourceID new_resource_id;
+		while (true)
+		{
+			new_resource_id = ResourceID::generate();
+			if (find_resource(new_resource_id).is_valid() == false)
+			{
+				break;
+			}
+		}
+
+		return internal_add_resource(ResourceInfo{ .id = new_resource_id, .type_id = type_id }, resource);
 	}
 
 	ResourceHandle ResourceSystem::find_resource(ResourceID resource_id) const
@@ -121,115 +193,78 @@ namespace Vadon::Private::Scene
 		return result;
 	}
 
-	bool ResourceSystem::import_resource_library(Vadon::Core::RootDirectoryHandle root_directory, std::string_view extensions)
+	ResourceHandle ResourceSystem::import_resource(const ResourcePath& path)
 	{
-		bool all_valid = true;
+		ResourceLoader resource_loader;
 
-		Vadon::Core::FileSystem& file_system = m_engine_core.get_system<Vadon::Core::FileSystem>();
-
-		std::string extensions_string = extensions.empty() ? m_resource_file_extensions : std::string(extensions);
-		
-		const std::vector<ResourcePath> resource_files = file_system.get_files_of_type(ResourcePath{ .root_directory = root_directory }, extensions_string, true);
-		for (const ResourcePath& current_file_path : resource_files)
+		if (resource_loader.initialize(m_engine_core, path) == false)
 		{
-			all_valid &= import_resource_file(current_file_path).is_valid();
+			log_error("Resource system: failed to import resource file!\n");
+			return ResourceHandle();
 		}
 
-		return all_valid;
+		ResourceInfo resource_info;
+		if (internal_load_resource_info(*resource_loader.serializer_instance, resource_info) == false)
+		{
+			log_error("Resource system: failed to import resource info from file!\n");
+			return ResourceHandle();
+		}
+
+		resource_loader.finalize(m_engine_core);
+
+		ResourceHandle imported_resource_handle = find_resource(resource_info.id);
+		if (imported_resource_handle.is_valid() == true)
+		{
+			// Resource already imported
+			// TODO: log/warning message?
+			return imported_resource_handle;
+		}
+
+		// Store path and add resource to pool
+		resource_info.path = path;
+		imported_resource_handle = internal_add_resource(resource_info, nullptr);
+
+		return imported_resource_handle;
 	}
 
-	ResourceHandle ResourceSystem::import_resource_file(const ResourcePath& path)
+	ResourceHandle ResourceSystem::load_resource(const ResourcePath& path)
 	{
-		Vadon::Core::FileSystem& file_system = m_engine_core.get_system<Vadon::Core::FileSystem>();
-		Vadon::Core::FileSystem::RawFileDataBuffer resource_file_buffer;
+		ResourceLoader resource_loader;
 
-		if (file_system.load_file(path, resource_file_buffer) == false)
+		if (resource_loader.initialize(m_engine_core, path) == false)
 		{
 			log_error("Resource system: failed to load resource file!\n");
 			return ResourceHandle();
 		}
 
-		// FIXME: support binary file serialization!
-		// Solution: have file system create the appropriate serializer!
-		Vadon::Utilities::Serializer::Instance serializer = Vadon::Utilities::Serializer::create_serializer(resource_file_buffer, Vadon::Utilities::Serializer::Type::JSON, Vadon::Utilities::Serializer::Mode::READ);
+		ResourceHandle loaded_resource_handle;
+		internal_load_resource(*resource_loader.serializer_instance, loaded_resource_handle);
 
-		if (serializer->initialize() == false)
+		resource_loader.finalize(m_engine_core);
+
+		if (loaded_resource_handle.is_valid() == true)
 		{
-			log_error("Resource system: failed to initialize serializer while loading resource!\n");
-			return ResourceHandle();
-		}
-
-		ResourceHandle imported_resource_handle = import_resource(*serializer);
-		if (imported_resource_handle.is_valid() == false)
-		{
-			log_error("Resource system: failed to import loaded resource!\n");
-			return imported_resource_handle;
-		}
-
-		ResourceData& imported_resource_data = m_resource_pool.get(imported_resource_handle);
-		imported_resource_data.info.path = path;
-
-		if (serializer->finalize() == false)
-		{
-			log_error("Resource system: failed to finalize serializer after loading resource!\n");
-		}
-
-		return imported_resource_handle;
-	}
-
-	ResourceHandle ResourceSystem::import_resource(Vadon::Utilities::Serializer& serializer)
-	{
-		using SerializerResult = Vadon::Utilities::Serializer::Result;
-
-		// TODO: utility function for TypeIDs to be serialized as string and deserialized to the ID number
-		ResourceID resource_id;
-		if (serializer.serialize("id", resource_id) != SerializerResult::SUCCESSFUL)
-		{
-			resource_failed_to_serialize();
-			return ResourceHandle();
-		}
-
-		// Check whether we already loaded this resource
-		{
-			ResourceHandle existing_resource = find_resource(resource_id);
-			if (existing_resource.is_valid() == true)
+			// Load successful, save the path
+			ResourceData& loaded_resource_data = m_resource_pool.get(loaded_resource_handle);
+			if (loaded_resource_data.info.path.is_valid() == false)
 			{
-				// TODO: notification?
-				return existing_resource;
+				loaded_resource_data.info.path = path;
+			}
+			else
+			{
+				// TODO: display resource ID and path!
+				log_error("Resource system: loaded resource with existing ID from different path!\n");
 			}
 		}
 
-		// Get type
-		std::string resource_type;
-		if (serializer.serialize("type", resource_type) != SerializerResult::SUCCESSFUL)
-		{
-			resource_failed_to_serialize();
-			return ResourceHandle();
-		}
-
-		const Vadon::Utilities::TypeID resource_type_id = Vadon::Utilities::TypeRegistry::get_type_id(resource_type);
-		if (resource_type_id == Vadon::Utilities::TypeID::INVALID)
-		{
-			log_error(std::format("Resource system error: resource data uses unknown type \"{}\"!\n", resource_type));
-			return ResourceHandle();
-		}
-
-		return internal_register_resource(resource_id, resource_type_id);
+		return loaded_resource_handle;
 	}
 
 	bool ResourceSystem::save_resource(ResourceHandle resource_handle)
 	{
-		ResourceData& resource_data = m_resource_pool.get(resource_handle);
-		if (resource_data.resource == nullptr)
+		ResourceData& resource = m_resource_pool.get(resource_handle);
+		if(resource.info.path.is_valid() == false)
 		{
-			// Resource must be loaded first!
-			log_error("Resource system error: cannot save resource that isn't loaded!\n");
-			return false;
-		}
-
-		if(resource_data.info.path.is_valid() == true)
-		{
-			// Cannot save a resource with no path!
 			log_error("Resource system: cannot save resource without a valid path!\n");
 			return false;
 		}
@@ -258,7 +293,7 @@ namespace Vadon::Private::Scene
 		}
 
 		Vadon::Core::FileSystem& file_system = m_engine_core.get_system<Vadon::Core::FileSystem>();
-		if (file_system.save_file(resource_data.info.path, resource_file_buffer) == false)
+		if (file_system.save_file(resource.info.path, resource_file_buffer) == false)
 		{
 			log_error("Resource system: failed to save resource data to file!\n");
 			return false;
@@ -269,57 +304,37 @@ namespace Vadon::Private::Scene
 
 	bool ResourceSystem::load_resource(ResourceHandle resource_handle)
 	{
+		// TODO: allow force-reloading?
 		ResourceData& resource_data = m_resource_pool.get(resource_handle);
-		if(resource_data.is_loaded() == true)
+		if (resource_data.is_loaded() == true)
 		{
-			// Resource already loaded!
-			// TODO: notification?
 			return true;
 		}
 
 		if (resource_data.info.path.is_valid() == false)
 		{
-			log_error("Resource system: cannot load a resource without a valid path!\n");
+			log_error("Resource system: cannot load resource without a valid path!\n");
 			return false;
 		}
 
-		Vadon::Core::FileSystem& file_system = m_engine_core.get_system<Vadon::Core::FileSystem>();
-		Vadon::Core::FileSystem::RawFileDataBuffer resource_file_buffer;
-		if (file_system.load_file(resource_data.info.path, resource_file_buffer) == false)
+		ResourceLoader resource_loader;
+
+		if (resource_loader.initialize(m_engine_core, resource_data.info.path) == false)
 		{
-			log_error("Resource system: failed to load resource file!\n");
 			return false;
 		}
 
-		// FIXME: support binary file serialization!
-		// Solution: have file system create the appropriate serializer!
-		Vadon::Utilities::Serializer::Instance serializer = Vadon::Utilities::Serializer::create_serializer(resource_file_buffer, Vadon::Utilities::Serializer::Type::JSON, Vadon::Utilities::Serializer::Mode::READ);
+		resource_data.resource = internal_load_resource_data(*resource_loader.serializer_instance, resource_data.info);
+		resource_loader.finalize(m_engine_core);
 
-		if (serializer->initialize() == false)
-		{
-			log_error("Resource system: failed to initialize serializer while loading resource!\n");
-			return false;
-		}
-
-		if (internal_load_resource(*serializer, resource_handle) == false)
-		{
-			log_error("Resource system: failed to deserialize resource data!\n");
-			return false;
-		}
-
-		if (serializer->finalize() == false)
-		{
-			log_error("Resource system: failed to finalize serializer after loading resource!\n");
-			return false;
-		}
-
-		return true;
+		return resource_data.is_loaded();
 	}
 
-	bool ResourceSystem::serialize_resource(Vadon::Utilities::Serializer& serializer, ResourceHandle resource_handle)
+	bool ResourceSystem::serialize_resource(Vadon::Utilities::Serializer& serializer, ResourceHandle& resource_handle)
 	{
 		if (serializer.is_reading() == true)
 		{
+			resource_handle.invalidate();
 			return internal_load_resource(serializer, resource_handle);
 		}
 		else
@@ -336,13 +351,22 @@ namespace Vadon::Private::Scene
 			ResourceID resource_id;
 			if (serializer.serialize(property_name, resource_id) == SerializerResult::SUCCESSFUL)
 			{
-				const ResourceHandle resource_handle = find_resource(resource_id);
-				if (resource_handle.is_valid() == false)
+				if (resource_id.is_valid() == true)
 				{
-					// TODO: warning, or error?
-					return false;
+					// TODO: should we try loading the resource from file if we can't find it?
+					const ResourceHandle resource_handle = find_resource(resource_id);
+					if (resource_handle.is_valid() == false)
+					{
+						// FIXME: show resource ID!
+						log_error("Resource system: cannot find referenced resource!\n");
+						return false;
+					}
+					property_value = resource_handle;
 				}
-				property_value = resource_handle;
+				else
+				{
+					property_value.invalidate();
+				}
 			}
 			else
 			{
@@ -363,40 +387,42 @@ namespace Vadon::Private::Scene
 		return true;
 	}
 
-	ResourceHandle ResourceSystem::internal_create_resource(ResourceBase* resource, Vadon::Utilities::TypeID type_id)
+	void ResourceSystem::unload_resource(ResourceHandle resource_handle)
 	{
-		// Generate UUID, checking to make sure it doesn't collide
-		ResourceID new_resource_id;
-		while (true)
+		ResourceData& resource_data = m_resource_pool.get(resource_handle);
+		if (resource_data.is_loaded() == true)
 		{
-			new_resource_id = ResourceID::generate();
-			if(find_resource(new_resource_id).is_valid() == false)
-			{
-				break;
-			}
+			delete resource_data.resource;
+			resource_data.resource = nullptr;
 		}
+	}
 
-		ResourceHandle new_resource_handle = internal_register_resource(new_resource_id, type_id);
+	void ResourceSystem::remove_resource(ResourceHandle resource_handle)
+	{
+		unload_resource(resource_handle);
+		m_resource_pool.remove(resource_handle);
+	}
 
-		ResourceData& new_resource_data = m_resource_pool.get(new_resource_handle);
-		new_resource_data.resource = resource;
+	bool ResourceSystem::is_resource_loaded(ResourceHandle resource_handle) const
+	{
+		return m_resource_pool.get(resource_handle).is_loaded();
+	}
 
-		return new_resource_handle;
+	const ResourceBase* ResourceSystem::get_resource_base(ResourceHandle resource_handle) const
+	{
+		return m_resource_pool.get(resource_handle).resource;
 	}
 
 	ResourceSystem::ResourceSystem(Vadon::Core::EngineCoreInterface& core)
 		: Vadon::Scene::ResourceSystem(core)
-		, m_resource_file_extensions(".vdrc")
 	{}
 
 	bool ResourceSystem::initialize()
 	{
 		log_message("Initializing Resource System\n");
+
 		Vadon::Scene::ResourceRegistry::register_resource_type<ResourceBase>();
 		Vadon::Utilities::TypeRegistry::add_property<ResourceBase>("name", Vadon::Utilities::MemberVariableBind<&ResourceBase::name>().bind_member_getter().bind_member_setter());
-
-		// TODO: add step where we import all resources in the current context!
-		// Might need to be the responsibility of a system one layer above, e.g using a project file
 
 		log_message("Resource System initialized successfully!\n");
 		return true;
@@ -417,76 +443,37 @@ namespace Vadon::Private::Scene
 		log_message("Resource System shut down!\n");
 	}
 
-	bool ResourceSystem::internal_load_resource(Vadon::Utilities::Serializer& serializer, ResourceHandle resource_handle)
+	bool ResourceSystem::internal_load_resource_info(Vadon::Utilities::Serializer& serializer, ResourceInfo& info) const
 	{
 		using SerializerResult = Vadon::Utilities::Serializer::Result;
-		using ErasedDataType = Vadon::Utilities::ErasedDataType;
 
-		ResourceData& resource_data = m_resource_pool.get(resource_handle);
-		if (resource_data.resource != nullptr)
+		if (serializer.is_reading() == false)
 		{
-			// Resource already loaded
-			// TODO: notification?
-			return true;
-		}
-
-		// Create the resource
-		if (internal_create_resource(resource_data) == false)
-		{
-			log_error("Resource system: failed to create loaded resource!\n");
-			return false;
-		}
-		
-		// Deserialize properties
-		if (serializer.open_object("properties") != SerializerResult::SUCCESSFUL)
-		{
-			resource_failed_to_serialize();
+			log_message("Resource system: invalid serializer!\n");
 			return false;
 		}
 
-		const Vadon::Utilities::PropertyInfoList resource_properties = Vadon::Utilities::TypeRegistry::get_type_properties(resource_data.info.type_id);
-
-		Vadon::Utilities::Variant current_property_value;
-		for (const Vadon::Utilities::PropertyInfo& current_property_info : resource_properties)
+		ResourceID resource_id;
+		if (serializer.serialize("id", info.id) != SerializerResult::SUCCESSFUL)
 		{
-			switch (current_property_info.data_type.type)
-			{
-			case ErasedDataType::TRIVIAL:
-			{
-				const SerializerResult result = process_trivial_property(serializer, current_property_info.name, current_property_value, current_property_info.data_type);
-				if (result == SerializerResult::SUCCESSFUL)
-				{
-					Vadon::Utilities::TypeRegistry::set_property(resource_data.resource, resource_data.info.type_id, current_property_info.name, current_property_value);
-				}
-				else
-				{
-					invalid_resource_data_error();
-				}
-			}
-			break;
-			case ErasedDataType::RESOURCE_HANDLE:
-			{
-				ResourceHandle temp_resource_handle;
-				if (serialize_resource_property(serializer, current_property_info.name, temp_resource_handle) == true)
-				{
-					current_property_value = temp_resource_handle;
-					Vadon::Utilities::TypeRegistry::set_property(resource_data.resource, resource_data.info.type_id, current_property_info.name, current_property_value);
-				}
-				else
-				{
-					invalid_resource_data_error();
-				}
-			}
-			break;
-			}
-		}
-
-		if (serializer.close_object() != SerializerResult::SUCCESSFUL)
-		{
-			resource_failed_to_serialize();
+			resource_info_failed_to_serialize();
 			return false;
 		}
-		
+
+		std::string resource_type;
+		if (serializer.serialize("type", resource_type) != SerializerResult::SUCCESSFUL)
+		{
+			resource_info_failed_to_serialize();
+			return false;
+		}
+
+		info.type_id = Vadon::Utilities::TypeRegistry::get_type_id(resource_type);
+		if (info.type_id == Vadon::Utilities::TypeID::INVALID)
+		{
+			log_error(std::format("Resource system error: resource file uses unknown type \"{}\"!\n", resource_type));
+			return false;
+		}
+
 		return true;
 	}
 
@@ -505,7 +492,7 @@ namespace Vadon::Private::Scene
 
 		if (serializer.serialize("id", resource_data.info.id) != SerializerResult::SUCCESSFUL)
 		{
-			resource_failed_to_serialize();
+			resource_info_failed_to_serialize();
 			return false;
 		}
 
@@ -513,14 +500,14 @@ namespace Vadon::Private::Scene
 		std::string resource_type = Vadon::Utilities::TypeRegistry::get_type_info(resource_data.info.type_id).name;
 		if (serializer.serialize("type", resource_type) != SerializerResult::SUCCESSFUL)
 		{
-			resource_failed_to_serialize();
+			resource_info_failed_to_serialize();
 			return false;
 		}
 
 		// Serialize properties
 		if (serializer.open_object("properties") != SerializerResult::SUCCESSFUL)
 		{
-			resource_failed_to_serialize();
+			resource_data_failed_to_serialize();
 			return false;
 		}
 
@@ -553,44 +540,180 @@ namespace Vadon::Private::Scene
 
 		if (serializer.close_object() != SerializerResult::SUCCESSFUL)
 		{
-			resource_failed_to_serialize();
+			resource_data_failed_to_serialize();
 			return false;
+		}
+
+		Vadon::Scene::ResourceRegistry::SerializerFunction resource_serializer = Vadon::Scene::ResourceRegistry::get_resource_serializer(resource_data.info.type_id);
+		if (resource_serializer != nullptr)
+		{
+			if (serializer.open_object("data") != SerializerResult::SUCCESSFUL)
+			{
+				resource_custom_data_failed_to_serialize();
+				return false;
+			}
+			if (resource_serializer(*this, serializer, *resource_data.resource) == false)
+			{
+				resource_custom_data_failed_to_serialize();
+				return false;
+			}
+			if (serializer.close_object() != SerializerResult::SUCCESSFUL)
+			{
+				resource_custom_data_failed_to_serialize();
+				return false;
+			}
 		}
 
 		return true;
 	}
 
-	ResourceHandle ResourceSystem::internal_register_resource(ResourceID resource_id, Vadon::Utilities::TypeID type_id)
+	bool ResourceSystem::internal_load_resource(Vadon::Utilities::Serializer& serializer, ResourceHandle& resource_handle)
+	{
+		ResourceInfo info;
+		if (internal_load_resource_info(serializer, info) == false)
+		{
+			return false;
+		}
+
+		resource_handle = find_resource(info.id);
+		if (resource_handle.is_valid() == true)
+		{
+			// Resource already registered
+			ResourceData& resource_data = m_resource_pool.get(resource_handle);
+			if (resource_data.is_loaded() == true)
+			{
+				// Resource already loaded
+				// TODO: log/warning message?
+				return true;
+			}
+			else
+			{
+				resource_data.resource = internal_load_resource_data(serializer, info);
+				return resource_data.is_loaded();
+			}
+		}
+
+		// Resource is loaded for the first time
+		// Try loading the resource data first
+		ResourceBase* loaded_resource = internal_load_resource_data(serializer, info);
+		if (loaded_resource == nullptr)
+		{
+			return false;
+		}
+
+		resource_handle = internal_add_resource(info, loaded_resource);
+		return true;
+	}
+
+	ResourceBase* ResourceSystem::internal_load_resource_data(Vadon::Utilities::Serializer& serializer, const ResourceInfo& info)
+	{
+		using SerializerResult = Vadon::Utilities::Serializer::Result;
+		using ErasedDataType = Vadon::Utilities::ErasedDataType;
+
+		// Create resource object
+		std::unique_ptr<ResourceBase> resource(internal_create_resource(info.type_id));
+		if (resource == nullptr)
+		{
+			return nullptr;
+		}
+
+		// Deserialize resource data
+		if (serializer.open_object("properties") != SerializerResult::SUCCESSFUL)
+		{
+			resource_data_failed_to_serialize();
+			return nullptr;
+		}
+
+		const Vadon::Utilities::PropertyInfoList resource_properties = Vadon::Utilities::TypeRegistry::get_type_properties(info.type_id);
+
+		Vadon::Utilities::Variant current_property_value;
+		for (const Vadon::Utilities::PropertyInfo& current_property_info : resource_properties)
+		{
+			switch (current_property_info.data_type.type)
+			{
+			case ErasedDataType::TRIVIAL:
+			{
+				const SerializerResult result = process_trivial_property(serializer, current_property_info.name, current_property_value, current_property_info.data_type);
+				if (result == SerializerResult::SUCCESSFUL)
+				{
+					Vadon::Utilities::TypeRegistry::set_property(resource.get(), info.type_id, current_property_info.name, current_property_value);
+				}
+				else
+				{
+					invalid_resource_data_error();
+				}
+			}
+			break;
+			case ErasedDataType::RESOURCE_HANDLE:
+			{
+				ResourceHandle temp_resource_handle;
+				if (serialize_resource_property(serializer, current_property_info.name, temp_resource_handle) == true)
+				{
+					current_property_value = temp_resource_handle;
+					Vadon::Utilities::TypeRegistry::set_property(resource.get(), info.type_id, current_property_info.name, current_property_value);
+				}
+				else
+				{
+					invalid_resource_data_error();
+				}
+			}
+			break;
+			}
+		}
+
+		if (serializer.close_object() != SerializerResult::SUCCESSFUL)
+		{
+			resource_data_failed_to_serialize();
+			return nullptr;
+		}
+
+		Vadon::Scene::ResourceRegistry::SerializerFunction resource_serializer = Vadon::Scene::ResourceRegistry::get_resource_serializer(info.type_id);
+		if (resource_serializer != nullptr)
+		{
+			if (serializer.open_object("data") != SerializerResult::SUCCESSFUL)
+			{
+				resource_custom_data_failed_to_serialize();
+				return nullptr;
+			}
+			if (resource_serializer(*this, serializer, *resource) == false)
+			{
+				resource_custom_data_failed_to_serialize();
+				return nullptr;
+			}
+			if (serializer.close_object() != SerializerResult::SUCCESSFUL)
+			{
+				resource_custom_data_failed_to_serialize();
+				return nullptr;
+			}
+		}
+
+		// Load succeeded, unique_ptr can release
+		return resource.release();
+	}
+
+	ResourceBase* ResourceSystem::internal_create_resource(Vadon::Utilities::TypeID type_id) const
+	{
+		ResourceBase* new_resource = Vadon::Scene::ResourceRegistry::create_resource(type_id);
+		if (new_resource == nullptr)
+		{
+			// FIXME: show type name?
+			log_error(std::format("Resource system error: failed to create resource with type ID {}!\n", Vadon::Utilities::to_integral(type_id)));
+		}
+
+		return new_resource;
+	}
+
+	ResourceHandle ResourceSystem::internal_add_resource(const ResourceInfo& info, ResourceBase* resource)
 	{
 		// Create object, add to lookup
 		ResourceHandle new_resource_handle = m_resource_pool.add();
-		m_resource_lookup[resource_id] = new_resource_handle;
+		m_resource_lookup[info.id] = new_resource_handle;
 
 		// Set metadata
 		ResourceData& new_resource_data = m_resource_pool.get(new_resource_handle);
-		new_resource_data.info.id = resource_id;
-		new_resource_data.info.type_id = type_id;
-		new_resource_data.resource = nullptr;
+		new_resource_data.info = info;
+		new_resource_data.resource = resource;
 
 		return new_resource_handle;
-	}
-
-	bool ResourceSystem::internal_create_resource(ResourceData& resource_data)
-	{
-		ResourceBase* new_resource_object = Vadon::Scene::ResourceRegistry::create_resource(resource_data.info.type_id);
-		if (new_resource_object == nullptr)
-		{
-			// FIXME: show type name?
-			log_error(std::format("Resource system error: failed to create resource with type ID {}!\n", Vadon::Utilities::to_integral(resource_data.info.type_id)));
-			return false;
-		}
-
-		resource_data.resource = new_resource_object;
-		return true;
-	}
-
-	bool ResourceSystem::has_resource(ResourceHandle resource_handle) const
-	{
-		return m_resource_pool.is_handle_valid(resource_handle);
 	}
 }

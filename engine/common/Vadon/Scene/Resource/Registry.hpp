@@ -8,12 +8,19 @@ namespace Vadon::Utilities
 }
 namespace Vadon::Scene
 {
+	class ResourceSystem;
+
 	// FIXME: very similar to Component registry
 	// Find some way to deduplicate?
 	class ResourceRegistry
 	{
 	public:
 		using FactoryFunction = ResourceBase*(*)();
+
+		// We pass the resource system instance that called this
+		// FIXME: implement a way to retrieve "context" from the engine
+		// That way, if needed, endpoint can access engine from resource system, and from there access the relevant context
+		using SerializerFunction = bool(*)(ResourceSystem&, Vadon::Utilities::Serializer&, ResourceBase&);
 
 		template<typename T, typename Base = T>
 		static void register_resource_type(FactoryFunction factory = nullptr)
@@ -31,13 +38,36 @@ namespace Vadon::Scene
 			register_resource_type(Vadon::Utilities::TypeRegistry::get_type_id<T>(), factory_impl);
 		}
 
+		template<typename T>
+		static void register_resource_serializer(SerializerFunction serializer)
+		{
+			register_resource_serializer(Vadon::Utilities::TypeRegistry::get_type_id<T>(), serializer);
+		}
+
+		template<typename T>
+		static SerializerFunction get_resource_serializer()
+		{
+			return get_resource_serializer(Vadon::Utilities::TypeRegistry::get_type_id<T>());
+		}
+
 		VADONCOMMON_API static ResourceBase* create_resource(Vadon::Utilities::TypeID type_id);
+		VADONCOMMON_API static SerializerFunction get_resource_serializer(Vadon::Utilities::TypeID type_id);
 	private:
 		VADONCOMMON_API static void register_resource_type(Vadon::Utilities::TypeID type_id, FactoryFunction factory);
+		VADONCOMMON_API static void register_resource_serializer(Vadon::Utilities::TypeID type_id, SerializerFunction serializer);
+
+		struct SerializerInfo
+		{
+			SerializerFunction function = nullptr;
+			void* context = nullptr;
+
+			bool is_valid() const { return function != nullptr; }
+		};
 
 		struct ResourceTypeInfo
 		{
 			FactoryFunction factory_function;
+			SerializerInfo serializer;
 			// TODO: anything else?
 		};
 

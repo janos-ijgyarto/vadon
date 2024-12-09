@@ -7,7 +7,6 @@
 namespace Vadon::Private::Scene
 {
 	using Scene = Vadon::Scene::Scene;
-
 	using SceneHandle = Vadon::Scene::SceneHandle;
 
 	using SceneComponent = Vadon::Scene::SceneComponent;
@@ -51,6 +50,13 @@ namespace Vadon::Private::Scene
 		}
 
 		static void register_scene_type_info();
+	};
+}
+namespace Vadon::Scene
+{
+	struct Scene : public ResourceBase
+	{
+		Vadon::Private::Scene::SceneData data;
 	};
 }
 #endif

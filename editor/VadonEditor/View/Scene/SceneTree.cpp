@@ -1,6 +1,8 @@
 #include <VadonEditor/View/Scene/SceneTree.hpp>
 
 #include <VadonEditor/Model/Scene/Entity.hpp>
+#include <VadonEditor/Model/ModelSystem.hpp>
+#include <VadonEditor/Model/Scene/SceneSystem.hpp>
 
 #include <VadonEditor/View/ViewSystem.hpp>
 #include <VadonEditor/View/Scene/Resource/Scene.hpp>
@@ -102,14 +104,25 @@ namespace VadonEditor::View
 
 						if (m_instantiate_scene_dialog.draw(dev_gui) == VadonApp::UI::Developer::Dialog::Result::ACCEPTED)
 						{
-							Model::Entity* instantiated_entity = active_scene->instantiate_sub_scene(m_instantiate_scene_dialog.get_selected_scene(), *active_entity);
-							if (instantiated_entity != nullptr)
+							const Vadon::Scene::SceneHandle selected_scene_handle = m_instantiate_scene_dialog.get_selected_scene();
+							Model::SceneSystem& editor_scene_system = editor.get_system<Model::ModelSystem>().get_scene_system();
+
+							Model::Scene* selected_scene = editor_scene_system.get_scene(selected_scene_handle);
+							if (selected_scene != nullptr)
 							{
-								view_model.set_active_entity(instantiated_entity);
+								Model::Entity* instantiated_entity = active_scene->instantiate_sub_scene(selected_scene, *active_entity);
+								if (instantiated_entity != nullptr)
+								{
+									view_model.set_active_entity(instantiated_entity);
+								}
+								else
+								{
+									show_error("Scene Error", "Error instantiating sub-scene!");
+								}
 							}
 							else
 							{
-								show_error("Scene Error", "Error instantiating sub-scene!");
+								show_error("Scene Error", "Failed to load sub-scene!");
 							}
 						}
 					}

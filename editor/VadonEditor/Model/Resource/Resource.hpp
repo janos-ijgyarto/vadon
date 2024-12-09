@@ -8,33 +8,33 @@ namespace VadonEditor::Core
 }
 namespace VadonEditor::Model
 {
+	using ResourcePath = Vadon::Scene::ResourcePath;
+
 	class Resource
 	{
 	public:
 		Vadon::Scene::ResourceHandle get_handle() const { return m_handle; }
-		const Vadon::Scene::ResourceInfo& get_info() const { return m_info; }
+		Vadon::Scene::ResourceInfo get_info() const;
 
-		void set_path(const Vadon::Scene::ResourcePath& path);
+		void set_path(const ResourcePath& path);
 
 		bool is_modified() const { return m_modified; }
+		void notify_modified() { m_modified = true; }
+		void clear_modified() { m_modified = false; }
 
-		bool save();
 		bool load();
+		bool save();
+
+		bool is_loaded() const;
 
 		Vadon::Utilities::Variant get_property(std::string_view property_name) const;
 		void edit_property(std::string_view property_name, const Vadon::Utilities::Variant& value);
 	private:
 		Resource(Core::Editor& editor, Vadon::Scene::ResourceHandle resource_handle);
 
-		bool initialize();
-		void update_info();
-
-		void notify_modified() { m_modified = true; }
-
 		Core::Editor& m_editor;
 
 		Vadon::Scene::ResourceHandle m_handle;
-		Vadon::Scene::ResourceInfo m_info;
 		bool m_modified;
 
 		friend class ResourceSystem;

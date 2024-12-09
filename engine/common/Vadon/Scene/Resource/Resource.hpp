@@ -15,6 +15,8 @@ namespace Vadon::Scene
 		ResourceID id;
 		Vadon::Utilities::TypeID type_id;
 		ResourcePath path;
+
+		bool is_valid() const { return id.is_valid(); }
 	};
 
 	struct ResourceBase
@@ -29,11 +31,12 @@ namespace Vadon::Scene
 	struct TypedResourceHandle : public ResourceHandle
 	{
 		using _ResourceType = T;
+		using _TypedHandle = TypedResourceHandle<T>;
 
 		TypedResourceHandle<T>& operator=(const ResourceHandle& h) { handle = h.handle; return *this; }
 
 		ResourceHandle to_resource_handle() const { return ResourceHandle{ .handle = this->handle }; }
-		TypedResourceHandle<T>& from_resource_handle(ResourceHandle h) { this->handle = h.handle; return *this; }
+		static TypedResourceHandle<T> from_resource_handle(ResourceHandle h) { _TypedHandle typed_handle; typed_handle.handle = h.handle; return typed_handle; }
 
 		uint64_t to_uint() const { return this->handle.to_uint(); }
 	};

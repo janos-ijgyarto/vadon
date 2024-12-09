@@ -18,7 +18,7 @@ namespace VadonEditor::View
 
 		void set_resource_type(Vadon::Utilities::TypeID resource_type) { m_resource_type = resource_type; }
 
-		Vadon::Scene::ResourceHandle get_selected_resource();
+		Vadon::Scene::ResourceHandle get_selected_resource() const;
 	protected:
 		Dialog::Result internal_draw(UI::Developer::GUISystem& dev_gui) override;
 

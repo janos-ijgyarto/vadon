@@ -6,6 +6,8 @@
 #include <VadonEditor/Model/Scene/Scene.hpp>
 #include <VadonEditor/Model/Scene/SceneSystem.hpp>
 
+#include <Vadon/Core/CoreInterface.hpp>
+
 #include <Vadon/ECS/World/World.hpp>
 #include <Vadon/ECS/Component/Registry.hpp>
 
@@ -153,9 +155,9 @@ namespace VadonEditor::Model
 		return m_owning_scene->add_new_entity(*this);
 	}
 
-	Entity* Entity::instantiate_child_scene(Vadon::Scene::SceneHandle scene_handle)
+	Entity* Entity::instantiate_child_scene(Scene* scene)
 	{
-		return m_owning_scene->instantiate_sub_scene(scene_handle, *this);
+		return m_owning_scene->instantiate_sub_scene(scene, *this);
 	}
 
 	bool Entity::add_component(Vadon::ECS::ComponentID type_id)

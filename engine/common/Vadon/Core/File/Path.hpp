@@ -9,6 +9,8 @@ namespace Vadon::Core
 		std::string path;
 
 		bool is_valid() const { return (root_directory.is_valid()) || (path.empty() == false); }
+
+		bool operator==(const FileSystemPath& other) const { return (root_directory == other.root_directory) && (path == other.path); }
 	};
 }
 #endif

@@ -1,12 +1,9 @@
 #ifndef VADON_SCENE_SCENE_HPP
 #define VADON_SCENE_SCENE_HPP
-#include <Vadon/ECS/Entity/Entity.hpp>
 #include <Vadon/Scene/Resource/Resource.hpp>
 namespace Vadon::Scene
 {
-	struct Scene : public ResourceBase
-	{
-	};
+	struct Scene;
 
 	VADON_DECLARE_TYPED_RESOURCE_HANDLE(Scene, SceneHandle);
 
