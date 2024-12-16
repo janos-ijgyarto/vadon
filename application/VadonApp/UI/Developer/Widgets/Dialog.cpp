@@ -37,24 +37,24 @@ namespace VadonApp::UI::Developer
 			return result;
 		case State::OPEN_REQUESTED:
 		{
-			dev_gui.open_dialog(m_window.title);
+			dev_gui.open_popup(m_window.title);
 			m_state = State::OPEN;
 			on_open();
 			break;
 		}
 		}
 
-		if (dev_gui.begin_modal_dialog(m_window) == true)
+		if (dev_gui.begin_popup_modal(m_window) == true)
 		{
 			result = internal_draw(dev_gui);
 			if (m_state == State::CLOSE_REQUESTED)
 			{
 				m_state = State::CLOSED;
-				dev_gui.close_current_dialog();
+				dev_gui.close_current_popup();
 				// TODO: on_close?
 			}
 
-			dev_gui.end_dialog();
+			dev_gui.end_popup();
 		}
 		else
 		{

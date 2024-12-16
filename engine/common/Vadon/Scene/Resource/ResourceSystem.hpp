@@ -15,7 +15,7 @@ namespace Vadon::Scene
 		template<typename T>
 		ResourceHandle create_resource()
 		{
-			static_assert(std::is_base_of_v<ResourceBase, T>);
+			static_assert(std::is_base_of_v<Resource, T>);
 			return create_resource(Vadon::Utilities::TypeRegistry::get_type_id<T>());
 		}
 
@@ -29,7 +29,7 @@ namespace Vadon::Scene
 		template<typename T>
 		std::vector<ResourceHandle> find_resources_of_type() const
 		{
-			static_assert(std::is_base_of_v<ResourceBase, T>);
+			static_assert(std::is_base_of_v<Resource, T>);
 			return find_resources_of_type(Vadon::Utilities::TypeRegistry::get_type_id<T>());
 		}
 
@@ -52,15 +52,15 @@ namespace Vadon::Scene
 		template<typename T>
 		const T* get_resource(ResourceHandle resource_handle) const
 		{
-			static_assert(std::is_base_of_v<ResourceBase, T>);
-			return static_cast<const T*>(get_resource_base(resource_handle));
+			static_assert(std::is_base_of_v<Resource, T>);
+			return static_cast<const T*>(get_base_resource(resource_handle));
 		}
 
 		template<typename T>
 		T* get_resource(ResourceHandle resource_handle) { return const_cast<T*>(std::as_const(*this).get_resource<T>(resource_handle)); }
 
-		virtual const ResourceBase* get_resource_base(ResourceHandle resource_handle) const = 0;
-		ResourceBase* get_resource_base(ResourceHandle resource_handle) { return const_cast<ResourceBase*>(std::as_const(*this).get_resource_base(resource_handle)); }
+		virtual const Resource* get_base_resource(ResourceHandle resource_handle) const = 0;
+		Resource* get_base_resource(ResourceHandle resource_handle) { return const_cast<Resource*>(std::as_const(*this).get_base_resource(resource_handle)); }
 	protected:
 		ResourceSystem(Core::EngineCoreInterface& core)
 			: System(core)

@@ -13,7 +13,7 @@ namespace
 
 namespace Vadon::Scene
 {
-	ResourceBase* ResourceRegistry::create_resource(Vadon::Utilities::TypeID type_id)
+	Resource* ResourceRegistry::create_resource(Vadon::Utilities::TypeID type_id)
 	{
 		ResourceRegistry& registry_instance = get_registry_instance();
 

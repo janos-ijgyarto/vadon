@@ -269,7 +269,7 @@ namespace Vadon::Private::Scene
 			return true;
 		}
 
-		bool serialize_scene(Vadon::Scene::ResourceSystem& resource_system, Vadon::Utilities::Serializer& serializer, ResourceBase& resource)
+		bool serialize_scene(Vadon::Scene::ResourceSystem& resource_system, Vadon::Utilities::Serializer& serializer, Resource& resource)
 		{
 			using SerializerResult = Vadon::Utilities::Serializer::Result;
 			constexpr const char* c_entity_array_error_log = "Scene system: unable to serialize component object!\n";
@@ -317,7 +317,7 @@ namespace Vadon::Private::Scene
 
 	void SceneData::register_scene_type_info()
 	{
-		Vadon::Scene::ResourceRegistry::register_resource_type<Vadon::Scene::Scene, ResourceBase>();
+		Vadon::Scene::ResourceRegistry::register_resource_type<Vadon::Scene::Scene, Resource>();
 
 		Vadon::Scene::ResourceRegistry::register_resource_serializer<Scene>(&serialize_scene);
 

@@ -31,23 +31,19 @@ namespace VadonApp::Private::UI::Developer::ImGUI
 {
     namespace
     {
-        int get_imgui_mouse_button(VadonApp::Platform::MouseButton mouse_button)
+        ImGuiMouseButton_ get_imgui_mouse_button(VadonApp::Platform::MouseButton mouse_button)
         {
             switch (mouse_button)
             {
             case VadonApp::Platform::MouseButton::LEFT:
-                return 0;
+                return ImGuiMouseButton_::ImGuiMouseButton_Left;
             case VadonApp::Platform::MouseButton::MIDDLE:
-                return 1;
+                return ImGuiMouseButton_::ImGuiMouseButton_Middle;
             case VadonApp::Platform::MouseButton::RIGHT:
-                return 2;
-            case VadonApp::Platform::MouseButton::X1:
-                return 3;
-            case VadonApp::Platform::MouseButton::X2:
-                return 4;
+                return ImGuiMouseButton_::ImGuiMouseButton_Right;
             }
 
-            return -1;
+            return ImGuiMouseButton_::ImGuiMouseButton_COUNT;
         }
 
         ImGuiKey get_imgui_key(VadonApp::Platform::KeyCode key_code)
@@ -839,25 +835,35 @@ float4 main(PS_INPUT input) : SV_Target
         ImGui::EndChild();
     }
 
-    void GUISystem::open_dialog(std::string_view id)
+    bool GUISystem::begin_popup(Window& popup)
+    {
+        return ImGui::BeginPopup(popup.title.c_str());
+    }
+
+    bool GUISystem::begin_popup_modal(Window& popup)
+    {
+        // TODO: flags to set whether to pass in pointer to open flag
+        return ImGui::BeginPopupModal(popup.title.c_str(), nullptr);
+    }
+
+    void GUISystem::end_popup()
+    {
+        ImGui::EndPopup();
+    }
+
+    void GUISystem::open_popup(std::string_view id)
     {
         ImGui::OpenPopup(id.data());
     }
 
-    void GUISystem::close_current_dialog()
+    void GUISystem::close_current_popup()
     {
         ImGui::CloseCurrentPopup();
     }
 
-    bool GUISystem::begin_modal_dialog(Window& dialog)
+    bool GUISystem::begin_popup_context_item(std::string_view id)
     {
-        // TODO: flags to set whether to pass in pointer to open flag
-        return ImGui::BeginPopupModal(dialog.title.c_str(), nullptr);
-    }
-
-    void GUISystem::end_dialog()
-    {
-        ImGui::EndPopup();
+        return ImGui::BeginPopupContextItem(id.empty() == false ? id.data() : nullptr);
     }
 
     bool GUISystem::begin_main_menu_bar()
@@ -1087,6 +1093,11 @@ float4 main(PS_INPUT input) : SV_Target
     void GUISystem::add_separator_text(std::string_view text)
     {
         ImGui::SeparatorText(text.data());
+    }
+
+    void GUISystem::set_item_tooltip(std::string_view tooltip_text)
+    {
+        ImGui::SetItemTooltip(tooltip_text.data());
     }
 
     void GUISystem::same_line()
@@ -1495,7 +1506,7 @@ float4 main(PS_INPUT input) : SV_Target
             [this](const VadonApp::Platform::MouseButtonEvent& mouse_button)
             {
                 ImGuiIO& io = ImGui::GetIO();
-                const int imgui_mouse_button = get_imgui_mouse_button(mouse_button.button);
+                const ImGuiMouseButton_ imgui_mouse_button = get_imgui_mouse_button(mouse_button.button);
 
                 io.AddMouseButtonEvent(imgui_mouse_button, mouse_button.down); // TODO: map application button code to ImGui button code!
                 m_platform_data.mouse_buttons_down = mouse_button.down ? (m_platform_data.mouse_buttons_down | (1 << imgui_mouse_button)) : (m_platform_data.mouse_buttons_down & ~(1 << imgui_mouse_button));

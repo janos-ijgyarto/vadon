@@ -1,5 +1,5 @@
-#ifndef VADONEDITOR_VIEW_WIDGETS_PROPERTY_HPP
-#define VADONEDITOR_VIEW_WIDGETS_PROPERTY_HPP
+#ifndef VADONEDITOR_VIEW_SCENE_PROPERTY_PROPERTY_HPP
+#define VADONEDITOR_VIEW_SCENE_PROPERTY_PROPERTY_HPP
 #include <VadonEditor/UI/Developer/GUI.hpp>
 #include <Vadon/Utilities/TypeInfo/Registry/Property.hpp>
 namespace VadonEditor::Core
@@ -28,6 +28,7 @@ namespace VadonEditor::View
 
 		virtual void value_updated() = 0;
 
+		// FIXME: could remove and retrieve data from derived classes?
 		Vadon::Utilities::Property m_property;
 	};
 }

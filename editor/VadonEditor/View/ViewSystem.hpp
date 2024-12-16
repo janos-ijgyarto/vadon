@@ -9,13 +9,18 @@ namespace VadonEditor::Core
 namespace VadonEditor::Model
 {
 	class Entity;
+	class Resource;
 	class Scene;
 }
 namespace VadonEditor::View
 {
+	// FIXME: improve this interface!
 	class ViewModel
 	{
 	public:
+		Model::Resource* get_active_resource() const { return m_active_resource; }
+		void set_active_resource(Model::Resource* resource);
+
 		Model::Scene* get_active_scene() const { return m_active_scene; }
 		void set_active_scene(Model::Scene* scene);
 
@@ -26,6 +31,7 @@ namespace VadonEditor::View
 
 		Core::Editor& m_editor;
 
+		Model::Resource* m_active_resource;
 		Model::Scene* m_active_scene;
 		Model::Entity* m_active_entity;
 

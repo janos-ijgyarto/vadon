@@ -61,11 +61,19 @@ namespace VadonEditor::Model
 		return resource_system.is_resource_loaded(m_handle);
 	}
 
+	Vadon::Utilities::PropertyList Resource::get_properties() const
+	{
+		Vadon::Scene::ResourceSystem& resource_system = m_editor.get_engine_core().get_system<Vadon::Scene::ResourceSystem>();
+
+		Vadon::Scene::Resource* resource_base = resource_system.get_base_resource(m_handle);
+		return Vadon::Utilities::TypeRegistry::get_properties(resource_base, get_info().type_id);
+	}
+
 	Vadon::Utilities::Variant Resource::get_property(std::string_view property_name) const
 	{
 		Vadon::Scene::ResourceSystem& resource_system = m_editor.get_engine_core().get_system<Vadon::Scene::ResourceSystem>();
 
-		Vadon::Scene::ResourceBase* resource_base = resource_system.get_resource_base(m_handle);
+		Vadon::Scene::Resource* resource_base = resource_system.get_base_resource(m_handle);
 		return Vadon::Utilities::TypeRegistry::get_property(resource_base, get_info().type_id, property_name);
 	}
 
@@ -73,15 +81,16 @@ namespace VadonEditor::Model
 	{
 		Vadon::Scene::ResourceSystem& resource_system = m_editor.get_engine_core().get_system<Vadon::Scene::ResourceSystem>();
 
-		Vadon::Scene::ResourceBase* resource_base = resource_system.get_resource_base(m_handle);
+		Vadon::Scene::Resource* resource_base = resource_system.get_base_resource(m_handle);
 		Vadon::Utilities::TypeRegistry::set_property(resource_base, get_info().type_id, property_name, value);
 
 		notify_modified();
 	}
 
-	Resource::Resource(Core::Editor& editor, Vadon::Scene::ResourceHandle resource_handle)
+	Resource::Resource(Core::Editor& editor, Vadon::Scene::ResourceHandle resource_handle, EditorResourceID id)
 		: m_editor(editor)
 		, m_handle(resource_handle)
+		, m_id(id)
 		, m_modified(false)
 	{
 

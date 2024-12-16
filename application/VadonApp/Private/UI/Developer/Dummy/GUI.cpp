@@ -152,24 +152,36 @@ namespace VadonApp::Private::UI::Developer::Dummy
     {
     }
 
-    void GUISystem::open_dialog(std::string_view /*id*/)
+    bool GUISystem::begin_popup(Window& /*popup*/)
     {
         // TODO
-    }
-
-    void GUISystem::close_current_dialog()
-    {
-        // TODO
-    }
-
-    bool GUISystem::begin_modal_dialog(Window& /*dialog*/)
-    {
         return false;
     }
 
-    void GUISystem::end_dialog()
+    bool GUISystem::begin_popup_modal(Window& /*popup*/)
     {
         // TODO
+        return false;
+    }
+
+    void GUISystem::end_popup()
+    {
+        // TODO
+    }
+
+    void GUISystem::open_popup(std::string_view /*id*/)
+    {
+        // TODO
+    }
+
+    void GUISystem::close_current_popup()
+    {
+        // TODO
+    }
+
+    bool GUISystem::begin_popup_context_item(std::string_view /*id*/)
+    {
+        return false;
     }
 
     bool GUISystem::begin_main_menu_bar()
@@ -338,6 +350,11 @@ namespace VadonApp::Private::UI::Developer::Dummy
     }
 
     void GUISystem::add_separator_text(std::string_view /*text*/)
+    {
+        // TODO
+    }
+
+    void GUISystem::set_item_tooltip(std::string_view /*tooltip_text*/)
     {
         // TODO
     }

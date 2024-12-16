@@ -160,6 +160,28 @@ namespace Vadon::Utilities
 		return type_data_it->second.info;
 	}
 
+	std::vector<TypeID> TypeRegistry::get_subclass_list(TypeID type_id)
+	{
+		TypeRegistry& instance = get_registry_instance();
+
+		std::vector<TypeID> subclass_list;
+		subclass_list.push_back(type_id);
+
+		for (const auto& type_pair : instance.m_type_lookup)
+		{
+			if (type_pair.first == type_id)
+			{
+				continue;
+			}
+			if (is_base_of(type_id, type_pair.first) == true)
+			{
+				subclass_list.push_back(type_pair.first);
+			}
+		}
+
+		return subclass_list;
+	}
+
 	PropertyInfoList TypeRegistry::get_type_properties(TypeID type_id)
 	{
 		PropertyInfoList properties;

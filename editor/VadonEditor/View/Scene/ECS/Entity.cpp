@@ -91,7 +91,6 @@ namespace VadonEditor::View
 
 	void EntityEditor::update_selected_entity(Model::Entity* entity)
 	{
-
 		if (entity == m_last_entity)
 		{
 			return;

@@ -35,12 +35,12 @@ namespace Vadon::Private::Scene
 
 		bool is_resource_loaded(ResourceHandle resource_handle) const override;
 
-		const ResourceBase* get_resource_base(ResourceHandle resource_handle) const override;
+		const Resource* get_base_resource(ResourceHandle resource_handle) const override;
 	private:
 		struct ResourceData
 		{
 			ResourceInfo info;
-			ResourceBase* resource = nullptr;
+			Resource* resource = nullptr;
 
 			bool is_loaded() const { return resource != nullptr; }
 		};
@@ -54,12 +54,12 @@ namespace Vadon::Private::Scene
 
 		bool internal_save_resource(Vadon::Utilities::Serializer& serializer, ResourceHandle resource_handle);
 		bool internal_load_resource(Vadon::Utilities::Serializer& serializer, ResourceHandle& resource_handle);
-		ResourceBase* internal_load_resource_data(Vadon::Utilities::Serializer& serializer, const ResourceInfo& info);
+		Resource* internal_load_resource_data(Vadon::Utilities::Serializer& serializer, const ResourceInfo& info);
 
-		ResourceBase* internal_create_resource(Vadon::Utilities::TypeID type_id) const;
-		ResourceHandle internal_add_resource(const ResourceInfo& info, ResourceBase* resource);
+		Resource* internal_create_resource(Vadon::Utilities::TypeID type_id) const;
+		ResourceHandle internal_add_resource(const ResourceInfo& info, Resource* resource);
 
-		using ResourcePool = Vadon::Utilities::ObjectPool<Vadon::Scene::Resource, ResourceData>;
+		using ResourcePool = Vadon::Utilities::ObjectPool<Vadon::Scene::ResourceBase, ResourceData>;
 		ResourcePool m_resource_pool;
 
 		std::unordered_map<ResourceID, ResourceHandle> m_resource_lookup;

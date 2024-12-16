@@ -26,9 +26,7 @@ namespace VadonDemo::Model
 	{
 		Vadon::ECS::ComponentRegistry::register_component_type<CanvasComponent>();
 
-		Vadon::Utilities::TypeRegistry::add_property<CanvasComponent>("type", Vadon::Utilities::MemberVariableBind<&CanvasComponent::type>().bind_member_getter().bind_member_setter());
-		Vadon::Utilities::TypeRegistry::add_property<CanvasComponent>("color", Vadon::Utilities::MemberVariableBind<&CanvasComponent::color>().bind_member_getter().bind_member_setter());
-		Vadon::Utilities::TypeRegistry::add_property<CanvasComponent>("z_order", Vadon::Utilities::MemberVariableBind<&CanvasComponent::z_order>().bind_member_getter().bind_member_setter());
+		Vadon::Utilities::TypeRegistry::add_property<CanvasComponent>("item_definition", Vadon::Utilities::MemberVariableBind<&CanvasComponent::item_definition>().bind_member_getter().bind_member_setter());
 	}
 
 	void Health::register_component()

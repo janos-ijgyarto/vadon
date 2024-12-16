@@ -174,11 +174,19 @@ namespace VadonApp::UI::Developer
         }
     }
 
-    FileBrowserDialog::FileBrowserDialog(std::string_view title)
+    FileBrowserDialog::FileBrowserDialog(std::string_view title, Flags flags)
         : Dialog(title)
+        , m_flags(flags)
     {
-        m_select_button.label = "Select";
+        m_accept_button.label = "Select";
         m_cancel_button.label = "Cancel";
+
+        m_file_name_input.label = "File name";
+    }
+
+    std::string FileBrowserDialog::get_entered_file_path() const
+    {
+        return (std::filesystem::path(m_file_browser.get_current_path()) / m_file_name_input.input).string();
     }
 
     void FileBrowserDialog::open_at(std::string_view path)
@@ -199,11 +207,19 @@ namespace VadonApp::UI::Developer
 
         Vadon::Utilities::Vector2 file_browser_area = dev_gui.get_available_content_region();
         const GUIStyle gui_style = dev_gui.get_style();
-        file_browser_area.y -= dev_gui.calculate_text_size(m_select_button.label).y + gui_style.frame_padding.y * 2 + 5.0f;
+        file_browser_area.y -= dev_gui.calculate_text_size(m_accept_button.label).y + gui_style.frame_padding.y * 2 + 5.0f;
+        if (Vadon::Utilities::to_bool(m_flags & Flags::NAME_INPUT) == true)
+        {
+            file_browser_area.y -= dev_gui.calculate_text_size(m_file_name_input.label).y + gui_style.frame_padding.y * 2;
+        }
 
         m_file_browser.draw(dev_gui, file_browser_area);
+        if (Vadon::Utilities::to_bool(m_flags & Flags::NAME_INPUT) == true)
+        {
+            dev_gui.draw_input_text(m_file_name_input);
+        }
 
-        if (dev_gui.draw_button(m_select_button) == true)
+        if (dev_gui.draw_button(m_accept_button) == true)
         {
             result = Result::ACCEPTED;
         }

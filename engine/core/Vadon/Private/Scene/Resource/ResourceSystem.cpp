@@ -133,7 +133,7 @@ namespace Vadon::Private::Scene
 {
 	ResourceHandle ResourceSystem::create_resource(Vadon::Utilities::TypeID type_id)
 	{
-		ResourceBase* resource = internal_create_resource(type_id);
+		Resource* resource = internal_create_resource(type_id);
 		if (resource == nullptr)
 		{
 			return ResourceHandle();
@@ -408,7 +408,7 @@ namespace Vadon::Private::Scene
 		return m_resource_pool.get(resource_handle).is_loaded();
 	}
 
-	const ResourceBase* ResourceSystem::get_resource_base(ResourceHandle resource_handle) const
+	const Resource* ResourceSystem::get_base_resource(ResourceHandle resource_handle) const
 	{
 		return m_resource_pool.get(resource_handle).resource;
 	}
@@ -421,8 +421,8 @@ namespace Vadon::Private::Scene
 	{
 		log_message("Initializing Resource System\n");
 
-		Vadon::Scene::ResourceRegistry::register_resource_type<ResourceBase>();
-		Vadon::Utilities::TypeRegistry::add_property<ResourceBase>("name", Vadon::Utilities::MemberVariableBind<&ResourceBase::name>().bind_member_getter().bind_member_setter());
+		Vadon::Scene::ResourceRegistry::register_resource_type<Resource>();
+		Vadon::Utilities::TypeRegistry::add_property<Resource>("name", Vadon::Utilities::MemberVariableBind<&Resource::name>().bind_member_getter().bind_member_setter());
 
 		log_message("Resource System initialized successfully!\n");
 		return true;
@@ -595,7 +595,7 @@ namespace Vadon::Private::Scene
 
 		// Resource is loaded for the first time
 		// Try loading the resource data first
-		ResourceBase* loaded_resource = internal_load_resource_data(serializer, info);
+		Resource* loaded_resource = internal_load_resource_data(serializer, info);
 		if (loaded_resource == nullptr)
 		{
 			return false;
@@ -605,13 +605,13 @@ namespace Vadon::Private::Scene
 		return true;
 	}
 
-	ResourceBase* ResourceSystem::internal_load_resource_data(Vadon::Utilities::Serializer& serializer, const ResourceInfo& info)
+	Resource* ResourceSystem::internal_load_resource_data(Vadon::Utilities::Serializer& serializer, const ResourceInfo& info)
 	{
 		using SerializerResult = Vadon::Utilities::Serializer::Result;
 		using ErasedDataType = Vadon::Utilities::ErasedDataType;
 
 		// Create resource object
-		std::unique_ptr<ResourceBase> resource(internal_create_resource(info.type_id));
+		std::unique_ptr<Resource> resource(internal_create_resource(info.type_id));
 		if (resource == nullptr)
 		{
 			return nullptr;
@@ -691,9 +691,9 @@ namespace Vadon::Private::Scene
 		return resource.release();
 	}
 
-	ResourceBase* ResourceSystem::internal_create_resource(Vadon::Utilities::TypeID type_id) const
+	Resource* ResourceSystem::internal_create_resource(Vadon::Utilities::TypeID type_id) const
 	{
-		ResourceBase* new_resource = Vadon::Scene::ResourceRegistry::create_resource(type_id);
+		Resource* new_resource = Vadon::Scene::ResourceRegistry::create_resource(type_id);
 		if (new_resource == nullptr)
 		{
 			// FIXME: show type name?
@@ -703,7 +703,7 @@ namespace Vadon::Private::Scene
 		return new_resource;
 	}
 
-	ResourceHandle ResourceSystem::internal_add_resource(const ResourceInfo& info, ResourceBase* resource)
+	ResourceHandle ResourceSystem::internal_add_resource(const ResourceInfo& info, Resource* resource)
 	{
 		// Create object, add to lookup
 		ResourceHandle new_resource_handle = m_resource_pool.add();

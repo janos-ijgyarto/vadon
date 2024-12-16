@@ -1,7 +1,6 @@
 #ifndef VADONEDITOR_VIEW_PROJECT_PROJECT_HPP
 #define VADONEDITOR_VIEW_PROJECT_PROJECT_HPP
 #include <VadonEditor/Core/Project/Project.hpp>
-#include <VadonEditor/UI/Developer/GUI.hpp>
 #include <VadonEditor/UI/Developer/Widgets.hpp>
 #include <VadonApp/UI/Developer/Widgets/FileBrowser.hpp>
 namespace VadonEditor::Core

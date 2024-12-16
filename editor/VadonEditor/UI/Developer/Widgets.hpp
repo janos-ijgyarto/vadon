@@ -1,5 +1,6 @@
 #ifndef VADONEDITOR_UI_DEVELOPER_WIDGETS_HPP
 #define VADONEDITOR_UI_DEVELOPER_WIDGETS_HPP
+#include <VadonEditor/UI/Developer/GUI.hpp>
 #include <VadonApp/UI/Developer/Widgets/Dialog.hpp>
 #include <VadonApp/UI/Developer/Widgets/FileBrowser.hpp>
 namespace VadonEditor::UI::Developer

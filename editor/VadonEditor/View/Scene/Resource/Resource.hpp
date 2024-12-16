@@ -1,9 +1,8 @@
 #ifndef VADONEDITOR_VIEW_SCENE_RESOURCE_RESOURCE_HPP
 #define VADONEDITOR_VIEW_SCENE_RESOURCE_RESOURCE_HPP
-#include <VadonEditor/UI/Developer/GUI.hpp>
-#include <VadonEditor/UI/Developer/Widgets.hpp>
-
 #include <VadonEditor/Model/Resource/ResourceSystem.hpp>
+#include <VadonEditor/View/Scene/Property/Property.hpp>
+#include <VadonEditor/UI/Developer/Widgets.hpp>
 namespace VadonEditor::Core
 {
 	class Editor;
@@ -32,6 +31,30 @@ namespace VadonEditor::View
 		UI::Developer::ListBox m_resource_list_box;
 		UI::Developer::Button m_select_button;
 		UI::Developer::Button m_cancel_button;
+	};
+
+	class ResourceEditor
+	{
+	private:
+		ResourceEditor(Core::Editor& editor);
+
+		void draw(UI::Developer::GUISystem& dev_gui);
+
+		void update_selected_resource(Model::Resource* resource);
+		void update_labels(Model::Resource* resource);
+		void reset_properties(Model::Resource* resource);
+
+		Core::Editor& m_editor;
+
+		Model::Resource* m_last_resource = nullptr;
+
+		UI::Developer::Window m_window;
+		std::vector<PropertyEditor::Instance> m_property_editors;
+
+		std::string m_path;
+		UI::Developer::Button m_save_button; // FIXME: save automatically? Or use some other logic?
+
+		friend class MainWindow;
 	};
 }
 #endif

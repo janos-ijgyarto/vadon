@@ -9,6 +9,6 @@ namespace Vadon::Private::Scene
 
 	using ResourceInfo = Vadon::Scene::ResourceInfo;
 
-	using ResourceBase = Vadon::Scene::ResourceBase;
+	using Resource = Vadon::Scene::Resource;
 }
 #endif

@@ -1,8 +1,4 @@
 {
-    "id": "TqsMmMToSB6ND9daJ92XHw==",
-    "properties": {
-        "name": ""
-    },
     "data": {
         "entities": [
             {
@@ -30,13 +26,7 @@
                     },
                     {
                         "properties": {
-                            "color": [
-                                0.0,
-                                0.48235294222831726,
-                                0.0
-                            ],
-                            "type": 1,
-                            "z_order": 0.0
+                            "item_definition": "MaOi3W7+QQCl81xiVbHJTg=="
                         },
                         "type": "VadonDemo::Model::CanvasComponent"
                     }
@@ -45,6 +35,10 @@
                 "parent": -1
             }
         ]
+    },
+    "id": "TqsMmMToSB6ND9daJ92XHw==",
+    "properties": {
+        "name": ""
     },
     "type": "Vadon::Scene::Scene"
 }

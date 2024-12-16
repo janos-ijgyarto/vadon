@@ -104,6 +104,7 @@ namespace VadonEditor::Core
 
 	ProjectManager::ProjectManager(Editor& editor)
 		: System(editor)
+		, m_asset_library(editor)
 		, m_state(State::LAUNCHER)
 	{
 
@@ -273,6 +274,8 @@ namespace VadonEditor::Core
 
 		// Everything loaded successfuly, add to project cache
 		add_project_to_cache(Core::ProjectInfo{ .name = project_info.name, .root_path = project_info.root_path });
+
+		m_asset_library.rebuild_asset_tree();
 
 		// Set the editor state
 		m_state = State::PROJECT_LOADED;

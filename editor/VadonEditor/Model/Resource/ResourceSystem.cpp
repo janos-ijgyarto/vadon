@@ -78,6 +78,7 @@ namespace VadonEditor::Model
 
 	ResourceSystem::ResourceSystem(Core::Editor& editor)
 		: m_editor(editor)
+		, m_resource_id_counter(0)
 	{
 
 	}
@@ -132,7 +133,8 @@ namespace VadonEditor::Model
 		}
 
 		// Resource not yet registered, so we create it
-		auto resource_it = m_resource_lookup.emplace(resource_handle.handle.to_uint(), Resource(m_editor, resource_handle)).first;
+		const EditorResourceID new_resource_id = m_resource_id_counter++;
+		auto resource_it = m_resource_lookup.emplace(resource_handle.handle.to_uint(), Resource(m_editor, resource_handle, new_resource_id)).first;
 		return &resource_it->second;
 	}
 }

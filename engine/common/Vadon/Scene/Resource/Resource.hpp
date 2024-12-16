@@ -5,7 +5,7 @@
 #include <Vadon/Utilities/TypeInfo/TypeInfo.hpp>
 namespace Vadon::Scene
 {
-	VADON_DECLARE_TYPED_POOL_HANDLE(Resource, ResourceHandle);
+	VADON_DECLARE_TYPED_POOL_HANDLE(ResourceBase, ResourceHandle);
 	using ResourceID = Vadon::Utilities::UUID;
 
 	using ResourcePath = Vadon::Core::FileSystemPath;
@@ -19,12 +19,12 @@ namespace Vadon::Scene
 		bool is_valid() const { return id.is_valid(); }
 	};
 
-	struct ResourceBase
+	struct Resource
 	{
 		ResourceID id;
 		std::string name;
 
-		virtual ~ResourceBase() {}
+		virtual ~Resource() {}
 	};
 
 	template<typename T>

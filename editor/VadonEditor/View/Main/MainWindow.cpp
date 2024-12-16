@@ -3,9 +3,11 @@
 #include <VadonEditor/Core/Editor.hpp>
 #include <VadonEditor/Core/Project/ProjectManager.hpp>
 
+#include <VadonEditor/View/Project/AssetBrowser.hpp>
 #include <VadonEditor/View/Project/Project.hpp>
 
 #include <VadonEditor/View/Scene/ECS/Entity.hpp>
+#include <VadonEditor/View/Scene/Resource/Resource.hpp>
 #include <VadonEditor/View/Scene/Resource/Scene.hpp>
 #include <VadonEditor/View/Scene/SceneTree.hpp>
 
@@ -27,16 +29,21 @@ namespace VadonEditor::View
 
 		ProjectLauncher m_launcher;
 
+		AssetBrowser m_asset_browser;
+
 		SceneListWindow m_scene_list;
 		SceneTreeWindow m_scene_tree;
 		EntityEditor m_entity_editor;
+		ResourceEditor m_resource_editor;
 
 		Internal(Core::Editor& editor)
 			: m_editor(editor)
 			, m_launcher(editor)
+			, m_asset_browser(editor)
 			, m_scene_list(editor)
 			, m_scene_tree(editor)
 			, m_entity_editor(editor)
+			, m_resource_editor(editor)
 		{
 			// FIXME: use pooled strings so we don't need to cache!
 			m_new_scene_menu.label = "New Scene";
@@ -78,9 +85,11 @@ namespace VadonEditor::View
 			// TODO: use some kind of "state enum" for the editor to decide what the main window should show?
 			// Could be relevant when handling editor settings, etc.
 			draw_main_menu(dev_gui);
+			m_asset_browser.draw(dev_gui);
 			m_scene_list.draw(dev_gui);
 			m_scene_tree.draw(dev_gui);
 			m_entity_editor.draw(dev_gui);
+			m_resource_editor.draw(dev_gui);
 		}
 
 		void draw_main_menu(VadonApp::UI::Developer::GUISystem& dev_gui)

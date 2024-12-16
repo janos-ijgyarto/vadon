@@ -63,6 +63,16 @@ namespace Vadon::Utilities
 
 		// TODO: use std::expected so we can check for failure?
 		template<typename T>
+		static std::vector<TypeID> get_subclass_list()
+		{
+			return get_subclass_list(get_type_id<T>());
+		}
+
+		// TODO: use std::expected so we can check for failure?
+		VADONCOMMON_API static std::vector<TypeID> get_subclass_list(TypeID type_id);
+
+		// TODO: use std::expected so we can check for failure?
+		template<typename T>
 		static PropertyInfoList get_type_properties()
 		{
 			return get_type_properties(get_type_id<T>());

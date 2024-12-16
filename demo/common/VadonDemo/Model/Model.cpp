@@ -444,6 +444,8 @@ namespace VadonDemo::Model
 
 		bool initialize()
 		{
+			CanvasItemDefinition::register_resource();
+
 			Transform2D::register_component();
 			Velocity2D::register_component();
 			CanvasComponent::register_component();
@@ -483,12 +485,18 @@ namespace VadonDemo::Model
 				new_prefab.max_health = enemy_health->max_health;
 
 				const CanvasComponent* enemy_canvas = std::get<CanvasComponent*>(enemy_prefab_components);
+				Vadon::Scene::ResourceSystem& resource_system = m_engine_core.get_system<Vadon::Scene::ResourceSystem>();
+				if (resource_system.load_resource(enemy_canvas->item_definition) == true)
+				{
+					// FIXME: resource should also be moved to render context, and we should just pass a reference to it!
+					const CanvasItemDefinition* canvas_item_def = resource_system.get_resource<CanvasItemDefinition>(enemy_canvas->item_definition);
 
-				CreateEnemyPrefab* create_enemy_prefab = m_event_queue.allocate_object<CreateEnemyPrefab>(Vadon::Utilities::to_integral(PacketType::CREATE_ENEMY_PREFAB));
-				create_enemy_prefab->type = enemy_canvas->type;
-				create_enemy_prefab->color = enemy_canvas->color;
-				create_enemy_prefab->z_order = enemy_canvas->z_order;
-				create_enemy_prefab->scale = enemy_transform->scale;
+					CreateEnemyPrefab* create_enemy_prefab = m_event_queue.allocate_object<CreateEnemyPrefab>(Vadon::Utilities::to_integral(PacketType::CREATE_ENEMY_PREFAB));
+					create_enemy_prefab->type = canvas_item_def->type;
+					create_enemy_prefab->color = canvas_item_def->color;
+					create_enemy_prefab->z_order = canvas_item_def->z_order;
+					create_enemy_prefab->scale = enemy_transform->scale;
+				}
 			}
 
 			return prefab_index_it->second;
@@ -520,11 +528,18 @@ namespace VadonDemo::Model
 
 				const CanvasComponent* projectile_canvas = std::get<CanvasComponent*>(projectile_prefab_components);
 
-				CreateProjectilePrefab* create_proj_prefab = m_event_queue.allocate_object<CreateProjectilePrefab>(Vadon::Utilities::to_integral(PacketType::CREATE_PROJECTILE_PREFAB));
-				create_proj_prefab->type = projectile_canvas->type;
-				create_proj_prefab->color = projectile_canvas->color;
-				create_proj_prefab->z_order = projectile_canvas->z_order;
-				create_proj_prefab->scale = projectile_transform->scale;
+				Vadon::Scene::ResourceSystem& resource_system = m_engine_core.get_system<Vadon::Scene::ResourceSystem>();
+				if (resource_system.load_resource(projectile_canvas->item_definition) == true)
+				{
+					// FIXME: resource should also be moved to render context, and we should just pass a reference to it!
+					const CanvasItemDefinition* canvas_item_def = resource_system.get_resource<CanvasItemDefinition>(projectile_canvas->item_definition);
+
+					CreateProjectilePrefab* create_proj_prefab = m_event_queue.allocate_object<CreateProjectilePrefab>(Vadon::Utilities::to_integral(PacketType::CREATE_PROJECTILE_PREFAB));
+					create_proj_prefab->type = canvas_item_def->type;
+					create_proj_prefab->color = canvas_item_def->color;
+					create_proj_prefab->z_order = canvas_item_def->z_order;
+					create_proj_prefab->scale = projectile_transform->scale;
+				}
 			}
 
 			return prefab_index_it->second;
@@ -589,14 +604,21 @@ namespace VadonDemo::Model
 				{
 					player_canvas_component->render_handle = m_generic_render_pool.register_object();
 
-					CreateGeneric* create_player_render_obj = m_event_queue.allocate_object<CreateGeneric>(Vadon::Utilities::to_integral(PacketType::CREATE_GENERIC));
-					create_player_render_obj->handle = player_canvas_component->render_handle;
+					Vadon::Scene::ResourceSystem& resource_system = m_engine_core.get_system<Vadon::Scene::ResourceSystem>();
+					if (resource_system.load_resource(player_canvas_component->item_definition) == true)
+					{
+						// FIXME: resource should also be moved to render context, and we should just pass a reference to it!
+						const CanvasItemDefinition* canvas_item_def = resource_system.get_resource<CanvasItemDefinition>(player_canvas_component->item_definition);
 
-					ModifyGeneric* modify_player_render_obj = m_event_queue.allocate_object<ModifyGeneric>(Vadon::Utilities::to_integral(PacketType::MODIFY_GENERIC));
-					modify_player_render_obj->handle = player_canvas_component->render_handle;
-					modify_player_render_obj->type = player_canvas_component->type;
-					modify_player_render_obj->color = player_canvas_component->color;
-					modify_player_render_obj->z_order = player_canvas_component->z_order;
+						CreateGeneric* create_player_render_obj = m_event_queue.allocate_object<CreateGeneric>(Vadon::Utilities::to_integral(PacketType::CREATE_GENERIC));
+						create_player_render_obj->handle = player_canvas_component->render_handle;
+
+						ModifyGeneric* modify_player_render_obj = m_event_queue.allocate_object<ModifyGeneric>(Vadon::Utilities::to_integral(PacketType::MODIFY_GENERIC));
+						modify_player_render_obj->handle = player_canvas_component->render_handle;
+						modify_player_render_obj->type = canvas_item_def->type;
+						modify_player_render_obj->color = canvas_item_def->color;
+						modify_player_render_obj->z_order = canvas_item_def->z_order;
+					}
 				}				
 			}
 
@@ -637,14 +659,21 @@ namespace VadonDemo::Model
 				{
 					map_canvas_component->render_handle = m_generic_render_pool.register_object();
 
-					CreateGeneric* create_map_render_obj = m_event_queue.allocate_object<CreateGeneric>(Vadon::Utilities::to_integral(PacketType::CREATE_GENERIC));
-					create_map_render_obj->handle = map_canvas_component->render_handle;
+					Vadon::Scene::ResourceSystem& resource_system = m_engine_core.get_system<Vadon::Scene::ResourceSystem>();
+					if (resource_system.load_resource(map_canvas_component->item_definition) == true)
+					{
+						// FIXME: resource should also be moved to render context, and we should just pass a reference to it!
+						const CanvasItemDefinition* canvas_item_def = resource_system.get_resource<CanvasItemDefinition>(map_canvas_component->item_definition);
 
-					ModifyGeneric* modify_map_render_obj = m_event_queue.allocate_object<ModifyGeneric>(Vadon::Utilities::to_integral(PacketType::MODIFY_GENERIC));
-					modify_map_render_obj->handle = map_canvas_component->render_handle;
-					modify_map_render_obj->type = map_canvas_component->type;
-					modify_map_render_obj->color = map_canvas_component->color;
-					modify_map_render_obj->z_order = map_canvas_component->z_order;
+						CreateGeneric* create_map_render_obj = m_event_queue.allocate_object<CreateGeneric>(Vadon::Utilities::to_integral(PacketType::CREATE_GENERIC));
+						create_map_render_obj->handle = map_canvas_component->render_handle;
+
+						ModifyGeneric* modify_map_render_obj = m_event_queue.allocate_object<ModifyGeneric>(Vadon::Utilities::to_integral(PacketType::MODIFY_GENERIC));
+						modify_map_render_obj->handle = map_canvas_component->render_handle;
+						modify_map_render_obj->type = canvas_item_def->type;
+						modify_map_render_obj->color = canvas_item_def->color;
+						modify_map_render_obj->z_order = canvas_item_def->z_order;
+					}
 				}
 			}
 
@@ -989,10 +1018,14 @@ namespace VadonDemo::Model
 				Transform2D* transform_component = std::get<Transform2D*>(current_component_tuple);
 				CanvasComponent& canvas_component = std::get<CanvasComponent&>(current_component_tuple);
 
+				// FIXME: use message queue instead of checking each frame
 				if (canvas_component.render_handle < 0)
 				{
 					internal_update_canvas_item(canvas_component);
-					assert(canvas_component.render_handle >= 0);
+					if (canvas_component.render_handle < 0)
+					{
+						continue;
+					}
 				}
 
 				GenericRenderObject& render_object = m_generic_render_pool.objects[canvas_component.render_handle];
@@ -1457,6 +1490,19 @@ namespace VadonDemo::Model
 
 		void internal_update_canvas_item(CanvasComponent& canvas_component)
 		{
+			if (canvas_component.item_definition.is_valid() == false)
+			{
+				internal_remove_canvas_item(canvas_component);
+				return;
+			}
+
+			Vadon::Scene::ResourceSystem& resource_system = m_engine_core.get_system<Vadon::Scene::ResourceSystem>();
+			if (resource_system.load_resource(canvas_component.item_definition) == false)
+			{
+				m_engine_core.log_error("Failed to load canvas item definition!\n");
+				return;
+			}
+
 			Vadon::Render::Canvas::CanvasSystem& canvas_system = m_engine_core.get_system<Vadon::Render::Canvas::CanvasSystem>();
 			if (canvas_component.render_handle < 0)
 			{
@@ -1472,13 +1518,16 @@ namespace VadonDemo::Model
 				render_obj.canvas_item = canvas_system.create_item(new_item_info);
 			}
 
+			// FIXME: resource should also be moved to render context, and we should just pass a reference to it!
+			const CanvasItemDefinition* canvas_item_def = resource_system.get_resource<CanvasItemDefinition>(canvas_component.item_definition);
+
 			GenericRenderObject& render_obj = m_generic_render_pool.objects[canvas_component.render_handle];
 
-			const int32_t render_type = std::clamp(canvas_component.type, 0, Vadon::Utilities::to_integral(RenderObjectType::DIAMOND));
+			const int32_t render_type = std::clamp(canvas_item_def->type, 0, Vadon::Utilities::to_integral(RenderObjectType::DIAMOND));
 
-			prepare_canvas_item(render_obj.canvas_item, Vadon::Utilities::to_enum<RenderObjectType>(render_type), canvas_component.color);
+			prepare_canvas_item(render_obj.canvas_item, Vadon::Utilities::to_enum<RenderObjectType>(render_type), canvas_item_def->color);
 
-			canvas_system.set_item_z_order(render_obj.canvas_item, canvas_component.z_order);
+			canvas_system.set_item_z_order(render_obj.canvas_item, canvas_item_def->z_order);
 		}
 
 		void remove_canvas_item(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle entity)
@@ -1489,13 +1538,16 @@ namespace VadonDemo::Model
 				// TODO: error!
 				return;
 			}
+		}
 
-			if (canvas_component->render_handle < 0)
+		void internal_remove_canvas_item(CanvasComponent& canvas_component)
+		{
+			if (canvas_component.render_handle < 0)
 			{
 				return;
 			}
 
-			GenericRenderObject& generic_obj = m_generic_render_pool.objects[canvas_component->render_handle];
+			GenericRenderObject& generic_obj = m_generic_render_pool.objects[canvas_component.render_handle];
 			if (generic_obj.canvas_item.is_valid() == false)
 			{
 				return;
@@ -1506,8 +1558,8 @@ namespace VadonDemo::Model
 
 			generic_obj.canvas_item.invalidate();
 
-			m_generic_render_pool.unregister_object(canvas_component->render_handle);
-			canvas_component->render_handle = -1;
+			m_generic_render_pool.unregister_object(canvas_component.render_handle);
+			canvas_component.render_handle = -1;
 		}
 
 		void set_player_input(Vadon::ECS::World& ecs_world, const PlayerInput& input)

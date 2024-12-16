@@ -1,7 +1,6 @@
 #ifndef VADONEDITOR_VIEW_SCENE_RESOURCE_SCENE_HPP
 #define VADONEDITOR_VIEW_SCENE_RESOURCE_SCENE_HPP
 #include <VadonEditor/Model/Scene/Scene.hpp>
-#include <VadonEditor/UI/Developer/GUI.hpp>
 #include <VadonEditor/UI/Developer/Widgets.hpp>
 namespace VadonEditor::Core
 {
@@ -9,32 +8,6 @@ namespace VadonEditor::Core
 }
 namespace VadonEditor::View
 {
-	// Basically a "Save As" dialog
-	class SaveSceneDialog : public UI::Developer::Dialog
-	{
-	protected:
-		Dialog::Result internal_draw(UI::Developer::GUISystem& dev_gui) override;
-	private:
-		SaveSceneDialog(Core::Editor& editor);
-
-		std::string get_save_path() const;
-
-		void save_scene_as(Model::Scene* scene);
-		bool validate_path() const;
-
-		Core::Editor& m_editor;
-
-		Model::Scene* m_scene;
-		UI::Developer::InputText m_scene_name;
-
-		UI::Developer::FileBrowserWidget m_file_browser;
-
-		UI::Developer::Button m_save_button;
-		UI::Developer::Button m_cancel_button;
-
-		friend class SceneListWindow;
-	};
-
 	class SelectSceneDialog : public UI::Developer::Dialog
 	{
 	public:
@@ -88,7 +61,8 @@ namespace VadonEditor::View
 		UI::Developer::ListBox m_scene_list_box;
 		std::vector<Model::Scene*> m_scene_list;
 
-		SaveSceneDialog m_save_scene_dialog;
+		UI::Developer::FileBrowserDialog m_save_scene_dialog;
+		Model::Scene* m_saved_scene = nullptr; // FIXME: some way to better encapsulate with save dialog!
 		SelectSceneDialog m_load_scene_dialog;
 
 		friend class MainWindow;

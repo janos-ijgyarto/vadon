@@ -1,9 +1,7 @@
 #ifndef VADONDEMO_MODEL_COMPONENT_HPP
 #define VADONDEMO_MODEL_COMPONENT_HPP
-#include <Vadon/ECS/Component/Registry.hpp>
-#include <Vadon/Render/Canvas/Item.hpp>
-#include <Vadon/Utilities/Enum/EnumClass.hpp>
-
+#include <VadonDemo/Model/Resource.hpp>
+#include <Vadon/ECS/Entity/Entity.hpp>
 #include <Vadon/Scene/Scene.hpp>
 
 namespace VadonDemo::Model
@@ -38,9 +36,7 @@ namespace VadonDemo::Model
 
 	struct CanvasComponent
 	{
-		int32_t type = Vadon::Utilities::to_integral(RenderObjectType::TRIANGLE); // FIXME: implement a way to do enums, list of selectable options, etc.
-		Vadon::Utilities::Vector3 color = Vadon::Utilities::Vector3_One;
-		float z_order = 0.0f;
+		CanvasItemDefHandle item_definition;
 		
 		int32_t render_handle = -1;
 

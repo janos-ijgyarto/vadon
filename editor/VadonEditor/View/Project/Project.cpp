@@ -17,7 +17,7 @@ namespace VadonEditor::View
 			m_root_path = m_file_browser.get_selected_file().path;
 			if (m_root_path.empty() == true)
 			{
-				m_root_path = m_file_browser.get_current_directory();
+				m_root_path = m_file_browser.get_current_path();
 			}
 		}
 

@@ -1,0 +1,14 @@
+{
+    "id": "SH21xudPT76RxuogXgmtzA==",
+    "properties": {
+        "color": [
+            1.0,
+            1.0,
+            0.0
+        ],
+        "name": "",
+        "type": 2,
+        "z_order": 2.0
+    },
+    "type": "VadonDemo::Model::CanvasItemDefinition"
+}

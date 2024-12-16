@@ -54,7 +54,7 @@ namespace Vadon::Private::Scene
 }
 namespace Vadon::Scene
 {
-	struct Scene : public ResourceBase
+	struct Scene : public Resource
 	{
 		Vadon::Private::Scene::SceneData data;
 	};

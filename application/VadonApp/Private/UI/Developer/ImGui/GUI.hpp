@@ -62,11 +62,14 @@ namespace VadonApp::Private::UI::Developer::ImGUI
 		bool begin_child_window(const ChildWindow& window) override;
 		void end_child_window() override;
 
-		void open_dialog(std::string_view id) override;
-		void close_current_dialog() override;
+		bool begin_popup(Window& popup) override;
+		bool begin_popup_modal(Window& popup) override;
+		void end_popup() override;
 
-		bool begin_modal_dialog(Window& dialog) override;
-		void end_dialog() override;
+		void open_popup(std::string_view id) override;
+		void close_current_popup() override;
+
+		bool begin_popup_context_item(std::string_view id) override;
 
 		bool begin_main_menu_bar() override;
 		void end_main_menu_bar() override;
@@ -113,6 +116,8 @@ namespace VadonApp::Private::UI::Developer::ImGUI
 		void add_text(std::string_view text) override;
 		void add_text_unformatted(std::string_view text) override;
 		void add_separator_text(std::string_view text) override;
+
+		void set_item_tooltip(std::string_view tooltip_text) override;
 		
 		void same_line() override;
 		void set_scroll_x(float ratio = 0.5f) override;

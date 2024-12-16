@@ -1,6 +1,6 @@
 #ifndef VADONEDITOR_VIEW_SCENE_ECS_COMPONENT_HPP
 #define VADONEDITOR_VIEW_SCENE_ECS_COMPONENT_HPP
-#include <VadonEditor/View/Widgets/Property.hpp>
+#include <VadonEditor/View/Scene/Property/Property.hpp>
 #include <VadonEditor/UI/Developer/Widgets.hpp>
 #include <Vadon/ECS/Component/Component.hpp>
 namespace VadonEditor::Model

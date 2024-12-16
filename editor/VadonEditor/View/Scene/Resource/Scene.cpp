@@ -15,91 +15,6 @@
 
 namespace VadonEditor::View
 {
-	UI::Developer::Dialog::Result SaveSceneDialog::internal_draw(UI::Developer::GUISystem& dev_gui)
-	{
-		Result result = Result::NONE;
-
-		Vadon::Utilities::Vector2 file_browser_area = dev_gui.get_available_content_region();
-		const VadonApp::UI::Developer::GUIStyle gui_style = dev_gui.get_style();
-
-		file_browser_area.y -= dev_gui.calculate_text_size(m_scene_name.label).y + gui_style.frame_padding.y * 2;
-		file_browser_area.y -= dev_gui.calculate_text_size(m_save_button.label).y + gui_style.frame_padding.y * 2 + 10.0f;
-
-		m_file_browser.draw(dev_gui);
-		if (m_file_browser.get_selected_file().double_clicked == true)
-		{
-			// File double clicked, set its name in the input
-			m_scene_name.input = std::filesystem::path(m_file_browser.get_selected_file().path).stem().string();
-		}
-
-		dev_gui.draw_input_text(m_scene_name);
-
-		if (dev_gui.draw_button(m_save_button) == true)
-		{
-			// TODO: error dialog if not valid!
-			if (validate_path() == true)
-			{
-				result = Result::ACCEPTED;
-				close();
-			}
-		}
-		dev_gui.same_line();
-		if (dev_gui.draw_button(m_cancel_button) == true)
-		{
-			result = Result::CANCELLED;
-			close();
-		}
-		return result;
-	}
-
-	SaveSceneDialog::SaveSceneDialog(Core::Editor& editor)
-		: Dialog("Save Scene As")
-		, m_editor(editor)
-	{
-		m_scene_name.label = "Scene Name";
-
-		m_save_button.label = "Save";
-		m_cancel_button.label = "Cancel";
-	}
-
-	std::string SaveSceneDialog::get_save_path() const
-	{
-		return (std::filesystem::path(m_file_browser.get_current_path()) / (m_scene_name.input + ".vdsc")).string();
-	}
-
-	bool SaveSceneDialog::validate_path() const
-	{
-		// TODO: any other validation?
-		if (m_scene_name.input.empty() == true)
-		{
-			return false;
-		}
-
-		return true;
-	}
-
-	void SaveSceneDialog::save_scene_as(Model::Scene* scene)
-	{
-		m_scene = scene;
-		const Vadon::Core::FileSystemPath scene_path = scene->get_info().path;
-		Vadon::Core::FileSystem& file_system = m_editor.get_engine_core().get_system<Vadon::Core::FileSystem>();
-		if (scene_path.is_valid() == true)
-		{
-			// Existing scene
-			m_file_browser.navigate_to_path(file_system.get_absolute_path(scene_path));
-			m_scene_name.input = std::filesystem::path(scene_path.path).stem().string();
-		}
-		else
-		{
-			// New scene, need to set path
-			Core::ProjectManager& project_manager = m_editor.get_system<Core::ProjectManager>();
-			m_file_browser.navigate_to_path(file_system.get_absolute_path(Vadon::Core::FileSystemPath{ .root_directory = project_manager.get_active_project().root_dir_handle, .path = ""}));
-			m_scene_name.input.clear();
-		}
-
-		open();
-	}
-
 	SelectSceneDialog::SelectSceneDialog(Core::Editor& editor, std::string_view title)
 		: Dialog(title)
 		, m_editor(editor)
@@ -164,7 +79,7 @@ namespace VadonEditor::View
 
 	SceneListWindow::SceneListWindow(Core::Editor& editor)
 		: m_editor(editor)
-		, m_save_scene_dialog(editor)
+		, m_save_scene_dialog("Save Scene", UI::Developer::FileBrowserDialog::Flags::NAME_INPUT)
 		, m_load_scene_dialog(editor, "Load Scene")
 	{
 		m_window.title = "Scene List";
@@ -172,6 +87,8 @@ namespace VadonEditor::View
 
 		m_scene_list_box.label = "#scene_list";
 		m_scene_list_box.size = { -1, -1 };
+
+		m_save_scene_dialog.set_accept_label("Save");
 	}
 
 	void SceneListWindow::draw(UI::Developer::GUISystem& dev_gui)
@@ -180,23 +97,34 @@ namespace VadonEditor::View
 		{
 			if (m_save_scene_dialog.draw(dev_gui) == VadonApp::UI::Developer::Dialog::Result::ACCEPTED)
 			{
-				// TODO: prompt if about overwrite?
+				if (m_save_scene_dialog.get_file_name_input().empty() == true)
+				{
+					// TODO: error!
+					return;
+				}
+
+				// TODO: prompt if file already exists at path!
+				const std::string new_scene_path = m_save_scene_dialog.get_entered_file_path() + ".vdsc";
+
 				Core::ProjectManager& project_manager = m_editor.get_system<Core::ProjectManager>();
 				Vadon::Core::FileSystem& file_system = m_editor.get_engine_core().get_system<Vadon::Core::FileSystem>();
 				const Vadon::Core::RootDirectoryHandle project_root_dir = project_manager.get_active_project().root_dir_handle;
 
-				const Model::ResourcePath new_path = { .root_directory = project_root_dir, .path = file_system.get_relative_path(m_save_scene_dialog.get_save_path(), project_root_dir) };
-				m_save_scene_dialog.m_scene->set_path(new_path);
-				if (m_save_scene_dialog.m_scene->save() == true)
+				const Model::ResourcePath new_path = { .root_directory = project_root_dir, .path = file_system.get_relative_path(new_scene_path, project_root_dir) };
+
+				m_saved_scene->set_path(new_path);
+				if (m_saved_scene->save() == true)
 				{
-					const int32_t scene_index = get_scene_index(m_save_scene_dialog.m_scene);
+					const int32_t scene_index = get_scene_index(m_saved_scene);
 					// TODO: assert?
-					m_scene_list_box.items[scene_index] = m_save_scene_dialog.m_scene->get_info().path.path;
+					m_scene_list_box.items[scene_index] = m_saved_scene->get_info().path.path;
 				}
 				else
 				{
 					m_editor.get_engine_core().log_error("SceneListWindow: failed to save Scene!\n");
 				}
+
+				m_saved_scene = nullptr;
 			}
 
 			if (m_load_scene_dialog.draw(dev_gui) == VadonApp::UI::Developer::Dialog::Result::ACCEPTED)
@@ -253,7 +181,8 @@ namespace VadonEditor::View
 		if (active_scene->get_info().path.is_valid() == false)
 		{
 			// New scene, have to set path
-			m_save_scene_dialog.save_scene_as(active_scene);
+			m_saved_scene = active_scene;
+			m_save_scene_dialog.open();
 		}
 		else
 		{

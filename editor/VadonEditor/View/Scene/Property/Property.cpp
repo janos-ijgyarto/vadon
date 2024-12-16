@@ -1,4 +1,4 @@
-#include <VadonEditor/View/Widgets/Property.hpp>
+#include <VadonEditor/View/Scene/Property/Property.hpp>
 
 #include <VadonEditor/Core/Editor.hpp>
 

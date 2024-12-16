@@ -86,11 +86,15 @@ namespace VadonApp::UI::Developer
 		virtual bool begin_child_window(const ChildWindow& window) = 0;
 		virtual void end_child_window() = 0;
 
-		virtual void open_dialog(std::string_view id) = 0;
-		virtual void close_current_dialog() = 0;
+		virtual bool begin_popup(Window& popup) = 0;
+		virtual bool begin_popup_modal(Window& popup) = 0;
+		virtual void end_popup() = 0;
 
-		virtual bool begin_modal_dialog(Window& dialog) = 0;
-		virtual void end_dialog() = 0;
+		virtual void open_popup(std::string_view id) = 0;
+		virtual void close_current_popup() = 0;
+
+		// TODO: context popups for window and void!
+		virtual bool begin_popup_context_item(std::string_view id = "") = 0;
 
 		virtual bool begin_main_menu_bar() = 0;
 		virtual void end_main_menu_bar() = 0;
@@ -141,6 +145,8 @@ namespace VadonApp::UI::Developer
 		virtual void add_text(std::string_view text) = 0;
 		virtual void add_text_unformatted(std::string_view text) = 0;
 		virtual void add_separator_text(std::string_view text) = 0;
+
+		virtual void set_item_tooltip(std::string_view tooltip_text) = 0;
 
 		virtual void same_line() = 0;
 		virtual void set_scroll_x(float ratio = 0.5f) = 0;

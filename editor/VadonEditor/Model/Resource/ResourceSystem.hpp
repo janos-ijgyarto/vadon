@@ -41,6 +41,7 @@ namespace VadonEditor::Model
 
 		Core::Editor& m_editor;
 		std::unordered_map<uint64_t, Resource> m_resource_lookup;
+		EditorResourceID m_resource_id_counter;
 
 		friend class ModelSystem;
 	};

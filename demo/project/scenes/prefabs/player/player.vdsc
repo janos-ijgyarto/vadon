@@ -1,8 +1,4 @@
 {
-    "id": "Uw8C1hKZRsmH4sEQRuvUlA==",
-    "properties": {
-        "name": ""
-    },
     "data": {
         "entities": [
             {
@@ -20,13 +16,7 @@
                     },
                     {
                         "properties": {
-                            "color": [
-                                0.0,
-                                0.0,
-                                1.0
-                            ],
-                            "type": 2,
-                            "z_order": 3.0
+                            "item_definition": "DYDIDcxQQAaa4VDwTCPdrw=="
                         },
                         "type": "VadonDemo::Model::CanvasComponent"
                     },
@@ -59,6 +49,10 @@
                 "parent": -1
             }
         ]
+    },
+    "id": "Uw8C1hKZRsmH4sEQRuvUlA==",
+    "properties": {
+        "name": ""
     },
     "type": "Vadon::Scene::Scene"
 }

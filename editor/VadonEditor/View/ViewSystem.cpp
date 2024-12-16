@@ -78,6 +78,11 @@ namespace VadonEditor::View
 		};
 	}
 
+	void ViewModel::set_active_resource(Model::Resource* resource)
+	{
+		m_active_resource = resource;
+	}
+
 	void ViewModel::set_active_scene(Model::Scene* scene)
 	{
 		if (m_active_scene != scene)
@@ -105,6 +110,7 @@ namespace VadonEditor::View
 		: m_editor(editor)
 		, m_active_scene(nullptr)
 		, m_active_entity(nullptr)
+		, m_active_resource(nullptr)
 	{}
 
 	struct ViewSystem::Internal
