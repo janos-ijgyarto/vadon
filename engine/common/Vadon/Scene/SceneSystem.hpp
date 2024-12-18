@@ -17,6 +17,8 @@ namespace Vadon::Scene
 		virtual SceneHandle create_scene() = 0;
 		virtual SceneHandle find_scene(ResourceID scene_id) const = 0;
 
+		virtual SceneHandle load_scene(ResourceID scene_id) = 0;
+
 		virtual bool package_scene_data(SceneHandle scene_handle, Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle root_entity) = 0;
 
 		// NOTE: we don't check for circular dependencies, by this stage we assume scenes contain valid data

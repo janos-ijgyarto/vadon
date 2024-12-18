@@ -267,24 +267,7 @@ namespace VadonDemo::UI
 			// Import all resources in the project
 			// FIXME: do this automatically?
 			{
-				Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
-
-				bool all_valid = true;
-				Vadon::Core::FileSystem& file_system = engine_core.get_system<Vadon::Core::FileSystem>();
-
-				// FIXME: make this modular!
-				std::string extensions_string = ".vdsc,.vdrc";
-
-				const std::vector<Vadon::Core::FileSystemPath> resource_files = file_system.get_files_of_type(Vadon::Core::FileSystemPath{ .root_directory = m_root_directory }, extensions_string, true);
-				for (const Vadon::Core::FileSystemPath& current_file_path : resource_files)
-				{
-					all_valid &= resource_system.import_resource(current_file_path).is_valid();
-				}
-
-				if (all_valid != true)
-				{
-					Vadon::Core::Logger::log_error("Error while importing project resources!\n");
-				}
+				// TODO: create resource DB to import all the relevant resources!
 			}
 
 			// Everything loaded successfully

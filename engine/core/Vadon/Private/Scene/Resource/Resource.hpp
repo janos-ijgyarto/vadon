@@ -5,7 +5,6 @@ namespace Vadon::Private::Scene
 {
 	using ResourceHandle = Vadon::Scene::ResourceHandle;
 	using ResourceID = Vadon::Scene::ResourceID;
-	using ResourcePath = Vadon::Scene::ResourcePath;
 
 	using ResourceInfo = Vadon::Scene::ResourceInfo;
 

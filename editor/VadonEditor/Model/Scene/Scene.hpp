@@ -1,5 +1,6 @@
 #ifndef VADONEDITOR_MODEL_SCENE_SCENE_HPP
 #define VADONEDITOR_MODEL_SCENE_SCENE_HPP
+#include <Vadon/Core/File/Path.hpp>
 #include <Vadon/ECS/Entity/Entity.hpp>
 #include <Vadon/Scene/Scene.hpp>
 namespace VadonEditor::Core

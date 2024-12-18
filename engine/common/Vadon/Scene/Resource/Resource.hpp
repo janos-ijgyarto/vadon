@@ -1,20 +1,17 @@
 #ifndef VADON_SCENE_RESOURCE_RESOURCE_HPP
 #define VADON_SCENE_RESOURCE_RESOURCE_HPP
-#include <Vadon/Core/File/Path.hpp>
+#include <Vadon/Utilities/Container/ObjectPool/Handle.hpp>
 #include <Vadon/Utilities/System/UUID/UUID.hpp>
 #include <Vadon/Utilities/TypeInfo/TypeInfo.hpp>
 namespace Vadon::Scene
 {
 	VADON_DECLARE_TYPED_POOL_HANDLE(ResourceBase, ResourceHandle);
 	using ResourceID = Vadon::Utilities::UUID;
-
-	using ResourcePath = Vadon::Core::FileSystemPath;
-
+		
 	struct ResourceInfo
 	{
 		ResourceID id;
 		Vadon::Utilities::TypeID type_id;
-		ResourcePath path;
 
 		bool is_valid() const { return id.is_valid(); }
 	};

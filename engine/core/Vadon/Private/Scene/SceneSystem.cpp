@@ -326,9 +326,8 @@ namespace Vadon::Private::Scene
 
 	SceneHandle SceneSystem::create_scene()
 	{
-		SceneHandle new_scene_handle;
 		Vadon::Scene::ResourceSystem& resource_system = m_engine_core.get_system<Vadon::Scene::ResourceSystem>();
-		new_scene_handle.from_resource_handle(resource_system.create_resource<Scene>());
+		SceneHandle new_scene_handle = SceneHandle::from_resource_handle(resource_system.create_resource<Scene>());
 
 		if (new_scene_handle.is_valid() == false)
 		{
@@ -355,7 +354,21 @@ namespace Vadon::Private::Scene
 			return SceneHandle();
 		}
 
-		return SceneHandle().from_resource_handle(resource_handle);
+		return SceneHandle::from_resource_handle(resource_handle);
+	}
+
+	SceneHandle SceneSystem::load_scene(ResourceID scene_id)
+	{
+		Vadon::Scene::ResourceSystem& resource_system = m_engine_core.get_system<Vadon::Scene::ResourceSystem>();
+		const ResourceHandle scene_resource_handle = resource_system.load_resource(scene_id);
+		if (resource_system.get_resource_info(scene_resource_handle).type_id != Vadon::Utilities::TypeRegistry::get_type_id<Scene>())
+		{
+			// TODO: log resource ID!
+			// TODO2: remove loaded resource?
+			log_error("Scene system: resource ID does not correspond to scene resource!\n");
+			return SceneHandle();
+		}
+		return SceneHandle::from_resource_handle(scene_resource_handle);
 	}
 
 	bool SceneSystem::package_scene_data(SceneHandle scene_handle, ECS::World& ecs_world, ECS::EntityHandle root_entity)
@@ -384,14 +397,7 @@ namespace Vadon::Private::Scene
 	ECS::EntityHandle SceneSystem::instantiate_scene(SceneHandle scene_handle, ECS::World& ecs_world, bool is_sub_scene)
 	{
 		// TODO: circular dependency check?
-		// Make sure the scene is loaded	
-		Vadon::Scene::ResourceSystem& resource_system = m_engine_core.get_system<Vadon::Scene::ResourceSystem>();
-		if (resource_system.load_resource(scene_handle) == false)
-		{
-			log_error("Scene system: failed to load scene during instantiation!\n");
-			return ECS::EntityHandle();
-		}
-		const Scene* scene = resource_system.get_resource<Scene>(scene_handle);
+		const Scene* scene = get_scene(scene_handle);
 
 		std::vector<Vadon::ECS::EntityHandle> entity_lookup;
 
@@ -597,15 +603,7 @@ namespace Vadon::Private::Scene
 		// Add to stack, recursively check entities if they might lead to a circular dependency
 		dependency_stack.push_back(scene_handle);
 
-		// Make sure scene is loaded
-		Vadon::Scene::ResourceSystem& resource_system = m_engine_core.get_system<Vadon::Scene::ResourceSystem>();
-		if (resource_system.load_resource(scene_handle) == false)
-		{
-			log_error("Scene system: failed to load scene during dependency check!\n");
-			return true;
-		}
-
-		const Scene* scene = resource_system.get_resource<Scene>(scene_handle);
+		const Scene* scene = get_scene(scene_handle);
 		for (const SceneData::EntityData& current_entity_data : scene->data.entities)
 		{
 			if (current_entity_data.scene.is_valid() == true)
@@ -619,5 +617,11 @@ namespace Vadon::Private::Scene
 		dependency_stack.pop_back();
 
 		return false;
+	}
+
+	const Scene* SceneSystem::get_scene(SceneHandle scene_handle) const
+	{
+		Vadon::Scene::ResourceSystem& resource_system = m_engine_core.get_system<Vadon::Scene::ResourceSystem>();
+		return resource_system.get_resource<Scene>(scene_handle);
 	}
 }

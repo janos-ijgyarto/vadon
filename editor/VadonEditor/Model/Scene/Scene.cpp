@@ -15,7 +15,7 @@ namespace VadonEditor::Model
 {
 	Vadon::Scene::SceneHandle Scene::get_handle() const
 	{
-		return Vadon::Scene::SceneHandle().from_resource_handle(m_resource->get_handle());
+		return Vadon::Scene::SceneHandle::from_resource_handle(m_resource->get_handle());
 	}
 
 	Vadon::Scene::ResourceInfo Scene::get_info() const

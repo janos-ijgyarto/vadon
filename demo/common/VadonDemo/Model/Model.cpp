@@ -486,17 +486,15 @@ namespace VadonDemo::Model
 
 				const CanvasComponent* enemy_canvas = std::get<CanvasComponent*>(enemy_prefab_components);
 				Vadon::Scene::ResourceSystem& resource_system = m_engine_core.get_system<Vadon::Scene::ResourceSystem>();
-				if (resource_system.load_resource(enemy_canvas->item_definition) == true)
-				{
-					// FIXME: resource should also be moved to render context, and we should just pass a reference to it!
-					const CanvasItemDefinition* canvas_item_def = resource_system.get_resource<CanvasItemDefinition>(enemy_canvas->item_definition);
 
-					CreateEnemyPrefab* create_enemy_prefab = m_event_queue.allocate_object<CreateEnemyPrefab>(Vadon::Utilities::to_integral(PacketType::CREATE_ENEMY_PREFAB));
-					create_enemy_prefab->type = canvas_item_def->type;
-					create_enemy_prefab->color = canvas_item_def->color;
-					create_enemy_prefab->z_order = canvas_item_def->z_order;
-					create_enemy_prefab->scale = enemy_transform->scale;
-				}
+				// FIXME: resource should also be moved to render context, and we should just pass a reference to it!
+				const CanvasItemDefinition* canvas_item_def = resource_system.get_resource<CanvasItemDefinition>(enemy_canvas->item_definition);
+
+				CreateEnemyPrefab* create_enemy_prefab = m_event_queue.allocate_object<CreateEnemyPrefab>(Vadon::Utilities::to_integral(PacketType::CREATE_ENEMY_PREFAB));
+				create_enemy_prefab->type = canvas_item_def->type;
+				create_enemy_prefab->color = canvas_item_def->color;
+				create_enemy_prefab->z_order = canvas_item_def->z_order;
+				create_enemy_prefab->scale = enemy_transform->scale;
 			}
 
 			return prefab_index_it->second;
@@ -529,17 +527,15 @@ namespace VadonDemo::Model
 				const CanvasComponent* projectile_canvas = std::get<CanvasComponent*>(projectile_prefab_components);
 
 				Vadon::Scene::ResourceSystem& resource_system = m_engine_core.get_system<Vadon::Scene::ResourceSystem>();
-				if (resource_system.load_resource(projectile_canvas->item_definition) == true)
-				{
-					// FIXME: resource should also be moved to render context, and we should just pass a reference to it!
-					const CanvasItemDefinition* canvas_item_def = resource_system.get_resource<CanvasItemDefinition>(projectile_canvas->item_definition);
 
-					CreateProjectilePrefab* create_proj_prefab = m_event_queue.allocate_object<CreateProjectilePrefab>(Vadon::Utilities::to_integral(PacketType::CREATE_PROJECTILE_PREFAB));
-					create_proj_prefab->type = canvas_item_def->type;
-					create_proj_prefab->color = canvas_item_def->color;
-					create_proj_prefab->z_order = canvas_item_def->z_order;
-					create_proj_prefab->scale = projectile_transform->scale;
-				}
+				// FIXME: resource should also be moved to render context, and we should just pass a reference to it!
+				const CanvasItemDefinition* canvas_item_def = resource_system.get_resource<CanvasItemDefinition>(projectile_canvas->item_definition);
+
+				CreateProjectilePrefab* create_proj_prefab = m_event_queue.allocate_object<CreateProjectilePrefab>(Vadon::Utilities::to_integral(PacketType::CREATE_PROJECTILE_PREFAB));
+				create_proj_prefab->type = canvas_item_def->type;
+				create_proj_prefab->color = canvas_item_def->color;
+				create_proj_prefab->z_order = canvas_item_def->z_order;
+				create_proj_prefab->scale = projectile_transform->scale;
 			}
 
 			return prefab_index_it->second;
@@ -605,20 +601,18 @@ namespace VadonDemo::Model
 					player_canvas_component->render_handle = m_generic_render_pool.register_object();
 
 					Vadon::Scene::ResourceSystem& resource_system = m_engine_core.get_system<Vadon::Scene::ResourceSystem>();
-					if (resource_system.load_resource(player_canvas_component->item_definition) == true)
-					{
-						// FIXME: resource should also be moved to render context, and we should just pass a reference to it!
-						const CanvasItemDefinition* canvas_item_def = resource_system.get_resource<CanvasItemDefinition>(player_canvas_component->item_definition);
 
-						CreateGeneric* create_player_render_obj = m_event_queue.allocate_object<CreateGeneric>(Vadon::Utilities::to_integral(PacketType::CREATE_GENERIC));
-						create_player_render_obj->handle = player_canvas_component->render_handle;
+					// FIXME: resource should also be moved to render context, and we should just pass a reference to it!
+					const CanvasItemDefinition* canvas_item_def = resource_system.get_resource<CanvasItemDefinition>(player_canvas_component->item_definition);
 
-						ModifyGeneric* modify_player_render_obj = m_event_queue.allocate_object<ModifyGeneric>(Vadon::Utilities::to_integral(PacketType::MODIFY_GENERIC));
-						modify_player_render_obj->handle = player_canvas_component->render_handle;
-						modify_player_render_obj->type = canvas_item_def->type;
-						modify_player_render_obj->color = canvas_item_def->color;
-						modify_player_render_obj->z_order = canvas_item_def->z_order;
-					}
+					CreateGeneric* create_player_render_obj = m_event_queue.allocate_object<CreateGeneric>(Vadon::Utilities::to_integral(PacketType::CREATE_GENERIC));
+					create_player_render_obj->handle = player_canvas_component->render_handle;
+
+					ModifyGeneric* modify_player_render_obj = m_event_queue.allocate_object<ModifyGeneric>(Vadon::Utilities::to_integral(PacketType::MODIFY_GENERIC));
+					modify_player_render_obj->handle = player_canvas_component->render_handle;
+					modify_player_render_obj->type = canvas_item_def->type;
+					modify_player_render_obj->color = canvas_item_def->color;
+					modify_player_render_obj->z_order = canvas_item_def->z_order;
 				}				
 			}
 
@@ -660,20 +654,18 @@ namespace VadonDemo::Model
 					map_canvas_component->render_handle = m_generic_render_pool.register_object();
 
 					Vadon::Scene::ResourceSystem& resource_system = m_engine_core.get_system<Vadon::Scene::ResourceSystem>();
-					if (resource_system.load_resource(map_canvas_component->item_definition) == true)
-					{
-						// FIXME: resource should also be moved to render context, and we should just pass a reference to it!
-						const CanvasItemDefinition* canvas_item_def = resource_system.get_resource<CanvasItemDefinition>(map_canvas_component->item_definition);
 
-						CreateGeneric* create_map_render_obj = m_event_queue.allocate_object<CreateGeneric>(Vadon::Utilities::to_integral(PacketType::CREATE_GENERIC));
-						create_map_render_obj->handle = map_canvas_component->render_handle;
+					// FIXME: resource should also be moved to render context, and we should just pass a reference to it!
+					const CanvasItemDefinition* canvas_item_def = resource_system.get_resource<CanvasItemDefinition>(map_canvas_component->item_definition);
 
-						ModifyGeneric* modify_map_render_obj = m_event_queue.allocate_object<ModifyGeneric>(Vadon::Utilities::to_integral(PacketType::MODIFY_GENERIC));
-						modify_map_render_obj->handle = map_canvas_component->render_handle;
-						modify_map_render_obj->type = canvas_item_def->type;
-						modify_map_render_obj->color = canvas_item_def->color;
-						modify_map_render_obj->z_order = canvas_item_def->z_order;
-					}
+					CreateGeneric* create_map_render_obj = m_event_queue.allocate_object<CreateGeneric>(Vadon::Utilities::to_integral(PacketType::CREATE_GENERIC));
+					create_map_render_obj->handle = map_canvas_component->render_handle;
+
+					ModifyGeneric* modify_map_render_obj = m_event_queue.allocate_object<ModifyGeneric>(Vadon::Utilities::to_integral(PacketType::MODIFY_GENERIC));
+					modify_map_render_obj->handle = map_canvas_component->render_handle;
+					modify_map_render_obj->type = canvas_item_def->type;
+					modify_map_render_obj->color = canvas_item_def->color;
+					modify_map_render_obj->z_order = canvas_item_def->z_order;
 				}
 			}
 
@@ -1497,12 +1489,6 @@ namespace VadonDemo::Model
 			}
 
 			Vadon::Scene::ResourceSystem& resource_system = m_engine_core.get_system<Vadon::Scene::ResourceSystem>();
-			if (resource_system.load_resource(canvas_component.item_definition) == false)
-			{
-				m_engine_core.log_error("Failed to load canvas item definition!\n");
-				return;
-			}
-
 			Vadon::Render::Canvas::CanvasSystem& canvas_system = m_engine_core.get_system<Vadon::Render::Canvas::CanvasSystem>();
 			if (canvas_component.render_handle < 0)
 			{

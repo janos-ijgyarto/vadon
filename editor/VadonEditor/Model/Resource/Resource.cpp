@@ -1,31 +1,22 @@
 #include <VadonEditor/Model/Resource/Resource.hpp>
 
 #include <VadonEditor/Core/Editor.hpp>
-#include <VadonEditor/Core/Project/ProjectManager.hpp>
-
-#include <Vadon/Core/File/FileSystem.hpp>
 
 #include <Vadon/Scene/Resource/ResourceSystem.hpp>
 
-#include <Vadon/Utilities/Serialization/Serializer.hpp>
 #include <Vadon/Utilities/TypeInfo/Registry/Registry.hpp>
 
 namespace VadonEditor::Model
 {
-	Vadon::Scene::ResourceInfo VadonEditor::Model::Resource::get_info() const
-	{
-		Vadon::Scene::ResourceSystem& resource_system = m_editor.get_engine_core().get_system<Vadon::Scene::ResourceSystem>();
-		return resource_system.get_resource_info(m_handle);
-	}
-
-	void Resource::set_path(const ResourcePath& path)
-	{
-		Vadon::Scene::ResourceSystem& resource_system = m_editor.get_engine_core().get_system<Vadon::Scene::ResourceSystem>();
-		resource_system.set_resource_path(m_handle, path);
-	}
-
 	bool Resource::save()
 	{
+		if (is_loaded() == false)
+		{
+			// Nothing to do
+			// TODO: should this be an error?
+			return true;
+		}
+
 		Vadon::Scene::ResourceSystem& resource_system = m_editor.get_engine_core().get_system<Vadon::Scene::ResourceSystem>();
 		if (resource_system.save_resource(m_handle) == false)
 		{
@@ -39,13 +30,16 @@ namespace VadonEditor::Model
 
 	bool Resource::load()
 	{
-		Vadon::Scene::ResourceSystem& resource_system = m_editor.get_engine_core().get_system<Vadon::Scene::ResourceSystem>();
-		if (resource_system.is_resource_loaded(m_handle) == true)
+		if (is_loaded() == true)
 		{
+			// Nothing to do
 			return true;
 		}
+		
+		Vadon::Scene::ResourceSystem& resource_system = m_editor.get_engine_core().get_system<Vadon::Scene::ResourceSystem>();
+		m_handle = resource_system.load_resource(m_resource_id);
 
-		if (resource_system.load_resource(m_handle) == false)
+		if (m_handle.is_valid() == false)
 		{
 			resource_system.log_error("Editor resource: failed to load resource!\n");
 			return false;
@@ -55,14 +49,22 @@ namespace VadonEditor::Model
 		return true;
 	}
 
-	bool Resource::is_loaded() const
+	void Resource::unload()
 	{
+		if (is_loaded() == false)
+		{
+			return;
+		}
+
 		Vadon::Scene::ResourceSystem& resource_system = m_editor.get_engine_core().get_system<Vadon::Scene::ResourceSystem>();
-		return resource_system.is_resource_loaded(m_handle);
+		resource_system.remove_resource(m_handle);
+
+		m_handle.invalidate();
 	}
 
 	Vadon::Utilities::PropertyList Resource::get_properties() const
 	{
+		// TODO: ensure that resource is loaded!
 		Vadon::Scene::ResourceSystem& resource_system = m_editor.get_engine_core().get_system<Vadon::Scene::ResourceSystem>();
 
 		Vadon::Scene::Resource* resource_base = resource_system.get_base_resource(m_handle);
@@ -71,6 +73,7 @@ namespace VadonEditor::Model
 
 	Vadon::Utilities::Variant Resource::get_property(std::string_view property_name) const
 	{
+		// TODO: ensure that resource is loaded!
 		Vadon::Scene::ResourceSystem& resource_system = m_editor.get_engine_core().get_system<Vadon::Scene::ResourceSystem>();
 
 		Vadon::Scene::Resource* resource_base = resource_system.get_base_resource(m_handle);
@@ -79,6 +82,7 @@ namespace VadonEditor::Model
 
 	void Resource::edit_property(std::string_view property_name, const Vadon::Utilities::Variant& value)
 	{
+		// TODO: ensure that resource is loaded!
 		Vadon::Scene::ResourceSystem& resource_system = m_editor.get_engine_core().get_system<Vadon::Scene::ResourceSystem>();
 
 		Vadon::Scene::Resource* resource_base = resource_system.get_base_resource(m_handle);
@@ -87,12 +91,11 @@ namespace VadonEditor::Model
 		notify_modified();
 	}
 
-	Resource::Resource(Core::Editor& editor, Vadon::Scene::ResourceHandle resource_handle, EditorResourceID id)
+	Resource::Resource(Core::Editor& editor, ResourceID resource_id, EditorResourceID editor_id)
 		: m_editor(editor)
-		, m_handle(resource_handle)
-		, m_id(id)
+		, m_resource_id(resource_id)
+		, m_editor_id(editor_id)
 		, m_modified(false)
 	{
-
 	}
 }

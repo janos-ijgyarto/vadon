@@ -9,6 +9,8 @@ namespace Vadon::Utilities
 }
 namespace Vadon::Scene
 {
+	class ResourceDatabase;
+
 	class ResourceSystem : public SceneSystemBase<ResourceSystem>
 	{
 	public:
@@ -22,7 +24,6 @@ namespace Vadon::Scene
 		virtual ResourceHandle create_resource(Vadon::Utilities::TypeID type_id) = 0;
 
 		virtual ResourceInfo get_resource_info(ResourceHandle resource_handle) const = 0;
-		virtual void set_resource_path(ResourceHandle resource_handle, const ResourcePath& path) = 0;
 
 		virtual ResourceHandle find_resource(ResourceID resource_id) const = 0;
 
@@ -35,19 +36,20 @@ namespace Vadon::Scene
 
 		virtual std::vector<ResourceHandle> find_resources_of_type(Vadon::Utilities::TypeID type_id) const = 0;
 
-		virtual ResourceHandle import_resource(const ResourcePath& path) = 0;
-		virtual ResourceHandle load_resource(const ResourcePath& path) = 0;
+		virtual void register_database(ResourceDatabase& database) = 0;
 
+		virtual bool load_resource_info(Vadon::Utilities::Serializer& serializer, ResourceInfo& resource_info) const = 0;
+
+		// This will query all the registered ResourceSerializers for this ID and attempt to serialize the resource through them
 		virtual bool save_resource(ResourceHandle resource_handle) = 0;
-		virtual bool load_resource(ResourceHandle resource_handle) = 0;
+		virtual ResourceHandle load_resource(ResourceID resource_id) = 0;
 
-		virtual bool serialize_resource(Vadon::Utilities::Serializer& serializer, ResourceHandle& resource_handle) = 0;
+		virtual bool save_resource(Vadon::Utilities::Serializer& serializer, ResourceHandle resource_handle) = 0;
+		virtual ResourceHandle load_resource(Vadon::Utilities::Serializer& serializer) = 0;
+
 		virtual bool serialize_resource_property(Vadon::Utilities::Serializer& serializer, std::string_view property_name, ResourceHandle& property_value) = 0;
 
-		virtual void unload_resource(ResourceHandle resource_handle) = 0;
 		virtual void remove_resource(ResourceHandle resource_handle) = 0;
-
-		virtual bool is_resource_loaded(ResourceHandle resource_handle) const = 0;
 
 		template<typename T>
 		const T* get_resource(ResourceHandle resource_handle) const
