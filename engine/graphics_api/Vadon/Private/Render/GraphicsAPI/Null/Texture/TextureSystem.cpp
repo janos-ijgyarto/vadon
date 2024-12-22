@@ -1,7 +1,7 @@
 #include <Vadon/Private/PCH/GraphicsAPI.hpp>
-#include <Vadon/Private/Render/GraphicsAPI/Dummy/Texture/TextureSystem.hpp>
+#include <Vadon/Private/Render/GraphicsAPI/Null/Texture/TextureSystem.hpp>
 
-namespace Vadon::Private::Render::Dummy
+namespace Vadon::Private::Render::Null
 {
 	Vadon::Render::TextureHandle TextureSystem::create_texture(const Vadon::Render::TextureInfo& /*texture_info*/, const void* /*init_data*/)
 	{

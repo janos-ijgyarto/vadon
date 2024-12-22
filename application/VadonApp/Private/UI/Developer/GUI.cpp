@@ -4,7 +4,7 @@
 #ifdef VADON_DEVELOPER_GUI_IMGUI
 #include <VadonApp/Private/UI/Developer/ImGui/GUI.hpp>
 #endif
-#include <VadonApp/Private/UI/Developer/Dummy/GUI.hpp>
+#include <VadonApp/Private/UI/Developer/Null/GUI.hpp>
 
 namespace VadonApp::Private::UI::Developer
 {
@@ -13,13 +13,13 @@ namespace VadonApp::Private::UI::Developer
 #ifdef VADON_DEVELOPER_GUI_IMGUI
 		return std::make_unique<ImGUI::GUISystem>(application);
 #else
-		return get_dummy_gui(application);
+		return get_null_gui(application);
 #endif
 	}
 
-	GUISystem::Implementation GUISystem::get_dummy_gui(Core::Application& application)
+	GUISystem::Implementation GUISystem::get_null_gui(Core::Application& application)
 	{
-		return std::make_unique<Dummy::GUISystem>(application);
+		return std::make_unique<Null::GUISystem>(application);
 	}
 
 	GUISystem::GUISystem(VadonApp::Core::Application& application)

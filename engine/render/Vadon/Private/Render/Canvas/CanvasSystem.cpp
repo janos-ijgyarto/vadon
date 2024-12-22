@@ -638,8 +638,8 @@ namespace Vadon::Private::Render::Canvas
 			texture_resource_info.mip_levels = default_texture_info.mip_levels;
 			texture_resource_info.most_detailed_mip = 0;
 
-			constexpr Render::Vector4 c_dummy_data{ 1.0f, 1.0f, 1.0f, 1.0f };
-			m_default_texture.texture = texture_system.create_texture(default_texture_info, &c_dummy_data);
+			constexpr Render::Vector4 c_placeholder_data{ 1.0f, 1.0f, 1.0f, 1.0f };
+			m_default_texture.texture = texture_system.create_texture(default_texture_info, &c_placeholder_data);
 			if (m_default_texture.texture.is_valid() == false)
 			{
 				// Something went wrong!

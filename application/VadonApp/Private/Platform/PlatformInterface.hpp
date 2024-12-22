@@ -10,7 +10,7 @@ namespace VadonApp::Private::Platform
 		using Implementation = std::unique_ptr<PlatformInterface>;
 
 		static Implementation get_interface(VadonApp::Core::Application& application);
-		static Implementation get_dummy_interface(VadonApp::Core::Application& application);
+		static Implementation get_null_interface(VadonApp::Core::Application& application);
 
 		bool initialize();
 		void shutdown();

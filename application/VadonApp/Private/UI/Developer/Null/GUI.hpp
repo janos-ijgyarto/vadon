@@ -1,8 +1,8 @@
-#ifndef VADONAPP_PRIVATE_UI_DEVELOPER_DUMMY_GUI_HPP
-#define VADONAPP_PRIVATE_UI_DEVELOPER_DUMMY_GUI_HPP
+#ifndef VADONAPP_PRIVATE_UI_DEVELOPER_NULL_GUI_HPP
+#define VADONAPP_PRIVATE_UI_DEVELOPER_NULL_GUI_HPP
 #include <VadonApp/Private/UI/Developer/GUI.hpp>
-#include <VadonApp/Private/UI/Developer/Dummy/GUIElements.hpp>
-namespace VadonApp::Private::UI::Developer::Dummy
+#include <VadonApp/Private/UI/Developer/Null/GUIElements.hpp>
+namespace VadonApp::Private::UI::Developer::Null
 {
 	using GUIStyle = VadonApp::UI::Developer::GUIStyle;
 

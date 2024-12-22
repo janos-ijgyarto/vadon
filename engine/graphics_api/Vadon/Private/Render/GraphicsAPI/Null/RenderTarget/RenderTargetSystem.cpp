@@ -1,7 +1,7 @@
 #include <Vadon/Private/PCH/GraphicsAPI.hpp>
-#include <Vadon/Private/Render/GraphicsAPI/Dummy/RenderTarget/RenderTargetSystem.hpp>
+#include <Vadon/Private/Render/GraphicsAPI/Null/RenderTarget/RenderTargetSystem.hpp>
 
-namespace Vadon::Private::Render::Dummy
+namespace Vadon::Private::Render::Null
 {
 	WindowHandle RenderTargetSystem::add_window(const WindowInfo& /*window_info*/)
 	{

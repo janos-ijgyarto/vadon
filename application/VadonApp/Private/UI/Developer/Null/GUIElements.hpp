@@ -1,7 +1,7 @@
-#ifndef VADONAPP_PRIVATE_UI_DEVELOPER_DUMMY_GUIELEMENTS_HPP
-#define VADONAPP_PRIVATE_UI_DEVELOPER_DUMMY_GUIELEMENTS_HPP
+#ifndef VADONAPP_PRIVATE_UI_DEVELOPER_NULL_GUIELEMENTS_HPP
+#define VADONAPP_PRIVATE_UI_DEVELOPER_NULL_GUIELEMENTS_HPP
 #include <VadonApp/UI/Developer/GUIElements.hpp>
-namespace VadonApp::Private::UI::Developer::Dummy
+namespace VadonApp::Private::UI::Developer::Null
 {
 	using WindowFlags = VadonApp::UI::Developer::WindowFlags;
 

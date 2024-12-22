@@ -1,10 +1,10 @@
-#ifndef VADON_PRIVATE_RENDER_GRAPHICSAPI_DUMMY_RENDERTARGET_RENDERTARGETSYSTEM_HPP
-#define VADON_PRIVATE_RENDER_GRAPHICSAPI_DUMMY_RENDERTARGET_RENDERTARGETSYSTEM_HPP
+#ifndef VADON_PRIVATE_RENDER_GRAPHICSAPI_NULL_RENDERTARGET_RENDERTARGETSYSTEM_HPP
+#define VADON_PRIVATE_RENDER_GRAPHICSAPI_NULL_RENDERTARGET_RENDERTARGETSYSTEM_HPP
 #include <Vadon/Render/GraphicsAPI/RenderTarget/RenderTargetSystem.hpp>
 #include <Vadon/Utilities/Container/ObjectPool/Pool.hpp>
 
-#include <Vadon/Private/Render/GraphicsAPI/Dummy/RenderTarget/RenderTarget.hpp>
-namespace Vadon::Private::Render::Dummy
+#include <Vadon/Private/Render/GraphicsAPI/Null/RenderTarget/RenderTarget.hpp>
+namespace Vadon::Private::Render::Null
 {
 	class GraphicsAPI;
 

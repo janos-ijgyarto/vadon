@@ -1,10 +1,10 @@
-#ifndef VADON_PRIVATE_RENDER_GRAPHICSAPI_DUMMY_SHADER_SHADERSYSTEM_HPP
-#define VADON_PRIVATE_RENDER_GRAPHICSAPI_DUMMY_SHADER_SHADERSYSTEM_HPP
+#ifndef VADON_PRIVATE_RENDER_GRAPHICSAPI_NULL_SHADER_SHADERSYSTEM_HPP
+#define VADON_PRIVATE_RENDER_GRAPHICSAPI_NULL_SHADER_SHADERSYSTEM_HPP
 #include <Vadon/Render/GraphicsAPI/Shader/ShaderSystem.hpp>
 
-#include <Vadon/Private/Render/GraphicsAPI/Dummy/Shader/Resource.hpp>
-#include <Vadon/Private/Render/GraphicsAPI/Dummy/Shader/Shader.hpp>
-namespace Vadon::Private::Render::Dummy
+#include <Vadon/Private/Render/GraphicsAPI/Null/Shader/Resource.hpp>
+#include <Vadon/Private/Render/GraphicsAPI/Null/Shader/Shader.hpp>
+namespace Vadon::Private::Render::Null
 {
 	class GraphicsAPI;
 

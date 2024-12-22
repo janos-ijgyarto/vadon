@@ -1,6 +1,6 @@
 #include <Vadon/Private/PCH/GraphicsAPI.hpp>
-#include <Vadon/Private/Render/GraphicsAPI/Dummy/Buffer/BufferSystem.hpp>
-namespace Vadon::Private::Render::Dummy
+#include <Vadon/Private/Render/GraphicsAPI/Null/Buffer/BufferSystem.hpp>
+namespace Vadon::Private::Render::Null
 {
 	Vadon::Render::BufferHandle BufferSystem::create_buffer(const Vadon::Render::BufferInfo& /*buffer_info*/, const void* /*init_data*/)
 	{
