@@ -1,11 +1,11 @@
 #include <VadonApp/Private/PCH/VadonApp.hpp>
-#include <VadonApp/Private/UI/Developer/Dummy/GUI.hpp>
+#include <VadonApp/Private/UI/Developer/Null/GUI.hpp>
 
 #include <VadonApp/Private/Core/Application.hpp>
 
-#include <VadonApp/Private/UI/Developer/Dummy/GUIElements.hpp>
+#include <VadonApp/Private/UI/Developer/Null/GUIElements.hpp>
 
-namespace VadonApp::Private::UI::Developer::Dummy
+namespace VadonApp::Private::UI::Developer::Null
 {
     GUISystem::GUISystem(VadonApp::Core::Application& application)
         : VadonApp::Private::UI::Developer::GUISystem(application)
@@ -13,7 +13,7 @@ namespace VadonApp::Private::UI::Developer::Dummy
 
     }
 
-    // TODO: implement some kind of "dummy GUI stack" so we can see what the app is trying to draw, even if the dev GUI is disabled?
+    // TODO: implement some kind of "null GUI stack" so we can see what the app is trying to draw, even if the dev GUI is disabled?
 
     void GUISystem::start_frame()
     {
@@ -48,14 +48,14 @@ namespace VadonApp::Private::UI::Developer::Dummy
     bool GUISystem::initialize()
     {
         // TODO!!!
-        log_message("Dummy developer GUI initialized successfully!\n");
+        log_message("Null developer GUI initialized successfully!\n");
         return true;
     }
 
     void GUISystem::shutdown()
     {
         // TODO!!!
-        log_message("Dummy developer GUI shut down successfully!\n");
+        log_message("Null developer GUI shut down successfully!\n");
     }
 
     void GUISystem::push_id(std::string_view /*string_id*/)

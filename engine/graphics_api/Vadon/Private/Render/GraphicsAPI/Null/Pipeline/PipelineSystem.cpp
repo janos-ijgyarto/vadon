@@ -1,9 +1,9 @@
 #include <Vadon/Private/PCH/GraphicsAPI.hpp>
-#include <Vadon/Private/Render/GraphicsAPI/Dummy/Pipeline/PipelineSystem.hpp>
+#include <Vadon/Private/Render/GraphicsAPI/Null/Pipeline/PipelineSystem.hpp>
 
-#include <Vadon/Private/Render/GraphicsAPI/Dummy/GraphicsAPI.hpp>
+#include <Vadon/Private/Render/GraphicsAPI/Null/GraphicsAPI.hpp>
 
-namespace Vadon::Private::Render::Dummy
+namespace Vadon::Private::Render::Null
 {
 	Vadon::Render::BlendStateHandle PipelineSystem::get_blend_state(const Vadon::Render::BlendInfo& /*blend_info*/)
 	{

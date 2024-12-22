@@ -4,7 +4,7 @@
 #ifdef VADON_PLATFORM_INTERFACE_SDL
 #include <VadonApp/Private/Platform/SDL/PlatformInterface.hpp>
 #endif
-#include <VadonApp/Private/Platform/Dummy/PlatformInterface.hpp>
+#include <VadonApp/Private/Platform/Null/PlatformInterface.hpp>
 
 namespace VadonApp::Private::Platform
 {
@@ -13,13 +13,13 @@ namespace VadonApp::Private::Platform
 #ifdef VADON_PLATFORM_INTERFACE_SDL
 		return std::make_unique<SDL::PlatformInterface>(application);
 #else
-		return get_dummy_interface(application);
+		return get_null_interface(application);
 #endif
 	}
 
-	PlatformInterface::Implementation PlatformInterface::get_dummy_interface(VadonApp::Core::Application& application)
+	PlatformInterface::Implementation PlatformInterface::get_null_interface(VadonApp::Core::Application& application)
 	{
-		return std::make_unique<Dummy::PlatformInterface>(application);
+		return std::make_unique<Null::PlatformInterface>(application);
 	}
 
 	bool PlatformInterface::initialize()

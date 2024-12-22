@@ -1,4 +1,4 @@
-add_subdirectory(Dummy)
+add_subdirectory(Null)
 
 if(NOT DEFINED VADON_GRAPHICS)
 	set(VADON_GRAPHICS "DEFAULT")

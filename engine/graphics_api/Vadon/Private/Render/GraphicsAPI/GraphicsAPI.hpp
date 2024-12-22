@@ -20,7 +20,7 @@ namespace Vadon::Private::Render
 		static VADONGRAPHICSAPI_API void init_engine_environment(Vadon::Core::EngineEnvironment& environment);
 
 		static VADONGRAPHICSAPI_API Implementation get_graphics_api(Vadon::Core::EngineCoreInterface& core);
-		static VADONGRAPHICSAPI_API Implementation get_dummy_graphics_api(Vadon::Core::EngineCoreInterface& core);
+		static VADONGRAPHICSAPI_API Implementation get_null_graphics_api(Vadon::Core::EngineCoreInterface& core);
 	protected:
 		GraphicsAPIBase(Vadon::Core::EngineCoreInterface& core) : Vadon::Render::GraphicsAPI(core) {}
 	};

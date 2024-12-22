@@ -1,7 +1,7 @@
 #include <Vadon/Private/PCH/GraphicsAPI.hpp>
-#include <Vadon/Private/Render/GraphicsAPI/Dummy/Shader/ShaderSystem.hpp>
+#include <Vadon/Private/Render/GraphicsAPI/Null/Shader/ShaderSystem.hpp>
 
-namespace Vadon::Private::Render::Dummy
+namespace Vadon::Private::Render::Null
 {
 	ShaderHandle ShaderSystem::create_shader(const ShaderInfo& /*shader_info*/)
 	{

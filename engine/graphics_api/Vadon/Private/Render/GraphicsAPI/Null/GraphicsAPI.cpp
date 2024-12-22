@@ -1,7 +1,7 @@
 #include <Vadon/Private/PCH/GraphicsAPI.hpp>
-#include <Vadon/Private/Render/GraphicsAPI/Dummy/GraphicsAPI.hpp>
+#include <Vadon/Private/Render/GraphicsAPI/Null/GraphicsAPI.hpp>
 
-namespace Vadon::Private::Render::Dummy
+namespace Vadon::Private::Render::Null
 {
 	GraphicsAPI::GraphicsAPI(Vadon::Core::EngineCoreInterface& core)
 		: GraphicsAPIBase(core)
@@ -21,11 +21,11 @@ namespace Vadon::Private::Render::Dummy
 
 	bool GraphicsAPI::initialize()
 	{
-		log_message("Initializing dummy graphics API.\n");
+		log_message("Initializing null graphics API.\n");
 
 		// TODO!!!
 
-		log_message("Dummy graphics API initialized successfully.\n");
+		log_message("Null graphics API initialized successfully.\n");
 		return true;
 	}
 
@@ -36,10 +36,10 @@ namespace Vadon::Private::Render::Dummy
 
 	void GraphicsAPI::shutdown()
 	{
-		log_message("Shutting down dummy graphics API.\n");
+		log_message("Shutting down null graphics API.\n");
 
 		// TODO!!!
 
-		log_message("Dummy graphics API successfully shut down.\n");
+		log_message("Null graphics API successfully shut down.\n");
 	}
 }

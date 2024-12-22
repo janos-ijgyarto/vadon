@@ -12,7 +12,7 @@ namespace VadonApp::Private::UI::Developer
 		virtual void shutdown() = 0;
 
 		static Implementation get_gui(VadonApp::Core::Application& application);
-		static Implementation get_dummy_gui(VadonApp::Core::Application& application);
+		static Implementation get_null_gui(VadonApp::Core::Application& application);
 	protected:
 		GUISystem(VadonApp::Core::Application& application);
 	};

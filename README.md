@@ -75,7 +75,7 @@ Mid-level renderer API, provides features that composite low-level API features.
 - Utilities
 #### Graphics API
 Low-level renderer API and abstraction layer.
-- Dummy graphics API (for debugging or when run without graphics)
+- Null graphics API (for debugging or when run without graphics)
 - DirectX graphics API
 #### Core
 Implementations for engine interfaces, creates core object for client code

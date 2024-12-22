@@ -1,7 +1,7 @@
-#ifndef VADON_PRIVATE_RENDER_GRAPHICSAPI_DUMMY_SHADER_SHADER_HPP
-#define VADON_PRIVATE_RENDER_GRAPHICSAPI_DUMMY_SHADER_SHADER_HPP
+#ifndef VADON_PRIVATE_RENDER_GRAPHICSAPI_NULL_SHADER_SHADER_HPP
+#define VADON_PRIVATE_RENDER_GRAPHICSAPI_NULL_SHADER_SHADER_HPP
 #include <Vadon/Render/GraphicsAPI/Shader/Shader.hpp>
-namespace Vadon::Private::Render::Dummy
+namespace Vadon::Private::Render::Null
 {
 	using ShaderType = Vadon::Render::ShaderType;
 	using ShaderDefine = Vadon::Render::ShaderDefine;

@@ -1,7 +1,7 @@
-#ifndef VADONAPP_PRIVATE_PLATFORM_DUMMY_PLATFORMINTERFACE_HPP
-#define VADONAPP_PRIVATE_PLATFORM_DUMMY_PLATFORMINTERFACE_HPP
+#ifndef VADONAPP_PRIVATE_PLATFORM_NULL_PLATFORMINTERFACE_HPP
+#define VADONAPP_PRIVATE_PLATFORM_NULL_PLATFORMINTERFACE_HPP
 #include <VadonApp/Private/Platform/PlatformInterface.hpp>
-namespace VadonApp::Private::Platform::Dummy
+namespace VadonApp::Private::Platform::Null
 {
 	class PlatformInterface final : public VadonApp::Private::Platform::PlatformInterface
 	{
