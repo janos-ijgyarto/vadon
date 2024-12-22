@@ -18,9 +18,19 @@ namespace VadonEditor::Model
 		return Vadon::Scene::SceneHandle::from_resource_handle(m_resource->get_handle());
 	}
 
+	Vadon::Scene::SceneID Scene::get_id() const
+	{
+		return Vadon::Scene::SceneID::from_resource_id(m_resource->get_id());
+	}
+
 	Vadon::Scene::ResourceInfo Scene::get_info() const
 	{
 		return m_resource->get_info();
+	}
+
+	Vadon::Core::FileSystemPath Scene::get_path() const
+	{
+		return m_resource->get_path();
 	}
 
 	void Scene::set_path(const Vadon::Core::FileSystemPath& path)
@@ -34,6 +44,12 @@ namespace VadonEditor::Model
 		{
 			// Nothing to do
 			return true;
+		}
+
+		if (is_open() == false)
+		{
+			// TODO: error?
+			return false;
 		}
 
 		// First package the scene data
@@ -85,7 +101,7 @@ namespace VadonEditor::Model
 	Entity* Scene::instantiate_sub_scene(Scene* scene, Entity& parent)
 	{
 		// Should not try to instantiate itself within itself!
-		if (scene->get_handle() == get_handle())
+		if (scene->get_id() == get_id())
 		{
 			m_editor.get_engine_core().log_error("Editor scene: cannot add itself as sub-scene!\n");
 			return nullptr;
@@ -98,7 +114,7 @@ namespace VadonEditor::Model
 			return nullptr;
 		}
 
-		if (is_scene_dependent(scene->get_handle()) == true)
+		if (is_scene_dependent(scene->get_id()) == true)
 		{
 			m_editor.get_engine_core().log_error("Editor scene: cannot instantiate sub-scene that is dependent on this scene!\n");
 			return nullptr;
@@ -135,6 +151,12 @@ namespace VadonEditor::Model
 
 	Vadon::ECS::EntityHandle Scene::instantiate(bool is_sub_scene)
 	{
+		if (load() == false)
+		{
+			m_editor.get_engine_core().log_error("Editor scene: failed to load scene for instantiation!\n");
+			return Vadon::ECS::EntityHandle();
+		}
+
 		Vadon::ECS::World& ecs_world = m_editor.get_system<ModelSystem>().get_ecs_world();
 		Vadon::Scene::SceneSystem& scene_system = m_editor.get_engine_core().get_system<Vadon::Scene::SceneSystem>();
 
@@ -172,7 +194,7 @@ namespace VadonEditor::Model
 
 	bool Scene::initialize()
 	{
-		if (m_resource->get_info().path.is_valid() == false)
+		if (m_resource->get_path().is_valid() == false)
 		{
 			init_empty_scene();
 		}
@@ -229,10 +251,11 @@ namespace VadonEditor::Model
 		return entity.get_owning_scene() == this;
 	}
 
-	bool Scene::is_scene_dependent(Vadon::Scene::SceneHandle scene_handle) const
+	bool Scene::is_scene_dependent(Vadon::Scene::SceneID scene_id) const
 	{
+		// TODO: this will load scenes to do the check, need to make sure we unload scenes that aren't referenced afterward!
 		Vadon::Scene::SceneSystem& scene_system = m_editor.get_engine_core().get_system<Vadon::Scene::SceneSystem>();
-		return scene_system.is_scene_dependent(get_handle(), scene_handle);
+		return scene_system.is_scene_dependent(get_id(), scene_id);
 	}
 
 	Entity* Scene::instantiate_scene_recursive(Vadon::ECS::EntityHandle entity_handle, Entity* parent)

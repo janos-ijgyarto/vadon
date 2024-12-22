@@ -1,6 +1,6 @@
 #ifndef VADON_CORE_PROJECT_PROJECT_HPP
 #define VADON_CORE_PROJECT_PROJECT_HPP
-#include <Vadon/Scene/Resource/Resource.hpp>
+#include <Vadon/Scene/Scene.hpp>
 namespace Vadon::Core
 {
 	class EngineCoreInterface;
@@ -11,7 +11,7 @@ namespace Vadon::Core
 
 		std::string name;
 		std::string root_path;
-		Vadon::Scene::ResourceID startup_scene;
+		Vadon::Scene::SceneID startup_scene;
 		// TODO: any other settings?
 
 		// FIXME: use properties?

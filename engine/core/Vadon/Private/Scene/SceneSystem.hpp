@@ -17,23 +17,23 @@ namespace Vadon::Private::Scene
 	public:		
 		SceneHandle create_scene() override;
 
-		SceneHandle find_scene(ResourceID scene_id) const override;
+		SceneHandle find_scene(SceneID scene_id) const override;
 
-		SceneHandle load_scene(ResourceID scene_id) override;
+		SceneHandle load_scene(SceneID scene_id) override;
 
 		bool package_scene_data(SceneHandle scene_handle, ECS::World& ecs_world, ECS::EntityHandle root_entity) override;
 
 		ECS::EntityHandle instantiate_scene(SceneHandle scene_handle, ECS::World& ecs_world, bool is_sub_scene) override;
 
-		bool is_scene_dependent(SceneHandle base_scene_handle, SceneHandle dependent_scene_handle) override;
+		bool is_scene_dependent(SceneID base_scene_id, SceneID dependent_scene_id) override;
 	protected:
 		SceneSystem(Vadon::Core::EngineCoreInterface& core);
 
 		bool initialize();
 		void shutdown();
 
-		bool parse_scene_entity(ECS::World& ecs_world, ECS::EntityHandle entity, int32_t parent_index, SceneData& scene_data, std::vector<SceneHandle>& dependency_stack);
-		bool internal_is_scene_dependent(SceneHandle scene_handle, std::vector<SceneHandle>& dependency_stack);
+		bool parse_scene_entity(ECS::World& ecs_world, ECS::EntityHandle entity, int32_t parent_index, SceneData& scene_data, std::vector<SceneID>& dependency_stack);
+		bool internal_is_scene_dependent(SceneID scene_id, std::vector<SceneID>& dependency_stack);
 
 		const Scene* get_scene(SceneHandle scene_handle) const;
 		Scene* get_scene(SceneHandle scene_handle) { return const_cast<Scene*>(std::as_const(*this).get_scene(scene_handle)); }

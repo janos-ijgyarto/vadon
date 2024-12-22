@@ -144,6 +144,7 @@ namespace VadonApp::UI::Developer
 		virtual void add_separator() = 0;
 		virtual void add_text(std::string_view text) = 0;
 		virtual void add_text_unformatted(std::string_view text) = 0;
+		virtual void add_text_wrapped(std::string_view text) = 0;
 		virtual void add_separator_text(std::string_view text) = 0;
 
 		virtual void set_item_tooltip(std::string_view tooltip_text) = 0;

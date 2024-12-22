@@ -105,7 +105,7 @@ namespace VadonEditor::View
 		if (entity->is_sub_scene() == true)
 		{
 			m_sub_scene_label.clear();
-			std::format_to(std::back_inserter(m_sub_scene_label), "Instantiated scene: {}", entity->get_sub_scene()->get_info().path.path);
+			std::format_to(std::back_inserter(m_sub_scene_label), "Instantiated scene: {}", entity->get_sub_scene()->get_path().path);
 		}
 
 		update_labels(entity);

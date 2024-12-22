@@ -24,6 +24,7 @@ namespace VadonDemo::Model
 		static void register_resource();
 	};
 
+	VADON_DECLARE_TYPED_RESOURCE_ID(CanvasItemDefinition, CanvasItemDefID);
 	VADON_DECLARE_TYPED_RESOURCE_HANDLE(CanvasItemDefinition, CanvasItemDefHandle);
 }
 #endif

@@ -12,12 +12,7 @@ namespace VadonEditor::Core
 namespace VadonEditor::Model
 {
 	class Scene;
-
-	struct SceneInfo
-	{
-		Vadon::Scene::ResourceInfo info;
-		Vadon::Scene::SceneHandle handle;
-	};
+	struct ResourceInfo;
 
 	class SceneSystem
 	{
@@ -28,17 +23,15 @@ namespace VadonEditor::Model
 		// TODO: API for creating scene local resource!
 		// TODO2: API for opening a scene from a file (e.g selected in the asset browser)
 		Scene* create_scene();
-
+		Scene* get_scene(ResourceID scene_id);
 		Scene* get_scene(Vadon::Scene::SceneHandle scene_handle);
-
-		Scene* import_scene(const ResourcePath& path);
 
 		void open_scene(Scene* scene);
 		void close_scene(Scene* scene);
 
 		void remove_scene(Scene* scene);
 
-		std::vector<SceneInfo> get_scene_list() const;
+		std::vector<ResourceInfo> get_scene_list() const;
 
 		EntityID get_new_entity_id();
 
@@ -50,7 +43,7 @@ namespace VadonEditor::Model
 		VADONEDITOR_API bool initialize();
 
 		Scene* find_scene(Resource* resource);
-		Scene* internal_create_scene(Resource* resource);
+		Scene* internal_get_scene(Resource* resource);
 		void internal_remove_scene(Scene* scene);
 
 		Core::Editor& m_editor;

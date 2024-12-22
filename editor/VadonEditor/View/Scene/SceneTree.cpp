@@ -7,6 +7,8 @@
 #include <VadonEditor/View/ViewSystem.hpp>
 #include <VadonEditor/View/Scene/Resource/Scene.hpp>
 
+#include <VadonApp/UI/Developer/IconsFontAwesome5.h>
+
 #include <Vadon/Scene/Resource/ResourceSystem.hpp>
 
 #include <format>
@@ -104,10 +106,10 @@ namespace VadonEditor::View
 
 						if (m_instantiate_scene_dialog.draw(dev_gui) == VadonApp::UI::Developer::Dialog::Result::ACCEPTED)
 						{
-							const Vadon::Scene::SceneHandle selected_scene_handle = m_instantiate_scene_dialog.get_selected_scene();
+							const Model::ResourceID selected_scene_id = m_instantiate_scene_dialog.get_selected_scene();
 							Model::SceneSystem& editor_scene_system = editor.get_system<Model::ModelSystem>().get_scene_system();
 
-							Model::Scene* selected_scene = editor_scene_system.get_scene(selected_scene_handle);
+							Model::Scene* selected_scene = editor_scene_system.get_scene(selected_scene_id);
 							if (selected_scene != nullptr)
 							{
 								Model::Entity* instantiated_entity = active_scene->instantiate_sub_scene(selected_scene, *active_entity);
@@ -169,7 +171,7 @@ namespace VadonEditor::View
 			if (entity->is_sub_scene() == true)
 			{
 				m_tree_label_cache.clear();
-				std::format_to(std::back_inserter(m_tree_label_cache), "{} ({})", entity->get_name(), entity->get_sub_scene()->get_info().path.path);
+				std::format_to(std::back_inserter(m_tree_label_cache), "{} {}", entity->get_name(), ICON_FA_FILM);
 				entity_name = m_tree_label_cache;
 			}
 

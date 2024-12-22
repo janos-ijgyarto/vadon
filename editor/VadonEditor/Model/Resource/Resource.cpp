@@ -2,12 +2,27 @@
 
 #include <VadonEditor/Core/Editor.hpp>
 
+#include <VadonEditor/Model/ModelSystem.hpp>
+#include <VadonEditor/Model/Resource/ResourceSystem.hpp>
+
 #include <Vadon/Scene/Resource/ResourceSystem.hpp>
 
 #include <Vadon/Utilities/TypeInfo/Registry/Registry.hpp>
 
 namespace VadonEditor::Model
 {
+	ResourcePath Resource::get_path() const
+	{
+		ResourceSystem& editor_resource_system = m_editor.get_system<ModelSystem>().get_resource_system();
+		return editor_resource_system.get_database().find_resource_info(m_resource_id).path;
+	}
+
+	void Resource::set_path(const ResourcePath& path)
+	{
+		ResourceSystem& editor_resource_system = m_editor.get_system<ModelSystem>().get_resource_system();
+		editor_resource_system.get_database().set_resource_path(m_resource_id, path);
+	}
+
 	bool Resource::save()
 	{
 		if (is_loaded() == false)
@@ -35,7 +50,7 @@ namespace VadonEditor::Model
 			// Nothing to do
 			return true;
 		}
-		
+
 		Vadon::Scene::ResourceSystem& resource_system = m_editor.get_engine_core().get_system<Vadon::Scene::ResourceSystem>();
 		m_handle = resource_system.load_resource(m_resource_id);
 
@@ -44,6 +59,8 @@ namespace VadonEditor::Model
 			resource_system.log_error("Editor resource: failed to load resource!\n");
 			return false;
 		}
+
+		m_info = resource_system.get_resource_info(m_handle);
 
 		clear_modified();
 		return true;
@@ -64,7 +81,11 @@ namespace VadonEditor::Model
 
 	Vadon::Utilities::PropertyList Resource::get_properties() const
 	{
-		// TODO: ensure that resource is loaded!
+		if (is_loaded() == false)
+		{
+			Vadon::Core::Logger::log_error("Editor resource: cannot get properties of unloaded resource!\n");
+		}
+
 		Vadon::Scene::ResourceSystem& resource_system = m_editor.get_engine_core().get_system<Vadon::Scene::ResourceSystem>();
 
 		Vadon::Scene::Resource* resource_base = resource_system.get_base_resource(m_handle);
@@ -73,7 +94,11 @@ namespace VadonEditor::Model
 
 	Vadon::Utilities::Variant Resource::get_property(std::string_view property_name) const
 	{
-		// TODO: ensure that resource is loaded!
+		if (is_loaded() == false)
+		{
+			Vadon::Core::Logger::log_error("Editor resource: cannot get properties of unloaded resource!\n");
+		}
+
 		Vadon::Scene::ResourceSystem& resource_system = m_editor.get_engine_core().get_system<Vadon::Scene::ResourceSystem>();
 
 		Vadon::Scene::Resource* resource_base = resource_system.get_base_resource(m_handle);
@@ -82,7 +107,11 @@ namespace VadonEditor::Model
 
 	void Resource::edit_property(std::string_view property_name, const Vadon::Utilities::Variant& value)
 	{
-		// TODO: ensure that resource is loaded!
+		if (is_loaded() == false)
+		{
+			Vadon::Core::Logger::log_error("Editor resource: cannot edit properties of unloaded resource!\n");
+		}
+
 		Vadon::Scene::ResourceSystem& resource_system = m_editor.get_engine_core().get_system<Vadon::Scene::ResourceSystem>();
 
 		Vadon::Scene::Resource* resource_base = resource_system.get_base_resource(m_handle);

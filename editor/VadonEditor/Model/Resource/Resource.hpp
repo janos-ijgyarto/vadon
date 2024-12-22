@@ -26,6 +26,11 @@ namespace VadonEditor::Model
 		void notify_modified() { m_modified = true; }
 		void clear_modified() { m_modified = false; }
 
+		Vadon::Scene::ResourceInfo get_info() const { return m_info; }
+
+		ResourcePath get_path() const;
+		void set_path(const ResourcePath& path);
+
 		bool save();
 		bool load();
 
@@ -44,6 +49,7 @@ namespace VadonEditor::Model
 		ResourceID m_resource_id;
 		Vadon::Scene::ResourceHandle m_handle;
 
+		Vadon::Scene::ResourceInfo m_info;
 		EditorResourceID m_editor_id;
 
 		bool m_modified;

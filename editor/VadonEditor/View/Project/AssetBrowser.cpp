@@ -306,7 +306,14 @@ namespace VadonEditor::View
 
 			// Attempt to import as resource
 			// FIXME: what if it's not matching?
-			Model::Resource* resource = editor_resource_system.import_resource(Model::ResourcePath{ .root_directory = project_root_dir, .path = asset->get_path() });
+			const Model::ResourceID resource_id = editor_resource_system.get_database().import_resource(Model::ResourcePath{ .root_directory = project_root_dir, .path = asset->get_path() });
+			if (resource_id.is_valid() == false)
+			{
+				// TODO: error!
+				return;
+			}
+
+			Model::Resource* resource = editor_resource_system.get_resource(resource_id);
 			if (resource != nullptr)
 			{
 				if (resource->load() == true)

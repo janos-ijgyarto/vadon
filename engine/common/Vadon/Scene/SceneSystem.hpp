@@ -15,9 +15,9 @@ namespace Vadon::Scene
 	public:
 		// NOTE: these are convenience functions, equivalent to calling ResourceSystem directly
 		virtual SceneHandle create_scene() = 0;
-		virtual SceneHandle find_scene(ResourceID scene_id) const = 0;
+		virtual SceneHandle find_scene(SceneID scene_id) const = 0;
 
-		virtual SceneHandle load_scene(ResourceID scene_id) = 0;
+		virtual SceneHandle load_scene(SceneID scene_id) = 0;
 
 		virtual bool package_scene_data(SceneHandle scene_handle, Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle root_entity) = 0;
 
@@ -26,7 +26,8 @@ namespace Vadon::Scene
 		
 		// NOTE: cannot be const because we have to load the scenes to check for dependencies
 		// We expect to have to load them anyway to instantiate
-		virtual bool is_scene_dependent(SceneHandle base_scene_handle, SceneHandle dependent_scene_handle) = 0;
+		// Systems that use this should check for scenes that got loaded and unload those that are unused
+		virtual bool is_scene_dependent(SceneID base_scene_id, SceneID dependent_scene_id) = 0;
 	protected:
 		SceneSystem(Core::EngineCoreInterface& core)
 			: System(core)

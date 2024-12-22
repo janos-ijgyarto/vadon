@@ -349,6 +349,11 @@ namespace VadonApp::Private::UI::Developer::Dummy
         // TODO
     }
 
+    void GUISystem::add_text_wrapped(std::string_view /*text*/)
+    {
+        // TODO
+    }
+
     void GUISystem::add_separator_text(std::string_view /*text*/)
     {
         // TODO

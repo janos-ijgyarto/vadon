@@ -181,7 +181,7 @@ namespace VadonEditor::View
 		{
 			update_resource_reference();
 
-			m_label = model_property.name + ":";
+			m_header = model_property.name + ":";
 
 			m_select_resource_button.label = "Select";
 			m_clear_button.label = "Clear";
@@ -194,13 +194,31 @@ namespace VadonEditor::View
 			bool edited = false;
 			if (m_select_resource_dialog.draw(dev_gui) == VadonApp::UI::Developer::Dialog::Result::ACCEPTED)
 			{
-				m_property.value = m_select_resource_dialog.get_selected_resource();
+				const Model::ResourceID selected_resource_id = m_select_resource_dialog.get_selected_resource();
+				if (selected_resource_id.is_valid() == true)
+				{
+					VadonEditor::Model::ResourceSystem& resource_system = m_editor.get_system<VadonEditor::Model::ModelSystem>().get_resource_system();
+					Model::Resource* selected_resource = resource_system.get_resource(selected_resource_id);
+					if (selected_resource->load() == false)
+					{
+						Vadon::Core::Logger::log_error("Resource property editor: failed to load selected resource!\n");
+					}
+					else
+					{
+						m_property.value = selected_resource->get_handle();
+					}
+				}
+				else
+				{
+					m_property.value = Vadon::Scene::ResourceHandle();
+				}
+
 				edited = true;
 			}
 
-			dev_gui.add_text(m_label);
+			dev_gui.add_text(m_header);
 			dev_gui.same_line();
-			dev_gui.add_text(m_resource ? m_resource->get_info().path.path : "<NONE>");
+			dev_gui.add_text(m_resource ? m_label : "<NONE>");
 			dev_gui.same_line();
 			if (dev_gui.draw_button(m_select_resource_button) == true)
 			{
@@ -229,6 +247,12 @@ namespace VadonEditor::View
 			{
 				VadonEditor::Model::ResourceSystem& resource_system = m_editor.get_system<VadonEditor::Model::ModelSystem>().get_resource_system();
 				m_resource = resource_system.get_resource(resource_handle);
+
+				const Model::ResourcePath path = m_resource->get_path();
+				if (path.is_valid() == true)
+				{
+					m_label = path.path;
+				}
 			}
 			else
 			{
@@ -239,6 +263,7 @@ namespace VadonEditor::View
 		Core::Editor& m_editor;
 		VadonEditor::Model::Resource* m_resource;
 
+		std::string m_header;
 		std::string m_label;
 		UI::Developer::Button m_select_resource_button;
 		UI::Developer::Button m_clear_button;

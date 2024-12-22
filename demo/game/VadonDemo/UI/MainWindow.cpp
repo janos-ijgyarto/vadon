@@ -24,11 +24,13 @@
 #include <Vadon/Render/Frame/FrameSystem.hpp>
 #include <Vadon/Render/GraphicsAPI/RenderTarget/RenderTargetSystem.hpp>
 
+#include <Vadon/Scene/Resource/Database.hpp>
 #include <Vadon/Scene/Resource/ResourceSystem.hpp>
 #include <Vadon/Scene/SceneSystem.hpp>
 
 #include <Vadon/Utilities/Container/Concurrent/TripleBuffer.hpp>
 #include <Vadon/Utilities/Container/Queue/PacketQueue.hpp>
+#include <Vadon/Utilities/Serialization/Serializer.hpp>
 
 #include <filesystem>
 
@@ -157,6 +159,126 @@ namespace VadonDemo::UI
 			Vadon::Utilities::Vector2 camera_position = Vadon::Utilities::Vector2_Zero;
 			float camera_zoom = 1.0f;
 		};
+
+		// FIXME: reorganize all of this, move model code out of UI!
+		class GameResourceDatabase : public Vadon::Scene::ResourceDatabase
+		{
+		public:
+			GameResourceDatabase(Core::GameCore& game_core)
+				: m_game_core(game_core)
+			{
+			}
+
+			bool initialize(Vadon::Core::RootDirectoryHandle project_root)
+			{
+				// Import all resources in the project
+				bool all_valid = true;
+
+				// FIXME: make this modular!
+				// Scene system should load scene files!
+				std::string extensions_string = ".vdsc,.vdrc";
+
+				Vadon::Core::FileSystem& file_system = m_game_core.get_engine_app().get_engine_core().get_system<Vadon::Core::FileSystem>();
+
+				const std::vector<Vadon::Core::FileSystemPath> resource_files = file_system.get_files_of_type(Vadon::Core::FileSystemPath{ .root_directory = project_root }, extensions_string, true);
+				for (const Vadon::Core::FileSystemPath& current_file_path : resource_files)
+				{
+					all_valid &= import_resource(current_file_path).is_valid();
+				}
+
+				return all_valid;
+			}
+
+			bool save_resource(Vadon::Scene::ResourceSystem& /*resource_system*/, Vadon::Scene::ResourceHandle /*resource_handle*/) override
+			{
+				// We won't be saving resources 
+				return false;
+			}
+
+			Vadon::Scene::ResourceHandle load_resource(Vadon::Scene::ResourceSystem& resource_system, Vadon::Scene::ResourceID resource_id) override
+			{
+				auto resource_path_it = m_resource_file_lookup.find(resource_id);
+				if (resource_path_it == m_resource_file_lookup.end())
+				{
+					return Vadon::Scene::ResourceHandle();
+				}
+
+				Vadon::Core::EngineCoreInterface& engine_core = m_game_core.get_engine_app().get_engine_core();
+				Vadon::Core::FileSystem& file_system = engine_core.get_system<Vadon::Core::FileSystem>();
+				Vadon::Core::FileSystem::RawFileDataBuffer resource_file_buffer;
+				if (file_system.load_file(resource_path_it->second, resource_file_buffer) == false)
+				{
+					resource_system.log_error("Game resource database: failed to load resource file!\n");
+					return Vadon::Scene::ResourceHandle();
+				}
+
+				// FIXME: support binary file serialization!
+				// Solution: have file system create the appropriate serializer!
+				Vadon::Utilities::Serializer::Instance serializer_instance = Vadon::Utilities::Serializer::create_serializer(resource_file_buffer, Vadon::Utilities::Serializer::Type::JSON, Vadon::Utilities::Serializer::Mode::READ);
+
+				if (serializer_instance->initialize() == false)
+				{
+					resource_system.log_error("Game resource database: failed to initialize serializer while loading resource!\n");
+					return Vadon::Scene::ResourceHandle();
+				}
+
+				Vadon::Scene::ResourceHandle loaded_resource_handle = resource_system.load_resource(*serializer_instance);
+				if (loaded_resource_handle.is_valid() == false)
+				{
+					resource_system.log_error("Game resource database: failed to load resource data!\n");
+					return loaded_resource_handle;
+				}
+
+				if (serializer_instance->finalize() == false)
+				{
+					resource_system.log_error("Game resource database: failed to finalize serializer after loading resource!\n");
+				}
+
+				return loaded_resource_handle;
+			}
+
+		private:
+			// FIXME: this forces us to load all resources twice!
+			// Need to create a "cache" that has all this metadata
+			// Can be created by the editor when the project is exported
+			Vadon::Scene::ResourceID import_resource(const Vadon::Core::FileSystemPath& path)
+			{
+				// TODO: deduplicate parts shared with loading a resource!
+				Vadon::Core::EngineCoreInterface& engine_core = m_game_core.get_engine_app().get_engine_core();
+				Vadon::Core::FileSystem& file_system = engine_core.get_system<Vadon::Core::FileSystem>();
+				Vadon::Core::FileSystem::RawFileDataBuffer resource_file_buffer;
+				if (file_system.load_file(path, resource_file_buffer) == false)
+				{
+					Vadon::Core::Logger::log_error("Game resource database: failed to load resource file!\n");
+					return Vadon::Scene::ResourceID();
+				}
+
+				// FIXME: support binary file serialization!
+				// Solution: have file system create the appropriate serializer!
+				Vadon::Utilities::Serializer::Instance serializer_instance = Vadon::Utilities::Serializer::create_serializer(resource_file_buffer, Vadon::Utilities::Serializer::Type::JSON, Vadon::Utilities::Serializer::Mode::READ);
+
+				if (serializer_instance->initialize() == false)
+				{
+					Vadon::Core::Logger::log_error("Game resource database: failed to initialize serializer while loading resource!\n");
+					return Vadon::Scene::ResourceID();
+				}
+
+				Vadon::Scene::ResourceInfo imported_resource_info;
+				Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
+				if (resource_system.load_resource_info(*serializer_instance, imported_resource_info) == false)
+				{
+					Vadon::Core::Logger::log_error("Game resource database: failed to loading resource!\n");
+					return Vadon::Scene::ResourceID();
+				}
+								
+				m_resource_file_lookup[imported_resource_info.id] = path;
+
+				return imported_resource_info.id;
+			}
+
+			Core::GameCore& m_game_core;
+			std::unordered_map<Vadon::Scene::ResourceID, Vadon::Core::FileSystemPath> m_resource_file_lookup;
+		};
 	}
 
 	struct MainWindow::Internal
@@ -171,6 +293,7 @@ namespace VadonDemo::UI
 
 		// FIXME: move these to subsystems!
 		Vadon::Core::Project m_project_info;
+		GameResourceDatabase m_resource_db;
 		Vadon::Core::RootDirectoryHandle m_root_directory;
 		Vadon::Render::Canvas::RenderContext m_canvas_context;
 
@@ -186,6 +309,7 @@ namespace VadonDemo::UI
 		Internal(Core::GameCore& game_core)
 			: m_game_core(game_core)
 			, m_dev_gui_render_buffer({0, 1, 2})
+			, m_resource_db(game_core)
 		{
 		}
 
@@ -266,9 +390,11 @@ namespace VadonDemo::UI
 
 			// Import all resources in the project
 			// FIXME: do this automatically?
+			if(m_resource_db.initialize(m_root_directory) == false)
 			{
-				// TODO: create resource DB to import all the relevant resources!
+				return false;
 			}
+			engine_core.get_system<Vadon::Scene::ResourceSystem>().register_database(m_resource_db);
 
 			// Everything loaded successfully
 			return true;
@@ -289,7 +415,7 @@ namespace VadonDemo::UI
 			
 			{
 				Vadon::Scene::SceneSystem& scene_system = engine_core.get_system<Vadon::Scene::SceneSystem>();
-				const Vadon::Scene::SceneHandle main_scene_handle = scene_system.find_scene(m_project_info.startup_scene);
+				const Vadon::Scene::SceneHandle main_scene_handle = scene_system.load_scene(m_project_info.startup_scene);
 				if (main_scene_handle.is_valid() == false)
 				{
 					// Something went wrong

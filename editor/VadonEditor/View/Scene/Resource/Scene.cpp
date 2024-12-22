@@ -3,13 +3,12 @@
 #include <VadonEditor/Core/Project/ProjectManager.hpp>
 
 #include <VadonEditor/Model/ModelSystem.hpp>
+#include <VadonEditor/Model/Resource/ResourceSystem.hpp>
 #include <VadonEditor/Model/Scene/SceneSystem.hpp>
 
 #include <VadonEditor/View/ViewSystem.hpp>
 
 #include <Vadon/Core/File/FileSystem.hpp>
-
-#include <Vadon/Scene/Resource/ResourceSystem.hpp>
 
 #include <filesystem>
 
@@ -68,12 +67,12 @@ namespace VadonEditor::View
 		Model::ModelSystem& model = m_editor.get_system<Model::ModelSystem>();
 		Model::SceneSystem& editor_scene_system = model.get_scene_system();
 
-		std::vector<Model::SceneInfo> model_scene_list = editor_scene_system.get_scene_list();
+		std::vector<Model::ResourceInfo> model_scene_list = editor_scene_system.get_scene_list();
 
-		for (const Model::SceneInfo& current_scene_info : model_scene_list)
+		for (const Model::ResourceInfo& current_scene_info : model_scene_list)
 		{
-			m_scene_list.push_back(current_scene_info.handle);
-			m_scene_list_box.items.push_back(current_scene_info.info.path.path);
+			m_scene_list.push_back(current_scene_info.info.id);
+			m_scene_list_box.items.push_back(current_scene_info.path.path);
 		}
 	}
 
@@ -117,7 +116,7 @@ namespace VadonEditor::View
 				{
 					const int32_t scene_index = get_scene_index(m_saved_scene);
 					// TODO: assert?
-					m_scene_list_box.items[scene_index] = m_saved_scene->get_info().path.path;
+					m_scene_list_box.items[scene_index] = m_saved_scene->get_path().path;
 				}
 				else
 				{
@@ -178,7 +177,7 @@ namespace VadonEditor::View
 			return;
 		}
 
-		if (active_scene->get_info().path.is_valid() == false)
+		if (active_scene->get_path().is_valid() == false)
 		{
 			// New scene, have to set path
 			m_saved_scene = active_scene;
@@ -211,7 +210,7 @@ namespace VadonEditor::View
 			m_scene_list_box.selected_item = scene_index;
 			m_scene_list.push_back(scene);
 
-			const Vadon::Core::FileSystemPath& scene_path = scene->get_info().path;
+			const Vadon::Core::FileSystemPath scene_path = scene->get_path();
 			if (scene_path.is_valid() == true)
 			{
 				m_scene_list_box.items.push_back(scene_path.path);

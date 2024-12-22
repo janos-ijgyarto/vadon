@@ -11,7 +11,7 @@ namespace VadonEditor::View
 	class SelectSceneDialog : public UI::Developer::Dialog
 	{
 	public:
-		Vadon::Scene::SceneHandle get_selected_scene() const
+		Vadon::Scene::ResourceID get_selected_scene() const
 		{
 			return m_scene_list[m_scene_list_box.selected_item];
 		}
@@ -24,7 +24,7 @@ namespace VadonEditor::View
 
 		Core::Editor& m_editor;
 
-		std::vector<Vadon::Scene::SceneHandle> m_scene_list;
+		std::vector<Vadon::Scene::ResourceID> m_scene_list;
 
 		UI::Developer::ListBox m_scene_list_box;
 

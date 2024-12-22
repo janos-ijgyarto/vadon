@@ -106,6 +106,7 @@ namespace VadonApp::Private::UI::Developer::Dummy
 		void add_separator() override;
 		void add_text(std::string_view text) override;
 		void add_text_unformatted(std::string_view text) override;
+		void add_text_wrapped(std::string_view text) override;
 		void add_separator_text(std::string_view text) override;
 
 		void set_item_tooltip(std::string_view tooltip_text) override;

@@ -32,7 +32,21 @@ namespace VadonEditor::Model
 			return nullptr;
 		}
 
-		return internal_create_scene(scene_resource);
+		return internal_get_scene(scene_resource);
+	}
+
+	Scene* SceneSystem::get_scene(ResourceID scene_id)
+	{
+		ResourceSystem& editor_resource_system = m_editor.get_system<ModelSystem>().get_resource_system();
+
+		Resource* scene_resource = editor_resource_system.get_resource(scene_id);
+		if (scene_resource == nullptr)
+		{
+			// TODO: error?
+			return nullptr;
+		}
+
+		return internal_get_scene(scene_resource);
 	}
 
 	Scene* SceneSystem::get_scene(Vadon::Scene::SceneHandle scene_handle)
@@ -45,20 +59,7 @@ namespace VadonEditor::Model
 			return nullptr;
 		}
 
-		return internal_create_scene(scene_resource);
-	}
-
-	Scene* SceneSystem::import_scene(const ResourcePath& path)
-	{
-		ResourceSystem& editor_resource_system = m_editor.get_system<ModelSystem>().get_resource_system();
-		Resource* scene_resource = editor_resource_system.import_resource(path);
-		if (scene_resource == nullptr)
-		{
-			m_editor.get_engine_core().log_error("Editor scene system: failed to import scene resource!\n");
-			return nullptr;
-		}
-
-		return internal_create_scene(scene_resource);
+		return internal_get_scene(scene_resource);
 	}
 
 	void SceneSystem::open_scene(Scene* scene)
@@ -89,7 +90,7 @@ namespace VadonEditor::Model
 		scene->clear_contents();
 		scene->clear_modified();
 
-		if (scene->get_info().path.is_valid() == false)
+		if (scene->get_path().is_valid() == false)
 		{
 			// New scene closed without saving, so we delete it
 			internal_remove_scene(scene);
@@ -102,20 +103,10 @@ namespace VadonEditor::Model
 		internal_remove_scene(scene);
 	}
 
-	std::vector<SceneInfo> SceneSystem::get_scene_list() const
-	{		
-		std::vector<SceneInfo> scene_info_list;
-
+	std::vector<ResourceInfo> SceneSystem::get_scene_list() const
+	{
 		ResourceSystem& editor_resource_system = m_editor.get_system<ModelSystem>().get_resource_system();
-		const std::vector<ResourceInfo> scene_resource_list = editor_resource_system.get_resource_list(get_scene_type_id());
-
-		scene_info_list.reserve(scene_resource_list.size());
-		for (const ResourceInfo& current_scene_resource : scene_resource_list)
-		{
-			scene_info_list.push_back(SceneInfo{ .info = current_scene_resource.info, .handle = current_scene_resource.handle });
-		}
-
-		return scene_info_list;
+		return editor_resource_system.get_database().get_resource_list(get_scene_type_id());
 	}
 
 	EntityID SceneSystem::get_new_entity_id()
@@ -161,7 +152,7 @@ namespace VadonEditor::Model
 		return &scene_it->second;
 	}
 
-	Scene* SceneSystem::internal_create_scene(Resource* resource)
+	Scene* SceneSystem::internal_get_scene(Resource* resource)
 	{
 		Scene* scene = find_scene(resource);
 		if (scene != nullptr)
@@ -170,7 +161,10 @@ namespace VadonEditor::Model
 		}
 
 		// Scene not yet registered, so we create it
-		if (resource->get_info().type_id != get_scene_type_id())
+		// Make sure the resource is actually a scene
+		ResourceSystem& editor_resource_system = m_editor.get_system<ModelSystem>().get_resource_system();
+		const ResourceInfo scene_resource_info = editor_resource_system.get_database().find_resource_info(resource->get_id());
+		if (scene_resource_info.info.type_id != get_scene_type_id())
 		{
 			m_editor.get_engine_core().log_error("Editor scene system: selected resource is not a scene!\n");
 			return nullptr;

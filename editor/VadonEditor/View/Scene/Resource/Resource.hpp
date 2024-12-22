@@ -17,7 +17,7 @@ namespace VadonEditor::View
 
 		void set_resource_type(Vadon::Utilities::TypeID resource_type) { m_resource_type = resource_type; }
 
-		Vadon::Scene::ResourceHandle get_selected_resource() const;
+		Model::ResourceID get_selected_resource() const;
 	protected:
 		Dialog::Result internal_draw(UI::Developer::GUISystem& dev_gui) override;
 
@@ -26,7 +26,7 @@ namespace VadonEditor::View
 		Core::Editor& m_editor;
 		Vadon::Utilities::TypeID m_resource_type;
 
-		std::vector<Vadon::Scene::ResourceHandle> m_resource_list;
+		std::vector<Model::ResourceID> m_resource_list;
 
 		UI::Developer::ListBox m_resource_list_box;
 		UI::Developer::Button m_select_button;

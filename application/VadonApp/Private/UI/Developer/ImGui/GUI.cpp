@@ -1087,7 +1087,12 @@ float4 main(PS_INPUT input) : SV_Target
 
     void GUISystem::add_text_unformatted(std::string_view text)
     {
-        ImGui::TextUnformatted(text.data());
+        ImGui::TextUnformatted(text.data(), std::to_address(text.end()));
+    }
+
+    void GUISystem::add_text_wrapped(std::string_view text)
+    {
+        ImGui::TextWrapped(text.data());
     }
 
     void GUISystem::add_separator_text(std::string_view text)

@@ -7,6 +7,7 @@
 namespace Vadon::Private::Scene
 {
 	using Scene = Vadon::Scene::Scene;
+	using SceneID = Vadon::Scene::SceneID;
 	using SceneHandle = Vadon::Scene::SceneHandle;
 
 	using SceneComponent = Vadon::Scene::SceneComponent;
@@ -30,7 +31,7 @@ namespace Vadon::Private::Scene
 		{
 			std::string name;
 			int32_t parent = -1;
-			SceneHandle scene;
+			SceneID scene;
 			std::vector<ComponentData> components;
 
 			bool has_parent() const { return (parent >= 0); }

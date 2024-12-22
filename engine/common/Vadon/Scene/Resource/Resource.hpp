@@ -11,7 +11,7 @@ namespace Vadon::Scene
 	struct ResourceInfo
 	{
 		ResourceID id;
-		Vadon::Utilities::TypeID type_id;
+		Vadon::Utilities::TypeID type_id = Vadon::Utilities::TypeID::INVALID;
 
 		bool is_valid() const { return id.is_valid(); }
 	};
@@ -22,6 +22,20 @@ namespace Vadon::Scene
 		std::string name;
 
 		virtual ~Resource() {}
+	};
+
+	template<typename T>
+	struct TypedResourceID : public ResourceID
+	{
+		using _ResourceType = T;
+		using _TypedID = TypedResourceID<T>;
+
+		TypedResourceID<T>& operator=(const ResourceID& id) { data = id.data; return *this; }
+
+		ResourceID to_resource_id() const { return ResourceID{ .data = this->data }; }
+		static TypedResourceID<T> from_resource_id(ResourceID id) { _TypedID typed_id; typed_id.data = id.data; return typed_id; }
+
+		ResourceID& as_resource_id() { return *this; }
 	};
 
 	template<typename T>
@@ -39,5 +53,6 @@ namespace Vadon::Scene
 	};
 }
 
+#define VADON_DECLARE_TYPED_RESOURCE_ID(_resource, _name) using _name = Vadon::Scene::TypedResourceID<_resource>
 #define VADON_DECLARE_TYPED_RESOURCE_HANDLE(_resource, _name) using _name = Vadon::Scene::TypedResourceHandle<_resource>
 #endif

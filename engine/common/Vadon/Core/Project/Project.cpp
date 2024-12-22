@@ -62,7 +62,7 @@ namespace Vadon::Core
 		}
 		if(startup_scene.is_valid() == true)
 		{
-			if (serializer->serialize("startup_scene", startup_scene) != SerializerResult::SUCCESSFUL)
+			if (serializer->serialize("startup_scene", startup_scene.as_resource_id()) != SerializerResult::SUCCESSFUL)
 			{
 				project_serialization_error_log();
 				return false;
@@ -122,7 +122,7 @@ namespace Vadon::Core
 		}
 
 		// TODO: notify on failed serialization?
-		serializer->serialize("startup_scene", startup_scene);
+		serializer->serialize("startup_scene", startup_scene.as_resource_id());
 
 		// TODO: any other data?
 

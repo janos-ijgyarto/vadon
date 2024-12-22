@@ -15,9 +15,11 @@ namespace VadonEditor::Model
 	class Scene
 	{
 	public:
-		Vadon::Scene::SceneHandle get_handle() const; 
+		Vadon::Scene::SceneHandle get_handle() const;
+		Vadon::Scene::SceneID get_id() const;
 		Vadon::Scene::ResourceInfo get_info() const;
 
+		Vadon::Core::FileSystemPath get_path() const;
 		void set_path(const Vadon::Core::FileSystemPath& path);
 
 		Entity* get_root() const { return m_root_entity; }
@@ -49,7 +51,7 @@ namespace VadonEditor::Model
 		void internal_remove_entity(Entity* entity);
 
 		bool is_owner_of_entity(Entity& entity) const;
-		bool is_scene_dependent(Vadon::Scene::SceneHandle scene_handle) const;
+		bool is_scene_dependent(Vadon::Scene::SceneID scene_id) const;
 
 		Entity* instantiate_scene_recursive(Vadon::ECS::EntityHandle entity_handle, Entity* parent = nullptr);
 

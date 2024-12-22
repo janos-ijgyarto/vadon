@@ -47,6 +47,12 @@ namespace Vadon::Utilities
 	};
 
 	template<typename T>
+	struct VariantTypeMapping<Vadon::Scene::TypedResourceID<T>>
+	{
+		using _Type = Vadon::Scene::ResourceID;
+	};
+
+	template<typename T>
 	struct VariantTypeMapping<Vadon::Scene::TypedResourceHandle<T>>
 	{
 		using _Type = Vadon::Scene::ResourceHandle;

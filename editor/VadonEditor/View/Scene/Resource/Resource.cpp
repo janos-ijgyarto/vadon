@@ -18,14 +18,14 @@ namespace VadonEditor::View
 		m_resource_list_box.label = "Resources";
 	}
 
-	Vadon::Scene::ResourceHandle SelectResourceDialog::get_selected_resource() const
+	Model::ResourceID SelectResourceDialog::get_selected_resource() const
 	{
 		if (m_resource_list_box.has_valid_selection() == true)
 		{
 			return m_resource_list[m_resource_list_box.selected_item];
 		}
 
-		return Vadon::Scene::ResourceHandle();
+		return Model::ResourceID();
 	}
 
 	UI::Developer::Dialog::Result SelectResourceDialog::internal_draw(UI::Developer::GUISystem& dev_gui)
@@ -65,17 +65,17 @@ namespace VadonEditor::View
 		m_resource_list_box.deselect();
 
 		Model::ResourceSystem& resource_system = m_editor.get_system<Model::ModelSystem>().get_resource_system();
-		std::vector<Model::ResourceInfo> resource_info_list = resource_system.get_resource_list(m_resource_type);
+		std::vector<Model::ResourceInfo> resource_info_list = resource_system.get_database().get_resource_list(m_resource_type);
 
 		for (const Model::ResourceInfo& current_resource_info : resource_info_list)
 		{
-			if (current_resource_info.info.path.is_valid() == false)
+			if (current_resource_info.path.is_valid() == false)
 			{
 				continue;
 			}
 
-			m_resource_list_box.items.push_back(current_resource_info.info.path.path);
-			m_resource_list.push_back(current_resource_info.handle);
+			m_resource_list_box.items.push_back(current_resource_info.path.path);
+			m_resource_list.push_back(current_resource_info.info.id);
 		}
 	}
 
@@ -100,7 +100,7 @@ namespace VadonEditor::View
 			if (active_resource != nullptr)
 			{
 				dev_gui.push_id(active_resource->get_editor_id());
-				dev_gui.add_text(m_path);
+				dev_gui.add_text_wrapped(m_path);
 				for (auto& current_property : m_property_editors)
 				{
 					if (current_property->render(dev_gui) == true)
@@ -140,7 +140,17 @@ namespace VadonEditor::View
 
 	void ResourceEditor::update_labels(Model::Resource* resource)
 	{
-		m_path = resource->get_info().path.path;
+		Model::ResourceSystem& resource_system = m_editor.get_system<Model::ModelSystem>().get_resource_system();
+		Model::ResourceInfo resource_info = resource_system.get_database().find_resource_info(resource->get_id());
+
+		if (resource_info.path.is_valid() == true)
+		{
+			m_path = resource_info.path.path;
+		}
+		else
+		{
+			m_path.clear();
+		}
 	}
 
 	void ResourceEditor::reset_properties(Model::Resource* resource)

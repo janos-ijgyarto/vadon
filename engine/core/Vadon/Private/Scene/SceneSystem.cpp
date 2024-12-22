@@ -92,7 +92,7 @@ namespace Vadon::Private::Scene
 			return serialize_trivial_property_fold<int, float, bool, std::string, Utilities::Vector2, Utilities::Vector2i, Utilities::Vector3, Utilities::UUID>(serializer, property_name, property_value, data_type);
 		}
 
-		bool serialize_component(Vadon::Scene::ResourceSystem& resource_system, Vadon::Utilities::Serializer& serializer, size_t index, SceneData::ComponentData& component_data)
+		bool serialize_component(Vadon::Utilities::Serializer& serializer, size_t index, SceneData::ComponentData& component_data)
 		{
 			constexpr const char* c_component_obj_error_message = "Scene system: unable to serialize component object!\n";
 
@@ -160,12 +160,12 @@ namespace Vadon::Private::Scene
 						break;
 					case ErasedDataType::RESOURCE_HANDLE:
 					{
-						ResourceHandle temp_resource_handle;
-						if (resource_system.serialize_resource_property(serializer, current_property.name, temp_resource_handle) == true)
+						ResourceID temp_resource_id;
+						if (serializer.serialize(current_property.name, temp_resource_id) == SerializerResult::SUCCESSFUL)
 						{
 							property_data.name = current_property.name;
 							property_data.data_type = current_property.data_type;
-							property_data.value = temp_resource_handle;
+							property_data.value = temp_resource_id;
 							component_data.properties.push_back(property_data);
 						}
 						else
@@ -194,8 +194,8 @@ namespace Vadon::Private::Scene
 					break;
 					case ErasedDataType::RESOURCE_HANDLE:
 					{
-						ResourceHandle temp_resource_handle = std::get<ResourceHandle>(current_property.value);
-						if (resource_system.serialize_resource_property(serializer, current_property.name, temp_resource_handle) == false)
+						ResourceID temp_resource_id = std::get<ResourceID>(current_property.value);
+						if (serializer.serialize(current_property.name, temp_resource_id) != SerializerResult::SUCCESSFUL)
 						{
 							// TODO: log error?
 						}
@@ -220,7 +220,7 @@ namespace Vadon::Private::Scene
 			return true;
 		}
 
-		bool serialize_entity(Vadon::Scene::ResourceSystem& resource_system, Vadon::Utilities::Serializer& serializer, size_t index, SceneData::EntityData& entity_data)
+		bool serialize_entity(Vadon::Utilities::Serializer& serializer, size_t index, SceneData::EntityData& entity_data)
 		{
 			constexpr const char* c_entity_obj_error_message = "Scene system: unable to serialize entity object!\n";
 			constexpr const char* c_component_array_error_message = "Scene system: unable to serialize component array!\n";
@@ -236,7 +236,7 @@ namespace Vadon::Private::Scene
 			// NOTE: scene needs to be handled separately because it may or may not be set
 			if ((serializer.is_reading() == true) || ((serializer.is_reading() == false) && (entity_data.scene.is_valid() == true)))
 			{
-				resource_system.serialize_resource_property(serializer, "scene", entity_data.scene);
+				serializer.serialize("scene", entity_data.scene.as_resource_id());
 			}
 
 			if(serializer.open_array("components") != SerializerResult::SUCCESSFUL)
@@ -249,7 +249,7 @@ namespace Vadon::Private::Scene
 			for (size_t current_component_index = 0; current_component_index < component_count; ++current_component_index)
 			{
 				SceneData::ComponentData& current_component_data = serializer.is_reading() ? entity_data.components.emplace_back() : entity_data.components[current_component_index];
-				if (serialize_component(resource_system, serializer, current_component_index, current_component_data) == false)
+				if (serialize_component(serializer, current_component_index, current_component_data) == false)
 				{
 					return false;
 				}
@@ -288,7 +288,7 @@ namespace Vadon::Private::Scene
 				for (size_t current_entity_index = 0; current_entity_index < entity_count; ++current_entity_index)
 				{
 					SceneData::EntityData& current_entity_data = scene.data.entities.emplace_back();
-					if (serialize_entity(resource_system, serializer, current_entity_index, current_entity_data) == false)
+					if (serialize_entity(serializer, current_entity_index, current_entity_data) == false)
 					{
 						return false;
 					}
@@ -298,7 +298,7 @@ namespace Vadon::Private::Scene
 			{
 				for (size_t current_entity_index = 0; current_entity_index < scene.data.entities.size(); ++current_entity_index)
 				{
-					if (serialize_entity(resource_system, serializer, current_entity_index, scene.data.entities[current_entity_index]) == false)
+					if (serialize_entity(serializer, current_entity_index, scene.data.entities[current_entity_index]) == false)
 					{
 						return false;
 					}
@@ -338,7 +338,7 @@ namespace Vadon::Private::Scene
 		return new_scene_handle;
 	}
 
-	SceneHandle SceneSystem::find_scene(ResourceID scene_id) const
+	SceneHandle SceneSystem::find_scene(SceneID scene_id) const
 	{
 		Vadon::Scene::ResourceSystem& resource_system = m_engine_core.get_system<Vadon::Scene::ResourceSystem>();
 		const ResourceHandle resource_handle = resource_system.find_resource(scene_id);
@@ -357,7 +357,7 @@ namespace Vadon::Private::Scene
 		return SceneHandle::from_resource_handle(resource_handle);
 	}
 
-	SceneHandle SceneSystem::load_scene(ResourceID scene_id)
+	SceneHandle SceneSystem::load_scene(SceneID scene_id)
 	{
 		Vadon::Scene::ResourceSystem& resource_system = m_engine_core.get_system<Vadon::Scene::ResourceSystem>();
 		const ResourceHandle scene_resource_handle = resource_system.load_resource(scene_id);
@@ -380,8 +380,9 @@ namespace Vadon::Private::Scene
 		SceneData temp_scene_data;
 		{
 			// Track dependency stack (ensures we cannot save an invalid scene)
-			std::vector<SceneHandle> dependency_stack;
-			dependency_stack.push_back(scene_handle);
+			std::vector<SceneID> dependency_stack;
+			const SceneID scene_id = SceneID::from_resource_id(resource_system.get_resource_info(scene_handle).id);
+			dependency_stack.push_back(scene_id);
 
 			if (parse_scene_entity(ecs_world, root_entity, -1, temp_scene_data, dependency_stack) == false)
 			{
@@ -398,7 +399,6 @@ namespace Vadon::Private::Scene
 	{
 		// TODO: circular dependency check?
 		const Scene* scene = get_scene(scene_handle);
-
 		std::vector<Vadon::ECS::EntityHandle> entity_lookup;
 
 		Vadon::ECS::EntityManager& entity_manager = ecs_world.get_entity_manager();
@@ -413,7 +413,22 @@ namespace Vadon::Private::Scene
 			}
 			else
 			{
-				current_entity = instantiate_scene(current_entity_data.scene, ecs_world, true);
+				const SceneHandle sub_scene_handle = load_scene(current_entity_data.scene);
+				if (sub_scene_handle.is_valid() == false)
+				{
+					// TODO: log scene ID!
+					// TODO2: should we abort, or just skip the entity that failed to load?
+					log_error("Scene system: failed to load sub-scene while instantiating!\n");
+					if (entity_lookup.empty() == false)
+					{
+						// Clean up from root
+						const Vadon::ECS::EntityHandle root_entity = entity_lookup.front();
+						ecs_world.remove_entity(root_entity);
+					}
+
+					return Vadon::ECS::EntityHandle();
+				}
+				current_entity = instantiate_scene(sub_scene_handle, ecs_world, true);
 				if (current_entity.is_valid() == false)
 				{
 					if (entity_lookup.empty() == false)
@@ -447,10 +462,31 @@ namespace Vadon::Private::Scene
 					continue;
 				}
 
-				// TODO: if property is resource, handle separately!
+				using ErasedDataType = Vadon::Utilities::ErasedDataType;
 				for (const SceneData::ComponentData::Property& current_property_data : current_component_data.properties)
 				{
-					Vadon::Utilities::TypeRegistry::set_property(current_component, current_component_data.type_id, current_property_data.name, current_property_data.value);
+					switch (current_property_data.data_type.type)
+					{
+					case ErasedDataType::TRIVIAL:
+					{
+						Vadon::Utilities::TypeRegistry::set_property(current_component, current_component_data.type_id, current_property_data.name, current_property_data.value);
+					}
+					break;
+					case ErasedDataType::RESOURCE_HANDLE:
+					{
+						Vadon::Scene::ResourceSystem& resource_system = m_engine_core.get_system<Vadon::Scene::ResourceSystem>();
+						Vadon::Scene::ResourceHandle resource_handle = resource_system.load_resource(std::get<Vadon::Scene::ResourceID>(current_property_data.value));
+						if (resource_handle.is_valid() == true)
+						{
+							Vadon::Utilities::TypeRegistry::set_property(current_component, current_component_data.type_id, current_property_data.name, resource_handle);
+						}
+						else
+						{
+							// TODO: error?
+						}
+					}
+					break;
+					}
 				}
 			}
 
@@ -467,8 +503,11 @@ namespace Vadon::Private::Scene
 		if (is_sub_scene == true)
 		{
 			// Add scene component
+			Vadon::Scene::ResourceSystem& resource_system = m_engine_core.get_system<Vadon::Scene::ResourceSystem>();
+			const SceneID scene_id = SceneID::from_resource_id(resource_system.get_resource_info(scene_handle).id);
+
 			SceneComponent& root_scene_component = component_manager.add_component<SceneComponent>(root_entity);
-			root_scene_component.root_scene = scene_handle;
+			root_scene_component.root_scene = scene_id;
 
 			// Add scene component to each child, indicates that these were instantiated from the scene
 			for (Vadon::ECS::EntityHandle current_child : entity_manager.get_children(root_entity))
@@ -478,24 +517,24 @@ namespace Vadon::Private::Scene
 				{
 					child_scene_component = &component_manager.add_component<SceneComponent>(current_child);
 				}
-				child_scene_component->parent_scene = scene_handle;
+				child_scene_component->parent_scene = scene_id;
 			}
 		}	
 
 		return root_entity;
 	}
 
-	bool SceneSystem::is_scene_dependent(SceneHandle base_scene_handle, SceneHandle dependent_scene_handle)
+	bool SceneSystem::is_scene_dependent(SceneID base_scene_id, SceneID dependent_scene_id)
 	{
-		if (base_scene_handle == dependent_scene_handle)
+		if (base_scene_id == dependent_scene_id)
 		{
 			return true;
 		}
 
-		std::vector<SceneHandle> dependency_stack;
-		dependency_stack.push_back(base_scene_handle);
+		std::vector<SceneID> dependency_stack;
+		dependency_stack.push_back(base_scene_id);
 		
-		return internal_is_scene_dependent(dependent_scene_handle, dependency_stack);
+		return internal_is_scene_dependent(dependent_scene_id, dependency_stack);
 	}
 
 	SceneSystem::SceneSystem(Vadon::Core::EngineCoreInterface& core)
@@ -517,7 +556,7 @@ namespace Vadon::Private::Scene
 		log_message("Scene System shut down!\n");
 	}
 
-	bool SceneSystem::parse_scene_entity(ECS::World& ecs_world, ECS::EntityHandle entity, int32_t parent_index, SceneData& scene_data, std::vector<SceneHandle>& dependency_stack)
+	bool SceneSystem::parse_scene_entity(ECS::World& ecs_world, ECS::EntityHandle entity, int32_t parent_index, SceneData& scene_data, std::vector<SceneID>& dependency_stack)
 	{
 		Vadon::ECS::EntityManager& entity_manager = ecs_world.get_entity_manager();
 		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
@@ -593,15 +632,23 @@ namespace Vadon::Private::Scene
 		return true;
 	}
 
-	bool SceneSystem::internal_is_scene_dependent(SceneHandle scene_handle, std::vector<SceneHandle>& dependency_stack)
+	bool SceneSystem::internal_is_scene_dependent(SceneID scene_id, std::vector<SceneID>& dependency_stack)
 	{
-		if (std::find(dependency_stack.begin(), dependency_stack.end(), scene_handle) != dependency_stack.end())
+		if (std::find(dependency_stack.begin(), dependency_stack.end(), scene_id) != dependency_stack.end())
 		{
 			return true;
 		}
 
 		// Add to stack, recursively check entities if they might lead to a circular dependency
-		dependency_stack.push_back(scene_handle);
+		dependency_stack.push_back(scene_id);
+
+		const SceneHandle scene_handle = load_scene(scene_id);
+		if (scene_handle.is_valid() == false)
+		{
+			// TODO: log scene ID!
+			log_error("Scene system: failed to load scene during dependency check!\n");
+			return true;
+		}
 
 		const Scene* scene = get_scene(scene_handle);
 		for (const SceneData::EntityData& current_entity_data : scene->data.entities)
