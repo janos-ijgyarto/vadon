@@ -1,10 +1,10 @@
 #ifndef VADON_UTILITIES_TYPE_REGISTRY_REGISTRY_HPP
 #define VADON_UTILITIES_TYPE_REGISTRY_REGISTRY_HPP
 #include <Vadon/Common.hpp>
-#include <Vadon/Utilities/TypeInfo/TypeInfo.hpp>
 #include <Vadon/Utilities/TypeInfo/TypeName.hpp>
 
-#include <Vadon/Utilities/TypeInfo/Registry/MemberBind.hpp>
+#include <Vadon/Utilities/TypeInfo/Registry/FunctionBindBase.hpp>
+#include <Vadon/Utilities/TypeInfo/Registry/MemberBindBase.hpp>
 #include <Vadon/Utilities/TypeInfo/Registry/Property.hpp>
 
 #include <unordered_map>
@@ -63,6 +63,16 @@ namespace Vadon::Utilities
 
 		// TODO: use std::expected so we can check for failure?
 		template<typename T>
+		static std::vector<TypeID> get_subclass_list()
+		{
+			return get_subclass_list(get_type_id<T>());
+		}
+
+		// TODO: use std::expected so we can check for failure?
+		VADONCOMMON_API static std::vector<TypeID> get_subclass_list(TypeID type_id);
+
+		// TODO: use std::expected so we can check for failure?
+		template<typename T>
 		static PropertyInfoList get_type_properties()
 		{
 			return get_type_properties(get_type_id<T>());
@@ -99,7 +109,7 @@ namespace Vadon::Utilities
 			bool has_property(std::string_view name) const;
 		};
 
-		static VADONCOMMON_API void internal_register_type(std::string_view type_name, size_t size, size_t alignment, TypeID base_type_id = c_invalid_type_id);
+		static VADONCOMMON_API void internal_register_type(std::string_view type_name, size_t size, size_t alignment, TypeID base_type_id = TypeID::INVALID);
 		static VADONCOMMON_API bool internal_add_property(TypeID type_id, std::string_view name, MemberVariableBindBase property_bind);
 		static VADONCOMMON_API bool internal_bind_method(TypeID type_id, std::string_view name, MemberFunctionBind method_bind);
 		
@@ -114,7 +124,7 @@ namespace Vadon::Utilities
 
 		// FIXME: hide via PIMPL?
 		std::unordered_map<std::string, TypeID> m_id_lookup;
-		TypeID m_id_counter = 1;
+		std::underlying_type_t<TypeID> m_id_counter = 1;
 
 		// FIXME: use vector to improve lookup times?
 		std::unordered_map<TypeID, TypeData> m_type_lookup;

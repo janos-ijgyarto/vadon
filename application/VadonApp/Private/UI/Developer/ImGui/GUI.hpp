@@ -12,6 +12,8 @@
 #include <Vadon/Render/GraphicsAPI/Texture/Texture.hpp>
 namespace VadonApp::Private::UI::Developer::ImGUI
 {
+	using GUIStyle = VadonApp::UI::Developer::GUIStyle;
+
 	class GUISystem final : public VadonApp::Private::UI::Developer::GUISystem
 	{
 	public:
@@ -22,6 +24,7 @@ namespace VadonApp::Private::UI::Developer::ImGUI
 		void shutdown() override;
 
 		IOFlags get_io_flags() const override;
+		GUIStyle get_style() const override;
 
 		void start_frame() override;
 		void end_frame() override;
@@ -43,6 +46,13 @@ namespace VadonApp::Private::UI::Developer::ImGUI
 		void begin_disabled(bool disabled) override;
 		void end_disabled() override;
 
+		Vadon::Utilities::Vector2 get_available_content_region() const override;
+		Vadon::Utilities::Vector2 calculate_text_size(std::string_view text, std::string_view text_end = "", bool hide_after_double_hash = false, float wrap_width = -1.0f) const override;
+
+		void push_item_width(float item_width) override;
+		void pop_item_width() override;
+		void set_next_item_width(float item_width) override;
+
 		bool begin_window(Window& window) override;
 		void end_window() override;
 
@@ -52,11 +62,14 @@ namespace VadonApp::Private::UI::Developer::ImGUI
 		bool begin_child_window(const ChildWindow& window) override;
 		void end_child_window() override;
 
-		void open_dialog(std::string_view id) override;
-		void close_current_dialog() override;
+		bool begin_popup(Window& popup) override;
+		bool begin_popup_modal(Window& popup) override;
+		void end_popup() override;
 
-		bool begin_modal_dialog(Window& dialog) override;
-		void end_dialog() override;
+		void open_popup(std::string_view id) override;
+		void close_current_popup() override;
+
+		bool begin_popup_context_item(std::string_view id) override;
 
 		bool begin_main_menu_bar() override;
 		void end_main_menu_bar() override;
@@ -92,7 +105,7 @@ namespace VadonApp::Private::UI::Developer::ImGUI
 
 		bool draw_checkbox(Checkbox& checkbox) override;
 
-		bool draw_list_box(ListBox& list_box) override;
+		bool draw_list_box(ListBox& list_box, bool* double_clicked = nullptr) override;
 		bool draw_combo_box(ComboBox& combo_box) override;
 
 		bool begin_table(const Table& table) override;
@@ -102,7 +115,10 @@ namespace VadonApp::Private::UI::Developer::ImGUI
 		void add_separator() override;
 		void add_text(std::string_view text) override;
 		void add_text_unformatted(std::string_view text) override;
+		void add_text_wrapped(std::string_view text) override;
 		void add_separator_text(std::string_view text) override;
+
+		void set_item_tooltip(std::string_view tooltip_text) override;
 		
 		void same_line() override;
 		void set_scroll_x(float ratio = 0.5f) override;
@@ -113,6 +129,7 @@ namespace VadonApp::Private::UI::Developer::ImGUI
 		bool is_item_focused() const override;
 		bool is_item_clicked(VadonApp::Platform::MouseButton mouse_button = VadonApp::Platform::MouseButton::LEFT) const override;
 		bool is_item_toggled_open() const override;
+		bool is_item_edited() const override;
 
 		bool is_key_down(VadonApp::Platform::KeyCode key) const override;
 		bool is_key_pressed(VadonApp::Platform::KeyCode key, bool repeat = true) const override;

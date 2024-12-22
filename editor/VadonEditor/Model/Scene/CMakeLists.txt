@@ -4,6 +4,7 @@ target_sources(${VADONEDITOR_CURRENT_TARGET}
     Entity.hpp
     Entity.cpp
     Scene.hpp
-    SceneTree.hpp
-    SceneTree.cpp
+    Scene.cpp
+    SceneSystem.hpp
+    SceneSystem.cpp    
    )

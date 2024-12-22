@@ -5,4 +5,5 @@ target_sources(${VADONAPP_CURRENT_TARGET}
     Configuration.hpp
     GUI.hpp
     GUIElements.hpp
+    IconsFontAwesome5.h
 )

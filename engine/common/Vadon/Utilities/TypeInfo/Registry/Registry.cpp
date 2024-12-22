@@ -4,6 +4,8 @@
 #include <Vadon/Core/Environment.hpp>
 #include <Vadon/Core/Logger.hpp>
 
+#include <Vadon/Utilities/Enum/EnumClass.hpp>
+
 #include <format>
 
 namespace Vadon::Utilities
@@ -12,7 +14,7 @@ namespace Vadon::Utilities
 	{
 		PropertyInfo make_property_info(std::string_view name, const MemberVariableBindBase& property)
 		{
-			return PropertyInfo{ .name = std::string(name), .type_index = property.type,
+			return PropertyInfo{ .name = std::string(name), .data_type = property.data_type,
 				.has_getter = property.member_getter || property.getter_function,
 				.has_setter = property.member_setter || property.setter_function };
 		}
@@ -49,7 +51,7 @@ namespace Vadon::Utilities
 
 		void type_not_found_error(TypeID type_id)
 		{
-			Vadon::Core::Logger::log_error(std::format("Type registry error: type ID {} not present in registry!\n", type_id));
+			Vadon::Core::Logger::log_error(std::format("Type registry error: type ID {} not present in registry!\n", Vadon::Utilities::to_integral(type_id)));
 		}
 	}
 
@@ -108,7 +110,7 @@ namespace Vadon::Utilities
 		if (type_id_it == instance.m_id_lookup.end())
 		{
 			Vadon::Core::Logger::log_error(std::format("Type registry error: {} not present in registry!\n", type_name));
-			return c_invalid_type_id;
+			return Vadon::Utilities::TypeID::INVALID;
 		}
 
 		return type_id_it->second;
@@ -123,7 +125,7 @@ namespace Vadon::Utilities
 
 		const TypeRegistry& instance = get_registry_instance();
 		TypeID current_type_id = type_id;
-		while (current_type_id != c_invalid_type_id)
+		while (current_type_id != Vadon::Utilities::TypeID::INVALID)
 		{
 			auto current_data_it = instance.m_type_lookup.find(current_type_id);
 			if (current_data_it == instance.m_type_lookup.end())
@@ -158,6 +160,28 @@ namespace Vadon::Utilities
 		return type_data_it->second.info;
 	}
 
+	std::vector<TypeID> TypeRegistry::get_subclass_list(TypeID type_id)
+	{
+		TypeRegistry& instance = get_registry_instance();
+
+		std::vector<TypeID> subclass_list;
+		subclass_list.push_back(type_id);
+
+		for (const auto& type_pair : instance.m_type_lookup)
+		{
+			if (type_pair.first == type_id)
+			{
+				continue;
+			}
+			if (is_base_of(type_id, type_pair.first) == true)
+			{
+				subclass_list.push_back(type_pair.first);
+			}
+		}
+
+		return subclass_list;
+	}
+
 	PropertyInfoList TypeRegistry::get_type_properties(TypeID type_id)
 	{
 		PropertyInfoList properties;
@@ -189,15 +213,14 @@ namespace Vadon::Utilities
 		}
 
 		const TypeData& type_data = type_data_it->second;
-		auto type_property_it = type_data.properties.find(std::string(property_name));
-		if (type_property_it == type_data.properties.end())
+		const MemberVariableBindBase* property_bind = instance.internal_find_property(type_data, property_name);
+		if (property_bind == nullptr)
 		{
 			Vadon::Core::Logger::log_error(std::format("Type registry error: property \"{}\" not found in type \"{}\"!\n", property_name, type_data.info.name));
 			return Variant();
 		}
 
-		const MemberVariableBindBase& property_bind = type_property_it->second;
-		return invoke_property_getter(object, property_bind);
+		return invoke_property_getter(object, *property_bind);
 	}
 
 	void TypeRegistry::set_property(void* object, TypeID type_id, std::string_view property_name, const Variant& value)
@@ -227,7 +250,7 @@ namespace Vadon::Utilities
 		TypeRegistry& instance = get_registry_instance();
 		if (instance.m_id_lookup.find(type_name_str) == instance.m_id_lookup.end())
 		{
-			const TypeID new_type_id = instance.m_id_counter++;
+			const TypeID new_type_id = to_enum<TypeID>(instance.m_id_counter++);
 			instance.m_id_lookup.emplace(type_name_str, new_type_id);
 
 			TypeData& new_type_data = instance.m_type_lookup.insert(std::make_pair(new_type_id, TypeData{})).first->second;
@@ -236,7 +259,7 @@ namespace Vadon::Utilities
 			new_type_data.info.size = size;
 			new_type_data.info.alignment = alignment;
 
-			if (base_type_id != c_invalid_type_id)
+			if (base_type_id != Vadon::Utilities::TypeID::INVALID)
 			{
 				instance.register_type_with_base(new_type_id, new_type_data, base_type_id);
 			}
@@ -281,7 +304,7 @@ namespace Vadon::Utilities
 		auto base_data_it = m_type_lookup.find(base_id);
 		if (base_data_it == m_type_lookup.end())
 		{
-			Vadon::Core::Logger::log_error(std::format("Type registry error: base class with type ID {} provided for \"{}\" is not present in registry!\n", base_id, data.info.name));
+			Vadon::Core::Logger::log_error(std::format("Type registry error: base class with type ID {} provided for \"{}\" is not present in registry!\n", Vadon::Utilities::to_integral(base_id), data.info.name));
 			return;
 		}
 
@@ -294,7 +317,7 @@ namespace Vadon::Utilities
 	{
 		// FIXME: have a faster way to look this up?
 		TypeID current_type_id = type_id;
-		while (current_type_id != c_invalid_type_id)
+		while (current_type_id != Vadon::Utilities::TypeID::INVALID)
 		{
 			auto current_data_it = m_type_lookup.find(current_type_id);
 			if (current_data_it == m_type_lookup.end())
@@ -319,7 +342,7 @@ namespace Vadon::Utilities
 	{
 		// FIXME: have a faster way to look this up?
 		TypeID current_type_id = type_id;
-		while (current_type_id != c_invalid_type_id)
+		while (current_type_id != Vadon::Utilities::TypeID::INVALID)
 		{
 			auto current_data_it = m_type_lookup.find(current_type_id);
 			if (current_data_it == m_type_lookup.end())
@@ -350,7 +373,7 @@ namespace Vadon::Utilities
 		}
 
 		const TypeData& type_data = type_data_it->second;
-		if (type_data.info.base_id != c_invalid_type_id)
+		if (type_data.info.base_id != Vadon::Utilities::TypeID::INVALID)
 		{
 			internal_get_type_properties(type_data.info.base_id, property_list);
 		}
@@ -371,7 +394,7 @@ namespace Vadon::Utilities
 		}
 
 		const TypeData& type_data = type_data_it->second;
-		if (type_data.info.base_id != c_invalid_type_id)
+		if (type_data.info.base_id != Vadon::Utilities::TypeID::INVALID)
 		{
 			internal_get_properties(object, type_data.info.base_id, property_list);
 		}
@@ -384,7 +407,7 @@ namespace Vadon::Utilities
 				continue;
 			}
 
-			property_list.emplace_back(current_property.first, invoke_property_getter(object, property_bind));
+			property_list.emplace_back(current_property.first, current_property.second.data_type, invoke_property_getter(object, property_bind));
 		}
 	}
 
@@ -396,7 +419,7 @@ namespace Vadon::Utilities
 			return &property_it->second;
 		}
 
-		if (type_data.info.base_id != c_invalid_type_id)
+		if (type_data.info.base_id != Vadon::Utilities::TypeID::INVALID)
 		{
 			auto base_data_it = m_type_lookup.find(type_data.info.base_id);
 			if (base_data_it == m_type_lookup.end())

@@ -6,8 +6,8 @@ namespace Vadon::Private::Scene
 	using ResourceHandle = Vadon::Scene::ResourceHandle;
 	using ResourceID = Vadon::Scene::ResourceID;
 
-	using ResourceBase = Vadon::Scene::ResourceBase;
+	using ResourceInfo = Vadon::Scene::ResourceInfo;
 
-	using ResourcePath = Vadon::Scene::ResourcePath;
+	using Resource = Vadon::Scene::Resource;
 }
 #endif

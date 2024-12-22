@@ -57,19 +57,19 @@ namespace VadonEditor::View
 	}
 
 	ComponentEditor::ComponentEditor()
-		: m_type_id(0)
+		: m_type_id(Vadon::Utilities::TypeID::INVALID)
 	{
 		m_remove_button.label = "Remove component";
 	}
 
-	void ComponentEditor::initialize(Model::Entity& entity)
+	void ComponentEditor::initialize(Core::Editor& editor, Model::Entity& entity)
 	{
 		const VadonEditor::Model::Component component_data = entity.get_component_data(m_type_id);
 		m_name = component_data.name;
 
 		for (const Vadon::Utilities::Property& current_property : component_data.properties)
 		{
-			m_property_editors.emplace_back(PropertyEditor::create_property_editor(current_property));
+			m_property_editors.emplace_back(PropertyEditor::create_property_editor(editor, current_property));
 		}
 	}
 

@@ -1,6 +1,8 @@
 #include <Vadon/Private/PCH/Common.hpp>
 #include <Vadon/ECS/Entity/EntityManager.hpp>
 
+#include <Vadon/Core/Logger.hpp>
+
 namespace Vadon::ECS
 {
 	EntityHandle EntityManager::create_entity()
@@ -40,7 +42,7 @@ namespace Vadon::ECS
 		// Make sure we aren't trying to make a cycle
 		if (is_ancestor(parent, entity) == true)
 		{
-			// TODO: error message?
+			Vadon::Core::Logger::log_error("Entity manager: detected cyclical parent-child relationship between entities!\n");
 			return;
 		}
 

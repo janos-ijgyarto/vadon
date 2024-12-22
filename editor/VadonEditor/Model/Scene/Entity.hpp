@@ -1,10 +1,8 @@
 #ifndef VADONEDITOR_MODEL_SCENE_ENTITY_HPP
 #define VADONEDITOR_MODEL_SCENE_ENTITY_HPP
 #include <VadonEditor/Model/Scene/Component.hpp>
-#include <VadonEditor/Model/Scene/Scene.hpp>
 #include <Vadon/ECS/Entity/Entity.hpp>
 #include <Vadon/ECS/Component/Component.hpp>
-#include <set>
 namespace Vadon::ECS
 {
 	class World;
@@ -19,6 +17,8 @@ namespace VadonEditor::Model
 	using EntityList = std::vector<Entity*>;
 
 	using EntityID = uint32_t;
+
+	class Scene;
 
 	class Entity final
 	{
@@ -35,10 +35,12 @@ namespace VadonEditor::Model
 		const std::string& get_name() const { return m_name; }
 		void set_name(std::string_view name);
 
-		bool is_sub_scene() const { return m_sub_scene.scene_handle.is_valid() == true; }
-		const Scene& get_sub_scene_info() const { return m_sub_scene; }
+		Scene* get_owning_scene() const { return m_owning_scene; }
 
-		bool is_sub_scene_child() const { return m_sub_scene_child; }
+		Scene* get_sub_scene() const { return m_sub_scene; }
+		bool is_sub_scene() const { return get_sub_scene() != nullptr; }
+
+		bool is_sub_scene_child() const { return (get_parent() != nullptr) && get_parent()->get_sub_scene(); }
 
 		Vadon::ECS::EntityHandle get_handle() const { return m_entity_handle; }
 
@@ -48,6 +50,10 @@ namespace VadonEditor::Model
 		void add_child(Entity* entity, int32_t index = -1);
 		void remove_child(Entity* entity);
 
+		// TODO: "archetypes" which automatically add certain components?
+		Entity* create_new_child();
+		Entity* instantiate_child_scene(Scene* scene);
+
 		bool add_component(Vadon::ECS::ComponentID type_id);
 		void remove_component(Vadon::ECS::ComponentID type_id);
 
@@ -56,10 +62,11 @@ namespace VadonEditor::Model
 
 		Vadon::Utilities::TypeInfoList get_available_component_list() const;
 
-		Vadon::Utilities::Variant get_component_property(Vadon::ECS::ComponentID component_type_id, std::string_view property_name);
+		Vadon::Utilities::Variant get_component_property(Vadon::ECS::ComponentID component_type_id, std::string_view property_name) const;
 		void edit_component_property(Vadon::ECS::ComponentID component_type_id, std::string_view property_name, const Vadon::Utilities::Variant& value);
 	private:
-		Entity(Core::Editor& editor, Vadon::ECS::EntityHandle entity_handle, EntityID id, Entity* parent = nullptr);
+		Entity(Core::Editor& editor, Vadon::ECS::EntityHandle entity_handle, EntityID id, Scene* owning_scene);
+
 		Vadon::ECS::World& get_ecs_world() const;
 		void notify_modified();
 
@@ -78,12 +85,12 @@ namespace VadonEditor::Model
 
 		std::string m_name;
 
-		Scene m_sub_scene;
-		bool m_sub_scene_child; // FIXME: have a more elegant way to deduce this?
+		Scene* m_owning_scene;
+		Scene* m_sub_scene;
 
 		Vadon::ECS::EntityHandle m_entity_handle;
 
-		friend class SceneTree;
+		friend class Scene;
 	};
 }
 #endif

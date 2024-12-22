@@ -81,7 +81,7 @@ namespace VadonEditor::Core
 
 		if (load_project(root_path) == false)
 		{
-			// TODO: error!
+			log_error("Project manager: invalid path!\n");
 			return false;
 		}
 
@@ -104,6 +104,7 @@ namespace VadonEditor::Core
 
 	ProjectManager::ProjectManager(Editor& editor)
 		: System(editor)
+		, m_asset_library(editor)
 		, m_state(State::LAUNCHER)
 	{
 
@@ -126,7 +127,7 @@ namespace VadonEditor::Core
 		Vadon::Core::EngineCoreInterface& engine_core = m_editor.get_engine_core();
 		Vadon::Core::FileSystem& file_system = engine_core.get_system<Vadon::Core::FileSystem>();
 
-		const Vadon::Core::FileSystem::Path project_path{ .path = c_project_cache_file_name };
+		const Vadon::Core::FileSystemPath project_path{ .path = c_project_cache_file_name };
 
 		if (file_system.does_file_exist(project_path) == false)
 		{
@@ -137,7 +138,7 @@ namespace VadonEditor::Core
 		Vadon::Core::FileSystem::RawFileDataBuffer project_cache_buffer;
 		if (file_system.load_file(project_path, project_cache_buffer) == false)
 		{
-			// TODO: error!
+			log_error("Project manager: unable to load file!\n");
 			return;
 		}
 
@@ -150,7 +151,9 @@ namespace VadonEditor::Core
 			return;
 		}
 
-		if (serializer->open_array("projects") == false)
+		// TODO: use the return value for more elaborate parsing and error reporting?
+		using SerializerResult = Vadon::Utilities::Serializer::Result;
+		if (serializer->open_array("projects") != SerializerResult::SUCCESSFUL)
 		{
 			log_error(c_cache_file_data_error);
 			return;
@@ -161,26 +164,26 @@ namespace VadonEditor::Core
 
 		for (size_t current_project_index = 0; current_project_index < project_count; ++current_project_index)
 		{
-			if (serializer->open_object(current_project_index) == false)
+			if (serializer->open_object(current_project_index) != SerializerResult::SUCCESSFUL)
 			{
 				log_error(c_cache_file_data_error);
 				return;
 			}
 
 			ProjectInfo current_project_info;
-			if (serializer->serialize("name", current_project_info.name) == false)
+			if (serializer->serialize("name", current_project_info.name) != SerializerResult::SUCCESSFUL)
 			{
 				log_error(c_cache_file_data_error);
 				return;
 			}
 
-			if (serializer->serialize("path", current_project_info.root_path) == false)
+			if (serializer->serialize("path", current_project_info.root_path) != SerializerResult::SUCCESSFUL)
 			{
 				log_error(c_cache_file_data_error);
 				return;
 			}
 
-			if (serializer->close_object() == false)
+			if (serializer->close_object() != SerializerResult::SUCCESSFUL)
 			{
 				log_error(c_cache_file_data_error);
 				return;
@@ -189,7 +192,7 @@ namespace VadonEditor::Core
 			m_project_cache.push_back(current_project_info);
 		}
 
-		if (serializer->close_array() == false)
+		if (serializer->close_array() != SerializerResult::SUCCESSFUL)
 		{
 			log_error(c_cache_file_data_error);
 			return;
@@ -272,6 +275,8 @@ namespace VadonEditor::Core
 		// Everything loaded successfuly, add to project cache
 		add_project_to_cache(Core::ProjectInfo{ .name = project_info.name, .root_path = project_info.root_path });
 
+		m_asset_library.rebuild_asset_tree();
+
 		// Set the editor state
 		m_state = State::PROJECT_LOADED;
 		return true;
@@ -307,7 +312,9 @@ namespace VadonEditor::Core
 				return;
 			}
 
-			if (serializer->open_array("projects") == false)
+			// TODO: use the return value for more elaborate parsing and error reporting?
+			using SerializerResult = Vadon::Utilities::Serializer::Result;
+			if (serializer->open_array("projects") != SerializerResult::SUCCESSFUL)
 			{
 				log_error(c_cache_file_data_error);
 				return;
@@ -315,33 +322,33 @@ namespace VadonEditor::Core
 
 			for (size_t current_project_index = 0; current_project_index < m_project_cache.size(); ++current_project_index)
 			{
-				if (serializer->open_object(current_project_index) == false)
+				if (serializer->open_object(current_project_index) != SerializerResult::SUCCESSFUL)
 				{
 					log_error(c_cache_file_data_error);
 					return;
 				}
 
 				ProjectInfo& current_project_info = m_project_cache[current_project_index];
-				if (serializer->serialize("name", current_project_info.name) == false)
+				if (serializer->serialize("name", current_project_info.name) != SerializerResult::SUCCESSFUL)
 				{
 					log_error(c_cache_file_data_error);
 					return;
 				}
 
-				if (serializer->serialize("path", current_project_info.root_path) == false)
+				if (serializer->serialize("path", current_project_info.root_path) != SerializerResult::SUCCESSFUL)
 				{
 					log_error(c_cache_file_data_error);
 					return;
 				}
 
-				if (serializer->close_object() == false)
+				if (serializer->close_object() != SerializerResult::SUCCESSFUL)
 				{
 					log_error(c_cache_file_data_error);
 					return;
 				}
 			}
 
-			if (serializer->close_array() == false)
+			if (serializer->close_array() != SerializerResult::SUCCESSFUL)
 			{
 				log_error(c_cache_file_data_error);
 				return;
@@ -357,10 +364,10 @@ namespace VadonEditor::Core
 		Vadon::Core::EngineCoreInterface& engine_core = m_editor.get_engine_core();
 		Vadon::Core::FileSystem& file_system = engine_core.get_system<Vadon::Core::FileSystem>();
 
-		const Vadon::Core::FileSystem::Path project_path{ .path = c_project_cache_file_name };
+		const Vadon::Core::FileSystemPath project_path{ .path = c_project_cache_file_name };
 		if (file_system.save_file(project_path, project_cache_buffer) == false)
 		{
-			// TODO: error!
+			log_error("Project manager: unable to save file!\n");
 			return;
 		}
 	}

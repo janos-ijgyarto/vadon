@@ -5,7 +5,7 @@
 #include <VadonEditor/Core/Editor.hpp>
 
 #include <VadonEditor/Model/ModelSystem.hpp>
-#include <VadonEditor/Model/Scene/SceneTree.hpp>
+#include <VadonEditor/Model/Scene/SceneSystem.hpp>
 #include <VadonEditor/Platform/PlatformInterface.hpp>
 #include <VadonEditor/Render/RenderSystem.hpp>
 
@@ -154,7 +154,7 @@ namespace
                 }
             );
 
-            editor_model.get_scene_tree().register_edit_callback([this, &ecs_world](Vadon::ECS::EntityHandle entity, Vadon::Utilities::TypeID component)
+            editor_model.get_scene_system().register_edit_callback([this, &ecs_world](Vadon::ECS::EntityHandle entity, Vadon::Utilities::TypeID component)
                 {
                     component_edited(entity, component);
                 }

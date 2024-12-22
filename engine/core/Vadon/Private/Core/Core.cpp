@@ -29,6 +29,7 @@ namespace Vadon::Private::Core
         : m_file_system(*this)
         , m_task_system(*this) 
         , m_render_system(*this)
+        , m_resource_system(*this)
         , m_scene_system(*this)
     {
     }
@@ -67,6 +68,12 @@ namespace Vadon::Private::Core
             return false;
         }
 
+        if (m_resource_system.initialize() == false)
+        {
+            log_error(c_failure_message);
+            return false;
+        }
+
         if (m_scene_system.initialize() == false)
         {
             log_error(c_failure_message);
@@ -88,6 +95,7 @@ namespace Vadon::Private::Core
         log_message("Vadon shutting down.\n");
 
         m_scene_system.shutdown();
+        m_resource_system.shutdown();
         m_task_system.shutdown();
         m_render_system.shutdown();
         if (m_graphics_api != nullptr)

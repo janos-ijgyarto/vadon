@@ -6,8 +6,6 @@
 #include <Vadon/Private/ECS/Entity/Entity.hpp>
 #include <Vadon/Private/ECS/World/World.hpp>
 
-#include <Vadon/Private/Scene/Resource/ResourceSystem.hpp>
-
 namespace Vadon::Private::Core
 {
 	class EngineCore;
@@ -16,24 +14,29 @@ namespace Vadon::Private::Scene
 {
 	class SceneSystem final : public Vadon::Scene::SceneSystem
 	{
-	public:
-		ResourceHandle create_scene() override;
-		bool set_scene_data(ResourceHandle scene_handle, ECS::World& ecs_world, ECS::EntityHandle root_entity) override;
-		ECS::EntityHandle instantiate_scene(ResourceHandle scene_handle, ECS::World& ecs_world, bool is_sub_scene) override;
+	public:		
+		SceneHandle create_scene() override;
 
-		bool is_scene_dependent(ResourceHandle scene_handle, ResourceHandle dependent_scene_handle) const override;
+		SceneHandle find_scene(SceneID scene_id) const override;
+
+		SceneHandle load_scene(SceneID scene_id) override;
+
+		bool package_scene_data(SceneHandle scene_handle, ECS::World& ecs_world, ECS::EntityHandle root_entity) override;
+
+		ECS::EntityHandle instantiate_scene(SceneHandle scene_handle, ECS::World& ecs_world, bool is_sub_scene) override;
+
+		bool is_scene_dependent(SceneID base_scene_id, SceneID dependent_scene_id) override;
 	protected:
 		SceneSystem(Vadon::Core::EngineCoreInterface& core);
 
 		bool initialize();
 		void shutdown();
 
-		bool parse_scene_entity(ECS::World& ecs_world, ECS::EntityHandle entity, int32_t parent_index, SceneData& scene_data, std::vector<ResourceHandle>& dependency_stack);
-		bool internal_is_scene_dependent(ResourceHandle scene_handle, std::vector<ResourceHandle>& dependency_stack) const;
+		bool parse_scene_entity(ECS::World& ecs_world, ECS::EntityHandle entity, int32_t parent_index, SceneData& scene_data, std::vector<SceneID>& dependency_stack);
+		bool internal_is_scene_dependent(SceneID scene_id, std::vector<SceneID>& dependency_stack);
 
-		static bool serialize_scene(Vadon::Scene::ResourceSystemInterface& context, Vadon::Utilities::Serializer& serializer, ResourceBase& resource);
-
-		ResourceSystem m_resource_system;
+		const Scene* get_scene(SceneHandle scene_handle) const;
+		Scene* get_scene(SceneHandle scene_handle) { return const_cast<Scene*>(std::as_const(*this).get_scene(scene_handle)); }
 
 		friend Core::EngineCore;
 	};

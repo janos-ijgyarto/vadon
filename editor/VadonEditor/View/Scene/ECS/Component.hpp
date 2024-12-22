@@ -1,6 +1,6 @@
 #ifndef VADONEDITOR_VIEW_SCENE_ECS_COMPONENT_HPP
 #define VADONEDITOR_VIEW_SCENE_ECS_COMPONENT_HPP
-#include <VadonEditor/View/Widgets/Property.hpp>
+#include <VadonEditor/View/Scene/Property/Property.hpp>
 #include <VadonEditor/UI/Developer/Widgets.hpp>
 #include <Vadon/ECS/Component/Component.hpp>
 namespace VadonEditor::Model
@@ -42,7 +42,7 @@ namespace VadonEditor::View
 	public:
 		ComponentEditor();
 	private:
-		void initialize(Model::Entity& entity);
+		void initialize(Core::Editor& editor, Model::Entity& entity);
 		bool draw(VadonApp::UI::Developer::GUISystem& dev_gui, Model::Entity& entity);
 
 		Vadon::ECS::ComponentID m_type_id;

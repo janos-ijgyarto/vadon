@@ -13,13 +13,23 @@ namespace Vadon::Utilities
 
 		template<typename T> static constexpr size_t get_type_id()
 		{
+			static_assert(has_type<T>() == true, "Requested type not in type list!");
+			return internal_get_type_id<T>();
+		}
+
+		template<typename T> static constexpr bool has_type()
+		{
+			return (std::is_same_v<T, Types> || ...);
+		}
+	private:
+		template<typename T> static constexpr size_t internal_get_type_id()
+		{
 			static_assert(type_count() > 0, "Type list must not be empty!");
 
 			// Make sure we have no duplicates in the list (NOTE: unfortunately this can only detect duplicates if they are actually being used,
 			// but we expect this will be the case anyway)
 			constexpr size_t types_matched = (... + (1 & std::is_same_v<T, Types>));
-			static_assert(types_matched <= 1);
-			static_assert((std::is_same_v<T, Types> || ...), "Requested type not in type list!");
+			static_assert(types_matched <= 1, "Duplicate entries in type list!");
 
 			// Use fold expr to find the type (only evaluated once, and the benefits are worth the compile time cost)
 			size_t counter = 0;

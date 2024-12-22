@@ -2,6 +2,8 @@
 
 #include <VadonEditor/Core/Project/ProjectManager.hpp>
 
+#include <Vadon/Core/File/FileSystem.hpp>
+
 #include <format>
 
 namespace VadonEditor::View
@@ -10,8 +12,29 @@ namespace VadonEditor::View
 	{
 		Result result = Result::NONE;
 
+		if (m_file_browser.draw(dev_gui) == UI::Developer::Dialog::Result::ACCEPTED)
+		{
+			m_root_path = m_file_browser.get_selected_file().path;
+			if (m_root_path.empty() == true)
+			{
+				m_root_path = m_file_browser.get_current_path();
+			}
+		}
+
 		dev_gui.draw_input_text(m_input_name);
-		dev_gui.draw_input_text(m_input_path); // FIXME: implement a file browser widget!
+		dev_gui.add_text("Root path: ");
+
+		dev_gui.same_line();
+
+		dev_gui.add_text(m_root_path);
+
+		dev_gui.same_line();
+
+		if (dev_gui.draw_button(m_browse_button) == true)
+		{
+			Vadon::Core::FileSystem& file_system = m_editor.get_engine_core().get_system<Vadon::Core::FileSystem>();
+			m_file_browser.open_at(file_system.get_absolute_path(Vadon::Core::FileSystemPath{ .root_directory = file_system.get_default_root(), .path = "" }));
+		}
 
 		const bool input_valid = has_valid_input();
 		if (input_valid == false)
@@ -46,15 +69,16 @@ namespace VadonEditor::View
 	void NewProjectDialog::on_open()
 	{
 		m_input_name.input.clear();
-		m_input_path.input.clear();
+		m_root_path.clear();
 	}
 
 	NewProjectDialog::NewProjectDialog(Core::Editor& editor)
 		: Dialog("Create Project")
 		, m_editor(editor)
+		, m_file_browser("Select Project Root Directory")
 	{
 		m_input_name.label = "Name";
-		m_input_path.label = "Path";
+		m_browse_button.label = "Browse";
 
 		m_create_button.label = "Create";
 		m_cancel_button.label = "Cancel";
@@ -67,7 +91,7 @@ namespace VadonEditor::View
 			return false;
 		}
 
-		if (m_input_path.input.empty() == true)
+		if (m_root_path.empty() == true)
 		{
 			return false;
 		}
@@ -81,77 +105,10 @@ namespace VadonEditor::View
 		return true;
 	}
 
-	UI::Developer::Dialog::Result ImportProjectDialog::internal_draw(UI::Developer::GUISystem& dev_gui)
-	{
-		Result result = Result::NONE;
-
-		dev_gui.draw_input_text(m_project_path); // FIXME: implement a file browser widget!
-
-		const bool input_valid = has_valid_input();
-		if (input_valid == false)
-		{
-			dev_gui.begin_disabled();
-		}
-		if (dev_gui.draw_button(m_import_button) == true)
-		{
-			if (validate() == true)
-			{
-				result = Result::ACCEPTED;
-				close();
-			}
-			else
-			{
-				// TODO: show error!
-			}
-		}
-		if (input_valid == false)
-		{
-			dev_gui.end_disabled();
-		}
-		dev_gui.same_line();
-		if (dev_gui.draw_button(m_cancel_button) == true)
-		{
-			result = Result::CANCELLED;
-			close();
-		}
-
-		return result;
-	}
-
-	void ImportProjectDialog::on_open()
-	{
-		m_project_path.input.clear();
-	}
-
-	ImportProjectDialog::ImportProjectDialog(Core::Editor& editor)
-		: Dialog("Import Project")
-		, m_editor(editor)
-	{
-		m_project_path.label = "Project path";
-
-		m_import_button.label = "Import";
-		m_cancel_button.label = "Cancel";
-	}
-
-	bool ImportProjectDialog::has_valid_input() const
-	{
-		if (m_project_path.input.empty() == true)
-		{
-			return false;
-		}
-
-		return true;
-	}
-
-	bool ImportProjectDialog::validate() const
-	{
-		return true;
-	}
-
 	ProjectLauncher::ProjectLauncher(Core::Editor& editor)
 		: m_editor(editor)
 		, m_new_project_dialog(editor)
-		, m_import_project_dialog(editor)
+		, m_import_project_dialog("Import Project")
 	{
 		m_window.title = "Project Launcher";
 
@@ -159,7 +116,7 @@ namespace VadonEditor::View
 		m_import_project_button.label = "Import project";
 		m_open_project_button.label = "Open project";
 
-		m_project_list.label = "Previous projects";
+		m_project_list.label = "#project_list";
 	}
 
 	void ProjectLauncher::initialize()
@@ -187,7 +144,7 @@ namespace VadonEditor::View
 			Core::ProjectManager& project_manager = m_editor.get_system<Core::ProjectManager>();
 			if (m_new_project_dialog.draw(dev_gui) == UI::Developer::Dialog::Result::ACCEPTED)
 			{
-				if (project_manager.create_project(m_new_project_dialog.m_input_name.input, m_new_project_dialog.m_input_path.input) == false)
+				if (project_manager.create_project(m_new_project_dialog.m_input_name.input, m_new_project_dialog.m_root_path) == false)
 				{
 					// TODO: show error dialog!
 				}
@@ -197,7 +154,7 @@ namespace VadonEditor::View
 			{
 				// TODO: import the project!
 				// TODO: perform this asynchronously?
-				if (project_manager.open_project(m_import_project_dialog.m_project_path.input) == false)
+				if (project_manager.open_project(m_import_project_dialog.get_selected_file().path) == false)
 				{
 					// TODO: show error dialog!
 				}
@@ -210,8 +167,14 @@ namespace VadonEditor::View
 
 			if (dev_gui.draw_button(m_import_project_button) == true)
 			{
-				m_import_project_dialog.open();
+				Vadon::Core::FileSystem& file_system = m_editor.get_engine_core().get_system<Vadon::Core::FileSystem>();
+				m_import_project_dialog.open_at(file_system.get_absolute_path(Vadon::Core::FileSystemPath{ .root_directory = file_system.get_default_root(), .path = "" }));
 			}
+
+			m_project_list.size = dev_gui.get_available_content_region();
+			const VadonApp::UI::Developer::GUIStyle gui_style = dev_gui.get_style();
+
+			m_project_list.size.y -= dev_gui.calculate_text_size(m_open_project_button.label).y + gui_style.frame_padding.y * 2 + 5.0f;
 
 			dev_gui.draw_list_box(m_project_list);
 

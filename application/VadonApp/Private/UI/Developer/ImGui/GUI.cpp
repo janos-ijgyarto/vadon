@@ -3,9 +3,12 @@
 
 #include <VadonApp/Private/Core/Application.hpp>
 #include <VadonApp/Private/UI/Developer/ImGui/GUIElements.hpp>
+#include <VadonApp/Private/UI/Developer/ImGui/Fonts/fontawesome-webfont.inl>
 
 #include <VadonApp/Platform/PlatformInterface.hpp>
 #include <VadonApp/Platform/Input/Keyboard.hpp>
+
+#include <VadonApp/UI/Developer/IconsFontAwesome5.h>
 
 #include <Vadon/Core/Task/TaskSystem.hpp>
 
@@ -28,23 +31,19 @@ namespace VadonApp::Private::UI::Developer::ImGUI
 {
     namespace
     {
-        int get_imgui_mouse_button(VadonApp::Platform::MouseButton mouse_button)
+        ImGuiMouseButton_ get_imgui_mouse_button(VadonApp::Platform::MouseButton mouse_button)
         {
             switch (mouse_button)
             {
             case VadonApp::Platform::MouseButton::LEFT:
-                return 0;
+                return ImGuiMouseButton_::ImGuiMouseButton_Left;
             case VadonApp::Platform::MouseButton::MIDDLE:
-                return 1;
+                return ImGuiMouseButton_::ImGuiMouseButton_Middle;
             case VadonApp::Platform::MouseButton::RIGHT:
-                return 2;
-            case VadonApp::Platform::MouseButton::X1:
-                return 3;
-            case VadonApp::Platform::MouseButton::X2:
-                return 4;
+                return ImGuiMouseButton_::ImGuiMouseButton_Right;
             }
 
-            return -1;
+            return ImGuiMouseButton_::ImGuiMouseButton_COUNT;
         }
 
         ImGuiKey get_imgui_key(VadonApp::Platform::KeyCode key_code)
@@ -584,6 +583,38 @@ float4 main(PS_INPUT input) : SV_Target
             return false;
         }
 
+        // Load Fonts
+        // - If no fonts are loaded, dear imgui will use the default font. You can also load multiple fonts and use ImGui::PushFont()/PopFont() to select them.
+        // - AddFontFromFileTTF() will return the ImFont* so you can store it if you need to select the font among multiple.
+        // - If the file cannot be loaded, the function will return NULL. Please handle those errors in your application (e.g. use an assertion, or display an error and quit).
+        // - The fonts will be rasterized at a given size (w/ oversampling) and stored into a texture when calling ImFontAtlas::Build()/GetTexDataAsXXXX(), which ImGui_ImplXXXX_NewFrame below will call.
+        // - Use '#define IMGUI_ENABLE_FREETYPE' in your imconfig file to use Freetype for higher quality font rendering.
+        // - Read 'docs/FONTS.md' for more instructions and details.
+        // - Remember that in C/C++ if you want to include a backslash \ in a string literal you need to write a double backslash \\ !
+        io.Fonts->AddFontDefault();
+
+        // Set up FontAwesome fonts
+        {
+            const float base_font_size = 13.0f; // 13.0f is the size of the default font. Change to the font size you use.
+            const float icon_font_size_pixels = base_font_size * 2.0f / 3.0f; // FontAwesome fonts need to have their sizes reduced by 2.0f/3.0f in order to align correctly
+                
+            // merge in icons from Font Awesome
+            static const ImWchar icons_ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
+            ImFontConfig icons_config;
+            icons_config.MergeMode = true;
+            icons_config.PixelSnapH = true;
+            icons_config.GlyphMinAdvanceX = icon_font_size_pixels;
+            io.Fonts->AddFontFromMemoryCompressedTTF(font_awesome_webfont_compressed_data, font_awesome_webfont_compressed_size, icon_font_size_pixels, &icons_config, icons_ranges);
+            // use FONT_ICON_FILE_NAME_FAR if you want regular instead of solid
+        }
+
+        //io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\segoeui.ttf", 18.0f);
+        //io.Fonts->AddFontFromFileTTF("../../misc/fonts/DroidSans.ttf", 16.0f);
+        //io.Fonts->AddFontFromFileTTF("../../misc/fonts/Roboto-Medium.ttf", 16.0f);
+        //io.Fonts->AddFontFromFileTTF("../../misc/fonts/Cousine-Regular.ttf", 15.0f);
+        //ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
+        //IM_ASSERT(font != NULL);
+
         if (!init_renderer())
         {
             return false;
@@ -595,22 +626,6 @@ float4 main(PS_INPUT input) : SV_Target
         {
             m_internal->m_frame_cache.resize(dev_gui_config.frame_count);
         }
-
-        // Load Fonts
-        // - If no fonts are loaded, dear imgui will use the default font. You can also load multiple fonts and use ImGui::PushFont()/PopFont() to select them.
-        // - AddFontFromFileTTF() will return the ImFont* so you can store it if you need to select the font among multiple.
-        // - If the file cannot be loaded, the function will return NULL. Please handle those errors in your application (e.g. use an assertion, or display an error and quit).
-        // - The fonts will be rasterized at a given size (w/ oversampling) and stored into a texture when calling ImFontAtlas::Build()/GetTexDataAsXXXX(), which ImGui_ImplXXXX_NewFrame below will call.
-        // - Use '#define IMGUI_ENABLE_FREETYPE' in your imconfig file to use Freetype for higher quality font rendering.
-        // - Read 'docs/FONTS.md' for more instructions and details.
-        // - Remember that in C/C++ if you want to include a backslash \ in a string literal you need to write a double backslash \\ !
-        //io.Fonts->AddFontDefault();
-        //io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\segoeui.ttf", 18.0f);
-        //io.Fonts->AddFontFromFileTTF("../../misc/fonts/DroidSans.ttf", 16.0f);
-        //io.Fonts->AddFontFromFileTTF("../../misc/fonts/Roboto-Medium.ttf", 16.0f);
-        //io.Fonts->AddFontFromFileTTF("../../misc/fonts/Cousine-Regular.ttf", 15.0f);
-        //ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
-        //IM_ASSERT(font != NULL);
 
         log_message("ImGui initialized successfully!\n");
         return true;
@@ -644,6 +659,14 @@ float4 main(PS_INPUT input) : SV_Target
         }
 
         return flags;
+    }
+
+    GUIStyle GUISystem::get_style() const
+    {
+        ImGuiStyle& style = ImGui::GetStyle();
+        return GUIStyle{
+            .frame_padding = { style.FramePadding.x, style.FramePadding.y }
+        };
     }
 
     void GUISystem::start_frame()
@@ -744,6 +767,33 @@ float4 main(PS_INPUT input) : SV_Target
         ImGui::EndDisabled();
     }
 
+    Vadon::Utilities::Vector2 GUISystem::get_available_content_region() const
+    {
+        const ImVec2 content_region = ImGui::GetContentRegionAvail();
+        return Vadon::Utilities::Vector2{ content_region.x, content_region.y };
+    }
+
+    Vadon::Utilities::Vector2 GUISystem::calculate_text_size(std::string_view text, std::string_view text_end, bool hide_after_double_hash, float wrap_width) const
+    {
+        const ImVec2 text_size = ImGui::CalcTextSize(text.data(), text_end.empty() ? nullptr : text_end.data(), hide_after_double_hash, wrap_width);
+        return Vadon::Utilities::Vector2{ text_size.x, text_size.y };
+    }
+
+    void GUISystem::push_item_width(float item_width)
+    {
+        ImGui::PushItemWidth(item_width);
+    }
+
+    void GUISystem::pop_item_width()
+    {
+        ImGui::PopItemWidth();
+    }
+
+    void GUISystem::set_next_item_width(float item_width)
+    {
+        ImGui::SetNextItemWidth(item_width);
+    }
+
     bool GUISystem::begin_window(Window& window)
     {
         // TODO: add window initialization?
@@ -785,25 +835,35 @@ float4 main(PS_INPUT input) : SV_Target
         ImGui::EndChild();
     }
 
-    void GUISystem::open_dialog(std::string_view id)
+    bool GUISystem::begin_popup(Window& popup)
+    {
+        return ImGui::BeginPopup(popup.title.c_str());
+    }
+
+    bool GUISystem::begin_popup_modal(Window& popup)
+    {
+        // TODO: flags to set whether to pass in pointer to open flag
+        return ImGui::BeginPopupModal(popup.title.c_str(), nullptr);
+    }
+
+    void GUISystem::end_popup()
+    {
+        ImGui::EndPopup();
+    }
+
+    void GUISystem::open_popup(std::string_view id)
     {
         ImGui::OpenPopup(id.data());
     }
 
-    void GUISystem::close_current_dialog()
+    void GUISystem::close_current_popup()
     {
         ImGui::CloseCurrentPopup();
     }
 
-    bool GUISystem::begin_modal_dialog(Window& dialog)
+    bool GUISystem::begin_popup_context_item(std::string_view id)
     {
-        // TODO: flags to set whether to pass in pointer to open flag
-        return ImGui::BeginPopupModal(dialog.title.c_str(), nullptr);
-    }
-
-    void GUISystem::end_dialog()
-    {
-        ImGui::EndPopup();
+        return ImGui::BeginPopupContextItem(id.empty() == false ? id.data() : nullptr);
     }
 
     bool GUISystem::begin_main_menu_bar()
@@ -933,9 +993,14 @@ float4 main(PS_INPUT input) : SV_Target
         return ImGui::Checkbox(checkbox.label.c_str(), &checkbox.checked);
     }
 
-    bool GUISystem::draw_list_box(ListBox& list_box)
+    bool GUISystem::draw_list_box(ListBox& list_box, bool* double_clicked)
     {
-        if (ImGui::BeginListBox(list_box.label.c_str()))
+        if (double_clicked)
+        {
+            *double_clicked = false;
+        }
+
+        if (ImGui::BeginListBox(list_box.label.c_str(), ImVec2{ list_box.size.x, list_box.size.y }))
         {
             int32_t current_item_index = 0;
             for (const std::string& current_item : list_box.items)
@@ -944,6 +1009,14 @@ float4 main(PS_INPUT input) : SV_Target
                 if (ImGui::Selectable(current_item.c_str(), is_selected))
                 {
                     list_box.selected_item = current_item_index;
+                }
+
+                if (double_clicked)
+                {
+                    if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0))
+                    {
+                        *double_clicked = true;
+                    }
                 }
 
                 if (is_selected)
@@ -1014,12 +1087,22 @@ float4 main(PS_INPUT input) : SV_Target
 
     void GUISystem::add_text_unformatted(std::string_view text)
     {
-        ImGui::TextUnformatted(text.data());
+        ImGui::TextUnformatted(text.data(), std::to_address(text.end()));
+    }
+
+    void GUISystem::add_text_wrapped(std::string_view text)
+    {
+        ImGui::TextWrapped(text.data());
     }
 
     void GUISystem::add_separator_text(std::string_view text)
     {
         ImGui::SeparatorText(text.data());
+    }
+
+    void GUISystem::set_item_tooltip(std::string_view tooltip_text)
+    {
+        ImGui::SetItemTooltip(tooltip_text.data());
     }
 
     void GUISystem::same_line()
@@ -1060,6 +1143,11 @@ float4 main(PS_INPUT input) : SV_Target
     bool GUISystem::is_item_toggled_open() const
     {
         return ImGui::IsItemToggledOpen();
+    }
+
+    bool GUISystem::is_item_edited() const
+    {
+        return ImGui::IsItemEdited();
     }
 
     bool GUISystem::is_key_down(VadonApp::Platform::KeyCode key) const
@@ -1423,7 +1511,7 @@ float4 main(PS_INPUT input) : SV_Target
             [this](const VadonApp::Platform::MouseButtonEvent& mouse_button)
             {
                 ImGuiIO& io = ImGui::GetIO();
-                const int imgui_mouse_button = get_imgui_mouse_button(mouse_button.button);
+                const ImGuiMouseButton_ imgui_mouse_button = get_imgui_mouse_button(mouse_button.button);
 
                 io.AddMouseButtonEvent(imgui_mouse_button, mouse_button.down); // TODO: map application button code to ImGui button code!
                 m_platform_data.mouse_buttons_down = mouse_button.down ? (m_platform_data.mouse_buttons_down | (1 << imgui_mouse_button)) : (m_platform_data.mouse_buttons_down & ~(1 << imgui_mouse_button));

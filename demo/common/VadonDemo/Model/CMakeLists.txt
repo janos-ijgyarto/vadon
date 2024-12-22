@@ -4,4 +4,6 @@ target_sources(${VADONDEMO_CURRENT_TARGET}
     Component.cpp
     Model.hpp
     Model.cpp
+    Resource.hpp
+    Resource.cpp
     )
