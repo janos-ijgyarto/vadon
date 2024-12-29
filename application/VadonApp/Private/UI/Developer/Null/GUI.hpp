@@ -14,6 +14,8 @@ namespace VadonApp::Private::UI::Developer::Null
 		IOFlags get_io_flags() const override { return IOFlags::NONE; }
 		GUIStyle get_style() const override { return GUIStyle(); }
 
+		void set_platform_window(VadonApp::Platform::WindowHandle /*window_handle*/) override {}
+
 		void start_frame() override;
 		void end_frame() override;
 

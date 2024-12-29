@@ -23,18 +23,38 @@ namespace VadonApp::Platform
 
 		virtual ~PlatformInterface() {}
 
+		virtual WindowHandle create_window(const WindowInfo& window_info) = 0;
+		virtual WindowHandle find_window(WindowID window_id) const = 0;
+		virtual bool is_window_valid(WindowHandle window_handle) const = 0;
+		// TODO: remove window?
+
+		virtual WindowID get_window_id(WindowHandle window_handle) const = 0;
+		
+		virtual std::string get_window_title(WindowHandle window_handle) const = 0;
+		virtual void set_window_title(WindowHandle window_handle, std::string_view title) = 0;
+
+		virtual Vadon::Utilities::Vector2i get_window_position(WindowHandle window_handle) const = 0;
+		virtual void set_window_position(WindowHandle window_handle, const Vadon::Utilities::Vector2i position) = 0;
+
+		virtual Vadon::Utilities::Vector2i get_window_size(WindowHandle window_handle) const = 0;
+		virtual void set_window_size(WindowHandle window_handle, const Vadon::Utilities::Vector2i size) = 0;
+
+		virtual WindowFlags get_window_flags(WindowHandle window_handle) const = 0;
+
+		// FIXME: expose proper API for setting window states!
+		virtual void toggle_window_borderless_fullscreen(WindowHandle window_handle) = 0;
+
+		virtual PlatformWindowHandle get_platform_window_handle(WindowHandle window_handle) const = 0;
+
+		virtual Vadon::Utilities::Vector2i get_window_drawable_size(WindowHandle window_handle) const = 0;
+
+		virtual bool is_window_focused(WindowHandle window_handle) const = 0;
+
+		// TODO: window show/hide/minimize/maximize/etc.!
+
 		// NOTE: this will dispatch to all registered callbacks!
-		virtual void dispatch_events() = 0;
+		virtual void poll_events() = 0;
 		virtual void register_event_callback(EventCallback callback) = 0;
-
-		// TODO: allow creating multiple windows!
-		virtual RenderWindowInfo get_window_info() const = 0;
-		virtual WindowHandle get_window_handle() const = 0;
-
-		virtual void move_window(const Vadon::Utilities::Vector2i& position) = 0;
-		virtual void resize_window(const Vadon::Utilities::Vector2i& size) = 0;
-
-		virtual bool is_window_focused() const = 0;
 
 		virtual FeatureFlags get_feature_flags() const = 0;
 		virtual uint64_t get_performance_frequency() const = 0;
@@ -44,7 +64,7 @@ namespace VadonApp::Platform
 		virtual void set_cursor(Cursor cursor) = 0;
 
 		virtual void capture_mouse(bool capture) = 0;
-		virtual void warp_mouse(const Vadon::Utilities::Vector2i& mouse_position) = 0;
+		virtual void warp_mouse(WindowHandle window_handle, const Vadon::Utilities::Vector2i& mouse_position) = 0;
 		virtual Vadon::Utilities::Vector2i get_mouse_position() const = 0;
 
 		virtual void set_clipboard_text(const char* text) = 0;

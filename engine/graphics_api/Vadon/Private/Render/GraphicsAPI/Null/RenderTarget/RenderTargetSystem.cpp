@@ -35,7 +35,7 @@ namespace Vadon::Private::Render::Null
 		// TODO
 	}
 
-	RenderTargetHandle RenderTargetSystem::add_target(const RenderTargetInfo& /*rt_info*/)
+	RenderTargetHandle RenderTargetSystem::add_target(const RenderTargetInfo& /*rt_info*/, Vadon::Render::TextureHandle /*texture*/)
 	{
 		// TODO
 		return RenderTargetHandle();

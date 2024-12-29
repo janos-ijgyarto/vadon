@@ -11,6 +11,7 @@ namespace Vadon::Private::Render::DirectX
 
 	class RenderTargetSystem;
 	class ShaderSystem;
+	class TextureSystem;
 
 	class GraphicsAPI final : public Render::GraphicsAPIBase
 	{
@@ -35,6 +36,7 @@ namespace Vadon::Private::Render::DirectX
 
 		RenderTargetSystem& get_directx_rt_system();
 		ShaderSystem& get_directx_shader_system();
+		TextureSystem& get_directx_texture_system();
 	private:
 		D3DInfo m_d3d_info;
 

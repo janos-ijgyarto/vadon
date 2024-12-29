@@ -1,8 +1,6 @@
 #include <VadonApp/Private/PCH/VadonApp.hpp>
 #include <VadonApp/Private/Platform/SDL/PlatformInterface.hpp>
 
-#include <Vadon/Render/GraphicsAPI/RenderTarget/RenderTargetSystem.hpp>
-
 #include <SDL_syswm.h>
 
 // FIXME: defines taken from ImGui, should be investigated if it fits general usage
@@ -35,24 +33,150 @@ namespace VadonApp::Private::Platform::SDL
 
 		constexpr VadonApp::Platform::WindowEventType convert_sdl_to_platform_window_event_type(SDL_WindowEventID event_id)
 		{
+			using WindowEventType = VadonApp::Platform::WindowEventType;
+
+			// FIXME: replace with an array?
 			switch (event_id)
 			{
+			case SDL_WindowEventID::SDL_WINDOWEVENT_SHOWN:
+				return WindowEventType::SHOWN;
+			case SDL_WindowEventID::SDL_WINDOWEVENT_HIDDEN:
+				return WindowEventType::HIDDEN;
+			case SDL_WindowEventID::SDL_WINDOWEVENT_EXPOSED:
+				return WindowEventType::EXPOSED;
 			case SDL_WindowEventID::SDL_WINDOWEVENT_MOVED:
-				return VadonApp::Platform::WindowEventType::MOVED;
+				return WindowEventType::MOVED;
 			case SDL_WindowEventID::SDL_WINDOWEVENT_RESIZED:
+				return WindowEventType::RESIZED;
 			case SDL_WindowEventID::SDL_WINDOWEVENT_SIZE_CHANGED:
-				return VadonApp::Platform::WindowEventType::RESIZED;
+				return WindowEventType::SIZE_CHANGED;
+			case SDL_WindowEventID::SDL_WINDOWEVENT_MINIMIZED:
+				return WindowEventType::ENTER;
+			case SDL_WindowEventID::SDL_WINDOWEVENT_MAXIMIZED:
+				return WindowEventType::ENTER;
+			case SDL_WindowEventID::SDL_WINDOWEVENT_RESTORED:
+				return WindowEventType::ENTER;
 			case SDL_WindowEventID::SDL_WINDOWEVENT_ENTER:
-				return VadonApp::Platform::WindowEventType::ENTER;
+				return WindowEventType::ENTER;
 			case SDL_WindowEventID::SDL_WINDOWEVENT_LEAVE:
-				return VadonApp::Platform::WindowEventType::LEAVE;
+				return WindowEventType::LEAVE;
 			case SDL_WindowEventID::SDL_WINDOWEVENT_FOCUS_GAINED:
-				return VadonApp::Platform::WindowEventType::FOCUS_GAINED;
+				return WindowEventType::FOCUS_GAINED;
 			case SDL_WindowEventID::SDL_WINDOWEVENT_FOCUS_LOST:
-				return VadonApp::Platform::WindowEventType::FOCUS_LOST;
+				return WindowEventType::FOCUS_LOST;
+			case SDL_WindowEventID::SDL_WINDOWEVENT_CLOSE:
+				return WindowEventType::CLOSE;
+			case SDL_WindowEventID::SDL_WINDOWEVENT_DISPLAY_CHANGED:
+				return WindowEventType::DISPLAY_CHANGED;
 			}
 
-			return VadonApp::Platform::WindowEventType::NONE;
+			return WindowEventType::NONE;
+		}
+
+		constexpr WindowFlags convert_sdl_to_platform_window_flags(SDL_WindowFlags sdl_flags)
+		{
+			WindowFlags window_flags = WindowFlags::NONE;
+
+			VADON_START_BITMASK_SWITCH(sdl_flags)
+			{
+			case SDL_WINDOW_FULLSCREEN:
+				window_flags |= WindowFlags::FULLSCREEN;
+				break;
+			case SDL_WINDOW_SHOWN:
+				window_flags |= WindowFlags::SHOWN;
+				break;
+			case SDL_WINDOW_HIDDEN:
+				window_flags |= WindowFlags::HIDDEN;
+				break;
+			case SDL_WINDOW_BORDERLESS:
+				window_flags |= WindowFlags::BORDERLESS;
+				break;
+			case SDL_WINDOW_RESIZABLE:
+				window_flags |= WindowFlags::RESIZABLE;
+				break;
+			case SDL_WINDOW_MINIMIZED:
+				window_flags |= WindowFlags::MINIMIZED;
+				break;
+			case SDL_WINDOW_MAXIMIZED:
+				window_flags |= WindowFlags::MAXIMIZED;
+				break;
+			case SDL_WINDOW_MOUSE_GRABBED:
+				window_flags |= WindowFlags::MOUSE_GRABBED;
+				break;
+			case SDL_WINDOW_INPUT_FOCUS:
+				window_flags |= WindowFlags::INPUT_FOCUS;
+				break;
+			case SDL_WINDOW_MOUSE_FOCUS:
+				window_flags |= WindowFlags::MOUSE_FOCUS;
+				break;
+			case SDL_WINDOW_MOUSE_CAPTURE:
+				window_flags |= WindowFlags::MOUSE_CAPTURE;
+				break;
+			case SDL_WINDOW_ALWAYS_ON_TOP:
+				window_flags |= WindowFlags::ALWAYS_ON_TOP;
+				break;
+			case SDL_WINDOW_SKIP_TASKBAR:
+				window_flags |= WindowFlags::SKIP_TASKBAR;
+				break;
+			case SDL_WINDOW_KEYBOARD_GRABBED:
+				window_flags |= WindowFlags::KEYBOARD_GRABBED;
+				break;
+			}
+
+			return window_flags;
+		}
+
+		constexpr SDL_WindowFlags convert_platform_to_sdl_window_flags(WindowFlags window_flags)
+		{
+			Uint32 sdl_flags = 0;
+
+			VADON_START_BITMASK_SWITCH(window_flags)
+			{
+			case WindowFlags::FULLSCREEN:
+				sdl_flags |= SDL_WINDOW_FULLSCREEN;
+				break;
+			case WindowFlags::SHOWN:
+				sdl_flags |= SDL_WINDOW_SHOWN;
+				break;
+			case WindowFlags::HIDDEN:
+				sdl_flags |= SDL_WINDOW_HIDDEN;
+				break;
+			case WindowFlags::BORDERLESS:
+				sdl_flags |= SDL_WINDOW_BORDERLESS;
+				break;
+			case WindowFlags::RESIZABLE:
+				sdl_flags |= SDL_WINDOW_RESIZABLE;
+				break;
+			case WindowFlags::MINIMIZED:
+				sdl_flags |= SDL_WINDOW_MINIMIZED;
+				break;
+			case WindowFlags::MAXIMIZED:
+				sdl_flags |= SDL_WINDOW_MAXIMIZED;
+				break;
+			case WindowFlags::MOUSE_GRABBED:
+				sdl_flags |= SDL_WINDOW_MOUSE_GRABBED;
+				break;
+			case WindowFlags::INPUT_FOCUS:
+				sdl_flags |= SDL_WINDOW_INPUT_FOCUS;
+				break;
+			case WindowFlags::MOUSE_FOCUS:
+				sdl_flags |= SDL_WINDOW_MOUSE_FOCUS;
+				break;
+			case WindowFlags::MOUSE_CAPTURE:
+				sdl_flags |= SDL_WINDOW_MOUSE_CAPTURE;
+				break;
+			case WindowFlags::ALWAYS_ON_TOP:
+				sdl_flags |= SDL_WINDOW_ALWAYS_ON_TOP;
+				break;
+			case WindowFlags::SKIP_TASKBAR:
+				sdl_flags |= SDL_WINDOW_SKIP_TASKBAR;
+				break;
+			case WindowFlags::KEYBOARD_GRABBED:
+				sdl_flags |= SDL_WINDOW_KEYBOARD_GRABBED;
+				break;
+			}
+
+			return static_cast<SDL_WindowFlags>(sdl_flags);
 		}
 
 		constexpr SDL_SystemCursor get_sdl_cursor(VadonApp::Platform::Cursor cursor)
@@ -202,25 +326,44 @@ namespace VadonApp::Private::Platform::SDL
 		{
 			VadonApp::Platform::KeyModifiers key_modifiers = VadonApp::Platform::KeyModifiers::NONE;
 
-			// FIXME: implement more elegant iteration through flags
-			if (modifiers & SDL_Keymod::KMOD_LSHIFT)
+			VADON_START_BITMASK_SWITCH(modifiers)
 			{
+			case SDL_Keymod::KMOD_LSHIFT:
 				key_modifiers |= VadonApp::Platform::KeyModifiers::LEFT_SHIFT;
-			}
-
-			if (modifiers & SDL_Keymod::KMOD_RSHIFT)
-			{
+				break;
+			case SDL_Keymod::KMOD_RSHIFT:
 				key_modifiers |= VadonApp::Platform::KeyModifiers::RIGHT_SHIFT;
-			}
-
-			if (modifiers & SDL_Keymod::KMOD_LCTRL)
-			{
+				break;
+			case SDL_Keymod::KMOD_LCTRL:
 				key_modifiers |= VadonApp::Platform::KeyModifiers::LEFT_CTRL;
-			}
-
-			if (modifiers & SDL_Keymod::KMOD_RCTRL)
-			{
+				break;
+			case SDL_Keymod::KMOD_RCTRL:
 				key_modifiers |= VadonApp::Platform::KeyModifiers::RIGHT_CTRL;
+				break;
+			case SDL_Keymod::KMOD_LALT:
+				key_modifiers |= VadonApp::Platform::KeyModifiers::LEFT_ALT;
+				break;
+			case SDL_Keymod::KMOD_RALT:
+				key_modifiers |= VadonApp::Platform::KeyModifiers::RIGHT_ALT;
+				break;
+			case SDL_Keymod::KMOD_LGUI:
+				key_modifiers |= VadonApp::Platform::KeyModifiers::LEFT_GUI;
+				break;
+			case SDL_Keymod::KMOD_RGUI:
+				key_modifiers |= VadonApp::Platform::KeyModifiers::RIGHT_GUI;
+				break;
+			case SDL_Keymod::KMOD_NUM:
+				key_modifiers |= VadonApp::Platform::KeyModifiers::NUM_LOCK;
+				break;
+			case SDL_Keymod::KMOD_CAPS:
+				key_modifiers |= VadonApp::Platform::KeyModifiers::CAPS_LOCK;
+				break;
+			case SDL_Keymod::KMOD_MODE:
+				key_modifiers |= VadonApp::Platform::KeyModifiers::MODE;
+				break;
+			case SDL_Keymod::KMOD_SCROLL:
+				key_modifiers |= VadonApp::Platform::KeyModifiers::SCROLL_LOCK;
+				break;
 			}
 
 			return key_modifiers;
@@ -232,7 +375,151 @@ namespace VadonApp::Private::Platform::SDL
 		, m_clipboard(nullptr)
 	{}
 
-	void PlatformInterface::dispatch_events()
+	WindowHandle PlatformInterface::create_window(const WindowInfo& window_info)
+	{
+		// Prepare arguments
+		const int pos_x = (window_info.position.x >= 0) ? window_info.position.x : SDL_WINDOWPOS_UNDEFINED;
+		const int pos_y = (window_info.position.y >= 0) ? window_info.position.y : SDL_WINDOWPOS_UNDEFINED;
+		const SDL_WindowFlags window_flags = convert_platform_to_sdl_window_flags(window_info.flags);
+
+		// Attempt to create the SDL window
+		SDL_Window* sdl_window = SDL_CreateWindow(window_info.title.c_str(), pos_x, pos_y, window_info.size.x, window_info.size.y, window_flags);
+		if (sdl_window == nullptr)
+		{
+			// Something went wrong
+			log_error("Platform interface: failed to create SDL window!\n");
+			return WindowHandle();
+		}
+
+		WindowHandle new_window_handle = m_window_pool.add();
+		SDLWindow& new_window = m_window_pool.get(new_window_handle);
+
+		new_window.sdl_window = sdl_window;
+
+		// Add to lookup
+		const WindowID new_window_id = SDL_GetWindowID(sdl_window);
+		m_window_lookup[new_window_id] = new_window_handle;
+		
+		return new_window_handle;
+	}
+
+	WindowHandle PlatformInterface::find_window(WindowID window_id) const
+	{
+		auto window_it = m_window_lookup.find(window_id);
+		if (window_it != m_window_lookup.end())
+		{
+			return window_it->second;
+		}
+		return WindowHandle();
+	}
+
+	WindowID PlatformInterface::get_window_id(WindowHandle window_handle) const
+	{
+		const SDLWindow& window = m_window_pool.get(window_handle);
+		return SDL_GetWindowID(window.sdl_window);
+	}
+
+	std::string PlatformInterface::get_window_title(WindowHandle window_handle) const
+	{
+		const SDLWindow& window = m_window_pool.get(window_handle);
+		return SDL_GetWindowTitle(window.sdl_window);
+	}
+
+	void PlatformInterface::set_window_title(WindowHandle window_handle, std::string_view title)
+	{
+		SDLWindow& window = m_window_pool.get(window_handle);
+		SDL_SetWindowTitle(window.sdl_window, title.data());
+	}
+
+	Vadon::Utilities::Vector2i PlatformInterface::get_window_position(WindowHandle window_handle) const
+	{
+		const SDLWindow& window = m_window_pool.get(window_handle);
+		return get_sdl_window_position(window.sdl_window);
+	}
+
+	void PlatformInterface::set_window_position(WindowHandle window_handle, const Vadon::Utilities::Vector2i position)
+	{
+		SDLWindow& window = m_window_pool.get(window_handle);
+		SDL_SetWindowPosition(window.sdl_window, position.x, position.y);
+	}
+
+	Vadon::Utilities::Vector2i PlatformInterface::get_window_size(WindowHandle window_handle) const
+	{
+		const SDLWindow& window = m_window_pool.get(window_handle);
+		return get_sdl_window_size(window.sdl_window);
+	}
+
+	void PlatformInterface::set_window_size(WindowHandle window_handle, const Vadon::Utilities::Vector2i size)
+	{
+		SDLWindow& window = m_window_pool.get(window_handle);
+		SDL_SetWindowSize(window.sdl_window, size.x, size.y);
+	}
+
+	WindowFlags PlatformInterface::get_window_flags(WindowHandle window_handle) const
+	{
+		const SDLWindow& window = m_window_pool.get(window_handle);
+		return convert_sdl_to_platform_window_flags(static_cast<SDL_WindowFlags>(SDL_GetWindowFlags(window.sdl_window)));
+	}
+
+	void PlatformInterface::toggle_window_borderless_fullscreen(VadonApp::Platform::WindowHandle window_handle)
+	{
+		SDLWindow& window = m_window_pool.get(window_handle);
+		const Uint32 flags = SDL_GetWindowFlags(window.sdl_window);
+		if (flags & SDL_WINDOW_BORDERLESS)
+		{
+			SDL_SetWindowResizable(window.sdl_window, SDL_TRUE);
+			SDL_SetWindowBordered(window.sdl_window, SDL_TRUE);
+			SDL_SetWindowPosition(window.sdl_window, 10, 10);
+		}
+		else
+		{
+			SDL_SetWindowResizable(window.sdl_window, SDL_FALSE);
+			SDL_SetWindowBordered(window.sdl_window, SDL_FALSE);
+			SDL_SetWindowPosition(window.sdl_window, 0, 0);
+
+			SDL_DisplayMode display_mode;
+			SDL_GetCurrentDisplayMode(0, &display_mode);
+
+			SDL_SetWindowSize(window.sdl_window, display_mode.w, display_mode.h);
+		}
+	}
+
+	PlatformWindowHandle PlatformInterface::get_platform_window_handle(WindowHandle window_handle) const
+	{
+		const SDLWindow& window = m_window_pool.get(window_handle);
+
+		// Get the HWND from the SDL window
+		// FIXME: branch on OS!!!
+		SDL_SysWMinfo sdl_wm_info;
+		SDL_GetVersion(&sdl_wm_info.version);
+		SDL_GetWindowWMInfo(window.sdl_window, &sdl_wm_info);
+
+		return sdl_wm_info.info.win.window;
+	}
+
+	Vadon::Utilities::Vector2i PlatformInterface::get_window_drawable_size(WindowHandle window_handle) const
+	{
+		const SDLWindow& window = m_window_pool.get(window_handle);
+
+		int drawable_width = 0;
+		int drawable_height = 0;
+		SDL_GL_GetDrawableSize(window.sdl_window, &drawable_width, &drawable_height);
+
+		return Vadon::Utilities::Vector2i(drawable_width, drawable_height);
+	}
+
+	bool PlatformInterface::is_window_focused(WindowHandle window_handle) const
+	{
+		const SDLWindow& window = m_window_pool.get(window_handle);
+#if SDL_HAS_CAPTURE_AND_GLOBAL_MOUSE
+		SDL_Window* focused_window = SDL_GetKeyboardFocus();
+		return (window.sdl_window == focused_window);
+#else
+		return ((SDL_GetWindowFlags(window.sdl_window) & SDL_WINDOW_INPUT_FOCUS) != 0); // SDL 2.0.3 and non-windowed systems: single-viewport only
+#endif
+	}
+
+	void PlatformInterface::poll_events()
 	{
 		m_platform_events.clear();
 
@@ -346,44 +633,6 @@ namespace VadonApp::Private::Platform::SDL
 		m_event_callbacks.push_back(callback);
 	}
 
-	VadonApp::Platform::RenderWindowInfo PlatformInterface::get_window_info() const
-	{
-		// FIXME: need to make sure our flags are up to date!
-		return m_main_window.render_window;
-	}
-
-	VadonApp::Platform::WindowHandle PlatformInterface::get_window_handle() const
-	{
-		// Get the HWND from the SDL window
-		// FIXME: branch on OS!!!
-		SDL_SysWMinfo sdl_wm_info;
-		SDL_GetVersion(&sdl_wm_info.version);
-		SDL_GetWindowWMInfo(m_main_window.sdl_window, &sdl_wm_info);
-
-		return sdl_wm_info.info.win.window;
-	}
-
-	void PlatformInterface::move_window(const Vadon::Utilities::Vector2i& position)
-	{
-		SDL_SetWindowPosition(m_main_window.sdl_window, position.x, position.y);
-		window_moved(position);
-	}
-
-	void PlatformInterface::resize_window(const Vadon::Utilities::Vector2i& size)
-	{
-		SDL_SetWindowSize(m_main_window.sdl_window, size.x, size.y);
-	}
-
-	bool PlatformInterface::is_window_focused() const
-	{
-#if SDL_HAS_CAPTURE_AND_GLOBAL_MOUSE
-		SDL_Window* focused_window = SDL_GetKeyboardFocus();
-		return (m_main_window.sdl_window == focused_window);
-#else
-		return ((SDL_GetWindowFlags(m_main_window.sdl_window) & SDL_WINDOW_INPUT_FOCUS) != 0); // SDL 2.0.3 and non-windowed systems: single-viewport only
-#endif
-	}
-
 	VadonApp::Platform::FeatureFlags PlatformInterface::get_feature_flags() const
 	{
 		VadonApp::Platform::FeatureFlags feature_flags = VadonApp::Platform::FeatureFlags::NONE;
@@ -432,9 +681,10 @@ namespace VadonApp::Private::Platform::SDL
 #endif
 	}
 
-	void PlatformInterface::warp_mouse(const Vadon::Utilities::Vector2i& mouse_position)
+	void PlatformInterface::warp_mouse(WindowHandle window_handle, const Vadon::Utilities::Vector2i& mouse_position)
 	{
-		SDL_WarpMouseInWindow(m_main_window.sdl_window, mouse_position.x, mouse_position.y);
+		const SDLWindow& window = m_window_pool.get(window_handle);
+		SDL_WarpMouseInWindow(window.sdl_window, mouse_position.x, mouse_position.y);
 	}
 
 	Vadon::Utilities::Vector2i PlatformInterface::get_mouse_position() const
@@ -469,42 +719,6 @@ namespace VadonApp::Private::Platform::SDL
 			return false;
 		}
 
-		const VadonApp::Platform::Configuration& platform_config = m_application.get_config().platform_config;
-		const VadonApp::Platform::WindowInfo& main_window_info = platform_config.main_window_info;
-		working_dir = SDL_GetBasePath();
-
-		// Prepare arguments
-		const int pos_x = (main_window_info.position.x >= 0) ? main_window_info.position.x : SDL_WINDOWPOS_UNDEFINED;
-		const int pos_y = (main_window_info.position.y >= 0) ? main_window_info.position.y : SDL_WINDOWPOS_UNDEFINED;
-
-		// Attempt to create the SDL window
-		m_main_window.sdl_window = SDL_CreateWindow(main_window_info.title.c_str(), pos_x, pos_y, main_window_info.size.x, main_window_info.size.y, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
-		if (!m_main_window.sdl_window)
-		{
-			// Something went wrong
-			log_error("Failed to create SDL main window!");
-			return false;
-		}
-
-		m_main_window.render_window.window = main_window_info;
-		m_main_window.render_window.window.position = get_sdl_window_position(m_main_window.sdl_window); // Cache the actual starting position
-
-		Vadon::Render::WindowInfo window_info;
-		window_info.dimensions = get_sdl_window_size(m_main_window.sdl_window);
-		window_info.platform_handle = get_window_handle();
-
-		Vadon::Render::RenderTargetSystem& rt_system = m_application.get_engine_core().get_system<Vadon::Render::RenderTargetSystem>();
-		m_main_window.render_window.render_handle = rt_system.add_window(window_info);
-
-		if (!m_main_window.render_window.render_handle.is_valid())
-		{
-			// Something went wrong
-			log_error("Failed to register main render window!\n");
-			return false;
-		}
-
-		cache_window_drawable_size();
-
 		// Register cursors
 		m_cursors.fill(nullptr);
 		for (int current_cursor_index = 0; current_cursor_index < Vadon::Utilities::to_integral(VadonApp::Platform::Cursor::CURSOR_COUNT); ++current_cursor_index)
@@ -531,11 +745,11 @@ namespace VadonApp::Private::Platform::SDL
 
 		free_clipboard();
 
-		if (m_main_window.sdl_window)
+		// Destroy windows
+		for (auto window_pair : m_window_pool)
 		{
-			// Destroy window
-			SDL_DestroyWindow(m_main_window.sdl_window);
-			m_main_window.sdl_window = nullptr;
+			SDL_DestroyWindow(window_pair.second->sdl_window);
+			window_pair.second->sdl_window = nullptr;
 		}
 
 		// Quit SDL subsystems
@@ -547,6 +761,7 @@ namespace VadonApp::Private::Platform::SDL
 	{
 		VadonApp::Platform::WindowEvent window_event;
 		window_event.type = convert_sdl_to_platform_window_event_type(static_cast<SDL_WindowEventID>(sdl_event.window.event));
+		window_event.window_id = sdl_event.window.windowID;
 
 		// TODO: handle all (relevant) events: https://wiki.libsdl.org/SDL2/SDL_WindowEvent
 		switch (sdl_event.window.event)
@@ -556,40 +771,23 @@ namespace VadonApp::Private::Platform::SDL
 			// Set the event data
 			window_event.data1 = sdl_event.window.data1;
 			window_event.data2 = sdl_event.window.data2;
-
-			window_moved(Vadon::Utilities::Vector2i(window_event.data1, window_event.data2));
 		}
 		break;
 		case SDL_WINDOWEVENT_RESIZED:
-		case SDL_WINDOWEVENT_SIZE_CHANGED:
 		{
 			// Set the event data
 			window_event.data1 = sdl_event.window.data1;
 			window_event.data2 = sdl_event.window.data2;
-
-			// Cache the new size
-			m_main_window.render_window.window.size = Vadon::Utilities::Vector2i(window_event.data1, window_event.data2);
-			cache_window_drawable_size();
+		}
+		break;
+		case SDL_WINDOWEVENT_DISPLAY_CHANGED:
+		{
+			window_event.data1 = sdl_event.window.data1;
 		}
 		break;
 		}
 
 		return window_event;
-	}
-
-	void PlatformInterface::window_moved(const Vadon::Utilities::Vector2i& position)
-	{
-		// Cache the new position
-		m_main_window.render_window.window.position = position;
-	}
-
-	void PlatformInterface::cache_window_drawable_size()
-	{
-		int drawable_width = 0;
-		int drawable_height = 0;
-		SDL_GL_GetDrawableSize(m_main_window.sdl_window, &drawable_width, &drawable_height);
-
-		m_main_window.render_window.drawable_size = Vadon::Utilities::Vector2i(drawable_width, drawable_height);
 	}
 
 	void PlatformInterface::free_clipboard()

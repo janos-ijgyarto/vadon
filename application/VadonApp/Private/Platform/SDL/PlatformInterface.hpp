@@ -3,9 +3,9 @@
 #include <VadonApp/Private/Platform/PlatformInterface.hpp>
 #include <VadonApp/Private/Platform/Event/Event.hpp>
 
-#include <Vadon/Utilities/Enum/EnumClass.hpp>
+#include <VadonApp/Private/Platform/SDL/Window.hpp>
 
-#include <SDL.h>
+#include <Vadon/Utilities/Container/ObjectPool/Pool.hpp>
 
 namespace VadonApp::Private::Platform::SDL
 {
@@ -14,16 +14,33 @@ namespace VadonApp::Private::Platform::SDL
 	public:
 		PlatformInterface(VadonApp::Core::Application& application);
 
-		void dispatch_events() override;
+		WindowHandle create_window(const WindowInfo& window_info) override;
+		WindowHandle find_window(WindowID window_id) const override;
+		bool is_window_valid(WindowHandle window_handle) const override { return m_window_pool.is_handle_valid(window_handle); }
+
+		WindowID get_window_id(WindowHandle window_handle) const override;
+
+		std::string get_window_title(WindowHandle window_handle) const override;
+		void set_window_title(WindowHandle window_handle, std::string_view title) override;
+
+		Vadon::Utilities::Vector2i get_window_position(WindowHandle window_handle) const override;
+		void set_window_position(WindowHandle window_handle, const Vadon::Utilities::Vector2i position) override;
+
+		Vadon::Utilities::Vector2i get_window_size(WindowHandle window_handle) const override;
+		void set_window_size(WindowHandle window_handle, const Vadon::Utilities::Vector2i size) override;
+
+		WindowFlags get_window_flags(WindowHandle window_handle) const override;
+
+		void toggle_window_borderless_fullscreen(VadonApp::Platform::WindowHandle window_handle) override;
+
+		PlatformWindowHandle get_platform_window_handle(WindowHandle window_handle) const override;
+
+		Vadon::Utilities::Vector2i get_window_drawable_size(WindowHandle window_handle) const;
+
+		bool is_window_focused(WindowHandle window_handle) const override;
+
+		void poll_events() override;
 		void register_event_callback(EventCallback callback) override;
-
-		VadonApp::Platform::RenderWindowInfo get_window_info() const override;
-		VadonApp::Platform::WindowHandle get_window_handle() const override;
-
-		void move_window(const Vadon::Utilities::Vector2i& position) override;
-		void resize_window(const Vadon::Utilities::Vector2i& size) override;
-
-		bool is_window_focused() const override;
 
 		VadonApp::Platform::FeatureFlags get_feature_flags() const override;
 		uint64_t get_performance_frequency() const override;
@@ -33,7 +50,7 @@ namespace VadonApp::Private::Platform::SDL
 		void set_cursor(VadonApp::Platform::Cursor cursor) override;
 
 		void capture_mouse(bool capture) override;
-		void warp_mouse(const Vadon::Utilities::Vector2i& mouse_position) override;
+		void warp_mouse(WindowHandle window_handle, const Vadon::Utilities::Vector2i& mouse_position) override;
 		Vadon::Utilities::Vector2i get_mouse_position() const override;
 
 		void set_clipboard_text(const char* text) override;
@@ -43,25 +60,18 @@ namespace VadonApp::Private::Platform::SDL
 		void internal_shutdown() override;
 	private:
 		VadonApp::Platform::WindowEvent handle_window_event(const SDL_Event& sdl_event);
-		void window_moved(const Vadon::Utilities::Vector2i& position);
 
-		void cache_window_drawable_size();
 		void free_clipboard();
 
-		struct MainWindow
-		{
-			VadonApp::Platform::RenderWindowInfo render_window;
-			SDL_Window* sdl_window = nullptr;
-		};
-
-		const char* working_dir = nullptr;
-		MainWindow m_main_window;
 		char* m_clipboard;
 
 		std::array<SDL_Cursor*, Vadon::Utilities::to_integral(VadonApp::Platform::Cursor::CURSOR_COUNT)> m_cursors;
 
 		std::vector<EventCallback> m_event_callbacks;
 		VadonApp::Platform::PlatformEventList m_platform_events;
+
+		Vadon::Utilities::ObjectPool<VadonApp::Platform::Window, SDLWindow> m_window_pool;
+		std::unordered_map<WindowID, WindowHandle> m_window_lookup;
 	};
 }
 #endif

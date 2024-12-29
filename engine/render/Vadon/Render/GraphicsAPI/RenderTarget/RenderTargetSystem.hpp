@@ -2,6 +2,7 @@
 #define VADON_RENDER_GRAPHICSAPI_RENDERTARGET_RENDERTARGETSYSTEM_HPP
 #include <Vadon/Render/GraphicsAPI/GraphicsAPI.hpp>
 #include <Vadon/Render/GraphicsAPI/RenderTarget/RenderTarget.hpp>
+#include <Vadon/Render/GraphicsAPI/Texture/Texture.hpp>
 namespace Vadon::Render
 {
 	using RGBAColor = Utilities::Vector4;
@@ -21,7 +22,7 @@ namespace Vadon::Render
 		virtual void set_window_mode(WindowHandle window_handle, WindowMode mode) = 0;
 
 		// FIXME: RT system just manages targets, they can be created from various resources, other systems will link to this!
-		virtual RenderTargetHandle add_target(const RenderTargetInfo& rt_info) = 0;
+		virtual RenderTargetHandle add_target(const RenderTargetInfo& rt_info, TextureHandle texture_handle) = 0;
 		virtual bool is_render_target_valid(RenderTargetHandle rt_handle) const = 0;
 		virtual void copy_target(RenderTargetHandle source_handle, RenderTargetHandle destination_handle) = 0;
 		virtual void remove_target(RenderTargetHandle rt_handle) = 0;

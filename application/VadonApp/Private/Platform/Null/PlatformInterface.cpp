@@ -11,7 +11,7 @@ namespace VadonApp::Private::Platform::Null
 
 	}
 
-	void PlatformInterface::dispatch_events()
+	void PlatformInterface::poll_events()
 	{
 		// TODO!!!
 	}
@@ -23,15 +23,12 @@ namespace VadonApp::Private::Platform::Null
 
 	bool PlatformInterface::internal_initialize()
 	{
-		// TODO!!!
-		m_main_window_info.window = m_application.get_config().platform_config.main_window_info;
-
-		log_message("Null GUI initialized successfully!\n");
+		log_message("Null platform interface initialized successfully!\n");
 		return true;
 	}
 
 	void PlatformInterface::internal_shutdown()
 	{
-		log_message("Null GUI shut down successfully.\n");
+		log_message("Null platform interface shut down successfully.\n");
 	}
 }

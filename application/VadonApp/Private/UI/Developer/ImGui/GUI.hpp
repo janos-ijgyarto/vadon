@@ -26,6 +26,8 @@ namespace VadonApp::Private::UI::Developer::ImGUI
 		IOFlags get_io_flags() const override;
 		GUIStyle get_style() const override;
 
+		void set_platform_window(VadonApp::Platform::WindowHandle window_handle) override;
+
 		void start_frame() override;
 		void end_frame() override;
 
@@ -142,6 +144,8 @@ namespace VadonApp::Private::UI::Developer::ImGUI
 	private:
 		struct PlatformUserData
 		{
+			VadonApp::Platform::WindowHandle window_handle;
+
 			uint64_t performance_frequency = 0;
 			uint64_t current_time = 0;
 			int mouse_buttons_down = 0;

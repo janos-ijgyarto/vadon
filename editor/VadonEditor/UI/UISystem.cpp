@@ -2,6 +2,8 @@
 
 #include <VadonEditor/Core/Editor.hpp>
 
+#include <VadonEditor/Platform/PlatformInterface.hpp>
+
 #include <VadonEditor/UI/Developer/GUI.hpp>
 
 #include <VadonApp/Core/Application.hpp>
@@ -36,6 +38,12 @@ namespace VadonEditor::UI
 		bool initialize()
 		{
 			VadonApp::Core::Application& engine_app = m_editor.get_engine_app();
+			// Set main window for dev GUI
+			{
+				VadonApp::UI::Developer::GUISystem& dev_gui = engine_app.get_system<VadonApp::UI::Developer::GUISystem>();
+				dev_gui.set_platform_window(m_editor.get_system<Platform::PlatformInterface>().get_main_window());
+			}
+
 			VadonApp::Platform::PlatformInterface& platform_interface = engine_app.get_system<VadonApp::Platform::PlatformInterface>();
 			platform_interface.register_event_callback(
 				[this, &engine_app](const VadonApp::Platform::PlatformEventList& platform_events)

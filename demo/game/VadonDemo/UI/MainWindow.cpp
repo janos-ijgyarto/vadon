@@ -438,17 +438,16 @@ namespace VadonDemo::UI
 
 			{
 				VadonApp::Platform::PlatformInterface& platform_interface = engine_app.get_system<VadonApp::Platform::PlatformInterface>();
-				const VadonApp::Platform::RenderWindowInfo main_window_info = platform_interface.get_window_info();
 
-				m_model_camera.view_rectangle.size = main_window_info.window.size;
+				m_model_camera.view_rectangle.size = { 1024, 768 };
 				m_canvas_context.camera = m_model_camera;
 
 				{
 					Vadon::Render::RenderTargetSystem& rt_system = engine_core.get_system<Vadon::Render::RenderTargetSystem>();
 
-					Vadon::Render::Canvas::Viewport canvas_viewport;
-					canvas_viewport.render_target = rt_system.get_window_target(main_window_info.render_handle);
-					canvas_viewport.render_viewport.dimensions.size = main_window_info.window.size;
+					Vadon::Render::Canvas::Viewport canvas_viewport;					
+					canvas_viewport.render_target = rt_system.get_window_target(m_game_core.get_render_system().get_render_window());
+					canvas_viewport.render_viewport.dimensions.size = platform_interface.get_window_drawable_size(m_game_core.get_platform_interface().get_main_window());
 
 					m_canvas_context.viewports.push_back(canvas_viewport);
 
@@ -479,11 +478,8 @@ namespace VadonDemo::UI
 
 				clear_pass.targets.emplace_back("main_window", "main_window_cleared");
 
-				VadonApp::Platform::PlatformInterface& platform_interface = engine_app.get_system<VadonApp::Platform::PlatformInterface>();
-				const VadonApp::Platform::RenderWindowInfo main_window_info = platform_interface.get_window_info();
-
 				Vadon::Render::RenderTargetSystem& rt_system = engine_core.get_system<Vadon::Render::RenderTargetSystem>();
-				const Vadon::Render::RenderTargetHandle main_window_target = rt_system.get_window_target(main_window_info.render_handle);
+				const Vadon::Render::RenderTargetHandle main_window_target = rt_system.get_window_target(m_game_core.get_render_system().get_render_window());
 
 				clear_pass.execution = [main_window_target, &rt_system]()
 				{
@@ -501,6 +497,19 @@ namespace VadonDemo::UI
 
 				canvas_pass.execution = [this]()
 					{
+						// Update camera and viewport
+						// FIXME: do this only when it actually changes!
+						VadonApp::Platform::PlatformInterface& platform_interface = m_game_core.get_engine_app().get_system<VadonApp::Platform::PlatformInterface>();
+						const Vadon::Utilities::Vector2i window_size = platform_interface.get_window_drawable_size(m_game_core.get_platform_interface().get_main_window());
+						m_canvas_context.viewports.back().render_viewport.dimensions.size = window_size;
+
+						// NOTE: here this works trivially because our RT is also the back buffer
+						// We just sync up camera projection and viewport
+						// If we switch to separate RT and back buffer:
+						// - Can use scissor on the RT to cut off parts that won't be visible (probably overkill)
+						// - More important: calculate visible portion, use fullscreen copy shader to copy that part to back buffer
+						m_canvas_context.camera.view_rectangle.size = window_size;
+
 						Vadon::Render::Canvas::CanvasSystem& canvas_system = m_game_core.get_engine_app().get_engine_core().get_system<Vadon::Render::Canvas::CanvasSystem>();
 						canvas_system.render(m_canvas_context);
 					};
@@ -540,6 +549,12 @@ namespace VadonDemo::UI
 
 		void init_dev_gui()
 		{
+			// Set main window for dev GUI
+			{
+				VadonApp::UI::Developer::GUISystem& dev_gui = m_game_core.get_engine_app().get_system<VadonApp::UI::Developer::GUISystem>();
+				dev_gui.set_platform_window(m_game_core.get_platform_interface().get_main_window());
+			}
+
 			m_dev_gui.initialize();
 		}
 

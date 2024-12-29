@@ -8,16 +8,33 @@ namespace VadonApp::Private::Platform::Null
 	public:
 		PlatformInterface(VadonApp::Core::Application& application);
 
-		void dispatch_events() override;
+		VadonApp::Platform::WindowHandle create_window(const VadonApp::Platform::WindowInfo& /*window_info*/) override { return VadonApp::Platform::WindowHandle(); }
+		VadonApp::Platform::WindowHandle find_window(VadonApp::Platform::WindowID /*window_id*/) const override { return VadonApp::Platform::WindowHandle(); }
+		bool is_window_valid(VadonApp::Platform::WindowHandle /*window_handle*/) const override { return false; }
+
+		VadonApp::Platform::WindowID get_window_id(VadonApp::Platform::WindowHandle /*window_handle*/) const override { return 0; }
+
+		std::string get_window_title(VadonApp::Platform::WindowHandle /*window_handle*/) const override { return ""; }
+		void set_window_title(VadonApp::Platform::WindowHandle /*window_handle*/, std::string_view /*title*/) override {}
+
+		Vadon::Utilities::Vector2i get_window_position(VadonApp::Platform::WindowHandle /*window_handle*/) const override { return Vadon::Utilities::Vector2i{}; }
+		void set_window_position(VadonApp::Platform::WindowHandle /*window_handle*/, const Vadon::Utilities::Vector2i /*position*/) override {}
+
+		Vadon::Utilities::Vector2i get_window_size(VadonApp::Platform::WindowHandle /*window_handle*/) const override { return Vadon::Utilities::Vector2i{}; }
+		void set_window_size(VadonApp::Platform::WindowHandle /*window_handle*/, const Vadon::Utilities::Vector2i /*size*/) override {}
+
+		VadonApp::Platform::WindowFlags get_window_flags(VadonApp::Platform::WindowHandle /*window_handle*/) const override { return VadonApp::Platform::WindowFlags::NONE; }
+
+		void toggle_window_borderless_fullscreen(VadonApp::Platform::WindowHandle /*window_handle*/) override {}
+
+		VadonApp::Platform::PlatformWindowHandle get_platform_window_handle(VadonApp::Platform::WindowHandle /*window_handle*/) const override { return nullptr; }
+
+		Vadon::Utilities::Vector2i get_window_drawable_size(VadonApp::Platform::WindowHandle /*window_handle*/) const { return Vadon::Utilities::Vector2i{}; }
+
+		bool is_window_focused(VadonApp::Platform::WindowHandle /*window_handle*/) const override { return false; }
+
+		void poll_events() override;
 		void register_event_callback(EventCallback callback) override;
-
-		VadonApp::Platform::RenderWindowInfo get_window_info() const override { return m_main_window_info; }
-		VadonApp::Platform::WindowHandle get_window_handle() const override { return nullptr; }
-
-		void move_window(const Vadon::Utilities::Vector2i& /*position*/) override {}
-		void resize_window(const Vadon::Utilities::Vector2i& /*size*/) override {}
-
-		bool is_window_focused() const override { return false; }
 
 		VadonApp::Platform::FeatureFlags get_feature_flags() const override { return VadonApp::Platform::FeatureFlags::NONE; }
 
@@ -28,7 +45,7 @@ namespace VadonApp::Private::Platform::Null
 		void set_cursor(VadonApp::Platform::Cursor /*cursor*/) override {}
 
 		void capture_mouse(bool /*capture*/) override {}
-		void warp_mouse(const Vadon::Utilities::Vector2i& /*mouse_position*/) override {}
+		void warp_mouse(VadonApp::Platform::WindowHandle /*window_handle*/, const Vadon::Utilities::Vector2i& /*mouse_position*/) override {}
 		Vadon::Utilities::Vector2i get_mouse_position() const override { return Vadon::Utilities::Vector2i(); }
 
 		void set_clipboard_text(const char* /*text*/) override {}
@@ -36,8 +53,6 @@ namespace VadonApp::Private::Platform::Null
 	protected:
 		bool internal_initialize() override;
 		void internal_shutdown() override;
-	private:
-		VadonApp::Platform::RenderWindowInfo m_main_window_info;
 	};
 }
 #endif

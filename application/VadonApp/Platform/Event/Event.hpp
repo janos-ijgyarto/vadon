@@ -22,17 +22,27 @@ namespace VadonApp::Platform
 	enum class WindowEventType
 	{
 		NONE,
+		SHOWN,
+		HIDDEN,
+		EXPOSED,
 		MOVED,
 		RESIZED,
+		SIZE_CHANGED,
+		MINIMIZED,
+		MAXIMIZED,
+		RESTORED,
 		ENTER,
 		LEAVE,
 		FOCUS_GAINED,
-		FOCUS_LOST
+		FOCUS_LOST,
+		CLOSE,
+		DISPLAY_CHANGED
 	};
 
 	struct WindowEvent : public Utilities::Event<const WindowEvent&, bool>
 	{
 		WindowEventType type = WindowEventType::NONE;
+		uint32_t window_id;
 		int32_t data1 = 0;
 		int32_t data2 = 0;
 		// TODO: other data?
