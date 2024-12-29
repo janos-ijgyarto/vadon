@@ -497,6 +497,19 @@ namespace VadonDemo::UI
 
 				canvas_pass.execution = [this]()
 					{
+						// Update camera and viewport
+						// FIXME: do this only when it actually changes!
+						VadonApp::Platform::PlatformInterface& platform_interface = m_game_core.get_engine_app().get_system<VadonApp::Platform::PlatformInterface>();
+						const Vadon::Utilities::Vector2i window_size = platform_interface.get_window_drawable_size(m_game_core.get_platform_interface().get_main_window());
+						m_canvas_context.viewports.back().render_viewport.dimensions.size = window_size;
+
+						// NOTE: here this works trivially because our RT is also the back buffer
+						// We just sync up camera projection and viewport
+						// If we switch to separate RT and back buffer:
+						// - Can use scissor on the RT to cut off parts that won't be visible (probably overkill)
+						// - More important: calculate visible portion, use fullscreen copy shader to copy that part to back buffer
+						m_canvas_context.camera.view_rectangle.size = window_size;
+
 						Vadon::Render::Canvas::CanvasSystem& canvas_system = m_game_core.get_engine_app().get_engine_core().get_system<Vadon::Render::Canvas::CanvasSystem>();
 						canvas_system.render(m_canvas_context);
 					};

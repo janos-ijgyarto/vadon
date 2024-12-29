@@ -28,6 +28,7 @@ namespace VadonDemo::Platform
 		InputValues get_input_values() const;
 
 		VadonApp::Platform::WindowHandle get_main_window() const;
+		void toggle_fullscreen();
 	private:
 		PlatformInterface(Core::GameCore& game_core);
 

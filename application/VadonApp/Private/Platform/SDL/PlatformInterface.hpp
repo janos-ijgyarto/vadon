@@ -31,6 +31,8 @@ namespace VadonApp::Private::Platform::SDL
 
 		WindowFlags get_window_flags(WindowHandle window_handle) const override;
 
+		void toggle_window_borderless_fullscreen(VadonApp::Platform::WindowHandle window_handle) override;
+
 		PlatformWindowHandle get_platform_window_handle(WindowHandle window_handle) const override;
 
 		Vadon::Utilities::Vector2i get_window_drawable_size(WindowHandle window_handle) const;

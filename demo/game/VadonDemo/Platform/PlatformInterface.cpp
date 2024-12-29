@@ -124,6 +124,14 @@ namespace VadonDemo::Platform
 				m_dispatch_timer = 0.0f;
 			}
 		}
+
+		void toggle_fullscreen()
+		{
+			VadonApp::Core::Application& engine_app = m_game_core.get_engine_app();
+			VadonApp::Platform::PlatformInterface& platform_interface = engine_app.get_system<VadonApp::Platform::PlatformInterface>();
+
+			platform_interface.toggle_window_borderless_fullscreen(m_main_window);
+		}
 	};
 
 	PlatformInterface::~PlatformInterface() = default;
@@ -143,6 +151,11 @@ namespace VadonDemo::Platform
 	}
 
 	VadonApp::Platform::WindowHandle PlatformInterface::get_main_window() const { return m_internal->m_main_window; }
+
+	void PlatformInterface::toggle_fullscreen()
+	{
+		m_internal->toggle_fullscreen();
+	}
 
 	PlatformInterface::PlatformInterface(Core::GameCore& game_core)
 		: m_internal(std::make_unique<Internal>(game_core))

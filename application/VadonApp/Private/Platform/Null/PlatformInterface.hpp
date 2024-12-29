@@ -25,6 +25,8 @@ namespace VadonApp::Private::Platform::Null
 
 		VadonApp::Platform::WindowFlags get_window_flags(VadonApp::Platform::WindowHandle /*window_handle*/) const override { return VadonApp::Platform::WindowFlags::NONE; }
 
+		void toggle_window_borderless_fullscreen(VadonApp::Platform::WindowHandle /*window_handle*/) override {}
+
 		VadonApp::Platform::PlatformWindowHandle get_platform_window_handle(VadonApp::Platform::WindowHandle /*window_handle*/) const override { return nullptr; }
 
 		Vadon::Utilities::Vector2i get_window_drawable_size(VadonApp::Platform::WindowHandle /*window_handle*/) const { return Vadon::Utilities::Vector2i{}; }

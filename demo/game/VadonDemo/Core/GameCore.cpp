@@ -158,7 +158,8 @@ namespace VadonDemo::Core
 
 		void register_app_event_handlers()
 		{
-			// Register callback in platform interface			
+			// Register callback in platform interface
+			// FIXME: do this from subsystem!
 			m_engine_app->get_system<VadonApp::Platform::PlatformInterface>().register_event_callback(
 				[this](const VadonApp::Platform::PlatformEventList& platform_events)
 				{
@@ -174,6 +175,13 @@ namespace VadonDemo::Core
 							if (keyboard_event.key == VadonApp::Platform::KeyCode::BACKQUOTE)
 							{
 								m_main_window.show_dev_gui();
+							}
+							else if (keyboard_event.key == VadonApp::Platform::KeyCode::RETURN)
+							{
+								if (keyboard_event.down == false && Vadon::Utilities::to_bool(keyboard_event.modifiers & VadonApp::Platform::KeyModifiers::LEFT_ALT))
+								{
+									m_platform_interface.toggle_fullscreen();
+								}
 							}
 						},
 						[](auto) { /* Default, do nothing */ }

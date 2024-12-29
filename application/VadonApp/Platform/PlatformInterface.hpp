@@ -41,6 +41,9 @@ namespace VadonApp::Platform
 
 		virtual WindowFlags get_window_flags(WindowHandle window_handle) const = 0;
 
+		// FIXME: expose proper API for setting window states!
+		virtual void toggle_window_borderless_fullscreen(WindowHandle window_handle) = 0;
+
 		virtual PlatformWindowHandle get_platform_window_handle(WindowHandle window_handle) const = 0;
 
 		virtual Vadon::Utilities::Vector2i get_window_drawable_size(WindowHandle window_handle) const = 0;

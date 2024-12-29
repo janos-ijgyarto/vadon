@@ -76,6 +76,7 @@ namespace VadonDemo::Render
 							{
 							case VadonApp::Platform::WindowEventType::MOVED:
 							case VadonApp::Platform::WindowEventType::RESIZED:
+							case VadonApp::Platform::WindowEventType::SIZE_CHANGED:
 							{
 								// These window events must be handled in the render task context!
 								m_window_event_queue.enqueue(window_event);
@@ -126,6 +127,7 @@ namespace VadonDemo::Render
 				switch (window_event.type)
 				{
 				case VadonApp::Platform::WindowEventType::RESIZED:
+				case VadonApp::Platform::WindowEventType::SIZE_CHANGED:
 				{
 					// Get drawable size															
 					VadonApp::Platform::WindowHandle main_window = m_game_core.get_platform_interface().get_main_window();

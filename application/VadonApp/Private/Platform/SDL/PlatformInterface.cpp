@@ -326,25 +326,44 @@ namespace VadonApp::Private::Platform::SDL
 		{
 			VadonApp::Platform::KeyModifiers key_modifiers = VadonApp::Platform::KeyModifiers::NONE;
 
-			// FIXME: implement more elegant iteration through flags
-			if (modifiers & SDL_Keymod::KMOD_LSHIFT)
+			VADON_START_BITMASK_SWITCH(modifiers)
 			{
+			case SDL_Keymod::KMOD_LSHIFT:
 				key_modifiers |= VadonApp::Platform::KeyModifiers::LEFT_SHIFT;
-			}
-
-			if (modifiers & SDL_Keymod::KMOD_RSHIFT)
-			{
+				break;
+			case SDL_Keymod::KMOD_RSHIFT:
 				key_modifiers |= VadonApp::Platform::KeyModifiers::RIGHT_SHIFT;
-			}
-
-			if (modifiers & SDL_Keymod::KMOD_LCTRL)
-			{
+				break;
+			case SDL_Keymod::KMOD_LCTRL:
 				key_modifiers |= VadonApp::Platform::KeyModifiers::LEFT_CTRL;
-			}
-
-			if (modifiers & SDL_Keymod::KMOD_RCTRL)
-			{
+				break;
+			case SDL_Keymod::KMOD_RCTRL:
 				key_modifiers |= VadonApp::Platform::KeyModifiers::RIGHT_CTRL;
+				break;
+			case SDL_Keymod::KMOD_LALT:
+				key_modifiers |= VadonApp::Platform::KeyModifiers::LEFT_ALT;
+				break;
+			case SDL_Keymod::KMOD_RALT:
+				key_modifiers |= VadonApp::Platform::KeyModifiers::RIGHT_ALT;
+				break;
+			case SDL_Keymod::KMOD_LGUI:
+				key_modifiers |= VadonApp::Platform::KeyModifiers::LEFT_GUI;
+				break;
+			case SDL_Keymod::KMOD_RGUI:
+				key_modifiers |= VadonApp::Platform::KeyModifiers::RIGHT_GUI;
+				break;
+			case SDL_Keymod::KMOD_NUM:
+				key_modifiers |= VadonApp::Platform::KeyModifiers::NUM_LOCK;
+				break;
+			case SDL_Keymod::KMOD_CAPS:
+				key_modifiers |= VadonApp::Platform::KeyModifiers::CAPS_LOCK;
+				break;
+			case SDL_Keymod::KMOD_MODE:
+				key_modifiers |= VadonApp::Platform::KeyModifiers::MODE;
+				break;
+			case SDL_Keymod::KMOD_SCROLL:
+				key_modifiers |= VadonApp::Platform::KeyModifiers::SCROLL_LOCK;
+				break;
 			}
 
 			return key_modifiers;
@@ -440,6 +459,29 @@ namespace VadonApp::Private::Platform::SDL
 	{
 		const SDLWindow& window = m_window_pool.get(window_handle);
 		return convert_sdl_to_platform_window_flags(static_cast<SDL_WindowFlags>(SDL_GetWindowFlags(window.sdl_window)));
+	}
+
+	void PlatformInterface::toggle_window_borderless_fullscreen(VadonApp::Platform::WindowHandle window_handle)
+	{
+		SDLWindow& window = m_window_pool.get(window_handle);
+		const Uint32 flags = SDL_GetWindowFlags(window.sdl_window);
+		if (flags & SDL_WINDOW_BORDERLESS)
+		{
+			SDL_SetWindowResizable(window.sdl_window, SDL_TRUE);
+			SDL_SetWindowBordered(window.sdl_window, SDL_TRUE);
+			SDL_SetWindowPosition(window.sdl_window, 10, 10);
+		}
+		else
+		{
+			SDL_SetWindowResizable(window.sdl_window, SDL_FALSE);
+			SDL_SetWindowBordered(window.sdl_window, SDL_FALSE);
+			SDL_SetWindowPosition(window.sdl_window, 0, 0);
+
+			SDL_DisplayMode display_mode;
+			SDL_GetCurrentDisplayMode(0, &display_mode);
+
+			SDL_SetWindowSize(window.sdl_window, display_mode.w, display_mode.h);
+		}
 	}
 
 	PlatformWindowHandle PlatformInterface::get_platform_window_handle(WindowHandle window_handle) const

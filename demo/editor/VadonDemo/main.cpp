@@ -70,7 +70,6 @@ namespace
     private:
         bool init_renderer()
         {
-            m_canvas_context.camera.view_rectangle.size = { 1920, 1080 };
             m_canvas_context.layers.push_back(m_model->get_canvas_layer());
 
             {
@@ -118,11 +117,14 @@ namespace
                         camera_zoom = input_system.get_action_strength(m_input_actions[Vadon::Utilities::to_integral(InputAction::CAMERA_ZOOM)]);
                     }
 
+                    // Update viewport and camera rectangle
                     // FIXME: only update this when it changes!
                     VadonApp::Platform::WindowHandle main_window = get_system<VadonEditor::Platform::PlatformInterface>().get_main_window();
-                    m_canvas_context.viewports.back().render_viewport.dimensions.size = engine_app.get_system<VadonApp::Platform::PlatformInterface>().get_window_drawable_size(main_window);
+                    const Vadon::Utilities::Vector2i window_size = engine_app.get_system<VadonApp::Platform::PlatformInterface>().get_window_drawable_size(main_window);
+                    m_canvas_context.viewports.back().render_viewport.dimensions.size = window_size;
 
                     m_canvas_context.camera.view_rectangle.position += get_delta_time() * 200 * camera_velocity;
+                    m_canvas_context.camera.view_rectangle.size = window_size;
                     m_canvas_context.camera.zoom = std::clamp(m_canvas_context.camera.zoom + get_delta_time() * camera_zoom * 10.0f, 0.1f, 10.0f);
 
                     // No multithreading here, so we render without any async
