@@ -26,10 +26,6 @@ namespace VadonDemo::Core
 {
 	namespace
 	{
-		// TODO: implement systems for setting this up based on command line, serialized config, etc.
-		constexpr int c_screen_width = 1024;
-		constexpr int c_screen_height = 768;
-
 		using Clock = std::chrono::steady_clock;
 		using TimePoint = std::chrono::time_point<Clock>;
 		using Duration = std::chrono::duration<float>;
@@ -149,14 +145,6 @@ namespace VadonDemo::Core
 			// Prepare engine config
 			{
 				app_configuration.engine_config.core_config.program_name = argv[0];
-			}
-
-			// Prepare platform config
-			{
-				VadonApp::Platform::WindowInfo& main_window_info = app_configuration.platform_config.main_window_info;
-				main_window_info.title = "Vadon Demo"; // TODO: version numbering?
-				main_window_info.position = Vadon::Utilities::Vector2i(-1, -1);
-				main_window_info.size = Vadon::Utilities::Vector2i(c_screen_width, c_screen_height);
 			}
 
 			// Prepare UI config

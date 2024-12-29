@@ -5,6 +5,8 @@
 
 #include <VadonApp/Platform/Input/Keyboard.hpp>
 #include <VadonApp/Platform/Input/Mouse.hpp>
+#include <VadonApp/Platform/Window/Window.hpp>
+
 #include <Vadon/Utilities/Enum/EnumClassBitFlag.hpp>
 namespace VadonApp::UI::Developer
 {
@@ -44,6 +46,9 @@ namespace VadonApp::UI::Developer
 
 		virtual IOFlags get_io_flags() const = 0;
 		virtual GUIStyle get_style() const = 0;
+
+		// FIXME: currently we need to specify the window associated with the GUI
+		virtual void set_platform_window(VadonApp::Platform::WindowHandle window_handle) = 0;
 
 		// FIXME:
 		// - Decouple from specific window

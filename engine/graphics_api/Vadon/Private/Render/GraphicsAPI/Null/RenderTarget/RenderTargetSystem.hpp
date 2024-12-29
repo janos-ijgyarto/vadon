@@ -20,7 +20,7 @@ namespace Vadon::Private::Render::Null
 		void resize_window(WindowHandle window_handle, const Utilities::Vector2i& window_size) override;
 		void set_window_mode(WindowHandle window_handle, WindowMode mode) override;
 
-		RenderTargetHandle add_target(const RenderTargetInfo& rt_info) override;
+		RenderTargetHandle add_target(const RenderTargetInfo& rt_info, Vadon::Render::TextureHandle texture) override;
 		bool is_render_target_valid(RenderTargetHandle /*rt_handle*/) const override { return false; }
 		void copy_target(RenderTargetHandle source_handle, RenderTargetHandle destination_handle) override;
 		void remove_target(RenderTargetHandle rt_handle) override;

@@ -669,6 +669,17 @@ float4 main(PS_INPUT input) : SV_Target
         };
     }
 
+    void GUISystem::set_platform_window(VadonApp::Platform::WindowHandle window_handle)
+    {
+        m_platform_data.window_handle = window_handle;
+
+#ifdef _WIN32
+        // Set platform dependent data in viewport
+        VadonApp::Platform::PlatformInterface& platform_interface = m_application.get_system<VadonApp::Platform::PlatformInterface>();
+        ImGui::GetMainViewport()->PlatformHandleRaw = platform_interface.get_platform_window_handle(window_handle);
+#endif
+    }
+
     void GUISystem::start_frame()
     {
         update_platform();
@@ -1209,13 +1220,6 @@ float4 main(PS_INPUT input) : SV_Target
         io.GetClipboardTextFn = &GUISystem::get_clipboard_text;
         io.ClipboardUserData = nullptr;
 
-        // Set platform dependent data in viewport
-#ifdef _WIN32
-        ImGui::GetMainViewport()->PlatformHandleRaw = platform_interface.get_window_handle();
-#else
-        (void)window;
-#endif
-
         // From 2.0.5: Set SDL hint to receive mouse click events on window focus, otherwise SDL doesn't emit the event.
         // Without this, when clicking to gain focus, our widgets wouldn't activate even though they showed as hovered.
         // (This is unfortunately a global SDL setting, so enabling it might have a side-effect on your application.
@@ -1441,24 +1445,26 @@ float4 main(PS_INPUT input) : SV_Target
     {
         ImGuiIO& io = ImGui::GetIO();
         VadonApp::Platform::PlatformInterface& platform_interface = m_application.get_system<VadonApp::Platform::PlatformInterface>();
-        const VadonApp::Platform::RenderWindowInfo window_info = platform_interface.get_window_info();
+        const VadonApp::Platform::WindowFlags platform_window_flags = platform_interface.get_window_flags(m_platform_data.window_handle);
 
         // Setup display size (every frame to accommodate for window resizing)
         int width, height;
-        if (Vadon::Utilities::to_bool(window_info.window.flags & VadonApp::Platform::WindowFlags::MINIMIZED))
+        if (Vadon::Utilities::to_bool(platform_window_flags & VadonApp::Platform::WindowFlags::MINIMIZED))
         {
             width = height = 0;
         }
         else
         {
-            width = window_info.window.size.x;
-            height = window_info.window.size.y;
+            const Vadon::Utilities::Vector2i window_size = platform_interface.get_window_size(m_platform_data.window_handle);
+            width = window_size.x;
+            height = window_size.y;
         }
 
         io.DisplaySize = ImVec2(static_cast<float>(width), static_cast<float>(height));
         if ((width > 0) && (height > 0))
         {
-            io.DisplayFramebufferScale = ImVec2(static_cast<float>(window_info.drawable_size.x) / width, static_cast<float>(window_info.drawable_size.y) / height);
+            const Vadon::Utilities::Vector2i drawable_size = platform_interface.get_window_drawable_size(m_platform_data.window_handle);
+            io.DisplayFramebufferScale = ImVec2(static_cast<float>(drawable_size.x) / width, static_cast<float>(drawable_size.y) / height);
         }
 
         // Setup time step (we don't use SDL_GetTicks() because it is using millisecond resolution)
@@ -1554,24 +1560,25 @@ float4 main(PS_INPUT input) : SV_Target
     void GUISystem::update_mouse_data()
     {
         VadonApp::Platform::PlatformInterface& platform_interface = m_application.get_system<VadonApp::Platform::PlatformInterface>();
+        platform_interface.capture_mouse((m_platform_data.mouse_buttons_down != 0) ? true : false);
 
         // We forward mouse input when focused
-        if (platform_interface.is_window_focused())
+        if (platform_interface.is_window_focused(m_platform_data.window_handle))
         {
             ImGuiIO& io = ImGui::GetIO();
             // (Optional) Set OS mouse position from Dear ImGui if requested (rarely used, only when ImGuiConfigFlags_NavEnableSetMousePos is enabled by user)
             if (io.WantSetMousePos)
             {
-                platform_interface.warp_mouse(Vadon::Utilities::Vector2i(static_cast<int>(io.MousePos.x), static_cast<int>(io.MousePos.y)));
+                platform_interface.warp_mouse(m_platform_data.window_handle, Vadon::Utilities::Vector2i(static_cast<int>(io.MousePos.x), static_cast<int>(io.MousePos.y)));
             }
 
             // (Optional) Fallback to provide mouse position when focused
             if (m_platform_data.mouse_global_state && (m_platform_data.mouse_buttons_down == 0))
             {
                 const Vadon::Utilities::Vector2i mouse_position = platform_interface.get_mouse_position();
-                const VadonApp::Platform::RenderWindowInfo window_info = platform_interface.get_window_info();
+                const Vadon::Utilities::Vector2i window_position = platform_interface.get_window_position(m_platform_data.window_handle);
 
-                const Vadon::Utilities::Vector2i mouse_window_position = mouse_position - window_info.window.position;
+                const Vadon::Utilities::Vector2i mouse_window_position = mouse_position - window_position;
 
                 io.AddMousePosEvent(static_cast<float>(mouse_window_position.x), static_cast<float>(mouse_window_position.y));
             }

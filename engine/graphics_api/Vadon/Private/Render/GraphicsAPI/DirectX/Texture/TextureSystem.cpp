@@ -448,6 +448,12 @@ namespace Vadon::Private::Render::DirectX
 		apply_shader_samplers(shader_type, m_graphics_api.get_device_context(), samplers.start_slot, static_cast<UINT>(samplers.samplers.size()), temp_sampler_vector.data());
 	}
 
+	D3DResource TextureSystem::get_texture_d3d_resource(TextureHandle texture_handle)
+	{
+		Texture& texture = m_texture_pool.get(texture_handle);
+		return texture.d3d_texture_resource;
+	}
+
 	TextureSystem::TextureSystem(Core::EngineCoreInterface& core, GraphicsAPI& graphics_api)
 		: Vadon::Render::TextureSystem(core)
 		, m_graphics_api(graphics_api)

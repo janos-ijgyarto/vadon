@@ -3,6 +3,7 @@
 #include <Vadon/Utilities/Math/Vector.hpp>
 #include <VadonApp/Platform/Event/Event.hpp>
 #include <VadonApp/Platform/Input/Input.hpp>
+#include <VadonApp/Platform/Window/Window.hpp>
 #include <memory>
 namespace VadonDemo::Core
 {
@@ -24,10 +25,9 @@ namespace VadonDemo::Platform
 
 		~PlatformInterface();
 
-		void move_window(Vadon::Utilities::Vector2i position);
-		void resize_window(Vadon::Utilities::Vector2i size);
-
 		InputValues get_input_values() const;
+
+		VadonApp::Platform::WindowHandle get_main_window() const;
 	private:
 		PlatformInterface(Core::GameCore& game_core);
 

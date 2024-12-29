@@ -1,6 +1,7 @@
 #ifndef VADONEDITOR_RENDER_RENDERSYSTEM_HPP
 #define VADONEDITOR_RENDER_RENDERSYSTEM_HPP
 #include <VadonEditor/Render/Module.hpp>
+#include <Vadon/Render/GraphicsAPI/RenderTarget/RenderTarget.hpp>
 #include <Vadon/Render/GraphicsAPI/Shader/Shader.hpp>
 #include <memory>
 namespace Vadon::Render::Canvas
@@ -25,6 +26,8 @@ namespace VadonEditor::Render
 	{
 	public:
 		~RenderSystem();
+
+		VADONEDITOR_API Vadon::Render::WindowHandle get_render_window() const;
 
 		// FIXME: have a more elegant system?
 		// Frame graphs should be constructed from viewports and RTs, render system just goes over any that need to be processed

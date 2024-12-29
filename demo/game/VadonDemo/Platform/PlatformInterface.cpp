@@ -21,6 +21,10 @@ namespace
 	};
 
 	constexpr float c_platform_dispatch_interval = 1.0f / 60.0f;
+
+	// TODO: implement systems for setting this up based on command line, serialized config, etc.
+	constexpr int c_screen_width = 1024;
+	constexpr int c_screen_height = 768;
 }
 
 namespace VadonDemo::Platform
@@ -28,6 +32,8 @@ namespace VadonDemo::Platform
 	struct PlatformInterface::Internal
 	{
 		Core::GameCore& m_game_core;
+
+		VadonApp::Platform::WindowHandle m_main_window;
 
 		std::array<VadonApp::Platform::InputActionHandle, Vadon::Utilities::to_integral(InputAction::ACTION_COUNT)> m_input_actions;
 		float m_dispatch_timer = 0.0f;
@@ -39,6 +45,34 @@ namespace VadonDemo::Platform
 		}
 
 		bool initialize()
+		{
+			VadonApp::Core::Application& engine_app = m_game_core.get_engine_app();
+
+			// FIXME: have client provide platform config
+			VadonApp::Platform::WindowInfo main_window_info;
+			main_window_info.title = "Vadon Demo"; // TODO: version numbering?
+			main_window_info.position = Vadon::Utilities::Vector2i(-1, -1);
+			main_window_info.size = Vadon::Utilities::Vector2i(c_screen_width, c_screen_height);
+
+			main_window_info.flags = VadonApp::Platform::WindowFlags::SHOWN | VadonApp::Platform::WindowFlags::RESIZABLE;
+
+			VadonApp::Platform::PlatformInterface& platform_interface = engine_app.get_system<VadonApp::Platform::PlatformInterface>();
+			m_main_window = platform_interface.create_window(main_window_info);
+
+			if (m_main_window.is_valid() == false)
+			{
+				return false;
+			}
+
+			if (init_inputs() == false)
+			{
+				return false;
+			}
+
+			return true;
+		}
+
+		bool init_inputs()
 		{
 			VadonApp::Core::Application& engine_app = m_game_core.get_engine_app();
 			VadonApp::Platform::InputSystem& input_system = engine_app.get_system<VadonApp::Platform::InputSystem>();
@@ -85,7 +119,7 @@ namespace VadonDemo::Platform
 				VadonApp::Core::Application& engine_app = m_game_core.get_engine_app();
 
 				VadonApp::Platform::PlatformInterface& platform_interface = engine_app.get_system<VadonApp::Platform::PlatformInterface>();
-				platform_interface.dispatch_events();
+				platform_interface.poll_events();
 
 				m_dispatch_timer = 0.0f;
 			}
@@ -93,18 +127,6 @@ namespace VadonDemo::Platform
 	};
 
 	PlatformInterface::~PlatformInterface() = default;
-
-	void PlatformInterface::move_window(Vadon::Utilities::Vector2i position)
-	{
-		VadonApp::Platform::PlatformInterface& platform_interface = m_internal->m_game_core.get_engine_app().get_system<VadonApp::Platform::PlatformInterface>();
-		platform_interface.move_window(position);
-	}
-
-	void PlatformInterface::resize_window(Vadon::Utilities::Vector2i size)
-	{
-		VadonApp::Platform::PlatformInterface& platform_interface = m_internal->m_game_core.get_engine_app().get_system<VadonApp::Platform::PlatformInterface>();
-		platform_interface.resize_window(size);
-	}
 
 	PlatformInterface::InputValues PlatformInterface::get_input_values() const
 	{
@@ -119,6 +141,8 @@ namespace VadonDemo::Platform
 			.fire = input_system.is_action_pressed(m_internal->m_input_actions[Vadon::Utilities::to_integral(InputAction::FIRE)])
 		};
 	}
+
+	VadonApp::Platform::WindowHandle PlatformInterface::get_main_window() const { return m_internal->m_main_window; }
 
 	PlatformInterface::PlatformInterface(Core::GameCore& game_core)
 		: m_internal(std::make_unique<Internal>(game_core))

@@ -22,6 +22,8 @@ namespace VadonDemo::Render
 	public:
 		~RenderSystem();
 		void set_frame_graph(const Vadon::Render::FrameGraphInfo& graph_info);
+
+		Vadon::Render::WindowHandle get_render_window() const;
 	private:
 		RenderSystem(Core::GameCore& game_core);
 

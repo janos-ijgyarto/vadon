@@ -1,5 +1,6 @@
 #include <VadonEditor/Render/RenderSystem.hpp>
 
+#include <VadonEditor/Platform/PlatformInterface.hpp>
 #include <VadonEditor/UI/UISystem.hpp>
 
 #include <VadonApp/Core/Application.hpp>
@@ -19,6 +20,7 @@ namespace VadonEditor::Render
 		Core::Editor& m_editor;
 
 		Vadon::Render::FrameGraphHandle m_frame_graph;
+		Vadon::Render::WindowHandle m_render_window;
 
 		std::vector<Vadon::Render::Canvas::RenderContext> m_canvas_contexts;
 
@@ -30,6 +32,25 @@ namespace VadonEditor::Render
 
 		bool initialize()
 		{
+			VadonApp::Platform::WindowHandle main_window = m_editor.get_system<VadonEditor::Platform::PlatformInterface>().get_main_window();
+
+			VadonApp::Core::Application& engine_app = m_editor.get_engine_app();
+			VadonApp::Platform::PlatformInterface& platform_interface = engine_app.get_system<VadonApp::Platform::PlatformInterface>();
+
+			Vadon::Render::WindowInfo render_window_info;
+			render_window_info.platform_handle = platform_interface.get_platform_window_handle(main_window);
+			render_window_info.format = Vadon::Render::GraphicsAPIDataFormat::B8G8R8A8_UNORM;
+
+			Vadon::Core::EngineCoreInterface& engine_core = engine_app.get_engine_core();
+
+			Vadon::Render::RenderTargetSystem& rt_system = engine_core.get_system<Vadon::Render::RenderTargetSystem>();
+			m_render_window = rt_system.add_window(render_window_info);
+
+			if (m_render_window.is_valid() == false)
+			{
+				return false;
+			}
+
 			init_frame_graph();
 			register_events();
 			return true;
@@ -42,11 +63,9 @@ namespace VadonEditor::Render
 			Vadon::Core::EngineCoreInterface& engine_core = engine_app.get_engine_core();
 
 			// Draw to the main window
-			VadonApp::Platform::PlatformInterface& platform_interface = engine_app.get_system<VadonApp::Platform::PlatformInterface>();
-			const VadonApp::Platform::RenderWindowInfo main_window_info = platform_interface.get_window_info();
-
+			// FIXME: draw to separate RT and copy to back buffer at the end!		
 			Vadon::Render::RenderTargetSystem& rt_system = engine_core.get_system<Vadon::Render::RenderTargetSystem>();
-			const Vadon::Render::RenderTargetHandle main_window_target = rt_system.get_window_target(main_window_info.render_handle);
+			const Vadon::Render::RenderTargetHandle main_window_target = rt_system.get_window_target(m_render_window);
 
 			// Create frame graph
 			// FIXME: make this even more flexible, maybe even possible to set purely from data (so model doesn't even reference systems explicitly)
@@ -134,11 +153,13 @@ namespace VadonEditor::Render
 							{
 							case VadonApp::Platform::WindowEventType::RESIZED:
 							{
-								// Resize the render window
-								const VadonApp::Platform::RenderWindowInfo main_window_info = platform_interface.get_window_info();
+								// Get drawable size															
+								VadonApp::Platform::WindowHandle main_window = m_editor.get_system<VadonEditor::Platform::PlatformInterface>().get_main_window();
+								const Vadon::Utilities::Vector2i drawable_size = platform_interface.get_window_drawable_size(main_window);
 
+								// Resize the render window
 								Vadon::Render::RenderTargetSystem& rt_system = engine_app.get_engine_core().get_system<Vadon::Render::RenderTargetSystem>();
-								rt_system.resize_window(main_window_info.render_handle, Vadon::Utilities::Vector2i(window_event.data1, window_event.data2));
+								rt_system.resize_window(m_render_window, drawable_size);
 							}
 							break;
 							}
@@ -160,11 +181,8 @@ namespace VadonEditor::Render
 			frame_system.execute_graph(m_frame_graph);
 
 			// Present to the main window
-			VadonApp::Platform::PlatformInterface& platform_interface = engine_app.get_system<VadonApp::Platform::PlatformInterface>();
-			const VadonApp::Platform::RenderWindowInfo main_window_info = platform_interface.get_window_info();
-
 			Vadon::Render::RenderTargetSystem& rt_system = engine_core.get_system<Vadon::Render::RenderTargetSystem>();
-			rt_system.update_window(main_window_info.render_handle);
+			rt_system.update_window(m_render_window);
 		}
 
 		void shutdown()
@@ -174,6 +192,11 @@ namespace VadonEditor::Render
 	};
 
 	RenderSystem::~RenderSystem() = default;
+
+	Vadon::Render::WindowHandle RenderSystem::get_render_window() const
+	{
+		return m_internal->m_render_window;
+	}
 
 	void RenderSystem::enqueue_canvas(const Vadon::Render::Canvas::RenderContext& context)
 	{

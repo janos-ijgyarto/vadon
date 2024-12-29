@@ -21,13 +21,6 @@
 
 namespace VadonEditor::Core
 {
-	namespace
-	{
-		// TODO: implement systems for setting this up based on command line, serialized config, etc.
-		constexpr int c_default_window_width = 1280;
-		constexpr int c_default_window_height = 1024;
-	}
-
 	struct Editor::Internal
 	{
 		ProjectManager m_project_manager;
@@ -150,22 +143,6 @@ namespace VadonEditor::Core
 			// Prepare engine config
 			{
 				VadonApp_config.engine_config.core_config.program_name = m_program_name;
-			}
-
-			// Prepare platform config
-			{
-				// FIXME: have client provide platform config
-				VadonApp::Platform::WindowInfo& main_window_info = VadonApp_config.platform_config.main_window_info;
-				main_window_info.title = "Vadon Editor"; // TODO: version numbering?
-				main_window_info.position = Vadon::Utilities::Vector2i(-1, -1);
-
-				// FIXME: add casting to CLI parsing so we don't need to do it here
-				// TODO: make these args global vars that are possible to toggle at all times (similar to Unreal)?
-				const std::string window_width_str = get_command_line_arg("window_w");
-				const std::string window_height_str = get_command_line_arg("window_h");
-
-				main_window_info.size = Vadon::Utilities::Vector2i(window_width_str.empty() ? c_default_window_width : std::stoi(window_width_str),
-					window_height_str.empty() ? c_default_window_height : std::stoi(window_height_str));
 			}
 
 			m_engine_app = VadonApp::Core::Application::create_instance();

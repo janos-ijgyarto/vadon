@@ -35,7 +35,7 @@ namespace Vadon::Private::Render::DirectX
 
 		// FIXME: which exact IDXGI object should be used?
 		DXGISwapChain swap_chain;
-		RenderTargetHandle back_buffer;
+		RenderTargetHandle back_buffer_rt;
 	};
 
 	struct RenderTarget

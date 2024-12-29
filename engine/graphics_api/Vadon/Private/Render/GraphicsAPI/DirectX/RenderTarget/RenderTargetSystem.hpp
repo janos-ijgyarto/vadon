@@ -7,6 +7,7 @@
 #include <Vadon/Private/Render/GraphicsAPI/DirectX/D3DCommon.hpp>
 #include <Vadon/Private/Render/GraphicsAPI/DirectX/Shader/Resource.hpp>
 #include <Vadon/Private/Render/GraphicsAPI/DirectX/RenderTarget/RenderTarget.hpp>
+#include <Vadon/Private/Render/GraphicsAPI/DirectX/Texture/Texture.hpp>
 
 namespace Vadon::Private::Render::DirectX
 {
@@ -24,7 +25,7 @@ namespace Vadon::Private::Render::DirectX
 		void resize_window(WindowHandle window_handle, const Vadon::Utilities::Vector2i& window_size) override;
 		void set_window_mode(WindowHandle window_handle, WindowMode mode) override;
 
-		RenderTargetHandle add_target(const RenderTargetInfo& rt_info) override;
+		RenderTargetHandle add_target(const RenderTargetInfo& rt_info, TextureHandle texture_handle) override;
 		bool is_render_target_valid(RenderTargetHandle rt_handle) const override { return m_rt_pool.is_handle_valid(rt_handle); }
 		void copy_target(RenderTargetHandle source_handle, RenderTargetHandle destination_handle) override;
 		void remove_target(RenderTargetHandle rt_handle) override;
@@ -52,7 +53,8 @@ namespace Vadon::Private::Render::DirectX
 		using DepthStencilPool = Vadon::Utilities::ObjectPool<Vadon::Render::DepthStencil, DepthStencil>;
 		using WindowPool = Vadon::Utilities::ObjectPool<Vadon::Render::Window, Window>;
 
-		bool update_back_buffer_view(DXGISwapChain& swap_chain, D3DRenderTargetView& back_buffer_view);
+		bool create_back_buffer_view(DXGISwapChain& swap_chain, D3DRenderTargetView& back_buffer_view);
+		bool internal_create_rt_view(D3DRenderTargetView& rt_view, ID3D11Resource* resource, const D3D11_RENDER_TARGET_VIEW_DESC* description);
 
 		GraphicsAPI& m_graphics_api;
 

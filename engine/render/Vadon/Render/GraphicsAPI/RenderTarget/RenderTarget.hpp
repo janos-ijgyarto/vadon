@@ -1,5 +1,6 @@
 #ifndef VADON_RENDER_GRAPHICSAPI_RENDERTARGET_RENDERTARGET_HPP
 #define VADON_RENDER_GRAPHICSAPI_RENDERTARGET_RENDERTARGET_HPP
+#include <Vadon/Render/GraphicsAPI/Defines.hpp>
 #include <Vadon/Utilities/Container/ObjectPool/Handle.hpp>
 #include <Vadon/Utilities/Math/Rectangle.hpp>
 #include <Vadon/Utilities/Enum/EnumClassBitFlag.hpp>
@@ -23,17 +24,11 @@ namespace Vadon::Render
 
 	struct WindowInfo
 	{
-		Utilities::Vector2u dimensions;
 		PlatformWindowHandle platform_handle = nullptr;
-		// TODO: other info
-		// - vsync, refresh rate
-		// - buffer count
-		// - buffer format (and usage?)
-		// - MSAA
-		// - Scan line ordering
-		// - Scaling
-		// - Swap effect (e.g discard)
-		// - Flags (?)
+		Utilities::Vector2u size = { 0,0 };
+		GraphicsAPIDataFormat format = GraphicsAPIDataFormat::UNKNOWN;
+		uint32_t buffer_count = 2;
+		// TODO: other parameters?
 	};
 
 	VADON_DECLARE_TYPED_POOL_HANDLE(Window, WindowHandle);

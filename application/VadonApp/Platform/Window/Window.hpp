@@ -1,19 +1,30 @@
 #ifndef VADONAPP_PLATFORM_WINDOW_WINDOW_HPP
 #define VADONAPP_PLATFORM_WINDOW_WINDOW_HPP
-#include <Vadon/Render/GraphicsAPI/RenderTarget/RenderTarget.hpp>
+#include <Vadon/Utilities/Container/ObjectPool/Handle.hpp>
 #include <Vadon/Utilities/Enum/EnumClassBitFlag.hpp>
+#include <Vadon/Utilities/Math/Vector.hpp>
 namespace VadonApp::Platform
 {
 	enum class WindowFlags
 	{
 		NONE = 0,
 		FULLSCREEN = 1 << 0,
-		BORDERLESS = 1 << 1,
-		MINIMIZED = 1 << 2,
-		MAXIMIZED = 1 << 3,
-		VISIBLE = 1 << 4,
-		HIDDEN = 1 << 5,
+		SHOWN = 1 << 1,
+		HIDDEN = 1 << 2,
+		BORDERLESS = 1 << 3,
+		RESIZABLE = 1 << 4,
+		MINIMIZED = 1 << 5,
+		MAXIMIZED = 1 << 6,
+		MOUSE_GRABBED = 1 << 7,
+		INPUT_FOCUS = 1 << 8,
+		MOUSE_FOCUS = 1 << 9,
+		MOUSE_CAPTURE = 1 << 10,
+		ALWAYS_ON_TOP = 1 << 11,
+		SKIP_TASKBAR = 1 << 12,
+		KEYBOARD_GRABBED = 1 << 13
 	};
+
+	using WindowID = uint32_t;
 
 	struct WindowInfo
 	{
@@ -23,14 +34,9 @@ namespace VadonApp::Platform
 		WindowFlags flags = WindowFlags::NONE;
 	};
 
-	struct RenderWindowInfo
-	{
-		WindowInfo window;
-		Vadon::Render::WindowHandle render_handle;
-		Vadon::Utilities::Vector2i drawable_size;
-	};
+	VADON_DECLARE_TYPED_POOL_HANDLE(Window, WindowHandle);
 
-	using WindowHandle = void*; // Platform-dependent window handle
+	using PlatformWindowHandle = void*; // Platform-dependent window handle
 }
 
 namespace Vadon::Utilities

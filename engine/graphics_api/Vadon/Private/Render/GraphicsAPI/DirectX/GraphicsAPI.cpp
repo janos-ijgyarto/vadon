@@ -286,4 +286,9 @@ namespace Vadon::Private::Render::DirectX
 	{
 		return m_internal->m_shader_system;
 	}
+
+	TextureSystem& GraphicsAPI::get_directx_texture_system()
+	{
+		return m_internal->m_texture_system;
+	}
 }
