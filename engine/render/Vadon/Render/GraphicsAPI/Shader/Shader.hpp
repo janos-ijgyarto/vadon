@@ -30,6 +30,8 @@ namespace Vadon::Render
 		std::vector<ShaderDefine> defines;
 	};
 
+	// TODO: shader reflection (resource slots, etc.)
+
 	VADON_DECLARE_TYPED_POOL_HANDLE(Shader, ShaderHandle);
 
 	enum class VertexElementType

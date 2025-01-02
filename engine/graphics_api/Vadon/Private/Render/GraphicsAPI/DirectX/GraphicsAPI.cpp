@@ -4,6 +4,7 @@
 #include <Vadon/Private/Render/GraphicsAPI/DirectX/Buffer/BufferSystem.hpp>
 #include <Vadon/Private/Render/GraphicsAPI/DirectX/Pipeline/PipelineSystem.hpp>
 #include <Vadon/Private/Render/GraphicsAPI/DirectX/RenderTarget/RenderTargetSystem.hpp>
+#include <Vadon/Private/Render/GraphicsAPI/DirectX/Resource/ResourceSystem.hpp>
 #include <Vadon/Private/Render/GraphicsAPI/DirectX/Shader/ShaderSystem.hpp>
 #include <Vadon/Private/Render/GraphicsAPI/DirectX/Texture/TextureSystem.hpp>
 
@@ -22,6 +23,7 @@ namespace Vadon::Private::Render::DirectX
 		BufferSystem m_buffer_system;
 		PipelineSystem m_pipeline_system;
 		RenderTargetSystem m_rt_system;
+		ResourceSystem m_resource_system;
 		ShaderSystem m_shader_system;
 		TextureSystem m_texture_system;
 
@@ -33,6 +35,7 @@ namespace Vadon::Private::Render::DirectX
 			: m_buffer_system(core, graphics_api)
 			, m_pipeline_system(core, graphics_api)
 			, m_rt_system(core, graphics_api)
+			, m_resource_system(core, graphics_api)
 			, m_shader_system(core, graphics_api)
 			, m_texture_system(core, graphics_api)
 		{
@@ -42,6 +45,11 @@ namespace Vadon::Private::Render::DirectX
 		bool initialize()
 		{
 			// Initialize subsystems
+			if (m_resource_system.initialize() == false)
+			{
+				return false;
+			}
+
 			if (!m_buffer_system.initialize())
 			{
 				return false;
@@ -75,8 +83,9 @@ namespace Vadon::Private::Render::DirectX
 			m_texture_system.shutdown();
 			m_shader_system.shutdown();
 			m_rt_system.shutdown();
-			m_buffer_system.shutdown();
 			m_pipeline_system.shutdown();
+			m_buffer_system.shutdown();
+			m_resource_system.shutdown();
 		}
 	};
 
@@ -277,18 +286,8 @@ namespace Vadon::Private::Render::DirectX
 		log_message("DirectX successfully shut down.\n");
 	}
 
-	RenderTargetSystem& GraphicsAPI::get_directx_rt_system()
+	ResourceSystem& GraphicsAPI::get_directx_resource_system()
 	{
-		return m_internal->m_rt_system;
-	}
-
-	ShaderSystem& GraphicsAPI::get_directx_shader_system()
-	{
-		return m_internal->m_shader_system;
-	}
-
-	TextureSystem& GraphicsAPI::get_directx_texture_system()
-	{
-		return m_internal->m_texture_system;
+		return m_internal->m_resource_system;
 	}
 }

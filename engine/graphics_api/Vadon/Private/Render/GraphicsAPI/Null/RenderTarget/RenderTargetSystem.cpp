@@ -3,7 +3,7 @@
 
 namespace Vadon::Private::Render::Null
 {
-	WindowHandle RenderTargetSystem::add_window(const WindowInfo& /*window_info*/)
+	WindowHandle RenderTargetSystem::create_window(const WindowInfo& /*window_info*/)
 	{
 		// TODO
 		return WindowHandle();
@@ -30,56 +30,51 @@ namespace Vadon::Private::Render::Null
 		// TODO
 	}
 
-	void RenderTargetSystem::set_window_mode(WindowHandle /*window_handle*/, WindowMode /*mode*/)
+	Vadon::Render::RTVHandle RenderTargetSystem::create_render_target_view(Vadon::Render::ResourceHandle /*resource_handle*/, const Vadon::Render::RenderTargetViewInfo& /*rtv_info*/)
+	{
+		// TODO
+		return Vadon::Render::RTVHandle();
+	}
+
+	void RenderTargetSystem::remove_render_target_view(Vadon::Render::RTVHandle /*rtv_handle*/)
 	{
 		// TODO
 	}
 
-	RenderTargetHandle RenderTargetSystem::add_target(const RenderTargetInfo& /*rt_info*/, Vadon::Render::TextureHandle /*texture*/)
+	Vadon::Render::DSVHandle RenderTargetSystem::create_depth_stencil_view(Vadon::Render::ResourceHandle /*resource_handle*/, const Vadon::Render::DepthStencilViewInfo& /*dsv_info*/)
 	{
-		// TODO
-		return RenderTargetHandle();
+		return Vadon::Render::DSVHandle();
 	}
 
-	void RenderTargetSystem::copy_target(RenderTargetHandle /*source_handle*/, RenderTargetHandle /*destination_handle*/)
-	{
-		// TODO
-	}
-
-	void RenderTargetSystem::remove_target(RenderTargetHandle /*rt_handle*/)
+	void RenderTargetSystem::remove_depth_stencil_view(Vadon::Render::DSVHandle /*dsv_handle*/)
 	{
 		// TODO
 	}
 
-	void RenderTargetSystem::set_target(RenderTargetHandle /*rt_handle*/, DepthStencilHandle /*ds_handle*/)
+	void RenderTargetSystem::set_target(Vadon::Render::RTVHandle /*rtv_handle*/, Vadon::Render::DSVHandle /*dsv_handle*/)
 	{
 		// TODO
 	}
 
-	void RenderTargetSystem::clear_target(RenderTargetHandle /*rt_handle*/, const Vadon::Render::RGBAColor& /*clear_color*/)
+	void RenderTargetSystem::clear_target(Vadon::Render::RTVHandle /*rtv_handle*/, const Vadon::Render::RGBAColor& /*clear_color*/)
 	{
 		// TODO
 	}
 
-	void RenderTargetSystem::clear_depth_stencil(DepthStencilHandle /*ds_handle*/, const DepthStencilClear& /*clear*/)
+	void RenderTargetSystem::clear_depth_stencil(Vadon::Render::DSVHandle /*dsv_handle*/, const Vadon::Render::DepthStencilClear& /*clear*/)
 	{
 		// TODO
 	}
 
-	void RenderTargetSystem::remove_depth_stencil(DepthStencilHandle /*ds_handle*/)
+	void RenderTargetSystem::apply_viewport(const Vadon::Render::Viewport& /*viewport*/)
 	{
 		// TODO
 	}
 
-	void RenderTargetSystem::apply_viewport(const Viewport& /*viewport*/)
+	Vadon::Render::RTVHandle RenderTargetSystem::get_window_target(Vadon::Render::WindowHandle /*window_handle*/) const
 	{
 		// TODO
-	}
-
-	RenderTargetHandle RenderTargetSystem::get_window_target(WindowHandle /*window_handle*/) const
-	{
-		// TODO
-		return RenderTargetHandle();
+		return Vadon::Render::RTVHandle();
 	}
 
 	RenderTargetSystem::RenderTargetSystem(Vadon::Core::EngineCoreInterface& core, GraphicsAPI& graphics_api)

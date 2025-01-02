@@ -17,6 +17,7 @@
 #include <Vadon/Render/GraphicsAPI/Buffer/BufferSystem.hpp>
 #include <Vadon/Render/GraphicsAPI/Pipeline/PipelineSystem.hpp>
 #include <Vadon/Render/GraphicsAPI/RenderTarget/RenderTargetSystem.hpp>
+#include <Vadon/Render/GraphicsAPI/Resource/ResourceSystem.hpp>
 #include <Vadon/Render/GraphicsAPI/Shader/ShaderSystem.hpp>
 #include <Vadon/Render/GraphicsAPI/Texture/TextureSystem.hpp>
 
@@ -275,7 +276,7 @@ float4 main(PS_INPUT input) : SV_Target
             ImVec2 clip_min;
             ImVec2 clip_max;
 
-            Vadon::Render::ResourceViewHandle texture_handle;
+            Vadon::Render::SRVHandle texture_srv_handle;
         };
 
         using DrawCommandBuffer = std::vector<DrawCommand>;
@@ -405,7 +406,7 @@ float4 main(PS_INPUT input) : SV_Target
 
                     if (texture_it != m_gui_system.m_texture_lookup.end())
                     {
-                        current_command.texture_handle = texture_it->second;
+                        current_command.texture_srv_handle = texture_it->second;
                     }
 
                     // Store the command offsets and element count
@@ -475,6 +476,7 @@ float4 main(PS_INPUT input) : SV_Target
             Vadon::Render::BufferSystem& buffer_system = engine_core.get_system<Vadon::Render::BufferSystem>();
             Vadon::Render::PipelineSystem& pipeline_system = engine_core.get_system<Vadon::Render::PipelineSystem>();
             Vadon::Render::RenderTargetSystem& rt_system = engine_core.get_system<Vadon::Render::RenderTargetSystem>();
+            Vadon::Render::ResourceSystem& resource_system = engine_core.get_system<Vadon::Render::ResourceSystem>();
             Vadon::Render::ShaderSystem& shader_system = engine_core.get_system<Vadon::Render::ShaderSystem>();
             Vadon::Render::TextureSystem& texture_system = engine_core.get_system<Vadon::Render::TextureSystem>();
 
@@ -531,7 +533,7 @@ float4 main(PS_INPUT input) : SV_Target
                     );
 
                     // Bind texture
-                    shader_system.apply_resource(Vadon::Render::ShaderType::PIXEL, current_command.texture_handle, 0);
+                    resource_system.apply_shader_resource(Vadon::Render::ShaderType::PIXEL, current_command.texture_srv_handle, 0);
 
                     // Draw the vertices
                     Vadon::Render::DrawCommand draw_command = current_command.draw_command;
@@ -1343,19 +1345,19 @@ float4 main(PS_INPUT input) : SV_Target
                 texture_info.format = Vadon::Render::GraphicsAPIDataFormat::R8G8B8A8_UNORM;
                 texture_info.sample_info.count = 1;
                 texture_info.usage = Vadon::Render::ResourceUsage::DEFAULT;
-                texture_info.flags = Vadon::Render::TextureFlags::RESOURCE_VIEW;
+                texture_info.flags = Vadon::Render::TextureFlags::SHADER_RESOURCE;
 
                 // Create texture view
-                Vadon::Render::TextureResourceViewInfo texture_srv_info;
+                Vadon::Render::TextureSRVInfo texture_srv_info;
                 texture_srv_info.format = Vadon::Render::GraphicsAPIDataFormat::R8G8B8A8_UNORM;
-                texture_srv_info.type = Vadon::Render::TextureResourceViewType::TEXTURE_2D;
+                texture_srv_info.type = Vadon::Render::TextureSRVType::TEXTURE_2D;
                 texture_srv_info.mip_levels = texture_info.mip_levels;
                 texture_srv_info.most_detailed_mip = 0;
 
                 m_fonts_texture = texture_system.create_texture(texture_info, pixels);
 
                 // Store texture in the lookup
-                Vadon::Render::ResourceViewHandle fonts_texture_resource = texture_system.create_resource_view(m_fonts_texture, texture_srv_info);
+                Vadon::Render::SRVHandle fonts_texture_resource = texture_system.create_shader_resource_view(m_fonts_texture, texture_srv_info);
 
                 const size_t fonts_texture_id = m_texture_counter++;
                 m_texture_lookup[fonts_texture_id] = fonts_texture_resource;

@@ -1,6 +1,7 @@
 #ifndef VADONDEMO_RENDER_RENDERSYSTEM_HPP
 #define VADONDEMO_RENDER_RENDERSYSTEM_HPP
 #include <Vadon/Render/Frame/Graph.hpp>
+#include <Vadon/Render/GraphicsAPI/RenderTarget/Window.hpp>
 #include <memory>
 namespace VadonDemo::Core
 {

@@ -110,7 +110,7 @@ namespace Vadon::Private::Render::Canvas
 			struct PrimitiveBatch
 			{
 				int32_t index_count = 0;
-				Vadon::Render::ResourceViewHandle texture;
+				Vadon::Render::SRVHandle texture_srv;
 			};
 
 			std::vector<Vector4> primitive_data;
@@ -128,7 +128,7 @@ namespace Vadon::Private::Render::Canvas
 				primitive_batches.clear();
 			}
 
-			void add_command(PrimitiveType primitive_type, Vadon::Render::ResourceViewHandle texture);
+			void add_command(PrimitiveType primitive_type, Vadon::Render::SRVHandle texture_srv);
 			void add_primitive_indices(PrimitiveType primitive_type);
 
 			template<typename T>
@@ -154,16 +154,25 @@ namespace Vadon::Private::Render::Canvas
 		Vadon::Render::BlendStateHandle m_alpha_blend_state;
 		Vadon::Render::ShaderObject m_shader;
 
-		Vadon::Render::BufferObject m_material_buffer;
-		Vadon::Render::BufferObject m_primitive_buffer;
-		Vadon::Render::BufferObject m_index_buffer;
+		Vadon::Render::BufferHandle m_material_buffer;
+		Vadon::Render::SRVHandle m_material_buffer_srv;
 
-		Vadon::Render::BufferObject m_view_cbuffer;
-		Vadon::Render::BufferObject m_layers_cbuffer;
+		Vadon::Render::BufferInfo m_primitive_buffer_info;
+		Vadon::Render::BufferHandle m_primitive_buffer;
+
+		Vadon::Render::BufferSRVInfo m_primitive_buffer_srv_info;
+		Vadon::Render::SRVHandle m_primitive_buffer_srv;
+
+		Vadon::Render::BufferInfo m_index_buffer_info;
+		Vadon::Render::BufferHandle m_index_buffer;
+
+		Vadon::Render::BufferHandle m_view_cbuffer;
+		Vadon::Render::BufferHandle m_layers_cbuffer;
 
 		MaterialHandle m_default_material;
 
-		Vadon::Render::TextureObject m_default_texture;
+		Vadon::Render::TextureHandle m_default_texture;
+		Vadon::Render::SRVHandle m_default_texture_srv;
 		Vadon::Render::TextureSamplerHandle m_sampler;
 
 		friend Vadon::Private::Render::RenderSystem;

@@ -9,7 +9,7 @@ namespace Vadon::Private::Render::DirectX
 		D3D_FEATURE_LEVEL m_feature_level;
 	};
 
-	class RenderTargetSystem;
+	class ResourceSystem;
 	class ShaderSystem;
 	class TextureSystem;
 
@@ -34,9 +34,7 @@ namespace Vadon::Private::Render::DirectX
 		Device* get_device() const { return m_device.Get(); }
 		DeviceContext* get_device_context() const { return m_device_context.Get(); }
 
-		RenderTargetSystem& get_directx_rt_system();
-		ShaderSystem& get_directx_shader_system();
-		TextureSystem& get_directx_texture_system();
+		ResourceSystem& get_directx_resource_system();
 	private:
 		D3DInfo m_d3d_info;
 

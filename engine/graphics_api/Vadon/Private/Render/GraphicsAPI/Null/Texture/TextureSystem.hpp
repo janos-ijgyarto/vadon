@@ -14,8 +14,8 @@ namespace Vadon::Private::Render::Null
 		void remove_texture(Vadon::Render::TextureHandle texture_handle) override;
 
 		Vadon::Render::TextureInfo get_texture_info(Vadon::Render::TextureHandle texture_handle) const override;
-		Vadon::Render::ResourceViewHandle create_resource_view(Vadon::Render::TextureHandle texture_handle, const Vadon::Render::TextureResourceViewInfo& resource_view_info) override;
-		Vadon::Render::DepthStencilHandle create_depth_stencil_view(Vadon::Render::TextureHandle texture_handle, const Vadon::Render::DepthStencilViewInfo& ds_view_info) override;
+
+		Vadon::Render::SRVHandle create_shader_resource_view(Vadon::Render::TextureHandle texture_handle, const Vadon::Render::TextureSRVInfo& texture_srv_info) override;
 
 		Vadon::Render::TextureSamplerHandle create_sampler(const Vadon::Render::TextureSamplerInfo& sampler_info) override;
 		bool is_sampler_valid(Vadon::Render::TextureSamplerHandle /*sampler_handle*/) const override { return false; }

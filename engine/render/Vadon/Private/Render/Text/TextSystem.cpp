@@ -418,14 +418,14 @@ namespace Vadon::Private::Render
 			texture_info.format = Vadon::Render::GraphicsAPIDataFormat::R32_FLOAT;
 			texture_info.sample_info.count = 1;
 			texture_info.usage = Vadon::Render::ResourceUsage::DEFAULT;
-			texture_info.flags = Vadon::Render::TextureFlags::RESOURCE_VIEW;
+			texture_info.flags = Vadon::Render::TextureFlags::SHADER_RESOURCE;
 
 			// Create texture view
-			Vadon::Render::TextureResourceViewInfo texture_resource_info;
-			texture_resource_info.format = Vadon::Render::GraphicsAPIDataFormat::R32_FLOAT;
-			texture_resource_info.type = Vadon::Render::TextureResourceViewType::TEXTURE_2D;
-			texture_resource_info.mip_levels = texture_info.mip_levels;
-			texture_resource_info.most_detailed_mip = 0;
+			Vadon::Render::TextureSRVInfo texture_srv_info;
+			texture_srv_info.format = Vadon::Render::GraphicsAPIDataFormat::R32_FLOAT;
+			texture_srv_info.type = Vadon::Render::TextureSRVType::TEXTURE_2D;
+			texture_srv_info.mip_levels = texture_info.mip_levels;
+			texture_srv_info.most_detailed_mip = 0;
 
 			Vadon::Render::TextureHandle font_texture_handle = texture_system.create_texture(texture_info, finalized_font_texture_data.data());
 			if (font_texture_handle.is_valid() == false)
@@ -433,15 +433,15 @@ namespace Vadon::Private::Render
 				return FontHandle();
 			}
 
-			Vadon::Render::ResourceViewHandle font_resource_view = texture_system.create_resource_view(font_texture_handle, texture_resource_info);
+			Vadon::Render::SRVHandle font_resource_view = texture_system.create_shader_resource_view(font_texture_handle, texture_srv_info);
 			if (font_resource_view.is_valid() == false)
 			{
 				// FIXME: remove font texture?
 				return FontHandle();
 			}
 
-			font_data.texture.texture = font_texture_handle;
-			font_data.texture.resource_view = font_resource_view;
+			font_data.texture_handle = font_texture_handle;
+			font_data.texture_srv = font_resource_view;
 		}
 
 		// All succesful, store the new font
@@ -457,7 +457,7 @@ namespace Vadon::Private::Render
 		TextRenderData render_data;
 
 		const FontData& font_data = m_font_pool.get(render_info.font);
-		render_data.font_texture = font_data.texture.resource_view;
+		render_data.font_texture_view = font_data.texture_srv;
 
 		const float font_texture_dimension = static_cast<float>(font_data.texture_dimension);
 

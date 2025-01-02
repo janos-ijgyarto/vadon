@@ -2,7 +2,7 @@
 #define VADON_RENDER_GRAPHICSAPI_TEXTURE_TEXTURESYSTEM_HPP
 #include <Vadon/Render/GraphicsAPI/GraphicsModule.hpp>
 #include <Vadon/Render/GraphicsAPI/Texture/Texture.hpp>
-#include <Vadon/Render/GraphicsAPI/RenderTarget/RenderTarget.hpp>
+#include <Vadon/Render/GraphicsAPI/Resource/SRV.hpp>
 #include <Vadon/Render/GraphicsAPI/Shader/Shader.hpp>
 #include <span>
 namespace Vadon::Render
@@ -16,16 +16,17 @@ namespace Vadon::Render
 	class TextureSystem : public GraphicsSystem<TextureSystem>
 	{
 	public:
+		// TODO: specific helper functions to make RT and DS textures?
+		// Or put that functionality into RT system, which then calls this system?
 		virtual TextureHandle create_texture(const TextureInfo& texture_info, const void* init_data = nullptr) = 0;
+		// FIXME: need metadata to specify what kind of texture we are loading!
 		virtual TextureHandle create_texture_from_memory(size_t size, const void* data) = 0;
 		virtual bool is_texture_valid(TextureHandle texture_handle) const = 0;
 		virtual void remove_texture(TextureHandle texture_handle) = 0;
 
 		virtual TextureInfo get_texture_info(TextureHandle texture_handle) const = 0;
 
-		// FIXME: add function to create RT from texture!
-		virtual ResourceViewHandle create_resource_view(TextureHandle texture_handle, const TextureResourceViewInfo& resource_view_info) = 0;
-		virtual DepthStencilHandle create_depth_stencil_view(TextureHandle texture_handle, const DepthStencilViewInfo& ds_view_info) = 0;
+		virtual SRVHandle create_shader_resource_view(TextureHandle texture_handle, const TextureSRVInfo& texture_srv_info) = 0;
 
 		virtual TextureSamplerHandle create_sampler(const TextureSamplerInfo& sampler_info) = 0;
 		virtual bool is_sampler_valid(TextureSamplerHandle sampler_handle) const = 0;

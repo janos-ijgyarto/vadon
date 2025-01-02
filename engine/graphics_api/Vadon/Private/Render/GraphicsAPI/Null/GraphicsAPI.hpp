@@ -5,6 +5,7 @@
 #include <Vadon/Private/Render/GraphicsAPI/Null/Buffer/BufferSystem.hpp>
 #include <Vadon/Private/Render/GraphicsAPI/Null/Pipeline/PipelineSystem.hpp>
 #include <Vadon/Private/Render/GraphicsAPI/Null/RenderTarget/RenderTargetSystem.hpp>
+#include <Vadon/Private/Render/GraphicsAPI/Null/Resource/ResourceSystem.hpp>
 #include <Vadon/Private/Render/GraphicsAPI/Null/Shader/ShaderSystem.hpp>
 #include <Vadon/Private/Render/GraphicsAPI/Null/Texture/TextureSystem.hpp>
 
@@ -24,6 +25,7 @@ namespace Vadon::Private::Render::Null
 		BufferSystem m_buffer_system;
 		PipelineSystem m_pipeline_system;
 		RenderTargetSystem m_rt_system;
+		ResourceSystem m_resource_system;
 		ShaderSystem m_shader_system;
 		TextureSystem m_texture_system;
 	};

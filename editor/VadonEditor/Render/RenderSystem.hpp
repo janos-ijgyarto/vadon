@@ -1,7 +1,7 @@
 #ifndef VADONEDITOR_RENDER_RENDERSYSTEM_HPP
 #define VADONEDITOR_RENDER_RENDERSYSTEM_HPP
 #include <VadonEditor/Render/Module.hpp>
-#include <Vadon/Render/GraphicsAPI/RenderTarget/RenderTarget.hpp>
+#include <Vadon/Render/GraphicsAPI/RenderTarget/Window.hpp>
 #include <Vadon/Render/GraphicsAPI/Shader/Shader.hpp>
 #include <memory>
 namespace Vadon::Render::Canvas

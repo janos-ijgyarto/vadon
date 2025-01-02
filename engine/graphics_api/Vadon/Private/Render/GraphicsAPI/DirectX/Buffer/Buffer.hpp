@@ -3,7 +3,7 @@
 #include <Vadon/Render/GraphicsAPI/Buffer/Buffer.hpp>
 
 #include <Vadon/Private/Render/GraphicsAPI/DirectX/Defines.hpp>
-#include <Vadon/Private/Render/GraphicsAPI/DirectX/Shader/Resource.hpp>
+#include <Vadon/Private/Render/GraphicsAPI/DirectX/Resource/Resource.hpp>
 namespace Vadon::Private::Render::DirectX
 {
 	using BufferType = Vadon::Render::BufferType;
@@ -12,17 +12,20 @@ namespace Vadon::Private::Render::DirectX
 
 	using D3DBuffer = ComPtr<ID3D11Buffer>;
 
-	struct Buffer
+	struct Buffer : public Resource
 	{
-		Buffer(const BufferInfo& buffer_info) : info(buffer_info) {}
-
 		BufferInfo info;
-
 		D3DBuffer d3d_buffer;
 	};
 
+	VADON_GRAPHICSAPI_DECLARE_TYPED_RESOURCE_HANDLE(Buffer, D3DBufferHandle);
+
 	using BufferHandle = Vadon::Render::BufferHandle;
 
-	using BufferResourceViewInfo = Vadon::Render::BufferResourceViewInfo;
+	using BufferSRVType = Vadon::Render::BufferSRVType;
+	using BufferSRVFlags = Vadon::Render::BufferSRVFlags;
+	using BufferSRVInfo = Vadon::Render::BufferSRVInfo;
+
+	using BufferUAVFlags = Vadon::Render::BufferUAVFlags;
 }
 #endif

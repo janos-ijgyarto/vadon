@@ -44,7 +44,7 @@ namespace VadonEditor::Render
 			Vadon::Core::EngineCoreInterface& engine_core = engine_app.get_engine_core();
 
 			Vadon::Render::RenderTargetSystem& rt_system = engine_core.get_system<Vadon::Render::RenderTargetSystem>();
-			m_render_window = rt_system.add_window(render_window_info);
+			m_render_window = rt_system.create_window(render_window_info);
 
 			if (m_render_window.is_valid() == false)
 			{
@@ -65,7 +65,7 @@ namespace VadonEditor::Render
 			// Draw to the main window
 			// FIXME: draw to separate RT and copy to back buffer at the end!		
 			Vadon::Render::RenderTargetSystem& rt_system = engine_core.get_system<Vadon::Render::RenderTargetSystem>();
-			const Vadon::Render::RenderTargetHandle main_window_target = rt_system.get_window_target(m_render_window);
+			const Vadon::Render::RTVHandle main_window_target = rt_system.get_window_target(m_render_window);
 
 			// Create frame graph
 			// FIXME: make this even more flexible, maybe even possible to set purely from data (so model doesn't even reference systems explicitly)
@@ -82,7 +82,7 @@ namespace VadonEditor::Render
 				clear_pass.execution = [main_window_target, &rt_system]()
 					{
 						rt_system.clear_target(main_window_target, Vadon::Render::RGBAColor(0.0f, 0.0f, 0.0f, 1.0f));
-						rt_system.set_target(main_window_target, Vadon::Render::DepthStencilHandle());
+						rt_system.set_target(main_window_target, Vadon::Render::DSVHandle());
 					};
 			}
 

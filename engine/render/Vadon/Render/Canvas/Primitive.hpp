@@ -3,7 +3,7 @@
 #include <Vadon/Render/Canvas/Material.hpp>
 #include <Vadon/Render/Utilities/Vector.hpp>
 #include <Vadon/Render/Utilities/Rectangle.hpp>
-#include <Vadon/Render/GraphicsAPI/Shader/Resource.hpp>
+#include <Vadon/Render/GraphicsAPI/Resource/SRV.hpp>
 #include <vector>
 namespace Vadon::Render::Canvas
 {
@@ -42,7 +42,7 @@ namespace Vadon::Render::Canvas
 	{
 		Render::Rectangle dimensions;
 		Render::Rectangle uv_dimensions;
-		ResourceViewHandle texture_handle;
+		SRVHandle texture_view_handle;
 	};
 
 	using SpriteList = std::vector<Sprite>;

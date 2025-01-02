@@ -8,6 +8,7 @@ namespace Vadon::Private::Render::Null
 		, m_buffer_system(core, *this)
 		, m_pipeline_system(core, *this)
 		, m_rt_system(core, *this)
+		, m_resource_system(core, *this)
 		, m_shader_system(core, *this)
 		, m_texture_system(core, *this)
 	{

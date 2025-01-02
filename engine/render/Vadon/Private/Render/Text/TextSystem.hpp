@@ -41,7 +41,8 @@ namespace Vadon::Private::Render
 			std::vector<FontGlyph> glyphs;
 			int32_t texture_dimension = 0;
 
-			Vadon::Render::TextureObject texture;
+			Vadon::Render::TextureHandle texture_handle;
+			Vadon::Render::SRVHandle texture_srv;
 
 			void create_font_atlas();
 			std::vector<size_t> calculate_line_wrap_offsets(std::string_view text, const TextRenderInfo& render_info) const;

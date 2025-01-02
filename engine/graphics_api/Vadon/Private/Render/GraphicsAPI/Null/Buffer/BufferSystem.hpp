@@ -12,6 +12,8 @@ namespace Vadon::Private::Render::Null
 		bool is_buffer_valid(Vadon::Render::BufferHandle /*buffer_handle*/) const override { return false; }
 		void remove_buffer(Vadon::Render::BufferHandle buffer_handle) override;
 
+		Vadon::Render::SRVHandle create_buffer_srv(Vadon::Render::BufferHandle buffer_handle, const Vadon::Render::BufferSRVInfo& buffer_srv_info) override;
+
 		bool buffer_data(Vadon::Render::BufferHandle buffer_handle, const Vadon::Render::BufferWriteData& write_data) override;
 
 		void set_vertex_buffer(Vadon::Render::BufferHandle buffer_handle, int32_t slot, int32_t stride, int32_t offset) override;
@@ -21,8 +23,6 @@ namespace Vadon::Private::Render::Null
 
 		void set_constant_buffer(Vadon::Render::ShaderType shader, Vadon::Render::BufferHandle buffer_handle, int32_t slot) override;
 		void set_constant_buffer_slots(Vadon::Render::ShaderType shader, const Vadon::Render::ConstantBufferSpan& constant_buffers) override;
-
-		Vadon::Render::ResourceViewHandle create_resource_view(Vadon::Render::BufferHandle buffer_handle, const Vadon::Render::BufferResourceViewInfo& resource_view_info) override;
 	protected:
 		BufferSystem(Core::EngineCoreInterface& core, GraphicsAPI& graphics_api);
 

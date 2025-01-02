@@ -5,6 +5,7 @@
 #include <Vadon/Render/GraphicsAPI/Buffer/BufferSystem.hpp>
 #include <Vadon/Render/GraphicsAPI/Pipeline/PipelineSystem.hpp>
 #include <Vadon/Render/GraphicsAPI/RenderTarget/RenderTargetSystem.hpp>
+#include <Vadon/Render/GraphicsAPI/Resource/ResourceSystem.hpp>
 #include <Vadon/Render/GraphicsAPI/Shader/ShaderSystem.hpp>
 #include <Vadon/Render/GraphicsAPI/Texture/TextureSystem.hpp>
 
@@ -129,14 +130,14 @@ namespace Vadon::Private::Render::Canvas
 		using ItemSpriteCommand = ItemDirectDrawCommand<Sprite, BatchCommandType::SPRITE>;
 	}
 
-	void CanvasSystem::FrameData::add_command(PrimitiveType primitive_type, Vadon::Render::ResourceViewHandle texture)
+	void CanvasSystem::FrameData::add_command(PrimitiveType primitive_type, Vadon::Render::SRVHandle texture_srv)
 	{
 		const int32_t index_count = get_primitive_index_count(primitive_type);
 
 		if (primitive_batches.empty() == false)
 		{
 			FrameData::PrimitiveBatch& prev_batch = primitive_batches.back();
-			if (prev_batch.texture == texture)
+			if (prev_batch.texture_srv == texture_srv)
 			{
 				// Can just append to previous batch
 				prev_batch.index_count += index_count;
@@ -148,7 +149,7 @@ namespace Vadon::Private::Render::Canvas
 		// Add new batch
 		FrameData::PrimitiveBatch& new_batch = primitive_batches.emplace_back();
 		new_batch.index_count = index_count;
-		new_batch.texture = texture;
+		new_batch.texture_srv = texture_srv;
 
 		add_primitive_indices(primitive_type);
 	}
@@ -371,14 +372,14 @@ namespace Vadon::Private::Render::Canvas
 		init_render_state(context);
 
 		Vadon::Render::GraphicsAPI& graphics_api = m_engine_core.get_system<Vadon::Render::GraphicsAPI>();
-		Vadon::Render::ShaderSystem& shader_system = m_engine_core.get_system<Vadon::Render::ShaderSystem>();
+		Vadon::Render::ResourceSystem& resource_system = m_engine_core.get_system<Vadon::Render::ResourceSystem>();
 
 		int32_t index_offset = 0;
 		for (const FrameData::PrimitiveBatch& current_batch : m_frame_data.primitive_batches)
 		{
 			// Apply the texture
-			Vadon::Render::ResourceViewHandle current_texture = (current_batch.texture.is_valid() == true) ? current_batch.texture : m_default_texture.resource_view;
-			shader_system.apply_resource(Vadon::Render::ShaderType::PIXEL, current_texture, 2);
+			Vadon::Render::SRVHandle current_texture_srv = (current_batch.texture_srv.is_valid() == true) ? current_batch.texture_srv : m_default_texture_srv;
+			resource_system.apply_shader_resource(Vadon::Render::ShaderType::PIXEL, current_texture_srv, 2);
 
 			// Draw the batch
 			const Vadon::Render::DrawCommand current_draw_command {
@@ -506,30 +507,28 @@ namespace Vadon::Private::Render::Canvas
 			// Materials
 			// FIXME: could make this a constant buffer like the layers?
 			{
-				Vadon::Render::BufferInfo& material_buffer_info = m_material_buffer.buffer_info;
-
+				Vadon::Render::BufferInfo material_buffer_info;
 				material_buffer_info.type = Vadon::Render::BufferType::STRUCTURED;
 				material_buffer_info.usage = Vadon::Render::ResourceUsage::DEFAULT;
 				material_buffer_info.element_size = sizeof(ShaderCanvasMaterial);
 				material_buffer_info.capacity = c_max_material_count;
 
-				m_material_buffer.buffer_handle = buffer_system.create_buffer(material_buffer_info);
+				m_material_buffer = buffer_system.create_buffer(material_buffer_info);
 
-				if (m_material_buffer.buffer_handle.is_valid() == false)
+				if (m_material_buffer.is_valid() == false)
 				{
 					// TODO: error message?
 					return false;
 				}
 
-				Vadon::Render::BufferResourceViewInfo& buffer_resource_view_info = m_material_buffer.resource_view_info;
+				Vadon::Render::BufferSRVInfo buffer_srv_info;
+				buffer_srv_info.format = Vadon::Render::GraphicsAPIDataFormat::UNKNOWN;
+				buffer_srv_info.first_element = 0;
+				buffer_srv_info.num_elements = c_max_material_count;
 
-				buffer_resource_view_info.format = Vadon::Render::GraphicsAPIDataFormat::UNKNOWN;
-				buffer_resource_view_info.first_element = 0;
-				buffer_resource_view_info.num_elements = c_max_material_count;
+				m_material_buffer_srv = buffer_system.create_buffer_srv(m_material_buffer, buffer_srv_info);
 
-				m_material_buffer.resource_view_handle = buffer_system.create_resource_view(m_material_buffer.buffer_handle, buffer_resource_view_info);
-
-				if (m_material_buffer.resource_view_handle.is_valid() == false)
+				if (m_material_buffer_srv.is_valid() == false)
 				{
 					// TODO: error message?
 					return false;
@@ -538,30 +537,26 @@ namespace Vadon::Private::Render::Canvas
 
 			// Primitive data
 			{
-				Vadon::Render::BufferInfo& primitive_buffer_info = m_primitive_buffer.buffer_info;
+				m_primitive_buffer_info.type = Vadon::Render::BufferType::STRUCTURED;
+				m_primitive_buffer_info.usage = Vadon::Render::ResourceUsage::DYNAMIC;
+				m_primitive_buffer_info.element_size = sizeof(Vector4);
+				m_primitive_buffer_info.capacity = 1024;
 
-				primitive_buffer_info.type = Vadon::Render::BufferType::STRUCTURED;
-				primitive_buffer_info.usage = Vadon::Render::ResourceUsage::DYNAMIC;
-				primitive_buffer_info.element_size = sizeof(Vector4);
-				primitive_buffer_info.capacity = 1024;
+				m_primitive_buffer = buffer_system.create_buffer(m_primitive_buffer_info);
 
-				m_primitive_buffer.buffer_handle = buffer_system.create_buffer(primitive_buffer_info);
-
-				if (m_primitive_buffer.buffer_handle.is_valid() == false)
+				if (m_primitive_buffer.is_valid() == false)
 				{
 					// TODO: error message?
 					return false;
 				}
 
-				Vadon::Render::BufferResourceViewInfo& buffer_resource_view_info = m_primitive_buffer.resource_view_info;
+				m_primitive_buffer_srv_info.format = Vadon::Render::GraphicsAPIDataFormat::UNKNOWN;
+				m_primitive_buffer_srv_info.first_element = 0;
+				m_primitive_buffer_srv_info.num_elements = 1024;
 
-				buffer_resource_view_info.format = Vadon::Render::GraphicsAPIDataFormat::UNKNOWN;
-				buffer_resource_view_info.first_element = 0;
-				buffer_resource_view_info.num_elements = 1024;
+				m_primitive_buffer_srv = buffer_system.create_buffer_srv(m_primitive_buffer, m_primitive_buffer_srv_info);
 
-				m_primitive_buffer.resource_view_handle = buffer_system.create_resource_view(m_primitive_buffer.buffer_handle, buffer_resource_view_info);
-
-				if (m_primitive_buffer.resource_view_handle.is_valid() == false)
+				if (m_primitive_buffer_srv.is_valid() == false)
 				{
 					// TODO: error message?
 					return false;
@@ -570,16 +565,14 @@ namespace Vadon::Private::Render::Canvas
 
 			// Indices
 			{
-				Vadon::Render::BufferInfo& index_buffer_info = m_index_buffer.buffer_info;
+				m_index_buffer_info.type = Vadon::Render::BufferType::INDEX;
+				m_index_buffer_info.usage = Vadon::Render::ResourceUsage::DYNAMIC;
+				m_index_buffer_info.element_size = sizeof(uint32_t);
+				m_index_buffer_info.capacity = 1024;
 
-				index_buffer_info.type = Vadon::Render::BufferType::INDEX;
-				index_buffer_info.usage = Vadon::Render::ResourceUsage::DYNAMIC;
-				index_buffer_info.element_size = sizeof(uint32_t);
-				index_buffer_info.capacity = 1024;
+				m_index_buffer = buffer_system.create_buffer(m_index_buffer_info);
 
-				m_index_buffer.buffer_handle = buffer_system.create_buffer(index_buffer_info);
-
-				if (m_index_buffer.buffer_handle.is_valid() == false)
+				if (m_index_buffer.is_valid() == false)
 				{
 					// TODO: error message?
 					return false;
@@ -591,26 +584,26 @@ namespace Vadon::Private::Render::Canvas
 		{
 			// View
 			{
-				Vadon::Render::BufferInfo& view_cbuffer_info = m_view_cbuffer.buffer_info;
+				Vadon::Render::BufferInfo view_cbuffer_info;
 				view_cbuffer_info.type = Vadon::Render::BufferType::CONSTANT;
 				view_cbuffer_info.usage = Vadon::Render::ResourceUsage::DEFAULT;
 				view_cbuffer_info.element_size = sizeof(ShaderCanvasView);
 				view_cbuffer_info.capacity = 1;
 
 				constexpr ShaderCanvasView init_view;
-				m_view_cbuffer.buffer_handle = buffer_system.create_buffer(view_cbuffer_info, &init_view);
+				m_view_cbuffer = buffer_system.create_buffer(view_cbuffer_info, &init_view);
 			}
 
 			// Layers
 			{
-				Vadon::Render::BufferInfo& buffer_info = m_layers_cbuffer.buffer_info;
+				Vadon::Render::BufferInfo buffer_info;
 				buffer_info.type = Vadon::Render::BufferType::CONSTANT;
 				buffer_info.usage = Vadon::Render::ResourceUsage::DEFAULT;
 				buffer_info.element_size = sizeof(ShaderCanvasLayer);
 				buffer_info.capacity = static_cast<int32_t>(c_max_layer_data_count);
 
-				m_layers_cbuffer.buffer_handle = buffer_system.create_buffer(buffer_info);
-				if (m_layers_cbuffer.buffer_handle.is_valid() == false)
+				m_layers_cbuffer = buffer_system.create_buffer(buffer_info);
+				if (m_layers_cbuffer.is_valid() == false)
 				{
 					// TODO: error message?
 					return false;
@@ -629,27 +622,27 @@ namespace Vadon::Private::Render::Canvas
 			default_texture_info.format = Vadon::Render::GraphicsAPIDataFormat::R32G32B32A32_FLOAT;
 			default_texture_info.sample_info.count = 1;
 			default_texture_info.usage = Vadon::Render::ResourceUsage::DEFAULT;
-			default_texture_info.flags = Vadon::Render::TextureFlags::RESOURCE_VIEW;
-
-			// Create texture view
-			Vadon::Render::TextureResourceViewInfo texture_resource_info;
-			texture_resource_info.format = Vadon::Render::GraphicsAPIDataFormat::R32G32B32A32_FLOAT;
-			texture_resource_info.type = Vadon::Render::TextureResourceViewType::TEXTURE_2D;
-			texture_resource_info.mip_levels = default_texture_info.mip_levels;
-			texture_resource_info.most_detailed_mip = 0;
+			default_texture_info.flags = Vadon::Render::TextureFlags::SHADER_RESOURCE;
 
 			constexpr Render::Vector4 c_placeholder_data{ 1.0f, 1.0f, 1.0f, 1.0f };
-			m_default_texture.texture = texture_system.create_texture(default_texture_info, &c_placeholder_data);
-			if (m_default_texture.texture.is_valid() == false)
+			m_default_texture = texture_system.create_texture(default_texture_info, &c_placeholder_data);
+			if (m_default_texture.is_valid() == false)
 			{
-				// Something went wrong!
+				log_error("Canvas system: failed to create default texture!\n");
 				return false;
 			}
 
-			m_default_texture.resource_view = texture_system.create_resource_view(m_default_texture.texture, texture_resource_info);
-			if (m_default_texture.resource_view.is_valid() == false)
+			// Create texture view
+			Vadon::Render::TextureSRVInfo texture_srv_info;
+			texture_srv_info.format = Vadon::Render::GraphicsAPIDataFormat::R32G32B32A32_FLOAT;
+			texture_srv_info.type = Vadon::Render::TextureSRVType::TEXTURE_2D;
+			texture_srv_info.mip_levels = default_texture_info.mip_levels;
+			texture_srv_info.most_detailed_mip = 0;
+
+			m_default_texture_srv = texture_system.create_shader_resource_view(m_default_texture, texture_srv_info);
+			if (m_default_texture_srv.is_valid() == false)
 			{
-				// Something went wrong!
+				log_error("Canvas system: failed to create default texture SRV!\n");
 				return false;
 			}
 		}
@@ -702,7 +695,7 @@ namespace Vadon::Private::Render::Canvas
 
 			// Apply RT
 			Vadon::Render::RenderTargetSystem& rt_system = m_engine_core.get_system<Vadon::Render::RenderTargetSystem>();
-			rt_system.set_target(viewport.render_target, Vadon::Render::DepthStencilHandle());
+			rt_system.set_target(viewport.render_target, Vadon::Render::DSVHandle());
 
 			// Apply viewport
 			rt_system.apply_viewport(viewport.render_viewport);
@@ -715,7 +708,7 @@ namespace Vadon::Private::Render::Canvas
 
 		// Set constant buffers
 		{
-			Vadon::Render::BufferHandle constant_buffers[] = { m_view_cbuffer.buffer_handle, m_layers_cbuffer.buffer_handle };
+			Vadon::Render::BufferHandle constant_buffers[] = { m_view_cbuffer, m_layers_cbuffer };
 			buffer_system.set_constant_buffer_slots(Vadon::Render::ShaderType::VERTEX, { .start_slot = 0, .buffers = constant_buffers });
 		}
 
@@ -740,7 +733,7 @@ namespace Vadon::Private::Render::Canvas
 				canvas_view.view_projection = view * canvas_view.projection;
 			}
 
-			buffer_system.buffer_data(m_view_cbuffer.buffer_handle,
+			buffer_system.buffer_data(m_view_cbuffer,
 				Vadon::Render::BufferWriteData{
 					.range = Vadon::Utilities::DataRange{ .offset = 0, .count = 1 },
 					.data = &canvas_view
@@ -748,16 +741,17 @@ namespace Vadon::Private::Render::Canvas
 		}
 
 		// Set index buffer
-		buffer_system.set_index_buffer(m_index_buffer.buffer_handle, Vadon::Render::GraphicsAPIDataFormat::R32_UINT);
+		buffer_system.set_index_buffer(m_index_buffer, Vadon::Render::GraphicsAPIDataFormat::R32_UINT);
 
 		// Set resources
+		Vadon::Render::ResourceSystem& resource_system = m_engine_core.get_system<Vadon::Render::ResourceSystem>();
 		{
-			Vadon::Render::ResourceViewHandle vertex_shader_resources[] = { m_primitive_buffer.resource_view_handle };
-			shader_system.apply_resource_slots(Vadon::Render::ShaderType::VERTEX, { .start_slot = 1, .resources = vertex_shader_resources });
+			Vadon::Render::SRVHandle vertex_shader_resources[] = { m_primitive_buffer_srv };
+			resource_system.apply_shader_resource_slots(Vadon::Render::ShaderType::VERTEX, { .start_slot = 1, .resources = vertex_shader_resources });
 		}
 		{
-			Vadon::Render::ResourceViewHandle pixel_shader_resources[] = { m_material_buffer.resource_view_handle, m_primitive_buffer.resource_view_handle };
-			shader_system.apply_resource_slots(Vadon::Render::ShaderType::PIXEL, { .start_slot = 0, .resources = pixel_shader_resources });
+			Vadon::Render::SRVHandle pixel_shader_resources[] = { m_material_buffer_srv, m_primitive_buffer_srv };
+			resource_system.apply_shader_resource_slots(Vadon::Render::ShaderType::PIXEL, { .start_slot = 0, .resources = pixel_shader_resources });
 		}
 
 		// Set sampler
@@ -788,7 +782,7 @@ namespace Vadon::Private::Render::Canvas
 				const Triangle& triangle = *reinterpret_cast<const Triangle*>(command_data);
 
 				// Add command
-				canvas_system.m_frame_data.add_command(PrimitiveType::TRIANGLE, Vadon::Render::ResourceViewHandle());
+				canvas_system.m_frame_data.add_command(PrimitiveType::TRIANGLE, Vadon::Render::SRVHandle());
 
 				// Generate primitive data, offset with position
 				TrianglePrimitiveData triangle_primitive;
@@ -809,7 +803,7 @@ namespace Vadon::Private::Render::Canvas
 
 				// Add command
 				const PrimitiveType rectangle_type = rectangle.filled ? PrimitiveType::RECTANGLE_FILL : PrimitiveType::RECTANGLE_OUTLINE;
-				canvas_system.m_frame_data.add_command(rectangle_type, Vadon::Render::ResourceViewHandle());
+				canvas_system.m_frame_data.add_command(rectangle_type, Vadon::Render::SRVHandle());
 
 				RectanglePrimitiveData rectangle_primitive;
 				rectangle_primitive.info = get_primitive_info(item_data, rectangle_type);
@@ -829,7 +823,7 @@ namespace Vadon::Private::Render::Canvas
 			{
 				const Sprite& sprite = *reinterpret_cast<const Sprite*>(command_data);
 
-				canvas_system.m_frame_data.add_command(PrimitiveType::RECTANGLE_FILL, sprite.texture_handle);
+				canvas_system.m_frame_data.add_command(PrimitiveType::RECTANGLE_FILL, sprite.texture_view_handle);
 
 				RectanglePrimitiveData rectangle_primitive;
 				rectangle_primitive.info = get_primitive_info(item_data, PrimitiveType::RECTANGLE_FILL);
@@ -932,7 +926,7 @@ namespace Vadon::Private::Render::Canvas
 			const LayerData& dirty_layer = m_layer_pool.get(layer_handle);
 			canvas_layer_data.initialize(dirty_layer);
 
-			buffer_system.buffer_data(m_layers_cbuffer.buffer_handle, write_data);
+			buffer_system.buffer_data(m_layers_cbuffer, write_data);
 		}
 
 		m_shared_data.dirty_layers.clear();
@@ -961,7 +955,7 @@ namespace Vadon::Private::Render::Canvas
 			const MaterialData& dirty_material = m_material_pool.get(material_handle);
 			canvas_material.initialize(dirty_material);
 
-			buffer_system.buffer_data(m_material_buffer.buffer_handle, write_data);
+			buffer_system.buffer_data(m_material_buffer, write_data);
 		}
 
 		m_shared_data.dirty_materials.clear();
@@ -977,24 +971,24 @@ namespace Vadon::Private::Render::Canvas
 			// FIXME: utility system that handles this buffer bookkeeping for us!
 			const int32_t total_primitive_data_count = static_cast<int32_t>(m_frame_data.primitive_data.size());
 
-			if (total_primitive_data_count > m_primitive_buffer.buffer_info.capacity)
+			if (total_primitive_data_count > m_primitive_buffer_info.capacity)
 			{
 				// Need to increase the primitive buffer capacity
-				m_primitive_buffer.buffer_info.capacity = total_primitive_data_count;
-				m_primitive_buffer.resource_view_info.num_elements = total_primitive_data_count;
+				m_primitive_buffer_info.capacity = total_primitive_data_count;
+				m_primitive_buffer_srv_info.num_elements = total_primitive_data_count;
 
 				if (m_primitive_buffer.is_valid() == true)
 				{
-					buffer_system.remove_buffer(m_primitive_buffer.buffer_handle);
-					m_engine_core.get_system<Vadon::Render::ShaderSystem>().remove_resource(m_primitive_buffer.resource_view_handle);
+					buffer_system.remove_buffer(m_primitive_buffer);
+					m_engine_core.get_system<Vadon::Render::ResourceSystem>().remove_srv(m_primitive_buffer_srv);
 				}
 
-				m_primitive_buffer.buffer_handle = buffer_system.create_buffer(m_primitive_buffer.buffer_info, m_frame_data.primitive_data.data());
-				m_primitive_buffer.resource_view_handle = buffer_system.create_resource_view(m_primitive_buffer.buffer_handle, m_primitive_buffer.resource_view_info);
+				m_primitive_buffer = buffer_system.create_buffer(m_primitive_buffer_info, m_frame_data.primitive_data.data());
+				m_primitive_buffer_srv = buffer_system.create_buffer_srv(m_primitive_buffer, m_primitive_buffer_srv_info);
 			}
 			else
 			{
-				buffer_system.buffer_data(m_primitive_buffer.buffer_handle, { .range = {.offset = 0, .count = total_primitive_data_count }, .data = m_frame_data.primitive_data.data() });
+				buffer_system.buffer_data(m_primitive_buffer, { .range = {.offset = 0, .count = total_primitive_data_count }, .data = m_frame_data.primitive_data.data() });
 			}
 		}
 
@@ -1003,21 +997,21 @@ namespace Vadon::Private::Render::Canvas
 			// FIXME: utility system that handles this buffer bookkeeping for us!
 			const int32_t total_index_count = static_cast<int32_t>(m_frame_data.indices.size());
 
-			if (total_index_count > m_index_buffer.buffer_info.capacity)
+			if (total_index_count > m_index_buffer_info.capacity)
 			{
 				// Need to increase the primitive buffer capacity
-				m_index_buffer.buffer_info.capacity = total_index_count;
+				m_index_buffer_info.capacity = total_index_count;
 
 				if (m_index_buffer.is_valid())
 				{
-					buffer_system.remove_buffer(m_index_buffer.buffer_handle);
+					buffer_system.remove_buffer(m_index_buffer);
 				}
 
-				m_index_buffer.buffer_handle = buffer_system.create_buffer(m_index_buffer.buffer_info, m_frame_data.indices.data());
+				m_index_buffer = buffer_system.create_buffer(m_index_buffer_info, m_frame_data.indices.data());
 			}
 			else
 			{
-				buffer_system.buffer_data(m_index_buffer.buffer_handle, { .range = {.offset = 0, .count = total_index_count }, .data = m_frame_data.indices.data() });
+				buffer_system.buffer_data(m_index_buffer, { .range = {.offset = 0, .count = total_index_count }, .data = m_frame_data.indices.data() });
 			}
 		}
 	}

@@ -2,15 +2,90 @@
 #include <Vadon/Private/Render/GraphicsAPI/DirectX/RenderTarget/RenderTargetSystem.hpp>
 
 #include <Vadon/Private/Render/GraphicsAPI/DirectX/GraphicsAPI.hpp>
+#include <Vadon/Private/Render/GraphicsAPI/DirectX/Resource/ResourceSystem.hpp>
 #include <Vadon/Private/Render/GraphicsAPI/DirectX/Texture/TextureSystem.hpp>
 
 #include <Vadon/Core/CoreInterface.hpp>
 
 #include <Vadon/Utilities/Enum/EnumClass.hpp>
 
+namespace
+{
+	constexpr D3D11_RTV_DIMENSION get_d3d_rtv_dimension(Vadon::Render::RenderTargetViewType rtv_type)
+	{
+		switch (rtv_type)
+		{
+		case Vadon::Render::RenderTargetViewType::UNKNOWN:
+			return D3D11_RTV_DIMENSION::D3D11_RTV_DIMENSION_UNKNOWN;
+		case Vadon::Render::RenderTargetViewType::BUFFER:
+			return D3D11_RTV_DIMENSION::D3D11_RTV_DIMENSION_BUFFER;
+		case Vadon::Render::RenderTargetViewType::TEXTURE_1D:
+			return D3D11_RTV_DIMENSION::D3D11_RTV_DIMENSION_TEXTURE1D;
+		case Vadon::Render::RenderTargetViewType::TEXTURE_1D_ARRAY:
+			return D3D11_RTV_DIMENSION::D3D11_RTV_DIMENSION_TEXTURE1DARRAY;
+		case Vadon::Render::RenderTargetViewType::TEXTURE_2D:
+			return D3D11_RTV_DIMENSION::D3D11_RTV_DIMENSION_TEXTURE2D;
+		case Vadon::Render::RenderTargetViewType::TEXTURE_2D_ARRAY:
+			return D3D11_RTV_DIMENSION::D3D11_RTV_DIMENSION_TEXTURE2DARRAY;
+		case Vadon::Render::RenderTargetViewType::TEXTURE_2D_MS:
+			return D3D11_RTV_DIMENSION::D3D11_RTV_DIMENSION_TEXTURE2DMS;
+		case Vadon::Render::RenderTargetViewType::TEXTURE_2D_MS_ARRAY:
+			return D3D11_RTV_DIMENSION::D3D11_RTV_DIMENSION_TEXTURE2DMSARRAY;
+		case Vadon::Render::RenderTargetViewType::TEXTURE_3D:
+			return D3D11_RTV_DIMENSION::D3D11_RTV_DIMENSION_TEXTURE3D;
+		}
+		
+		return D3D11_RTV_DIMENSION::D3D11_RTV_DIMENSION_UNKNOWN;
+	}
+
+	constexpr D3D11_DSV_DIMENSION get_d3d_dsv_dimension(Vadon::Render::DepthStencilViewType dsv_type)
+	{
+		switch (dsv_type)
+		{
+		case Vadon::Render::DepthStencilViewType::UNKNOWN:
+			return D3D11_DSV_DIMENSION::D3D11_DSV_DIMENSION_UNKNOWN;
+		case Vadon::Render::DepthStencilViewType::TEXTURE_1D:
+			return D3D11_DSV_DIMENSION::D3D11_DSV_DIMENSION_TEXTURE1D;
+		case Vadon::Render::DepthStencilViewType::TEXTURE_1D_ARRAY:
+			return D3D11_DSV_DIMENSION::D3D11_DSV_DIMENSION_TEXTURE1DARRAY;
+		case Vadon::Render::DepthStencilViewType::TEXTURE_2D:
+			return D3D11_DSV_DIMENSION::D3D11_DSV_DIMENSION_TEXTURE2D;
+		case Vadon::Render::DepthStencilViewType::TEXTURE_2D_ARRAY:
+			return D3D11_DSV_DIMENSION::D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
+		case Vadon::Render::DepthStencilViewType::TEXTURE_2D_MS:
+			return D3D11_DSV_DIMENSION::D3D11_DSV_DIMENSION_TEXTURE2DMS;
+		case Vadon::Render::DepthStencilViewType::TEXTURE_2D_MS_ARRAY:
+			return D3D11_DSV_DIMENSION::D3D11_DSV_DIMENSION_TEXTURE2DMSARRAY;
+		}
+
+		return D3D11_DSV_DIMENSION::D3D11_DSV_DIMENSION_UNKNOWN;
+	}
+
+	constexpr UINT get_d3d_dsv_flags(Vadon::Render::DepthStencilViewFlags flags)
+	{
+		UINT d3d_flags = 0;
+		if (flags == Vadon::Render::DepthStencilViewFlags::NONE)
+		{
+			return d3d_flags;
+		}
+
+		if (Vadon::Utilities::to_bool(flags & Vadon::Render::DepthStencilViewFlags::READ_ONLY_DEPTH))
+		{
+			d3d_flags |= D3D11_DSV_READ_ONLY_DEPTH;
+		}
+
+		if (Vadon::Utilities::to_bool(flags & Vadon::Render::DepthStencilViewFlags::READ_ONLY_STENCIL))
+		{
+			d3d_flags |= D3D11_DSV_READ_ONLY_STENCIL;
+		}
+
+		return d3d_flags;
+	}
+}
+
 namespace Vadon::Private::Render::DirectX
 {
-	WindowHandle RenderTargetSystem::add_window(const WindowInfo& window_info)
+	WindowHandle RenderTargetSystem::create_window(const WindowInfo& window_info)
 	{
 		HWND platform_handle = static_cast<HWND>(window_info.platform_handle);
 
@@ -86,7 +161,7 @@ namespace Vadon::Private::Render::DirectX
 			return WindowHandle();
 		}
 
-		// Everything succeeded, create the window and back buffer RT in the pools
+		// Everything succeeded, create the window and back buffer RTV in the pools
 		const WindowHandle new_window_handle = m_window_pool.add();
 
 		Window& new_window = m_window_pool.get(new_window_handle);
@@ -95,10 +170,10 @@ namespace Vadon::Private::Render::DirectX
 		new_window.hwnd = platform_handle;
 		new_window.swap_chain = swap_chain;
 
-		new_window.back_buffer_rt = m_rt_pool.add();
+		new_window.back_buffer_rtv = m_rtv_pool.add();
 
-		RenderTarget& back_buffer_rt = m_rt_pool.get(new_window.back_buffer_rt);
-		back_buffer_rt.d3d_rt_view = back_buffer_view;
+		RenderTargetView& back_buffer_rtv = m_rtv_pool.get(new_window.back_buffer_rtv);
+		back_buffer_rtv.d3d_rt_view = back_buffer_view;
 
 		return new_window_handle;
 	}
@@ -122,7 +197,7 @@ namespace Vadon::Private::Render::DirectX
 		Window& window = m_window_pool.get(window_handle);
 
 		// Window was found, remove the target
-		remove_target(window.back_buffer_rt);
+		remove_render_target_view(window.back_buffer_rtv);
 
 		// Unset fullscreen state before we release, just to be safe
 		window.swap_chain->SetFullscreenState(false, NULL);
@@ -153,7 +228,7 @@ namespace Vadon::Private::Render::DirectX
 
 		// Need to resize the swap chain
 		// Release any outstanding references to back buffer
-		RenderTarget& back_buffer_target = m_rt_pool.get(window.back_buffer_rt);
+		RenderTargetView& back_buffer_target = m_rtv_pool.get(window.back_buffer_rtv);
 		back_buffer_target.d3d_rt_view.Reset();
 
 		// Clear state and flush just to be safe
@@ -176,84 +251,134 @@ namespace Vadon::Private::Render::DirectX
 		}
 	}
 
-	void RenderTargetSystem::set_window_mode(WindowHandle /*window_handle*/, Vadon::Render::WindowMode /*mode*/)
+	RTVHandle RenderTargetSystem::create_render_target_view(ResourceHandle resource_handle, const RenderTargetViewInfo& rtv_info)
 	{
-		// TODO!!!
+		D3D11_RENDER_TARGET_VIEW_DESC d3d_rtv_desc;
+		ZeroMemory(&d3d_rtv_desc, sizeof(D3D11_RENDER_TARGET_VIEW_DESC));
+
+		d3d_rtv_desc.Format = get_dxgi_format(rtv_info.format);
+		assert(rtv_info.type == RenderTargetViewType::TEXTURE_2D); // FIXME: support other RT types!
+		d3d_rtv_desc.ViewDimension = get_d3d_rtv_dimension(rtv_info.type);
+
+		d3d_rtv_desc.Texture2D.MipSlice = rtv_info.type_info.mip_slice;
+
+		D3DRenderTargetView d3d_rtv;
+
+		ResourceSystem& dx_resource_system = m_graphics_api.get_directx_resource_system();
+		Resource* resource = dx_resource_system.get_resource(D3DResourceHandle::from_resource_handle(resource_handle));
+
+		if (internal_create_rtv(d3d_rtv, resource->d3d_resource.Get(), &d3d_rtv_desc) == false)
+		{
+			log_error("Render target system: failed to create D3D RTV!\n");
+			return RTVHandle();
+		}
+
+		// Everything succeeded, add to pool
+		RTVHandle new_rtv_handle = m_rtv_pool.add();
+		RenderTargetView& new_rtv = m_rtv_pool.get(new_rtv_handle);
+
+		new_rtv.info = rtv_info;
+		new_rtv.d3d_rt_view = d3d_rtv;
+		new_rtv.resource = resource_handle;
+
+		return new_rtv_handle;
 	}
 
-	RenderTargetHandle RenderTargetSystem::add_target(const Vadon::Render::RenderTargetInfo& /*target_info*/, TextureHandle /*texture_handle*/)
-	{
-		// TODO: API for creating RT from texture!
-		return RenderTargetHandle();
-	}
-
-	void RenderTargetSystem::copy_target(RenderTargetHandle /*source_handle*/, RenderTargetHandle /*destination_handle*/)
-	{
-		// TODO!!!
-	}
-
-	void RenderTargetSystem::remove_target(RenderTargetHandle rt_handle)
+	void RenderTargetSystem::remove_render_target_view(RTVHandle rtv_handle)
 	{
 		// TODO: make sure we check whether the target was set, remove if so
 		// TODO2: make sure we can't remove a window RT directly, only if we remove the window itself?
-		RenderTarget& render_target = m_rt_pool.get(rt_handle);
+		RenderTargetView& render_target_view = m_rtv_pool.get(rtv_handle);
 
 		// Release the D3D resource
-		render_target.d3d_rt_view.Reset();
+		render_target_view.d3d_rt_view.Reset();
 
-		m_rt_pool.remove(rt_handle);
+		m_rtv_pool.remove(rtv_handle);
 	}
 
-	void RenderTargetSystem::set_target(RenderTargetHandle rt_handle, DepthStencilHandle ds_handle)
+	DSVHandle RenderTargetSystem::create_depth_stencil_view(ResourceHandle resource_handle, const DepthStencilViewInfo& dsv_info)
 	{
-		// TODO: allow for multiple RTs!
-		ID3D11RenderTargetView* render_target_views[] = { nullptr };
-		ID3D11DepthStencilView* depth_stencil_view = nullptr;
+		GraphicsAPI::Device* d3d_device = m_graphics_api.get_device();
+
+		D3DDepthStencilView d3d_ds_view;
+		D3D11_DEPTH_STENCIL_VIEW_DESC d3d_dsv_desc;
+		ZeroMemory(&d3d_dsv_desc, sizeof(D3D11_DEPTH_STENCIL_VIEW_DESC));
+
+		d3d_dsv_desc.Format = get_dxgi_format(dsv_info.format);
+		assert(dsv_info.type == DepthStencilViewType::TEXTURE_2D); // FIXME: support other RT types!
+		d3d_dsv_desc.ViewDimension = get_d3d_dsv_dimension(dsv_info.type);
+		d3d_dsv_desc.Flags = get_d3d_dsv_flags(dsv_info.flags);
+
+		// FIXME: implement proper branching and only set values as needed!
+		d3d_dsv_desc.Texture2D.MipSlice = dsv_info.type_info.mip_slice;
+
+		ResourceSystem& dx_resource_system = m_graphics_api.get_directx_resource_system();
+		Resource* resource = dx_resource_system.get_resource(D3DResourceHandle::from_resource_handle(resource_handle));
+
+		HRESULT result = d3d_device->CreateDepthStencilView(resource->d3d_resource.Get(), &d3d_dsv_desc, d3d_ds_view.ReleaseAndGetAddressOf());
+		if (FAILED(result))
+		{
+			// TODO: error?
+			return DSVHandle();
+		}
+
+		DSVHandle new_dsv_handle = m_dsv_pool.add();
+		DepthStencilView& new_depth_stencil_view = m_dsv_pool.get(new_dsv_handle);
+
+		new_depth_stencil_view.info = dsv_info;
+		new_depth_stencil_view.d3d_ds_view = d3d_ds_view;
+
+		return new_dsv_handle;
+	}
+	
+	void RenderTargetSystem::remove_depth_stencil_view(DSVHandle dsv_handle)
+	{
+		DepthStencilView& depth_stencil_view = m_dsv_pool.get(dsv_handle);
+		depth_stencil_view.d3d_ds_view.Reset();
+
+		m_dsv_pool.remove(dsv_handle);
+	}
+
+	void RenderTargetSystem::set_target(RTVHandle rtv_handle, DSVHandle dsv_handle)
+	{
+		// TODO: implement support for multiple RTVs!
+		ID3D11RenderTargetView* d3d_render_target_views[] = { nullptr };
+		ID3D11DepthStencilView* d3d_depth_stencil_view = nullptr;
 
 		// Invalid handle means we unset it
-		if (rt_handle.is_valid() == true)
+		if (rtv_handle.is_valid() == true)
 		{
-			const RenderTarget& render_target = m_rt_pool.get(rt_handle);
-			render_target_views[0] = render_target.d3d_rt_view.Get();
+			const RenderTargetView& render_target_view = m_rtv_pool.get(rtv_handle);
+			d3d_render_target_views[0] = render_target_view.d3d_rt_view.Get();
 		}
 
-		if (ds_handle.is_valid() == true)
+		if (dsv_handle.is_valid() == true)
 		{
-			const DepthStencil& depth_stencil = m_ds_pool.get(ds_handle);
-			depth_stencil_view = depth_stencil.d3d_ds_view.Get();
+			const DepthStencilView& depth_stencil_view = m_dsv_pool.get(dsv_handle);
+			d3d_depth_stencil_view = depth_stencil_view.d3d_ds_view.Get();
 		}
 
 		GraphicsAPI::DeviceContext* device_context = m_graphics_api.get_device_context();
-		device_context->OMSetRenderTargets(1, render_target_views, depth_stencil_view);
+		device_context->OMSetRenderTargets(1, d3d_render_target_views, d3d_depth_stencil_view);
 	}
 
-	void RenderTargetSystem::clear_target(RenderTargetHandle rt_handle, const Vadon::Render::RGBAColor& clear_color)
+	void RenderTargetSystem::clear_target(RTVHandle rtv_handle, const Vadon::Render::RGBAColor& clear_color)
 	{
-		const RenderTarget& render_target = m_rt_pool.get(rt_handle);
+		const RenderTargetView& render_target_view = m_rtv_pool.get(rtv_handle);
 
 		GraphicsAPI::DeviceContext* device_context = m_graphics_api.get_device_context();
-		device_context->ClearRenderTargetView(render_target.d3d_rt_view.Get(), &clear_color.x);
+		device_context->ClearRenderTargetView(render_target_view.d3d_rt_view.Get(), &clear_color.x);
 	}
 
-	void RenderTargetSystem::clear_depth_stencil(DepthStencilHandle ds_handle, const DepthStencilClear& clear)
+	void RenderTargetSystem::clear_depth_stencil(DSVHandle dsv_handle, const DepthStencilClear& clear)
 	{
-		const DepthStencil& depth_stencil = m_ds_pool.get(ds_handle);
+		const DepthStencilView& depth_stencil_view = m_dsv_pool.get(dsv_handle);
 
 		// FIXME: proper utility function!
 		const UINT clear_flags = Vadon::Utilities::to_integral(clear.clear_flags);
 
 		GraphicsAPI::DeviceContext* device_context = m_graphics_api.get_device_context();
-		device_context->ClearDepthStencilView(depth_stencil.d3d_ds_view.Get(), clear_flags, clear.depth, clear.stencil);
-	}
-
-	void RenderTargetSystem::remove_depth_stencil(DepthStencilHandle ds_handle)
-	{
-		DepthStencil& depth_stencil = m_ds_pool.get(ds_handle);
-
-		// Release the D3D resource
-		depth_stencil.d3d_ds_view.Reset();
-
-		m_ds_pool.remove(ds_handle);
+		device_context->ClearDepthStencilView(depth_stencil_view.d3d_ds_view.Get(), clear_flags, clear.depth, clear.stencil);
 	}
 
 	void RenderTargetSystem::apply_viewport(const Vadon::Render::Viewport& viewport)
@@ -272,33 +397,10 @@ namespace Vadon::Private::Render::DirectX
 		device_context->RSSetViewports(1, &d3d_viewport);
 	}
 
-	RenderTargetHandle RenderTargetSystem::get_window_target(WindowHandle window_handle) const
+	RTVHandle RenderTargetSystem::get_window_target(WindowHandle window_handle) const
 	{
 		const Window& window = m_window_pool.get(window_handle);
-		return window.back_buffer_rt;
-	}
-
-	DepthStencilHandle RenderTargetSystem::create_depth_stencil_view(const D3DResource& resource, const DepthStencilViewInfo& ds_view_info)
-	{
-		GraphicsAPI::Device* d3d_device = m_graphics_api.get_device();
-
-		D3DDepthStencilView d3d_ds_view;
-
-		// FIXME: use DS info!
-		HRESULT result = d3d_device->CreateDepthStencilView(resource.Get(), NULL, d3d_ds_view.ReleaseAndGetAddressOf());
-		if (FAILED(result))
-		{
-			// TODO: error?
-			return DepthStencilHandle();
-		}
-
-		DepthStencilHandle new_ds_handle = m_ds_pool.add();
-		DepthStencil& new_depth_stencil = m_ds_pool.get(new_ds_handle);
-
-		new_depth_stencil.info = ds_view_info;
-		new_depth_stencil.d3d_ds_view = d3d_ds_view;
-
-		return new_ds_handle;
+		return window.back_buffer_rtv;
 	}
 
 	RenderTargetSystem::RenderTargetSystem(Vadon::Core::EngineCoreInterface& core, GraphicsAPI& graphics_api)
@@ -327,7 +429,8 @@ namespace Vadon::Private::Render::DirectX
 
 		// Clear resources
 		// TODO: add warning in case of leftover resources?
-		m_rt_pool.reset();
+		m_rtv_pool.reset();
+		m_dsv_pool.reset();
 		m_window_pool.reset();
 
 		log_message("Render Target system (DirectX) shut down successfully.\n");
@@ -344,14 +447,14 @@ namespace Vadon::Private::Render::DirectX
 			return false;
 		}
 
-		return internal_create_rt_view(back_buffer_view, back_buffer_texture.Get(), nullptr);
+		return internal_create_rtv(back_buffer_view, back_buffer_texture.Get(), nullptr);
 	}
 
-	bool RenderTargetSystem::internal_create_rt_view(D3DRenderTargetView& rt_view, ID3D11Resource* resource, const D3D11_RENDER_TARGET_VIEW_DESC* description)
+	bool RenderTargetSystem::internal_create_rtv(D3DRenderTargetView& d3d_rtv, ID3D11Resource* resource, const D3D11_RENDER_TARGET_VIEW_DESC* description)
 	{
 		// Create the render target view with the back buffer pointer
 		ID3D11Device* d3d_device = m_graphics_api.get_device();
-		HRESULT hr = d3d_device->CreateRenderTargetView(resource, description, rt_view.ReleaseAndGetAddressOf());
+		HRESULT hr = d3d_device->CreateRenderTargetView(resource, description, d3d_rtv.ReleaseAndGetAddressOf());
 		if (FAILED(hr))
 		{
 			log_error("Render target system: failed to create render target view!\n");
