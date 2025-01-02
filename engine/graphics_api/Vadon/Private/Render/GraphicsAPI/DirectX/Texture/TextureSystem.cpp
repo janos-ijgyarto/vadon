@@ -2,10 +2,7 @@
 #include <Vadon/Private/Render/GraphicsAPI/DirectX/Texture/TextureSystem.hpp>
 
 #include <Vadon/Private/Render/GraphicsAPI/DirectX/GraphicsAPI.hpp>
-#include <Vadon/Private/Render/GraphicsAPI/DirectX/Buffer/Buffer.hpp>
-
-#include <Vadon/Private/Render/GraphicsAPI/DirectX/RenderTarget/RenderTargetSystem.hpp>
-#include <Vadon/Private/Render/GraphicsAPI/DirectX/Shader/ShaderSystem.hpp>
+#include <Vadon/Private/Render/GraphicsAPI/DirectX/Resource/ResourceSystem.hpp>
 
 #include <Vadon/Private/Render/GraphicsAPI/DirectX/Texture/DDSTextureLoader11.h>
 
@@ -19,10 +16,10 @@ namespace Vadon::Private::Render::DirectX
 
 			VADON_START_BITMASK_SWITCH(texture_info.flags)
 			{
-			case TextureFlags::RESOURCE_VIEW:
+			case TextureFlags::SHADER_RESOURCE:
 				bind_flags |= D3D11_BIND_SHADER_RESOURCE;
 				break;
-			case TextureFlags::UNORDERED_ACCESS_VIEW:
+			case TextureFlags::UNORDERED_ACCESS:
 				bind_flags |= D3D11_BIND_UNORDERED_ACCESS;
 				break;
 			case TextureFlags::RENDER_TARGET:
@@ -57,10 +54,10 @@ namespace Vadon::Private::Render::DirectX
 			VADON_START_BITMASK_SWITCH(bind_flags)
 			{
 			case D3D11_BIND_SHADER_RESOURCE:
-				texture_flags |= TextureFlags::RESOURCE_VIEW;
+				texture_flags |= TextureFlags::SHADER_RESOURCE;
 				break;
 			case D3D11_BIND_UNORDERED_ACCESS:
-				texture_flags |= TextureFlags::UNORDERED_ACCESS_VIEW;
+				texture_flags |= TextureFlags::UNORDERED_ACCESS;
 				break;
 			case D3D11_BIND_RENDER_TARGET:
 				texture_flags |= TextureFlags::RENDER_TARGET;
@@ -87,31 +84,31 @@ namespace Vadon::Private::Render::DirectX
 			return texture_flags;
 		}
 
-		constexpr ResourceType get_texture_resource_type(TextureResourceViewType type)
+		constexpr ShaderResourceViewType get_srv_type(TextureSRVType type)
 		{
 			switch (type)
 			{
-			case TextureResourceViewType::TEXTURE_1D:
-				return ResourceType::TEXTURE_1D;
-			case TextureResourceViewType::TEXTURE_1D_ARRAY:
-				return ResourceType::TEXTURE_1D_ARRAY;
-			case TextureResourceViewType::TEXTURE_2D:
-				return ResourceType::TEXTURE_2D;
-			case TextureResourceViewType::TEXTURE_2D_ARRAY:
-				return ResourceType::TEXTURE_2D_ARRAY;
-			case TextureResourceViewType::TEXTURE_2D_MS:
-				return ResourceType::TEXTURE_2D_MS;
-			case TextureResourceViewType::TEXTURE_2D_MS_ARRAY:
-				return ResourceType::TEXTURE_2D_MS_ARRAY;
-			case TextureResourceViewType::TEXTURE_3D:
-				return ResourceType::TEXTURE_3D;
-			case TextureResourceViewType::TEXTURE_CUBE:
-				return ResourceType::TEXTURE_CUBE;
-			case TextureResourceViewType::TEXTURE_CUBE_ARRAY:
-				return ResourceType::TEXTURE_CUBE_ARRAY;
+			case TextureSRVType::TEXTURE_1D:
+				return ShaderResourceViewType::TEXTURE_1D;
+			case TextureSRVType::TEXTURE_1D_ARRAY:
+				return ShaderResourceViewType::TEXTURE_1D_ARRAY;
+			case TextureSRVType::TEXTURE_2D:
+				return ShaderResourceViewType::TEXTURE_2D;
+			case TextureSRVType::TEXTURE_2D_ARRAY:
+				return ShaderResourceViewType::TEXTURE_2D_ARRAY;
+			case TextureSRVType::TEXTURE_2D_MS:
+				return ShaderResourceViewType::TEXTURE_2D_MS;
+			case TextureSRVType::TEXTURE_2D_MS_ARRAY:
+				return ShaderResourceViewType::TEXTURE_2D_MS_ARRAY;
+			case TextureSRVType::TEXTURE_3D:
+				return ShaderResourceViewType::TEXTURE_3D;
+			case TextureSRVType::TEXTURE_CUBE:
+				return ShaderResourceViewType::TEXTURE_CUBE;
+			case TextureSRVType::TEXTURE_CUBE_ARRAY:
+				return ShaderResourceViewType::TEXTURE_CUBE_ARRAY;
 			}
 
-			return ResourceType::UNKNOWN;
+			return ShaderResourceViewType::UNKNOWN;
 		}
 
 		constexpr D3D11_FILTER get_d3d_filter(TextureFilter filter)
@@ -247,40 +244,18 @@ namespace Vadon::Private::Render::DirectX
 
 	TextureHandle TextureSystem::create_texture_from_memory(size_t size, const void* data)
 	{
-		GraphicsAPI::Device* device = m_graphics_api.get_device();
-		
-		D3DResource texture_resource;
+		// FIXME: other texture types?
+		return create_texture_from_dds(size, data);
+	}
 
-		// TODO: could just move code into this function to fill in the texture info
-		HRESULT result = ::DirectX::CreateDDSTextureFromMemory(device, static_cast<const uint8_t*>(data), size, texture_resource.ReleaseAndGetAddressOf(), nullptr, 0, nullptr);
-		if (FAILED(result))
-		{
-			return TextureHandle();
-		}
-
-		// Make sure we can query valid texture info
-		const TextureInfo texture_info = create_texture_info(texture_resource);
-		if (texture_info.is_valid() == false)
-		{
-			return TextureHandle();
-		}
-
-		// Add texture to pool
-		TextureHandle new_texture_handle = m_texture_pool.add();
-
-		Texture& new_texture = m_texture_pool.get(new_texture_handle);
-		new_texture.info = texture_info;
-		new_texture.d3d_texture_resource = texture_resource;
-
-		return new_texture_handle;
+	bool TextureSystem::is_texture_valid(TextureHandle texture_handle) const
+	{
+		return m_graphics_api.get_directx_resource_system().is_resource_valid(texture_handle);
 	}
 
 	TextureHandle TextureSystem::create_texture(const TextureInfo& texture_info, const void* init_data)
 	{
-		TextureHandle new_texture_handle;
-
 		GraphicsAPI::Device* device = m_graphics_api.get_device();
-		D3DResource new_d3d_texture;
 
 		if (texture_info.dimensions.z > 0)
 		{
@@ -308,69 +283,54 @@ namespace Vadon::Private::Render::DirectX
 			const HRESULT result = device->CreateTexture2D(&texture_description, init_data ? &subresource_data : nullptr, d3d_texture_2d.ReleaseAndGetAddressOf());
 			if (FAILED(result))
 			{
-				// TODO: error message!
-				return new_texture_handle;
+				log_error("Texture system: failed to create D3D 2D texture!\n");
+				return TextureHandle();
 			}
 
-			new_d3d_texture = d3d_texture_2d;
-		}
+			D3DTextureHandle new_texture_handle = internal_create_texture(ResourceType::TEXTURE_2D, d3d_texture_2d);
+			
+			ResourceSystem& dx_resource_system = m_graphics_api.get_directx_resource_system();
+			Texture* new_2d_texture = dx_resource_system.get_resource(new_texture_handle);
+			new_2d_texture->info = texture_info;
+			new_2d_texture->d3d_texture_2d = d3d_texture_2d;
+
+			return TextureHandle::from_resource_handle(new_texture_handle);
+;		}
 		else
 		{
 			// 1D texture
 			// TODO!!!
 		}
 
-		// Add texture to pool
-		new_texture_handle = m_texture_pool.add();
-
-		Texture& new_texture = m_texture_pool.get(new_texture_handle);
-		new_texture.info = texture_info;
-		new_texture.d3d_texture_resource = new_d3d_texture;
-
-		return new_texture_handle;
+		log_error("Texture system: failed to create D3D texture!\n");
+		return TextureHandle();
 	}
 
 	void TextureSystem::remove_texture(TextureHandle texture_handle)
 	{
-		Texture& texture = m_texture_pool.get(texture_handle);
-
-		// NOTE: we only remove the texture, no SRVs (client is responsible for full cleanup)
-		texture.d3d_texture_resource.Reset();
-
-		m_texture_pool.remove(texture_handle);
+		ResourceSystem& dx_resource_system = m_graphics_api.get_directx_resource_system();
+		dx_resource_system.remove_resource(texture_handle);
 	}
 
 	TextureInfo TextureSystem::get_texture_info(TextureHandle texture_handle) const
 	{
-		const Texture& texture = m_texture_pool.get(texture_handle);
-		return texture.info;
+		ResourceSystem& dx_resource_system = m_graphics_api.get_directx_resource_system();
+		return dx_resource_system.get_resource(D3DTextureHandle::from_resource_handle(texture_handle))->info;
 	}
 
-	ResourceViewHandle TextureSystem::create_resource_view(TextureHandle texture_handle, const TextureResourceViewInfo& resource_view_info)
+	SRVHandle TextureSystem::create_shader_resource_view(TextureHandle texture_handle, const TextureSRVInfo& texture_srv_info)
 	{
-		const Texture& texture = m_texture_pool.get(texture_handle);
+		ResourceSystem& dx_resource_system = m_graphics_api.get_directx_resource_system();
 
-		ResourceViewInfo texture_resource_view_info;
-		texture_resource_view_info.type = get_texture_resource_type(resource_view_info.type); // FIXME: Does type need to match texture?
-		texture_resource_view_info.format = resource_view_info.format; // FIXME: does format need to match texture?
+		ShaderResourceViewInfo srv_info;
+		srv_info.type = get_srv_type(texture_srv_info.type);
+		srv_info.format = texture_srv_info.format;
+		srv_info.type_info.array_size = texture_srv_info.most_detailed_mip;
+		srv_info.type_info.mip_levels = texture_srv_info.mip_levels;
+		srv_info.type_info.first_array_slice = texture_srv_info.first_array_slice;
+		srv_info.type_info.array_size = texture_srv_info.array_size;
 
-		texture_resource_view_info.type_info.most_detailed_mip = resource_view_info.most_detailed_mip;
-		texture_resource_view_info.type_info.mip_levels = resource_view_info.mip_levels;
-		texture_resource_view_info.type_info.first_array_slice = resource_view_info.first_array_slice;
-		texture_resource_view_info.type_info.array_size = resource_view_info.array_size;
-
-		// Create shader resource view from D3D resource
-		ShaderSystem& shader_system = m_graphics_api.get_directx_shader_system();
-		return shader_system.create_resource_view(texture.d3d_texture_resource.Get(), texture_resource_view_info);
-	}
-
-	DepthStencilHandle TextureSystem::create_depth_stencil_view(TextureHandle texture_handle, const DepthStencilViewInfo& ds_view_info)
-	{
-		const Texture& texture = m_texture_pool.get(texture_handle);
-
-		// Pass on to the RT system
-		// TODO: any operations or checks regarding the texture?
-		return m_graphics_api.get_directx_rt_system().create_depth_stencil_view(texture.d3d_texture_resource, ds_view_info);
+		return dx_resource_system.create_srv(texture_handle, srv_info);
 	}
 
 	TextureSamplerHandle TextureSystem::create_sampler(const TextureSamplerInfo& sampler_info)
@@ -448,12 +408,6 @@ namespace Vadon::Private::Render::DirectX
 		apply_shader_samplers(shader_type, m_graphics_api.get_device_context(), samplers.start_slot, static_cast<UINT>(samplers.samplers.size()), temp_sampler_vector.data());
 	}
 
-	D3DResource TextureSystem::get_texture_d3d_resource(TextureHandle texture_handle)
-	{
-		Texture& texture = m_texture_pool.get(texture_handle);
-		return texture.d3d_texture_resource;
-	}
-
 	TextureSystem::TextureSystem(Core::EngineCoreInterface& core, GraphicsAPI& graphics_api)
 		: Vadon::Render::TextureSystem(core)
 		, m_graphics_api(graphics_api)
@@ -472,9 +426,57 @@ namespace Vadon::Private::Render::DirectX
 
 		// Clear pools
 		// TODO: add warning in case of leftover resources?
-		m_texture_pool.reset();
 		m_sampler_pool.reset();
 
 		log_message("Texture system (DirectX) shut down successfully.\n");
+	}
+
+	D3DTextureHandle TextureSystem::internal_create_texture(ResourceType type, D3DResource d3d_texture_resource)
+	{
+		ResourceSystem& dx_resource_system = m_graphics_api.get_directx_resource_system();
+		return dx_resource_system.create_resource<Texture>(type, d3d_texture_resource);
+	}
+
+	TextureHandle TextureSystem::create_texture_from_dds(size_t size, const void* data)
+	{
+		GraphicsAPI::Device* device = m_graphics_api.get_device();
+
+		D3DResource texture_resource;
+
+		// TODO: could just move code into this function to fill in the texture info
+		HRESULT result = ::DirectX::CreateDDSTextureFromMemory(device, static_cast<const uint8_t*>(data), size, texture_resource.ReleaseAndGetAddressOf(), nullptr, 0, nullptr);
+		if (FAILED(result))
+		{
+			log_error("Texture system: failed to create D3D texture from DDS!\n");
+			return TextureHandle();
+		}
+
+		// Make sure we can query valid texture info
+		const TextureInfo texture_info = create_texture_info(texture_resource);
+		if (texture_info.is_valid() == false)
+		{
+			log_error("Texture system: DDS texture has invalid data!\n");
+			return TextureHandle();
+		}
+
+		// Ensure it's a 2D texture
+		// FIXME: should we also be able to load other texture types like this?
+		D3DTexture2D d3d_2d_texture;
+
+		result = texture_resource.As(&d3d_2d_texture);
+		if (FAILED(result))
+		{
+			log_error("Texture system: DDS texture is not 2D texture!\n");
+			return TextureHandle();
+		}
+
+		D3DTextureHandle new_texture_handle = internal_create_texture(ResourceType::TEXTURE_2D, texture_resource);
+
+		ResourceSystem& dx_resource_system = m_graphics_api.get_directx_resource_system();
+		Texture* new_2d_texture = dx_resource_system.get_resource(new_texture_handle);
+		new_2d_texture->info = texture_info;
+		new_2d_texture->d3d_texture_2d = d3d_2d_texture;
+
+		return TextureHandle::from_resource_handle(new_texture_handle);
 	}
 }

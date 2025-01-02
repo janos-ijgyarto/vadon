@@ -479,13 +479,13 @@ namespace VadonDemo::UI
 				clear_pass.targets.emplace_back("main_window", "main_window_cleared");
 
 				Vadon::Render::RenderTargetSystem& rt_system = engine_core.get_system<Vadon::Render::RenderTargetSystem>();
-				const Vadon::Render::RenderTargetHandle main_window_target = rt_system.get_window_target(m_game_core.get_render_system().get_render_window());
+				const Vadon::Render::RTVHandle main_window_target = rt_system.get_window_target(m_game_core.get_render_system().get_render_window());
 
 				clear_pass.execution = [main_window_target, &rt_system]()
 				{
 					// Clear target and set it
 					rt_system.clear_target(main_window_target, Vadon::Render::RGBAColor(0.0f, 0.0f, 0.6f, 1.0f));
-					rt_system.set_target(main_window_target, Vadon::Render::DepthStencilHandle());
+					rt_system.set_target(main_window_target, Vadon::Render::DSVHandle());
 				};
 			}
 

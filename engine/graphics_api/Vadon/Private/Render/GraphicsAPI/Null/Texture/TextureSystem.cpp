@@ -26,16 +26,10 @@ namespace Vadon::Private::Render::Null
 		return Vadon::Render::TextureInfo();
 	}
 
-	Vadon::Render::ResourceViewHandle TextureSystem::create_resource_view(Vadon::Render::TextureHandle /*texture_handle*/, const Vadon::Render::TextureResourceViewInfo& /*resource_view_info*/)
+	Vadon::Render::SRVHandle TextureSystem::create_shader_resource_view(Vadon::Render::TextureHandle /*texture_handle*/, const Vadon::Render::TextureSRVInfo& /*texture_srv_info*/)
 	{
-		// TODO!!!
-		return Vadon::Render::ResourceViewHandle();
-	}
-
-	Vadon::Render::DepthStencilHandle TextureSystem::create_depth_stencil_view(Vadon::Render::TextureHandle /*texture_handle*/, const Vadon::Render::DepthStencilViewInfo& /*ds_view_info*/)
-	{
-		// TODO!!!
-		return Vadon::Render::DepthStencilHandle();
+		// TODO
+		return Vadon::Render::SRVHandle();
 	}
 
 	Vadon::Render::TextureSamplerHandle TextureSystem::create_sampler(const Vadon::Render::TextureSamplerInfo& /*sampler_info*/)

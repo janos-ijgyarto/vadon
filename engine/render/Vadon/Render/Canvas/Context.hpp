@@ -13,7 +13,7 @@ namespace Vadon::Render::Canvas
 
 	struct Viewport
 	{
-		Vadon::Render::RenderTargetHandle render_target;
+		Vadon::Render::RTVHandle render_target;
 		Vadon::Render::Viewport render_viewport;
 	};
 

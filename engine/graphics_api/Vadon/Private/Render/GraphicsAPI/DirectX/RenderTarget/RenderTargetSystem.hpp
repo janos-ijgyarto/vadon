@@ -5,9 +5,9 @@
 #include <Vadon/Utilities/Container/ObjectPool/Pool.hpp>
 
 #include <Vadon/Private/Render/GraphicsAPI/DirectX/D3DCommon.hpp>
-#include <Vadon/Private/Render/GraphicsAPI/DirectX/Shader/Resource.hpp>
+#include <Vadon/Private/Render/GraphicsAPI/DirectX/RenderTarget/DSV.hpp>
 #include <Vadon/Private/Render/GraphicsAPI/DirectX/RenderTarget/RenderTarget.hpp>
-#include <Vadon/Private/Render/GraphicsAPI/DirectX/Texture/Texture.hpp>
+#include <Vadon/Private/Render/GraphicsAPI/DirectX/RenderTarget/Window.hpp>
 
 namespace Vadon::Private::Render::DirectX
 {
@@ -16,32 +16,29 @@ namespace Vadon::Private::Render::DirectX
 	class RenderTargetSystem : public Vadon::Render::RenderTargetSystem
 	{
 	public:
-		WindowHandle add_window(const WindowInfo& window_info) override;
+		WindowHandle create_window(const WindowInfo& window_info) override;
 		bool is_window_valid(WindowHandle window_handle) const override { return m_window_pool.is_handle_valid(window_handle); }
 		WindowInfo get_window_info(WindowHandle window_handle) const override;
 		void update_window(WindowHandle window_handle) override;
 		void remove_window(WindowHandle window_handle) override;
 
 		void resize_window(WindowHandle window_handle, const Vadon::Utilities::Vector2i& window_size) override;
-		void set_window_mode(WindowHandle window_handle, WindowMode mode) override;
 
-		RenderTargetHandle add_target(const RenderTargetInfo& rt_info, TextureHandle texture_handle) override;
-		bool is_render_target_valid(RenderTargetHandle rt_handle) const override { return m_rt_pool.is_handle_valid(rt_handle); }
-		void copy_target(RenderTargetHandle source_handle, RenderTargetHandle destination_handle) override;
-		void remove_target(RenderTargetHandle rt_handle) override;
+		RTVHandle create_render_target_view(ResourceHandle resource_handle, const RenderTargetViewInfo& rtv_info) override;
+		bool is_rtv_valid(RTVHandle rtv_handle) const override { return m_rtv_pool.is_handle_valid(rtv_handle); }
+		void remove_render_target_view(RTVHandle rtv_handle) override;
 
-		void set_target(RenderTargetHandle rt_handle, DepthStencilHandle ds_handle) override;
-		void clear_target(RenderTargetHandle rt_handle, const Vadon::Render::RGBAColor& clear_color) override;
-		void clear_depth_stencil(DepthStencilHandle ds_handle, const DepthStencilClear& clear) override;
+		DSVHandle create_depth_stencil_view(ResourceHandle resource_handle, const DepthStencilViewInfo& dsv_info) override;
+		bool is_dsv_valid(DSVHandle dsv_handle) const override { return m_dsv_pool.is_handle_valid(dsv_handle); }
+		void remove_depth_stencil_view(DSVHandle dsv_handle) override;
 
-		bool is_depth_stencil_valid(DepthStencilHandle ds_handle) const override { return m_ds_pool.is_handle_valid(ds_handle); }
-		void remove_depth_stencil(DepthStencilHandle ds_handle) override;
+		void set_target(RTVHandle rtv_handle, DSVHandle dsv_handle) override;
+		void clear_target(RTVHandle rtv_handle, const Vadon::Render::RGBAColor& clear_color) override;
+		void clear_depth_stencil(DSVHandle dsv_handle, const DepthStencilClear& clear) override;
 
 		void apply_viewport(const Viewport& viewport) override;
 
-		RenderTargetHandle get_window_target(WindowHandle window_handle) const override;
-
-		DepthStencilHandle create_depth_stencil_view(const D3DResource& resource, const DepthStencilViewInfo& ds_view_info);
+		RTVHandle get_window_target(WindowHandle window_handle) const override;
 	private:
 		RenderTargetSystem(Vadon::Core::EngineCoreInterface& core, GraphicsAPI& graphics_api);
 
@@ -49,17 +46,17 @@ namespace Vadon::Private::Render::DirectX
 		void update();
 		void shutdown();
 
-		using RenderTargetPool = Vadon::Utilities::ObjectPool<Vadon::Render::RenderTarget, RenderTarget>;
-		using DepthStencilPool = Vadon::Utilities::ObjectPool<Vadon::Render::DepthStencil, DepthStencil>;
+		using RenderTargetViewPool = Vadon::Utilities::ObjectPool<Vadon::Render::RenderTargetView, RenderTargetView>;
+		using DepthStencilViewPool = Vadon::Utilities::ObjectPool<Vadon::Render::DepthStencilView, DepthStencilView>;
 		using WindowPool = Vadon::Utilities::ObjectPool<Vadon::Render::Window, Window>;
 
 		bool create_back_buffer_view(DXGISwapChain& swap_chain, D3DRenderTargetView& back_buffer_view);
-		bool internal_create_rt_view(D3DRenderTargetView& rt_view, ID3D11Resource* resource, const D3D11_RENDER_TARGET_VIEW_DESC* description);
+		bool internal_create_rtv(D3DRenderTargetView& d3d_rtv, ID3D11Resource* resource, const D3D11_RENDER_TARGET_VIEW_DESC* description);
 
 		GraphicsAPI& m_graphics_api;
 
-		RenderTargetPool m_rt_pool;
-		DepthStencilPool m_ds_pool;
+		RenderTargetViewPool m_rtv_pool;
+		DepthStencilViewPool m_dsv_pool;
 		WindowPool m_window_pool;
 
 		friend GraphicsAPI;

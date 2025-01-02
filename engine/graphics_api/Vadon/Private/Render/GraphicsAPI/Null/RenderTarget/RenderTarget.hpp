@@ -5,22 +5,10 @@ namespace Vadon::Private::Render::Null
 {
 	using Viewport = Vadon::Render::Viewport;
 
-	using WindowMode = Vadon::Render::WindowMode;
-
 	using PlatformWindowHandle = Vadon::Render::PlatformWindowHandle;
 
 	using WindowInfo = Vadon::Render::WindowInfo;
 
 	using WindowHandle = Vadon::Render::WindowHandle;
-
-	using RenderTargetInfo = Vadon::Render::RenderTargetInfo;
-
-	using RenderTargetHandle = Vadon::Render::RenderTargetHandle;
-
-	using DepthStencilViewInfo = Vadon::Render::DepthStencilViewInfo;
-
-	using DepthStencilClear = Vadon::Render::DepthStencilClear;
-
-	using DepthStencilHandle = Vadon::Render::DepthStencilHandle;
 }
 #endif

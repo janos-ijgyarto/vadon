@@ -13,6 +13,12 @@ namespace Vadon::Private::Render::Null
 		// TODO!!!
 	}
 
+	Vadon::Render::SRVHandle BufferSystem::create_buffer_srv(Vadon::Render::BufferHandle /*buffer_handle*/, const Vadon::Render::BufferSRVInfo& /*buffer_srv_info*/)
+	{
+		// TODO
+		return Vadon::Render::SRVHandle();
+	}
+
 	bool BufferSystem::buffer_data(Vadon::Render::BufferHandle /*buffer_handle*/, const Vadon::Render::BufferWriteData& /*write_data*/)
 	{
 		// TODO!!!
@@ -42,12 +48,6 @@ namespace Vadon::Private::Render::Null
 	void BufferSystem::set_constant_buffer_slots(Vadon::Render::ShaderType /*shader*/, const Vadon::Render::ConstantBufferSpan& /*constant_buffers*/)
 	{
 		// TODO!!!
-	}
-
-	Vadon::Render::ResourceViewHandle BufferSystem::create_resource_view(Vadon::Render::BufferHandle /*buffer_handle*/, const Vadon::Render::BufferResourceViewInfo& /*resource_view_info*/)
-	{
-		// TODO!!!
-		return Vadon::Render::ResourceViewHandle();
 	}
 
 	BufferSystem::BufferSystem(Core::EngineCoreInterface& core, GraphicsAPI& graphics_api)

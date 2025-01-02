@@ -7,8 +7,8 @@
 
 #include <Vadon/Render/GraphicsAPI/Buffer/Buffer.hpp>
 #include <Vadon/Render/GraphicsAPI/Pipeline/Pipeline.hpp>
+#include <Vadon/Render/GraphicsAPI/Resource/SRV.hpp>
 #include <Vadon/Render/GraphicsAPI/Shader/Shader.hpp>
-#include <Vadon/Render/GraphicsAPI/Shader/Resource.hpp>
 #include <Vadon/Render/GraphicsAPI/Texture/Texture.hpp>
 namespace VadonApp::Private::UI::Developer::ImGUI
 {
@@ -191,7 +191,7 @@ namespace VadonApp::Private::UI::Developer::ImGUI
 		Vadon::Render::TextureHandle m_fonts_texture;
 		Vadon::Render::TextureSamplerHandle m_sampler;
 
-		std::unordered_map<size_t, Vadon::Render::ResourceViewHandle> m_texture_lookup;
+		std::unordered_map<size_t, Vadon::Render::SRVHandle> m_texture_lookup;
 		size_t m_texture_counter;
 
 		struct Internal;

@@ -5,7 +5,7 @@
 namespace Vadon::Render
 {
 	class GraphicsModule : public Core::SystemModule<Core::SystemModuleList, GraphicsModule, class GraphicsAPI, class BufferSystem, class PipelineSystem,
-		class RenderTargetSystem, class ShaderSystem, class TextureSystem>
+		class RenderTargetSystem, class ResourceSystem, class ShaderSystem, class TextureSystem>
 	{
 	};
 

@@ -5,8 +5,8 @@ namespace Vadon::Scene
 {
 	struct Scene;
 
-	VADON_DECLARE_TYPED_RESOURCE_ID(Scene, SceneID);
-	VADON_DECLARE_TYPED_RESOURCE_HANDLE(Scene, SceneHandle);
+	VADON_SCENE_DECLARE_TYPED_RESOURCE_ID(Scene, SceneID);
+	VADON_SCENE_DECLARE_TYPED_RESOURCE_HANDLE(Scene, SceneHandle);
 
 	struct SceneComponent
 	{

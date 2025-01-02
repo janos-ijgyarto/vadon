@@ -1,7 +1,7 @@
 #ifndef VADON_RENDER_TEXT_FONT_HPP
 #define VADON_RENDER_TEXT_FONT_HPP
 #include <Vadon/Render/Utilities/Rectangle.hpp>
-#include <Vadon/Render/GraphicsAPI/Shader/Resource.hpp>
+#include <Vadon/Render/GraphicsAPI/Resource/SRV.hpp>
 namespace Vadon::Render
 {
 	struct FontInfo
@@ -32,11 +32,11 @@ namespace Vadon::Render
 
 	struct TextRenderData
 	{
-		ResourceViewHandle font_texture;
+		SRVHandle font_texture_view;
 		TextGlyphList glyphs;
 
-		void clear() { glyphs.clear(); font_texture.invalidate(); }
-		bool is_valid() const { return font_texture.is_valid() && (!glyphs.empty()); }
+		void clear() { glyphs.clear(); font_texture_view.invalidate(); }
+		bool is_valid() const { return font_texture_view.is_valid() && (!glyphs.empty()); }
 	};
 }
 #endif

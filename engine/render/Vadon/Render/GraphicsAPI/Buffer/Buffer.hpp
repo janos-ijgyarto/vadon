@@ -1,6 +1,6 @@
 #ifndef VADON_RENDER_GRAPHICSAPI_BUFFER_BUFFER_HPP
 #define VADON_RENDER_GRAPHICSAPI_BUFFER_BUFFER_HPP
-#include <Vadon/Render/GraphicsAPI/Shader/Resource.hpp>
+#include <Vadon/Render/GraphicsAPI/Resource/Resource.hpp>
 namespace Vadon::Render
 {
 	enum class BufferType
@@ -16,8 +16,9 @@ namespace Vadon::Render
 	enum class BufferFlags
 	{
 		NONE = 0,
-		RESOURCE_VIEW = 1 << 0,
-		UNORDERED_ACCESS_VIEW = 1 << 1
+		SHADER_RESOURCE = 1 << 0,
+		UNORDERED_ACCESS = 1 << 1,
+		RENDER_TARGET = 1 << 2
 	};
 
 	struct BufferInfo
@@ -30,31 +31,49 @@ namespace Vadon::Render
 		int32_t capacity = 0;
 	};
 
-	VADON_DECLARE_TYPED_POOL_HANDLE(Buffer, BufferHandle);
+	VADON_GRAPHICSAPI_DECLARE_TYPED_RESOURCE_HANDLE(class Buffer, BufferHandle);
 
-	struct BufferResourceViewInfo
+	enum class BufferSRVType
 	{
-		GraphicsAPIDataFormat format = GraphicsAPIDataFormat::UNKNOWN;
-		int32_t first_element = 0;
-		int32_t num_elements = 0;
+		BUFFER,
+		RAW_BUFFER
 	};
 
-	// FIXME: more appropriate name?
-	struct BufferObject
+	enum class BufferSRVFlags
 	{
-		BufferInfo buffer_info;
-		BufferResourceViewInfo resource_view_info;
-
-		BufferHandle buffer_handle;
-		ResourceViewHandle resource_view_handle;
-
-		bool is_valid() const { return buffer_handle.is_valid(); }
+		NONE = 0,
+		RAW = 1 << 0
 	};
+
+	struct BufferSRVInfo
+	{
+		BufferSRVType type = BufferSRVType::BUFFER;
+		GraphicsAPIDataFormat format;
+		uint32_t first_element;
+		uint32_t num_elements;
+		BufferSRVFlags flags = BufferSRVFlags::NONE;
+	};
+
+	enum class BufferUAVFlags
+	{
+		NONE = 0,
+		RAW = 1 << 0,
+		APPEND = 1 << 1,
+		COUNTER = 1 << 2
+	};
+
+	// TODO: UAV info?
 }
 namespace Vadon::Utilities
 {
 	template<>
 	struct EnableEnumBitwiseOperators<Vadon::Render::BufferFlags> : public std::true_type
+	{
+
+	};
+
+	template<>
+	struct EnableEnumBitwiseOperators<Vadon::Render::BufferUAVFlags> : public std::true_type
 	{
 
 	};

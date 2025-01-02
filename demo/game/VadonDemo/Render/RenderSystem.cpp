@@ -53,7 +53,7 @@ namespace VadonDemo::Render
 			Vadon::Core::EngineCoreInterface& engine_core = engine_app.get_engine_core();
 
 			Vadon::Render::RenderTargetSystem& rt_system = engine_core.get_system<Vadon::Render::RenderTargetSystem>();
-			m_render_window = rt_system.add_window(render_window_info);
+			m_render_window = rt_system.create_window(render_window_info);
 
 			if (m_render_window.is_valid() == false)
 			{

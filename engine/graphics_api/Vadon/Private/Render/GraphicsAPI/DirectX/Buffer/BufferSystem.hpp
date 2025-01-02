@@ -4,8 +4,9 @@
 
 #include <Vadon/Utilities/Container/ObjectPool/Pool.hpp>
 
-#include <Vadon/Private/Render/GraphicsAPI/DirectX/Shader/Shader.hpp>
 #include <Vadon/Private/Render/GraphicsAPI/DirectX/Buffer/Buffer.hpp>
+#include <Vadon/Private/Render/GraphicsAPI/DirectX/Resource/SRV.hpp>
+#include <Vadon/Private/Render/GraphicsAPI/DirectX/Shader/Shader.hpp>
 
 namespace Vadon::Private::Render::DirectX
 {
@@ -20,8 +21,10 @@ namespace Vadon::Private::Render::DirectX
 	{
 	public:
 		BufferHandle create_buffer(const BufferInfo& buffer_info, const void* init_data = nullptr) override;
-		bool is_buffer_valid(BufferHandle buffer_handle) const override { return m_buffer_pool.is_handle_valid(buffer_handle); }
+		bool is_buffer_valid(BufferHandle buffer_handle) const override;
 		void remove_buffer(BufferHandle buffer_handle) override;
+
+		SRVHandle create_buffer_srv(BufferHandle buffer_handle, const BufferSRVInfo& buffer_srv_info) override;
 
 		bool buffer_data(BufferHandle buffer_handle, const BufferWriteData& write_data) override;
 
@@ -32,8 +35,6 @@ namespace Vadon::Private::Render::DirectX
 
 		void set_constant_buffer(ShaderType shader, BufferHandle buffer_handle, int32_t slot) override;
 		void set_constant_buffer_slots(ShaderType shader, const ConstantBufferSpan& constant_buffers) override;
-
-		ResourceViewHandle create_resource_view(BufferHandle buffer_handle, const BufferResourceViewInfo& resource_view_info) override;
 	private:
 		using BufferPool = Vadon::Utilities::ObjectPool<Vadon::Render::Buffer, Buffer>;
 

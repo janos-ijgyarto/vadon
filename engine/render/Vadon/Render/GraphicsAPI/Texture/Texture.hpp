@@ -1,14 +1,14 @@
 #ifndef VADON_RENDER_GRAPHICSAPI_TEXTURE_TEXTURE_HPP
 #define VADON_RENDER_GRAPHICSAPI_TEXTURE_TEXTURE_HPP
-#include <Vadon/Render/GraphicsAPI/Shader/Resource.hpp>
+#include <Vadon/Render/GraphicsAPI/Resource/Resource.hpp>
 #include <Vadon/Utilities/Math/Vector.hpp>
 namespace Vadon::Render
 {
 	enum class TextureFlags
 	{
 		NONE = 0,
-		RESOURCE_VIEW = 1 << 0,
-		UNORDERED_ACCESS_VIEW = 1 << 1,
+		SHADER_RESOURCE = 1 << 0,
+		UNORDERED_ACCESS = 1 << 1,
 		RENDER_TARGET = 1 << 2,
 		DEPTH_STENCIL = 1 << 3,
 		CUBE = 1 << 4
@@ -34,6 +34,8 @@ namespace Vadon::Render
 
 		bool is_valid() const { return (dimensions.x > 0); }
 	};
+
+	VADON_GRAPHICSAPI_DECLARE_TYPED_RESOURCE_HANDLE(class Texture, TextureHandle);
 
 	enum class TextureFilter
 	{
@@ -65,10 +67,9 @@ namespace Vadon::Render
 		float max_lod = 0.0f;
 	};
 
-	VADON_DECLARE_TYPED_POOL_HANDLE(Texture, TextureHandle);
 	VADON_DECLARE_TYPED_POOL_HANDLE(TextureSampler, TextureSamplerHandle);
 
-	enum class TextureResourceViewType
+	enum class TextureSRVType
 	{
 		TEXTURE_1D,
 		TEXTURE_1D_ARRAY,
@@ -82,22 +83,15 @@ namespace Vadon::Render
 	};
 
 	// FIXME: have a different struct per texture type, e.g via std::variant?
-	struct TextureResourceViewInfo
+	struct TextureSRVInfo
 	{
-		TextureResourceViewType type = TextureResourceViewType::TEXTURE_1D;
+		TextureSRVType type = TextureSRVType::TEXTURE_1D;
 		GraphicsAPIDataFormat format = GraphicsAPIDataFormat::UNKNOWN;
 
-		int32_t most_detailed_mip = 0;
-		int32_t mip_levels = 0;
-		int32_t first_array_slice = 0;
-		int32_t array_size = 0;
-	};
-
-
-	struct TextureObject
-	{
-		TextureHandle texture;
-		ResourceViewHandle resource_view;
+		uint32_t most_detailed_mip = 0;
+		uint32_t mip_levels = 0;
+		uint32_t first_array_slice = 0;
+		uint32_t array_size = 0;
 	};
 }
 namespace Vadon::Utilities

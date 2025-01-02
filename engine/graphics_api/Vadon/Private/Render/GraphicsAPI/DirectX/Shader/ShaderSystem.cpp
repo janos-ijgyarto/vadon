@@ -2,7 +2,6 @@
 #include <Vadon/Private/Render/GraphicsAPI/DirectX/Shader/ShaderSystem.hpp>
 
 #include <Vadon/Private/Render/GraphicsAPI/DirectX/GraphicsAPI.hpp>
-#include <Vadon/Private/Render/GraphicsAPI/DirectX/Shader/Resource.hpp>
 
 #include <Vadon/Utilities/Enum/EnumClass.hpp>
 
@@ -63,25 +62,6 @@ namespace Vadon::Private::Render::DirectX
 
 			return shader_macros;
 		}
-
-		void apply_shader_resources(ShaderType shader_type, GraphicsAPI::DeviceContext* device_context, UINT start_slot, UINT num_views, ID3D11ShaderResourceView* const* shader_resource_views)
-		{
-			switch (shader_type)
-			{
-			case ShaderType::VERTEX:
-				device_context->VSSetShaderResources(start_slot, num_views, shader_resource_views);
-				break;
-			case ShaderType::GEOMETRY:
-				device_context->GSSetShaderResources(start_slot, num_views, shader_resource_views);
-				break;
-			case ShaderType::PIXEL:
-				device_context->PSSetShaderResources(start_slot, num_views, shader_resource_views);
-				break;
-			case ShaderType::COMPUTE:
-				device_context->CSSetShaderResources(start_slot, num_views, shader_resource_views);
-				break;
-			}
-		}
 	}
 
 	ShaderHandle ShaderSystem::create_shader(const ShaderInfo& shader_info)
@@ -114,8 +94,6 @@ namespace Vadon::Private::Render::DirectX
 			break;
 			// TODO: other shader types?
 		}
-
-		m_current_shaders[Vadon::Utilities::to_integral(shader.info.type)] = shader_handle;
 	}
 
 	void ShaderSystem::remove_shader(ShaderHandle /*shader_handle*/)
@@ -174,149 +152,17 @@ namespace Vadon::Private::Render::DirectX
 
 	void ShaderSystem::set_vertex_layout(VertexLayoutHandle layout_handle)
 	{
-		ShaderHandle current_vshader_handle = m_current_shaders[Vadon::Utilities::to_integral(ShaderType::VERTEX)];
-		if (current_vshader_handle.is_valid() == false)
-		{
-			// No shader set!
-			// FIXME: error message?
-			return;
-		}
+		GraphicsAPI::DeviceContext* device_context = m_graphics_api.get_device_context();
 
+		// Invalid handle means we unset the layout
 		if (layout_handle.is_valid() == false)
 		{
-			// Assume we want to unset the input layout
-			GraphicsAPI::DeviceContext* device_context = m_graphics_api.get_device_context();
 			device_context->IASetInputLayout(nullptr);
 			return;
 		}
 
 		VertexLayout& vertex_layout = m_layout_pool.get(layout_handle);
-		if (vertex_layout.shader != current_vshader_handle)
-		{
-			// Cannot set layout to a different shader!
-			// FIXME: error message?
-			return;
-		}
-
-		GraphicsAPI::DeviceContext* device_context = m_graphics_api.get_device_context();
 		device_context->IASetInputLayout(vertex_layout.d3d_input_layout.Get());
-	}
-
-	ResourceViewInfo ShaderSystem::get_resource_view_info(ResourceViewHandle resource_view_handle) const
-	{
-		const ShaderResourceView& resource = m_resource_pool.get(resource_view_handle);
-		return resource.info;
-	}
-
-	void ShaderSystem::apply_resource(ShaderType shader_type, ResourceViewHandle resource_handle, int32_t slot)
-	{
-		ID3D11ShaderResourceView* resource_array[] = { nullptr };
-		if (resource_handle.is_valid() == true)
-		{
-			const ShaderResourceView& resource = m_resource_pool.get(resource_handle);
-			resource_array[0] = resource.d3d_srv.Get();
-		}
-
-		apply_shader_resources(shader_type, m_graphics_api.get_device_context(), slot, 1, resource_array);
-	}
-
-	void ShaderSystem::apply_resource_slots(ShaderType shader_type, const ShaderResourceSpan& resource_views)
-	{
-		static std::vector<ID3D11ShaderResourceView*> temp_srv_vector;
-		temp_srv_vector.clear();
-		temp_srv_vector.reserve(resource_views.resources.size());
-
-		for (const ResourceViewHandle& current_resource_handle : resource_views.resources)
-		{
-			ID3D11ShaderResourceView* current_srv = nullptr;
-			if (current_resource_handle.is_valid() == true)
-			{
-				const ShaderResourceView& current_resource = m_resource_pool.get(current_resource_handle);
-				current_srv = current_resource.d3d_srv.Get();
-			}
-			temp_srv_vector.push_back(current_srv);
-		}
-
-		apply_shader_resources(shader_type, m_graphics_api.get_device_context(), resource_views.start_slot, static_cast<UINT>(resource_views.resources.size()), temp_srv_vector.data());
-	}
-
-	void ShaderSystem::remove_resource(ResourceViewHandle resource_view_handle)
-	{
-		ShaderResourceView& resource = m_resource_pool.get(resource_view_handle);
-		resource.d3d_srv.Reset();
-
-		m_resource_pool.remove(resource_view_handle);
-	}
-
-	ResourceViewHandle ShaderSystem::add_resource_view(D3DShaderResourceView d3d_srv)
-	{
-		D3D11_SHADER_RESOURCE_VIEW_DESC srv_description;
-		ZeroMemory(&srv_description, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
-
-		d3d_srv->GetDesc(&srv_description);
-
-		ResourceViewInfo srv_info = get_srv_info(srv_description);
-
-		return add_resource_view_internal(d3d_srv, srv_info);
-	}
-
-	ResourceViewHandle ShaderSystem::create_resource_view(D3DResourcePtr resource, const ResourceViewInfo& resource_view_info)
-	{
-		D3D11_SHADER_RESOURCE_VIEW_DESC srv_description;
-		ZeroMemory(&srv_description, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
-
-		srv_description.Format = get_dxgi_format(resource_view_info.format);
-		srv_description.ViewDimension = get_d3d_srv_dimension(resource_view_info.type);
-
-		// FIXME: implement other types!
-		switch (resource_view_info.type)
-		{
-		case ResourceType::BUFFER:
-		{
-			srv_description.Buffer.FirstElement = resource_view_info.type_info.first_array_slice;
-			srv_description.Buffer.NumElements = resource_view_info.type_info.array_size;
-		}
-		break;
-		case ResourceType::TEXTURE_2D:
-		{
-			srv_description.Texture2D.MipLevels = resource_view_info.type_info.mip_levels;
-			srv_description.Texture2D.MostDetailedMip = resource_view_info.type_info.most_detailed_mip;
-		}
-		break;
-		default:
-			return ResourceViewHandle();
-		}
-
-		D3DShaderResourceView d3d_srv;
-
-		GraphicsAPI::Device* device = m_graphics_api.get_device();
-		const HRESULT result = device->CreateShaderResourceView(resource, &srv_description, d3d_srv.ReleaseAndGetAddressOf());
-		if (FAILED(result))
-		{
-			// TODO: error message
-			return ResourceViewHandle();
-		}
-
-		return add_resource_view_internal(d3d_srv, resource_view_info);
-	}
-
-	ResourceViewInfo ShaderSystem::get_srv_info(D3D11_SHADER_RESOURCE_VIEW_DESC& srv_desc)
-	{
-		ResourceViewInfo srv_info;
-		srv_info.format = get_graphics_api_data_format(srv_desc.Format);
-		srv_info.type = get_srv_type(srv_desc.ViewDimension);
-
-		switch (srv_info.type)
-		{
-		case ResourceType::TEXTURE_2D:
-		{
-			srv_info.type_info.mip_levels = srv_desc.Texture2D.MipLevels;
-			srv_info.type_info.most_detailed_mip = srv_desc.Texture2D.MostDetailedMip;
-		}
-		break;
-		}
-
-		return srv_info;
 	}
 
 	ShaderSystem::ShaderSystem(Vadon::Core::EngineCoreInterface& core, GraphicsAPI& graphics_api)
@@ -339,7 +185,6 @@ namespace Vadon::Private::Render::DirectX
 		// TODO: add warning in case of leftover resources?
 		m_shader_pool.reset();
 		m_layout_pool.reset();
-		m_resource_pool.reset();
 
 		log_message("Shader system (DirectX) shut down successfully.\n");
 	}
@@ -434,16 +279,5 @@ namespace Vadon::Private::Render::DirectX
 		}
 
 		return shader_blob;
-	}
-
-	ResourceViewHandle ShaderSystem::add_resource_view_internal(D3DShaderResourceView d3d_srv, const ResourceViewInfo& srv_info)
-	{
-		ResourceViewHandle new_resource_handle = m_resource_pool.add();
-
-		ShaderResourceView& new_resource = m_resource_pool.get(new_resource_handle);
-		new_resource.info = srv_info;
-		new_resource.d3d_srv = d3d_srv;
-
-		return new_resource_handle;
 	}
 }

@@ -1,6 +1,7 @@
 add_subdirectory(Buffer)
 add_subdirectory(Pipeline)
 add_subdirectory(RenderTarget)
+add_subdirectory(Resource)
 add_subdirectory(Shader)
 add_subdirectory(Texture)
 

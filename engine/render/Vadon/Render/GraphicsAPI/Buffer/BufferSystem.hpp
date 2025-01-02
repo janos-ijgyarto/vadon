@@ -2,6 +2,7 @@
 #define VADON_RENDER_GRAPHICSAPI_BUFFER_BUFFERSYSTEM_HPP
 #include <Vadon/Render/GraphicsAPI/GraphicsModule.hpp>
 #include <Vadon/Render/GraphicsAPI/Buffer/Buffer.hpp>
+#include <Vadon/Render/GraphicsAPI/Resource/SRV.hpp>
 #include <Vadon/Render/GraphicsAPI/Shader/Shader.hpp>
 #include <Vadon/Utilities/Data/DataUtilities.hpp>
 #include <span>
@@ -44,7 +45,11 @@ namespace Vadon::Render
 		virtual bool is_buffer_valid(BufferHandle buffer_handle) const = 0;
 		virtual void remove_buffer(BufferHandle buffer_handle) = 0;
 
-		// TODO: extend API to enable mapping, read/write, etc.?
+		virtual SRVHandle create_buffer_srv(BufferHandle buffer_handle, const BufferSRVInfo& buffer_srv_info) = 0;
+		// TODO: utility function for UAV
+
+		// NOTE: utility function, calls ResourceSystem interface
+		// FIXME: separate Update and Map/Unmap so we can clearly handle the buffer-specific logic
 		virtual bool buffer_data(BufferHandle buffer_handle, const BufferWriteData& write_data) = 0;
 
 		virtual void set_vertex_buffer(BufferHandle buffer_handle, int32_t slot, int32_t stride = -1, int32_t offset = 0) = 0;
@@ -54,8 +59,6 @@ namespace Vadon::Render
 
 		virtual void set_constant_buffer(ShaderType shader, BufferHandle buffer_handle, int32_t slot) = 0;
 		virtual void set_constant_buffer_slots(ShaderType shader, const ConstantBufferSpan& constant_buffers) = 0;
-
-		virtual ResourceViewHandle create_resource_view(BufferHandle buffer_handle, const BufferResourceViewInfo& resource_view_info) = 0;
 	protected:
 		BufferSystem(Core::EngineCoreInterface& core) 
 			: System(core) 
