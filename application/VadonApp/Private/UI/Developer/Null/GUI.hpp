@@ -21,10 +21,6 @@ namespace VadonApp::Private::UI::Developer::Null
 
 		void render() override;
 
-		void cache_frame(int32_t frame_index) override;
-		void swap_frame(int32_t source_index, int32_t target_index) override;
-		void render_frame(int32_t frame_index) override;
-
 		bool initialize() override;
 		void shutdown() override;
 

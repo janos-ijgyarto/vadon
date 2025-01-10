@@ -1,8 +1,4 @@
 {
-    "id": "3uQnNM11QXOCi6FS8O8YpQ==",
-    "properties": {
-        "name": ""
-    },
     "data": {
         "entities": [
             {
@@ -18,7 +14,7 @@
                                 500.0,
                                 500.0
                             ],
-                            "display_name": ""
+                            "display_name": "Demo map"
                         },
                         "type": "VadonDemo::Model::Map"
                     },
@@ -35,20 +31,14 @@
                     },
                     {
                         "properties": {
-                            "color": [
-                                0.0,
-                                0.48235294222831726,
-                                0.0
-                            ],
-                            "type": 1,
-                            "z_order": 0.0
+                            "resource": "KkqpfJOESB+yH+OZ38LzaQ=="
                         },
-                        "type": "VadonDemo::Model::CanvasComponent"
+                        "type": "VadonDemo::View::ViewComponent"
                     }
                 ],
                 "name": "Map",
                 "parent": 0,
-                "scene": "TqsMmMToSB6ND9daJ92XHw=="
+                "scene": "sYwe60a/S7u7MDxRJ9+tWA=="
             },
             {
                 "components": [
@@ -65,21 +55,16 @@
                     },
                     {
                         "properties": {
-                            "color": [
-                                0.0,
-                                0.0,
-                                1.0
-                            ],
-                            "type": 2,
-                            "z_order": 3.0
+                            "projectile_prefab": "CjiAVUGbQQ6HGqbCh3/QkQ==",
+                            "rate_of_fire": 180.0
                         },
-                        "type": "VadonDemo::Model::CanvasComponent"
+                        "type": "VadonDemo::Model::Weapon"
                     },
                     {
                         "properties": {
-                            "max_health": 100.0
+                            "resource": "JEb0jPI3QZa/2FHo2MAemw=="
                         },
-                        "type": "VadonDemo::Model::Health"
+                        "type": "VadonDemo::View::ViewComponent"
                     },
                     {
                         "properties": {
@@ -90,26 +75,33 @@
                     },
                     {
                         "properties": {
-                            "projectile_prefab": "ZD8zDlZ3TYepiZwi7hxGkA==",
-                            "rate_of_fire": 180.0
+                            "max_health": 100.0
                         },
-                        "type": "VadonDemo::Model::Weapon"
+                        "type": "VadonDemo::Model::Health"
                     },
                     {
-                        "properties": {},
+                        "properties": {
+                            "radius": 0.5
+                        },
+                        "type": "VadonDemo::Model::Collision"
+                    },
+                    {
+                        "properties": {
+                            "damage_delay": 3.0
+                        },
                         "type": "VadonDemo::Model::Player"
                     }
                 ],
                 "name": "Player",
                 "parent": 0,
-                "scene": "Uw8C1hKZRsmH4sEQRuvUlA=="
+                "scene": "ksqzkk6GQRerCUwjgv4FPA=="
             },
             {
                 "components": [
                     {
                         "properties": {
                             "activation_delay": 1.0,
-                            "enemy_prefab": "pkAqPxdbTJ2nT3leq61HeA==",
+                            "enemy_prefab": "upAiG77VR+aZR0UoIsLgvQ==",
                             "level_multiplier": 2.0,
                             "level_up_delay": 10.0,
                             "max_level": 1,
@@ -123,6 +115,10 @@
                 "parent": 0
             }
         ]
+    },
+    "id": "jlis1+rNQpmey1q0JNLhxw==",
+    "properties": {
+        "name": ""
     },
     "type": "Vadon::Scene::Scene"
 }

@@ -52,14 +52,14 @@ namespace Vadon::Scene
 		virtual void remove_resource(ResourceHandle resource_handle) = 0;
 
 		template<typename T>
-		const T* get_resource(ResourceHandle resource_handle) const
+		const T* get_resource(TypedResourceHandle<T> resource_handle) const
 		{
 			static_assert(std::is_base_of_v<Resource, T>);
 			return static_cast<const T*>(get_base_resource(resource_handle));
 		}
 
 		template<typename T>
-		T* get_resource(ResourceHandle resource_handle) { return const_cast<T*>(std::as_const(*this).get_resource<T>(resource_handle)); }
+		T* get_resource(TypedResourceHandle<T> resource_handle) { return const_cast<T*>(std::as_const(*this).get_resource<T>(resource_handle)); }
 
 		virtual const Resource* get_base_resource(ResourceHandle resource_handle) const = 0;
 		Resource* get_base_resource(ResourceHandle resource_handle) { return const_cast<Resource*>(std::as_const(*this).get_base_resource(resource_handle)); }

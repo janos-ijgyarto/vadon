@@ -1,8 +1,10 @@
 #ifndef VADONDEMO_MODEL_COMPONENT_HPP
 #define VADONDEMO_MODEL_COMPONENT_HPP
 #include <VadonDemo/Model/Resource.hpp>
+
 #include <Vadon/ECS/Entity/Entity.hpp>
 #include <Vadon/Scene/Scene.hpp>
+#include <Vadon/Utilities/Math/Vector.hpp>
 
 namespace VadonDemo::Model
 {
@@ -24,21 +26,10 @@ namespace VadonDemo::Model
 		static void register_component();
 	};
 
-	// TODO: implement system that uses resources to allow basic shapes
-	// More complex shapes will use an advanced system that generates visuals based on game state
-	enum class RenderObjectType
+	struct Collision
 	{
-		TRIANGLE,
-		BOX,
-		DIAMOND
-		// TODO: other shapes!
-	};
-
-	struct CanvasComponent
-	{
-		CanvasItemDefHandle item_definition;
-		
-		int32_t render_handle = -1;
+		float radius = 1.0f;
+		size_t collision_data_offset = 0;
 
 		static void register_component();
 	};
@@ -59,11 +50,12 @@ namespace VadonDemo::Model
 
 	struct Player
 	{
+		float damage_delay = 0.0f;
+
 		int score = 0;
 		PlayerInput input;
 
-		// FIXME: use transform!
-		Vadon::Utilities::Vector2 facing = { 1.0f, 0.0f };
+		float damage_timer = 0.0f;
 
 		static void register_component();
 	};
@@ -74,8 +66,9 @@ namespace VadonDemo::Model
 		Vadon::Scene::SceneHandle projectile_prefab;
 		float rate_of_fire = 1.0f;
 
+		bool active = true;
+		Vadon::Utilities::Vector2 aim_direction = { 1.0f, 0.0f };
 		float firing_timer = 0.0f;
-		Vadon::ECS::EntityHandle projectile_prefab_entity;
 
 		static void register_component();
 	};
@@ -84,6 +77,7 @@ namespace VadonDemo::Model
 	{
 		float range = 0.0f;
 		float damage = 0.0f;
+		float remaining_lifetime = 0.0f;
 
 		static void register_component();
 	};
@@ -108,7 +102,6 @@ namespace VadonDemo::Model
 	struct Spawner
 	{
 		Vadon::Scene::SceneHandle enemy_prefab;
-		Vadon::ECS::EntityHandle enemy_prefab_entity;
 
 		float activation_delay = 60.0f;
 		float min_spawn_delay = 0.0f;

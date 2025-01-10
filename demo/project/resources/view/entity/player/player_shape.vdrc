@@ -1,5 +1,5 @@
 {
-    "id": "DYDIDcxQQAaa4VDwTCPdrw==",
+    "id": "JEb0jPI3QZa/2FHo2MAemw==",
     "properties": {
         "color": [
             0.0,
@@ -10,5 +10,5 @@
         "type": 2,
         "z_order": 3.0
     },
-    "type": "VadonDemo::Model::CanvasItemDefinition"
+    "type": "VadonDemo::View::Shape"
 }

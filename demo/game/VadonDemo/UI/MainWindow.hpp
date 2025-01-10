@@ -16,7 +16,7 @@ namespace VadonDemo::UI
 		MainWindow(Core::GameCore& game_core);
 
 		bool initialize();
-		Vadon::Core::TaskGroup update();
+		void update();
 		void render();
 
 		void show_dev_gui();

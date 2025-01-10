@@ -1,11 +1,13 @@
 #include <VadonDemo/Model/Model.hpp>
-
 #include <VadonDemo/Model/Component.hpp>
+
+#include <VadonDemo/View/View.hpp>
+#include <VadonDemo/View/Component.hpp>
 
 #include <VadonEditor/Core/Editor.hpp>
 
 #include <VadonEditor/Model/ModelSystem.hpp>
-#include <VadonEditor/Model/Scene/SceneSystem.hpp>
+#include <VadonEditor/Model/Resource/ResourceSystem.hpp>
 #include <VadonEditor/Platform/PlatformInterface.hpp>
 #include <VadonEditor/Render/RenderSystem.hpp>
 
@@ -50,12 +52,18 @@ namespace
                 return false;
             }
 
+            m_view = std::make_unique<VadonDemo::View::View>(get_engine_core());
+            if (m_view->initialize() == false)
+            {
+                return false;
+            }
+
             if (init_renderer() == false)
             {
                 return false;
             }
 
-            if (init_ecs() == false)
+            if (init_model_view() == false)
             {
                 return false;
             }
@@ -70,7 +78,7 @@ namespace
     private:
         bool init_renderer()
         {
-            m_canvas_context.layers.push_back(m_model->get_canvas_layer());
+            m_canvas_context.layers.push_back(m_view->get_canvas_layer());
 
             {
                 Vadon::Render::RenderTargetSystem& rt_system = get_engine_core().get_system<Vadon::Render::RenderTargetSystem>();
@@ -127,8 +135,10 @@ namespace
                     m_canvas_context.camera.view_rectangle.size = window_size;
                     m_canvas_context.camera.zoom = std::clamp(m_canvas_context.camera.zoom + get_delta_time() * camera_zoom * 10.0f, 0.1f, 10.0f);
 
-                    // No multithreading here, so we render without any async
-                    m_model->render_sync(ecs_world);
+                    // Continuously extract model state and render
+                    // FIXME: make this event-driven so we only update when something changes?
+                    m_view->extract_model_state(ecs_world);
+                    m_view->update(ecs_world, 1.0f);
 
                     editor_render.enqueue_canvas(m_canvas_context);
                 }
@@ -137,32 +147,19 @@ namespace
             return true;
         }
 
-        bool init_ecs()
+        bool init_model_view()
         {
-            VadonEditor::Model::ModelSystem& editor_model = get_system<VadonEditor::Model::ModelSystem>();
-
-            Vadon::ECS::World& ecs_world = editor_model.get_ecs_world();
-            Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
-
-            component_manager.register_event_callback<VadonDemo::Model::Transform2D>(
-                [this](const Vadon::ECS::ComponentEvent& event)
+            VadonEditor::Model::ResourceSystem& resource_system = get_system<VadonEditor::Model::ModelSystem>().get_resource_system();
+            resource_system.register_edit_callback(
+                [this, &resource_system](Vadon::Scene::ResourceID resource_id)
                 {
-                    component_event(event);
+                    const VadonEditor::Model::ResourceInfo resource_info = resource_system.get_database().find_resource_info(resource_id);
+                    if (Vadon::Utilities::TypeRegistry::is_base_of(Vadon::Utilities::TypeRegistry::get_type_id<VadonDemo::View::ViewResource>(), resource_info.info.type_id))
+                    {
+                        m_view->update_view_resource(VadonDemo::View::ViewResourceHandle::from_resource_handle(resource_system.get_resource(resource_id)->get_handle()));
+                    }
                 }
             );
-            component_manager.register_event_callback<VadonDemo::Model::CanvasComponent>(
-                [this](const Vadon::ECS::ComponentEvent& event)
-                {
-                    component_event(event);
-                }
-            );
-
-            editor_model.get_scene_system().register_edit_callback([this, &ecs_world](Vadon::ECS::EntityHandle entity, Vadon::Utilities::TypeID component)
-                {
-                    component_edited(entity, component);
-                }
-            );
-
             return true;
         }
 
@@ -204,35 +201,6 @@ namespace
             return true;
         }
 
-        void component_event(const Vadon::ECS::ComponentEvent& event)
-        {
-            VadonEditor::Model::ModelSystem& editor_model = get_system<VadonEditor::Model::ModelSystem>();
-            Vadon::ECS::World& ecs_world = editor_model.get_ecs_world();
-
-            switch (event.event_type)
-            {
-            case Vadon::ECS::ComponentEventType::REMOVED:
-            {
-                if (event.type_id == Vadon::ECS::ComponentManager::get_component_type_id<VadonDemo::Model::CanvasComponent>())
-                {
-                    m_model->remove_canvas_item(ecs_world, event.owner);
-                }
-                break;
-            }
-            }
-        }
-
-        void component_edited(Vadon::ECS::EntityHandle entity, Vadon::ECS::ComponentID component)
-        {
-            VadonEditor::Model::ModelSystem& editor_model = get_system<VadonEditor::Model::ModelSystem>();
-            Vadon::ECS::World& ecs_world = editor_model.get_ecs_world();
-
-            if (component == Vadon::ECS::ComponentManager::get_component_type_id<VadonDemo::Model::CanvasComponent>())
-            {
-                m_model->update_canvas_item(ecs_world, entity);
-            }
-        }
-
         enum class InputAction
         {
             CAMERA_UP,
@@ -246,8 +214,8 @@ namespace
         std::array<VadonApp::Platform::InputActionHandle, Vadon::Utilities::to_integral(InputAction::ACTION_COUNT)> m_input_actions;
 
         std::unique_ptr<VadonDemo::Model::Model> m_model;
+        std::unique_ptr<VadonDemo::View::View> m_view;
         Vadon::Render::Canvas::RenderContext m_canvas_context;
-        Vadon::Utilities::PacketQueue m_view_queue;
     };
 }
 

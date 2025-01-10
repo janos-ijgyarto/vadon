@@ -17,18 +17,11 @@ namespace VadonEditor::Model
 		return editor_resource_system.get_database().find_resource_info(m_resource_id).path;
 	}
 
-	void Resource::set_path(const ResourcePath& path)
-	{
-		ResourceSystem& editor_resource_system = m_editor.get_system<ModelSystem>().get_resource_system();
-		editor_resource_system.get_database().set_resource_path(m_resource_id, path);
-	}
-
 	bool Resource::save()
 	{
 		if (is_loaded() == false)
 		{
-			// Nothing to do
-			// TODO: should this be an error?
+			Vadon::Core::Logger::log_error("Editor resource: cannot save resource that is not loaded!\n");
 			return true;
 		}
 
@@ -43,6 +36,18 @@ namespace VadonEditor::Model
 		return true;
 	}
 
+	bool Resource::save_as(const ResourcePath& path)
+	{
+		if (is_loaded() == false)
+		{
+			Vadon::Core::Logger::log_error("Editor resource: cannot save resource that is not loaded!\n");
+			return true;
+		}
+
+		EditorResourceDatabase& editor_resource_db = m_editor.get_system<ModelSystem>().get_resource_system().get_database();
+		return editor_resource_db.save_resource_as(m_resource_id, path);
+	}
+
 	bool Resource::load()
 	{
 		if (is_loaded() == true)
@@ -52,17 +57,15 @@ namespace VadonEditor::Model
 		}
 
 		Vadon::Scene::ResourceSystem& resource_system = m_editor.get_engine_core().get_system<Vadon::Scene::ResourceSystem>();
-		m_handle = resource_system.load_resource(m_resource_id);
+		Vadon::Scene::ResourceHandle resource_handle = resource_system.load_resource(m_resource_id);
 
-		if (m_handle.is_valid() == false)
+		if (resource_handle.is_valid() == false)
 		{
 			resource_system.log_error("Editor resource: failed to load resource!\n");
 			return false;
 		}
 
-		m_info = resource_system.get_resource_info(m_handle);
-
-		clear_modified();
+		internal_load(resource_handle);
 		return true;
 	}
 
@@ -117,6 +120,9 @@ namespace VadonEditor::Model
 		Vadon::Scene::Resource* resource_base = resource_system.get_base_resource(m_handle);
 		Vadon::Utilities::TypeRegistry::set_property(resource_base, get_info().type_id, property_name, value);
 
+		// Notify Editor resource system
+		m_editor.get_system<ModelSystem>().get_resource_system().resource_edited(*this);
+
 		notify_modified();
 	}
 
@@ -126,5 +132,15 @@ namespace VadonEditor::Model
 		, m_editor_id(editor_id)
 		, m_modified(false)
 	{
+	}
+
+	void Resource::internal_load(Vadon::Scene::ResourceHandle resource_handle)
+	{
+		m_handle = resource_handle;
+
+		Vadon::Scene::ResourceSystem& resource_system = m_editor.get_engine_core().get_system<Vadon::Scene::ResourceSystem>();
+		m_info = resource_system.get_resource_info(resource_handle);
+
+		clear_modified();
 	}
 }

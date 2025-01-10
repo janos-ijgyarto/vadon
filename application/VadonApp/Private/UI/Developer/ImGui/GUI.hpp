@@ -33,10 +33,6 @@ namespace VadonApp::Private::UI::Developer::ImGUI
 
 		void render() override;
 
-		void cache_frame(int32_t frame_index) override;
-		void swap_frame(int32_t source_index, int32_t target_index) override;
-		void render_frame(int32_t frame_index) override;
-
 		void push_id(std::string_view string_id) override;
 		void push_id(const void* pointer_id) override;
 		void push_id(int32_t int_id) override;

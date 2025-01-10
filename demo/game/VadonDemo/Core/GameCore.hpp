@@ -22,6 +22,11 @@ namespace VadonDemo::Render
 	class RenderSystem;
 }
 
+namespace VadonDemo::View
+{
+	class View;
+}
+
 namespace VadonDemo::UI
 {
 	class MainWindow;
@@ -57,12 +62,15 @@ namespace VadonDemo::Core
 		float get_delta_time() const;
 
 		Model::Model& get_model();
+		View::View& get_view();
 
 		Vadon::ECS::World& get_ecs_world();
 
 		// FIXME: implement a proper CLI parser!
 		bool has_command_line_arg(std::string_view name) const;
 		std::string get_command_line_arg(std::string_view name) const;
+
+		void request_shutdown();
 	private:
 		struct Internal;
 		std::unique_ptr<Internal> m_internal;

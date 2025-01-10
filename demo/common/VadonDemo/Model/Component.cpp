@@ -22,11 +22,11 @@ namespace VadonDemo::Model
 		Vadon::Utilities::TypeRegistry::add_property<Velocity2D>("acceleration", Vadon::Utilities::MemberVariableBind<&Velocity2D::acceleration>().bind_member_getter().bind_member_setter());
 	}
 
-	void CanvasComponent::register_component()
+	void Collision::register_component()
 	{
-		Vadon::ECS::ComponentRegistry::register_component_type<CanvasComponent>();
+		Vadon::ECS::ComponentRegistry::register_component_type<Collision>();
 
-		Vadon::Utilities::TypeRegistry::add_property<CanvasComponent>("item_definition", Vadon::Utilities::MemberVariableBind<&CanvasComponent::item_definition>().bind_member_getter().bind_member_setter());
+		Vadon::Utilities::TypeRegistry::add_property<Collision>("radius", Vadon::Utilities::MemberVariableBind<&Collision::radius>().bind_member_getter().bind_member_setter());
 	}
 
 	void Health::register_component()
@@ -39,6 +39,8 @@ namespace VadonDemo::Model
 	void Player::register_component()
 	{
 		Vadon::ECS::ComponentRegistry::register_component_type<Player>();
+
+		Vadon::Utilities::TypeRegistry::add_property<Player>("damage_delay", Vadon::Utilities::MemberVariableBind<&Player::damage_delay>().bind_member_getter().bind_member_setter());
 	}
 
 	void Weapon::register_component()

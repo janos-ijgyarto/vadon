@@ -4,7 +4,7 @@ namespace VadonApp::UI::Developer
 {
 	struct GUIConfiguration
 	{
-		int32_t frame_count = 0; // Number of frames to cache (helps client code with multithreaded contexts)
+		// TODO
 	};
 }
 #endif

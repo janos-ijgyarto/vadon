@@ -111,8 +111,7 @@ namespace VadonEditor::View
 
 				const Model::ResourcePath new_path = { .root_directory = project_root_dir, .path = file_system.get_relative_path(new_scene_path, project_root_dir) };
 
-				m_saved_scene->set_path(new_path);
-				if (m_saved_scene->save() == true)
+				if (m_saved_scene->save_as(new_path) == true)
 				{
 					const int32_t scene_index = get_scene_index(m_saved_scene);
 					// TODO: assert?
@@ -181,7 +180,19 @@ namespace VadonEditor::View
 		{
 			// New scene, have to set path
 			m_saved_scene = active_scene;
-			m_save_scene_dialog.open();
+
+			if (m_save_scene_dialog.get_current_path().empty() == false)
+			{
+				m_save_scene_dialog.open();
+			}
+			else
+			{
+				// Open project root folder
+				Core::ProjectManager& project_manager = m_editor.get_system<Core::ProjectManager>();
+				Vadon::Core::FileSystem& file_system = m_editor.get_engine_core().get_system<Vadon::Core::FileSystem>();
+				const Vadon::Core::RootDirectoryHandle project_root_dir = project_manager.get_active_project().root_dir_handle;
+				m_save_scene_dialog.open_at(file_system.get_absolute_path(Vadon::Core::FileSystemPath{ .root_directory = project_root_dir, .path = "" }));
+			}
 		}
 		else
 		{

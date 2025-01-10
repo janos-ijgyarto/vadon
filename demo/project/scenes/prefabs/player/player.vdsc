@@ -16,9 +16,16 @@
                     },
                     {
                         "properties": {
-                            "item_definition": "DYDIDcxQQAaa4VDwTCPdrw=="
+                            "projectile_prefab": "CjiAVUGbQQ6HGqbCh3/QkQ==",
+                            "rate_of_fire": 180.0
                         },
-                        "type": "VadonDemo::Model::CanvasComponent"
+                        "type": "VadonDemo::Model::Weapon"
+                    },
+                    {
+                        "properties": {
+                            "resource": "JEb0jPI3QZa/2FHo2MAemw=="
+                        },
+                        "type": "VadonDemo::View::ViewComponent"
                     },
                     {
                         "properties": {
@@ -35,13 +42,14 @@
                     },
                     {
                         "properties": {
-                            "projectile_prefab": "ZD8zDlZ3TYepiZwi7hxGkA==",
-                            "rate_of_fire": 180.0
+                            "radius": 0.5
                         },
-                        "type": "VadonDemo::Model::Weapon"
+                        "type": "VadonDemo::Model::Collision"
                     },
                     {
-                        "properties": {},
+                        "properties": {
+                            "damage_delay": 3.0
+                        },
                         "type": "VadonDemo::Model::Player"
                     }
                 ],
@@ -50,7 +58,7 @@
             }
         ]
     },
-    "id": "Uw8C1hKZRsmH4sEQRuvUlA==",
+    "id": "ksqzkk6GQRerCUwjgv4FPA==",
     "properties": {
         "name": ""
     },

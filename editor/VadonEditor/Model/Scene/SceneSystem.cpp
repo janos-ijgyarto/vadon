@@ -163,8 +163,8 @@ namespace VadonEditor::Model
 		// Scene not yet registered, so we create it
 		// Make sure the resource is actually a scene
 		ResourceSystem& editor_resource_system = m_editor.get_system<ModelSystem>().get_resource_system();
-		const ResourceInfo scene_resource_info = editor_resource_system.get_database().find_resource_info(resource->get_id());
-		if (scene_resource_info.info.type_id != get_scene_type_id())
+		const Vadon::Scene::ResourceInfo scene_resource_info = (resource->is_loaded() == true) ? resource->get_info() : editor_resource_system.get_database().find_resource_info(resource->get_id()).info;
+		if (scene_resource_info.type_id != get_scene_type_id())
 		{
 			m_editor.get_engine_core().log_error("Editor scene system: selected resource is not a scene!\n");
 			return nullptr;

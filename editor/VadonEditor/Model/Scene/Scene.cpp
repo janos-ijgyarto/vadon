@@ -33,14 +33,9 @@ namespace VadonEditor::Model
 		return m_resource->get_path();
 	}
 
-	void Scene::set_path(const Vadon::Core::FileSystemPath& path)
-	{
-		m_resource->set_path(path);
-	}
-
 	bool Scene::save()
 	{
-		if(is_modified() == false)
+		if (is_modified() == false)
 		{
 			// Nothing to do
 			return true;
@@ -48,20 +43,17 @@ namespace VadonEditor::Model
 
 		if (is_open() == false)
 		{
-			// TODO: error?
+			Vadon::Core::Logger::log_error("Editor scene: cannot save scene that has not been opened!\n");
 			return false;
 		}
 
 		// First package the scene data
-		Vadon::Scene::SceneSystem& scene_system = m_editor.get_engine_core().get_system<Vadon::Scene::SceneSystem>();
-		Vadon::ECS::World& ecs_world = m_editor.get_system<ModelSystem>().get_ecs_world();
-
-		if (scene_system.package_scene_data(get_handle(), ecs_world, m_root_entity->get_handle()) == false)
+		if (package_scene_data() == false)
 		{
-			m_editor.get_engine_core().log_error("Editor scene: failed to package Scene data!\n");
 			return false;
 		}
 
+		// Attempt to save the resource
 		if (m_resource->save() == false)
 		{
 			m_editor.get_engine_core().log_error("Editor scene: failed to save Scene!\n");
@@ -69,6 +61,24 @@ namespace VadonEditor::Model
 		}
 
 		return true;
+	}
+
+	bool Scene::save_as(const Vadon::Core::FileSystemPath& path)
+	{
+		if (is_open() == false)
+		{
+			Vadon::Core::Logger::log_error("Editor scene: cannot save scene that has not been opened!\n");
+			return false;
+		}
+
+		// First package the scene data
+		if (package_scene_data() == false)
+		{
+			return false;
+		}
+
+		// Attempt to save the resource
+		return m_resource->save_as(path);
 	}
 
 	bool Scene::load()
@@ -127,7 +137,11 @@ namespace VadonEditor::Model
 			return nullptr;
 		}
 
-		return instantiate_scene_recursive(sub_scene_root_handle, &parent);
+		// Instantiate without parent, then add to parent (to get unique name, etc.)
+		Entity* sub_scene_entity = instantiate_scene_recursive(sub_scene_root_handle, nullptr);
+		parent.add_child(sub_scene_entity);
+
+		return sub_scene_entity;
 	}
 
 	bool Scene::remove_entity(Entity& entity)
@@ -211,28 +225,42 @@ namespace VadonEditor::Model
 	Entity* Scene::internal_add_new_entity(Entity* parent)
 	{
 		Vadon::ECS::World& ecs_world = m_editor.get_system<ModelSystem>().get_ecs_world();
-		Vadon::ECS::EntityHandle new_entity_handle = ecs_world.get_entity_manager().create_entity();
+		Vadon::ECS::EntityManager& entity_manager = ecs_world.get_entity_manager();
 
-		Entity* new_entity = internal_create_entity(new_entity_handle, parent);
-		new_entity->set_name("Entity");
+		Vadon::ECS::EntityHandle new_entity_handle = entity_manager.create_entity();
+		entity_manager.set_entity_name(new_entity_handle, "Entity");
+
+		// Create with no parent to get default initialization of editor Entity
+		Entity* new_entity = internal_create_entity(new_entity_handle, nullptr);
+		if (parent != nullptr)
+		{
+			// Add to parent here to both update ECS state and ensure unique name
+			parent->add_child(new_entity);
+		}
 
 		return new_entity;
 	}
 	
 	Entity* Scene::internal_create_entity(Vadon::ECS::EntityHandle entity_handle, Entity* parent)
 	{
+		// NOTE: at this point, all the state in the editor Entity is initialized from and validated against the ECS backend
+		// Subsequent operations are all handled as edits
 		SceneSystem& model_scene_system = m_editor.get_system<Model::ModelSystem>().get_scene_system();
 		Entity* new_entity = new Entity(m_editor, entity_handle, model_scene_system.get_new_entity_id(), this);
 
 		Vadon::ECS::World& ecs_world = m_editor.get_system<ModelSystem>().get_ecs_world();
 		Vadon::ECS::EntityManager& entity_manager = ecs_world.get_entity_manager();
 
-		new_entity->set_name(entity_manager.get_entity_name(entity_handle));
+		new_entity->m_name = entity_manager.get_entity_name(entity_handle);
 
 		if (parent != nullptr)
 		{
+			const Vadon::ECS::EntityHandle parent_handle = entity_manager.get_entity_parent(entity_handle);
+			assert(parent_handle == parent->m_entity_handle);
+		
 			// Add to parent
-			parent->add_child(new_entity);
+			parent->m_children.push_back(new_entity);
+			new_entity->m_parent = parent;
 		}
 
 		notify_modified();
@@ -299,5 +327,19 @@ namespace VadonEditor::Model
 	{
 		// Remove the root
 		internal_remove_entity(m_root_entity);
+	}
+
+	bool Scene::package_scene_data()
+	{
+		Vadon::Scene::SceneSystem& scene_system = m_editor.get_engine_core().get_system<Vadon::Scene::SceneSystem>();
+		Vadon::ECS::World& ecs_world = m_editor.get_system<ModelSystem>().get_ecs_world();
+
+		if (scene_system.package_scene_data(get_handle(), ecs_world, m_root_entity->get_handle()) == false)
+		{
+			m_editor.get_engine_core().log_error("Editor scene: failed to package Scene data!\n");
+			return false;
+		}
+
+		return true;
 	}
 }

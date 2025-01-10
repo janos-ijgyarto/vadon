@@ -1,14 +1,14 @@
 {
-    "id": "MaOi3W7+QQCl81xiVbHJTg==",
+    "id": "KkqpfJOESB+yH+OZ38LzaQ==",
     "properties": {
         "color": [
             0.0,
-            0.6821705102920532,
+            0.47843137383461,
             0.0
         ],
         "name": "",
         "type": 1,
         "z_order": 0.0
     },
-    "type": "VadonDemo::Model::CanvasItemDefinition"
+    "type": "VadonDemo::View::Shape"
 }
