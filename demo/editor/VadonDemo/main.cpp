@@ -22,8 +22,6 @@
 #include <Vadon/Render/Canvas/Context.hpp>
 #include <Vadon/Render/GraphicsAPI/RenderTarget/RenderTargetSystem.hpp>
 
-#include <Vadon/Utilities/Container/Queue/PacketQueue.hpp>
-
 namespace
 {
     // FIXME: should split this up into subsystems!

@@ -9,8 +9,6 @@
 #include <Vadon/Render/Frame/FrameSystem.hpp>
 #include <Vadon/Render/GraphicsAPI/RenderTarget/RenderTargetSystem.hpp>
 
-#include <Vadon/Utilities/Container/Concurrent/ConcurrentQueue.hpp>
-
 namespace VadonDemo::Render
 {
 	struct RenderSystem::Internal
@@ -20,12 +18,9 @@ namespace VadonDemo::Render
 
 		Vadon::Render::WindowHandle m_render_window;
 
-		Vadon::Utilities::ConcurrentQueue<VadonApp::Platform::WindowEvent> m_window_event_queue;
-
 		Internal(Core::GameCore& game_core)
 			: m_game_core(game_core)
 		{
-
 		}
 
 		void set_frame_graph(const Vadon::Render::FrameGraphInfo& graph_info)
@@ -78,8 +73,14 @@ namespace VadonDemo::Render
 							case VadonApp::Platform::WindowEventType::RESIZED:
 							case VadonApp::Platform::WindowEventType::SIZE_CHANGED:
 							{
-								// These window events must be handled in the render task context!
-								m_window_event_queue.enqueue(window_event);
+								// Get drawable size							
+								VadonApp::Core::Application& engine_app = m_game_core.get_engine_app();								
+								VadonApp::Platform::WindowHandle main_window = m_game_core.get_platform_interface().get_main_window();
+								const Vadon::Utilities::Vector2i drawable_size = engine_app.get_system<VadonApp::Platform::PlatformInterface>().get_window_drawable_size(main_window);
+
+								// Resize the window render target
+								Vadon::Render::RenderTargetSystem& rt_system = engine_app.get_engine_core().get_system<Vadon::Render::RenderTargetSystem>();
+								rt_system.resize_window(m_render_window, drawable_size);
 							}
 							break;
 							}
@@ -101,10 +102,6 @@ namespace VadonDemo::Render
 				return;
 			}
 
-			// Process any events that might have come in
-			process_events();
-
-			// FIXME: split this up so it can be done in multiple tasks?
 			VadonApp::Core::Application& engine_app = m_game_core.get_engine_app();
 			Vadon::Core::EngineCoreInterface& engine_core = engine_app.get_engine_core();
 
@@ -115,31 +112,6 @@ namespace VadonDemo::Render
 			// Present to the main window
 			Vadon::Render::RenderTargetSystem& rt_system = engine_core.get_system<Vadon::Render::RenderTargetSystem>();
 			rt_system.update_window(m_render_window);
-		}
-
-		void process_events()
-		{
-			VadonApp::Core::Application& engine_app = m_game_core.get_engine_app();
-
-			VadonApp::Platform::WindowEvent window_event;
-			while (m_window_event_queue.try_dequeue(window_event))
-			{
-				switch (window_event.type)
-				{
-				case VadonApp::Platform::WindowEventType::RESIZED:
-				case VadonApp::Platform::WindowEventType::SIZE_CHANGED:
-				{
-					// Get drawable size															
-					VadonApp::Platform::WindowHandle main_window = m_game_core.get_platform_interface().get_main_window();
-					const Vadon::Utilities::Vector2i drawable_size = engine_app.get_system<VadonApp::Platform::PlatformInterface>().get_window_drawable_size(main_window);
-
-					// Resize the window render target
-					Vadon::Render::RenderTargetSystem& rt_system = engine_app.get_engine_core().get_system<Vadon::Render::RenderTargetSystem>();
-					rt_system.resize_window(m_render_window, drawable_size);
-				}
-					break;
-				}
-			}
 		}
 	};
 

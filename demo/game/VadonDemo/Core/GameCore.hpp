@@ -9,7 +9,7 @@ namespace VadonApp::Core
 
 namespace VadonDemo::Model
 {
-	class Model;
+	class GameModel;
 }
 
 namespace VadonDemo::Platform
@@ -24,12 +24,12 @@ namespace VadonDemo::Render
 
 namespace VadonDemo::View
 {
-	class View;
+	class GameView;
 }
 
 namespace VadonDemo::UI
 {
-	class MainWindow;
+	class UISystem;
 }
 
 namespace Vadon::Core
@@ -57,12 +57,12 @@ namespace VadonDemo::Core
 
 		Platform::PlatformInterface& get_platform_interface();
 		Render::RenderSystem& get_render_system();
-		UI::MainWindow& get_main_window();
+		UI::UISystem& get_ui_system();
 
 		float get_delta_time() const;
 
-		Model::Model& get_model();
-		View::View& get_view();
+		Model::GameModel& get_model();
+		View::GameView& get_view();
 
 		Vadon::ECS::World& get_ecs_world();
 

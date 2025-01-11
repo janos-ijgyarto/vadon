@@ -1,10 +1,10 @@
 #include <VadonDemo/Core/GameCore.hpp>
 
-#include <VadonDemo/Model/Model.hpp>
+#include <VadonDemo/Model/GameModel.hpp>
 #include <VadonDemo/Platform/PlatformInterface.hpp>
 #include <VadonDemo/Render/RenderSystem.hpp>
-#include <VadonDemo/UI/MainWindow.hpp>
-#include <VadonDemo/View/View.hpp>
+#include <VadonDemo/UI/UISystem.hpp>
+#include <VadonDemo/View/GameView.hpp>
 
 #include <VadonApp/Core/Application.hpp>
 
@@ -18,8 +18,7 @@
 
 #include <Vadon/ECS/World/World.hpp>
 
-#include <Vadon/Utilities/Data/Visitor.hpp>
-
+#include <chrono>
 #include <format>
 
 namespace VadonDemo::Core
@@ -33,11 +32,12 @@ namespace VadonDemo::Core
 
 	struct GameCore::Internal
 	{
-		std::unique_ptr<Model::Model> m_model;
-		std::unique_ptr<View::View> m_view;
+		Model::GameModel m_game_model;
 		Platform::PlatformInterface m_platform_interface;
 		Render::RenderSystem m_render_system;
-		UI::MainWindow m_main_window; // FIXME: should use a UI system instead!
+		UI::UISystem m_ui_system;
+		View::GameView m_game_view;
+
 		VadonApp::Core::Application::Instance m_engine_app;
 
 		Vadon::ECS::World m_ecs_world;
@@ -51,10 +51,12 @@ namespace VadonDemo::Core
 
 		bool m_shutdown_requested = false;
 
-		Internal(GameCore& game_core)
-			: m_platform_interface(game_core)
+		Internal(GameCore& game_core, Vadon::Core::EngineEnvironment& environment)
+			: m_game_model(game_core, environment)
+			, m_platform_interface(game_core)
 			, m_render_system(game_core)
-			, m_main_window(game_core)
+			, m_ui_system(game_core)
+			, m_game_view(game_core)
 		{
 
 		}
@@ -70,20 +72,6 @@ namespace VadonDemo::Core
 				return false;
 			}
 
-			// FIXME: need to do this because app and engine only start to exist after initialization
-			// Might want to be able to decouple this?
-			m_model = std::make_unique<Model::Model>(m_engine_app->get_engine_core());
-			if (m_model->initialize() != true)
-			{
-				return false;
-			}
-
-			m_view = std::make_unique<View::View>(m_engine_app->get_engine_core());
-			if (m_view->initialize() != true)
-			{
-				return false;
-			}
-
 			if (!m_platform_interface.initialize())
 			{
 				return false;
@@ -94,12 +82,31 @@ namespace VadonDemo::Core
 				return false;
 			}
 
-			if (!m_main_window.initialize())
+			if (m_ui_system.initialize() == false)
 			{
 				return false;
 			}
 
-			register_app_event_handlers();
+			// All subsystems initialized, now we initialize the game model and view
+			if (m_game_model.initialize() == false)
+			{
+				return false;
+			}
+
+			if (m_game_view.initialize() == false)
+			{
+				return false;
+			}
+
+			if (m_game_model.init_simulation() == false)
+			{
+				return false;
+			}
+
+			if (m_game_view.init_visualization() == false)
+			{
+				return false;
+			}
 
 			Vadon::Core::Logger::log_message("Vadon Demo app initialized.\n");
 
@@ -165,59 +172,6 @@ namespace VadonDemo::Core
 			return m_engine_app->initialize(app_configuration);
 		}
 
-		void register_app_event_handlers()
-		{
-			// Register callback in platform interface
-			// FIXME: do this from subsystem!
-			m_engine_app->get_system<VadonApp::Platform::PlatformInterface>().register_event_callback(
-				[this](const VadonApp::Platform::PlatformEventList& platform_events)
-				{
-					auto platform_event_visitor = Vadon::Utilities::VisitorOverloadList{
-						[this](const VadonApp::Platform::QuitEvent&)
-						{
-							// Platform is trying to quit, so we request stop
-							request_shutdown();
-						},
-						[this](const VadonApp::Platform::KeyboardEvent& keyboard_event)
-						{
-							if (keyboard_event.key == VadonApp::Platform::KeyCode::BACKQUOTE)
-							{
-								m_main_window.show_dev_gui();
-							}
-							else if (keyboard_event.key == VadonApp::Platform::KeyCode::RETURN)
-							{
-								if (keyboard_event.down == false && Vadon::Utilities::to_bool(keyboard_event.modifiers & VadonApp::Platform::KeyModifiers::LEFT_ALT))
-								{
-									m_platform_interface.toggle_fullscreen();
-								}
-							}
-						},
-						[](auto) { /* Default, do nothing */ }
-					};
-
-					// FIXME: make this more concise using std::visit?
-					for (const VadonApp::Platform::PlatformEvent& current_event : platform_events)
-					{
-						std::visit(platform_event_visitor, current_event);
-					}
-				}
-			);
-
-			// Handle console events
-			// TODO: dispatch console events properly!
-			{
-				VadonApp::UI::Console& console = m_engine_app->get_system<VadonApp::UI::UISystem>().get_console();
-				console.register_event_handler(
-					[this, &console](const VadonApp::UI::ConsoleCommandEvent& command_event)
-					{
-						// TODO: parse command
-						console.log_error(std::format("Command not recognized: \"{}\"\n", command_event.text));
-						return true;
-					}
-				);
-			}
-		}
-
 		int execute(int argc, char* argv[])
 		{
 			if (initialize(argc, argv) == false)
@@ -237,8 +191,14 @@ namespace VadonDemo::Core
 				// First process platform events
 				m_platform_interface.update(); 
 				
-				m_main_window.update();
-				m_main_window.render();
+				// Update model and view
+				m_game_model.update();
+				m_game_view.update();
+
+				// Update the UI
+				m_ui_system.update();
+
+				// Render the results
 				m_render_system.update();
 			}
 
@@ -283,10 +243,9 @@ namespace VadonDemo::Core
 	};
 
 	GameCore::GameCore(Vadon::Core::EngineEnvironment& environment)
-		: m_internal(std::make_unique<Internal>(*this))
+		: m_internal(std::make_unique<Internal>(*this, environment))
 	{
 		VadonApp::Core::Application::init_application_environment(environment);
-		VadonDemo::Model::Model::init_engine_environment(environment);
 	}
 
 	GameCore::~GameCore() = default;
@@ -310,10 +269,10 @@ namespace VadonDemo::Core
 	{
 		return m_internal->m_render_system;
 	}
-
-	UI::MainWindow& GameCore::get_main_window()
+	
+	UI::UISystem& GameCore::get_ui_system()
 	{
-		return m_internal->m_main_window;
+		return m_internal->m_ui_system;
 	}
 
 	float GameCore::get_delta_time() const
@@ -321,14 +280,14 @@ namespace VadonDemo::Core
 		return m_internal->m_delta_time;
 	}
 
-	Model::Model& GameCore::get_model()
+	Model::GameModel& GameCore::get_model()
 	{
-		return *m_internal->m_model;
+		return m_internal->m_game_model;
 	}
 
-	View::View& GameCore::get_view()
+	View::GameView& GameCore::get_view()
 	{
-		return *m_internal->m_view;
+		return m_internal->m_game_view;
 	}
 
 	Vadon::ECS::World& GameCore::get_ecs_world()
