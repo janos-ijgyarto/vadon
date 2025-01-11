@@ -60,9 +60,7 @@ namespace VadonApp::UI::Developer
 
 		virtual void render() = 0; // Render the last frame directly (NOTE: this function assumes the shader and render target are set)
 
-		virtual void cache_frame(int32_t frame_index) = 0; // Store frame render data (useful for multithreaded contexts)
-		virtual void swap_frame(int32_t source_index, int32_t target_index) = 0; // Swap cached frame data (allows creating a "ready buffer" for multithreaded environments)
-		virtual void render_frame(int32_t frame_index) = 0; // Render from cached frame
+		// TODO: revise multithreaded rendering by getting a "render context", drawing to it, then returning it!
 
 		virtual void push_id(std::string_view string_id) = 0;
 		virtual void push_id(const void* pointer_id) = 0;

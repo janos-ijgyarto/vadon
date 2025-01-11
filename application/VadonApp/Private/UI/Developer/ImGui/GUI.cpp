@@ -328,7 +328,8 @@ float4 main(PS_INPUT input) : SV_Target
     struct GUISystem::Internal
     {
         GUISystem& m_gui_system;
-        std::vector<DrawData> m_frame_cache;
+
+        DrawData m_draw_data;
 
         Internal(GUISystem& gui_system)
             : m_gui_system(gui_system)
@@ -622,12 +623,7 @@ float4 main(PS_INPUT input) : SV_Target
             return false;
         }
 
-        // Create frame cache based on config
-        const VadonApp::UI::Developer::GUIConfiguration& dev_gui_config = m_application.get_config().ui_config.dev_gui_config;
-        if (dev_gui_config.frame_count > 0)
-        {
-            m_internal->m_frame_cache.resize(dev_gui_config.frame_count);
-        }
+        // TODO: use configuration?
 
         log_message("ImGui initialized successfully!\n");
         return true;
@@ -699,45 +695,15 @@ float4 main(PS_INPUT input) : SV_Target
 
     void GUISystem::render()
     {
-        // Create a static draw data object (so we don't keep re-allocating)
-        static DrawData s_draw_data;
-
         // Write, buffer, and then render the draw data directly
-        if (!m_internal->write_draw_data(s_draw_data))
+        if (!m_internal->write_draw_data(m_internal->m_draw_data))
         {
             // Nothing to draw
             return;
         }
 
-        m_internal->buffer_draw_data(s_draw_data);
-        m_internal->render_draw_data(s_draw_data);
-    }
-
-    void GUISystem::cache_frame(int32_t frame_index)
-    {
-        // FIXME: range check?
-        DrawData& draw_data = m_internal->m_frame_cache[frame_index];
-        m_internal->write_draw_data(draw_data);
-    }
-
-    void GUISystem::swap_frame(int32_t source_index, int32_t target_index)
-    {
-        DrawData& source_frame = m_internal->m_frame_cache[source_index];
-        DrawData& target_frame = m_internal->m_frame_cache[target_index];
-
-        target_frame.swap(source_frame);
-    }
-
-    void GUISystem::render_frame(int32_t frame_index)
-    {
-        const DrawData& draw_data = m_internal->m_frame_cache[frame_index];
-        if (!draw_data.is_valid())
-        {
-            // Nothing to draw
-            return;
-        }
-        m_internal->buffer_draw_data(draw_data);
-        m_internal->render_draw_data(draw_data);
+        m_internal->buffer_draw_data(m_internal->m_draw_data);
+        m_internal->render_draw_data(m_internal->m_draw_data);
     }
 
     void GUISystem::push_id(std::string_view string_id)

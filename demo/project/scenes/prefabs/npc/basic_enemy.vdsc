@@ -16,9 +16,16 @@
                     },
                     {
                         "properties": {
-                            "item_definition": "GHVCxMV1Q62o9xWX/vcyOw=="
+                            "resource": "JemhbTdMQnCMb+X4G0bw2A=="
                         },
-                        "type": "VadonDemo::Model::CanvasComponent"
+                        "type": "VadonDemo::View::ViewComponent"
+                    },
+                    {
+                        "properties": {
+                            "acceleration": 0.0,
+                            "top_speed": 10.0
+                        },
+                        "type": "VadonDemo::Model::Velocity2D"
                     },
                     {
                         "properties": {
@@ -28,14 +35,13 @@
                     },
                     {
                         "properties": {
-                            "acceleration": 1.0,
-                            "top_speed": 10.0
+                            "radius": 1.0
                         },
-                        "type": "VadonDemo::Model::Velocity2D"
+                        "type": "VadonDemo::Model::Collision"
                     },
                     {
                         "properties": {
-                            "damage": 5.0,
+                            "damage": 10.0,
                             "score_reward": 100
                         },
                         "type": "VadonDemo::Model::Enemy"
@@ -46,7 +52,7 @@
             }
         ]
     },
-    "id": "pkAqPxdbTJ2nT3leq61HeA==",
+    "id": "upAiG77VR+aZR0UoIsLgvQ==",
     "properties": {
         "name": ""
     },

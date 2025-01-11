@@ -1,6 +1,5 @@
 #ifndef VADONDEMO_UI_MAINWINDOW_HPP
 #define VADONDEMO_UI_MAINWINDOW_HPP
-#include <Vadon/Core/Task/Task.hpp>
 #include <memory>
 namespace VadonDemo::Core
 {
@@ -8,23 +7,24 @@ namespace VadonDemo::Core
 }
 namespace VadonDemo::UI
 {
+	class UISystem;
+
 	class MainWindow
 	{
 	public:
 		~MainWindow();
+
+		void show();
 	private:
 		MainWindow(Core::GameCore& game_core);
 
 		bool initialize();
-		Vadon::Core::TaskGroup update();
-		void render();
-
-		void show_dev_gui();
+		void update();
 
 		struct Internal;
 		std::unique_ptr<Internal> m_internal;
 
-		friend Core::GameCore;
+		friend UISystem;
 	};
 }
 #endif

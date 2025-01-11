@@ -558,6 +558,8 @@ namespace Vadon::Private::Scene
 
 	bool SceneSystem::parse_scene_entity(ECS::World& ecs_world, ECS::EntityHandle entity, int32_t parent_index, SceneData& scene_data, std::vector<SceneID>& dependency_stack)
 	{
+		using ErasedDataType = Vadon::Utilities::ErasedDataType;
+
 		Vadon::ECS::EntityManager& entity_manager = ecs_world.get_entity_manager();
 		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
 		const SceneComponent* scene_comp = component_manager.get_component<SceneComponent>(entity);
@@ -575,6 +577,8 @@ namespace Vadon::Private::Scene
 
 		entity_data.name = entity_manager.get_entity_name(entity);
 		entity_data.parent = parent_index;
+
+		Vadon::Scene::ResourceSystem& resource_system = m_engine_core.get_system<Vadon::Scene::ResourceSystem>();
 
 		if (scene_comp != nullptr)
 		{
@@ -616,8 +620,27 @@ namespace Vadon::Private::Scene
 			{
 				SceneData::ComponentData::Property& current_property_data = current_component_data.properties.emplace_back();
 				current_property_data.name = current_component_property.name;
-				current_property_data.value = current_component_property.value;
 				current_property_data.data_type = current_component_property.data_type;
+
+				switch (current_component_property.data_type.type)
+				{
+				case ErasedDataType::TRIVIAL:
+					current_property_data.value = current_component_property.value;
+					break;
+				case ErasedDataType::RESOURCE_HANDLE:
+				{
+					Vadon::Scene::ResourceHandle temp_resource_handle = std::get<Vadon::Scene::ResourceHandle>(current_component_property.value);
+					if (temp_resource_handle.is_valid() == true)
+					{
+						current_property_data.value = resource_system.get_resource_info(temp_resource_handle).id;
+					}
+					else
+					{
+						current_property_data.value = ResourceID();
+					}
+				}
+					break;
+				}
 			}
 		}
 

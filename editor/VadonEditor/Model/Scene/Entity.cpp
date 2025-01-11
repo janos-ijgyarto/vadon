@@ -349,7 +349,7 @@ namespace VadonEditor::Model
 		while (child_name_search(unique_child_name) == true)
 		{
 			++attempt_count;
-			unique_child_name = std::format("{}_{}", child->get_name(), attempt_count);
+			unique_child_name = std::format("{}_{}", name, attempt_count);
 		}
 
 		child->internal_set_name(unique_child_name);

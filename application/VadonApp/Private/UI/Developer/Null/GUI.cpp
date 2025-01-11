@@ -30,21 +30,6 @@ namespace VadonApp::Private::UI::Developer::Null
         // TODO!!!
     }
 
-    void GUISystem::cache_frame(int32_t /*frame_index*/)
-    {
-        // TODO!!!
-    }
-
-    void GUISystem::swap_frame(int32_t /*source_index*/, int32_t /*target_index*/)
-    {
-        // TODO!!!
-    }
-
-    void GUISystem::render_frame(int32_t /*frame_index*/)
-    {
-        // TODO!!!
-    }
-
     bool GUISystem::initialize()
     {
         // TODO!!!

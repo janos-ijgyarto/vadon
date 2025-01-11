@@ -9,7 +9,7 @@ namespace VadonApp::Core
 
 namespace VadonDemo::Model
 {
-	class Model;
+	class GameModel;
 }
 
 namespace VadonDemo::Platform
@@ -22,9 +22,14 @@ namespace VadonDemo::Render
 	class RenderSystem;
 }
 
+namespace VadonDemo::View
+{
+	class GameView;
+}
+
 namespace VadonDemo::UI
 {
-	class MainWindow;
+	class UISystem;
 }
 
 namespace Vadon::Core
@@ -52,17 +57,20 @@ namespace VadonDemo::Core
 
 		Platform::PlatformInterface& get_platform_interface();
 		Render::RenderSystem& get_render_system();
-		UI::MainWindow& get_main_window();
+		UI::UISystem& get_ui_system();
 
 		float get_delta_time() const;
 
-		Model::Model& get_model();
+		Model::GameModel& get_model();
+		View::GameView& get_view();
 
 		Vadon::ECS::World& get_ecs_world();
 
 		// FIXME: implement a proper CLI parser!
 		bool has_command_line_arg(std::string_view name) const;
 		std::string get_command_line_arg(std::string_view name) const;
+
+		void request_shutdown();
 	private:
 		struct Internal;
 		std::unique_ptr<Internal> m_internal;

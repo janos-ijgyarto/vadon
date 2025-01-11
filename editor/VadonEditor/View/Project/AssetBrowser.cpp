@@ -280,9 +280,7 @@ namespace VadonEditor::View
 		const Vadon::Core::RootDirectoryHandle project_root_dir = project_manager.get_active_project().root_dir_handle;
 
 		const Model::ResourcePath new_resource_path = { .root_directory = project_root_dir, .path = std::string(path) };
-
-		new_resource->set_path(new_resource_path);
-		if (new_resource->save() == false)
+		if (new_resource->save_as(new_resource_path) == false)
 		{
 			// TODO: delete resource?
 			m_editor.get_engine_core().log_error("Asset browser: failed to save resource!\n");

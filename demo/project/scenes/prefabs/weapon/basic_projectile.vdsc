@@ -16,9 +16,9 @@
                     },
                     {
                         "properties": {
-                            "item_definition": "SH21xudPT76RxuogXgmtzA=="
+                            "resource": "XdMJARXYR1qzTxOyNDOkzw=="
                         },
-                        "type": "VadonDemo::Model::CanvasComponent"
+                        "type": "VadonDemo::View::ViewComponent"
                     },
                     {
                         "properties": {
@@ -26,6 +26,12 @@
                             "top_speed": 300.0
                         },
                         "type": "VadonDemo::Model::Velocity2D"
+                    },
+                    {
+                        "properties": {
+                            "radius": 1.0
+                        },
+                        "type": "VadonDemo::Model::Collision"
                     },
                     {
                         "properties": {
@@ -40,7 +46,7 @@
             }
         ]
     },
-    "id": "ZD8zDlZ3TYepiZwi7hxGkA==",
+    "id": "CjiAVUGbQQ6HGqbCh3/QkQ==",
     "properties": {
         "name": ""
     },

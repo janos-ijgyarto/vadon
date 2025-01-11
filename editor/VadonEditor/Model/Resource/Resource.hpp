@@ -29,9 +29,9 @@ namespace VadonEditor::Model
 		Vadon::Scene::ResourceInfo get_info() const { return m_info; }
 
 		ResourcePath get_path() const;
-		void set_path(const ResourcePath& path);
 
 		bool save();
+		bool save_as(const ResourcePath& path);
 		bool load();
 
 		void unload();
@@ -43,6 +43,8 @@ namespace VadonEditor::Model
 		void edit_property(std::string_view property_name, const Vadon::Utilities::Variant& value);
 	private:
 		Resource(Core::Editor& editor, ResourceID resource_id, EditorResourceID editor_id);
+
+		void internal_load(Vadon::Scene::ResourceHandle resource_handle);
 
 		Core::Editor& m_editor;
 

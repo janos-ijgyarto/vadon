@@ -20,12 +20,12 @@ namespace VadonEditor::Model
 		Vadon::Scene::ResourceInfo get_info() const;
 
 		Vadon::Core::FileSystemPath get_path() const;
-		void set_path(const Vadon::Core::FileSystemPath& path);
 
 		Entity* get_root() const { return m_root_entity; }
 		bool is_open() const { return m_root_entity != nullptr; }
 
 		bool save();
+		bool save_as(const Vadon::Core::FileSystemPath& path);
 		bool load();
 
 		bool is_loaded() const;
@@ -57,6 +57,8 @@ namespace VadonEditor::Model
 
 		void instantiate_from_root();
 		void clear_contents();
+
+		bool package_scene_data();
 
 		Core::Editor& m_editor;
 

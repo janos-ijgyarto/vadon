@@ -28,37 +28,7 @@ namespace VadonEditor::Model
 			return false;
 		}
 
-		// FIXME: support binary file serialization!
-		// Solution: have file system create the appropriate serializer!
-		Vadon::Core::FileSystem::RawFileDataBuffer resource_file_buffer;
-		Vadon::Utilities::Serializer::Instance serializer = Vadon::Utilities::Serializer::create_serializer(resource_file_buffer, Vadon::Utilities::Serializer::Type::JSON, Vadon::Utilities::Serializer::Mode::WRITE);
-
-		if (serializer->initialize() == false)
-		{
-			resource_system.log_error("Editor resource database: failed to initialize serializer while saving resource!\n");
-			return false;
-		}
-
-		if (resource_system.save_resource(*serializer, resource_handle) == false)
-		{
-			resource_system.log_error("Editor resource database: failed to serialize resource data!\n");
-			return false;
-		}
-
-		if (serializer->finalize() == false)
-		{
-			resource_system.log_error("Editor resource database: failed to finalize serializer after saving resource!\n");
-			return false;
-		}
-
-		Vadon::Core::FileSystem& file_system = m_editor.get_engine_core().get_system<Vadon::Core::FileSystem>();
-		if (file_system.save_file(editor_resource_info->path, resource_file_buffer) == false)
-		{
-			resource_system.log_error("Editor resource database: failed to save resource data to file!\n");
-			return false;
-		}
-
-		return true;
+		return internal_save_resource(resource_system, resource_handle, editor_resource_info->path);
 	}
 
 	Vadon::Scene::ResourceHandle ResourceSystem::EditorResourceDatabaseImpl::load_resource(Vadon::Scene::ResourceSystem& resource_system, ResourceID resource_id)
@@ -125,20 +95,34 @@ namespace VadonEditor::Model
 
 		return ResourceInfo();
 	}
-	
-	void ResourceSystem::EditorResourceDatabaseImpl::set_resource_path(ResourceID resource_id, const ResourcePath& path)
+
+	bool ResourceSystem::EditorResourceDatabaseImpl::save_resource_as(ResourceID resource_id, const ResourcePath& path)
 	{
-		const ResourceInfo* prev_editor_info = internal_find_resource_info(resource_id);
-		if (prev_editor_info != nullptr)
+		if (internal_find_resource_info(resource_id) != nullptr)
 		{
-			const Vadon::Scene::ResourceInfo prev_info = prev_editor_info->info;
-			internal_remove_resource(resource_id);
-			internal_import_resource(prev_info, path);
+			Vadon::Core::Logger::log_error("Editor resource database: cannot save-as a resource that is already imported!\n");
+			return false;
 		}
-		else
+
+		Vadon::Core::EngineCoreInterface& engine_core = m_editor.get_engine_core();
+		Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
+
+		const Vadon::Scene::ResourceHandle resource_handle = resource_system.find_resource(resource_id);
+		if (resource_handle.is_valid() == false)
 		{
-			// TODO: error?
+			Vadon::Core::Logger::log_error("Editor resource database: cannot save resource that isn't loaded!\n");
+			return false;
 		}
+
+		if (internal_save_resource(resource_system, resource_handle, path) == false)
+		{
+			Vadon::Core::Logger::log_error("Editor resource database: failed to save resource!\n");
+			return false;
+		}
+
+		// Success, add resource to DB
+		internal_import_resource(resource_system.get_resource_info(resource_handle), path);
+		return true;
 	}
 	
 	ResourceID ResourceSystem::EditorResourceDatabaseImpl::import_resource(const ResourcePath& path)
@@ -243,6 +227,42 @@ namespace VadonEditor::Model
 		}
 	}
 
+	bool ResourceSystem::EditorResourceDatabaseImpl::internal_save_resource(Vadon::Scene::ResourceSystem& resource_system, Vadon::Scene::ResourceHandle resource_handle, const ResourcePath& path)
+	{
+
+		// FIXME: support binary file serialization!
+		// Solution: have file system create the appropriate serializer!
+		Vadon::Core::FileSystem::RawFileDataBuffer resource_file_buffer;
+		Vadon::Utilities::Serializer::Instance serializer = Vadon::Utilities::Serializer::create_serializer(resource_file_buffer, Vadon::Utilities::Serializer::Type::JSON, Vadon::Utilities::Serializer::Mode::WRITE);
+
+		if (serializer->initialize() == false)
+		{
+			resource_system.log_error("Editor resource database: failed to initialize serializer while saving resource!\n");
+			return false;
+		}
+
+		if (resource_system.save_resource(*serializer, resource_handle) == false)
+		{
+			resource_system.log_error("Editor resource database: failed to serialize resource data!\n");
+			return false;
+		}
+
+		if (serializer->finalize() == false)
+		{
+			resource_system.log_error("Editor resource database: failed to finalize serializer after saving resource!\n");
+			return false;
+		}
+
+		Vadon::Core::FileSystem& file_system = m_editor.get_engine_core().get_system<Vadon::Core::FileSystem>();
+		if (file_system.save_file(path, resource_file_buffer) == false)
+		{
+			resource_system.log_error("Editor resource database: failed to save resource data to file!\n");
+			return false;
+		}
+
+		return true;
+	}
+
 	Resource* ResourceSystem::create_resource(Vadon::Utilities::TypeID resource_type)
 	{
 		Vadon::Core::EngineCoreInterface& engine_core = m_editor.get_engine_core();
@@ -264,8 +284,18 @@ namespace VadonEditor::Model
 		if (resource_it == m_resource_lookup.end())
 		{
 			// Resource not yet registered, so we create it
-			const EditorResourceID new_resource_id = m_resource_id_counter++;
-			resource_it = m_resource_lookup.emplace(resource_id, Resource(m_editor, resource_id, new_resource_id)).first;
+			const EditorResourceID editor_resource_id = m_resource_id_counter++;
+			resource_it = m_resource_lookup.emplace(resource_id, Resource(m_editor, resource_id, editor_resource_id)).first;
+
+			// Check whether the resource was already loaded
+			Vadon::Core::EngineCoreInterface& engine_core = m_editor.get_engine_core();
+			Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
+			const Vadon::Scene::ResourceHandle resource_handle = resource_system.find_resource(resource_id);
+			if (resource_handle.is_valid() == true)
+			{
+				// Resource already loaded
+				resource_it->second.internal_load(resource_handle);
+			}
 		}
 
 		return &resource_it->second;
@@ -283,6 +313,19 @@ namespace VadonEditor::Model
 	{
 		// TODO: implement refcounting or some other system to track when a resource should be unloaded/removed!
 		// TODO2: remove from engine resource system!
+	}
+
+	void ResourceSystem::register_edit_callback(EditCallback callback)
+	{
+		m_edit_callbacks.push_back(callback);
+	}
+
+	void ResourceSystem::resource_edited(const Resource& resource)
+	{
+		for (const EditCallback& current_callback : m_edit_callbacks)
+		{
+			current_callback(resource.get_id());
+		}
 	}
 
 	ResourceSystem::ResourceSystem(Core::Editor& editor)
