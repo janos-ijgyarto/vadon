@@ -57,7 +57,12 @@ namespace Vadon::Utilities
 
 	bool ObjectPoolManager::validate(const ObjectPoolHandle& handle) const
 	{
-		if (handle.pool_generation != m_generation)
+		if ((handle.is_valid() == false) || (handle.pool_generation != m_generation))
+		{
+			return false;
+		}
+
+		if (handle.index > static_cast<uint32_t>(m_entries.size()))
 		{
 			return false;
 		}
@@ -68,7 +73,7 @@ namespace Vadon::Utilities
 
 	void ObjectPoolManager::remove(const ObjectPoolHandle& handle)
 	{
-		assert(validate(handle) == true);
+		VADON_ASSERT(validate(handle) == true, "Tried to remove object with invalid handle!");
 
 		Entry& released_entry = m_entries[handle.index];
 		released_entry.active = false;

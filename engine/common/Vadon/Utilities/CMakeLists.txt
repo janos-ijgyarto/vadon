@@ -1,5 +1,6 @@
 add_subdirectory(Container)
 add_subdirectory(Data)
+add_subdirectory(Debugging)
 add_subdirectory(Enum)
 add_subdirectory(Event)
 add_subdirectory(Math)

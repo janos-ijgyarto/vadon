@@ -115,7 +115,7 @@ namespace Vadon::ECS
 		if (component_pool == nullptr)
 		{
 			component_pool = ComponentRegistry::get_component_pool(type_id);
-			assert(component_pool && "Component Manager error: component type not registered!");
+			VADON_ASSERT(component_pool != nullptr, "Component type not registered!");
 			m_component_pools[type_id] = component_pool;
 		}
 

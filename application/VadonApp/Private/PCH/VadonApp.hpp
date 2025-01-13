@@ -6,7 +6,6 @@
 #include <string>
 #include <thread>
 #include <mutex>
-#include <cassert>
 #ifdef VADONAPP_PLATFORM_WIN32
 #include <windows.h>
 #endif

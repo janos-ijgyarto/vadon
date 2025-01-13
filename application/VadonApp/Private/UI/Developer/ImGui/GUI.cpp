@@ -25,6 +25,12 @@
 #include <Vadon/Utilities/Data/Visitor.hpp>
 #include <Vadon/Utilities/Math/Matrix.hpp>
 
+#include <Vadon/Utilities/Debugging/Assert.hpp>
+
+#ifndef IM_ASSERT
+#define IM_ASSERT(Expr) VADON_ASSERT(Expr, "Dear ImGui error!")
+#endif
+
 #include <imgui.h>
 #include <misc/cpp/imgui_stdlib.h> // NOTE: required to allow using std::string with input text
 
@@ -1167,7 +1173,7 @@ float4 main(PS_INPUT input) : SV_Target
     bool GUISystem::init_platform()
     {
         ImGuiIO& io = ImGui::GetIO();
-        //IM_ASSERT(io.BackendPlatformUserData == nullptr && "Already initialized a platform backend!");
+        IM_ASSERT(io.BackendPlatformUserData == nullptr);
 
         VadonApp::Platform::PlatformInterface& platform_interface = m_application.get_system<VadonApp::Platform::PlatformInterface>();
 
@@ -1213,7 +1219,7 @@ float4 main(PS_INPUT input) : SV_Target
     bool GUISystem::init_renderer()
     {
         ImGuiIO& io = ImGui::GetIO();
-        IM_ASSERT(io.BackendRendererUserData == nullptr && "Already initialized a renderer backend!");
+        IM_ASSERT(io.BackendRendererUserData == nullptr);
 
         // Setup backend capabilities flags
         io.BackendRendererUserData = nullptr;
@@ -1234,7 +1240,11 @@ float4 main(PS_INPUT input) : SV_Target
                 vertex_shader_info.type = Vadon::Render::ShaderType::VERTEX;
 
                 m_vertex_shader = shader_system.create_shader(vertex_shader_info);
-                assert(m_vertex_shader.is_valid());
+                VADON_ASSERT(m_vertex_shader.is_valid(), "Failed to create vertex shader!");
+                if (m_vertex_shader.is_valid() == false)
+                {
+                    return false;
+                }
 
                 // Create vertex layout
                 Vadon::Render::VertexLayoutInfo vertex_layout_info;
@@ -1261,7 +1271,11 @@ float4 main(PS_INPUT input) : SV_Target
                 }
 
                 m_vertex_layout = shader_system.create_vertex_layout(m_vertex_shader, vertex_layout_info);
-                assert(m_vertex_layout.is_valid());
+                VADON_ASSERT(m_vertex_layout.is_valid(), "Failed to create vertex layout!");
+                if (m_vertex_layout.is_valid() == false)
+                {
+                    return false;
+                }
             }
 
             {
@@ -1272,7 +1286,11 @@ float4 main(PS_INPUT input) : SV_Target
                 pixel_shader_info.type = Vadon::Render::ShaderType::PIXEL;
 
                 m_pixel_shader = shader_system.create_shader(pixel_shader_info);
-                assert(m_pixel_shader.is_valid());
+                VADON_ASSERT(m_pixel_shader.is_valid(), "Failed to create pixel shader!");
+                if (m_pixel_shader.is_valid() == false)
+                {
+                    return false;
+                }
             }
 
             update_buffers(INIT_VERTEX_BUFFER_CAPACITY, INIT_INDEX_BUFFER_CAPACITY);
@@ -1289,6 +1307,11 @@ float4 main(PS_INPUT input) : SV_Target
 
                 Vadon::Render::BufferSystem& buffer_system = engine_core.get_system<Vadon::Render::BufferSystem>();
                 m_constant_buffer = buffer_system.create_buffer(constant_buffer_info, &constant_buffer_init_data);
+                VADON_ASSERT(m_constant_buffer.is_valid(), "Failed to create constant buffer!");
+                if (m_constant_buffer.is_valid() == false)
+                {
+                    return false;
+                }
             }
         }
 

@@ -102,13 +102,7 @@ namespace Vadon::Core
 
 	void EngineEnvironment::initialize(EngineEnvironment& instance)
 	{
-		if ((s_instance != nullptr) && (s_instance != &instance))
-		{
-			s_instance->get_logger().log_error("Engine environment error : attempted to set different environment instances!\n");
-			assert(false);
-			std::terminate();
-		}
-
+        VADON_ASSERT((s_instance == nullptr) || (s_instance == &instance), "Attempted to set different engine environment instances!\n");
 		s_instance = &instance;
 	}
 }

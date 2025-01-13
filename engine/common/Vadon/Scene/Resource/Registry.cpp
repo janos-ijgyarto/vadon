@@ -43,7 +43,7 @@ namespace Vadon::Scene
 	{
 		ResourceRegistry& registry_instance = get_registry_instance();
 
-		assert((registry_instance.m_resource_info_lookup.find(type_id) == registry_instance.m_resource_info_lookup.end()) && "Resource registry error: resource type already registered!");
+		VADON_ASSERT((registry_instance.m_resource_info_lookup.find(type_id) == registry_instance.m_resource_info_lookup.end()), "Resource type already registered!");
 
 		ResourceTypeInfo resource_info;
 		resource_info.factory_function = factory;
@@ -56,7 +56,7 @@ namespace Vadon::Scene
 		ResourceRegistry& registry_instance = get_registry_instance();
 
 		auto resource_info_it = registry_instance.m_resource_info_lookup.find(type_id);
-		assert((resource_info_it != registry_instance.m_resource_info_lookup.end()) && "Resource registry error: resource type not registered, cannot register serializer!");
+		VADON_ASSERT((resource_info_it != registry_instance.m_resource_info_lookup.end()), "Resource type not registered, cannot register serializer!");
 
 		ResourceTypeInfo& resource_info = resource_info_it->second;
 		resource_info.serializer.function = serializer;

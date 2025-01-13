@@ -45,7 +45,7 @@ namespace Vadon::ECS
 	{
 		ComponentRegistry& registry_instance = get_registry_instance();
 
-		assert((registry_instance.m_pool_info_lookup.find(type_id) == registry_instance.m_pool_info_lookup.end()) && "Vadon ECS error: component type already registered!");
+		VADON_ASSERT((registry_instance.m_pool_info_lookup.find(type_id) == registry_instance.m_pool_info_lookup.end()), "Component type already registered!");
 
 		PoolInfo pool_info;
 		pool_info.factory_function = factory;

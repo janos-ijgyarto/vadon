@@ -91,7 +91,7 @@ namespace Vadon::Utilities
             return false;
         }
 
-        assert(decoded_data.size() == data.size());
+        VADON_ASSERT(decoded_data.size() == data.size(), "UUID decoded data is incorrect size!");
         std::copy(decoded_data.begin(), decoded_data.end(), data.begin());
         return true;
     }

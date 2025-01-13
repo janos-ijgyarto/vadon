@@ -263,13 +263,13 @@ namespace VadonDemo::View
 		void add_sprite_resource(SpriteResourceHandle /*sprite_handle*/)
 		{
 			// TODO!!!
-			assert(false);
+			VADON_UNREACHABLE;
 		}
 
 		void update_sprite_resource(SpriteResourceHandle /*sprite_handle*/)
 		{
 			// TODO!!!
-			assert(false);
+			VADON_UNREACHABLE;
 		}
 
 		void update_view_resource(ViewResourceHandle resource_handle)

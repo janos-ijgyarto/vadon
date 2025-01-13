@@ -200,7 +200,8 @@ namespace Vadon::Private::Render::DirectX
 
 		D3DVertexShader d3d_vertex_shader;
 		GraphicsAPI::Device* device = m_graphics_api.get_device();
-		if (device->CreateVertexShader(new_shader_blob->GetBufferPointer(), new_shader_blob->GetBufferSize(), nullptr, d3d_vertex_shader.ReleaseAndGetAddressOf()) != S_OK)
+		HRESULT hr = device->CreateVertexShader(new_shader_blob->GetBufferPointer(), new_shader_blob->GetBufferSize(), nullptr, d3d_vertex_shader.ReleaseAndGetAddressOf());
+		if (FAILED(hr))
 		{
 			// TODO: error
 			return ShaderHandle();
@@ -227,7 +228,8 @@ namespace Vadon::Private::Render::DirectX
 
 		D3DPixelShader d3d_pixel_shader;
 		GraphicsAPI::Device* device = m_graphics_api.get_device();
-		if (device->CreatePixelShader(new_shader_blob->GetBufferPointer(), new_shader_blob->GetBufferSize(), nullptr, d3d_pixel_shader.ReleaseAndGetAddressOf()) != S_OK)
+		HRESULT hr = device->CreatePixelShader(new_shader_blob->GetBufferPointer(), new_shader_blob->GetBufferSize(), nullptr, d3d_pixel_shader.ReleaseAndGetAddressOf());
+		if (FAILED(hr))
 		{
 			// TODO: error
 			return ShaderHandle();

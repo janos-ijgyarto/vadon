@@ -1,8 +1,11 @@
 #ifndef VADON_UTILITIES_CONTAINER_OBJECTPOOL_POOL_HPP
 #define VADON_UTILITIES_CONTAINER_OBJECTPOOL_POOL_HPP
 #include <Vadon/Utilities/Container/ObjectPool/Manager.hpp>
+#include <Vadon/Utilities/Debugging/Assert.hpp>
 namespace Vadon::Utilities
 {
+	// TODO: implement "deque" (or "hive") version where memory address is always stable
+	// Also move as much code as possible to non-templated code
 	template<typename HandleType, typename PoolType>
 	class ObjectPool
 	{
@@ -19,7 +22,7 @@ namespace Vadon::Utilities
 
 		ObjectPool()
 		{
-			static_assert(!std::is_reference_v<PoolType>);
+			static_assert(std::is_reference_v<PoolType> == false, "Cannot use reference as pool data type!");
 		}
 
 		~ObjectPool()
@@ -87,6 +90,8 @@ namespace Vadon::Utilities
 
 		const _Type& get(const _Handle& handle) const
 		{
+			// FIXME: could move the assert to manager by having it return the data index (in case we use "deque" implementation)
+			VADON_ASSERT(is_handle_valid(handle) == true, "Tried to retrieve invalid handle!");
 			if constexpr (std::is_pointer_v<PoolType>)
 			{
 				return *m_pool[handle.handle.index];

@@ -248,28 +248,21 @@ namespace Vadon::Utilities
 	{
 		const std::string type_name_str(type_name);
 		TypeRegistry& instance = get_registry_instance();
-		if (instance.m_id_lookup.find(type_name_str) == instance.m_id_lookup.end())
-		{
-			const TypeID new_type_id = to_enum<TypeID>(instance.m_id_counter++);
-			instance.m_id_lookup.emplace(type_name_str, new_type_id);
 
-			TypeData& new_type_data = instance.m_type_lookup.insert(std::make_pair(new_type_id, TypeData{})).first->second;
-			new_type_data.info.id = new_type_id;
-			new_type_data.info.name = type_name;
-			new_type_data.info.size = size;
-			new_type_data.info.alignment = alignment;
+		VADON_ASSERT(instance.m_id_lookup.find(type_name_str) == instance.m_id_lookup.end(), std::format("Type registry error: \"{}\" already exists in registry!\n", type_name));
 
-			if (base_type_id != Vadon::Utilities::TypeID::INVALID)
-			{
-				instance.register_type_with_base(new_type_id, new_type_data, base_type_id);
-			}
-		}
-		else
+		const TypeID new_type_id = to_enum<TypeID>(instance.m_id_counter++);
+		instance.m_id_lookup.emplace(type_name_str, new_type_id);
+
+		TypeData& new_type_data = instance.m_type_lookup.insert(std::make_pair(new_type_id, TypeData{})).first->second;
+		new_type_data.info.id = new_type_id;
+		new_type_data.info.name = type_name;
+		new_type_data.info.size = size;
+		new_type_data.info.alignment = alignment;
+
+		if (base_type_id != Vadon::Utilities::TypeID::INVALID)
 		{
-			// FIXME: more elegant error handling?
-			Vadon::Core::Logger::log_error(std::format("Type registry error: \"{}\" already exists in registry!\n", type_name));
-			assert(false);
-			std::terminate();
+			instance.register_type_with_base(new_type_id, new_type_data, base_type_id);
 		}
 	}
 
