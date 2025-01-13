@@ -264,7 +264,7 @@ namespace VadonDemo::Model
 				while (current_index < m_entity_remove_list.size())
 				{
 					bool removed = false;
-					const Vadon::ECS::EntityHandle current_entity;
+					const Vadon::ECS::EntityHandle current_entity = m_entity_remove_list[current_index];
 					Vadon::ECS::EntityHandle parent_entity = entity_manager.get_entity_parent(current_entity);
 					while (parent_entity.is_valid() == true)
 					{

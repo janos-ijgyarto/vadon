@@ -17,7 +17,6 @@
 #include "DDSTextureLoader11.h"
 
 #include <algorithm>
-#include <cassert>
 #include <memory>
 #include <new>
 
@@ -1037,7 +1036,7 @@ namespace
                         tdepth = d;
                     }
 
-                    assert(index < mipCount * arraySize);
+                    VADON_ASSERT(index < mipCount * arraySize, "Invalid texture data!");
                     _Analysis_assume_(index < mipCount * arraySize);
                     initData[index].pSysMem = pSrcBits;
                     initData[index].SysMemPitch = static_cast<UINT>(RowBytes);
@@ -1477,7 +1476,7 @@ namespace
                 // Note there's no way for a legacy Direct3D 9 DDS to express a '1D' texture
             }
 
-            assert(BitsPerPixel(format) != 0);
+            VADON_ASSERT(BitsPerPixel(format) != 0, "Invalid texture data!");
         }
 
         // Bound sizes (for security purposes we don't trust DDS file metadata larger than the D3D 11.x hardware requirements)

@@ -12,8 +12,6 @@
 #include <limits>
 #include <algorithm>
 
-#include <cassert>
-
 #ifdef VADON_GRAPHICS_API_DIRECTX
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX

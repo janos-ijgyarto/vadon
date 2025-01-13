@@ -256,7 +256,7 @@ namespace VadonEditor::Model
 		if (parent != nullptr)
 		{
 			const Vadon::ECS::EntityHandle parent_handle = entity_manager.get_entity_parent(entity_handle);
-			assert(parent_handle == parent->m_entity_handle);
+			VADON_ASSERT(parent_handle == parent->m_entity_handle, "Editor entity parent does not match ECS parent!");
 		
 			// Add to parent
 			parent->m_children.push_back(new_entity);

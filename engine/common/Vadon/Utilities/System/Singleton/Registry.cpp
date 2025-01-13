@@ -26,7 +26,7 @@ namespace Vadon::Utilities
 
         // FIXME: make sure we only register once?
         const size_t instance_offset = m_instances.size();
-        assert(selected_module_instances[type_index] == c_invalid_offset); // Make sure we haven't tried to register the same system before
+        VADON_ASSERT(selected_module_instances[type_index] == c_invalid_offset, "System already registered!"); // Make sure we haven't tried to register the same system before
         selected_module_instances[type_index] = instance_offset;
 
         m_instances.push_back(instance);

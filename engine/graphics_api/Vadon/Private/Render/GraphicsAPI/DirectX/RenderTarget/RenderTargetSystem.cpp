@@ -257,7 +257,7 @@ namespace Vadon::Private::Render::DirectX
 		ZeroMemory(&d3d_rtv_desc, sizeof(D3D11_RENDER_TARGET_VIEW_DESC));
 
 		d3d_rtv_desc.Format = get_dxgi_format(rtv_info.format);
-		assert(rtv_info.type == RenderTargetViewType::TEXTURE_2D); // FIXME: support other RT types!
+		VADON_ASSERT(rtv_info.type == RenderTargetViewType::TEXTURE_2D, "Unsupported render target type!"); // FIXME: support other RT types!
 		d3d_rtv_desc.ViewDimension = get_d3d_rtv_dimension(rtv_info.type);
 
 		d3d_rtv_desc.Texture2D.MipSlice = rtv_info.type_info.mip_slice;
@@ -305,7 +305,7 @@ namespace Vadon::Private::Render::DirectX
 		ZeroMemory(&d3d_dsv_desc, sizeof(D3D11_DEPTH_STENCIL_VIEW_DESC));
 
 		d3d_dsv_desc.Format = get_dxgi_format(dsv_info.format);
-		assert(dsv_info.type == DepthStencilViewType::TEXTURE_2D); // FIXME: support other RT types!
+		VADON_ASSERT(dsv_info.type == DepthStencilViewType::TEXTURE_2D, "Unsupported depth-stencil type!"); // FIXME: support other DS types!
 		d3d_dsv_desc.ViewDimension = get_d3d_dsv_dimension(dsv_info.type);
 		d3d_dsv_desc.Flags = get_d3d_dsv_flags(dsv_info.flags);
 
