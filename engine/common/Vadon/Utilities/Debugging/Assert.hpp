@@ -1,6 +1,6 @@
 #ifndef VADON_UTILITIES_DEBUGGING_ASSERT_HPP
 #define VADON_UTILITIES_DEBUGGING_ASSERT_HPP
-#include <Vadon/Core/Logger.hpp>
+#include <Vadon/Common.hpp>
 #include <format>
 #include <source_location>
 
@@ -86,13 +86,7 @@
 
 namespace Vadon::Utilities
 {
-    VADON_FORCE_INLINE void do_assert(const char* expression_string, std::string_view message, std::source_location location = std::source_location::current())
-    {
-        Vadon::Core::Logger::log_error(std::format("Assertion failed!\n{}\n\"{}\"\nFile: {}\nFunction: {}\nLine: {}\nColumn: {}",
-            expression_string, message, location.file_name(), location.function_name(), location.line(), location.column()));
-
-        VADON_ASSERT_BREAKPOINT();
-    }
+    VADONCOMMON_API void do_assert(const char* expression_string, std::string_view message, std::source_location location = std::source_location::current());
 }
 
 #define VADON_ENABLED_ASSERT(condition, message) do { if ( !(condition) ) { Vadon::Utilities::do_assert(#condition, message); } } while (VADON_NULL_WHILE_LOOP_CONDITION)
