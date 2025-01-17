@@ -55,6 +55,8 @@ namespace VadonDemo::Model
 
 		std::vector<Vadon::ECS::EntityHandle> m_entity_remove_list;
 
+		Vadon::ECS::EntityHandle m_level_root;
+
 		Internal(Vadon::Core::EngineCoreInterface& engine_core)
 			: m_engine_core(engine_core)
 			, m_random_engine(std::random_device{}())
@@ -78,7 +80,57 @@ namespace VadonDemo::Model
 			return true;
 		}
 
-		bool init_simulation(Vadon::ECS::World& ecs_world)
+		bool init_simulation(Vadon::ECS::World& ecs_world, Vadon::Scene::SceneID level_scene_id)
+		{
+			if (load_level(ecs_world, level_scene_id) == false)
+			{
+				// TODO: error!
+				return false;
+			}
+
+			if (validate_sim_state(ecs_world) == false)
+			{
+				return false;
+			}
+
+			return true;
+		}
+
+		void end_simulation(Vadon::ECS::World& ecs_world)
+		{
+			if (m_level_root.is_valid() == false)
+			{
+				return;
+			}
+
+			// TODO: error checking?
+			ecs_world.remove_entity(m_level_root);
+			m_level_root.invalidate();
+		}
+
+		bool load_level(Vadon::ECS::World& ecs_world, Vadon::Scene::SceneID level_scene_id)
+		{
+			VADON_ASSERT(m_level_root.is_valid() == false, "Cannot load a level while a game is already in progress!");
+
+			Vadon::Scene::SceneSystem& scene_system = m_engine_core.get_system<Vadon::Scene::SceneSystem>();
+			const Vadon::Scene::SceneHandle level_scene_handle = scene_system.load_scene(level_scene_id);
+			if (level_scene_handle.is_valid() == false)
+			{
+				// Something went wrong
+				return false;
+			}
+
+			m_level_root = scene_system.instantiate_scene(level_scene_handle, ecs_world);
+			if (m_level_root.is_valid() == false)
+			{
+				// Something went wrong
+				return false;
+			}
+
+			return true;
+		}
+
+		bool validate_sim_state(Vadon::ECS::World& ecs_world)
 		{
 			Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
 
@@ -136,7 +188,7 @@ namespace VadonDemo::Model
 				{
 					// TODO: error!
 					return false;
-				}				
+				}
 			}
 
 			{
@@ -607,6 +659,11 @@ namespace VadonDemo::Model
 							const float rand_angle = m_enemy_dist(m_random_engine);
 
 							const Vadon::ECS::EntityHandle spawned_enemy = scene_system.instantiate_scene(current_spawner.enemy_prefab, ecs_world);
+							
+							// FIXME: make a parent entity for enemies?
+							// Could be the enemy subsystem
+							ecs_world.get_entity_manager().add_child_entity(m_level_root, spawned_enemy);
+
 							Transform2D* transform_component = component_manager.get_component<Transform2D>(spawned_enemy);
 
 							if (transform_component != nullptr)
@@ -661,6 +718,11 @@ namespace VadonDemo::Model
 					// FIXME: at the moment we make an entity for every projectile
 					// Could use a special "pool" Entity that contains projectile instances
 					const Vadon::ECS::EntityHandle spawned_projectile = scene_system.instantiate_scene(current_weapon.projectile_prefab, ecs_world);
+
+					// FIXME: make a parent entity for projectiles?
+					// Could be the projectile subsystem
+					ecs_world.get_entity_manager().add_child_entity(m_level_root, spawned_projectile);
+
 					auto projectile_tuple = component_manager.get_component_tuple<Transform2D, Velocity2D, Projectile>(spawned_projectile);
 
 					// Set the initial position
@@ -710,6 +772,30 @@ namespace VadonDemo::Model
 				}
 			}
 		}
+
+		bool is_in_end_state(Vadon::ECS::World& ecs_world) const
+		{
+			Vadon::ECS::EntityHandle player_entity;
+
+			Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
+			auto player_query = component_manager.run_component_query<Player&>();
+			for (auto player_it = player_query.get_iterator(); player_it.is_valid() == true; player_it.next())
+			{
+				player_entity = player_it.get_entity();
+				if (player_entity.is_valid() == true)
+				{
+					break;
+				}
+			}
+
+			if (player_entity.is_valid() == false)
+			{
+				return true;
+			}
+
+			// TODO2: check some kind of victory condition?
+			return false;
+		}
 	};
 
 	Model::Model(Vadon::Core::EngineCoreInterface& engine_core)
@@ -724,14 +810,24 @@ namespace VadonDemo::Model
 		return m_internal->initialize();
 	}
 	
-	bool Model::init_simulation(Vadon::ECS::World& ecs_world)
+	bool Model::init_simulation(Vadon::ECS::World& ecs_world, Vadon::Scene::SceneID level_scene_id)
 	{
-		return m_internal->init_simulation(ecs_world);
+		return m_internal->init_simulation(ecs_world, level_scene_id);
 	}
 
 	void Model::update(Vadon::ECS::World& ecs_world, float delta_time)
 	{
 		m_internal->update(ecs_world, delta_time);
+	}
+
+	bool Model::is_in_end_state(Vadon::ECS::World& ecs_world) const
+	{
+		return m_internal->is_in_end_state(ecs_world);
+	}
+
+	void Model::end_simulation(Vadon::ECS::World& ecs_world)
+	{
+		m_internal->end_simulation(ecs_world);
 	}
 
 	void Model::init_engine_environment(Vadon::Core::EngineEnvironment& environment)

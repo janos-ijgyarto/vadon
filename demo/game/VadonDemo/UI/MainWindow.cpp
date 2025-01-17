@@ -169,8 +169,39 @@ namespace VadonDemo::UI
 		{
 			if (dev_gui.begin_window(m_dev_gui.window))
 			{
-				dev_gui.add_text(std::format("Model frames: {}", m_game_core.get_model().get_frame_count()));
-				dev_gui.add_text(std::format("View frames: {}", m_game_core.get_view().get_frame_count()));
+				{
+					static constexpr const char* c_game_state_labels[] = {
+						"INIT",
+						"LOADING",
+						"RUNNING"
+					};
+
+					Model::GameModel& game_model = m_game_core.get_model();
+					const Model::GameModel::State game_state = game_model.get_state();
+					dev_gui.add_text(std::format("Game state: {}", c_game_state_labels[Vadon::Utilities::to_integral(game_state)]));
+
+					if (game_state == Model::GameModel::State::RUNNING)
+					{
+						static constexpr const char* c_sim_state_labels[] = {
+							"INVALID",
+							"PLAYING",
+							"PAUSED",
+							"GAME OVER"
+						};
+
+						const Model::GameModel::SimState sim_state = game_model.get_sim_state();
+						dev_gui.add_text(std::format("Sim state: {}", c_sim_state_labels[Vadon::Utilities::to_integral(sim_state)]));
+
+						// TODO: display which level we loaded!
+						if (sim_state != Model::GameModel::SimState::GAME_OVER)
+						{
+							dev_gui.add_text(std::format("Player health: {}", game_model.get_player_health()));
+						}
+					}
+
+					dev_gui.add_text(std::format("Model frames: {}", game_model.get_frame_count()));
+					dev_gui.add_text(std::format("View frames: {}", m_game_core.get_view().get_frame_count()));
+				}
 
 				if (dev_gui.push_tree_node("Numeric Inputs"))
 				{

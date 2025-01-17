@@ -15,6 +15,7 @@
 #include <VadonApp/UI/Developer/GUI.hpp>
 
 #include <Vadon/Core/Environment.hpp>
+#include <Vadon/Core/Project/Project.hpp>
 
 #include <Vadon/ECS/World/World.hpp>
 
@@ -98,15 +99,50 @@ namespace VadonDemo::Core
 				return false;
 			}
 
-			if (m_game_model.init_simulation() == false)
+			// FIXME: have to do this separately because all the types are only registered at this stage!
+			if (m_game_model.init_database() == false)
 			{
 				return false;
 			}
 
-			if (m_game_view.init_visualization() == false)
-			{
-				return false;
-			}
+			// FIXME: currently have to give UUID base64 string. Allow referencing scenes via path!
+			m_ui_system.register_console_command("load", 
+				[this](std::string_view scene_id_string)
+				{
+					Vadon::Scene::SceneID scene_id;
+					if (scene_id.from_base64_string(scene_id_string) == true)
+					{
+						m_game_model.load_level(Model::GameModel::LevelConfiguration{ .scene_id = scene_id });
+					}
+				}
+			);
+
+			m_ui_system.register_console_command("pause",
+				[this](std::string_view value)
+				{
+					// TODO: error if param is incorrect?
+					if (value.empty() == true)
+					{
+						return;
+					}
+
+					if (value == "1")
+					{
+						m_game_model.set_paused(true);
+					}
+					else if (value == "0")
+					{
+						m_game_model.set_paused(false);
+					}
+				}
+			);
+
+			m_ui_system.register_console_command("quit",
+				[this](std::string_view)
+				{
+					m_game_model.quit_level();
+				}
+			);
 
 			Vadon::Core::Logger::log_message("Vadon Demo app initialized.\n");
 
@@ -172,6 +208,15 @@ namespace VadonDemo::Core
 			return m_engine_app->initialize(app_configuration);
 		}
 
+		void post_init()
+		{
+			const Vadon::Core::Project& project_info = m_game_model.get_project_info();
+			if (project_info.startup_scene.is_valid() == true)
+			{
+				m_game_model.load_level(Model::GameModel::LevelConfiguration{ .scene_id = project_info.startup_scene });
+			}
+		}
+
 		int execute(int argc, char* argv[])
 		{
 			if (initialize(argc, argv) == false)
@@ -180,6 +225,8 @@ namespace VadonDemo::Core
 				shutdown();
 				return 1;
 			}
+
+			post_init();
 
 			while (m_shutdown_requested == false)
 			{

@@ -16,11 +16,14 @@ namespace VadonDemo::UI
 	{
 	public:
 		using DevGUICallback = std::function<void(VadonApp::UI::Developer::GUISystem&)>;
+		using ConsoleCommandCallback = std::function<void(std::string_view)>;
 
 		MainWindow& get_main_window() { return m_main_window; }
 
 		void register_dev_gui_callback(const DevGUICallback& callback);
 		bool is_dev_gui_enabled() const { return m_dev_gui_enabled; }
+
+		void register_console_command(std::string_view command_name, const ConsoleCommandCallback& callback);
 	private:
 		UISystem(Core::GameCore& core);
 
@@ -35,6 +38,8 @@ namespace VadonDemo::UI
 		MainWindow m_main_window;
 		std::vector<DevGUICallback> m_dev_gui_callbacks;
 		bool m_dev_gui_enabled = false;
+
+		std::unordered_map<std::string, ConsoleCommandCallback> m_console_commands;
 
 		friend Core::GameCore;
 	};

@@ -57,11 +57,6 @@ namespace VadonDemo::View
 				return false;
 			}
 
-			return true;
-		}
-
-		bool init_visualization()
-		{
 			if (m_view->init_visualization(m_game_core.get_ecs_world()) == false)
 			{
 				// TODO: error?
@@ -229,11 +224,6 @@ namespace VadonDemo::View
 	bool GameView::initialize()
 	{
 		return m_internal->initialize();
-	}
-
-	bool GameView::init_visualization()
-	{
-		return m_internal->init_visualization();
 	}
 
 	void GameView::update()

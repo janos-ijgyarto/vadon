@@ -1,9 +1,7 @@
 #ifndef VADONDEMO_MODEL_MODEL_HPP
 #define VADONDEMO_MODEL_MODEL_HPP
 #include <VadonDemo/VadonDemoCommon.hpp>
-#include <Vadon/ECS/Entity/Entity.hpp>
-#include <Vadon/ECS/Component/Component.hpp>
-#include <Vadon/Render/Canvas/Layer.hpp>
+#include <Vadon/Scene/Scene.hpp>
 #include <memory>
 namespace Vadon::Core
 {
@@ -27,8 +25,10 @@ namespace VadonDemo::Model
 
 		VADONDEMO_API bool initialize();
 
-		VADONDEMO_API bool init_simulation(Vadon::ECS::World& ecs_world);
+		VADONDEMO_API bool init_simulation(Vadon::ECS::World& ecs_world, Vadon::Scene::SceneID level_scene_id);
 		VADONDEMO_API void update(Vadon::ECS::World& ecs_world, float delta_time);
+		VADONDEMO_API bool is_in_end_state(Vadon::ECS::World& ecs_world) const;
+		VADONDEMO_API void end_simulation(Vadon::ECS::World& ecs_world);
 
 		VADONDEMO_API static void init_engine_environment(Vadon::Core::EngineEnvironment& environment);
 	private:

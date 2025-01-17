@@ -21,7 +21,6 @@ namespace VadonDemo::View
 		GameView(Core::GameCore& core);
 		
 		bool initialize();
-		bool init_visualization();
 		void update();
 
 		struct Internal;

@@ -21,6 +21,11 @@ namespace VadonDemo::UI
 		m_dev_gui_callbacks.push_back(callback);
 	}
 
+	void UISystem::register_console_command(std::string_view command_name, const ConsoleCommandCallback& callback)
+	{
+		m_console_commands[std::string(command_name)] = callback;
+	}
+
 	UISystem::UISystem(Core::GameCore& core)
 		: m_game_core(core)
 		, m_main_window(core)
@@ -83,8 +88,29 @@ namespace VadonDemo::UI
 			console.register_event_handler(
 				[this, &console](const VadonApp::UI::ConsoleCommandEvent& command_event)
 				{
-					// TODO: parse command
-					console.log_error(std::format("Command not recognized: \"{}\"\n", command_event.text));
+					if (command_event.text.empty() == true)
+					{
+						return false;
+					}
+
+					const size_t command_name_end = command_event.text.find(" ", 0);
+					std::string_view command_name = command_event.text;
+					std::string_view command_args = "";
+					if (command_name_end != std::string::npos)
+					{
+						command_args = command_name.substr(command_name_end + 1);
+						command_name = command_name.substr(0, command_name_end);
+					}		
+
+					auto command_it = m_console_commands.find(std::string(command_name));
+					if (command_it == m_console_commands.end())
+					{
+						console.log_error(std::format("Command not recognized: \"{}\"\n", command_name));
+						return false;
+					}
+
+					// Run callback
+					command_it->second(command_args);
 					return true;
 				}
 			);

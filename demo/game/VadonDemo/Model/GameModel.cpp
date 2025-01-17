@@ -107,6 +107,16 @@ namespace
 			return loaded_resource_handle;
 		}
 
+		Vadon::Core::FileSystemPath find_resource_file(Vadon::Scene::ResourceID resource_id) const
+		{
+			auto resource_file_it = m_resource_file_lookup.find(resource_id);
+			if (resource_file_it != m_resource_file_lookup.end())
+			{
+				return resource_file_it->second;
+			}
+
+			return Vadon::Core::FileSystemPath();
+		}
 	private:
 		// FIXME: this forces us to load all resources twice!
 		// Need to create a "cache" that has all this metadata
@@ -160,6 +170,9 @@ namespace VadonDemo::Model
 		std::unique_ptr<Model> m_model;
 		bool m_model_updated = false;
 
+		State m_state = State::INIT;
+		SimState m_sim_state = SimState::INVALID;
+
 		Vadon::Core::Project m_project_info;
 		Vadon::Core::RootDirectoryHandle m_root_directory;
 
@@ -176,6 +189,11 @@ namespace VadonDemo::Model
 
 		bool initialize()
 		{
+			if (load_project() == false)
+			{
+				return false;
+			}
+
 			m_model = std::make_unique<Model>(m_game_core.get_engine_app().get_engine_core());
 
 			if (m_model->initialize() == false)
@@ -186,22 +204,10 @@ namespace VadonDemo::Model
 			return true;
 		}
 
-		bool init_simulation()
+		bool init_database()
 		{
-			if (load_project() == false)
+			if (m_resource_db.initialize(m_root_directory) == false)
 			{
-				return false;
-			}
-
-			if (init_scene() == false)
-			{
-				return false;
-			}
-
-			Vadon::ECS::World& ecs_world = m_game_core.get_ecs_world();
-			if (m_model->init_simulation(ecs_world) == false)
-			{
-				// TODO: error?
 				return false;
 			}
 
@@ -251,17 +257,11 @@ namespace VadonDemo::Model
 				return false;
 			}
 
-			if (m_project_info.startup_scene.is_valid() == false)
-			{
-				// TODO: error!
-				return false;
-			}
-
+			// Add project root directory
 			{
 				Vadon::Core::RootDirectoryInfo project_dir_info;
 				project_dir_info.path = m_project_info.root_path;
 
-				// Add project root directory
 				Vadon::Core::FileSystem& file_system = engine_core.get_system<Vadon::Core::FileSystem>();
 				m_root_directory = file_system.add_root_directory(project_dir_info);
 				if (m_root_directory.is_valid() == false)
@@ -271,44 +271,53 @@ namespace VadonDemo::Model
 				}
 			}
 
-			// Import all resources in the project
-			// FIXME: do this automatically?
-			if (m_resource_db.initialize(m_root_directory) == false)
-			{
-				return false;
-			}
+			// Register the resource DB
 			engine_core.get_system<Vadon::Scene::ResourceSystem>().register_database(m_resource_db);
 
 			// Everything loaded successfully
 			return true;
 		}
 
-		bool init_scene()
+		bool load_level(const LevelConfiguration& level_config)
 		{
-			using Logger = Vadon::Core::Logger;
+			m_state = State::LOADING;
 
-			VadonApp::Core::Application& engine_app = m_game_core.get_engine_app();
-			Vadon::Core::EngineCoreInterface& engine_core = engine_app.get_engine_core();
 			Vadon::ECS::World& ecs_world = m_game_core.get_ecs_world();
-
+			if (m_model->init_simulation(ecs_world, level_config.scene_id) == false)
 			{
-				Vadon::Scene::SceneSystem& scene_system = engine_core.get_system<Vadon::Scene::SceneSystem>();
-				const Vadon::Scene::SceneHandle main_scene_handle = scene_system.load_scene(m_project_info.startup_scene);
-				if (main_scene_handle.is_valid() == false)
-				{
-					// Something went wrong
-					return false;
-				}
-
-				Vadon::ECS::EntityHandle root_entity_handle = scene_system.instantiate_scene(main_scene_handle, ecs_world);
-				if (root_entity_handle.is_valid() == false)
-				{
-					// Something went wrong
-					return false;
-				}
+				// TODO: error?
+				m_state = State::INIT;
+				m_sim_state = SimState::INVALID;
+				return false;
 			}
 
+			m_state = State::RUNNING;
+			m_sim_state = SimState::PLAYING;
+			{
+				auto level_file = m_resource_db.find_resource_file(level_config.scene_id);
+				m_game_core.get_engine_app().log_message(std::format("Loaded level: {}\n", level_file.path));
+			}
 			return true;
+		}
+
+		void set_paused(bool paused)
+		{
+			if (m_state == State::RUNNING)
+			{
+				m_sim_state = paused ? SimState::PAUSED : SimState::PLAYING;
+			}
+		}
+
+		void quit_level()
+		{
+			if (m_state == State::INIT)
+			{
+				return;
+			}
+
+			m_model->end_simulation(m_game_core.get_ecs_world());
+			m_state = State::INIT;
+			m_sim_state = SimState::INVALID;
 		}
 
 		void update()
@@ -316,9 +325,19 @@ namespace VadonDemo::Model
 			// Reset update flag
 			m_model_updated = false;
 
-			const float delta_time = std::min(m_game_core.get_delta_time(), c_frame_limit);
+			if (m_state != State::RUNNING)
+			{
+				return;
+			}
+
+			if (m_sim_state != SimState::PLAYING)
+			{
+				return;
+			}
 
 			// Model update logic inspired by the "Fix Your Timestep!" blog by Gaffer on Games: https://gafferongames.com/post/fix_your_timestep/
+			const float delta_time = std::min(m_game_core.get_delta_time(), c_frame_limit);
+
 			float model_accumulator = m_model_accumulator;
 			model_accumulator += delta_time;
 
@@ -328,7 +347,12 @@ namespace VadonDemo::Model
 
 				update_player_input();
 
-				m_model->update(m_game_core.get_ecs_world(), c_sim_timestep);
+				Vadon::ECS::World& ecs_world = m_game_core.get_ecs_world();
+				m_model->update(ecs_world, c_sim_timestep);
+				if (m_model->is_in_end_state(ecs_world) == true)
+				{
+					m_sim_state = SimState::GAME_OVER;
+				}
 
 				model_accumulator -= c_sim_timestep;				
 				++m_model_frame_count;
@@ -379,9 +403,55 @@ namespace VadonDemo::Model
 				player_component.input = player_input;
 			}
 		}
+
+		int get_player_health() const
+		{
+			auto player_query = m_game_core.get_ecs_world().get_component_manager().run_component_query<VadonDemo::Model::Player&, VadonDemo::Model::Health&>();
+			auto player_it = player_query.get_iterator();
+			if (player_it.is_valid() == true)
+			{
+				auto player_components = player_it.get_tuple();
+
+				VadonDemo::Model::Health& player_health = std::get<VadonDemo::Model::Health&>(player_components);
+				return static_cast<int>(player_health.current_health);
+			}
+
+			// TODO: error?
+			return -1;
+		}
 	};
 
 	GameModel::~GameModel() = default;
+
+	const Vadon::Core::Project& GameModel::get_project_info() const
+	{
+		return m_internal->m_project_info;
+	}
+
+	GameModel::State GameModel::get_state() const
+	{
+		return m_internal->m_state;
+	}
+
+	GameModel::SimState GameModel::get_sim_state() const
+	{
+		return m_internal->m_sim_state;
+	}
+
+	bool GameModel::load_level(const LevelConfiguration& level_config)
+	{
+		return m_internal->load_level(level_config);
+	}
+
+	void GameModel::set_paused(bool paused)
+	{
+		m_internal->set_paused(paused);
+	}
+
+	void GameModel::quit_level()
+	{
+		m_internal->quit_level();
+	}
 
 	float GameModel::get_sim_timestep() const
 	{
@@ -396,6 +466,11 @@ namespace VadonDemo::Model
 	int GameModel::get_frame_count() const
 	{
 		return m_internal->m_model_frame_count;
+	}
+
+	int GameModel::get_player_health() const
+	{
+		return m_internal->get_player_health();
 	}
 
 	bool GameModel::is_updated() const
@@ -414,9 +489,9 @@ namespace VadonDemo::Model
 		return m_internal->initialize();
 	}
 
-	bool GameModel::init_simulation()
+	bool GameModel::init_database()
 	{
-		return m_internal->init_simulation();
+		return m_internal->init_database();
 	}
 
 	void GameModel::update()
