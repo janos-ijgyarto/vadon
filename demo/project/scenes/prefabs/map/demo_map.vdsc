@@ -5,6 +5,16 @@
                 "components": [
                     {
                         "properties": {
+                            "dimensions": [
+                                500.0,
+                                500.0
+                            ],
+                            "display_name": "Demo map"
+                        },
+                        "type": "VadonDemo::Model::Map"
+                    },
+                    {
+                        "properties": {
                             "position": [
                                 0.0,
                                 0.0
@@ -16,19 +26,10 @@
                     },
                     {
                         "properties": {
-                            "resource": "KkqpfJOESB+yH+OZ38LzaQ=="
+                            "resource": "KkqpfJOESB+yH+OZ38LzaQ==",
+                            "z_order": 0.0
                         },
                         "type": "VadonDemo::View::ViewComponent"
-                    },
-                    {
-                        "properties": {
-                            "dimensions": [
-                                500.0,
-                                500.0
-                            ],
-                            "display_name": "Demo map"
-                        },
-                        "type": "VadonDemo::Model::Map"
                     }
                 ],
                 "name": "Map",

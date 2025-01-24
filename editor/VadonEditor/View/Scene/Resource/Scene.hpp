@@ -33,7 +33,7 @@ namespace VadonEditor::View
 	private:
 		bool has_valid_option() const
 		{
-			return m_scene_list.empty() == false;
+			return m_scene_list_box.has_valid_selection();
 		}
 
 		friend class SceneListWindow;

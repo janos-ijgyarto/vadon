@@ -208,12 +208,12 @@ namespace Vadon::Private::Render::DirectX
 			// Create a box that defines the region we want to update (need to use byte widths for the dimensions)
 			// Buffers are all flat, so we only need the L-R portions
 			ResourceBox dest_box{
-				static_cast<UINT>(buffer_info.element_size * write_data.range.offset), // Left
-				0, // Top
-				0, // Front
-				static_cast<UINT>(buffer_info.element_size * (write_data.range.offset + write_data.range.count)), // Right
-				1, // Bottom
-				1 // Back
+				.left = static_cast<UINT>(buffer_info.element_size * write_data.range.offset),
+				.top = 0,
+				.front = 0,
+				.right = static_cast<UINT>(buffer_info.element_size * (write_data.range.offset + write_data.range.count)),
+				.bottom = 1,
+				.back = 1
 			}; 
 
 			// FIXME: subresource index?

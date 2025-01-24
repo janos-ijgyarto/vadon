@@ -35,6 +35,8 @@ namespace VadonDemo::View
 
 		Vadon::Render::Canvas::RenderContext m_canvas_context;
 
+		std::vector<Vadon::ECS::EntityHandle> m_uninitialized_entities;
+
 		Internal(Core::GameCore& game_core)
 			: m_game_core(game_core)
 		{ }
@@ -168,7 +170,28 @@ namespace VadonDemo::View
 
 			m_canvas_context.viewports.push_back(canvas_viewport);
 
-			m_canvas_context.layers.push_back(m_view->get_canvas_layer());
+			Vadon::Render::Canvas::CanvasSystem& canvas_system = m_game_core.get_engine_app().get_engine_core().get_system<Vadon::Render::Canvas::CanvasSystem>();
+			Vadon::Render::Canvas::LayerHandle canvas_layer = canvas_system.create_layer(Vadon::Render::Canvas::LayerInfo{});
+
+			m_canvas_context.layers.push_back(canvas_layer);
+
+			Vadon::ECS::World& ecs_world = m_game_core.get_ecs_world();
+			Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
+
+			component_manager.register_event_callback<VadonDemo::View::ViewComponent>(
+				[this, &ecs_world](const Vadon::ECS::ComponentEvent& component_event)
+				{
+					switch (component_event.event_type)
+					{
+					case Vadon::ECS::ComponentEventType::ADDED:
+						m_uninitialized_entities.push_back(component_event.owner);
+						break;
+					case Vadon::ECS::ComponentEventType::REMOVED:
+						remove_view_entity(ecs_world, component_event.owner);
+						break;
+					}
+				}
+			);
 
 			return true;
 		}
@@ -182,8 +205,17 @@ namespace VadonDemo::View
 				m_view->extract_model_state(m_game_core.get_ecs_world());
 			}
 
+			if (m_uninitialized_entities.empty() == false)
+			{
+				for (Vadon::ECS::EntityHandle current_entity : m_uninitialized_entities)
+				{
+					init_view_entity(m_game_core.get_ecs_world(), current_entity);
+				}
+				m_uninitialized_entities.clear();
+			}
+
 			// Interpolate the view state based on model accumulator
-			m_view->update(m_game_core.get_ecs_world(), game_model.get_accumulator() / game_model.get_sim_timestep());
+			m_view->lerp_view_state(m_game_core.get_ecs_world(), game_model.get_accumulator() / game_model.get_sim_timestep());
 			
 			update_camera();
 
@@ -207,6 +239,49 @@ namespace VadonDemo::View
 				const VadonDemo::View::ViewComponent& player_view_component = std::get<VadonDemo::View::ViewComponent&>(player_components);
 				m_canvas_context.camera.view_rectangle.position = player_view_component.prev_transform.position * (1.0f - lerp_factor) + player_view_component.current_transform.position * lerp_factor;
 			}
+		}
+
+		// FIXME: deduplicate between editor and game?
+		void init_view_entity(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle entity)
+		{
+			Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
+			VadonDemo::View::ViewComponent* view_component = component_manager.get_component<VadonDemo::View::ViewComponent>(entity);
+			if (view_component == nullptr)
+			{
+				return;
+			}
+
+			if (view_component->canvas_item.is_valid() == true)
+			{
+				return;
+			}
+
+			Vadon::Render::Canvas::CanvasSystem& canvas_system = m_game_core.get_engine_app().get_engine_core().get_system<Vadon::Render::Canvas::CanvasSystem>();
+			view_component->canvas_item = canvas_system.create_item(Vadon::Render::Canvas::ItemInfo{ .layer = m_canvas_context.layers.front() });
+
+			// Update view
+			// FIXME: could also prompt the view to iterate through all newly created entities
+			m_view->update_view_entity_draw_data(ecs_world, entity);
+		}
+
+		void remove_view_entity(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle entity)
+		{
+			Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
+			VadonDemo::View::ViewComponent* view_component = component_manager.get_component<VadonDemo::View::ViewComponent>(entity);
+
+			if (view_component == nullptr)
+			{
+				return;
+			}
+
+			if (view_component->canvas_item.is_valid() == false)
+			{
+				return;
+			}
+
+			Vadon::Render::Canvas::CanvasSystem& canvas_system = m_game_core.get_engine_app().get_engine_core().get_system<Vadon::Render::Canvas::CanvasSystem>();
+			canvas_system.remove_item(view_component->canvas_item);
+			view_component->canvas_item.invalidate();
 		}
 	};
 

@@ -918,6 +918,7 @@ namespace Vadon::Private::Render::Canvas
 		Vadon::Render::BufferWriteData write_data;
 		write_data.range.count = 1;
 		write_data.data = &canvas_layer_data;
+		write_data.no_overwrite = true;
 
 		for (LayerHandle layer_handle : m_shared_data.dirty_layers)
 		{

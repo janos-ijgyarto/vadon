@@ -631,6 +631,13 @@ namespace VadonDemo::Model
 				}
 			}
 
+			struct CreateEnemyData
+			{
+				Vadon::Utilities::Vector2 position;
+				Vadon::Scene::SceneHandle prefab;
+			};
+			std::vector<CreateEnemyData> deferred_spawned_enemies;
+
 			// NOTE: currently all spawners just keep spawning once the delay counts down
 			// Need to implement limits on enemy numbers and a priority system
 			// Can put all spawners that timed out into a FIFO list
@@ -656,29 +663,14 @@ namespace VadonDemo::Model
 
 						for (int32_t spawned_enemy_index = 0; spawned_enemy_index < current_spawner.current_spawn_count; ++spawned_enemy_index)
 						{
+							CreateEnemyData& new_enemy_data = deferred_spawned_enemies.emplace_back();
+
 							const float rand_angle = m_enemy_dist(m_random_engine);
 
-							const Vadon::ECS::EntityHandle spawned_enemy = scene_system.instantiate_scene(current_spawner.enemy_prefab, ecs_world);
+							// Spawn relative to player
+							new_enemy_data.position = player_position + Vadon::Utilities::Vector2(std::cosf(rand_angle), std::sinf(rand_angle)) * spawn_radius;
 							
-							// FIXME: make a parent entity for enemies?
-							// Could be the enemy subsystem
-							ecs_world.get_entity_manager().add_child_entity(m_level_root, spawned_enemy);
-
-							Transform2D* transform_component = component_manager.get_component<Transform2D>(spawned_enemy);
-
-							if (transform_component != nullptr)
-							{
-								// Spawn relative to player
-								transform_component->position = player_position + Vadon::Utilities::Vector2(std::cosf(rand_angle), std::sinf(rand_angle)) * spawn_radius;
-							}
-
-							// Init health
-							// FIXME: could use event for this!
-							Health* health_component = component_manager.get_component<Health>(spawned_enemy);
-							if (health_component != nullptr)
-							{
-								health_component->current_health = health_component->max_health;
-							}
+							new_enemy_data.prefab = current_spawner.enemy_prefab;
 						}
 					}
 
@@ -693,6 +685,31 @@ namespace VadonDemo::Model
 					}
 				}
 			}
+
+			for (const CreateEnemyData& current_enemy_data : deferred_spawned_enemies)
+			{
+				const Vadon::ECS::EntityHandle spawned_enemy = scene_system.instantiate_scene(current_enemy_data.prefab, ecs_world);
+
+				// FIXME: make a parent entity for enemies?
+				// Could be the enemy subsystem
+				ecs_world.get_entity_manager().add_child_entity(m_level_root, spawned_enemy);
+
+				Transform2D* transform_component = component_manager.get_component<Transform2D>(spawned_enemy);
+
+				if (transform_component != nullptr)
+				{
+					// Spawn relative to player
+					transform_component->position = current_enemy_data.position;
+				}
+
+				// Init health
+				// FIXME: could use event for this!
+				Health* health_component = component_manager.get_component<Health>(spawned_enemy);
+				if (health_component != nullptr)
+				{
+					health_component->current_health = health_component->max_health;
+				}
+			}
 		}
 
 		void update_weapons(Vadon::ECS::World& ecs_world, float delta_time)
@@ -700,13 +717,21 @@ namespace VadonDemo::Model
 			Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
 			Vadon::Scene::SceneSystem& scene_system = m_engine_core.get_system<Vadon::Scene::SceneSystem>();
 
+			// Have to defer creating the projectiles, because we can't add to the ECS while iterating in it
+			// FIXME: implement deferred operations in ECS?
+			struct CreateProjectileData
+			{
+				Vadon::Utilities::Vector2 position;
+				Vadon::Utilities::Vector2 aim_direction;
+				Vadon::Scene::SceneHandle prefab;
+			};
+			std::vector<CreateProjectileData> deferred_projectiles;
+
 			auto weapon_query = component_manager.run_component_query<Weapon&, Transform2D*>();
 			for (auto weapon_it = weapon_query.get_iterator(); weapon_it.is_valid() == true; weapon_it.next())
 			{
 				auto weapon_tuple = weapon_it.get_tuple();
 				Weapon& current_weapon = std::get<Weapon&>(weapon_tuple);
-				const Transform2D* weapon_transform = std::get<Transform2D*>(weapon_tuple);
-
 				if (current_weapon.firing_timer > 0.0f)
 				{
 					current_weapon.firing_timer -= delta_time;
@@ -714,41 +739,52 @@ namespace VadonDemo::Model
 
 				if ((current_weapon.active == true) && (current_weapon.firing_timer <= 0.0f))
 				{
-					// Spawn projectile
-					// FIXME: at the moment we make an entity for every projectile
-					// Could use a special "pool" Entity that contains projectile instances
-					const Vadon::ECS::EntityHandle spawned_projectile = scene_system.instantiate_scene(current_weapon.projectile_prefab, ecs_world);
+					CreateProjectileData& new_projectile_data = deferred_projectiles.emplace_back();
 
-					// FIXME: make a parent entity for projectiles?
-					// Could be the projectile subsystem
-					ecs_world.get_entity_manager().add_child_entity(m_level_root, spawned_projectile);
-
-					auto projectile_tuple = component_manager.get_component_tuple<Transform2D, Velocity2D, Projectile>(spawned_projectile);
-
-					// Set the initial position
-					Transform2D* projectile_transform = std::get<Transform2D*>(projectile_tuple);
-					if (projectile_transform != nullptr)
+					const Transform2D* weapon_transform = std::get<Transform2D*>(weapon_tuple);
+					if (weapon_transform != nullptr)
 					{
-						if (weapon_transform != nullptr)
-						{
-							projectile_transform->position = weapon_transform->position;
-						}
-						else
-						{
-							projectile_transform->position = Vadon::Utilities::Vector2_Zero;
-						}
+						new_projectile_data.position = weapon_transform->position;
+					}
+					else
+					{
+						new_projectile_data.position = Vadon::Utilities::Vector2_Zero;
 					}
 
-					// Set velocity and lifetime
-					Velocity2D* projectile_velocity = std::get<Velocity2D*>(projectile_tuple);
-					Projectile* projectile_component = std::get<Projectile*>(projectile_tuple);
-
-					projectile_component->remaining_lifetime = projectile_component->range / projectile_velocity->top_speed;
-					projectile_velocity->velocity = current_weapon.aim_direction * projectile_velocity->top_speed;
+					new_projectile_data.aim_direction = current_weapon.aim_direction;
+					new_projectile_data.prefab = current_weapon.projectile_prefab;
 
 					// Reset firing timer
 					current_weapon.firing_timer += 60.0f / std::max(current_weapon.rate_of_fire, 0.001f);
 				}
+			}
+
+			for (const CreateProjectileData& current_projectile_data : deferred_projectiles)
+			{
+				// Spawn projectile
+				// FIXME: at the moment we make an entity for every projectile
+				// Could use a special "pool" Entity that contains projectile instances
+				const Vadon::ECS::EntityHandle spawned_projectile = scene_system.instantiate_scene(current_projectile_data.prefab, ecs_world);
+
+				// FIXME: make a parent entity for projectiles?
+				// Could be the projectile subsystem
+				ecs_world.get_entity_manager().add_child_entity(m_level_root, spawned_projectile);
+
+				auto projectile_tuple = component_manager.get_component_tuple<Transform2D, Velocity2D, Projectile>(spawned_projectile);
+
+				// Set the initial position
+				Transform2D* projectile_transform = std::get<Transform2D*>(projectile_tuple);
+				if (projectile_transform != nullptr)
+				{
+					projectile_transform->position = current_projectile_data.position;
+				}
+
+				// Set velocity and lifetime
+				Velocity2D* projectile_velocity = std::get<Velocity2D*>(projectile_tuple);
+				Projectile* projectile_component = std::get<Projectile*>(projectile_tuple);
+
+				projectile_component->remaining_lifetime = projectile_component->range / projectile_velocity->top_speed;
+				projectile_velocity->velocity = current_projectile_data.aim_direction * projectile_velocity->top_speed;
 			}
 		}
 

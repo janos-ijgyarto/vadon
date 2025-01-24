@@ -23,7 +23,8 @@
                     },
                     {
                         "properties": {
-                            "resource": "JEb0jPI3QZa/2FHo2MAemw=="
+                            "resource": "JEb0jPI3QZa/2FHo2MAemw==",
+                            "z_order": 3.0
                         },
                         "type": "VadonDemo::View::ViewComponent"
                     },

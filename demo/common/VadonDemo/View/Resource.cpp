@@ -11,8 +11,6 @@ namespace VadonDemo::View
 		using TypeRegistry = Vadon::Utilities::TypeRegistry;
 
 		ResourceRegistry::register_resource_type<ViewResource, Vadon::Scene::Resource>();
-
-		TypeRegistry::add_property<ViewResource>("z_order", Vadon::Utilities::MemberVariableBind<&ViewResource::z_order>().bind_member_getter().bind_member_setter());
 	}
 
 	void Shape::register_resource()

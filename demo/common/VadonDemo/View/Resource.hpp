@@ -9,8 +9,6 @@ namespace VadonDemo::View
 {
 	struct ViewResource : public Vadon::Scene::Resource
 	{
-		float z_order = 0.0f; // FIXME: revise this, we need to be able to set Z order per-object!
-
 		static void register_resource();
 	};
 

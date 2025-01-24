@@ -40,8 +40,6 @@ namespace VadonEditor::View
 		UI::Developer::ChildWindow m_tree_window;
 		std::string m_tree_label_cache;
 
-		Model::Scene* m_last_active_scene = nullptr;
-
 		struct TreeViewState
 		{
 			VadonEditor::Model::Entity* clicked_entity = nullptr;
