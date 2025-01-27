@@ -32,5 +32,6 @@ namespace VadonDemo::View
 		ResourceRegistry::register_resource_type<Sprite, ViewResource>();
 
 		TypeRegistry::add_property<Sprite>("texture_path", Vadon::Utilities::MemberVariableBind<&Sprite::texture_path>().bind_member_getter().bind_member_setter());
+		TypeRegistry::add_property<Sprite>("repeat", Vadon::Utilities::MemberVariableBind<&Sprite::repeat>().bind_member_getter().bind_member_setter());
 	}
 }

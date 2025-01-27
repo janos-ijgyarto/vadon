@@ -10,6 +10,7 @@
 #include <Vadon/Scene/Resource/ResourceSystem.hpp>
 
 #include <unordered_map>
+#include <random>
 
 namespace
 {
@@ -28,8 +29,13 @@ namespace VadonDemo::View
 
 		std::unordered_map<uint64_t, CanvasResource> m_canvas_resource_lookup;
 
+		std::mt19937 m_random_engine;
+		std::uniform_int_distribution<int> m_texture_dist;
+
 		Internal(Vadon::Core::EngineCoreInterface& core)
 			: m_engine_core(core)
+			, m_random_engine(std::random_device{}())
+			, m_texture_dist(0, 3)
 		{ }
 
 		bool initialize()
@@ -206,16 +212,80 @@ namespace VadonDemo::View
 			}
 		}
 
-		CanvasResource& add_sprite_resource(SpriteResourceHandle /*sprite_handle*/)
+		CanvasResource& add_sprite_resource(SpriteResourceHandle sprite_handle)
 		{
-			// TODO!!!
-			VADON_UNREACHABLE;
+			CanvasResource& canvas_resource = add_canvas_resource(ViewResourceHandle::from_resource_handle(sprite_handle));
+			update_sprite_resource(sprite_handle, canvas_resource);
+
+			return canvas_resource;
 		}
 
-		void update_sprite_resource(SpriteResourceHandle /*sprite_handle*/)
+		void update_sprite_resource(SpriteResourceHandle sprite_handle, CanvasResource& sprite_canvas_resource)
 		{
-			// TODO!!!
-			VADON_UNREACHABLE;
+			Vadon::Scene::ResourceSystem& resource_system = m_engine_core.get_system<Vadon::Scene::ResourceSystem>();
+			const Sprite* sprite = resource_system.get_resource(sprite_handle);
+
+			Vadon::Render::Canvas::CanvasSystem& canvas_system = m_engine_core.get_system<Vadon::Render::Canvas::CanvasSystem>();
+
+			canvas_system.clear_batch(sprite_canvas_resource.batch);
+
+			const int tile_dim = std::max(sprite->repeat, 1);
+
+			sprite_canvas_resource.batch_range.offset = static_cast<int32_t>(canvas_system.get_batch_buffer_size(sprite_canvas_resource.batch));
+			sprite_canvas_resource.batch_range.count = tile_dim * tile_dim;
+
+			if (sprite_canvas_resource.batch_range.count > 1)
+			{
+				Vadon::Render::Canvas::Sprite current_tile_sprite;
+				current_tile_sprite.dimensions.size = Vadon::Utilities::Vector2_One / static_cast<float>(tile_dim);
+				current_tile_sprite.texture_view_handle = sprite->texture_srv;
+
+				const float tile_pos_offset = (0.5f / static_cast<float>(tile_dim));
+
+				for (int current_x = 0; current_x < tile_dim; ++current_x)
+				{
+					for (int current_y = 0; current_y < tile_dim; ++current_y)
+					{
+						current_tile_sprite.dimensions.position.x = (static_cast<float>(current_x) / static_cast<float>(tile_dim)) - 0.5f + tile_pos_offset;
+						current_tile_sprite.dimensions.position.y = (static_cast<float>(current_y) / static_cast<float>(tile_dim)) - 0.5f + tile_pos_offset;
+
+						const int rotation = m_texture_dist(m_random_engine);
+						switch (rotation)
+						{
+						case 1:
+							current_tile_sprite.uv_top_left = { 0, 1 };
+							current_tile_sprite.uv_top_right = Vadon::Utilities::Vector2_Zero;
+							current_tile_sprite.uv_bottom_left = Vadon::Utilities::Vector2_One;
+							current_tile_sprite.uv_bottom_right = { 1, 0 };
+							break;
+						case 2:
+							current_tile_sprite.uv_top_left = Vadon::Utilities::Vector2_One;
+							current_tile_sprite.uv_top_right = { 0, 1 };
+							current_tile_sprite.uv_bottom_left = { 1, 0 };
+							current_tile_sprite.uv_bottom_right = Vadon::Utilities::Vector2_Zero;
+							break;
+						case 3:
+							current_tile_sprite.uv_top_left = { 1, 0 };
+							current_tile_sprite.uv_top_right = Vadon::Utilities::Vector2_One;
+							current_tile_sprite.uv_bottom_left = Vadon::Utilities::Vector2_Zero;
+							current_tile_sprite.uv_bottom_right = { 0, 1 };
+							break;
+						}
+
+						canvas_system.draw_batch_sprite(sprite_canvas_resource.batch, current_tile_sprite);
+					}
+				}
+			}
+			else
+			{
+				Vadon::Render::Canvas::Sprite canvas_sprite;
+				canvas_sprite.dimensions.size = Vadon::Utilities::Vector2_One;
+				canvas_sprite.uv_top_left = Vadon::Utilities::Vector2_Zero;
+				canvas_sprite.uv_bottom_right = Vadon::Utilities::Vector2_One;
+				canvas_sprite.texture_view_handle = sprite->texture_srv;
+
+				canvas_system.draw_batch_sprite(sprite_canvas_resource.batch, canvas_sprite);
+			}
 		}
 
 		void update_view_entity_transform(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle view_entity)
@@ -312,7 +382,7 @@ namespace VadonDemo::View
 				}
 				else if (resource_info.type_id == Vadon::Utilities::TypeRegistry::get_type_id<Sprite>())
 				{
-					update_sprite_resource(SpriteResourceHandle::from_resource_handle(resource_handle));
+					update_sprite_resource(SpriteResourceHandle::from_resource_handle(resource_handle), *resource);
 				}
 			}
 			else
@@ -332,6 +402,12 @@ namespace VadonDemo::View
 
 				if (current_view_component.resource != resource_handle)
 				{
+					continue;
+				}
+
+				if (current_view_component.canvas_item.is_valid() == false)
+				{
+					// Entity not yet initialized
 					continue;
 				}
 

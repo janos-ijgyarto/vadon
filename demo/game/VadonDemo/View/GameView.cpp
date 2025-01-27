@@ -18,11 +18,18 @@
 #include <VadonApp/Platform/PlatformInterface.hpp>
 #include <VadonApp/UI/Developer/GUI.hpp>
 
+#include <Vadon/Core/File/FileSystem.hpp>
+
 #include <Vadon/ECS/World/World.hpp>
 
 #include <Vadon/Render/Canvas/Context.hpp>
 #include <Vadon/Render/Canvas/CanvasSystem.hpp>
 #include <Vadon/Render/GraphicsAPI/RenderTarget/RenderTargetSystem.hpp>
+#include <Vadon/Render/GraphicsAPI/Texture/TextureSystem.hpp>
+
+#include <Vadon/Scene/Resource/ResourceSystem.hpp>
+
+#include <filesystem>
 
 namespace VadonDemo::View
 {
@@ -36,6 +43,15 @@ namespace VadonDemo::View
 		Vadon::Render::Canvas::RenderContext m_canvas_context;
 
 		std::vector<Vadon::ECS::EntityHandle> m_uninitialized_entities;
+
+		// FIXME: refactor this, need a proper asset management system!
+		struct SpriteTexture
+		{
+			Vadon::Render::TextureHandle texture;
+			Vadon::Render::SRVHandle srv;
+		};
+
+		std::unordered_map<std::string, SpriteTexture> m_sprite_textures;
 
 		Internal(Core::GameCore& game_core)
 			: m_game_core(game_core)
@@ -256,6 +272,12 @@ namespace VadonDemo::View
 				return;
 			}
 
+			// Ensure resource is valid
+			if (view_component->resource.is_valid() == true)
+			{
+				init_view_resource(view_component->resource);
+			}
+
 			Vadon::Render::Canvas::CanvasSystem& canvas_system = m_game_core.get_engine_app().get_engine_core().get_system<Vadon::Render::Canvas::CanvasSystem>();
 			view_component->canvas_item = canvas_system.create_item(Vadon::Render::Canvas::ItemInfo{ .layer = m_canvas_context.layers.front() });
 
@@ -282,6 +304,108 @@ namespace VadonDemo::View
 			Vadon::Render::Canvas::CanvasSystem& canvas_system = m_game_core.get_engine_app().get_engine_core().get_system<Vadon::Render::Canvas::CanvasSystem>();
 			canvas_system.remove_item(view_component->canvas_item);
 			view_component->canvas_item.invalidate();
+		}
+
+		void init_view_resource(VadonDemo::View::ViewResourceHandle resource_handle)
+		{
+			Vadon::Core::EngineCoreInterface& engine_core = m_game_core.get_engine_app().get_engine_core();
+			Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
+			const Vadon::Scene::ResourceInfo resource_info = resource_system.get_resource_info(resource_handle);
+
+			if (Vadon::Utilities::TypeRegistry::is_base_of(Vadon::Utilities::TypeRegistry::get_type_id<VadonDemo::View::Sprite>(), resource_info.type_id))
+			{
+				// Check if referenced sprite is already loaded
+				VadonDemo::View::SpriteResourceHandle sprite_handle = VadonDemo::View::SpriteResourceHandle::from_resource_handle(resource_handle);
+
+				VadonDemo::View::Sprite* sprite_resource = resource_system.get_resource(sprite_handle);
+
+				auto sprite_it = m_sprite_textures.find(sprite_resource->texture_path);
+				if (sprite_it == m_sprite_textures.end())
+				{
+					// Sprite not yet loaded
+					update_sprite_resource(sprite_handle);
+				}
+			}
+		}
+
+		void update_sprite_resource(VadonDemo::View::SpriteResourceHandle sprite_handle)
+		{
+			load_sprite_resource(sprite_handle);
+			m_view->update_view_resource(m_game_core.get_ecs_world(), VadonDemo::View::ViewResourceHandle::from_resource_handle(sprite_handle));
+		}
+
+		void load_sprite_resource(VadonDemo::View::SpriteResourceHandle sprite_handle)
+		{
+			// FIXME: this should not be here, use asset management system to decouple View from any file management!
+			Vadon::Core::EngineCoreInterface& engine_core = m_game_core.get_engine_app().get_engine_core();
+			Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
+			VadonDemo::View::Sprite* sprite_resource = resource_system.get_resource(sprite_handle);
+
+			if (sprite_resource->texture_path.empty())
+			{
+				sprite_resource->texture_srv.invalidate();
+				return;
+			}
+
+			auto sprite_it = m_sprite_textures.find(sprite_resource->texture_path);
+			if (sprite_it != m_sprite_textures.end())
+			{
+				sprite_resource->texture_srv = sprite_it->second.srv;
+				return;
+			}
+
+			// FIXME: accept other extensions!
+			std::filesystem::path texture_fs_path = sprite_resource->texture_path;
+			texture_fs_path.replace_extension(".dds");
+
+			Model::GameModel& game_model = m_game_core.get_model();
+			Vadon::Core::FileSystem& file_system = engine_core.get_system<Vadon::Core::FileSystem>();
+			Vadon::Core::FileSystemPath file_path{ .root_directory = game_model.get_project_root_dir(), .path = texture_fs_path.string()};
+
+			if (file_system.does_file_exist(file_path) == false)
+			{
+				sprite_resource->texture_srv.invalidate();
+				return;
+			}
+
+			Vadon::Core::FileSystem::RawFileDataBuffer texture_file_buffer;
+			if (file_system.load_file(file_path, texture_file_buffer) == false)
+			{
+				sprite_resource->texture_srv.invalidate();
+				return;
+			}
+
+			Vadon::Render::TextureSystem& texture_system = engine_core.get_system<Vadon::Render::TextureSystem>();
+			Vadon::Render::TextureHandle texture_handle = texture_system.create_texture_from_memory(texture_file_buffer.size(), texture_file_buffer.data());
+			if (texture_handle.is_valid() == false)
+			{
+				sprite_resource->texture_srv.invalidate();
+				return;
+			}
+
+			const Vadon::Render::TextureInfo texture_info = texture_system.get_texture_info(texture_handle);
+
+			// Create texture view
+			// FIXME: we are guessing the 
+			Vadon::Render::TextureSRVInfo texture_srv_info;
+			texture_srv_info.format = texture_info.format;
+			texture_srv_info.type = Vadon::Render::TextureSRVType::TEXTURE_2D;
+			texture_srv_info.mip_levels = texture_info.mip_levels;
+			texture_srv_info.most_detailed_mip = 0;
+
+			Vadon::Render::SRVHandle srv_handle = texture_system.create_shader_resource_view(texture_handle, texture_srv_info);
+			if (srv_handle.is_valid() == false)
+			{
+				// TODO: also remove texture?
+				sprite_resource->texture_srv.invalidate();
+				return;
+			}
+
+			// Add to lookup
+			SpriteTexture new_sprite_texture{ .texture = texture_handle, .srv = srv_handle };
+			m_sprite_textures.insert(std::make_pair(sprite_resource->texture_path, new_sprite_texture));
+
+			sprite_resource->texture_srv = srv_handle;
 		}
 	};
 

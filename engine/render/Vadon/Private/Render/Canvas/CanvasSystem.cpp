@@ -808,10 +808,12 @@ namespace Vadon::Private::Render::Canvas
 				RectanglePrimitiveData rectangle_primitive;
 				rectangle_primitive.info = get_primitive_info(item_data, rectangle_type);
 				rectangle_primitive.material = canvas_system.get_material_index(rectangle);
-				rectangle_primitive.dimensions.position = rectangle.dimensions.position + transform.position;
+				rectangle_primitive.dimensions.position = (rectangle.dimensions.position * transform.scale) + transform.position;
 				rectangle_primitive.dimensions.size = rectangle.dimensions.size * transform.scale;
-				rectangle_primitive.uv_dimensions.position = { 0, 0 };
-				rectangle_primitive.uv_dimensions.size = { 1, 1 };
+				rectangle_primitive.uvs[0] = {0, 0};
+				rectangle_primitive.uvs[1] = { 1, 0 };
+				rectangle_primitive.uvs[2] = { 0, 1 };
+				rectangle_primitive.uvs[3] = { 1, 1 };
 				rectangle_primitive.depth = 0.0f; // TODO: depth?
 				rectangle_primitive.thickness = rectangle.thickness;
 				rectangle_primitive.color = rectangle.color;
@@ -828,10 +830,12 @@ namespace Vadon::Private::Render::Canvas
 				RectanglePrimitiveData rectangle_primitive;
 				rectangle_primitive.info = get_primitive_info(item_data, PrimitiveType::RECTANGLE_FILL);
 				rectangle_primitive.material = canvas_system.get_material_index(sprite);
-				rectangle_primitive.dimensions.position = sprite.dimensions.position + transform.position;
+				rectangle_primitive.dimensions.position = (sprite.dimensions.position * transform.scale) + transform.position;
 				rectangle_primitive.dimensions.size = sprite.dimensions.size * transform.scale;
-				rectangle_primitive.uv_dimensions.position = sprite.uv_dimensions.position;
-				rectangle_primitive.uv_dimensions.size = sprite.uv_dimensions.size;
+				rectangle_primitive.uvs[0] = sprite.uv_top_left;
+				rectangle_primitive.uvs[1] = sprite.uv_top_right;
+				rectangle_primitive.uvs[2] = sprite.uv_bottom_left;
+				rectangle_primitive.uvs[3] = sprite.uv_bottom_right;
 				rectangle_primitive.depth = 0.0f; // TODO: depth?
 				rectangle_primitive.thickness = 0.0f;
 				rectangle_primitive.color = sprite.color;

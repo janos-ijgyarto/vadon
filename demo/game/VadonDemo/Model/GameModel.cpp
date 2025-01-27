@@ -428,6 +428,11 @@ namespace VadonDemo::Model
 		return m_internal->m_project_info;
 	}
 
+	Vadon::Core::RootDirectoryHandle GameModel::get_project_root_dir() const
+	{
+		return m_internal->m_root_directory;
+	}
+
 	GameModel::State GameModel::get_state() const
 	{
 		return m_internal->m_state;

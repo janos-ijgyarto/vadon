@@ -5,6 +5,7 @@
 #include <VadonDemo/View/Component.hpp>
 
 #include <VadonEditor/Core/Editor.hpp>
+#include <VadonEditor/Core/Project/ProjectManager.hpp>
 
 #include <VadonEditor/Model/ModelSystem.hpp>
 #include <VadonEditor/Model/Resource/ResourceSystem.hpp>
@@ -20,12 +21,16 @@
 #include <VadonApp/UI/Developer/GUI.hpp>
 
 #include <Vadon/Core/Environment.hpp>
+#include <Vadon/Core/File/FileSystem.hpp>
 
 #include <Vadon/ECS/World/World.hpp>
 
 #include <Vadon/Render/Canvas/Context.hpp>
 #include <Vadon/Render/Canvas/CanvasSystem.hpp>
 #include <Vadon/Render/GraphicsAPI/RenderTarget/RenderTargetSystem.hpp>
+#include <Vadon/Render/GraphicsAPI/Texture/TextureSystem.hpp>
+
+#include <Vadon/Scene/Resource/ResourceSystem.hpp>
 
 namespace
 {
@@ -186,22 +191,31 @@ namespace
                     }
                     else if (component_type == Vadon::Utilities::TypeRegistry::get_type_id<VadonDemo::View::ViewComponent>())
                     {
+                        // Make sure the resource is up-to-date
                         VadonEditor::Model::ModelSystem& editor_model = get_system<VadonEditor::Model::ModelSystem>();
                         Vadon::ECS::World& ecs_world = editor_model.get_ecs_world();
+                        VadonDemo::View::ViewComponent* view_component = ecs_world.get_component_manager().get_component<VadonDemo::View::ViewComponent>(entity);
+                        VADON_ASSERT(view_component != nullptr, "Cannot find View component!");
+
+                        // Make sure the resource is up-to-date
+                        init_view_resource(view_component->resource);
                         m_view->update_view_entity_draw_data(ecs_world, entity);
                     }
                 }
             );
 
-            VadonEditor::Model::ResourceSystem& resource_system = editor_model.get_resource_system();
-            resource_system.register_edit_callback(
-                [this, &resource_system](Vadon::Scene::ResourceID resource_id)
+            VadonEditor::Model::ResourceSystem& editor_resource_system = editor_model.get_resource_system();
+            editor_resource_system.register_edit_callback(
+                [this, &editor_resource_system](Vadon::Scene::ResourceID resource_id)
                 {
-                    const VadonEditor::Model::ResourceInfo resource_info = resource_system.get_database().find_resource_info(resource_id);
-                    if (Vadon::Utilities::TypeRegistry::is_base_of(Vadon::Utilities::TypeRegistry::get_type_id<VadonDemo::View::ViewResource>(), resource_info.info.type_id))
+                    Vadon::Scene::ResourceSystem& resource_system = get_engine_core().get_system<Vadon::Scene::ResourceSystem>();
+                    Vadon::Scene::ResourceHandle resource_handle = resource_system.find_resource(resource_id);
+                    VADON_ASSERT(resource_handle.is_valid() == true, "Resource not found!");
+
+                    const Vadon::Scene::ResourceInfo resource_info = resource_system.get_resource_info(resource_handle);
+                    if (Vadon::Utilities::TypeRegistry::is_base_of(Vadon::Utilities::TypeRegistry::get_type_id<VadonDemo::View::ViewResource>(), resource_info.type_id))
                     {
-                        VadonEditor::Model::ModelSystem& editor_model = get_system<VadonEditor::Model::ModelSystem>();
-                        m_view->update_view_resource(editor_model.get_ecs_world(), VadonDemo::View::ViewResourceHandle::from_resource_handle(resource_system.get_resource(resource_id)->get_handle()));
+                        update_view_resource(VadonDemo::View::ViewResourceHandle::from_resource_handle(resource_handle));
                     }
                 }
             );
@@ -324,6 +338,12 @@ namespace
             VadonDemo::View::ViewComponent* view_component = component_manager.get_component<VadonDemo::View::ViewComponent>(entity);
             if (view_component != nullptr)
             {
+                // Make sure the resource is up-to-date
+                if (view_component->resource.is_valid() == true)
+                {
+                    init_view_resource(view_component->resource);
+                }
+
                 if (view_component->canvas_item.is_valid() == false)
                 {
                     Vadon::Render::Canvas::CanvasSystem& canvas_system = get_engine_core().get_system<Vadon::Render::Canvas::CanvasSystem>();
@@ -362,6 +382,118 @@ namespace
             view_component->canvas_item.invalidate();
         }
 
+        void init_view_resource(VadonDemo::View::ViewResourceHandle resource_handle)
+        {
+            Vadon::Scene::ResourceSystem& resource_system = get_engine_core().get_system<Vadon::Scene::ResourceSystem>();
+            const Vadon::Scene::ResourceInfo resource_info = resource_system.get_resource_info(resource_handle);
+
+            if (Vadon::Utilities::TypeRegistry::is_base_of(Vadon::Utilities::TypeRegistry::get_type_id<VadonDemo::View::Sprite>(), resource_info.type_id))
+            {
+                // Check if referenced sprite is already loaded
+                VadonDemo::View::SpriteResourceHandle sprite_handle = VadonDemo::View::SpriteResourceHandle::from_resource_handle(resource_handle);
+
+                VadonDemo::View::Sprite* sprite_resource = resource_system.get_resource(sprite_handle);
+
+                auto sprite_it = m_sprite_textures.find(sprite_resource->texture_path);
+                if (sprite_it == m_sprite_textures.end())
+                {
+                    // Sprite not yet loaded
+                    update_sprite_resource(sprite_handle);
+                }
+            }
+        }
+
+        void update_view_resource(VadonDemo::View::ViewResourceHandle resource_handle)
+        {
+            Vadon::Scene::ResourceSystem& resource_system = get_engine_core().get_system<Vadon::Scene::ResourceSystem>();
+            const Vadon::Scene::ResourceInfo resource_info = resource_system.get_resource_info(resource_handle);
+
+            if (Vadon::Utilities::TypeRegistry::is_base_of(Vadon::Utilities::TypeRegistry::get_type_id<VadonDemo::View::Sprite>(), resource_info.type_id))
+            {
+                update_sprite_resource(VadonDemo::View::SpriteResourceHandle::from_resource_handle(resource_handle));
+            }
+        }
+
+        void update_sprite_resource(VadonDemo::View::SpriteResourceHandle sprite_handle)
+        {
+            load_sprite_resource(sprite_handle);
+
+            VadonEditor::Model::ModelSystem& editor_model = get_system<VadonEditor::Model::ModelSystem>();
+            m_view->update_view_resource(editor_model.get_ecs_world(), VadonDemo::View::ViewResourceHandle::from_resource_handle(sprite_handle));
+        }
+
+        void load_sprite_resource(VadonDemo::View::SpriteResourceHandle sprite_handle)
+        {
+            Vadon::Scene::ResourceSystem& resource_system = get_engine_core().get_system<Vadon::Scene::ResourceSystem>();
+            VadonDemo::View::Sprite* sprite_resource = resource_system.get_resource(sprite_handle);
+
+            if (sprite_resource->texture_path.empty())
+            {
+                sprite_resource->texture_srv.invalidate();
+                return;
+            }
+
+            auto sprite_it = m_sprite_textures.find(sprite_resource->texture_path);
+            if (sprite_it != m_sprite_textures.end())
+            {
+                sprite_resource->texture_srv = sprite_it->second.srv;
+                return;
+            }
+
+            // FIXME: accept other extensions!
+            std::filesystem::path texture_fs_path = sprite_resource->texture_path;
+            texture_fs_path.replace_extension(".dds");
+
+            VadonEditor::Core::ProjectManager& project_manager = get_system<VadonEditor::Core::ProjectManager>();
+            Vadon::Core::FileSystem& file_system = get_engine_core().get_system<Vadon::Core::FileSystem>();
+            Vadon::Core::FileSystemPath file_path{ .root_directory = project_manager.get_active_project().root_dir_handle, .path = texture_fs_path.string() };
+            
+            if (file_system.does_file_exist(file_path) == false)
+            {
+                sprite_resource->texture_srv.invalidate();
+                return;
+            }
+
+            Vadon::Core::FileSystem::RawFileDataBuffer texture_file_buffer;
+            if (file_system.load_file(file_path, texture_file_buffer) == false)
+            {
+                sprite_resource->texture_srv.invalidate();
+                return;
+            }
+
+            Vadon::Render::TextureSystem& texture_system = get_engine_core().get_system<Vadon::Render::TextureSystem>();
+            Vadon::Render::TextureHandle texture_handle = texture_system.create_texture_from_memory(texture_file_buffer.size(), texture_file_buffer.data());
+            if (texture_handle.is_valid() == false)
+            {
+                sprite_resource->texture_srv.invalidate();
+                return;
+            }
+
+            const Vadon::Render::TextureInfo texture_info = texture_system.get_texture_info(texture_handle);
+
+            // Create texture view
+            // FIXME: we are guessing the 
+            Vadon::Render::TextureSRVInfo texture_srv_info;
+            texture_srv_info.format = texture_info.format;
+            texture_srv_info.type = Vadon::Render::TextureSRVType::TEXTURE_2D;
+            texture_srv_info.mip_levels = texture_info.mip_levels;
+            texture_srv_info.most_detailed_mip = 0;
+
+            Vadon::Render::SRVHandle srv_handle = texture_system.create_shader_resource_view(texture_handle, texture_srv_info);
+            if (srv_handle.is_valid() == false)
+            {
+                // TODO: also remove texture?
+                sprite_resource->texture_srv.invalidate();
+                return;
+            }
+
+            // Add to lookup
+            SpriteTexture new_sprite_texture{ .texture = texture_handle, .srv = srv_handle };
+            m_sprite_textures.insert(std::make_pair(sprite_resource->texture_path, new_sprite_texture));
+
+            sprite_resource->texture_srv = srv_handle;
+        }
+
         enum class InputAction
         {
             CAMERA_UP,
@@ -378,6 +510,15 @@ namespace
         std::unique_ptr<VadonDemo::View::View> m_view;
 
         std::unordered_map<VadonEditor::Model::Scene*, Vadon::Render::Canvas::RenderContext> m_scene_canvas_contexts;
+
+        // FIXME: refactor this, need a proper asset management system!
+        struct SpriteTexture
+        {
+            Vadon::Render::TextureHandle texture;
+            Vadon::Render::SRVHandle srv;
+        };
+
+        std::unordered_map<std::string, SpriteTexture> m_sprite_textures;
     };
 }
 

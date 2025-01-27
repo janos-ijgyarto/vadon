@@ -31,7 +31,8 @@
                     },
                     {
                         "properties": {
-                            "resource": "KkqpfJOESB+yH+OZ38LzaQ=="
+                            "resource": "QA85kaI8S9Gbv+1BcKK+3A==",
+                            "z_order": 0.0
                         },
                         "type": "VadonDemo::View::ViewComponent"
                     }
@@ -62,7 +63,8 @@
                     },
                     {
                         "properties": {
-                            "resource": "JEb0jPI3QZa/2FHo2MAemw=="
+                            "resource": "JEb0jPI3QZa/2FHo2MAemw==",
+                            "z_order": 3.0
                         },
                         "type": "VadonDemo::View::ViewComponent"
                     },

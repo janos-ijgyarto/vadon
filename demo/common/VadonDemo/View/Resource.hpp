@@ -36,7 +36,8 @@ namespace VadonDemo::View
 	struct Sprite : public ViewResource
 	{
 		std::string texture_path; // FIXME: implement texture resource!
-		// TODO: other params (offset, etc.)
+		Vadon::Render::SRVHandle texture_srv; // FIXME: we shouldn't immediately point to an SRV, have client determine how they want to use texture data
+		int repeat = 1;
 
 		static void register_resource();
 	};

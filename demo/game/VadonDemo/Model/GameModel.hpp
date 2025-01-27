@@ -1,5 +1,6 @@
 #ifndef VADONDEMO_MODEL_GAMEMODEL_HPP
 #define VADONDEMO_MODEL_GAMEMODEL_HPP
+#include <Vadon/Core/File/RootDirectory.hpp>
 #include <Vadon/Scene/Scene.hpp>
 #include <memory>
 namespace Vadon::Core
@@ -45,6 +46,7 @@ namespace VadonDemo::Model
 		~GameModel();
 
 		const Vadon::Core::Project& get_project_info() const;
+		Vadon::Core::RootDirectoryHandle get_project_root_dir() const;
 
 		State get_state() const;
 		SimState get_sim_state() const;
