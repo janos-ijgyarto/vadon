@@ -37,5 +37,18 @@ namespace Vadon::Utilities
         std::unique_ptr<T> m_data;
     };
 
+    template<typename T>
+    bool operator==(const Box<T>& /*lhs*/, const Box<T>& /*rhs*/)
+    {
+        // TODO!!!
+        return false;
+    }
+
+    template<typename T>
+    bool operator!=(const Box<T>& /*lhs*/, const Box<T>& /*rhs*/)
+    {
+        // TODO!!!
+        return true;
+    }
 }
 #endif

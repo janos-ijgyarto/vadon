@@ -7,93 +7,13 @@
                 "parent": -1
             },
             {
-                "components": [
-                    {
-                        "properties": {
-                            "dimensions": [
-                                500.0,
-                                500.0
-                            ],
-                            "display_name": "Demo map"
-                        },
-                        "type": "VadonDemo::Model::Map"
-                    },
-                    {
-                        "properties": {
-                            "position": [
-                                0.0,
-                                0.0
-                            ],
-                            "rotation": 0.0,
-                            "scale": 1000.0
-                        },
-                        "type": "VadonDemo::Model::Transform2D"
-                    },
-                    {
-                        "properties": {
-                            "resource": "QA85kaI8S9Gbv+1BcKK+3A==",
-                            "z_order": 0.0
-                        },
-                        "type": "VadonDemo::View::ViewComponent"
-                    }
-                ],
+                "components": [],
                 "name": "Map",
                 "parent": 0,
                 "scene": "sYwe60a/S7u7MDxRJ9+tWA=="
             },
             {
-                "components": [
-                    {
-                        "properties": {
-                            "position": [
-                                0.0,
-                                0.0
-                            ],
-                            "rotation": 0.0,
-                            "scale": 25.0
-                        },
-                        "type": "VadonDemo::Model::Transform2D"
-                    },
-                    {
-                        "properties": {
-                            "projectile_prefab": "CjiAVUGbQQ6HGqbCh3/QkQ==",
-                            "rate_of_fire": 180.0
-                        },
-                        "type": "VadonDemo::Model::Weapon"
-                    },
-                    {
-                        "properties": {
-                            "resource": "JEb0jPI3QZa/2FHo2MAemw==",
-                            "z_order": 3.0
-                        },
-                        "type": "VadonDemo::View::ViewComponent"
-                    },
-                    {
-                        "properties": {
-                            "acceleration": 0.0,
-                            "top_speed": 100.0
-                        },
-                        "type": "VadonDemo::Model::Velocity2D"
-                    },
-                    {
-                        "properties": {
-                            "max_health": 100.0
-                        },
-                        "type": "VadonDemo::Model::Health"
-                    },
-                    {
-                        "properties": {
-                            "radius": 0.5
-                        },
-                        "type": "VadonDemo::Model::Collision"
-                    },
-                    {
-                        "properties": {
-                            "damage_delay": 3.0
-                        },
-                        "type": "VadonDemo::Model::Player"
-                    }
-                ],
+                "components": [],
                 "name": "Player",
                 "parent": 0,
                 "scene": "ksqzkk6GQRerCUwjgv4FPA=="

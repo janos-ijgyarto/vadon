@@ -45,6 +45,8 @@ namespace Vadon::Utilities
 
 			Result close_array() override { return Result::NOT_IMPLEMENTED; }
 			Result close_object() override { return Result::NOT_IMPLEMENTED; }
+
+			bool has_key(std::string_view /*key*/) const override { return false; }
 		protected:
 			Result serialize_int(int& /*value*/) override { return Result::NOT_IMPLEMENTED; }
 			Result serialize_float(float& /*value*/) override { return Result::NOT_IMPLEMENTED; }
@@ -142,6 +144,17 @@ namespace Vadon::Utilities
 					return Result::INVALID_CONTAINER;
 				}
 				return Result::SUCCESSFUL;
+			}
+
+			bool has_key(std::string_view key) const override
+			{
+				// Only allow if we were in an object to begin with
+				const JSON& current_object = get_current_value();
+				if (current_object.is_object() == true)
+				{
+					return current_object.find(key) != current_object.end();
+				}
+				return false;
 			}
 		protected:
 			Result set_value_reference(std::string_view key) override
