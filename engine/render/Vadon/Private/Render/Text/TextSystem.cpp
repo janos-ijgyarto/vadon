@@ -290,7 +290,7 @@ namespace Vadon::Private::Render
 		return wrap_offsets;
 	}
 
-	FontHandle TextSystem::create_font(const FontInfo& font_info, std::span<unsigned char> font_data_buffer)
+	FontHandle TextSystem::create_font(const FontInfo& font_info, std::span<const unsigned char> font_data_buffer)
 	{
 		// FreeType code based in part on: https://kevinboone.me/fbtextdemo.html
 		FTFontFaceWrapper font_face;

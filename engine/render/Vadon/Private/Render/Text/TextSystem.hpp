@@ -18,7 +18,7 @@ namespace Vadon::Private::Render
 	public:
 		static constexpr size_t c_font_character_count = 128; // FIXME: make this user-configurable?
 
-		FontHandle create_font(const FontInfo& font_info, std::span<unsigned char> font_data_buffer) override;
+		FontHandle create_font(const FontInfo& font_info, std::span<const unsigned char> font_data_buffer) override;
 		TextRenderData create_text_render_data(std::string_view text, const TextRenderInfo& render_info) const override;
 	protected:
 		struct FontGlyph

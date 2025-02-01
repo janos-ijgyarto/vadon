@@ -1,0 +1,62 @@
+{
+    "data": {
+        "entities": [
+            {
+                "components": [],
+                "name": "Root",
+                "parent": -1
+            },
+            {
+                "components": [
+                    {
+                        "properties": {
+                            "dimensions": [
+                                800.0,
+                                800.0
+                            ],
+                            "position": [
+                                -400.0,
+                                400.0
+                            ]
+                        },
+                        "type": "VadonDemo::UI::Base"
+                    }
+                ],
+                "name": "MainFrame",
+                "parent": 0,
+                "scene": "SkNc4cxeQV+JAgDb4DW6qw=="
+            },
+            {
+                "components": [
+                    {
+                        "properties": {
+                            "text": "Vadon Demo"
+                        },
+                        "type": "VadonDemo::UI::Text"
+                    },
+                    {
+                        "properties": {
+                            "dimensions": [
+                                300.0,
+                                16.0
+                            ],
+                            "position": [
+                                -80.0,
+                                380.0
+                            ]
+                        },
+                        "type": "VadonDemo::UI::Base"
+                    }
+                ],
+                "name": "Label",
+                "parent": 0,
+                "scene": "2r2yS8FDT/WGSZ7bPY6/ZQ=="
+            }
+        ]
+    },
+    "id": "logqRpQYSLqnn8W+lZaOwg==",
+    "properties": {
+        "name": ""
+    },
+    "type": "Vadon::Scene::Scene"
+}

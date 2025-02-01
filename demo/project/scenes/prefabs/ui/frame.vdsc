@@ -1,0 +1,49 @@
+{
+    "data": {
+        "entities": [
+            {
+                "components": [
+                    {
+                        "properties": {
+                            "dimensions": [
+                                16.0,
+                                16.0
+                            ],
+                            "position": [
+                                0.0,
+                                0.0
+                            ],
+                            "visible": true,
+                            "z_order": 0.0
+                        },
+                        "type": "VadonDemo::UI::Base"
+                    },
+                    {
+                        "properties": {
+                            "fill_color": [
+                                1.0,
+                                1.0,
+                                1.0
+                            ],
+                            "fill_enable": false,
+                            "outline_color": [
+                                1.0,
+                                1.0,
+                                1.0
+                            ],
+                            "outline_thickness": 1.0
+                        },
+                        "type": "VadonDemo::UI::Frame"
+                    }
+                ],
+                "name": "Frame",
+                "parent": -1
+            }
+        ]
+    },
+    "id": "SkNc4cxeQV+JAgDb4DW6qw==",
+    "properties": {
+        "name": ""
+    },
+    "type": "Vadon::Scene::Scene"
+}
