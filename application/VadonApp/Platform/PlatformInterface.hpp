@@ -16,6 +16,13 @@ namespace VadonApp::Platform
 		MOUSE_GLOBAL_STATE = 1 << 0
 	};
 
+	struct MouseState
+	{
+		Vadon::Utilities::Vector2i position = { 0, 0 };
+		// TODO: use enum for button state!
+		uint32_t buttons = 0;
+	};
+
 	class PlatformInterface : public PlatformSystem<PlatformInterface>
 	{
 	public:
@@ -65,7 +72,8 @@ namespace VadonApp::Platform
 
 		virtual void capture_mouse(bool capture) = 0;
 		virtual void warp_mouse(WindowHandle window_handle, const Vadon::Utilities::Vector2i& mouse_position) = 0;
-		virtual Vadon::Utilities::Vector2i get_mouse_position() const = 0;
+		virtual MouseState get_mouse_state() const = 0;
+		virtual MouseState get_global_mouse_state() const = 0;
 
 		virtual void set_clipboard_text(const char* text) = 0;
 		virtual const char* get_clipboard_text() = 0;

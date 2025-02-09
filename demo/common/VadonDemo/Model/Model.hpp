@@ -23,14 +23,13 @@ namespace VadonDemo::Model
 		VADONDEMO_API Model(Vadon::Core::EngineCoreInterface& engine_core);
 		VADONDEMO_API ~Model();
 
+		static void register_types();
 		VADONDEMO_API bool initialize();
 
 		VADONDEMO_API bool init_simulation(Vadon::ECS::World& ecs_world, Vadon::Scene::SceneID level_scene_id);
 		VADONDEMO_API void update(Vadon::ECS::World& ecs_world, float delta_time);
 		VADONDEMO_API bool is_in_end_state(Vadon::ECS::World& ecs_world) const;
 		VADONDEMO_API void end_simulation(Vadon::ECS::World& ecs_world);
-
-		VADONDEMO_API static void init_engine_environment(Vadon::Core::EngineEnvironment& environment);
 	private:
 		struct Internal;
 		std::unique_ptr<Internal> m_internal;

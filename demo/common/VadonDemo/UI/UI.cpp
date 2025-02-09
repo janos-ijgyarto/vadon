@@ -17,17 +17,14 @@ namespace VadonDemo::UI
 		Vadon::Render::FontHandle m_default_font;
 		Vadon::Render::Canvas::MaterialHandle m_text_sdf_material;
 
+		std::unordered_map<std::string, std::vector<SelectableCallback>> m_selectable_callbacks;
+
 		Internal(Vadon::Core::EngineCoreInterface& engine_core)
 			: m_engine_core(engine_core)
 		{ }
 
 		bool initialize()
 		{
-			Base::register_component();
-			Frame::register_component();
-			Text::register_component();
-			Selectable::register_component();
-
 			if (load_default_font() == false)
 			{
 				return false;
@@ -44,6 +41,25 @@ namespace VadonDemo::UI
 			}
 
 			return true;
+		}
+
+		void register_selectable_callback(std::string_view key, SelectableCallback callback)
+		{
+			m_selectable_callbacks[std::string(key)].push_back(callback);
+		}
+
+		void signal_selectable_callbacks(std::string_view key)
+		{
+			auto selectable_it = m_selectable_callbacks.find(std::string(key));
+			if (selectable_it == m_selectable_callbacks.end())
+			{
+				return;
+			}
+
+			for (const SelectableCallback& current_callback : selectable_it->second)
+			{
+				current_callback(key);
+			}
 		}
 
 		// TODO: manage fonts via resources!
@@ -64,9 +80,50 @@ namespace VadonDemo::UI
 			return true;
 		}
 
-		void update(Vadon::ECS::World& ecs_world)
+		void update(Vadon::ECS::World& ecs_world, const CursorState& cursor)
 		{
-			update_selectables(ecs_world);
+			update_selectables(ecs_world, cursor);
+		}
+
+		void update_selectables(Vadon::ECS::World& ecs_world, const CursorState& cursor)
+		{
+			if (cursor.clicked == false)
+			{
+				return;
+			}
+
+			Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
+			auto selectable_query = component_manager.run_component_query<Base&, Selectable&>();
+			for (auto selectable_it = selectable_query.get_iterator(); selectable_it.is_valid() == true; selectable_it.next())
+			{
+				auto selectable_tuple = selectable_it.get_tuple();
+
+				const Base& base_component = std::get<Base&>(selectable_tuple);
+				const Selectable& selectable_component = std::get<Selectable&>(selectable_tuple);
+
+				if (selectable_component.clicked_key.empty() == true)
+				{
+					continue;
+				}
+
+				if (base_component.visible == false)
+				{
+					continue;
+				}
+
+				const Vadon::Utilities::Vector2 min_corner(base_component.position.x, base_component.position.y - base_component.dimensions.y);
+				const Vadon::Utilities::Vector2 max_corner(base_component.position.x + base_component.dimensions.x, base_component.position.y);
+
+				if (Vadon::Utilities::any(Vadon::Utilities::lessThan(cursor.position, min_corner))
+					|| Vadon::Utilities::any(Vadon::Utilities::greaterThan(cursor.position, max_corner)))
+				{
+					continue;
+				}
+
+				// TODO: sort by Z order and pick the top
+				// For now just activate all
+				signal_selectable_callbacks(selectable_component.clicked_key);
+			}
 		}
 
 		void update_ui_element(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle entity)
@@ -154,28 +211,6 @@ namespace VadonDemo::UI
 				canvas_system.remove_item(base_component->canvas_item);
 			}
 		}
-
-		void update_selectables(Vadon::ECS::World& /*ecs_world*/)
-		{
-#if 0
-			// TODO: register callbacks, use EntityHandle to identify which selectable to use
-			abcdefg;
-
-			Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
-			auto selectable_query = component_manager.run_component_query<Base&, Selectable&>();
-			for (auto selectable_it = selectable_query.get_iterator(); selectable_it.is_valid() == true; selectable_it.next())
-			{
-				auto selectable_tuple = selectable_it.get_tuple();
-
-				const Base& base_component = std::get<Base&>(selectable_tuple);
-				const Selectable& selectable_component = std::get<Selectable&>(selectable_tuple);
-
-				// TODO: check cursor position
-				// If over selectable and clicked, activate callback
-				abcdefg;
-			}
-#endif
-		}
 	};
 
 	UI::UI(Vadon::Core::EngineCoreInterface& engine_core)
@@ -185,14 +220,27 @@ namespace VadonDemo::UI
 
 	UI::~UI() = default;
 
+	void UI::register_types()
+	{
+		Base::register_component();
+		Frame::register_component();
+		Text::register_component();
+		Selectable::register_component();
+	}
+
 	bool UI::initialize()
 	{
 		return m_internal->initialize();
 	}
 
-	void UI::update(Vadon::ECS::World& ecs_world)
+	void UI::register_selectable_callback(std::string_view key, SelectableCallback callback)
 	{
-		m_internal->update(ecs_world);
+		m_internal->register_selectable_callback(key, callback);
+	}
+
+	void UI::update(Vadon::ECS::World& ecs_world, const CursorState& cursor)
+	{
+		m_internal->update(ecs_world, cursor);
 	}
 
 	void UI::update_ui_element(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle entity)

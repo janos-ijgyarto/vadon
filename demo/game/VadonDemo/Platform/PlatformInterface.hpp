@@ -21,6 +21,7 @@ namespace VadonDemo::Platform
 			bool move_left = false;
 			bool move_right = false;
 			bool fire = false;
+			bool ui_select = false;
 		};
 
 		~PlatformInterface();

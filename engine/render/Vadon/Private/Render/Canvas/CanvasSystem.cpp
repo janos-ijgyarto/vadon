@@ -241,6 +241,14 @@ namespace Vadon::Private::Render::Canvas
 		m_item_pool.remove(item_handle);
 	}
 
+	void CanvasSystem::set_item_visible(ItemHandle item_handle, bool visible)
+	{
+		ItemData& item = m_item_pool.get(item_handle);
+		item.visible = visible;
+
+		set_item_layer_dirty(item);
+	}
+
 	void CanvasSystem::set_item_transform(ItemHandle item_handle, const Transform& transform)
 	{
 		ItemData& item = m_item_pool.get(item_handle);
@@ -869,9 +877,9 @@ namespace Vadon::Private::Render::Canvas
 			update_layer_items(current_layer_data);
 
 			// FIXME: should sort primitives based on layer and Z order, for now just do them in whatever order they are in
-			for (ItemHandle item_handle : current_layer_data.items)
+			for (size_t current_item_index = 0; current_item_index < current_layer_data.visible_count; ++current_item_index)
 			{
-				const ItemData& current_item_data = m_item_pool.get(item_handle);
+				const ItemData& current_item_data = m_item_pool.get(current_layer_data.items[current_item_index]);
 				if (current_item_data.command_buffer.is_empty() == true)
 				{
 					continue;
@@ -1050,8 +1058,24 @@ namespace Vadon::Private::Render::Canvas
 				const ItemData& left_item = m_item_pool.get(lhs);
 				const ItemData& right_item = m_item_pool.get(rhs);
 
+				if ((left_item.visible == true) && (right_item.visible == false))
+				{
+					return true;
+				}
+
 				return left_item.info.z_order < right_item.info.z_order;
 			}
 		);
+
+		layer.visible_count = 0;
+		for (ItemHandle current_item_handle : layer.items)
+		{
+			const ItemData& current_item = m_item_pool.get(current_item_handle);
+			if (current_item.visible == false)
+			{
+				break;
+			}
+			++layer.visible_count;
+		}
 	}
 }

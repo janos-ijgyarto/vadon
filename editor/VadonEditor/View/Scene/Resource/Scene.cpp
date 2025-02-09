@@ -84,7 +84,7 @@ namespace VadonEditor::View
 		m_window.title = "Scene List";
 		m_window.open = false;
 
-		m_scene_list_box.label = "#scene_list";
+		m_scene_list_box.label = "##scene_list";
 		m_scene_list_box.size = { -1, -1 };
 
 		m_save_scene_dialog.set_accept_label("Save");

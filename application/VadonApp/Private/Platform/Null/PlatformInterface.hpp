@@ -46,7 +46,8 @@ namespace VadonApp::Private::Platform::Null
 
 		void capture_mouse(bool /*capture*/) override {}
 		void warp_mouse(VadonApp::Platform::WindowHandle /*window_handle*/, const Vadon::Utilities::Vector2i& /*mouse_position*/) override {}
-		Vadon::Utilities::Vector2i get_mouse_position() const override { return Vadon::Utilities::Vector2i(); }
+		VadonApp::Platform::MouseState get_mouse_state() const override { return VadonApp::Platform::MouseState(); }
+		VadonApp::Platform::MouseState get_global_mouse_state() const override { return VadonApp::Platform::MouseState(); }
 
 		void set_clipboard_text(const char* /*text*/) override {}
 		const char* get_clipboard_text() override { return nullptr; }

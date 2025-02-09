@@ -191,6 +191,12 @@ namespace VadonDemo::View
 
 			m_canvas_context.layers.push_back(canvas_layer);
 
+			// Add the UI layer
+			// FIXME: make this more modular!
+			{				
+				m_canvas_context.layers.push_back(m_game_core.get_ui_system().get_canvas_layer());
+			}
+
 			Vadon::ECS::World& ecs_world = m_game_core.get_ecs_world();
 			Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
 
@@ -358,9 +364,8 @@ namespace VadonDemo::View
 			std::filesystem::path texture_fs_path = sprite_resource->texture_path;
 			texture_fs_path.replace_extension(".dds");
 
-			Model::GameModel& game_model = m_game_core.get_model();
 			Vadon::Core::FileSystem& file_system = engine_core.get_system<Vadon::Core::FileSystem>();
-			Vadon::Core::FileSystemPath file_path{ .root_directory = game_model.get_project_root_dir(), .path = texture_fs_path.string()};
+			Vadon::Core::FileSystemPath file_path{ .root_directory = m_game_core.get_project_root_dir(), .path = texture_fs_path.string()};
 
 			if (file_system.does_file_exist(file_path) == false)
 			{

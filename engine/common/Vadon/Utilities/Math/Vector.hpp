@@ -26,11 +26,15 @@ namespace Vadon::Utilities
 	constexpr Vector4 Vector4_One = Vector4{ 1, 1, 1, 1 };
 
 	// TODO: organize these?
+	using glm::any;
+	using glm::all;
 	using glm::distance;
 	using glm::length;
 	using glm::normalize;
 	using glm::abs;
 	using glm::dot;
 	using glm::clamp;
+	using glm::lessThan;
+	using glm::greaterThan;
 }
 #endif

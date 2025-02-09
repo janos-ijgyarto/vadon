@@ -3,11 +3,9 @@
 #include <VadonDemo/Model/Component.hpp>
 
 #include <Vadon/Core/CoreInterface.hpp>
-#include <Vadon/Core/Environment.hpp>
 
 #include <Vadon/ECS/World/World.hpp>
 
-#include <Vadon/Scene/Resource/ResourceSystem.hpp>
 #include <Vadon/Scene/SceneSystem.hpp>
 
 #include <numbers>
@@ -66,17 +64,7 @@ namespace VadonDemo::Model
 
 		bool initialize()
 		{
-			Transform2D::register_component();
-			Velocity2D::register_component();
-			Collision::register_component();
-			Health::register_component();
-			Player::register_component();
-			Weapon::register_component();
-			Projectile::register_component();
-			Enemy::register_component();
-			Map::register_component();
-			Spawner::register_component();
-
+			// TODO: anything?
 			return true;
 		}
 
@@ -841,6 +829,20 @@ namespace VadonDemo::Model
 
 	Model::~Model() = default;
 
+	void Model::register_types()
+	{
+		Transform2D::register_component();
+		Velocity2D::register_component();
+		Collision::register_component();
+		Health::register_component();
+		Player::register_component();
+		Weapon::register_component();
+		Projectile::register_component();
+		Enemy::register_component();
+		Map::register_component();
+		Spawner::register_component();
+	}
+
 	bool Model::initialize()
 	{
 		return m_internal->initialize();
@@ -864,12 +866,5 @@ namespace VadonDemo::Model
 	void Model::end_simulation(Vadon::ECS::World& ecs_world)
 	{
 		m_internal->end_simulation(ecs_world);
-	}
-
-	void Model::init_engine_environment(Vadon::Core::EngineEnvironment& environment)
-	{
-		Vadon::Core::EngineEnvironment::initialize(environment);
-
-		// TODO: register types as needed!
 	}
 }

@@ -38,6 +38,7 @@ namespace Vadon::Private::Render::Canvas
 		ItemInfo get_item_info(ItemHandle item_handle) const override;
 		void remove_item(ItemHandle item_handle) override;
 
+		void set_item_visible(ItemHandle item_handle, bool visible) override;
 		void set_item_transform(ItemHandle item_handle, const Transform& transform) override;
 		void set_item_z_order(ItemHandle item_handle, float z_order) override;
 

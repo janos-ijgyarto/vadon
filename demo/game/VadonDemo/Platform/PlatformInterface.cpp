@@ -17,6 +17,7 @@ namespace
 		MOVE_LEFT,
 		MOVE_RIGHT,
 		FIRE,
+		UI_SELECT,
 		ACTION_COUNT
 	};
 
@@ -107,6 +108,12 @@ namespace VadonDemo::Platform
 				m_input_actions[Vadon::Utilities::to_integral(InputAction::FIRE)] = fire_action;
 			}
 
+			{
+				VadonApp::Platform::InputActionHandle ui_action = input_system.create_input_action(VadonApp::Platform::InputActionInfo{ .name = "ui_select" });
+				input_system.add_mouse_entry(ui_action, VadonApp::Platform::MouseButton::LEFT);
+				m_input_actions[Vadon::Utilities::to_integral(InputAction::UI_SELECT)] = ui_action;
+			}
+
 			return true;
 		}
 
@@ -146,7 +153,8 @@ namespace VadonDemo::Platform
 			.move_down = input_system.is_action_pressed(m_internal->m_input_actions[Vadon::Utilities::to_integral(InputAction::MOVE_DOWN)]),
 			.move_left = input_system.is_action_pressed(m_internal->m_input_actions[Vadon::Utilities::to_integral(InputAction::MOVE_LEFT)]),
 			.move_right = input_system.is_action_pressed(m_internal->m_input_actions[Vadon::Utilities::to_integral(InputAction::MOVE_RIGHT)]),
-			.fire = input_system.is_action_pressed(m_internal->m_input_actions[Vadon::Utilities::to_integral(InputAction::FIRE)])
+			.fire = input_system.is_action_pressed(m_internal->m_input_actions[Vadon::Utilities::to_integral(InputAction::FIRE)]),
+			.ui_select = input_system.is_action_pressed(m_internal->m_input_actions[Vadon::Utilities::to_integral(InputAction::UI_SELECT)])
 		};
 	}
 

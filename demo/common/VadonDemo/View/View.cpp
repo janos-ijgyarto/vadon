@@ -40,12 +40,7 @@ namespace VadonDemo::View
 
 		bool initialize()
 		{
-			ViewResource::register_resource();
-			Shape::register_resource();
-			Sprite::register_resource();
-
-			ViewComponent::register_component();
-
+			// TODO: anything?
 			return true;
 		}
 
@@ -430,6 +425,15 @@ namespace VadonDemo::View
 
 	View::~View()
 	{
+	}
+
+	void View::register_types()
+	{
+		ViewResource::register_resource();
+		Shape::register_resource();
+		Sprite::register_resource();
+
+		ViewComponent::register_component();
 	}
 
 	bool View::initialize()

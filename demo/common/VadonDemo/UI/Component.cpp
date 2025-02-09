@@ -37,5 +37,7 @@ namespace VadonDemo::UI
 	void Selectable::register_component()
 	{
 		Vadon::ECS::ComponentRegistry::register_component_type<Selectable>();
+
+		Vadon::Utilities::TypeRegistry::add_property<Selectable>("clicked_key", Vadon::Utilities::MemberVariableBind<&Selectable::clicked_key>().bind_member_getter().bind_member_setter());
 	}
 }

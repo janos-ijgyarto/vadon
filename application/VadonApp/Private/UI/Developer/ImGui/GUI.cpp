@@ -1566,7 +1566,7 @@ float4 main(PS_INPUT input) : SV_Target
             // (Optional) Fallback to provide mouse position when focused
             if (m_platform_data.mouse_global_state && (m_platform_data.mouse_buttons_down == 0))
             {
-                const Vadon::Utilities::Vector2i mouse_position = platform_interface.get_mouse_position();
+                const Vadon::Utilities::Vector2i mouse_position = platform_interface.get_global_mouse_state().position;
                 const Vadon::Utilities::Vector2i window_position = platform_interface.get_window_position(m_platform_data.window_handle);
 
                 const Vadon::Utilities::Vector2i mouse_window_position = mouse_position - window_position;

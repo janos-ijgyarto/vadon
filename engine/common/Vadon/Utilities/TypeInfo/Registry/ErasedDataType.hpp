@@ -6,6 +6,7 @@ namespace Vadon::Utilities
 	enum class ErasedDataType
 	{
 		TRIVIAL,
+		RESOURCE_ID,
 		RESOURCE_HANDLE
 	};
 

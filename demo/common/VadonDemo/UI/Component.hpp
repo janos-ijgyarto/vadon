@@ -15,6 +15,9 @@ namespace VadonDemo::UI
 
 		// TODO: position and sizing style, whether to use absolute coords or relative to screen size
 
+		// FIXME: decouple from visualization
+		// Could create Render component/system which can be used by View and UI to visualize their content
+		// e.g UI system takes UI components and feeds draw data into Render component
 		Vadon::Render::Canvas::ItemHandle canvas_item;
 
 		static void register_component();
@@ -46,7 +49,8 @@ namespace VadonDemo::UI
 
 	struct Selectable
 	{
-		// TODO: anything?
+		// TODO: more advanced signal/callback system?
+		std::string clicked_key;
 
 		static void register_component();
 	};

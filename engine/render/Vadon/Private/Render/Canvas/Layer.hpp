@@ -12,6 +12,7 @@ namespace Vadon::Private::Render::Canvas
 		LayerInfo info;
 		std::vector<Vadon::Render::Canvas::ItemHandle> items;
 		bool items_dirty = false;
+		size_t visible_count = 0;
 		// TODO: anything else?
 
 		void set_items_dirty() { items_dirty = true; }

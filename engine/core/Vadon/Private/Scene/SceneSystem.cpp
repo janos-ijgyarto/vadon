@@ -165,6 +165,7 @@ namespace Vadon::Private::Scene
 						}
 					}
 						break;
+					case ErasedDataType::RESOURCE_ID:
 					case ErasedDataType::RESOURCE_HANDLE:
 					{
 						ResourceID temp_resource_id;
@@ -199,6 +200,7 @@ namespace Vadon::Private::Scene
 						}
 					}
 					break;
+					case ErasedDataType::RESOURCE_ID:
 					case ErasedDataType::RESOURCE_HANDLE:
 					{
 						ResourceID temp_resource_id = std::get<ResourceID>(current_property.value);
@@ -475,6 +477,7 @@ namespace Vadon::Private::Scene
 					switch (current_property_data.data_type.type)
 					{
 					case ErasedDataType::TRIVIAL:
+					case ErasedDataType::RESOURCE_ID:
 					{
 						Vadon::Utilities::TypeRegistry::set_property(current_component, current_component_data.type_id, current_property_data.name, current_property_data.value);
 					}
@@ -598,6 +601,7 @@ namespace Vadon::Private::Scene
 				switch (component_property.data_type.type)
 				{
 				case ErasedDataType::TRIVIAL:
+				case ErasedDataType::RESOURCE_ID:
 					property_data.value = component_property.value;
 					break;
 				case ErasedDataType::RESOURCE_HANDLE:
@@ -621,6 +625,7 @@ namespace Vadon::Private::Scene
 				switch (component_property.data_type.type)
 				{
 				case ErasedDataType::TRIVIAL:
+				case ErasedDataType::RESOURCE_ID:
 					return property_data.value == component_property.value;
 				case ErasedDataType::RESOURCE_HANDLE:
 				{

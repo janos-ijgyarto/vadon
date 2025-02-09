@@ -1,6 +1,8 @@
 #include <VadonDemo/Model/Model.hpp>
 #include <VadonDemo/Model/Component.hpp>
 
+#include <VadonDemo/Core/Core.hpp>
+
 #include <VadonDemo/UI/Component.hpp>
 #include <VadonDemo/UI/UI.hpp>
 
@@ -43,9 +45,8 @@ namespace
     public:
         Editor(Vadon::Core::EngineEnvironment& environment)
             : VadonEditor::Core::Editor(environment)
+            , m_core(environment)
         {
-            // Initialize both for editor library and the game-specific model
-            VadonDemo::Model::Model::init_engine_environment(environment);
         }
     protected:
         bool initialize(int argc, char* argv[]) override
@@ -55,6 +56,8 @@ namespace
             {
                 return false;
             }
+
+            VadonDemo::Core::Core::register_types();
 
             // Initialize Demo-specific systems
             m_model = std::make_unique<VadonDemo::Model::Model>(get_engine_core());
@@ -131,8 +134,6 @@ namespace
                         }
                     }
 
-                    m_ui->update(ecs_world);
-
                     Vadon::Render::Canvas::RenderContext& active_scene_context = get_scene_canvas_context(active_scene);
 
                     // Control camera per-scene
@@ -140,6 +141,11 @@ namespace
                     float camera_zoom = 0.0f;
 
                     VadonApp::Core::Application& engine_app = get_engine_app();
+
+                    VadonApp::Platform::WindowHandle main_window = get_system<VadonEditor::Platform::PlatformInterface>().get_main_window();
+                    VadonApp::Platform::PlatformInterface& platform_interface = engine_app.get_system<VadonApp::Platform::PlatformInterface>();
+                    const Vadon::Utilities::Vector2i window_size = platform_interface.get_window_drawable_size(main_window);
+
                     if (Vadon::Utilities::to_bool(engine_app.get_system<VadonApp::UI::Developer::GUISystem>().get_io_flags() & VadonApp::UI::Developer::GUISystem::IOFlags::KEYBOARD_CAPTURE) == false)
                     {
                         VadonApp::Platform::InputSystem& input_system = engine_app.get_system<VadonApp::Platform::InputSystem>();
@@ -166,8 +172,6 @@ namespace
 
                     // Update viewport and camera rectangle
                     // FIXME: only update this when it changes!
-                    VadonApp::Platform::WindowHandle main_window = get_system<VadonEditor::Platform::PlatformInterface>().get_main_window();
-                    const Vadon::Utilities::Vector2i window_size = engine_app.get_system<VadonApp::Platform::PlatformInterface>().get_window_drawable_size(main_window);
                     active_scene_context.viewports.back().render_viewport.dimensions.size = window_size;
 
                     active_scene_context.camera.view_rectangle.position += get_delta_time() * 200 * camera_velocity;
@@ -219,7 +223,7 @@ namespace
                         init_ui_entity(component_event.owner);
                         break;
                     case Vadon::ECS::ComponentEventType::REMOVED:
-                        remove_view_entity(ecs_world, component_event.owner);
+                        remove_ui_entity(ecs_world, component_event.owner);
                         break;
                     }
                 }
@@ -672,6 +676,7 @@ namespace
 
         std::array<VadonApp::Platform::InputActionHandle, Vadon::Utilities::to_integral(InputAction::ACTION_COUNT)> m_input_actions;
 
+        VadonDemo::Core::Core m_core;
         std::unique_ptr<VadonDemo::Model::Model> m_model;
         std::unique_ptr<VadonDemo::UI::UI> m_ui;
         std::unique_ptr<VadonDemo::View::View> m_view;

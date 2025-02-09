@@ -21,6 +21,7 @@ namespace VadonDemo::View
 		VADONDEMO_API View(Vadon::Core::EngineCoreInterface& engine_core);
 		VADONDEMO_API ~View();
 
+		static void register_types();
 		VADONDEMO_API bool initialize();
 
 		VADONDEMO_API bool init_visualization(Vadon::ECS::World& ecs_world);

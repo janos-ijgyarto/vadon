@@ -51,6 +51,70 @@
                 "name": "Label",
                 "parent": 0,
                 "scene": "2r2yS8FDT/WGSZ7bPY6/ZQ=="
+            },
+            {
+                "components": [
+                    {
+                        "properties": {
+                            "offset": [
+                                8.0,
+                                -15.0
+                            ],
+                            "text": "Start"
+                        },
+                        "type": "VadonDemo::UI::Text"
+                    },
+                    {
+                        "properties": {
+                            "dimensions": [
+                                120.0,
+                                60.0
+                            ]
+                        },
+                        "type": "VadonDemo::UI::Base"
+                    },
+                    {
+                        "properties": {
+                            "clicked_key": "start"
+                        },
+                        "type": "VadonDemo::UI::Selectable"
+                    }
+                ],
+                "name": "StartButton",
+                "parent": 0,
+                "scene": "DVGQXXLXTOGkymiY2E5x/g=="
+            },
+            {
+                "components": [
+                    {
+                        "properties": {
+                            "offset": [
+                                5.0,
+                                -15.0
+                            ],
+                            "text": "Quit"
+                        },
+                        "type": "VadonDemo::UI::Text"
+                    },
+                    {
+                        "properties": {
+                            "position": [
+                                0.0,
+                                -120.0
+                            ]
+                        },
+                        "type": "VadonDemo::UI::Base"
+                    },
+                    {
+                        "properties": {
+                            "clicked_key": "quit"
+                        },
+                        "type": "VadonDemo::UI::Selectable"
+                    }
+                ],
+                "name": "QuitButton",
+                "parent": 0,
+                "scene": "DVGQXXLXTOGkymiY2E5x/g=="
             }
         ]
     },

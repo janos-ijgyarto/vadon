@@ -4,7 +4,10 @@
 #include <Vadon/Render/Canvas/Item.hpp>
 namespace VadonDemo::View
 {
-	// Adding this component means the Entity needs to be visualized
+	// FIXME: split functionality between "View" and "Render" (or "Canvas") components
+	// View refers to something from the Model that needs visualization, uses interpolation, etc.
+	// Render has a Canvas item handle, lets other systems fill it with draw commands
+	// This will allow View and UI to both use the same interfaces for visualization, without knowing about each other
 	struct ViewComponent
 	{
 		ViewResourceHandle resource;

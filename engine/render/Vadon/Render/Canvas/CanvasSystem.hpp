@@ -27,6 +27,7 @@ namespace Vadon::Render::Canvas
 		virtual void remove_item(ItemHandle item_handle) = 0;
 
 		// TODO: allow setting layer?
+		virtual void set_item_visible(ItemHandle item_handle, bool visible) = 0;
 		virtual void set_item_transform(ItemHandle item_handle, const Transform& transform) = 0;
 		virtual void set_item_z_order(ItemHandle item_handle, float z_order) = 0;
 
