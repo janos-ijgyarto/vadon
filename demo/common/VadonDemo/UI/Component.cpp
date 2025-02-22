@@ -9,10 +9,9 @@ namespace VadonDemo::UI
 	{
 		Vadon::ECS::ComponentRegistry::register_component_type<Base>();
 
-		Vadon::Utilities::TypeRegistry::add_property<Base>("visible", Vadon::Utilities::MemberVariableBind<&Base::visible>().bind_member_getter().bind_member_setter());
+		Vadon::Utilities::TypeRegistry::add_property<Base>("enabled", Vadon::Utilities::MemberVariableBind<&Base::enabled>().bind_member_getter().bind_member_setter());
 		Vadon::Utilities::TypeRegistry::add_property<Base>("position", Vadon::Utilities::MemberVariableBind<&Base::position>().bind_member_getter().bind_member_setter());
 		Vadon::Utilities::TypeRegistry::add_property<Base>("dimensions", Vadon::Utilities::MemberVariableBind<&Base::dimensions>().bind_member_getter().bind_member_setter());
-		Vadon::Utilities::TypeRegistry::add_property<Base>("z_order", Vadon::Utilities::MemberVariableBind<&Base::z_order>().bind_member_getter().bind_member_setter());
 	}
 
 	void Frame::register_component()

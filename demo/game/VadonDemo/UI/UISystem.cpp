@@ -1,5 +1,6 @@
 #include <VadonDemo/UI/UISystem.hpp>
 
+#include <VadonDemo/Core/Core.hpp>
 #include <VadonDemo/Core/Component.hpp>
 #include <VadonDemo/Core/GameCore.hpp>
 
@@ -7,21 +8,22 @@
 
 #include <VadonDemo/Platform/PlatformInterface.hpp>
 
-#include <VadonDemo/UI/UI.hpp>
 #include <VadonDemo/UI/Component.hpp>
 
+#include <VadonApp/Core/Application.hpp>
+
 #include <VadonApp/Platform/PlatformInterface.hpp>
+#include <VadonApp/Platform/Input/InputSystem.hpp>
 
 #include <VadonApp/UI/Console.hpp>
 #include <VadonApp/UI/UISystem.hpp>
 #include <VadonApp/UI/Developer/GUI.hpp>
 
 #include <Vadon/ECS/World/World.hpp>
-#include <Vadon/Render/Canvas/CanvasSystem.hpp>
-#include <Vadon/Scene/SceneSystem.hpp>
-#include <Vadon/Utilities/Data/Visitor.hpp>
 
-#include <format>
+#include <Vadon/Scene/SceneSystem.hpp>
+
+#include <Vadon/Utilities/Data/Visitor.hpp>
 
 namespace VadonDemo::UI
 {
@@ -134,20 +136,6 @@ namespace VadonDemo::UI
 			return false;
 		}
 
-		Vadon::Render::Canvas::CanvasSystem& canvas_system = m_game_core.get_engine_app().get_engine_core().get_system<Vadon::Render::Canvas::CanvasSystem>();
-		m_canvas_layer = canvas_system.create_layer(Vadon::Render::Canvas::LayerInfo{ .flags = Vadon::Render::Canvas::LayerInfo::Flags::VIEW_AGNOSTIC });
-
-		if (m_canvas_layer.is_valid() == false)
-		{
-			return false;
-		}
-
-		m_ui = std::make_unique<VadonDemo::UI::UI>(m_game_core.get_engine_app().get_engine_core());
-		if (m_ui->initialize() == false)
-		{
-			return false;
-		}
-
 		init_game_ui();
 
 		Vadon::ECS::World& ecs_world = m_game_core.get_ecs_world();
@@ -158,10 +146,10 @@ namespace VadonDemo::UI
 				switch (component_event.event_type)
 				{
 				case Vadon::ECS::ComponentEventType::ADDED:
-					init_ui_entity(component_event.owner);
+					m_deferred_init_queue.push_back(component_event.owner);
 					break;
 				case Vadon::ECS::ComponentEventType::REMOVED:
-					remove_ui_entity(component_event.owner);
+					remove_entity(component_event.owner);
 					break;
 				}
 			}
@@ -174,23 +162,25 @@ namespace VadonDemo::UI
 
 	void UISystem::init_game_ui()
 	{
+		UI& common_ui = m_game_core.get_core().get_ui();
+
 		// FIXME: have a more robust way to connect UI to game functions!
 		// Implement scripting?
-		m_ui->register_selectable_callback("start",
+		common_ui.register_selectable_callback("start",
 			[this](std::string_view /*key*/)
 			{
 				start_game();
 			}
 		);
 
-		m_ui->register_selectable_callback("quit",
+		common_ui.register_selectable_callback("quit",
 			[this](std::string_view /*key*/)
 			{
 				m_game_core.request_shutdown();
 			}
 		);
 
-		m_ui->register_selectable_callback("pause",
+		common_ui.register_selectable_callback("pause",
 			[this](std::string_view /*key*/)
 			{
 				Model::GameModel& game_model = m_game_core.get_model();
@@ -205,7 +195,7 @@ namespace VadonDemo::UI
 			}
 		);
 
-		m_ui->register_selectable_callback("return_to_main",
+		common_ui.register_selectable_callback("return_to_main",
 			[this](std::string_view /*key*/)
 			{
 				return_to_main_menu();
@@ -228,24 +218,14 @@ namespace VadonDemo::UI
 			update_dev_gui();
 		}
 
-		if (m_deferred_entities.empty() == false)
+		if (m_deferred_init_queue.empty() == false)
 		{
-			for (Vadon::ECS::EntityHandle current_entity : m_deferred_entities)
+			for (Vadon::ECS::EntityHandle current_entity : m_deferred_init_queue)
 			{
-				Vadon::ECS::World& ecs_world = m_game_core.get_ecs_world();
-				Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
-				VadonDemo::UI::Base* base_component = component_manager.get_component<VadonDemo::UI::Base>(current_entity);
-				VADON_ASSERT(base_component != nullptr, "Entity is not UI element!");
-				VADON_ASSERT(base_component->canvas_item.is_valid() == false, "Entity canvas component already created!");
-
-				Vadon::Render::Canvas::CanvasSystem& canvas_system = m_game_core.get_engine_app().get_engine_core().get_system<Vadon::Render::Canvas::CanvasSystem>();
-				base_component->canvas_item = canvas_system.create_item(Vadon::Render::Canvas::ItemInfo{ .layer = m_canvas_layer });
-
-				// Update UI
-				m_ui->update_ui_element(ecs_world, current_entity);
+				init_entity(current_entity);
 			}
 
-			m_deferred_entities.clear();
+			m_deferred_init_queue.clear();
 		}
 
 		CursorState cursor_state;
@@ -259,16 +239,17 @@ namespace VadonDemo::UI
 		cursor_state.position.x = mouse_state.position.x - (window_size.x * 0.5f);
 		cursor_state.position.y = (window_size.y * 0.5f) - mouse_state.position.y;
 
-		// FIXME: this is a really messy solution
-		// Implement separate input handling for UI?
-		const Platform::PlatformInterface::InputValues input_values = m_game_core.get_platform_interface().get_input_values();
-		if ((m_was_clicked == true) && (input_values.ui_select == true))
+		// TODO: could also handle platform events directly?
+		VadonApp::Platform::InputSystem& input_system = m_game_core.get_engine_app().get_system<VadonApp::Platform::InputSystem>();
+		const VadonApp::Platform::InputActionHandle ui_select_action = game_platform_interface.get_action(Platform::GameInputAction::UI_SELECT);
+		const bool clicked = input_system.is_action_pressed(ui_select_action);
+		if ((m_was_clicked == true) && (clicked == false))
 		{
 			cursor_state.clicked = true;
 		}
-		m_was_clicked = input_values.ui_select;
+		m_was_clicked = clicked;
 
-		m_ui->update(m_game_core.get_ecs_world(), cursor_state);
+		m_game_core.get_core().get_ui().update(m_game_core.get_ecs_world(), cursor_state);
 	}
 
 	void UISystem::update_dev_gui()
@@ -290,19 +271,19 @@ namespace VadonDemo::UI
 		dev_gui.end_frame();
 	}
 
-	void UISystem::init_ui_entity(Vadon::ECS::EntityHandle entity)
+	void UISystem::init_entity(Vadon::ECS::EntityHandle entity)
 	{
-		m_deferred_entities.push_back(entity);
+		m_game_core.get_core().get_ui().update_ui_element(m_game_core.get_ecs_world(), entity);
 	}
 
-	void UISystem::remove_ui_entity(Vadon::ECS::EntityHandle entity)
+	void UISystem::remove_entity(Vadon::ECS::EntityHandle entity)
 	{
 		Vadon::ECS::World& ecs_world = m_game_core.get_ecs_world();
 		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
 		VadonDemo::UI::Base* base_component = component_manager.get_component<VadonDemo::UI::Base>(entity);
 		if (base_component != nullptr)
 		{
-			m_ui->remove_ui_element(ecs_world, entity);
+			m_game_core.get_core().get_ui().remove_ui_element(ecs_world, entity);
 		}
 	}
 

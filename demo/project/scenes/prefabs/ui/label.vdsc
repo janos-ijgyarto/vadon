@@ -5,6 +5,28 @@
                 "components": [
                     {
                         "properties": {
+                            "layer_def": "m6RD58IxSzuDWoRgRXAqZQ==",
+                            "visible": true,
+                            "z_order": 0.0
+                        },
+                        "type": "VadonDemo::Render::CanvasComponent"
+                    },
+                    {
+                        "properties": {
+                            "dimensions": [
+                                110.0,
+                                16.0
+                            ],
+                            "enabled": true,
+                            "position": [
+                                0.0,
+                                0.0
+                            ]
+                        },
+                        "type": "VadonDemo::UI::Base"
+                    },
+                    {
+                        "properties": {
                             "color": [
                                 1.0,
                                 1.0,
@@ -17,21 +39,6 @@
                             "text": "Label"
                         },
                         "type": "VadonDemo::UI::Text"
-                    },
-                    {
-                        "properties": {
-                            "dimensions": [
-                                110.0,
-                                16.0
-                            ],
-                            "position": [
-                                0.0,
-                                0.0
-                            ],
-                            "visible": true,
-                            "z_order": 0.0
-                        },
-                        "type": "VadonDemo::UI::Base"
                     }
                 ],
                 "name": "Label",

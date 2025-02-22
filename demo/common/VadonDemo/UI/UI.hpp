@@ -1,18 +1,17 @@
 #ifndef VADONDEMO_UI_UI_HPP
 #define VADONDEMO_UI_UI_HPP
 #include <VadonDemo/VadonDemoCommon.hpp>
-#include <Vadon/Core/File/Path.hpp>
 #include <Vadon/ECS/Entity/Entity.hpp>
-#include <Vadon/Render/Canvas/Layer.hpp>
+#include <Vadon/Render/Canvas/Material.hpp>
+#include <Vadon/Render/Text/Font.hpp>
 #include <functional>
-#include <memory>
-namespace Vadon::Core
-{
-	class EngineCoreInterface;
-}
 namespace Vadon::ECS
 {
 	class World;
+}
+namespace VadonDemo::Core
+{
+	class Core;
 }
 namespace VadonDemo::UI
 {
@@ -28,11 +27,7 @@ namespace VadonDemo::UI
 	public:
 		using SelectableCallback = std::function<void(std::string_view)>;
 
-		VADONDEMO_API UI(Vadon::Core::EngineCoreInterface& engine_core);
-		VADONDEMO_API ~UI();
-
 		static void register_types();
-		VADONDEMO_API bool initialize();
 
 		VADONDEMO_API void register_selectable_callback(std::string_view key, SelectableCallback callback);
 
@@ -41,8 +36,23 @@ namespace VadonDemo::UI
 		VADONDEMO_API void update_ui_element(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle entity);
 		VADONDEMO_API void remove_ui_element(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle entity);
 	private:
-		struct Internal;
-		std::unique_ptr<Internal> m_internal;
+		VADONDEMO_API UI(VadonDemo::Core::Core& core);
+
+		bool initialize();
+
+		bool load_default_font();
+
+		void update_selectables(Vadon::ECS::World& ecs_world, const CursorState& cursor);
+		void signal_selectable_callbacks(std::string_view key);
+
+		VadonDemo::Core::Core& m_core;
+
+		Vadon::Render::FontHandle m_default_font;
+		Vadon::Render::Canvas::MaterialHandle m_text_sdf_material;
+
+		std::unordered_map<std::string, std::vector<SelectableCallback>> m_selectable_callbacks;
+
+		friend Core::Core;
 	};
 }
 #endif

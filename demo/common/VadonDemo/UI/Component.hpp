@@ -7,18 +7,12 @@ namespace VadonDemo::UI
 	// e.g to show/hide all the elements of an entire widget
 	struct Base
 	{
-		bool visible = true;
+		bool enabled = true;
 
 		Vadon::Utilities::Vector2 position = Vadon::Utilities::Vector2_Zero;
 		Vadon::Utilities::Vector2 dimensions = Vadon::Utilities::Vector2_Zero;
-		float z_order = 0.0f;
 
 		// TODO: position and sizing style, whether to use absolute coords or relative to screen size
-
-		// FIXME: decouple from visualization
-		// Could create Render component/system which can be used by View and UI to visualize their content
-		// e.g UI system takes UI components and feeds draw data into Render component
-		Vadon::Render::Canvas::ItemHandle canvas_item;
 
 		static void register_component();
 	};

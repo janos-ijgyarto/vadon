@@ -1,7 +1,6 @@
 #ifndef VADONDEMO_MODEL_GAMEMODEL_HPP
 #define VADONDEMO_MODEL_GAMEMODEL_HPP
 #include <Vadon/Scene/Scene.hpp>
-#include <memory>
 namespace Vadon::Core
 {
 	class EngineEnvironment;
@@ -43,32 +42,41 @@ namespace VadonDemo::Model
 
 		~GameModel();
 
-		State get_state() const;
-		SimState get_sim_state() const;
+		State get_state() const { return m_state; }
+		SimState get_sim_state() const { return m_sim_state; }
 
 		bool load_level(const LevelConfiguration& level_config);
 		void set_paused(bool paused);
 		void quit_level();
 
 		float get_sim_timestep() const;
-		float get_accumulator() const;
+		float get_accumulator() const { return m_model_accumulator; }
 
-		int get_frame_count() const;
+		int get_frame_count() const { return m_model_frame_count; }
 
 		// FIXME: have a more elegant info query system!
 		int get_player_health() const;
 
 		// True if the model was updated this frame
 		// FIXME: implement as a proper event/signal!
-		bool is_updated() const;
+		bool is_updated() const { return m_model_updated; }
 	private:
 		GameModel(Core::GameCore& core);
 		
 		bool initialize();
 		void update();
 
-		struct Internal;
-		std::unique_ptr<Internal> m_internal;
+		void update_player_input();
+
+		Core::GameCore& m_game_core;
+
+		bool m_model_updated = false;
+
+		State m_state = State::INIT;
+		SimState m_sim_state = SimState::INVALID;
+
+		float m_model_accumulator = 0.0f;
+		int m_model_frame_count = 0;
 
 		friend Core::GameCore;
 	};

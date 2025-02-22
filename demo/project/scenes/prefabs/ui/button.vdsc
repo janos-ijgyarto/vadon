@@ -5,18 +5,11 @@
                 "components": [
                     {
                         "properties": {
-                            "color": [
-                                1.0,
-                                1.0,
-                                1.0
-                            ],
-                            "offset": [
-                                0.0,
-                                0.0
-                            ],
-                            "text": "Text"
+                            "layer_def": "m6RD58IxSzuDWoRgRXAqZQ==",
+                            "visible": true,
+                            "z_order": 0.0
                         },
-                        "type": "VadonDemo::UI::Text"
+                        "type": "VadonDemo::Render::CanvasComponent"
                     },
                     {
                         "properties": {
@@ -24,12 +17,11 @@
                                 100.0,
                                 60.0
                             ],
+                            "enabled": true,
                             "position": [
                                 0.0,
                                 0.0
-                            ],
-                            "visible": true,
-                            "z_order": 0.0
+                            ]
                         },
                         "type": "VadonDemo::UI::Base"
                     },
@@ -49,6 +41,21 @@
                             "outline_thickness": 1.0
                         },
                         "type": "VadonDemo::UI::Frame"
+                    },
+                    {
+                        "properties": {
+                            "color": [
+                                1.0,
+                                1.0,
+                                1.0
+                            ],
+                            "offset": [
+                                0.0,
+                                0.0
+                            ],
+                            "text": "Text"
+                        },
+                        "type": "VadonDemo::UI::Text"
                     },
                     {
                         "properties": {

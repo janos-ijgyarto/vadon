@@ -8,7 +8,6 @@ namespace VadonDemo::View
 	void ViewResource::register_resource()
 	{
 		using ResourceRegistry = Vadon::Scene::ResourceRegistry;
-		using TypeRegistry = Vadon::Utilities::TypeRegistry;
 
 		ResourceRegistry::register_resource_type<ViewResource, Vadon::Scene::Resource>();
 	}

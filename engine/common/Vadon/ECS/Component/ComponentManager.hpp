@@ -44,7 +44,7 @@ namespace Vadon::ECS
 
 		template<typename ...Components> ComponentTuple<Components*...> get_component_tuple(EntityHandle entity)
 		{			
-			const ComponentIDArray<Components...>& component_ids = unpack_component_ids_sorted<Components...>();
+			const ComponentIDArray<Components...>& component_ids = unpack_component_ids<Components...>();
 
 			std::array<void*, sizeof...(Components)> component_pointers;
 

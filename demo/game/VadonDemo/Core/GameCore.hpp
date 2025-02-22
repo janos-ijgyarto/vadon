@@ -46,6 +46,7 @@ namespace Vadon::ECS
 
 namespace VadonDemo::Core
 {
+	class Core;
 	struct CoreComponent;
 
 	// FIXME: make separate interface so we don't expose "execute" to subsystems
@@ -65,6 +66,7 @@ namespace VadonDemo::Core
 
 		float get_delta_time() const;
 
+		Core& get_core();
 		Model::GameModel& get_model();
 		View::GameView& get_view();
 

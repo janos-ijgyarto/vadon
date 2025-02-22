@@ -6,7 +6,7 @@
 #include <VadonEditor/Model/Resource/ResourceSystem.hpp>
 
 #include <Vadon/Core/File/FileSystem.hpp>
-
+#include <Vadon/ECS/World/World.hpp>
 #include <Vadon/Scene/SceneSystem.hpp>
 #include <Vadon/Utilities/TypeInfo/Registry/Registry.hpp>
 
@@ -125,6 +125,21 @@ namespace VadonEditor::Model
 		{
 			current_callback(entity.get_handle(), component_id);
 		}
+	}
+
+	const Scene* SceneSystem::find_entity_scene(Vadon::ECS::EntityHandle entity) const
+	{
+		Vadon::ECS::EntityHandle root_entity = m_editor.get_system<ModelSystem>().get_ecs_world().get_entity_manager().get_entity_root(entity);
+		for (auto& scene_pair : m_scene_lookup)
+		{
+			Entity* root_editor_entity = scene_pair.second.get_root();
+			if((root_editor_entity != nullptr) && (root_editor_entity->get_handle() == root_entity))
+			{
+				return &scene_pair.second;
+			}
+		}
+
+		return nullptr;
 	}
 
 	SceneSystem::SceneSystem(Core::Editor& editor)

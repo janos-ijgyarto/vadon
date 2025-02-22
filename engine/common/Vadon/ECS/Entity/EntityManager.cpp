@@ -31,6 +31,25 @@ namespace Vadon::ECS
 		return entity_data.parent;
 	}
 
+	EntityHandle EntityManager::get_entity_root(EntityHandle entity) const
+	{
+		VADON_ASSERT(entity.is_valid(), "Invalid entity handle!");
+		Vadon::ECS::EntityHandle root_entity = entity;
+		while (true)
+		{
+			const EntityData& entity_data = m_entity_pool.get(root_entity);
+			Vadon::ECS::EntityHandle parent = entity_data.parent;
+			if (parent.is_valid() == false)
+			{
+				break;
+			}
+
+			root_entity = parent;
+		}
+
+		return root_entity;
+	}
+
 	void EntityManager::set_entity_parent(EntityHandle entity, EntityHandle parent)
 	{
 		EntityData& entity_data = m_entity_pool.get(entity);

@@ -14,6 +14,7 @@ namespace Vadon::ECS
 		VADONCOMMON_API void set_entity_name(EntityHandle entity_handle, std::string_view name);
 
 		VADONCOMMON_API EntityHandle get_entity_parent(EntityHandle entity) const;
+		VADONCOMMON_API EntityHandle get_entity_root(EntityHandle entity) const;
 		VADONCOMMON_API void set_entity_parent(EntityHandle entity, EntityHandle parent);
 		void add_child_entity(EntityHandle parent, EntityHandle child) { set_entity_parent(child, parent); }
 		VADONCOMMON_API void remove_child_entity(EntityHandle parent, EntityHandle child);

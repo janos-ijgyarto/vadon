@@ -20,6 +20,7 @@ namespace Vadon::Render::Canvas
 		virtual void remove_layer(LayerHandle layer_handle) = 0;
 
 		virtual void set_layer_transform(LayerHandle layer_handle, const Transform& transform) = 0;
+		virtual void set_layer_flags(LayerHandle layer_handle, LayerInfo::Flags flags) = 0;
 
 		virtual ItemHandle create_item(ItemInfo info) = 0;
 		virtual bool is_item_valid(ItemHandle item_handle) const = 0;

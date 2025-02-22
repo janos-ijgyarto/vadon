@@ -175,7 +175,7 @@ namespace VadonDemo::Core
 
 	struct GameCore::Internal
 	{
-		Core m_core;
+		std::unique_ptr<Core> m_core;
 		GameResourceDatabase m_resource_db;
 
 		Model::GameModel m_game_model;
@@ -203,14 +203,14 @@ namespace VadonDemo::Core
 		bool m_shutdown_requested = false;
 
 		Internal(GameCore& game_core, Vadon::Core::EngineEnvironment& environment)
-			: m_core(environment)
-			, m_resource_db(game_core)
+			: m_resource_db(game_core)
 			, m_game_model(game_core)
 			, m_platform_interface(game_core)
 			, m_render_system(game_core)
 			, m_ui_system(game_core)
 			, m_game_view(game_core)
 		{
+			Core::init_environment(environment);
 		}
 
 		bool initialize(int argc, char* argv[])
@@ -224,17 +224,21 @@ namespace VadonDemo::Core
 				return false;
 			}
 
-			if (!m_platform_interface.initialize())
+			m_core = std::make_unique<Core>(m_engine_app->get_engine_core());
+			if(m_core->initialize() == false)
 			{
 				return false;
 			}
 
-			if (!m_render_system.initialize())
+			if (m_platform_interface.initialize() == false)
 			{
 				return false;
 			}
 
-			Core::register_types();
+			if (m_render_system.initialize() == false)
+			{
+				return false;
+			}
 
 			if (load_project() == false)
 			{
@@ -375,8 +379,14 @@ namespace VadonDemo::Core
 				// First process platform events
 				m_platform_interface.update(); 
 				
-				// Update model and view
+				// Update model
 				m_game_model.update();
+
+				// Pre-update renderer
+				// FIXME: remove once ECS events are fixed!
+				m_render_system.pre_update();
+
+				// Update view
 				m_game_view.update();
 
 				// Update the UI
@@ -530,6 +540,11 @@ namespace VadonDemo::Core
 	float GameCore::get_delta_time() const
 	{
 		return m_internal->m_delta_time;
+	}
+
+	Core& GameCore::get_core()
+	{
+		return *m_internal->m_core;
 	}
 
 	Model::GameModel& GameCore::get_model()

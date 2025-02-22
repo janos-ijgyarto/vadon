@@ -201,6 +201,14 @@ namespace Vadon::Private::Render::Canvas
 		m_shared_data.add_dirty_layer(layer_handle);
 	}
 
+	void CanvasSystem::set_layer_flags(LayerHandle layer_handle, LayerInfo::Flags flags)
+	{
+		LayerData& layer = m_layer_pool.get(layer_handle);
+		layer.info.flags = flags;
+
+		m_shared_data.add_dirty_layer(layer_handle);
+	}
+
 	ItemHandle CanvasSystem::create_item(ItemInfo info)
 	{
 		ItemHandle new_item_handle = m_item_pool.add();
@@ -277,6 +285,9 @@ namespace Vadon::Private::Render::Canvas
 
 	void CanvasSystem::add_item_batch_draw(ItemHandle item_handle, const BatchDrawCommand& batch_command)
 	{
+		VADON_ASSERT(batch_command.range.is_valid() == true, "Invalid batch command!");
+		VADON_ASSERT(batch_command.range.count > 0, "Invalid batch command!");
+
 		ItemData& item = m_item_pool.get(item_handle);
 		item.command_buffer.write_object<BatchDrawCommand>(Vadon::Utilities::to_integral(ItemCommandType::DRAW_BATCH), batch_command);
 	}

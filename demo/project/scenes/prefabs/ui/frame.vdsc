@@ -5,16 +5,23 @@
                 "components": [
                     {
                         "properties": {
+                            "layer_def": "m6RD58IxSzuDWoRgRXAqZQ==",
+                            "visible": true,
+                            "z_order": 0.0
+                        },
+                        "type": "VadonDemo::Render::CanvasComponent"
+                    },
+                    {
+                        "properties": {
                             "dimensions": [
                                 16.0,
                                 16.0
                             ],
+                            "enabled": true,
                             "position": [
                                 0.0,
                                 0.0
-                            ],
-                            "visible": true,
-                            "z_order": 0.0
+                            ]
                         },
                         "type": "VadonDemo::UI::Base"
                     },
