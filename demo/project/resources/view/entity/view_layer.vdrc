@@ -1,0 +1,9 @@
+{
+    "id": "2bdWkqSdTuSxnfVFk+5q+g==",
+    "properties": {
+        "name": "",
+        "priority": 0,
+        "view_agnostic": false
+    },
+    "type": "VadonDemo::Render::CanvasLayerDefinition"
+}

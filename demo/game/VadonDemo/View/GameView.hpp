@@ -1,6 +1,7 @@
 #ifndef VADONDEMO_VIEW_GAMEVIEW_HPP
 #define VADONDEMO_VIEW_GAMEVIEW_HPP
-#include <memory>
+#include <VadonDemo/View/Resource.hpp>
+#include <Vadon/ECS/Entity/Entity.hpp>
 namespace Vadon::ECS
 {
 	class World;
@@ -16,16 +17,28 @@ namespace VadonDemo::View
 	public:
 		~GameView();
 
-		int get_frame_count() const;
+		int get_frame_count() const { return m_view_frame_count; }
 	private:
 		GameView(Core::GameCore& core);
 		
 		bool initialize();
-		bool init_visualization();
 		void update();
 
-		struct Internal;
-		std::unique_ptr<Internal> m_internal;
+		bool init_canvas();
+
+		void update_camera();
+
+		void init_entity(Vadon::ECS::EntityHandle entity);
+
+		void init_resource(VadonDemo::View::ViewResourceHandle resource_handle);
+		void update_sprite_resource(VadonDemo::View::SpriteResourceHandle sprite_handle);
+		void load_sprite_resource(VadonDemo::View::SpriteResourceHandle sprite_handle);
+
+		Core::GameCore& m_game_core;
+
+		int m_view_frame_count = 0;
+
+		std::vector<Vadon::ECS::EntityHandle> m_deferred_init_queue;
 
 		friend Core::GameCore;
 	};

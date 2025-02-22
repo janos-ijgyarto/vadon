@@ -31,7 +31,12 @@ namespace Vadon::Utilities
 	template<typename T>
 	static constexpr ErasedDataTypeID get_erased_data_type_id()
 	{
-		if constexpr (std::is_base_of_v<Vadon::Scene::ResourceHandle, T> && (std::is_same_v<Vadon::Scene::ResourceHandle, T> == false))
+		if constexpr (std::is_base_of_v<Vadon::Scene::ResourceID, T> && (std::is_same_v<Vadon::Scene::ResourceID, T> == false))
+		{
+			return ErasedDataTypeID{ .type = ErasedDataType::RESOURCE_ID,
+				.id = Vadon::Utilities::to_integral(Vadon::Utilities::TypeRegistry::get_type_id<typename T::_ResourceType>()) };
+		}
+		else if constexpr (std::is_base_of_v<Vadon::Scene::ResourceHandle, T> && (std::is_same_v<Vadon::Scene::ResourceHandle, T> == false))
 		{
 			return ErasedDataTypeID{ .type = ErasedDataType::RESOURCE_HANDLE, 
 				.id = Vadon::Utilities::to_integral(Vadon::Utilities::TypeRegistry::get_type_id<typename T::_ResourceType>()) };

@@ -80,6 +80,7 @@ namespace Vadon::Utilities
 		virtual size_t get_array_size() const = 0;
 		virtual Result close_array() = 0;
 
+		virtual bool has_key(std::string_view key) const = 0;
 		// TODO: get list of keys from object?
 
 		VADONCOMMON_API Result open_object(std::string_view key);

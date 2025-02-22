@@ -270,6 +270,7 @@ namespace Vadon::Utilities
 	{
 		TypeRegistry& instance = get_registry_instance();
 		auto type_data_it = instance.m_type_lookup.find(type_id);
+		VADON_ASSERT(type_data_it != instance.m_type_lookup.end(), "Type not found!");
 		if (type_data_it == instance.m_type_lookup.end())
 		{
 			type_not_found_error(type_id);

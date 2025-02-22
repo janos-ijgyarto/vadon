@@ -201,6 +201,14 @@ namespace Vadon::Private::Render::Canvas
 		m_shared_data.add_dirty_layer(layer_handle);
 	}
 
+	void CanvasSystem::set_layer_flags(LayerHandle layer_handle, LayerInfo::Flags flags)
+	{
+		LayerData& layer = m_layer_pool.get(layer_handle);
+		layer.info.flags = flags;
+
+		m_shared_data.add_dirty_layer(layer_handle);
+	}
+
 	ItemHandle CanvasSystem::create_item(ItemInfo info)
 	{
 		ItemHandle new_item_handle = m_item_pool.add();
@@ -241,6 +249,14 @@ namespace Vadon::Private::Render::Canvas
 		m_item_pool.remove(item_handle);
 	}
 
+	void CanvasSystem::set_item_visible(ItemHandle item_handle, bool visible)
+	{
+		ItemData& item = m_item_pool.get(item_handle);
+		item.visible = visible;
+
+		set_item_layer_dirty(item);
+	}
+
 	void CanvasSystem::set_item_transform(ItemHandle item_handle, const Transform& transform)
 	{
 		ItemData& item = m_item_pool.get(item_handle);
@@ -269,6 +285,9 @@ namespace Vadon::Private::Render::Canvas
 
 	void CanvasSystem::add_item_batch_draw(ItemHandle item_handle, const BatchDrawCommand& batch_command)
 	{
+		VADON_ASSERT(batch_command.range.is_valid() == true, "Invalid batch command!");
+		VADON_ASSERT(batch_command.range.count > 0, "Invalid batch command!");
+
 		ItemData& item = m_item_pool.get(item_handle);
 		item.command_buffer.write_object<BatchDrawCommand>(Vadon::Utilities::to_integral(ItemCommandType::DRAW_BATCH), batch_command);
 	}
@@ -808,10 +827,12 @@ namespace Vadon::Private::Render::Canvas
 				RectanglePrimitiveData rectangle_primitive;
 				rectangle_primitive.info = get_primitive_info(item_data, rectangle_type);
 				rectangle_primitive.material = canvas_system.get_material_index(rectangle);
-				rectangle_primitive.dimensions.position = rectangle.dimensions.position + transform.position;
+				rectangle_primitive.dimensions.position = (rectangle.dimensions.position * transform.scale) + transform.position;
 				rectangle_primitive.dimensions.size = rectangle.dimensions.size * transform.scale;
-				rectangle_primitive.uv_dimensions.position = { 0, 0 };
-				rectangle_primitive.uv_dimensions.size = { 1, 1 };
+				rectangle_primitive.uvs[0] = {0, 0};
+				rectangle_primitive.uvs[1] = { 1, 0 };
+				rectangle_primitive.uvs[2] = { 0, 1 };
+				rectangle_primitive.uvs[3] = { 1, 1 };
 				rectangle_primitive.depth = 0.0f; // TODO: depth?
 				rectangle_primitive.thickness = rectangle.thickness;
 				rectangle_primitive.color = rectangle.color;
@@ -828,10 +849,12 @@ namespace Vadon::Private::Render::Canvas
 				RectanglePrimitiveData rectangle_primitive;
 				rectangle_primitive.info = get_primitive_info(item_data, PrimitiveType::RECTANGLE_FILL);
 				rectangle_primitive.material = canvas_system.get_material_index(sprite);
-				rectangle_primitive.dimensions.position = sprite.dimensions.position + transform.position;
+				rectangle_primitive.dimensions.position = (sprite.dimensions.position * transform.scale) + transform.position;
 				rectangle_primitive.dimensions.size = sprite.dimensions.size * transform.scale;
-				rectangle_primitive.uv_dimensions.position = sprite.uv_dimensions.position;
-				rectangle_primitive.uv_dimensions.size = sprite.uv_dimensions.size;
+				rectangle_primitive.uvs[0] = sprite.uv_top_left;
+				rectangle_primitive.uvs[1] = sprite.uv_top_right;
+				rectangle_primitive.uvs[2] = sprite.uv_bottom_left;
+				rectangle_primitive.uvs[3] = sprite.uv_bottom_right;
 				rectangle_primitive.depth = 0.0f; // TODO: depth?
 				rectangle_primitive.thickness = 0.0f;
 				rectangle_primitive.color = sprite.color;
@@ -865,9 +888,9 @@ namespace Vadon::Private::Render::Canvas
 			update_layer_items(current_layer_data);
 
 			// FIXME: should sort primitives based on layer and Z order, for now just do them in whatever order they are in
-			for (ItemHandle item_handle : current_layer_data.items)
+			for (size_t current_item_index = 0; current_item_index < current_layer_data.visible_count; ++current_item_index)
 			{
-				const ItemData& current_item_data = m_item_pool.get(item_handle);
+				const ItemData& current_item_data = m_item_pool.get(current_layer_data.items[current_item_index]);
 				if (current_item_data.command_buffer.is_empty() == true)
 				{
 					continue;
@@ -918,6 +941,7 @@ namespace Vadon::Private::Render::Canvas
 		Vadon::Render::BufferWriteData write_data;
 		write_data.range.count = 1;
 		write_data.data = &canvas_layer_data;
+		write_data.no_overwrite = true;
 
 		for (LayerHandle layer_handle : m_shared_data.dirty_layers)
 		{
@@ -1045,8 +1069,24 @@ namespace Vadon::Private::Render::Canvas
 				const ItemData& left_item = m_item_pool.get(lhs);
 				const ItemData& right_item = m_item_pool.get(rhs);
 
+				if ((left_item.visible == true) && (right_item.visible == false))
+				{
+					return true;
+				}
+
 				return left_item.info.z_order < right_item.info.z_order;
 			}
 		);
+
+		layer.visible_count = 0;
+		for (ItemHandle current_item_handle : layer.items)
+		{
+			const ItemData& current_item = m_item_pool.get(current_item_handle);
+			if (current_item.visible == false)
+			{
+				break;
+			}
+			++layer.visible_count;
+		}
 	}
 }

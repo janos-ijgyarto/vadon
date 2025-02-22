@@ -22,11 +22,34 @@ namespace Vadon::Utilities
 		Utilities::Box<VariantArray>, Utilities::Box<VariantDictionary>, NoReturnValue>;
 
 	struct VariantArray : public std::vector<Variant>
-	{};
+	{
+		bool operator==(const VariantArray& /*other*/) const
+		{
+			// TODO!!!
+			return false;
+		}
+
+		bool operator!=(const VariantArray& /*other*/) const
+		{
+			// TODO!!!
+			return true;
+		}
+	};
 
 	// NOTE: for now we only support string keys
 	struct VariantDictionary : public std::unordered_map<std::string, Variant>
 	{
+		bool operator==(const VariantDictionary& /*rhs*/) const
+		{
+			// TODO!!!
+			return false;
+		}
+
+		bool operator!=(const VariantDictionary& /*rhs*/) const
+		{
+			// TODO!!!
+			return true;
+		}
 	};
 
 	// Type remapping (when needing to convert an argument to a type compatible with the variant)

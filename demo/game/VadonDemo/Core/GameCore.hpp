@@ -1,5 +1,6 @@
 #ifndef VADONDEMO_CORE_GAMECORE_HPP
 #define VADONDEMO_CORE_GAMECORE_HPP
+#include <Vadon/Core/File/RootDirectory.hpp>
 #include <memory>
 
 namespace VadonApp::Core
@@ -35,6 +36,7 @@ namespace VadonDemo::UI
 namespace Vadon::Core
 {
 	class EngineEnvironment;
+	struct Project;
 }
 
 namespace Vadon::ECS
@@ -44,6 +46,9 @@ namespace Vadon::ECS
 
 namespace VadonDemo::Core
 {
+	class Core;
+	struct CoreComponent;
+
 	// FIXME: make separate interface so we don't expose "execute" to subsystems
 	class GameCore
 	{
@@ -61,10 +66,15 @@ namespace VadonDemo::Core
 
 		float get_delta_time() const;
 
+		Core& get_core();
 		Model::GameModel& get_model();
 		View::GameView& get_view();
 
 		Vadon::ECS::World& get_ecs_world();
+		const CoreComponent& get_core_component() const;
+
+		const Vadon::Core::Project& get_project_info() const;
+		Vadon::Core::RootDirectoryHandle get_project_root_dir() const;
 
 		// FIXME: implement a proper CLI parser!
 		bool has_command_line_arg(std::string_view name) const;

@@ -37,6 +37,8 @@ namespace VadonEditor::Model
 
 		VADONEDITOR_API void register_edit_callback(EditCallback callback);
 		void entity_edited(const Entity& entity, Vadon::Utilities::TypeID component_id);
+
+		VADONEDITOR_API const Scene* find_entity_scene(Vadon::ECS::EntityHandle entity) const;
 	private:
 		SceneSystem(Core::Editor& editor);
 

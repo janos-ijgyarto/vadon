@@ -1,0 +1,77 @@
+{
+    "data": {
+        "entities": [
+            {
+                "components": [
+                    {
+                        "properties": {
+                            "layer_def": "m6RD58IxSzuDWoRgRXAqZQ==",
+                            "visible": true,
+                            "z_order": 0.0
+                        },
+                        "type": "VadonDemo::Render::CanvasComponent"
+                    },
+                    {
+                        "properties": {
+                            "dimensions": [
+                                100.0,
+                                60.0
+                            ],
+                            "enabled": true,
+                            "position": [
+                                0.0,
+                                0.0
+                            ]
+                        },
+                        "type": "VadonDemo::UI::Base"
+                    },
+                    {
+                        "properties": {
+                            "fill_color": [
+                                1.0,
+                                1.0,
+                                1.0
+                            ],
+                            "fill_enable": false,
+                            "outline_color": [
+                                1.0,
+                                1.0,
+                                1.0
+                            ],
+                            "outline_thickness": 1.0
+                        },
+                        "type": "VadonDemo::UI::Frame"
+                    },
+                    {
+                        "properties": {
+                            "color": [
+                                1.0,
+                                1.0,
+                                1.0
+                            ],
+                            "offset": [
+                                0.0,
+                                0.0
+                            ],
+                            "text": "Text"
+                        },
+                        "type": "VadonDemo::UI::Text"
+                    },
+                    {
+                        "properties": {
+                            "clicked_key": ""
+                        },
+                        "type": "VadonDemo::UI::Selectable"
+                    }
+                ],
+                "name": "Button",
+                "parent": -1
+            }
+        ]
+    },
+    "id": "DVGQXXLXTOGkymiY2E5x/g==",
+    "properties": {
+        "name": ""
+    },
+    "type": "Vadon::Scene::Scene"
+}

@@ -10,7 +10,7 @@ namespace Vadon::Render
 	class TextSystem : public RenderSystem<TextSystem>
 	{
 	public:
-		virtual FontHandle create_font(const FontInfo& font_info, std::span<unsigned char> font_data_buffer) = 0;
+		virtual FontHandle create_font(const FontInfo& font_info, std::span<const unsigned char> font_data_buffer) = 0;
 		virtual TextRenderData create_text_render_data(std::string_view text, const TextRenderInfo& render_info) const = 0;
 	protected:
 		TextSystem(Core::EngineCoreInterface& core)

@@ -141,6 +141,13 @@ namespace Vadon::Private::Scene
 				SceneData::ComponentData::Property property_data;
 				for (const Vadon::Utilities::PropertyInfo& current_property : component_properties)
 				{
+					// Check if key is present (if not, assume we should just use default value)
+					// FIXME: invert this to instead only process keys that are actually in the data?
+					if (serializer.has_key(current_property.name) == false)
+					{
+						continue;
+					}
+
 					switch (current_property.data_type.type)
 					{
 					case ErasedDataType::TRIVIAL:
@@ -158,6 +165,7 @@ namespace Vadon::Private::Scene
 						}
 					}
 						break;
+					case ErasedDataType::RESOURCE_ID:
 					case ErasedDataType::RESOURCE_HANDLE:
 					{
 						ResourceID temp_resource_id;
@@ -192,6 +200,7 @@ namespace Vadon::Private::Scene
 						}
 					}
 					break;
+					case ErasedDataType::RESOURCE_ID:
 					case ErasedDataType::RESOURCE_HANDLE:
 					{
 						ResourceID temp_resource_id = std::get<ResourceID>(current_property.value);
@@ -468,6 +477,7 @@ namespace Vadon::Private::Scene
 					switch (current_property_data.data_type.type)
 					{
 					case ErasedDataType::TRIVIAL:
+					case ErasedDataType::RESOURCE_ID:
 					{
 						Vadon::Utilities::TypeRegistry::set_property(current_component, current_component_data.type_id, current_property_data.name, current_property_data.value);
 					}
@@ -580,6 +590,62 @@ namespace Vadon::Private::Scene
 
 		Vadon::Scene::ResourceSystem& resource_system = m_engine_core.get_system<Vadon::Scene::ResourceSystem>();
 
+		const Vadon::ECS::ComponentIDList component_type_ids = component_manager.get_component_list(entity);
+		const Vadon::Utilities::TypeID scene_component_id = Vadon::Utilities::TypeRegistry::get_type_id<SceneComponent>();
+
+		static constexpr auto c_save_property_func = +[](SceneData::ComponentData::Property& property_data, const Vadon::Utilities::Property& component_property, Vadon::Scene::ResourceSystem& resource_system)
+			{
+				property_data.name = component_property.name;
+				property_data.data_type = component_property.data_type;
+
+				switch (component_property.data_type.type)
+				{
+				case ErasedDataType::TRIVIAL:
+				case ErasedDataType::RESOURCE_ID:
+					property_data.value = component_property.value;
+					break;
+				case ErasedDataType::RESOURCE_HANDLE:
+				{
+					Vadon::Scene::ResourceHandle temp_resource_handle = std::get<Vadon::Scene::ResourceHandle>(component_property.value);
+					if (temp_resource_handle.is_valid() == true)
+					{
+						property_data.value = resource_system.get_resource_info(temp_resource_handle).id;
+					}
+					else
+					{
+						property_data.value = ResourceID();
+					}
+				}
+				break;
+				}
+			};
+
+		static constexpr auto c_compare_property_func = +[](const SceneData::ComponentData::Property& property_data, const Vadon::Utilities::Property& component_property, Vadon::Scene::ResourceSystem& resource_system)
+			{
+				switch (component_property.data_type.type)
+				{
+				case ErasedDataType::TRIVIAL:
+				case ErasedDataType::RESOURCE_ID:
+					return property_data.value == component_property.value;
+				case ErasedDataType::RESOURCE_HANDLE:
+				{
+					const Vadon::Scene::ResourceID& resource_id = std::get<Vadon::Scene::ResourceID>(property_data.value);
+					const Vadon::Scene::ResourceHandle& resource_handle = std::get<Vadon::Scene::ResourceHandle>(component_property.value);
+					if (resource_handle.is_valid() == true)
+					{
+						return resource_id == resource_system.get_resource_info(resource_handle).id;
+					}
+					else
+					{
+						return (resource_id.is_valid() == false);
+					}
+				}
+				break;
+				}
+
+				return false;
+			};
+
 		if (scene_comp != nullptr)
 		{
 			if (scene_comp->root_scene.is_valid() == false)
@@ -598,48 +664,105 @@ namespace Vadon::Private::Scene
 			}
 
 			entity_data.scene = scene_comp->root_scene;
-		}
 
-		const Vadon::ECS::ComponentIDList component_type_ids = component_manager.get_component_list(entity);
-		const Vadon::Utilities::TypeID scene_component_id = Vadon::Utilities::TypeRegistry::get_type_id<SceneComponent>();
-		for (Vadon::Utilities::TypeID current_component_type_id : component_type_ids)
-		{
-			if (current_component_type_id == scene_component_id)
+			const SceneHandle sub_scene_handle = load_scene(scene_comp->root_scene);
+			if (sub_scene_handle.is_valid() == false)
 			{
-				continue;
+				// TODO: log scene ID!
+				log_error("Scene system: failed to load sub-scene!\n");
+				return true;
 			}
 
-			SceneData::ComponentData& current_component_data = entity_data.components.emplace_back();
-			current_component_data.type_id = current_component_type_id;
-
-			void* component_ptr = component_manager.get_component(entity, current_component_type_id);
-			const Vadon::Utilities::PropertyList component_properties = Vadon::Utilities::TypeRegistry::get_properties(component_ptr, current_component_type_id);
-
-			// FIXME: filter to properties that are intended to be serialized?
-			for (const Vadon::Utilities::Property& current_component_property : component_properties)
+			// Compare against root entity
+			const Scene* sub_scene = resource_system.get_resource<Scene>(sub_scene_handle);
+			const SceneData::EntityData& sub_scene_root = sub_scene->data.entities.front();
+			std::vector<size_t> unique_property_indices;
+			for (Vadon::Utilities::TypeID current_component_type_id : component_type_ids)
 			{
-				SceneData::ComponentData::Property& current_property_data = current_component_data.properties.emplace_back();
-				current_property_data.name = current_component_property.name;
-				current_property_data.data_type = current_component_property.data_type;
+				if (current_component_type_id == scene_component_id)
+				{
+					continue;
+				}
 
-				switch (current_component_property.data_type.type)
+				void* component_ptr = component_manager.get_component(entity, current_component_type_id);
+				const Vadon::Utilities::PropertyList component_properties = Vadon::Utilities::TypeRegistry::get_properties(component_ptr, current_component_type_id);
+
+				bool found = false;
+				for (const SceneData::ComponentData& sub_scene_component : sub_scene_root.components)
 				{
-				case ErasedDataType::TRIVIAL:
-					current_property_data.value = current_component_property.value;
-					break;
-				case ErasedDataType::RESOURCE_HANDLE:
-				{
-					Vadon::Scene::ResourceHandle temp_resource_handle = std::get<Vadon::Scene::ResourceHandle>(current_component_property.value);
-					if (temp_resource_handle.is_valid() == true)
+					if (sub_scene_component.type_id == current_component_type_id)
 					{
-						current_property_data.value = resource_system.get_resource_info(temp_resource_handle).id;
-					}
-					else
-					{
-						current_property_data.value = ResourceID();
+						unique_property_indices.clear();
+						for (size_t property_index = 0; property_index < component_properties.size(); ++property_index)
+						{
+							const Vadon::Utilities::Property& current_property_data = component_properties[property_index];
+							for (const SceneData::ComponentData::Property& sub_scene_property : sub_scene_component.properties)
+							{
+								if (current_property_data.name == sub_scene_property.name)
+								{
+									if (c_compare_property_func(sub_scene_property, current_property_data, resource_system) == false)
+									{
+										unique_property_indices.push_back(property_index);
+									}
+									break;
+								}
+							}
+						}
+
+						if (unique_property_indices.empty() == false)
+						{
+							// Save the unique properties
+							SceneData::ComponentData& current_component_data = entity_data.components.emplace_back();
+							current_component_data.type_id = current_component_type_id;
+
+							for (size_t current_property_index : unique_property_indices)
+							{
+								SceneData::ComponentData::Property& current_property_data = current_component_data.properties.emplace_back();
+								const Vadon::Utilities::Property& component_property = component_properties[current_property_index];
+								
+								c_save_property_func(current_property_data, component_property, resource_system);
+							}
+						}
+						found = true;
+						break;
 					}
 				}
-					break;
+
+				if (found == false)
+				{
+					// Component was not in original, save entirely
+					SceneData::ComponentData& current_component_data = entity_data.components.emplace_back();
+					current_component_data.type_id = current_component_type_id;
+
+					// FIXME: filter to properties that are intended to be serialized?
+					for (const Vadon::Utilities::Property& current_component_property : component_properties)
+					{
+						SceneData::ComponentData::Property& current_property_data = current_component_data.properties.emplace_back();
+						c_save_property_func(current_property_data, current_component_property, resource_system);
+					}
+				}
+			}
+		}
+		else
+		{
+			for (Vadon::Utilities::TypeID current_component_type_id : component_type_ids)
+			{
+				if (current_component_type_id == scene_component_id)
+				{
+					continue;
+				}
+
+				void* component_ptr = component_manager.get_component(entity, current_component_type_id);
+				const Vadon::Utilities::PropertyList component_properties = Vadon::Utilities::TypeRegistry::get_properties(component_ptr, current_component_type_id);
+
+				SceneData::ComponentData& current_component_data = entity_data.components.emplace_back();
+				current_component_data.type_id = current_component_type_id;
+
+				// FIXME: filter to properties that are intended to be serialized?
+				for (const Vadon::Utilities::Property& current_component_property : component_properties)
+				{
+					SceneData::ComponentData::Property& current_property_data = current_component_data.properties.emplace_back();
+					c_save_property_func(current_property_data, current_component_property, resource_system);
 				}
 			}
 		}

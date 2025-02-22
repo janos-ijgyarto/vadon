@@ -40,8 +40,11 @@ namespace Vadon::Render::Canvas
 
 	struct Sprite : public PrimitiveBase
 	{
-		Render::Rectangle dimensions;
-		Render::Rectangle uv_dimensions;
+		Render::Rectangle dimensions = { .position = Vector2_Zero, .size = Vector2_One };
+		Render::Vector2 uv_top_left = Render::Vector2_Zero;
+		Render::Vector2 uv_top_right = { 1, 0 };
+		Render::Vector2 uv_bottom_left = { 0, 1 };
+		Render::Vector2 uv_bottom_right = Render::Vector2_One;
 		SRVHandle texture_view_handle;
 	};
 

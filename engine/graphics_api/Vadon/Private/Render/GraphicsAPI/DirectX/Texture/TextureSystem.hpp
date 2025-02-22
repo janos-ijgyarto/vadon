@@ -33,7 +33,6 @@ namespace Vadon::Private::Render::DirectX
 		void set_sampler(ShaderType shader_type, TextureSamplerHandle sampler_handle, int slot) override;
 		void set_sampler_slots(ShaderType shader_type, const TextureSamplerSpan& samplers) override;
 	private:
-		using TexturePool = Vadon::Utilities::ObjectPool<Vadon::Render::Texture, Texture>;
 		using SamplerPool = Vadon::Utilities::ObjectPool<Vadon::Render::TextureSampler, TextureSampler>;
 
 		TextureSystem(Core::EngineCoreInterface& core, GraphicsAPI& graphics_api);

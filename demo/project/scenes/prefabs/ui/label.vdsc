@@ -1,0 +1,54 @@
+{
+    "data": {
+        "entities": [
+            {
+                "components": [
+                    {
+                        "properties": {
+                            "layer_def": "m6RD58IxSzuDWoRgRXAqZQ==",
+                            "visible": true,
+                            "z_order": 0.0
+                        },
+                        "type": "VadonDemo::Render::CanvasComponent"
+                    },
+                    {
+                        "properties": {
+                            "dimensions": [
+                                110.0,
+                                16.0
+                            ],
+                            "enabled": true,
+                            "position": [
+                                0.0,
+                                0.0
+                            ]
+                        },
+                        "type": "VadonDemo::UI::Base"
+                    },
+                    {
+                        "properties": {
+                            "color": [
+                                1.0,
+                                1.0,
+                                1.0
+                            ],
+                            "offset": [
+                                0.0,
+                                0.0
+                            ],
+                            "text": "Label"
+                        },
+                        "type": "VadonDemo::UI::Text"
+                    }
+                ],
+                "name": "Label",
+                "parent": -1
+            }
+        ]
+    },
+    "id": "2r2yS8FDT/WGSZ7bPY6/ZQ==",
+    "properties": {
+        "name": ""
+    },
+    "type": "Vadon::Scene::Scene"
+}

@@ -1,0 +1,126 @@
+{
+    "data": {
+        "entities": [
+            {
+                "components": [],
+                "name": "Root",
+                "parent": -1
+            },
+            {
+                "components": [
+                    {
+                        "properties": {
+                            "dimensions": [
+                                800.0,
+                                800.0
+                            ],
+                            "position": [
+                                -400.0,
+                                400.0
+                            ]
+                        },
+                        "type": "VadonDemo::UI::Base"
+                    }
+                ],
+                "name": "MainFrame",
+                "parent": 0,
+                "scene": "SkNc4cxeQV+JAgDb4DW6qw=="
+            },
+            {
+                "components": [
+                    {
+                        "properties": {
+                            "text": "Vadon Demo"
+                        },
+                        "type": "VadonDemo::UI::Text"
+                    },
+                    {
+                        "properties": {
+                            "dimensions": [
+                                300.0,
+                                16.0
+                            ],
+                            "position": [
+                                -80.0,
+                                380.0
+                            ]
+                        },
+                        "type": "VadonDemo::UI::Base"
+                    }
+                ],
+                "name": "Label",
+                "parent": 0,
+                "scene": "2r2yS8FDT/WGSZ7bPY6/ZQ=="
+            },
+            {
+                "components": [
+                    {
+                        "properties": {
+                            "offset": [
+                                8.0,
+                                -15.0
+                            ],
+                            "text": "Start"
+                        },
+                        "type": "VadonDemo::UI::Text"
+                    },
+                    {
+                        "properties": {
+                            "dimensions": [
+                                120.0,
+                                60.0
+                            ]
+                        },
+                        "type": "VadonDemo::UI::Base"
+                    },
+                    {
+                        "properties": {
+                            "clicked_key": "start"
+                        },
+                        "type": "VadonDemo::UI::Selectable"
+                    }
+                ],
+                "name": "StartButton",
+                "parent": 0,
+                "scene": "DVGQXXLXTOGkymiY2E5x/g=="
+            },
+            {
+                "components": [
+                    {
+                        "properties": {
+                            "offset": [
+                                5.0,
+                                -15.0
+                            ],
+                            "text": "Quit"
+                        },
+                        "type": "VadonDemo::UI::Text"
+                    },
+                    {
+                        "properties": {
+                            "position": [
+                                0.0,
+                                -120.0
+                            ]
+                        },
+                        "type": "VadonDemo::UI::Base"
+                    },
+                    {
+                        "properties": {
+                            "clicked_key": "quit"
+                        },
+                        "type": "VadonDemo::UI::Selectable"
+                    }
+                ],
+                "name": "QuitButton",
+                "parent": 0,
+                "scene": "DVGQXXLXTOGkymiY2E5x/g=="
+            }
+        ]
+    },
+    "id": "logqRpQYSLqnn8W+lZaOwg==",
+    "properties": {
+        "name": ""
+    },
+    "type": "Vadon::Scene::Scene"
+}

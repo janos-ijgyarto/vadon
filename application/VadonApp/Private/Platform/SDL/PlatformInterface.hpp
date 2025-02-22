@@ -9,6 +9,8 @@
 
 namespace VadonApp::Private::Platform::SDL
 {
+	using MouseState = VadonApp::Platform::MouseState;
+
 	class PlatformInterface final : public VadonApp::Private::Platform::PlatformInterface
 	{
 	public:
@@ -51,7 +53,8 @@ namespace VadonApp::Private::Platform::SDL
 
 		void capture_mouse(bool capture) override;
 		void warp_mouse(WindowHandle window_handle, const Vadon::Utilities::Vector2i& mouse_position) override;
-		Vadon::Utilities::Vector2i get_mouse_position() const override;
+		MouseState get_mouse_state() const override;
+		MouseState get_global_mouse_state() const override;
 
 		void set_clipboard_text(const char* text) override;
 		const char* get_clipboard_text() override;

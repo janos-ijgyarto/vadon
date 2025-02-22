@@ -9,8 +9,6 @@ namespace VadonDemo::View
 {
 	struct ViewResource : public Vadon::Scene::Resource
 	{
-		float z_order = 0.0f; // FIXME: revise this, we need to be able to set Z order per-object!
-
 		static void register_resource();
 	};
 
@@ -38,7 +36,8 @@ namespace VadonDemo::View
 	struct Sprite : public ViewResource
 	{
 		std::string texture_path; // FIXME: implement texture resource!
-		// TODO: other params (offset, etc.)
+		Vadon::Render::SRVHandle texture_srv; // FIXME: we shouldn't immediately point to an SRV, have client determine how they want to use texture data
+		int repeat = 1;
 
 		static void register_resource();
 	};

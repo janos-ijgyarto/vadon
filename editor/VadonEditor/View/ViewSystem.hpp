@@ -43,7 +43,7 @@ namespace VadonEditor::View
 	public:
 		~ViewSystem();
 
-		ViewModel& get_view_model();
+		VADONEDITOR_API ViewModel& get_view_model();
 	private:
 		ViewSystem(Core::Editor& editor);
 

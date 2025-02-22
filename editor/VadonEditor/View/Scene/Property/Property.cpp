@@ -173,18 +173,18 @@ namespace VadonEditor::View
 	struct ResourcePropertyEditor : public PropertyEditor
 	{
 	public:
-		ResourcePropertyEditor(Core::Editor& editor, const Vadon::Utilities::Property& model_property)
+		ResourcePropertyEditor(Core::Editor& editor, const Vadon::Utilities::Property& model_property, bool use_handle)
 			: PropertyEditor(model_property)
 			, m_editor(editor)
-			, m_resource(nullptr)
 			, m_select_resource_dialog(editor)
+			, m_use_handle(use_handle)
 		{
 			update_resource_reference();
 
 			m_header = model_property.name + ":";
 
-			m_select_resource_button.label = "Select";
-			m_clear_button.label = "Clear";
+			m_select_resource_button.label = "Select##resource_select_" + model_property.name;
+			m_clear_button.label = "Clear##resource_clear_" + model_property.name;
 
 			m_select_resource_dialog.set_resource_type(Vadon::Utilities::to_enum<Vadon::Utilities::TypeID>(model_property.data_type.id));
 		}
@@ -195,22 +195,29 @@ namespace VadonEditor::View
 			if (m_select_resource_dialog.draw(dev_gui) == VadonApp::UI::Developer::Dialog::Result::ACCEPTED)
 			{
 				const Model::ResourceID selected_resource_id = m_select_resource_dialog.get_selected_resource();
-				if (selected_resource_id.is_valid() == true)
+				if (m_use_handle == true)
 				{
-					VadonEditor::Model::ResourceSystem& resource_system = m_editor.get_system<VadonEditor::Model::ModelSystem>().get_resource_system();
-					Model::Resource* selected_resource = resource_system.get_resource(selected_resource_id);
-					if (selected_resource->load() == false)
+					if (selected_resource_id.is_valid() == true)
 					{
-						Vadon::Core::Logger::log_error("Resource property editor: failed to load selected resource!\n");
+						VadonEditor::Model::ResourceSystem& resource_system = m_editor.get_system<VadonEditor::Model::ModelSystem>().get_resource_system();
+						Model::Resource* selected_resource = resource_system.get_resource(selected_resource_id);
+						if (selected_resource->load() == false)
+						{
+							Vadon::Core::Logger::log_error("Resource property editor: failed to load selected resource!\n");
+						}
+						else
+						{
+							m_property.value = selected_resource->get_handle();
+						}
 					}
 					else
 					{
-						m_property.value = selected_resource->get_handle();
+						m_property.value = Vadon::Scene::ResourceHandle();
 					}
 				}
 				else
 				{
-					m_property.value = Vadon::Scene::ResourceHandle();
+					m_property.value = selected_resource_id;
 				}
 
 				edited = true;
@@ -218,7 +225,7 @@ namespace VadonEditor::View
 
 			dev_gui.add_text(m_header);
 			dev_gui.same_line();
-			dev_gui.add_text(m_resource ? m_label : "<NONE>");
+			dev_gui.add_text(m_label);
 			dev_gui.same_line();
 			if (dev_gui.draw_button(m_select_resource_button) == true)
 			{
@@ -241,27 +248,46 @@ namespace VadonEditor::View
 	private:
 		void update_resource_reference()
 		{
-			Vadon::Scene::ResourceHandle resource_handle = std::get<Vadon::Scene::ResourceHandle>(m_property.value);
-
-			if (resource_handle.is_valid() == true)
+			// FIXME: deduplicate the code?
+			if (m_use_handle == true)
 			{
-				VadonEditor::Model::ResourceSystem& resource_system = m_editor.get_system<VadonEditor::Model::ModelSystem>().get_resource_system();
-				m_resource = resource_system.get_resource(resource_handle);
+				Vadon::Scene::ResourceHandle resource_handle = std::get<Vadon::Scene::ResourceHandle>(m_property.value);
 
-				const Model::ResourcePath path = m_resource->get_path();
-				if (path.is_valid() == true)
+				if (resource_handle.is_valid() == true)
 				{
-					m_label = path.path;
+					VadonEditor::Model::ResourceSystem& resource_system = m_editor.get_system<VadonEditor::Model::ModelSystem>().get_resource_system();
+					VadonEditor::Model::Resource* resource = resource_system.get_resource(resource_handle);
+
+					const Model::ResourcePath path = resource->get_path();
+					if (path.is_valid() == true)
+					{
+						m_label = path.path;
+						return;
+					}
 				}
 			}
 			else
 			{
-				m_resource = nullptr;
+				Vadon::Scene::ResourceID resource_id = std::get<Vadon::Scene::ResourceID>(m_property.value);
+				if (resource_id.is_valid() == true)
+				{
+					VadonEditor::Model::ResourceSystem& resource_system = m_editor.get_system<VadonEditor::Model::ModelSystem>().get_resource_system();
+					const VadonEditor::Model::ResourceInfo resource_info = resource_system.get_database().find_resource_info(resource_id);
+					VADON_ASSERT(resource_info.info.is_valid() == true, "Invalid resource ID!");
+
+					if (resource_info.path.is_valid() == true)
+					{
+						m_label = resource_info.path.path;
+						return;
+					}
+				}
 			}
+
+			m_label = "<NONE>";
 		}
 
 		Core::Editor& m_editor;
-		VadonEditor::Model::Resource* m_resource;
+		bool m_use_handle;
 
 		std::string m_header;
 		std::string m_label;
@@ -293,8 +319,10 @@ namespace VadonEditor::View
 			}
 		}
 		break;
+		case Vadon::Utilities::ErasedDataType::RESOURCE_ID:
+			return Instance(new ResourcePropertyEditor(editor, model_property, false));
 		case Vadon::Utilities::ErasedDataType::RESOURCE_HANDLE:
-			return Instance(new ResourcePropertyEditor(editor, model_property));
+			return Instance(new ResourcePropertyEditor(editor, model_property, true));
 		}
 
 		Vadon::Core::Logger::log_error("Property editor: no matching property editor available for data type!\n");

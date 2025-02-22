@@ -687,12 +687,20 @@ namespace VadonApp::Private::Platform::SDL
 		SDL_WarpMouseInWindow(window.sdl_window, mouse_position.x, mouse_position.y);
 	}
 
-	Vadon::Utilities::Vector2i PlatformInterface::get_mouse_position() const
+	MouseState PlatformInterface::get_mouse_state() const
 	{
-		int mouse_x_global, mouse_y_global;
-		SDL_GetGlobalMouseState(&mouse_x_global, &mouse_y_global);
+		MouseState mouse_state;
+		mouse_state.buttons = SDL_GetMouseState(&mouse_state.position.x, &mouse_state.position.y);
 
-		return Vadon::Utilities::Vector2i(mouse_x_global, mouse_y_global);
+		return mouse_state;
+	}
+
+	MouseState PlatformInterface::get_global_mouse_state() const
+	{
+		MouseState global_mouse_state;
+		global_mouse_state.buttons = SDL_GetGlobalMouseState(&global_mouse_state.position.x, &global_mouse_state.position.y);
+
+		return global_mouse_state;
 	}
 
 	void PlatformInterface::set_clipboard_text(const char* text)

@@ -8,11 +8,8 @@ namespace VadonDemo::View
 	void ViewResource::register_resource()
 	{
 		using ResourceRegistry = Vadon::Scene::ResourceRegistry;
-		using TypeRegistry = Vadon::Utilities::TypeRegistry;
 
 		ResourceRegistry::register_resource_type<ViewResource, Vadon::Scene::Resource>();
-
-		TypeRegistry::add_property<ViewResource>("z_order", Vadon::Utilities::MemberVariableBind<&ViewResource::z_order>().bind_member_getter().bind_member_setter());
 	}
 
 	void Shape::register_resource()
@@ -34,5 +31,6 @@ namespace VadonDemo::View
 		ResourceRegistry::register_resource_type<Sprite, ViewResource>();
 
 		TypeRegistry::add_property<Sprite>("texture_path", Vadon::Utilities::MemberVariableBind<&Sprite::texture_path>().bind_member_getter().bind_member_setter());
+		TypeRegistry::add_property<Sprite>("repeat", Vadon::Utilities::MemberVariableBind<&Sprite::repeat>().bind_member_getter().bind_member_setter());
 	}
 }

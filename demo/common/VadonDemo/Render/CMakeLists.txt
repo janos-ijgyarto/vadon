@@ -1,0 +1,9 @@
+target_sources(${VADONDEMO_CURRENT_TARGET}
+    PRIVATE
+    Component.hpp
+    Component.cpp
+    Render.hpp
+    Render.cpp
+    Resource.hpp
+    Resource.cpp
+    )

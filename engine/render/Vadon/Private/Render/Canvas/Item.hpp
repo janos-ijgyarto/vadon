@@ -30,6 +30,7 @@ namespace Vadon::Private::Render::Canvas
 	struct ItemData
 	{
 		ItemInfo info;
+		bool visible = true;
 		ItemCommandBuffer command_buffer;
 	};
 }

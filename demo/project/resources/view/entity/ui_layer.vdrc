@@ -1,0 +1,9 @@
+{
+    "id": "m6RD58IxSzuDWoRgRXAqZQ==",
+    "properties": {
+        "name": "UILayer",
+        "priority": 1,
+        "view_agnostic": true
+    },
+    "type": "VadonDemo::Render::CanvasLayerDefinition"
+}

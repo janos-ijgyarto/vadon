@@ -7,8 +7,7 @@
             1.0
         ],
         "name": "",
-        "type": 2,
-        "z_order": 3.0
+        "type": 2
     },
     "type": "VadonDemo::View::Shape"
 }

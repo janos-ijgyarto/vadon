@@ -5,20 +5,17 @@
                 "components": [
                     {
                         "properties": {
-                            "position": [
-                                0.0,
-                                0.0
-                            ],
-                            "rotation": 0.0,
-                            "scale": 1000.0
+                            "resource": "QA85kaI8S9Gbv+1BcKK+3A=="
                         },
-                        "type": "VadonDemo::Model::Transform2D"
+                        "type": "VadonDemo::View::ViewComponent"
                     },
                     {
                         "properties": {
-                            "resource": "KkqpfJOESB+yH+OZ38LzaQ=="
+                            "layer_def": "2bdWkqSdTuSxnfVFk+5q+g==",
+                            "visible": true,
+                            "z_order": 0.0
                         },
-                        "type": "VadonDemo::View::ViewComponent"
+                        "type": "VadonDemo::Render::CanvasComponent"
                     },
                     {
                         "properties": {
@@ -29,6 +26,17 @@
                             "display_name": "Demo map"
                         },
                         "type": "VadonDemo::Model::Map"
+                    },
+                    {
+                        "properties": {
+                            "position": [
+                                0.0,
+                                0.0
+                            ],
+                            "rotation": 0.0,
+                            "scale": 1000.0
+                        },
+                        "type": "VadonDemo::Model::Transform2D"
                     }
                 ],
                 "name": "Map",
