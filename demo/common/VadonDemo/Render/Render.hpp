@@ -35,7 +35,8 @@ namespace VadonDemo::Render
 		VADONDEMO_API CanvasContextHandle create_canvas_context();
 		VADONDEMO_API Vadon::Render::Canvas::RenderContext& get_context(CanvasContextHandle context_handle);
 
-		VADONDEMO_API void update_entity(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle entity, CanvasContextHandle context_handle);
+		VADONDEMO_API void init_entity(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle entity, CanvasContextHandle context_handle);
+		VADONDEMO_API void update_entity(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle entity);
 		VADONDEMO_API void remove_entity(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle entity);
 
 		VADONDEMO_API void update_layer_definition(CanvasLayerDefHandle layer_def_handle);
@@ -52,10 +53,6 @@ namespace VadonDemo::Render
 
 		bool initialize();
 		Vadon::Render::Canvas::LayerHandle get_context_layer(CanvasContextHandle context_handle, CanvasLayerDefHandle layer_def_handle);
-		CanvasContextHandle find_context_by_layer(Vadon::Render::Canvas::LayerHandle layer_handle) const;
-
-		void internal_remove_entity(Vadon::Render::Canvas::CanvasSystem& canvas_system, CanvasComponent& canvas_component);
-		void internal_create_item(Vadon::Render::Canvas::CanvasSystem& canvas_system, CanvasComponent& canvas_component, Vadon::Render::Canvas::LayerHandle layer_handle);
 		
 		void sort_context_layers(CanvasContextData& context);
 

@@ -141,6 +141,9 @@ namespace VadonEditor::Model
 		Entity* sub_scene_entity = instantiate_scene_recursive(sub_scene_root_handle, nullptr);
 		parent.add_child(sub_scene_entity);
 
+		// Dispatch event
+		entity_added(*sub_scene_entity);
+
 		return sub_scene_entity;
 	}
 
@@ -151,6 +154,9 @@ namespace VadonEditor::Model
 			m_editor.get_engine_core().log_error("Editor scene: cannot modify Entities of other scenes!\n");
 			return false;
 		}
+
+		// Entity will be removed, dispatch events
+		entity_removed(entity);
 
 		if (m_root_entity == &entity)
 		{
@@ -220,11 +226,14 @@ namespace VadonEditor::Model
 	{
 		// Replace root with a new empty entity
 		m_root_entity = internal_add_new_entity(nullptr);
+
+		entity_added(*m_root_entity);
 	}
 
 	Entity* Scene::internal_add_new_entity(Entity* parent)
 	{
-		Vadon::ECS::World& ecs_world = m_editor.get_system<ModelSystem>().get_ecs_world();
+		ModelSystem& editor_model = m_editor.get_system<ModelSystem>();
+		Vadon::ECS::World& ecs_world = editor_model.get_ecs_world();
 		Vadon::ECS::EntityManager& entity_manager = ecs_world.get_entity_manager();
 
 		Vadon::ECS::EntityHandle new_entity_handle = entity_manager.create_entity();
@@ -321,6 +330,8 @@ namespace VadonEditor::Model
 	{
 		Vadon::ECS::EntityHandle root_entity_handle = instantiate(false);
 		m_root_entity = instantiate_scene_recursive(root_entity_handle);
+
+		entity_added(*m_root_entity);
 	}
 
 	void Scene::clear_contents()
@@ -341,5 +352,31 @@ namespace VadonEditor::Model
 		}
 
 		return true;
+	}
+
+	void Scene::entity_added(const Entity& entity)
+	{
+		ModelSystem& editor_model = m_editor.get_system<ModelSystem>();
+		SceneSystem& editor_scene_system = editor_model.get_scene_system();
+
+		editor_scene_system.entity_added(entity);
+
+		for (const Entity* current_child : entity.get_children())
+		{
+			entity_added(*current_child);
+		}
+	}
+
+	void Scene::entity_removed(const Entity& entity)
+	{
+		ModelSystem& editor_model = m_editor.get_system<ModelSystem>();
+		SceneSystem& editor_scene_system = editor_model.get_scene_system();
+
+		editor_scene_system.entity_removed(entity);
+
+		for (const Entity* current_child : entity.get_children())
+		{
+			entity_removed(*current_child);
+		}
 	}
 }

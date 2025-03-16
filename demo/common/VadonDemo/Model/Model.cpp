@@ -1,5 +1,6 @@
 #include <VadonDemo/Model/Model.hpp>
 
+#include <VadonDemo/Core/Core.hpp>
 #include <VadonDemo/Model/Component.hpp>
 
 #include <Vadon/Core/CoreInterface.hpp>
@@ -109,13 +110,15 @@ namespace VadonDemo::Model
 			return;
 		}
 
+		m_core.entity_removed(ecs_world, m_level_root);
+
 		// TODO: error checking?
 		ecs_world.remove_entity(m_level_root);
 		m_level_root.invalidate();
 	}
 
-	Model::Model(Vadon::Core::EngineCoreInterface& engine_core)
-		: m_engine_core(engine_core)
+	Model::Model(Core::Core& core)
+		: m_core(core)
 		, m_random_engine(std::random_device{}())
 		, m_enemy_dist(0.0f, 2 * std::numbers::pi_v<float>)
 	{
@@ -131,7 +134,7 @@ namespace VadonDemo::Model
 	{
 		VADON_ASSERT(m_level_root.is_valid() == false, "Cannot load a level while a game is already in progress!");
 
-		Vadon::Scene::SceneSystem& scene_system = m_engine_core.get_system<Vadon::Scene::SceneSystem>();
+		Vadon::Scene::SceneSystem& scene_system = m_core.get_engine_core().get_system<Vadon::Scene::SceneSystem>();
 		const Vadon::Scene::SceneHandle level_scene_handle = scene_system.load_scene(level_scene_id);
 		if (level_scene_handle.is_valid() == false)
 		{
@@ -146,6 +149,7 @@ namespace VadonDemo::Model
 			return false;
 		}
 
+		m_core.entity_added(ecs_world, m_level_root);
 		return true;
 	}
 
@@ -347,6 +351,7 @@ namespace VadonDemo::Model
 		// Now remove each entity
 		for (Vadon::ECS::EntityHandle current_entity : m_entity_remove_list)
 		{
+			m_core.entity_removed(ecs_world, current_entity);
 			ecs_world.remove_entity(current_entity);
 		}
 
@@ -619,7 +624,7 @@ namespace VadonDemo::Model
 	void Model::update_spawners(Vadon::ECS::World& ecs_world, float delta_time)
 	{
 		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
-		Vadon::Scene::SceneSystem& scene_system = m_engine_core.get_system<Vadon::Scene::SceneSystem>();
+		Vadon::Scene::SceneSystem& scene_system = m_core.get_engine_core().get_system<Vadon::Scene::SceneSystem>();
 
 		// FIXME: instead of having to do a query, we should just cache the player entity handle!
 		Vadon::Utilities::Vector2 player_position = Vadon::Utilities::Vector2_Zero;
@@ -714,13 +719,15 @@ namespace VadonDemo::Model
 			{
 				health_component->current_health = health_component->max_health;
 			}
+
+			m_core.entity_added(ecs_world, spawned_enemy);
 		}
 	}
 
 	void Model::update_weapons(Vadon::ECS::World& ecs_world, float delta_time)
 	{
 		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
-		Vadon::Scene::SceneSystem& scene_system = m_engine_core.get_system<Vadon::Scene::SceneSystem>();
+		Vadon::Scene::SceneSystem& scene_system = m_core.get_engine_core().get_system<Vadon::Scene::SceneSystem>();
 
 		// Have to defer creating the projectiles, because we can't add to the ECS while iterating in it
 		// FIXME: implement deferred operations in ECS?
@@ -790,6 +797,8 @@ namespace VadonDemo::Model
 
 			projectile_component->remaining_lifetime = projectile_component->range / projectile_velocity->top_speed;
 			projectile_velocity->velocity = current_projectile_data.aim_direction * projectile_velocity->top_speed;
+
+			m_core.entity_added(ecs_world, spawned_projectile);
 		}
 	}
 

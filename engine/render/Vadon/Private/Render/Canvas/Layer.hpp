@@ -16,6 +16,24 @@ namespace Vadon::Private::Render::Canvas
 		// TODO: anything else?
 
 		void set_items_dirty() { items_dirty = true; }
+
+		void add_item(Vadon::Render::Canvas::ItemHandle item_handle)
+		{
+			if (std::find(items.begin(), items.end(), item_handle) != items.end())
+			{
+				// Item already in layer
+				return;
+			}
+
+			items.push_back(item_handle);
+			set_items_dirty();
+		}
+
+		void remove_item(Vadon::Render::Canvas::ItemHandle item_handle)
+		{
+			items.erase(std::remove(items.begin(), items.end(), item_handle), items.end());
+			set_items_dirty();
+		}
 	};
 }
 #endif

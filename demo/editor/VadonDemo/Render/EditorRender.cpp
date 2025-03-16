@@ -78,6 +78,31 @@ namespace VadonDemo::Render
         return &texture_it->second;
     }
 
+    void EditorRender::init_entity(Vadon::ECS::EntityHandle entity)
+    {
+        VadonEditor::Model::ModelSystem& editor_model = m_editor.get_system<VadonEditor::Model::ModelSystem>();
+        Vadon::ECS::World& ecs_world = editor_model.get_ecs_world();
+
+        CanvasComponent* canvas_component = ecs_world.get_component_manager().get_component<CanvasComponent>(entity);
+        if (canvas_component == nullptr)
+        {
+            return;
+        }
+
+        if (canvas_component->canvas_item.is_valid() == true)
+        {
+            // Canvas item already initialized
+            // FIXME: check if context is correctly set?
+            return;
+        }
+
+        const VadonEditor::Model::Scene* entity_scene = m_editor.find_entity_scene(entity);
+        VADON_ASSERT(entity_scene != nullptr, "Cannot find scene!");
+
+        const CanvasContextHandle scene_context = get_scene_canvas_context(entity_scene);
+        m_editor.get_core().get_render().init_entity(ecs_world, entity, scene_context);
+    }
+
     EditorRender::EditorRender(Core::Editor& editor)
         : m_editor(editor)
     { }
@@ -85,31 +110,42 @@ namespace VadonDemo::Render
     bool EditorRender::initialize()
     {
         VadonEditor::Model::ModelSystem& editor_model = m_editor.get_system<VadonEditor::Model::ModelSystem>();
-        Vadon::ECS::World& ecs_world = editor_model.get_ecs_world();
-        Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
+        VadonEditor::Model::SceneSystem& editor_scene_system = editor_model.get_scene_system();
 
-        component_manager.register_event_callback<VadonDemo::Render::CanvasComponent>(
-            [this](const Vadon::ECS::ComponentEvent& component_event)
+        editor_scene_system.add_entity_event_callback(
+            [this](const VadonEditor::Model::EntityEvent& event)
             {
-                switch (component_event.event_type)
+                switch (event.type)
                 {
-                case Vadon::ECS::ComponentEventType::ADDED:
-                    update_entity(component_event.owner);
+                case VadonEditor::Model::EntityEventType::ADDED:
+                    init_entity(event.entity);
                     break;
-                case Vadon::ECS::ComponentEventType::REMOVED:
-                    remove_entity(component_event.owner);
+                case VadonEditor::Model::EntityEventType::REMOVED:
+                    remove_entity(event.entity);
                     break;
                 }
             }
         );
 
-        VadonEditor::Model::SceneSystem& editor_scene_system = editor_model.get_scene_system();
-        editor_scene_system.register_edit_callback(
-            [this](Vadon::ECS::EntityHandle entity, Vadon::Utilities::TypeID component_type)
+        editor_scene_system.add_component_event_callback(
+            [this](const VadonEditor::Model::ComponentEvent& event)
             {
-                if (component_type == Vadon::Utilities::TypeRegistry::get_type_id<CanvasComponent>())
+                if (event.component_type != Vadon::Utilities::TypeRegistry::get_type_id<CanvasComponent>())
                 {
-                    update_entity(entity);
+                    return;
+                }
+
+                switch (event.type)
+                {
+                case VadonEditor::Model::ComponentEventType::ADDED:
+                    init_entity(event.owner);
+                    break;
+                case VadonEditor::Model::ComponentEventType::EDITED:
+                    update_entity(event.owner);
+                    break;
+                case VadonEditor::Model::ComponentEventType::REMOVED:
+                    remove_entity(event.owner);
+                    break;
                 }
             }
         );
@@ -135,16 +171,6 @@ namespace VadonDemo::Render
 
     void EditorRender::update()
     {
-        if (m_deferred_update_queue.empty() == false)
-        {
-            for (Vadon::ECS::EntityHandle current_entity : m_deferred_update_queue)
-            {
-                deferred_update_entity(current_entity);
-            }
-
-            m_deferred_update_queue.clear();
-        }
-
         VadonEditor::View::ViewModel& view_model = m_editor.get_system<VadonEditor::View::ViewSystem>().get_view_model();
         VadonEditor::Model::Scene* active_scene = view_model.get_active_scene();
 
@@ -176,23 +202,10 @@ namespace VadonDemo::Render
 
     void EditorRender::update_entity(Vadon::ECS::EntityHandle entity)
     {
-        auto entity_it = std::find(m_deferred_update_queue.begin(), m_deferred_update_queue.end(), entity);
-        if (entity_it == m_deferred_update_queue.end())
-        {
-            m_deferred_update_queue.push_back(entity);
-        }
-    }
-
-    void EditorRender::deferred_update_entity(Vadon::ECS::EntityHandle entity)
-    {
         VadonEditor::Model::ModelSystem& editor_model = m_editor.get_system<VadonEditor::Model::ModelSystem>();
         Vadon::ECS::World& ecs_world = editor_model.get_ecs_world();
 
-        const VadonEditor::Model::Scene* entity_scene = m_editor.find_entity_scene(entity);
-        VADON_ASSERT(entity_scene != nullptr, "Cannot find scene!");
-        CanvasContextHandle scene_context = get_scene_canvas_context(entity_scene);
-
-        m_editor.get_core().get_render().update_entity(ecs_world, entity, scene_context);
+        m_editor.get_core().get_render().update_entity(ecs_world, entity);
     }
 
     void EditorRender::remove_entity(Vadon::ECS::EntityHandle entity)

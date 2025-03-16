@@ -114,17 +114,39 @@ namespace VadonEditor::Model
 		return m_entity_id_counter++;
 	}
 
-	void SceneSystem::register_edit_callback(EditCallback callback)
+	void SceneSystem::add_entity_event_callback(EntityEventCallback callback)
 	{
-		m_edit_callbacks.push_back(callback);
+		m_entity_callbacks.push_back(callback);
 	}
 
-	void SceneSystem::entity_edited(const Entity& entity, Vadon::Utilities::TypeID component_id)
+	void SceneSystem::add_component_event_callback(ComponentEventCallback callback)
 	{
-		for (const EditCallback& current_callback : m_edit_callbacks)
-		{
-			current_callback(entity.get_handle(), component_id);
-		}
+		m_component_callbacks.push_back(callback);
+	}
+
+	void SceneSystem::entity_added(const Entity& entity)
+	{
+		dispatch_entity_event(EntityEvent{ .type = EntityEventType::ADDED, .entity = entity.get_handle() });
+	}
+
+	void SceneSystem::entity_removed(const Entity& entity)
+	{
+		dispatch_entity_event(EntityEvent{ .type = EntityEventType::REMOVED, .entity = entity.get_handle() });
+	}
+
+	void SceneSystem::component_added(const Entity& owner, Vadon::Utilities::TypeID component_id)
+	{
+		dispatch_component_event(ComponentEvent{ .type = ComponentEventType::ADDED, .owner = owner.get_handle(), .component_type = component_id });
+	}
+
+	void SceneSystem::component_edited(const Entity& owner, Vadon::Utilities::TypeID component_id)
+	{
+		dispatch_component_event(ComponentEvent{ .type = ComponentEventType::EDITED, .owner = owner.get_handle(), .component_type = component_id });
+	}
+
+	void SceneSystem::component_removed(const Entity& owner, Vadon::Utilities::TypeID component_id)
+	{
+		dispatch_component_event(ComponentEvent{ .type = ComponentEventType::REMOVED, .owner = owner.get_handle(), .component_type = component_id });
 	}
 
 	const Scene* SceneSystem::find_entity_scene(Vadon::ECS::EntityHandle entity) const
@@ -205,5 +227,21 @@ namespace VadonEditor::Model
 		// TODO: use refcounting so we only remove the scene if nothing else is using it?
 		ResourceSystem& editor_resource_system = m_editor.get_system<ModelSystem>().get_resource_system();
 		editor_resource_system.remove_resource(scene_resource);
+	}
+
+	void SceneSystem::dispatch_entity_event(const EntityEvent& event)
+	{
+		for (const EntityEventCallback& current_callback : m_entity_callbacks)
+		{
+			current_callback(event);
+		}
+	}
+
+	void SceneSystem::dispatch_component_event(const ComponentEvent& event)
+	{
+		for (const ComponentEventCallback& current_callback : m_component_callbacks)
+		{
+			current_callback(event);
+		}
 	}
 }

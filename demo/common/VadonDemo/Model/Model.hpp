@@ -32,7 +32,7 @@ namespace VadonDemo::Model
 		VADONDEMO_API bool is_in_end_state(Vadon::ECS::World& ecs_world) const;
 		VADONDEMO_API void end_simulation(Vadon::ECS::World& ecs_world);
 	private:
-		Model(Vadon::Core::EngineCoreInterface& engine_core);
+		Model(Core::Core& core);
 		bool initialize();
 
 		bool load_level(Vadon::ECS::World& ecs_world, Vadon::Scene::SceneID level_scene_id);
@@ -53,7 +53,7 @@ namespace VadonDemo::Model
 
 		void clear_removed_entities(Vadon::ECS::World& ecs_world);
 
-		Vadon::Core::EngineCoreInterface& m_engine_core;
+		Core::Core& m_core;
 
 		std::mt19937 m_random_engine;
 		std::uniform_real_distribution<float> m_enemy_dist;

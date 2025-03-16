@@ -20,8 +20,8 @@ namespace VadonDemo::View
 		bool initialize();
         void update();
 
+		void init_entity(Vadon::ECS::EntityHandle entity);
 		void update_entity(Vadon::ECS::EntityHandle entity);
-		void deferred_update_entity(Vadon::ECS::EntityHandle entity);
 		void remove_entity(Vadon::ECS::EntityHandle entity);
 
 		void update_resource(VadonDemo::View::ViewResourceHandle resource_handle);
@@ -30,7 +30,6 @@ namespace VadonDemo::View
 		void update_camera(VadonEditor::Model::Scene* active_scene);
 
 		Core::Editor& m_editor;
-		std::vector<Vadon::ECS::EntityHandle> m_deferred_update_queue;
 
 		friend Core::Editor;
 	};

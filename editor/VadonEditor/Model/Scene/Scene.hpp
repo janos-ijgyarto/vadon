@@ -60,6 +60,9 @@ namespace VadonEditor::Model
 
 		bool package_scene_data();
 
+		void entity_added(const Entity& entity);
+		void entity_removed(const Entity& entity);
+
 		Core::Editor& m_editor;
 
 		Resource* m_resource;

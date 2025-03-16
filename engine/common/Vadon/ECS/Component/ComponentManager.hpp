@@ -72,18 +72,9 @@ namespace Vadon::ECS
 			const TypedComponentPool<T>* typed_pool = find_component_pool<T>();
 			if (typed_pool != nullptr)
 			{
-				dispatch_component_event(*typed_pool, ComponentEvent{ .owner = entity, .type_id = get_component_type_id<T>(), .event_type = ComponentEventType::REMOVED });
 				typed_pool->remove_component(entity);
 			}
 		}
-
-		template<typename T>
-		void register_event_callback(ComponentEventCallback callback)
-		{
-			register_event_callback(std::move(callback), get_component_type_id<T>());
-		}
-
-		VADONCOMMON_API void register_event_callback(ComponentEventCallback callback, ComponentID type_id);
 
 		template<typename T>
 		static ComponentID get_component_type_id()

@@ -2,7 +2,6 @@
 #define VADON_ECS_COMPONENT_POOL_HPP
 #include <Vadon/ECS/Entity/Entity.hpp>
 #include <Vadon/ECS/Component/Component.hpp>
-#include <Vadon/ECS/Component/Event.hpp>
 
 #include <Vadon/Utilities/TypeInfo/Registry/Registry.hpp>
 
@@ -32,10 +31,6 @@ namespace Vadon::ECS
 
 		virtual void clear() = 0;
 	protected:
-		VADONCOMMON_API void dispatch_component_event(const ComponentEvent& event);
-
-		std::vector<ComponentEventCallback> m_event_callbacks;
-
 		friend class ComponentManager;
 	};
 
@@ -87,9 +82,7 @@ namespace Vadon::ECS
 				return m_components[component_offset];
 			}
 
-			m_components.emplace_back();
-			ComponentPoolInterface::dispatch_component_event(ComponentEvent{ .owner = entity, .type_id = ComponentPoolInterface::get_component_type_id<T>(), .event_type = ComponentEventType::ADDED });
-
+			m_components.emplace_back();			
 			return m_components.back();
 		}
 
@@ -110,8 +103,6 @@ namespace Vadon::ECS
 			auto entity_it = find_entity(entity);
 			if (entity_it != m_entity_lookup.end())
 			{
-				ComponentPoolInterface::dispatch_component_event(ComponentEvent{ .owner = entity, .type_id = ComponentPoolInterface::get_component_type_id<T>(), .event_type = ComponentEventType::REMOVED });
-
 				const uint32_t component_offset = m_component_offsets[std::distance(m_entity_lookup.cbegin(), entity_it)];
 				auto removed_it = m_components.begin() + component_offset;
 				auto back_it = m_components.end() - 1;

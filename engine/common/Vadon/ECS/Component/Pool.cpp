@@ -5,14 +5,6 @@
 
 namespace Vadon::ECS
 {
-	void ComponentPoolInterface::dispatch_component_event(const ComponentEvent& event)
-	{
-		for (auto& current_callback : m_event_callbacks)
-		{
-			current_callback(event);
-		}
-	}
-
 	std::optional<EntityList::const_iterator> DefaultComponentPoolBase::add_entity(EntityHandle entity)
 	{
 		auto entity_it = std::lower_bound(m_entity_lookup.begin(), m_entity_lookup.end(), entity);

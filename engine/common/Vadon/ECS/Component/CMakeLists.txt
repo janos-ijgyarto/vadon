@@ -3,7 +3,6 @@ target_sources(${VADON_CURRENT_TARGET}
         Component.hpp
         ComponentManager.hpp
         ComponentManager.cpp
-        Event.hpp
         Pool.hpp
         Pool.cpp
         Query.hpp

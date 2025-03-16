@@ -49,6 +49,25 @@ namespace VadonDemo::Render
 		return &texture_it->second;
 	}
 
+	void RenderSystem::init_entity(Vadon::ECS::EntityHandle entity)
+	{
+		Vadon::ECS::World& ecs_world = m_game_core.get_ecs_world();
+		CanvasComponent* canvas_component = ecs_world.get_component_manager().get_component<CanvasComponent>(entity);
+		if (canvas_component == nullptr)
+		{
+			return;
+		}
+
+		if (canvas_component->canvas_item.is_valid() == true)
+		{
+			// Canvas item already initialized
+			// FIXME: check if context is correctly set?
+			return;
+		}
+
+		m_game_core.get_core().get_render().init_entity(ecs_world, entity, m_canvas_context);
+	}
+
 	RenderSystem::RenderSystem(Core::GameCore& game_core)
 		: m_game_core(game_core)
 	{
@@ -122,17 +141,16 @@ namespace VadonDemo::Render
 			return false;
 		}
 
-		Vadon::ECS::World& ecs_world = m_game_core.get_ecs_world();
-		ecs_world.get_component_manager().register_event_callback<VadonDemo::Render::CanvasComponent>(
-			[this](const Vadon::ECS::ComponentEvent& component_event)
+		m_game_core.get_core().add_entity_event_callback(
+			[this](Vadon::ECS::World& /*ecs_world*/, const VadonDemo::Core::EntityEvent& event)
 			{
-				switch (component_event.event_type)
+				switch (event.type)
 				{
-				case Vadon::ECS::ComponentEventType::ADDED:
-					m_deferred_init_queue.push_back(component_event.owner);
+				case VadonDemo::Core::EntityEventType::ADDED:
+					init_entity(event.entity);
 					break;
-				case Vadon::ECS::ComponentEventType::REMOVED:
-					remove_entity(component_event.owner);
+				case VadonDemo::Core::EntityEventType::REMOVED:
+					remove_entity(event.entity);
 					break;
 				}
 			}
@@ -256,23 +274,6 @@ namespace VadonDemo::Render
 
 		return true;
 	}
-
-	void RenderSystem::pre_update()
-	{
-		// TODO: revise this
-		// Allow other systems to register a callback (or use some other mechanism) to delegate
-		// filling the contents of the Canvas Item
-		// Once the Canvas Item is ready, we can use this callback
-		if (m_deferred_init_queue.empty() == false)
-		{
-			for (Vadon::ECS::EntityHandle current_entity : m_deferred_init_queue)
-			{
-				init_entity(current_entity);
-			}
-
-			m_deferred_init_queue.clear();
-		}
-	}
 	
 	void RenderSystem::update()
 	{
@@ -286,12 +287,6 @@ namespace VadonDemo::Render
 		// Present to the main window
 		Vadon::Render::RenderTargetSystem& rt_system = engine_core.get_system<Vadon::Render::RenderTargetSystem>();
 		rt_system.update_window(m_render_window);
-	}
-
-	void RenderSystem::init_entity(Vadon::ECS::EntityHandle entity)
-	{
-		Vadon::ECS::World& ecs_world = m_game_core.get_ecs_world();
-		m_game_core.get_core().get_render().update_entity(ecs_world, entity, m_canvas_context);
 	}
 
 	void RenderSystem::remove_entity(Vadon::ECS::EntityHandle entity)

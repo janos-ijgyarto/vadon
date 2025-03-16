@@ -24,18 +24,18 @@ namespace VadonDemo::Render
 
 		TextureResource* get_texture_resource(std::string_view path);
 		// TODO: unload unused resources!
+
+		void init_entity(Vadon::ECS::EntityHandle entity);
 	private:
 		EditorRender(Core::Editor& editor);
 		bool initialize();
 		void update();
 
 		void update_entity(Vadon::ECS::EntityHandle entity);
-		void deferred_update_entity(Vadon::ECS::EntityHandle entity);
 		void remove_entity(Vadon::ECS::EntityHandle entity);
 
 		Core::Editor& m_editor;
 		std::unordered_map<const VadonEditor::Model::Scene*, CanvasContextHandle> m_scene_canvas_contexts;
-		std::vector<Vadon::ECS::EntityHandle> m_deferred_update_queue;
 
 		std::unordered_map<std::string, TextureResource> m_textures;
 
