@@ -19,6 +19,8 @@ namespace Vadon::Render::Canvas
 		virtual LayerInfo get_layer_info(LayerHandle layer_handle) const = 0;
 		virtual void remove_layer(LayerHandle layer_handle) = 0;
 
+		virtual LayerHandle get_default_layer() const = 0;
+
 		virtual void set_layer_transform(LayerHandle layer_handle, const Transform& transform) = 0;
 		virtual void set_layer_flags(LayerHandle layer_handle, LayerInfo::Flags flags) = 0;
 
@@ -27,7 +29,7 @@ namespace Vadon::Render::Canvas
 		virtual ItemInfo get_item_info(ItemHandle item_handle) const = 0;
 		virtual void remove_item(ItemHandle item_handle) = 0;
 
-		// TODO: allow setting layer?
+		virtual void set_item_layer(ItemHandle item_handle, LayerHandle layer_handle) = 0;
 		virtual void set_item_visible(ItemHandle item_handle, bool visible) = 0;
 		virtual void set_item_transform(ItemHandle item_handle, const Transform& transform) = 0;
 		virtual void set_item_z_order(ItemHandle item_handle, float z_order) = 0;

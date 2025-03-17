@@ -17,59 +17,55 @@ namespace VadonDemo::UI
 
 	bool EditorUI::initialize()
 	{
-        VadonEditor::Model::ModelSystem& editor_model = m_editor.get_system<VadonEditor::Model::ModelSystem>();
-        Vadon::ECS::World& ecs_world = editor_model.get_ecs_world();
+        VadonEditor::Model::SceneSystem& editor_scene_system = m_editor.get_system<VadonEditor::Model::ModelSystem>().get_scene_system();
 
-        Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
-
-        component_manager.register_event_callback<VadonDemo::UI::Base>(
-            [this, &ecs_world](const Vadon::ECS::ComponentEvent& component_event)
+        editor_scene_system.add_entity_event_callback(
+            [this](const VadonEditor::Model::EntityEvent& entity_event)
             {
-                switch (component_event.event_type)
+                switch (entity_event.type)
                 {
-                case Vadon::ECS::ComponentEventType::ADDED:
-                    update_entity(component_event.owner);
+                case VadonEditor::Model::EntityEventType::ADDED:
+                    init_entity(entity_event.entity);
                     break;
-                case Vadon::ECS::ComponentEventType::REMOVED:
-                    remove_entity(component_event.owner);
+                case VadonEditor::Model::EntityEventType::REMOVED:
+                    remove_entity(entity_event.entity);
                     break;
                 }
             }
         );
 
-        component_manager.register_event_callback<VadonDemo::UI::Frame>(
-            [this, &ecs_world](const Vadon::ECS::ComponentEvent& component_event)
+        editor_scene_system.add_component_event_callback(
+            [this](const VadonEditor::Model::ComponentEvent& component_event)
             {
-                update_entity(component_event.owner);
-            }
-        );
-
-        component_manager.register_event_callback<VadonDemo::UI::Text>(
-            [this, &ecs_world](const Vadon::ECS::ComponentEvent& component_event)
-            {
-                update_entity(component_event.owner);
-            }
-        );
-
-        component_manager.register_event_callback<VadonDemo::Render::CanvasComponent>(
-            [this, &ecs_world](const Vadon::ECS::ComponentEvent& component_event)
-            {
-                update_entity(component_event.owner);
-            }
-        );
-
-        // FIXME: also need to make sure we remove the scene canvas context when scene is closed!
-        VadonEditor::Model::SceneSystem& scene_system = editor_model.get_scene_system();
-        scene_system.register_edit_callback(
-            [this](Vadon::ECS::EntityHandle entity, Vadon::Utilities::TypeID component_type)
-            {
-                if (component_type == Vadon::Utilities::TypeRegistry::get_type_id<VadonDemo::UI::Base>()
-                    || component_type == Vadon::Utilities::TypeRegistry::get_type_id<VadonDemo::UI::Frame>()
-                    || component_type == Vadon::Utilities::TypeRegistry::get_type_id<VadonDemo::UI::Text>()
-                    || component_type == Vadon::Utilities::TypeRegistry::get_type_id<VadonDemo::UI::Selectable>()
-                    || component_type == Vadon::Utilities::TypeRegistry::get_type_id<VadonDemo::Render::CanvasComponent>())
+                if (component_event.component_type == Vadon::Utilities::TypeRegistry::get_type_id<Base>())
                 {
-                    update_entity(entity);
+                    switch (component_event.type)
+                    {
+                    case VadonEditor::Model::ComponentEventType::ADDED:
+                        init_entity(component_event.owner);
+                        break;
+                    case VadonEditor::Model::ComponentEventType::EDITED:
+                        update_entity(component_event.owner);
+                        break;
+                    case VadonEditor::Model::ComponentEventType::REMOVED:
+                        remove_entity(component_event.owner);
+                        break;
+                    }
+                }
+                else if (component_event.component_type == Vadon::Utilities::TypeRegistry::get_type_id<VadonDemo::UI::Frame>()
+                    || component_event.component_type == Vadon::Utilities::TypeRegistry::get_type_id<VadonDemo::UI::Text>())
+                {
+                    update_entity(component_event.owner);
+                }
+                else if (component_event.component_type == Vadon::Utilities::TypeRegistry::get_type_id<Render::CanvasComponent>())
+                {
+                    // TODO: could also make this event-driven
+                    // EditorRender initializes CanvasComponent, fires event asking for it to be initialized
+                    // Other subsystems can add listener and add draw data
+                    if (component_event.type == VadonEditor::Model::ComponentEventType::ADDED)
+                    {
+                        update_entity(component_event.owner);
+                    }
                 }
             }
         );
@@ -79,30 +75,29 @@ namespace VadonDemo::UI
 
     void EditorUI::update()
     {
-        if (m_deferred_update_queue.empty() == false)
-        {
-            for(Vadon::ECS::EntityHandle current_entity : m_deferred_update_queue)
-            {
-                deferred_update_entity(current_entity);
-            }
+        // TODO: anything?
+    }
 
-            m_deferred_update_queue.clear();
-        }
+    void EditorUI::init_entity(Vadon::ECS::EntityHandle entity)
+    {
+        // TODO: should we do something different on init?
+        update_entity(entity);
     }
 
     void EditorUI::update_entity(Vadon::ECS::EntityHandle entity)
     {
-        auto entity_it = std::find(m_deferred_update_queue.begin(), m_deferred_update_queue.end(), entity);
-        if (entity_it == m_deferred_update_queue.end())
-        {
-            m_deferred_update_queue.push_back(entity);
-        }
-    }
-
-    void EditorUI::deferred_update_entity(Vadon::ECS::EntityHandle entity)
-    {
         VadonEditor::Model::ModelSystem& editor_model = m_editor.get_system<VadonEditor::Model::ModelSystem>();
         Vadon::ECS::World& ecs_world = editor_model.get_ecs_world();
+
+        // Make sure we at least have a base UI component!
+        Base* base_component = ecs_world.get_component_manager().get_component<Base>(entity);
+        if (base_component == nullptr)
+        {
+            return;
+        }
+
+        // Make sure render component is initialized
+        m_editor.get_render().init_entity(entity);
 
         m_editor.get_core().get_ui().update_ui_element(ecs_world, entity);
     }

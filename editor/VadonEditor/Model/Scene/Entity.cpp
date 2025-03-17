@@ -144,6 +144,7 @@ namespace VadonEditor::Model
 
 	void Entity::remove_child(Entity* entity)
 	{
+		// TODO: should we dispatch event from here?
 		internal_remove_child(entity, false);
 
 		Vadon::ECS::World& world = get_ecs_world();
@@ -171,6 +172,8 @@ namespace VadonEditor::Model
 		Vadon::ECS::World& world = get_ecs_world();
 		Vadon::ECS::ComponentManager& component_manager = world.get_component_manager();
 
+		VADON_ASSERT(component_manager.has_component(m_entity_handle, type_id) == false, "Cannot add component that is not already present!");
+
 		if (component_manager.has_component(m_entity_handle, type_id) == true)
 		{
 			return false;
@@ -180,6 +183,9 @@ namespace VadonEditor::Model
 		{
 			return false;
 		}
+
+		// Dispatch event
+		m_editor.get_system<Model::ModelSystem>().get_scene_system().component_added(*this, type_id);
 
 		notify_modified();
 		return true;
@@ -195,7 +201,12 @@ namespace VadonEditor::Model
 
 		Vadon::ECS::World& world = get_ecs_world();
 		Vadon::ECS::ComponentManager& component_manager = world.get_component_manager();
-		
+
+		VADON_ASSERT(component_manager.has_component(m_entity_handle, type_id), "Cannot remove component that was not already present!");
+
+		// Dispatch event
+		m_editor.get_system<Model::ModelSystem>().get_scene_system().component_removed(*this, type_id);
+
 		component_manager.remove_component(m_entity_handle, type_id);
 		notify_modified();
 	}
@@ -277,7 +288,8 @@ namespace VadonEditor::Model
 		void* component = component_manager.get_component(m_entity_handle, component_type_id);
 		Vadon::Utilities::TypeRegistry::set_property(component, component_type_id, property_name, value);
 
-		m_editor.get_system<ModelSystem>().get_scene_system().entity_edited(*this, component_type_id);
+		// Dispatch event
+		m_editor.get_system<ModelSystem>().get_scene_system().component_edited(*this, component_type_id);
 		notify_modified();
 	}
 

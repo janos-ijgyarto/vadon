@@ -70,12 +70,6 @@ namespace Vadon::ECS
 		return component_type_ids;
 	}
 
-	void ComponentManager::register_event_callback(ComponentEventCallback callback, ComponentID type_id)
-	{
-		ComponentPoolInterface* component_pool = get_component_pool(type_id);
-		component_pool->m_event_callbacks.push_back(callback);
-	}
-
 	ComponentManager::ComponentManager() = default;
 
 	void ComponentManager::remove_entity(EntityHandle entity)

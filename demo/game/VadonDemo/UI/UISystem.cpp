@@ -8,6 +8,8 @@
 
 #include <VadonDemo/Platform/PlatformInterface.hpp>
 
+#include <VadonDemo/Render/RenderSystem.hpp>
+
 #include <VadonDemo/UI/Component.hpp>
 
 #include <VadonApp/Core/Application.hpp>
@@ -138,18 +140,16 @@ namespace VadonDemo::UI
 
 		init_game_ui();
 
-		Vadon::ECS::World& ecs_world = m_game_core.get_ecs_world();
-		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
-		component_manager.register_event_callback<VadonDemo::UI::Base>(
-			[this](const Vadon::ECS::ComponentEvent& component_event)
+		m_game_core.get_core().add_entity_event_callback(
+			[this](Vadon::ECS::World& /*ecs_world*/, const VadonDemo::Core::EntityEvent& event)
 			{
-				switch (component_event.event_type)
+				switch (event.type)
 				{
-				case Vadon::ECS::ComponentEventType::ADDED:
-					m_deferred_init_queue.push_back(component_event.owner);
+				case VadonDemo::Core::EntityEventType::ADDED:
+					init_entity(event.entity);
 					break;
-				case Vadon::ECS::ComponentEventType::REMOVED:
-					remove_entity(component_event.owner);
+				case VadonDemo::Core::EntityEventType::REMOVED:
+					remove_entity(event.entity);
 					break;
 				}
 			}
@@ -218,16 +218,6 @@ namespace VadonDemo::UI
 			update_dev_gui();
 		}
 
-		if (m_deferred_init_queue.empty() == false)
-		{
-			for (Vadon::ECS::EntityHandle current_entity : m_deferred_init_queue)
-			{
-				init_entity(current_entity);
-			}
-
-			m_deferred_init_queue.clear();
-		}
-
 		CursorState cursor_state;
 
 		VadonDemo::Platform::PlatformInterface& game_platform_interface = m_game_core.get_platform_interface();
@@ -273,7 +263,19 @@ namespace VadonDemo::UI
 
 	void UISystem::init_entity(Vadon::ECS::EntityHandle entity)
 	{
-		m_game_core.get_core().get_ui().update_ui_element(m_game_core.get_ecs_world(), entity);
+		Vadon::ECS::World& ecs_world = m_game_core.get_ecs_world();
+
+		// Make sure we at least have a base UI component!
+		Base* base_component = ecs_world.get_component_manager().get_component<Base>(entity);
+		if (base_component == nullptr)
+		{
+			return;
+		}
+
+		// Make sure render component is initialized
+		m_game_core.get_render_system().init_entity(entity);
+
+		m_game_core.get_core().get_ui().update_ui_element(ecs_world, entity);
 	}
 
 	void UISystem::remove_entity(Vadon::ECS::EntityHandle entity)
@@ -281,10 +283,12 @@ namespace VadonDemo::UI
 		Vadon::ECS::World& ecs_world = m_game_core.get_ecs_world();
 		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
 		VadonDemo::UI::Base* base_component = component_manager.get_component<VadonDemo::UI::Base>(entity);
-		if (base_component != nullptr)
+		if (base_component == nullptr)
 		{
-			m_game_core.get_core().get_ui().remove_ui_element(ecs_world, entity);
+			return;
 		}
+
+		m_game_core.get_core().get_ui().remove_ui_element(ecs_world, entity);
 	}
 
 	void UISystem::start_game()
@@ -293,6 +297,10 @@ namespace VadonDemo::UI
 
 		// Remove main menu
 		Vadon::ECS::World& ecs_world = m_game_core.get_ecs_world();
+
+		// Dispatch events (to ensure we clean up used resources)
+		m_game_core.get_core().entity_removed(ecs_world, m_main_menu_entity);
+
 		ecs_world.remove_entity(m_main_menu_entity);
 		m_main_menu_entity.invalidate();
 
@@ -317,6 +325,11 @@ namespace VadonDemo::UI
 		const VadonDemo::Core::CoreComponent& core_component = m_game_core.get_core_component();
 
 		Vadon::Scene::SceneSystem& scene_system = m_game_core.get_engine_app().get_engine_core().get_system<Vadon::Scene::SceneSystem>();
-		m_main_menu_entity = scene_system.instantiate_scene(core_component.main_menu, m_game_core.get_ecs_world());
+		Vadon::ECS::World& ecs_world = m_game_core.get_ecs_world();
+
+		m_main_menu_entity = scene_system.instantiate_scene(core_component.main_menu, ecs_world);
+
+		// Dispatch events
+		m_game_core.get_core().entity_added(ecs_world, m_main_menu_entity);
 	}
 }

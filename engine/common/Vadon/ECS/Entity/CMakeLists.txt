@@ -3,5 +3,4 @@ target_sources(${VADON_CURRENT_TARGET}
         Entity.hpp
         EntityManager.hpp
         EntityManager.cpp
-        Event.hpp
    )

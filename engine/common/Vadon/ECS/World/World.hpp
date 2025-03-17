@@ -1,6 +1,5 @@
 #ifndef VADON_ECS_WORLD_WORLD_HPP
 #define VADON_ECS_WORLD_WORLD_HPP
-#include <Vadon/ECS/World/Event.hpp>
 #include <Vadon/ECS/Entity/EntityManager.hpp>
 #include <Vadon/ECS/Component/ComponentManager.hpp>
 namespace Vadon::ECS
@@ -17,16 +16,10 @@ namespace Vadon::ECS
 		VADONCOMMON_API void remove_entity(EntityHandle entity_handle);
 		VADONCOMMON_API void clear();
 
-		VADONCOMMON_API void register_event_callback(WorldEventCallback callback);
-
 		// TODO: systems?
 	private:
-		void dispatch_event(const WorldEvent& event) const;
-
 		EntityManager m_entity_manager;
 		ComponentManager m_component_manager;
-
-		std::vector<WorldEventCallback> m_event_callbacks;
 	};
 }
 #endif

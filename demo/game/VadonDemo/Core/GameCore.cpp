@@ -382,10 +382,6 @@ namespace VadonDemo::Core
 				// Update model
 				m_game_model.update();
 
-				// Pre-update renderer
-				// FIXME: remove once ECS events are fixed!
-				m_render_system.pre_update();
-
 				// Update view
 				m_game_view.update();
 

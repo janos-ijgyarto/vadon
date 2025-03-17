@@ -29,6 +29,8 @@ namespace VadonDemo::Render
 
 		Vadon::Render::Canvas::RenderContext& get_canvas_context();
 		TextureResource* get_texture_resource(std::string_view path);
+
+		void init_entity(Vadon::ECS::EntityHandle entity);
 	private:
 		RenderSystem(Core::GameCore& game_core);
 
@@ -36,9 +38,7 @@ namespace VadonDemo::Render
 		bool init_frame_graph();
 		bool init_canvas_context();
 
-		void pre_update(); // FIXME: temporary solution until ECS event fixes are implemented
 		void update();
-		void init_entity(Vadon::ECS::EntityHandle entity);
 		void remove_entity(Vadon::ECS::EntityHandle entity);
 
 		Core::GameCore& m_game_core;
@@ -49,8 +49,6 @@ namespace VadonDemo::Render
 		CanvasContextHandle m_canvas_context;
 
 		std::unordered_map<std::string, TextureResource> m_textures;
-
-		std::vector<Vadon::ECS::EntityHandle> m_deferred_init_queue;
 
 		friend Core::GameCore;
 	};

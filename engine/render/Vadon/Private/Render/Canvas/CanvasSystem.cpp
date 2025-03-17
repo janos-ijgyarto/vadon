@@ -189,7 +189,7 @@ namespace Vadon::Private::Render::Canvas
 
 	void CanvasSystem::remove_layer(LayerHandle layer_handle)
 	{
-		// TODO: any cleanup?
+		VADON_ASSERT(layer_handle != m_default_layer, "Cannot remove default layer!");
 		m_layer_pool.remove(layer_handle);
 	}
 
@@ -213,11 +213,10 @@ namespace Vadon::Private::Render::Canvas
 	{
 		ItemHandle new_item_handle = m_item_pool.add();
 
-		// TODO: move this to Layer implementation!
-		LayerData& layer = m_layer_pool.get(info.layer);
-		layer.items.push_back(new_item_handle);
+		LayerHandle layer_handle = get_layer_or_default(info.layer);
 
-		layer.set_items_dirty();
+		LayerData& layer = m_layer_pool.get(layer_handle);
+		layer.add_item(new_item_handle);
 
 		ItemData& new_item = m_item_pool.get(new_item_handle);
 		new_item.info = info;
@@ -235,18 +234,38 @@ namespace Vadon::Private::Render::Canvas
 	{
 		const ItemData& item = m_item_pool.get(item_handle);
 
-		if (item.info.layer.is_valid() == true)
-		{
-			// Remove from Layer
-			// TODO: move this to Layer implementation!
-			LayerData& layer = m_layer_pool.get(item.info.layer);
-			layer.items.erase(std::remove(layer.items.begin(), layer.items.end(), item_handle), layer.items.end());
-			
-			layer.set_items_dirty();
-		}
+		LayerHandle layer_handle = get_layer_or_default(item.info.layer);
+
+		// Remove from Layer
+		LayerData& layer = m_layer_pool.get(layer_handle);
+		layer.remove_item(item_handle);
 
 		// TODO: any other cleanup?
 		m_item_pool.remove(item_handle);
+	}
+
+	void CanvasSystem::set_item_layer(ItemHandle item_handle, LayerHandle layer_handle)
+	{
+		ItemData& item = m_item_pool.get(item_handle);
+		if (item.info.layer == layer_handle)
+		{
+			// Nothing to do
+			return;
+		}
+
+		// Remove from previous layer
+		{
+			LayerHandle prev_layer_handle = get_layer_or_default(item.info.layer);
+			LayerData& prev_layer = m_layer_pool.get(prev_layer_handle);
+			prev_layer.remove_item(item_handle);
+		}
+
+		// Add to new layer
+		{
+			LayerHandle new_layer_handle = layer_handle.is_valid() ? layer_handle : m_default_layer;
+			LayerData& new_layer = m_layer_pool.get(new_layer_handle);
+			new_layer.remove_item(item_handle);
+		}
 	}
 
 	void CanvasSystem::set_item_visible(ItemHandle item_handle, bool visible)
@@ -693,6 +712,9 @@ namespace Vadon::Private::Render::Canvas
 			// TODO2: default text material?
 		}
 
+		// Create default layer
+		m_default_layer = create_layer(LayerInfo{});
+
 		return true;
 	}
 
@@ -1088,5 +1110,10 @@ namespace Vadon::Private::Render::Canvas
 			}
 			++layer.visible_count;
 		}
+	}
+
+	LayerHandle CanvasSystem::get_layer_or_default(LayerHandle layer_handle) const
+	{
+		return layer_handle.is_valid() ? layer_handle : get_default_layer();
 	}
 }

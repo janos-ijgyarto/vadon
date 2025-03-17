@@ -152,6 +152,7 @@ namespace VadonDemo::View
 		Vadon::Core::EngineCoreInterface& engine_core = m_core.get_engine_core();
 		Vadon::Render::Canvas::CanvasSystem& canvas_system = engine_core.get_system<Vadon::Render::Canvas::CanvasSystem>();
 
+		// Find all entities that use this resource and re-initialize their draw data
 		// FIXME: could do this deferred so we only have to iterate over the entities once
 		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
 		auto view_query = component_manager.run_component_query<ViewComponent&, Render::CanvasComponent&>();
@@ -172,6 +173,10 @@ namespace VadonDemo::View
 				continue;
 			}
 
+			// FIXME: duplicating draw commands across items, need to update each one that uses this resource
+			// Could implement additional layers of indirection:
+			// Allow a batch to record batch draw commands, so one batch can be used as "template"
+			// Then all items can just reference the batch with a "draw all" setting
 			canvas_system.clear_item(canvas_component.canvas_item);
 			if (resource->batch_range.count > 0)
 			{

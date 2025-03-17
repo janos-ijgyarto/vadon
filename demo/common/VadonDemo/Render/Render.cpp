@@ -46,56 +46,38 @@ namespace VadonDemo::Render
 	{
 		return m_context_pool.get(context_handle).render_context;
 	}
-		
-	void Render::update_entity(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle entity, CanvasContextHandle context_handle)
+
+	void Render::init_entity(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle entity, CanvasContextHandle context_handle)
 	{
-		VADON_ASSERT(context_handle.is_valid(), "Must provide valid canvas context!");
+		VADON_ASSERT(context_handle.is_valid(), "Must provide valid canvas context!"); 
+		CanvasComponent* canvas_component = ecs_world.get_component_manager().get_component<CanvasComponent>(entity);
+		VADON_ASSERT(canvas_component != nullptr, "Entity does not have canvas component!");
+
+		canvas_component->context_handle = context_handle;
+
+		const Vadon::Render::Canvas::LayerHandle context_layer = get_context_layer(context_handle, canvas_component->layer_def);
+
+		Vadon::Core::EngineCoreInterface& engine_core = m_core.get_engine_core();
+		Vadon::Render::Canvas::CanvasSystem& canvas_system = engine_core.get_system<Vadon::Render::Canvas::CanvasSystem>();
+		canvas_component->canvas_item = canvas_system.create_item(Vadon::Render::Canvas::ItemInfo{ .layer = context_layer, .z_order = canvas_component->z_order });
+	}
+		
+	void Render::update_entity(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle entity)
+	{
 		CanvasComponent* canvas_component = ecs_world.get_component_manager().get_component<CanvasComponent>(entity);
 		if (canvas_component == nullptr)
 		{
 			return;
 		}
 
-		canvas_component->context_handle = context_handle;
+		VADON_ASSERT(canvas_component->context_handle.is_valid() == true, "Component must have valid canvas context!");
+		VADON_ASSERT(canvas_component->canvas_item.is_valid() == true, "Component must have valid canvas item!");
 
 		Vadon::Core::EngineCoreInterface& engine_core = m_core.get_engine_core();
 		Vadon::Render::Canvas::CanvasSystem& canvas_system = engine_core.get_system<Vadon::Render::Canvas::CanvasSystem>();
-		if (canvas_component->canvas_item.is_valid() == true)
-		{
-			if (canvas_component->layer_def.is_valid() == false)
-			{
-				// Cannot show item without layer definition
-				internal_remove_entity(canvas_system, *canvas_component);
-				return;
-			}
-
-			// Update existing item
-			Vadon::Render::Canvas::LayerHandle prev_layer = canvas_system.get_item_info(canvas_component->canvas_item).layer;
-			const CanvasContextHandle prev_context_handle = find_context_by_layer(prev_layer);
-			VADON_ASSERT(context_handle.is_valid(), "Canvas item not in valid context!");
-
-			const Vadon::Render::Canvas::LayerHandle context_layer = get_context_layer(context_handle, canvas_component->layer_def);
-			if ((prev_context_handle != context_handle) || (prev_layer != context_layer))
-			{
-				// Need to re-create the item
-				internal_remove_entity(canvas_system, *canvas_component);
-				internal_create_item(canvas_system, *canvas_component, context_layer);
-				return;
-			}
-		}
-		else
-		{
-			// Create new item
-			if (canvas_component->layer_def.is_valid() == false)
-			{
-				// Cannot show item without layer definition
-				return;
-			}
-
-			Vadon::Render::Canvas::LayerHandle context_layer = get_context_layer(context_handle, canvas_component->layer_def);
-			internal_create_item(canvas_system, *canvas_component, context_layer);
-			return;
-		}
+		
+		const Vadon::Render::Canvas::LayerHandle context_layer = get_context_layer(canvas_component->context_handle, canvas_component->layer_def);
+		canvas_system.set_item_layer(canvas_component->canvas_item, context_layer);
 
 		// Update item state
 		canvas_system.set_item_visible(canvas_component->canvas_item, canvas_component->visible);
@@ -117,7 +99,8 @@ namespace VadonDemo::Render
 
 		Vadon::Core::EngineCoreInterface& engine_core = m_core.get_engine_core();
 		Vadon::Render::Canvas::CanvasSystem& canvas_system = engine_core.get_system<Vadon::Render::Canvas::CanvasSystem>();
-		internal_remove_entity(canvas_system, *canvas_component);
+		canvas_system.remove_item(canvas_component->canvas_item);
+		canvas_component->canvas_item.invalidate();
 	}
 
 	void Render::update_layer_definition(CanvasLayerDefHandle layer_def_handle)
@@ -212,6 +195,11 @@ namespace VadonDemo::Render
 
 	Vadon::Render::Canvas::LayerHandle Render::get_context_layer(CanvasContextHandle context_handle, CanvasLayerDefHandle layer_def_handle)
 	{
+		if (layer_def_handle.is_valid() == false)
+		{
+			return Vadon::Render::Canvas::LayerHandle();
+		}
+
 		CanvasContextData& context_data = m_context_pool.get(context_handle);
 		VADON_ASSERT(context_data.layer_definitions.size() == context_data.render_context.layers.size(), "Mismatch between layers and definitions!");
 		for (const auto& layer_pair : context_data.layer_definitions)
@@ -224,7 +212,7 @@ namespace VadonDemo::Render
 			}
 		}
 
-		// Context not in layer, add it
+		// Layer not in context, add it
 		Vadon::Core::EngineCoreInterface& engine_core = m_core.get_engine_core();
 		Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
 		const CanvasLayerDefinition* layer_definition = resource_system.get_resource(layer_def_handle);
@@ -239,34 +227,6 @@ namespace VadonDemo::Render
 		sort_context_layers(context_data);
 
 		return new_layer_handle;
-	}
-
-	CanvasContextHandle Render::find_context_by_layer(Vadon::Render::Canvas::LayerHandle layer_handle) const
-	{
-		for (auto context_pair : m_context_pool)
-		{
-			const CanvasContextData* current_context = context_pair.second;
-			for (Vadon::Render::Canvas::LayerHandle current_context_layer : current_context->render_context.layers)
-			{
-				if (layer_handle == current_context_layer)
-				{
-					return context_pair.first;
-				}
-			}
-		}
-
-		return CanvasContextHandle();
-	}
-
-	void Render::internal_remove_entity(Vadon::Render::Canvas::CanvasSystem& canvas_system, CanvasComponent& canvas_component)
-	{
-		canvas_system.remove_item(canvas_component.canvas_item);
-		canvas_component.canvas_item.invalidate();
-	}
-
-	void Render::internal_create_item(Vadon::Render::Canvas::CanvasSystem& canvas_system, CanvasComponent& canvas_component, Vadon::Render::Canvas::LayerHandle layer_handle)
-	{
-		canvas_component.canvas_item = canvas_system.create_item(Vadon::Render::Canvas::ItemInfo{ .layer = layer_handle, .z_order = canvas_component.z_order });
 	}
 
 	void Render::sort_context_layers(CanvasContextData& context)

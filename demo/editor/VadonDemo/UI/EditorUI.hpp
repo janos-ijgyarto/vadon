@@ -16,12 +16,11 @@ namespace VadonDemo::UI
 		bool initialize();
 		void update();
 
+		void init_entity(Vadon::ECS::EntityHandle entity);
 		void update_entity(Vadon::ECS::EntityHandle entity);
-		void deferred_update_entity(Vadon::ECS::EntityHandle entity);
 		void remove_entity(Vadon::ECS::EntityHandle entity);
 
 		Core::Editor& m_editor;
-		std::vector<Vadon::ECS::EntityHandle> m_deferred_update_queue;
 
 		friend Core::Editor;
 	};

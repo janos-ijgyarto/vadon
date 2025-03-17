@@ -31,6 +31,8 @@ namespace Vadon::Private::Render::Canvas
 		LayerInfo get_layer_info(LayerHandle layer_handle) const override;
 		void remove_layer(LayerHandle layer_handle) override;
 
+		LayerHandle get_default_layer() const override { return m_default_layer; }
+
 		void set_layer_transform(LayerHandle layer_handle, const Transform& transform) override;
 		void set_layer_flags(LayerHandle layer_handle, LayerInfo::Flags flags) override;
 
@@ -39,6 +41,7 @@ namespace Vadon::Private::Render::Canvas
 		ItemInfo get_item_info(ItemHandle item_handle) const override;
 		void remove_item(ItemHandle item_handle) override;
 
+		void set_item_layer(ItemHandle item_handle, LayerHandle layer_handle) override;
 		void set_item_visible(ItemHandle item_handle, bool visible) override;
 		void set_item_transform(ItemHandle item_handle, const Transform& transform) override;
 		void set_item_z_order(ItemHandle item_handle, float z_order) override;
@@ -88,6 +91,8 @@ namespace Vadon::Private::Render::Canvas
 
 		void set_item_layer_dirty(const ItemData& item);
 		void update_layer_items(LayerData& layer);
+
+		LayerHandle get_layer_or_default(LayerHandle layer_handle) const;
 
 		// Data shared across render passes (layers, materials, etc.)
 		struct SharedData
@@ -171,6 +176,7 @@ namespace Vadon::Private::Render::Canvas
 		Vadon::Render::BufferHandle m_view_cbuffer;
 		Vadon::Render::BufferHandle m_layers_cbuffer;
 
+		LayerHandle m_default_layer;
 		MaterialHandle m_default_material;
 
 		Vadon::Render::TextureHandle m_default_texture;

@@ -25,10 +25,20 @@ namespace VadonDemo::View
 
 	bool GameView::initialize()
 	{
-		if (init_canvas() == false)
-		{
-			return false;
-		}
+		m_game_core.get_core().add_entity_event_callback(
+			[this](Vadon::ECS::World& /*ecs_world*/, const VadonDemo::Core::EntityEvent& event)
+			{
+				switch (event.type)
+				{
+				case VadonDemo::Core::EntityEventType::ADDED:
+					init_entity(event.entity);
+					break;
+				case VadonDemo::Core::EntityEventType::REMOVED:
+					remove_entity(event.entity);
+					break;
+				}
+			}
+		);
 
 		return true;
 	}
@@ -43,15 +53,6 @@ namespace VadonDemo::View
 			view.extract_model_state(m_game_core.get_ecs_world());
 		}
 
-		if (m_deferred_init_queue.empty() == false)
-		{
-			for (Vadon::ECS::EntityHandle current_entity : m_deferred_init_queue)
-			{
-				init_entity(current_entity);
-			}
-			m_deferred_init_queue.clear();
-		}
-
 		// Interpolate the view state based on model accumulator
 		view.lerp_view_state(m_game_core.get_ecs_world(), game_model.get_accumulator() / game_model.get_sim_timestep());
 
@@ -59,27 +60,6 @@ namespace VadonDemo::View
 
 		// Update frame counter
 		++m_view_frame_count;
-	}
-
-	bool GameView::init_canvas()
-	{
-		Vadon::ECS::World& ecs_world = m_game_core.get_ecs_world();
-		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
-
-		component_manager.register_event_callback<VadonDemo::View::ViewComponent>(
-			[this, &ecs_world](const Vadon::ECS::ComponentEvent& component_event)
-			{
-				switch (component_event.event_type)
-				{
-				case Vadon::ECS::ComponentEventType::ADDED:
-					m_deferred_init_queue.push_back(component_event.owner);
-					break;
-					// TODO: clean up view resources
-				}
-			}
-		);
-
-		return true;
 	}
 
 	void GameView::update_camera()
@@ -108,14 +88,26 @@ namespace VadonDemo::View
 		Vadon::ECS::World& ecs_world = m_game_core.get_ecs_world();
 		Vadon::ECS::ComponentManager& component_manager = m_game_core.get_ecs_world().get_component_manager();
 		VadonDemo::View::ViewComponent* view_component = component_manager.get_component<VadonDemo::View::ViewComponent>(entity);
-		VADON_ASSERT(view_component != nullptr, "Failed to get view component!");
+		if (view_component == nullptr)
+		{
+			return;
+		}
 
+		// Make sure resource is initialized
 		if (view_component->resource.is_valid() == true)
 		{
 			init_resource(view_component->resource);
 		}
 
+		// Make sure render component is initialized
+		m_game_core.get_render_system().init_entity(entity);
+
 		m_game_core.get_core().get_view().update_entity_draw_data(ecs_world, entity);
+	}
+
+	void GameView::remove_entity(Vadon::ECS::EntityHandle /*entity*/)
+	{
+		// TODO: anything?
 	}
 
 	void GameView::init_resource(VadonDemo::View::ViewResourceHandle resource_handle)

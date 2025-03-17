@@ -48,8 +48,6 @@ namespace VadonDemo::UI
 
 		Core::GameCore& m_game_core;
 
-		std::vector<Vadon::ECS::EntityHandle> m_deferred_init_queue;
-
 		MainWindow m_main_window;
 		std::vector<DevGUICallback> m_dev_gui_callbacks;
 		bool m_dev_gui_enabled = false;
