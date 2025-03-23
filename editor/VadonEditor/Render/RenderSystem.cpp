@@ -65,7 +65,7 @@ namespace VadonEditor::Render
 			// Draw to the main window
 			// FIXME: draw to separate RT and copy to back buffer at the end!		
 			Vadon::Render::RenderTargetSystem& rt_system = engine_core.get_system<Vadon::Render::RenderTargetSystem>();
-			const Vadon::Render::RTVHandle main_window_target = rt_system.get_window_target(m_render_window);
+			const Vadon::Render::RTVHandle main_window_target = rt_system.get_window_back_buffer_view(m_render_window);
 
 			// Create frame graph
 			// FIXME: make this even more flexible, maybe even possible to set purely from data (so model doesn't even reference systems explicitly)
@@ -182,7 +182,7 @@ namespace VadonEditor::Render
 
 			// Present to the main window
 			Vadon::Render::RenderTargetSystem& rt_system = engine_core.get_system<Vadon::Render::RenderTargetSystem>();
-			rt_system.update_window(m_render_window);
+			rt_system.update_window(Vadon::Render::WindowUpdateInfo{ .window = m_render_window });
 		}
 
 		void shutdown()

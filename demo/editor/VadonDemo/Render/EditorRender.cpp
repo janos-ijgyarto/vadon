@@ -46,7 +46,7 @@ namespace VadonDemo::Render
                 Vadon::Render::RenderTargetSystem& rt_system = engine_core.get_system<Vadon::Render::RenderTargetSystem>();
 
                 Vadon::Render::Canvas::Viewport canvas_viewport;
-                canvas_viewport.render_target = rt_system.get_window_target(m_editor.get_system<VadonEditor::Render::RenderSystem>().get_render_window());
+                canvas_viewport.render_target = rt_system.get_window_back_buffer_view(m_editor.get_system<VadonEditor::Render::RenderSystem>().get_render_window());
 
                 render_context.viewports.push_back(canvas_viewport);
             }

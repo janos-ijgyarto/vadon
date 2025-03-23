@@ -19,7 +19,7 @@ namespace Vadon::Private::Render::DirectX
 		WindowHandle create_window(const WindowInfo& window_info) override;
 		bool is_window_valid(WindowHandle window_handle) const override { return m_window_pool.is_handle_valid(window_handle); }
 		WindowInfo get_window_info(WindowHandle window_handle) const override;
-		void update_window(WindowHandle window_handle) override;
+		WindowUpdateResult update_window(const WindowUpdateInfo& info) override;
 		void remove_window(WindowHandle window_handle) override;
 
 		void resize_window(WindowHandle window_handle, const Vadon::Utilities::Vector2i& window_size) override;
@@ -38,7 +38,7 @@ namespace Vadon::Private::Render::DirectX
 
 		void apply_viewport(const Viewport& viewport) override;
 
-		RTVHandle get_window_target(WindowHandle window_handle) const override;
+		RTVHandle get_window_back_buffer_view(WindowHandle window_handle) override;
 	private:
 		RenderTargetSystem(Vadon::Core::EngineCoreInterface& core, GraphicsAPI& graphics_api);
 

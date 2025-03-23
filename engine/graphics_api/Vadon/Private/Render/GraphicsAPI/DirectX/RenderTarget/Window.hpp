@@ -10,6 +10,10 @@ namespace Vadon::Private::Render::DirectX
 
 	using WindowHandle = Vadon::Render::WindowHandle;
 
+	using WindowUpdateInfo = Vadon::Render::WindowUpdateInfo;
+
+	using WindowUpdateResult = Vadon::Render::WindowUpdateResult;
+
 	using DXGISwapChain = ComPtr<IDXGISwapChain>;
 
 	struct Window
