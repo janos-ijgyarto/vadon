@@ -253,6 +253,13 @@ namespace VadonDemo::Core
 				m_core_entity = scene_system.instantiate_scene(startup_scene_handle, m_ecs_world);
 			}
 
+			// FIXME: at the moment this has to be done as a separate, bespoke step
+			// Should replace with actual configurable viewports!
+			if (m_render_system.init_viewport() == false)
+			{
+				return false;
+			}
+
 			if (m_ui_system.initialize() == false)
 			{
 				return false;

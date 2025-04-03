@@ -31,12 +31,16 @@ namespace VadonDemo::Render
 		TextureResource* get_texture_resource(std::string_view path);
 
 		void init_entity(Vadon::ECS::EntityHandle entity);
+
+		Vadon::Utilities::Vector2i map_to_game_viewport(const Vadon::Utilities::Vector2i& position) const;
 	private:
 		RenderSystem(Core::GameCore& game_core);
 
 		bool initialize();
 		bool init_frame_graph();
-		bool init_canvas_context();
+
+		bool init_viewport();
+		void update_viewport(const Vadon::Utilities::Vector2i& window_size);
 
 		void update();
 		void remove_entity(Vadon::ECS::EntityHandle entity);
@@ -45,6 +49,16 @@ namespace VadonDemo::Render
 		Vadon::Render::FrameGraphHandle m_frame_graph;
 
 		Vadon::Render::WindowHandle m_render_window;
+		
+		float m_aspect_ratio;
+		Vadon::Render::TextureHandle m_game_rt_texture;
+		Vadon::Render::SRVHandle m_game_rt_srv;
+		Vadon::Render::RTVHandle m_game_rtv;
+		Vadon::Render::Viewport m_game_viewport;
+
+		Vadon::Render::ShaderHandle m_copy_vshader;
+		Vadon::Render::ShaderHandle m_copy_pshader;
+		Vadon::Render::TextureSamplerHandle m_copy_sampler;
 
 		CanvasContextHandle m_canvas_context;
 

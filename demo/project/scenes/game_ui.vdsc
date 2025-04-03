@@ -3,7 +3,7 @@
         "entities": [
             {
                 "components": [],
-                "name": "Root",
+                "name": "Controller",
                 "parent": -1
             },
             {
@@ -11,31 +11,11 @@
                     {
                         "properties": {
                             "dimensions": [
-                                1000.0,
-                                744.0
+                                110.0,
+                                35.0
                             ],
                             "position": [
-                                -500.0,
-                                372.0
-                            ]
-                        },
-                        "type": "VadonDemo::UI::Base"
-                    }
-                ],
-                "name": "MainFrame",
-                "parent": 0,
-                "scene": "SkNc4cxeQV+JAgDb4DW6qw=="
-            },
-            {
-                "components": [
-                    {
-                        "properties": {
-                            "dimensions": [
-                                300.0,
-                                16.0
-                            ],
-                            "position": [
-                                -80.0,
+                                380.0,
                                 360.0
                             ]
                         },
@@ -43,48 +23,22 @@
                     },
                     {
                         "properties": {
-                            "text": "Vadon Demo"
-                        },
-                        "type": "VadonDemo::UI::Text"
-                    }
-                ],
-                "name": "Title",
-                "parent": 0,
-                "scene": "2r2yS8FDT/WGSZ7bPY6/ZQ=="
-            },
-            {
-                "components": [
-                    {
-                        "properties": {
-                            "dimensions": [
-                                120.0,
-                                60.0
-                            ],
-                            "position": [
-                                -30.0,
-                                0.0
-                            ]
-                        },
-                        "type": "VadonDemo::UI::Base"
-                    },
-                    {
-                        "properties": {
                             "offset": [
-                                8.0,
-                                -15.0
+                                0.0,
+                                -3.0
                             ],
-                            "text": "Start"
+                            "text": "Pause"
                         },
                         "type": "VadonDemo::UI::Text"
                     },
                     {
                         "properties": {
-                            "clicked_key": "start"
+                            "clicked_key": "pause"
                         },
                         "type": "VadonDemo::UI::Selectable"
                     }
                 ],
-                "name": "StartButton",
+                "name": "PauseButton",
                 "parent": 0,
                 "scene": "DVGQXXLXTOGkymiY2E5x/g=="
             },
@@ -92,9 +46,13 @@
                 "components": [
                     {
                         "properties": {
+                            "dimensions": [
+                                190.0,
+                                75.0
+                            ],
                             "position": [
-                                -22.0,
-                                -120.0
+                                300.0,
+                                310.0
                             ]
                         },
                         "type": "VadonDemo::UI::Base"
@@ -102,21 +60,21 @@
                     {
                         "properties": {
                             "offset": [
-                                5.0,
-                                -15.0
+                                0.0,
+                                -4.0
                             ],
-                            "text": "Quit"
+                            "text": "Return to Main"
                         },
                         "type": "VadonDemo::UI::Text"
                     },
                     {
                         "properties": {
-                            "clicked_key": "quit"
+                            "clicked_key": "return_to_main"
                         },
                         "type": "VadonDemo::UI::Selectable"
                     }
                 ],
-                "name": "QuitButton",
+                "name": "ReturnButton",
                 "parent": 0,
                 "scene": "DVGQXXLXTOGkymiY2E5x/g=="
             },
@@ -136,13 +94,13 @@
                         "type": "VadonDemo::UI::Base"
                     }
                 ],
-                "name": "ViewportFrame",
+                "name": "Frame",
                 "parent": 0,
                 "scene": "SkNc4cxeQV+JAgDb4DW6qw=="
             }
         ]
     },
-    "id": "logqRpQYSLqnn8W+lZaOwg==",
+    "id": "77/pFO4USs67NlcVYdxWVw==",
     "properties": {
         "name": ""
     },

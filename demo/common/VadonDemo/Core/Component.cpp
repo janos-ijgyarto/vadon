@@ -11,5 +11,6 @@ namespace VadonDemo::Core
 
 		Vadon::Utilities::TypeRegistry::add_property<CoreComponent>("main_menu", Vadon::Utilities::MemberVariableBind<&CoreComponent::main_menu>().bind_member_getter().bind_member_setter());
 		Vadon::Utilities::TypeRegistry::add_property<CoreComponent>("default_start_level", Vadon::Utilities::MemberVariableBind<&CoreComponent::default_start_level>().bind_member_getter().bind_member_setter());
+		Vadon::Utilities::TypeRegistry::add_property<CoreComponent>("viewport_size", Vadon::Utilities::MemberVariableBind<&CoreComponent::viewport_size>().bind_member_getter().bind_member_setter());
 	}
 }

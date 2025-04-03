@@ -33,6 +33,8 @@ namespace Vadon::Utilities
 	using glm::normalize;
 	using glm::abs;
 	using glm::dot;
+	using glm::min;
+	using glm::max;
 	using glm::clamp;
 	using glm::lessThan;
 	using glm::greaterThan;
