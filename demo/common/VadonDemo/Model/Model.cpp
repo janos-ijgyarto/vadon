@@ -130,6 +130,11 @@ namespace VadonDemo::Model
 		return true;
 	}
 
+	void Model::global_config_updated()
+	{
+		// TODO: anything?
+	}
+
 	bool Model::load_level(Vadon::ECS::World& ecs_world, Vadon::Scene::SceneID level_scene_id)
 	{
 		VADON_ASSERT(m_level_root.is_valid() == false, "Cannot load a level while a game is already in progress!");

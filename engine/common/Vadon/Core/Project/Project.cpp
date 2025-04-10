@@ -4,6 +4,7 @@
 #include <Vadon/Core/File/FileSystem.hpp>
 
 #include <Vadon/Utilities/Serialization/Serializer.hpp>
+#include <Vadon/Utilities/TypeInfo/Reflection/PropertySerialization.hpp>
 
 #include <filesystem>
 #include <format>
@@ -41,7 +42,7 @@ namespace Vadon::Core
 		return true;
 	}
 
-	bool Project::save_project_file(EngineCoreInterface& engine_core)
+	bool Project::save_project_file(EngineCoreInterface& engine_core, Project& project_data)
 	{
 		// TODO: decouple serializer settings so we can make binary project files as well?
 		Vadon::Core::FileSystem::RawFileDataBuffer project_file_buffer;
@@ -55,21 +56,51 @@ namespace Vadon::Core
 			return false;
 		}
 
-		if (serializer->serialize("name", name) != SerializerResult::SUCCESSFUL)
+		if (serializer->serialize("name", project_data.name) != SerializerResult::SUCCESSFUL)
 		{
 			project_serialization_error_log();
 			return false;
 		}
-		if(startup_scene.is_valid() == true)
+
+		// Serialize any custom properties to a separate object
+		if (serializer->open_object("custom_properties") != SerializerResult::SUCCESSFUL)
 		{
-			if (serializer->serialize("startup_scene", startup_scene.as_resource_id()) != SerializerResult::SUCCESSFUL)
+			project_serialization_error_log();
+			return false;
+		}
+
+		for (Vadon::Utilities::Property& current_property : project_data.custom_properties)
+		{
+			switch (current_property.data_type.type)
 			{
-				project_serialization_error_log();
-				return false;
+			case Vadon::Utilities::ErasedDataType::TRIVIAL:
+			{
+				const SerializerResult result = Vadon::Utilities::process_trivial_property(*serializer, current_property.name, current_property.value, current_property.data_type);
+				if (result != SerializerResult::SUCCESSFUL)
+				{
+					project_serialization_error_log();
+					return false;
+				}
+			}
+			break;
+			case Vadon::Utilities::ErasedDataType::RESOURCE_ID:
+			{
+				Vadon::Scene::ResourceID& resource_id = std::get<Vadon::Scene::ResourceID>(current_property.value);
+				if (serializer->serialize(current_property.name, resource_id) != SerializerResult::SUCCESSFUL)
+				{
+					project_serialization_error_log();
+					return false;
+				}
+			}
+			break;
 			}
 		}
 
-		// TODO: any other data?
+		if (serializer->close_object() != SerializerResult::SUCCESSFUL)
+		{
+			project_serialization_error_log();
+			return false;
+		}
 
 		if (serializer->finalize() == false)
 		{
@@ -77,7 +108,7 @@ namespace Vadon::Core
 			return false;
 		}
 	
-		const std::string file_path = (std::filesystem::path(root_path) / c_project_file_name).string();
+		const std::string file_path = (std::filesystem::path(project_data.root_path) / c_project_file_name).string();
 
 		Vadon::Core::Logger::log_message(std::format("Saving project file at \"{}\".\n", file_path));
 
@@ -91,7 +122,7 @@ namespace Vadon::Core
 		return true;
 	}
 
-	bool Project::load_project_file(EngineCoreInterface& engine_core, std::string_view path)
+	bool Project::load_project_file(EngineCoreInterface& engine_core, std::string_view path, Project& project_data)
 	{
 		Vadon::Core::Logger::log_message(std::format("Loading project file at \"{}\".\n", path));
 
@@ -115,16 +146,58 @@ namespace Vadon::Core
 			return false;
 		}
 
-		if (serializer->serialize("name", name) != SerializerResult::SUCCESSFUL)
+		if (serializer->serialize("name", project_data.name) != SerializerResult::SUCCESSFUL)
 		{
 			project_serialization_error_log();
 			return false;
 		}
 
-		// TODO: notify on failed serialization?
-		serializer->serialize("startup_scene", startup_scene.as_resource_id());
+		// Serialize any custom properties to a separate object
+		if (serializer->open_object("custom_properties") != SerializerResult::SUCCESSFUL)
+		{
+			project_serialization_error_log();
+			return false;
+		}
 
-		// TODO: any other data?
+		for (Vadon::Utilities::Property& current_property : project_data.custom_properties)
+		{
+			// Check if key is present (if not, assume we should just use default value)
+			// FIXME: invert this to instead only process keys that are actually in the data?
+			if (serializer->has_key(current_property.name) == false)
+			{
+				continue;
+			}
+
+			switch (current_property.data_type.type)
+			{
+			case Vadon::Utilities::ErasedDataType::TRIVIAL:
+			{
+				const SerializerResult result = Vadon::Utilities::process_trivial_property(*serializer, current_property.name, current_property.value, current_property.data_type);
+				if (result != SerializerResult::SUCCESSFUL)
+				{
+					project_serialization_error_log();
+					return false;
+				}
+			}
+			break;
+			case Vadon::Utilities::ErasedDataType::RESOURCE_ID:
+			{
+				Vadon::Scene::ResourceID& resource_id = std::get<Vadon::Scene::ResourceID>(current_property.value);
+				if (serializer->serialize(current_property.name, resource_id) != SerializerResult::SUCCESSFUL)
+				{
+					project_serialization_error_log();
+					return false;
+				}
+			}
+			break;
+			}
+		}
+
+		if (serializer->close_object() != SerializerResult::SUCCESSFUL)
+		{
+			project_serialization_error_log();
+			return false;
+		}
 
 		if (serializer->finalize() == false)
 		{
@@ -132,7 +205,7 @@ namespace Vadon::Core
 			return false;
 		}
 
-		root_path = std::filesystem::path(path).parent_path().string();
+		project_data.root_path = std::filesystem::path(path).parent_path().string();
 		return true;
 	}
 }

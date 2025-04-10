@@ -1,7 +1,7 @@
 #ifndef VADON_SCENE_RESOURCE_REGISTRY_HPP
 #define VADON_SCENE_RESOURCE_REGISTRY_HPP
 #include <Vadon/Scene/Resource/Resource.hpp>
-#include <Vadon/Utilities/TypeInfo/Registry/Registry.hpp>
+#include <Vadon/Utilities/TypeInfo/Registry.hpp>
 namespace Vadon::Utilities
 {
 	class Serializer;

@@ -27,10 +27,12 @@ namespace Vadon::Core
 		VADONCOMMON_API EngineEnvironment();
 		VADONCOMMON_API ~EngineEnvironment();
 
+		VADONCOMMON_API static bool is_initialized();
+
 		static ::Vadon::ECS::ComponentRegistry& get_component_registry();
 		static ::Vadon::Scene::ResourceRegistry& get_resource_registry();
 		static ::Vadon::Utilities::TypeRegistry& get_type_registry();
-		static LoggerInterface& get_logger();
+		VADONCOMMON_API static LoggerInterface& get_logger();
 
 		VADONCOMMON_API static void set_logger(LoggerInterface* logger);
 

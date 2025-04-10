@@ -28,6 +28,7 @@ namespace VadonEditor::View
 		UI::Developer::MenuItem m_close_project_menu;
 
 		ProjectLauncher m_launcher;
+		ProjectPropertiesDialog m_project_properties;
 
 		AssetBrowser m_asset_browser;
 
@@ -39,6 +40,7 @@ namespace VadonEditor::View
 		Internal(Core::Editor& editor)
 			: m_editor(editor)
 			, m_launcher(editor)
+			, m_project_properties(editor)
 			, m_asset_browser(editor)
 			, m_scene_list(editor)
 			, m_scene_tree(editor)
@@ -119,7 +121,7 @@ namespace VadonEditor::View
 				{
 					if (dev_gui.add_menu_item(m_project_settings_menu) == true)
 					{
-						// TODO
+						m_project_properties.open();
 					}
 					if (dev_gui.add_menu_item(m_close_project_menu) == true)
 					{
@@ -131,6 +133,12 @@ namespace VadonEditor::View
 				}
 
 				dev_gui.end_main_menu_bar();
+			}
+
+			if (m_project_properties.draw(dev_gui) == UI::Developer::Dialog::Result::ACCEPTED)
+			{
+				Core::ProjectManager& project_manager = m_editor.get_system<Core::ProjectManager>();
+				project_manager.update_project_custom_properties(m_project_properties.get_edited_properties());
 			}
 		}
 	};

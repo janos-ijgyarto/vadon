@@ -14,6 +14,8 @@ namespace Vadon::Utilities
 	{
 		ErasedDataType type;
 		std::underlying_type_t<TypeID> id; // NOTE: have to use underlying_type for simplicity in type erasure API
+
+		bool operator==(const ErasedDataTypeID& other) const { return (type == other.type) && (id == other.id); }
 	};
 }
 #endif

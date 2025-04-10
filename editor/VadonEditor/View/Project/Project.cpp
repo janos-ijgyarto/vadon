@@ -203,4 +203,84 @@ namespace VadonEditor::View
 		}
 		dev_gui.end_window();
 	}
+
+	ProjectPropertiesDialog::Result ProjectPropertiesDialog::internal_draw(UI::Developer::GUISystem& dev_gui)
+	{
+		Result result = Result::NONE;
+
+		Core::ProjectManager& project_manager = m_editor.get_system<Core::ProjectManager>();
+		const Core::Project& active_project = project_manager.get_active_project();
+
+		// TODO: draw other attributes?
+		dev_gui.add_text(active_project.info.name);
+		dev_gui.add_separator();
+		dev_gui.add_text("Properties");
+
+		for (auto& current_property : m_property_editors)
+		{
+			if (current_property->render(dev_gui) == true)
+			{
+				bool added = false;
+				const Vadon::Utilities::Property& property_data = current_property->get_property();
+				for (Vadon::Utilities::Property& edited_property : m_edited_properties)
+				{
+					if (edited_property.name == property_data.name)
+					{
+						edited_property.value = current_property->get_property().value;
+						added = true;
+						break;
+					}
+				}
+				if (added == false)
+				{
+					m_edited_properties.push_back(current_property->get_property());
+				}
+				current_property->value_updated();
+			}
+		}
+
+		if (m_edited_properties.empty() == true)
+		{
+			dev_gui.begin_disabled();
+		}
+		if (dev_gui.draw_button(m_ok_button) == true)
+		{
+			result = Result::ACCEPTED;
+			close();
+		}
+		if (m_edited_properties.empty() == true)
+		{
+			dev_gui.end_disabled();
+		}
+		dev_gui.same_line();
+		if (dev_gui.draw_button(m_cancel_button) == true)
+		{
+			result = Result::CANCELLED;
+			close();
+		}
+
+		return result;
+	}
+
+	void ProjectPropertiesDialog::on_open()
+	{
+		m_property_editors.clear();
+		m_edited_properties.clear();
+
+		Core::ProjectManager& project_manager = m_editor.get_system<Core::ProjectManager>();
+		const Core::Project& active_project = project_manager.get_active_project();
+
+		for (const Vadon::Utilities::Property& current_property : active_project.info.custom_properties)
+		{
+			m_property_editors.emplace_back(PropertyEditor::create_property_editor(m_editor, current_property));
+		}
+	}
+
+	ProjectPropertiesDialog::ProjectPropertiesDialog(Core::Editor& editor)
+		: Dialog("Edit Project Properties")
+		, m_editor(editor)
+	{
+		m_ok_button.label = "Ok";
+		m_cancel_button.label = "Cancel";
+	}
 }

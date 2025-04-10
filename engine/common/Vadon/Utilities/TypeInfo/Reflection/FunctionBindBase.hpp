@@ -1,6 +1,6 @@
-#ifndef VADON_UTILITIES_TYPEINFO_FUNCTIONBINDBASE_HPP
-#define VADON_UTILITIES_TYPEINFO_FUNCTIONBINDBASE_HPP
-#include <Vadon/Utilities/TypeInfo/Registry/ErasedDataType.hpp>
+#ifndef VADON_UTILITIES_TYPEINFO_REFLECTION_FUNCTIONBINDBASE_HPP
+#define VADON_UTILITIES_TYPEINFO_REFLECTION_FUNCTIONBINDBASE_HPP
+#include <Vadon/Utilities/TypeInfo/ErasedDataType.hpp>
 #include <Vadon/Utilities/Data/Variant.hpp>
 #include <span>
 namespace Vadon::Utilities

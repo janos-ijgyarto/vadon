@@ -107,8 +107,9 @@ namespace VadonEditor::View
 					{
 						// Property edited, update the resource
 						// FIXME: optimize this somehow?
-						active_resource->edit_property(current_property->get_name(), current_property->get_value());
-						current_property->set_value(active_resource->get_property(current_property->get_name()));
+						const Vadon::Utilities::Property& property_data = current_property->get_property();
+						active_resource->edit_property(property_data.name, property_data.value);
+						current_property->set_value(active_resource->get_property(property_data.name));
 					}
 				}
 				if (dev_gui.draw_button(m_save_button) == true)

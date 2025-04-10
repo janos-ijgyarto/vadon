@@ -1,7 +1,6 @@
 #include <VadonDemo/Render/RenderSystem.hpp>
 
 #include <VadonDemo/Core/Core.hpp>
-#include <VadonDemo/Core/Component.hpp>
 #include <VadonDemo/Core/GameCore.hpp>
 #include <VadonDemo/Platform/PlatformInterface.hpp>
 #include <VadonDemo/UI/UISystem.hpp>
@@ -110,8 +109,8 @@ namespace VadonDemo::Render
 
 	Vadon::Utilities::Vector2i RenderSystem::map_to_game_viewport(const Vadon::Utilities::Vector2i& position) const
 	{
-		const Core::CoreComponent& core_component = m_game_core.get_core_component();
-		return ((Vadon::Utilities::Vector2(position) - m_game_viewport.dimensions.position) / m_game_viewport.dimensions.size) * core_component.viewport_size;
+		const Core::GlobalConfiguration& global_config = m_game_core.get_core().get_global_config();
+		return ((Vadon::Utilities::Vector2(position) - m_game_viewport.dimensions.position) / m_game_viewport.dimensions.size) * global_config.viewport_size;
 	}
 
 	RenderSystem::RenderSystem(Core::GameCore& game_core)
@@ -379,8 +378,8 @@ namespace VadonDemo::Render
 		m_canvas_context = common_render.create_canvas_context();
 
 		Vadon::Render::Canvas::RenderContext& render_context = common_render.get_context(m_canvas_context);
-		const Core::CoreComponent& core_component = m_game_core.get_core_component();
-		VADON_ASSERT(Vadon::Utilities::all(Vadon::Utilities::greaterThan(core_component.viewport_size, Vadon::Utilities::Vector2_Zero)), "Invalid viewport dimensions!");
+		const Core::GlobalConfiguration& global_config = m_game_core.get_core().get_global_config();
+		VADON_ASSERT(Vadon::Utilities::all(Vadon::Utilities::greaterThan(global_config.viewport_size, Vadon::Utilities::Vector2_Zero)), "Invalid viewport dimensions!");
 
 		// Create RT for game contents
 		{
@@ -390,7 +389,7 @@ namespace VadonDemo::Render
 				Vadon::Render::TextureSystem& texture_system = engine_core.get_system<Vadon::Render::TextureSystem>();
 
 				Vadon::Render::TextureInfo rt_texture_info{
-					.dimensions = { core_component.viewport_size.x, core_component.viewport_size.y, 0 },
+					.dimensions = { global_config.viewport_size.x, global_config.viewport_size.y, 0 },
 					.mip_levels = 1,
 					.array_size = 1,
 					.format = Vadon::Render::GraphicsAPIDataFormat::B8G8R8A8_UNORM,
@@ -425,14 +424,14 @@ namespace VadonDemo::Render
 			Vadon::Render::Canvas::Viewport canvas_viewport;
 			canvas_viewport.render_target = m_game_rtv;
 
-			canvas_viewport.render_viewport.dimensions.size = core_component.viewport_size;
+			canvas_viewport.render_viewport.dimensions.size = global_config.viewport_size;
 
 			render_context.viewports.push_back(canvas_viewport);
 		}
 
-		render_context.camera.view_rectangle.size = core_component.viewport_size;
+		render_context.camera.view_rectangle.size = global_config.viewport_size;
 
-		m_aspect_ratio = core_component.viewport_size.x / core_component.viewport_size.y;
+		m_aspect_ratio = global_config.viewport_size.x / global_config.viewport_size.y;
 
 		{
 			VadonApp::Core::Application& engine_app = m_game_core.get_engine_app();

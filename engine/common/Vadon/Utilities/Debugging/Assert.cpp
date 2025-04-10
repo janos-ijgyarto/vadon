@@ -11,4 +11,12 @@ namespace Vadon::Utilities
 
         VADON_ASSERT_BREAKPOINT();
     }
+
+    void do_error(std::string_view message, std::source_location location)
+    {
+        Vadon::Core::Logger::log_error(std::format("Error!\n\"{}\"\nFile: {}\nFunction: {}\nLine: {}\nColumn: {}",
+            message, location.file_name(), location.function_name(), location.line(), location.column()));
+
+        VADON_ASSERT_BREAKPOINT();
+    }
 }

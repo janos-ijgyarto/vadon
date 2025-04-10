@@ -1,6 +1,6 @@
 #ifndef VADONEDITOR_MODEL_SCENE_COMPONENT_HPP
 #define VADONEDITOR_MODEL_SCENE_COMPONENT_HPP
-#include <Vadon/Utilities/TypeInfo/Registry/Property.hpp>
+#include <Vadon/Utilities/TypeInfo/Reflection/Property.hpp>
 #include <map>
 namespace VadonEditor::Model
 {

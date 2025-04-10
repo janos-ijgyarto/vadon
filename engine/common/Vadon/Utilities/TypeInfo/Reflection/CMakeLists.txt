@@ -1,11 +1,10 @@
 target_sources(${VADON_CURRENT_TARGET}
 	PRIVATE
+	ErasedProperty.hpp
 	FunctionBind.hpp
 	FunctionBindBase.hpp
 	MemberBind.hpp
 	MemberBindBase.hpp
 	Property.hpp
-	Registry.hpp
-	Registry.cpp
-	TypeData.hpp
+	PropertySerialization.hpp
 	)

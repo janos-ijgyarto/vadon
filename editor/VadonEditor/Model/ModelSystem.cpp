@@ -23,8 +23,6 @@ namespace VadonEditor::Model
 		ResourceSystem m_resource_system;
 		SceneSystem m_scene_system;
 
-		std::vector<std::function<void()>> m_callbacks;
-
 		Internal(Core::Editor& editor)
 			: m_resource_system(editor)
 			, m_scene_system(editor)
@@ -64,15 +62,6 @@ namespace VadonEditor::Model
 
 			return true;
 		}
-
-		void update()
-		{
-			// Run callbacks
-			for (auto& current_callback : m_callbacks)
-			{
-				current_callback();
-			}
-		}
 	};
 
 	ModelSystem::~ModelSystem() = default;
@@ -92,11 +81,6 @@ namespace VadonEditor::Model
 		return m_internal->m_scene_system;
 	}
 
-	void ModelSystem::add_callback(std::function<void()> callback)
-	{
-		m_internal->m_callbacks.push_back(callback);
-	}
-
 	ModelSystem::ModelSystem(Core::Editor& editor)
 		: System(editor)
 		, m_internal(std::make_unique<Internal>(editor))
@@ -112,10 +96,5 @@ namespace VadonEditor::Model
 	bool ModelSystem::load_project()
 	{
 		return m_internal->load_project(m_editor);
-	}
-
-	void ModelSystem::update()
-	{
-		m_internal->update();
 	}
 }

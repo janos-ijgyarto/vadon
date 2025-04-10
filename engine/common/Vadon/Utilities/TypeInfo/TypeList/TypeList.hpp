@@ -1,5 +1,5 @@
-#ifndef VADON_UTILITIES_TYPEINFO_TYPELIST_HPP
-#define VADON_UTILITIES_TYPEINFO_TYPELIST_HPP
+#ifndef VADON_UTILITIES_TYPEINFO_TYPELIST_TYPELIST_HPP
+#define VADON_UTILITIES_TYPEINFO_TYPELIST_TYPELIST_HPP
 namespace Vadon::Utilities
 {
 	// Type list for generating sequential unique type IDs at compile time. Users can declare a type list using forward declared types.
@@ -38,8 +38,13 @@ namespace Vadon::Utilities
 		}
 	};
 
-
 	template <typename T, typename... U>
 	concept IsAnyOf = (std::same_as<T, U> || ...);
+
+	template <typename T, typename... Alts>
+	static constexpr size_t type_list_index_v = TypeList<Alts...>::template get_type_id<T>();
+
+	template<typename T, typename... Alts>
+	static constexpr bool type_list_has_type_v = Utilities::TypeList<Alts...>::template has_type<T>();
 }
 #endif

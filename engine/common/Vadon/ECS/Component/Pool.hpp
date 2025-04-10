@@ -3,10 +3,9 @@
 #include <Vadon/ECS/Entity/Entity.hpp>
 #include <Vadon/ECS/Component/Component.hpp>
 
-#include <Vadon/Utilities/TypeInfo/Registry/Registry.hpp>
+#include <Vadon/Utilities/TypeInfo/Registry.hpp>
 
 #include <optional>
-#include <vector>
 namespace Vadon::ECS
 {
 	class ComponentPoolInterface

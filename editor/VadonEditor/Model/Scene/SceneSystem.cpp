@@ -8,7 +8,7 @@
 #include <Vadon/Core/File/FileSystem.hpp>
 #include <Vadon/ECS/World/World.hpp>
 #include <Vadon/Scene/SceneSystem.hpp>
-#include <Vadon/Utilities/TypeInfo/Registry/Registry.hpp>
+#include <Vadon/Utilities/TypeInfo/Registry.hpp>
 
 #include <format>
 

@@ -193,6 +193,11 @@ namespace VadonDemo::Render
 		return true;
 	}
 
+	void Render::global_config_updated()
+	{
+		// TODO: anything?
+	}
+
 	Vadon::Render::Canvas::LayerHandle Render::get_context_layer(CanvasContextHandle context_handle, CanvasLayerDefHandle layer_def_handle)
 	{
 		if (layer_def_handle.is_valid() == false)

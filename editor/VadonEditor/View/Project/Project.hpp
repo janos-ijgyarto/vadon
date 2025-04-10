@@ -2,6 +2,7 @@
 #define VADONEDITOR_VIEW_PROJECT_PROJECT_HPP
 #include <VadonEditor/Core/Project/Project.hpp>
 #include <VadonEditor/UI/Developer/Widgets.hpp>
+#include <VadonEditor/View/Scene/Property/Property.hpp>
 #include <VadonApp/UI/Developer/Widgets/FileBrowser.hpp>
 namespace VadonEditor::Core
 {
@@ -55,6 +56,27 @@ namespace VadonEditor::View
 		UI::Developer::Button m_import_project_button;
 		UI::Developer::Button m_open_project_button;
 		UI::Developer::ListBox m_project_list;
+
+		friend class MainWindow;
+	};
+
+	class ProjectPropertiesDialog : public UI::Developer::Dialog
+	{
+	protected:
+		Result internal_draw(UI::Developer::GUISystem& dev_gui) override;
+
+		void on_open() override;
+
+		const Vadon::Utilities::PropertyList& get_edited_properties() const { return m_edited_properties; }
+	private:
+		ProjectPropertiesDialog(Core::Editor& editor);
+
+		Core::Editor& m_editor;
+		std::vector<PropertyEditor::Instance> m_property_editors;
+		Vadon::Utilities::PropertyList m_edited_properties;
+
+		UI::Developer::Button m_ok_button;
+		UI::Developer::Button m_cancel_button;
 
 		friend class MainWindow;
 	};

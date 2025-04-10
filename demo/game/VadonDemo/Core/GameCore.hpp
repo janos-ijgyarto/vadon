@@ -47,7 +47,6 @@ namespace Vadon::ECS
 namespace VadonDemo::Core
 {
 	class Core;
-	struct CoreComponent;
 
 	// FIXME: make separate interface so we don't expose "execute" to subsystems
 	class GameCore
@@ -71,7 +70,6 @@ namespace VadonDemo::Core
 		View::GameView& get_view();
 
 		Vadon::ECS::World& get_ecs_world();
-		const CoreComponent& get_core_component() const;
 
 		const Vadon::Core::Project& get_project_info() const;
 		Vadon::Core::RootDirectoryHandle get_project_root_dir() const;

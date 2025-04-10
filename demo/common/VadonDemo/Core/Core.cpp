@@ -1,8 +1,7 @@
 #include <VadonDemo/Core/Core.hpp>
 
-#include <VadonDemo/Core/Component.hpp>
-
 #include <Vadon/Core/Environment.hpp>
+#include <Vadon/Core/Project/Project.hpp>
 #include <Vadon/ECS/World/World.hpp>
 
 namespace VadonDemo::Core
@@ -21,14 +20,19 @@ namespace VadonDemo::Core
 		Vadon::Core::EngineEnvironment::initialize(environment);
 	}
 
-	bool Core::initialize()
+	void Core::register_types()
 	{
-		CoreComponent::register_component();
+		GlobalConfiguration::register_type();
 
 		Model::Model::register_types();
 		Render::Render::register_types();
 		UI::UI::register_types();
 		View::View::register_types();
+	}
+
+	bool Core::initialize(const Vadon::Core::Project& project_info)
+	{
+		Vadon::Utilities::TypeRegistry::apply_property_values(&m_global_config, Vadon::Utilities::TypeRegistry::get_type_id<GlobalConfiguration>(), project_info.custom_properties);
 
 		if (m_render.initialize() == false)
 		{
@@ -51,6 +55,18 @@ namespace VadonDemo::Core
 		}
 
 		return true;
+	}
+
+	void Core::override_global_config(const Vadon::Core::Project& project_info)
+	{
+		// Update global config values
+		Vadon::Utilities::TypeRegistry::apply_property_values(&m_global_config, Vadon::Utilities::TypeRegistry::get_type_id<GlobalConfiguration>(), project_info.custom_properties);
+
+		// Notify subsystems
+		m_render.global_config_updated();
+		m_model.global_config_updated();
+		m_view.global_config_updated();
+		m_ui.global_config_updated();
 	}
 
 	void Core::add_entity_event_callback(EntityEventCallback callback)

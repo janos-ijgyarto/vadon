@@ -1,7 +1,7 @@
 #include <VadonDemo/Render/Resource.hpp>
 
 #include <Vadon/Scene/Resource/Registry.hpp>
-#include <Vadon/Utilities/TypeInfo/Registry/MemberBind.hpp>
+#include <Vadon/Utilities/TypeInfo/Reflection/MemberBind.hpp>
 
 namespace VadonDemo::Render
 {

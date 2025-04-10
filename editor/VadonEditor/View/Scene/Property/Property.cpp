@@ -7,7 +7,7 @@
 
 #include <VadonEditor/View/Scene/Resource/Resource.hpp>
 
-#include <Vadon/Utilities/TypeInfo/Registry/FunctionBind.hpp>
+#include <Vadon/Utilities/TypeInfo/Reflection/FunctionBind.hpp>
 
 namespace VadonEditor::View
 {
@@ -234,7 +234,14 @@ namespace VadonEditor::View
 			dev_gui.same_line();
 			if (dev_gui.draw_button(m_clear_button) == true)
 			{
-				m_property.value = Vadon::Scene::ResourceHandle();
+				if (m_use_handle == true)
+				{
+					m_property.value = Vadon::Scene::ResourceHandle();
+				}
+				else
+				{
+					m_property.value = Vadon::Scene::ResourceID();
+				}
 				edited = true;
 			}
 

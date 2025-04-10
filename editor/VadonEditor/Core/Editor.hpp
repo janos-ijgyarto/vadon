@@ -35,6 +35,8 @@ namespace VadonEditor::Core
 		std::string get_command_line_arg(std::string_view name) const;
 	protected:
 		VADONEDITOR_API virtual bool initialize(int argc, char* argv[]);
+		virtual bool project_loaded() { return true; }
+		virtual void update() {}
 	private:
 		struct Internal;
 		std::unique_ptr<Internal> m_internal;

@@ -43,6 +43,7 @@ namespace VadonDemo::View
 		View(VadonDemo::Core::Core& core);
 
 		bool initialize();
+		void global_config_updated();
 
 		struct CanvasResource
 		{
