@@ -17,8 +17,6 @@ namespace VadonEditor::Core
 			PROJECT_CLOSED
 		};
 
-		using ProjectPropertiesCallback = std::function<void(const Project&)>;
-
 		State get_state() const { return m_state; }
 
 		const ProjectInfoList& get_project_cache() const { return m_project_cache; }
@@ -28,7 +26,10 @@ namespace VadonEditor::Core
 		// NOTE: client code is expected to set this as required by the project
 		void set_project_custom_properties(const Vadon::Utilities::PropertyList& properties) { m_custom_properties = properties; }
 		void update_project_custom_properties(const Vadon::Utilities::PropertyList& properties);
-		void register_project_properties_callback(ProjectPropertiesCallback callback);
+
+		// FIXME: implement some other way than having to do it via callbacks?
+		using ProjectPropertiesCallback = std::function<void(const Project&)>;
+		VADONEDITOR_API void register_project_properties_callback(ProjectPropertiesCallback callback);
 
 		bool create_project(std::string_view project_name, std::string_view root_path);
 		bool open_project(std::string_view path);

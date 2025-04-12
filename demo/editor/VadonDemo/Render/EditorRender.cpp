@@ -101,10 +101,12 @@ namespace VadonDemo::Render
 
         const CanvasContextHandle scene_context = get_scene_canvas_context(entity_scene);
         m_editor.get_core().get_render().init_entity(ecs_world, entity, scene_context);
+        set_layers_dirty();
     }
 
     EditorRender::EditorRender(Core::Editor& editor)
         : m_editor(editor)
+        , m_layers_dirty(false)
     { }
 
     bool EditorRender::initialize()
@@ -154,17 +156,32 @@ namespace VadonDemo::Render
         editor_resource_system.register_edit_callback(
             [this](Vadon::Scene::ResourceID resource_id)
             {
-                Vadon::Scene::ResourceSystem& resource_system = m_editor.get_engine_core().get_system<Vadon::Scene::ResourceSystem>();
+                Vadon::Core::EngineCoreInterface& engine_core = m_editor.get_engine_core();
+                Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
                 Vadon::Scene::ResourceHandle resource_handle = resource_system.find_resource(resource_id);
                 VADON_ASSERT(resource_handle.is_valid() == true, "Resource not found!");
 
                 const Vadon::Scene::ResourceInfo resource_info = resource_system.get_resource_info(resource_handle);
                 if (Vadon::Utilities::TypeRegistry::is_base_of(Vadon::Utilities::TypeRegistry::get_type_id<VadonDemo::Render::CanvasLayerDefinition>(), resource_info.type_id))
                 {
-                    m_editor.get_core().get_render().update_layer_definition(CanvasLayerDefHandle::from_resource_handle(resource_handle));
+                    VadonDemo::Render::Render& common_render = m_editor.get_core().get_render();
+                    common_render.update_layer_definition(CanvasLayerDefHandle::from_resource_handle(resource_handle));
+
+                    set_layers_dirty();
                 }
             }
         );
+
+        // Create editor layer and item (e.g to show viewport rectangle)
+        {
+            Vadon::Core::EngineCoreInterface& engine_core = m_editor.get_engine_core();
+            Vadon::Render::Canvas::CanvasSystem& canvas_system = engine_core.get_system<Vadon::Render::Canvas::CanvasSystem>();
+
+            m_editor_layer = canvas_system.create_layer(Vadon::Render::Canvas::LayerInfo{});
+
+            m_editor_item = canvas_system.create_item(Vadon::Render::Canvas::ItemInfo{ .layer = m_editor_layer });
+            update_editor_layer();
+        }
 
         return true;
     }
@@ -180,10 +197,16 @@ namespace VadonDemo::Render
             return;
         }
 
+        if (m_layers_dirty == true)
+        {
+            update_dirty_layers();
+        }
+
         CanvasContextHandle active_context = get_scene_canvas_context(active_scene);
 
         Render& common_render = m_editor.get_core().get_render();
-        Vadon::Render::Canvas::RenderContext& render_context = common_render.get_context(active_context);
+        const Vadon::Render::Canvas::RenderContext& active_render_context = common_render.get_context(active_context);
+        Vadon::Render::Canvas::RenderContext render_context = active_render_context;
 
         // Update viewport and camera rectangle
         // FIXME: only update this when it changes!
@@ -196,6 +219,8 @@ namespace VadonDemo::Render
         render_context.camera.view_rectangle.size = window_size;
         render_context.viewports.back().render_viewport.dimensions.size = window_size;
 
+        render_context.layers.push_back(m_editor_layer);
+
         VadonEditor::Render::RenderSystem& editor_render = m_editor.get_system<VadonEditor::Render::RenderSystem>();
         editor_render.enqueue_canvas(render_context);
     }
@@ -206,6 +231,7 @@ namespace VadonDemo::Render
         Vadon::ECS::World& ecs_world = editor_model.get_ecs_world();
 
         m_editor.get_core().get_render().update_entity(ecs_world, entity);
+        set_layers_dirty();
     }
 
     void EditorRender::remove_entity(Vadon::ECS::EntityHandle entity)
@@ -214,5 +240,50 @@ namespace VadonDemo::Render
         Vadon::ECS::World& ecs_world = editor_model.get_ecs_world();
 
         m_editor.get_core().get_render().remove_entity(ecs_world, entity);
+    }
+
+    void EditorRender::update_dirty_layers()
+    {
+        // The editor needs to display the layers in a specific way, so after using the common code path, we "fix up" for the editor afterward
+        m_layers_dirty = false;
+
+        Vadon::Core::EngineCoreInterface& engine_core = m_editor.get_engine_core();
+        Vadon::Render::Canvas::CanvasSystem& canvas_system = engine_core.get_system<Vadon::Render::Canvas::CanvasSystem>();
+        VadonDemo::Render::Render& common_render = m_editor.get_core().get_render();
+
+        for (auto context_pair : m_scene_canvas_contexts)
+        {
+            Vadon::Render::Canvas::RenderContext& current_context = common_render.get_context(context_pair.second);
+            for (Vadon::Render::Canvas::LayerHandle current_layer_handle : current_context.layers)
+            {
+                const Vadon::Render::Canvas::LayerInfo current_layer_info = canvas_system.get_layer_info(current_layer_handle);
+
+                // NOTE: filtering out "view agnostic" flag, in-editor we want to see how things are positioned w.r.t the viewport
+                const auto flags_integral = Vadon::Utilities::to_integral(current_layer_info.flags) & ~Vadon::Utilities::to_integral(Vadon::Render::Canvas::LayerFlags::VIEW_AGNOSTIC);
+
+                canvas_system.set_layer_flags(current_layer_handle, Vadon::Utilities::to_enum<Vadon::Render::Canvas::LayerFlags>(flags_integral));
+            }
+        }
+    }
+
+    void EditorRender::update_editor_layer()
+    {
+        Vadon::Core::EngineCoreInterface& engine_core = m_editor.get_engine_core();
+        Vadon::Render::Canvas::CanvasSystem& canvas_system = engine_core.get_system<Vadon::Render::Canvas::CanvasSystem>();
+
+        canvas_system.clear_item(m_editor_item);
+
+        // Add viewport
+        {
+            const Vadon::Utilities::Vector2& viewport_size = m_editor.get_core().get_global_config().viewport_size;
+
+            Vadon::Render::Canvas::Rectangle viewport_rectangle;
+            viewport_rectangle.color = Vadon::Render::Canvas::ColorRGBA{ 0.0f, 0.0f, 1.0f, 1.0f };
+            viewport_rectangle.dimensions.size = viewport_size;
+            viewport_rectangle.thickness = 1.0f;
+            viewport_rectangle.filled = false;
+
+            canvas_system.draw_item_rectangle(m_editor_item, viewport_rectangle);
+        }
     }
 }

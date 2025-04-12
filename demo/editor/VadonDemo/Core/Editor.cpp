@@ -40,7 +40,17 @@ namespace VadonDemo::Core
         // that enqueues type registry metadata, and then use one explicit call to process all of it.
         VadonDemo::Core::Core::register_types();
 
-        get_system<VadonEditor::Core::ProjectManager>().set_project_custom_properties(VadonDemo::Core::GlobalConfiguration::get_default_properties());
+        VadonEditor::Core::ProjectManager& editor_project_manager = get_system<VadonEditor::Core::ProjectManager>();
+
+        editor_project_manager.set_project_custom_properties(VadonDemo::Core::GlobalConfiguration::get_default_properties());
+
+        editor_project_manager.register_project_properties_callback(
+            [this](const VadonEditor::Core::Project& project)
+            {
+                m_core->override_global_config(project.info);
+                m_render.update_editor_layer();
+            }
+        );
 
         return true;
     }

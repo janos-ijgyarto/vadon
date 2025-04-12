@@ -4,6 +4,7 @@
 #include <Vadon/Render/Canvas/Item.hpp>
 namespace Vadon::Private::Render::Canvas
 {
+	using LayerFlags = Vadon::Render::Canvas::LayerFlags;
 	using LayerInfo = Vadon::Render::Canvas::LayerInfo;
 	using LayerHandle = Vadon::Render::Canvas::LayerHandle;
 

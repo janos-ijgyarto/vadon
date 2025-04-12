@@ -119,26 +119,6 @@
                 "name": "QuitButton",
                 "parent": 0,
                 "scene": "DVGQXXLXTOGkymiY2E5x/g=="
-            },
-            {
-                "components": [
-                    {
-                        "properties": {
-                            "dimensions": [
-                                1024.0,
-                                768.0
-                            ],
-                            "position": [
-                                -512.0,
-                                384.0
-                            ]
-                        },
-                        "type": "VadonDemo::UI::Base"
-                    }
-                ],
-                "name": "ViewportFrame",
-                "parent": 0,
-                "scene": "SkNc4cxeQV+JAgDb4DW6qw=="
             }
         ]
     },
