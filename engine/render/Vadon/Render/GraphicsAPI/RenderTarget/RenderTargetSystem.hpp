@@ -16,7 +16,7 @@ namespace Vadon::Render
 		virtual WindowHandle create_window(const WindowInfo& window_info) = 0;
 		virtual bool is_window_valid(WindowHandle window_handle) const = 0;
 		virtual WindowInfo get_window_info(WindowHandle window_handle) const = 0;
-		virtual void update_window(WindowHandle window_handle) = 0;
+		virtual WindowUpdateResult update_window(const WindowUpdateInfo& info) = 0;
 		virtual void remove_window(WindowHandle window_handle) = 0;
 
 		virtual void resize_window(WindowHandle window_handle, const Utilities::Vector2i& window_size) = 0;
@@ -35,7 +35,7 @@ namespace Vadon::Render
 
 		virtual void apply_viewport(const Viewport& viewport) = 0;
 
-		virtual RTVHandle get_window_target(WindowHandle window_handle) const = 0;
+		virtual RTVHandle get_window_back_buffer_view(WindowHandle window_handle) = 0;
 	protected:
 		RenderTargetSystem(Core::EngineCoreInterface& core) 
 			: System(core) 

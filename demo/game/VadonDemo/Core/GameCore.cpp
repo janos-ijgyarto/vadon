@@ -1,7 +1,6 @@
 #include <VadonDemo/Core/GameCore.hpp>
 
 #include <VadonDemo/Core/Core.hpp>
-#include <VadonDemo/Core/Component.hpp>
 #include <VadonDemo/Model/GameModel.hpp>
 #include <VadonDemo/Platform/PlatformInterface.hpp>
 #include <VadonDemo/Render/RenderSystem.hpp>
@@ -192,6 +191,7 @@ namespace VadonDemo::Core
 		// TODO: move to subsystem?
 		Vadon::Core::Project m_project_info;
 		Vadon::Core::RootDirectoryHandle m_root_directory;
+		GlobalConfiguration m_global_config;
 
 		// FIXME: implement a proper CLI parser!
 		std::string m_program_name;
@@ -224,8 +224,18 @@ namespace VadonDemo::Core
 				return false;
 			}
 
+			// FIXME: this needs to be done here to ensure that the parent types are already available
+			// Should refactor to instead have "auto-registering" (via macros on the declarations and static vars)
+			// that enqueues type registry metadata, and then use one explicit call to process all of it.
+			VadonDemo::Core::Core::register_types();
+
+			if (load_project() == false)
+			{
+				return false;
+			}
+
 			m_core = std::make_unique<Core>(m_engine_app->get_engine_core());
-			if(m_core->initialize() == false)
+			if(m_core->initialize(m_project_info) == false)
 			{
 				return false;
 			}
@@ -240,17 +250,11 @@ namespace VadonDemo::Core
 				return false;
 			}
 
-			if (load_project() == false)
+			// FIXME: at the moment this has to be done as a separate, bespoke step
+			// Should replace with actual configurable viewports!
+			if (m_render_system.init_viewport() == false)
 			{
 				return false;
-			}
-
-			// Load core entity
-			{
-				VADON_ASSERT(m_project_info.startup_scene.is_valid() == true, "No startup scene!");
-				Vadon::Scene::SceneSystem& scene_system = m_engine_app->get_engine_core().get_system<Vadon::Scene::SceneSystem>();
-				Vadon::Scene::SceneHandle startup_scene_handle = scene_system.load_scene(m_project_info.startup_scene);
-				m_core_entity = scene_system.instantiate_scene(startup_scene_handle, m_ecs_world);
 			}
 
 			if (m_ui_system.initialize() == false)
@@ -466,8 +470,11 @@ namespace VadonDemo::Core
 				}
 			}
 
+			// Initialize with default properties
+			m_project_info.custom_properties = GlobalConfiguration::get_default_properties();
+
 			const std::string project_file_path = fs_root_path.string();
-			if (m_project_info.load_project_file(engine_core, project_file_path) == false)
+			if (Vadon::Core::Project::load_project_file(engine_core, project_file_path, m_project_info) == false)
 			{
 				Vadon::Core::Logger::log_error(std::format("Invalid project file at \"{}\"!\n", project_file_path));
 				return false;
@@ -556,13 +563,6 @@ namespace VadonDemo::Core
 	Vadon::ECS::World& GameCore::get_ecs_world()
 	{
 		return m_internal->m_ecs_world;
-	}
-
-	const CoreComponent& GameCore::get_core_component() const
-	{
-		CoreComponent* core_component = m_internal->m_ecs_world.get_component_manager().get_component<CoreComponent>(m_internal->m_core_entity);
-		VADON_ASSERT(core_component != nullptr, "Cannot find core component!");
-		return *core_component;
 	}
 
 	const Vadon::Core::Project& GameCore::get_project_info() const

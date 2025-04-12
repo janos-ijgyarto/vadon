@@ -7,7 +7,7 @@
 
 #include <Vadon/Scene/Resource/ResourceSystem.hpp>
 
-#include <Vadon/Utilities/TypeInfo/Registry/Registry.hpp>
+#include <Vadon/Utilities/TypeInfo/Registry.hpp>
 
 namespace VadonEditor::Model
 {

@@ -1,5 +1,5 @@
 #include <Vadon/Private/PCH/Common.hpp>
-#include <Vadon/Utilities/TypeInfo/Registry/Registry.hpp>
+#include <Vadon/Utilities/TypeInfo/Registry.hpp>
 
 #include <Vadon/Core/Environment.hpp>
 #include <Vadon/Core/Logger.hpp>
@@ -234,14 +234,24 @@ namespace Vadon::Utilities
 		}
 
 		const TypeData& type_data = type_data_it->second;
-		const MemberVariableBindBase* property_bind = instance.internal_find_property(type_data, property_name);
-		if (property_bind == nullptr)
+		instance.internal_apply_property_value(type_data, object, property_name, value);
+	}
+
+	void TypeRegistry::apply_property_values(void* object, TypeID type_id, const PropertyList& properties)
+	{
+		TypeRegistry& instance = get_registry_instance();
+		auto type_data_it = instance.m_type_lookup.find(type_id);
+		if (type_data_it == instance.m_type_lookup.end())
 		{
-			Vadon::Core::Logger::log_error(std::format("Type registry error: property \"{}\" not found in type \"{}\"!\n", property_name, type_data.info.name));
+			type_not_found_error(type_id);
 			return;
 		}
 
-		invoke_property_setter(object, *property_bind, value);
+		const TypeData& type_data = type_data_it->second;
+		for (const Property& current_property : properties)
+		{
+			instance.internal_apply_property_value(type_data, object, current_property.name, current_property.value);
+		}
 	}
 
 	void TypeRegistry::internal_register_type(std::string_view type_name, size_t size, size_t alignment, TypeID base_type_id)
@@ -430,5 +440,17 @@ namespace Vadon::Utilities
 		}
 
 		return nullptr;
+	}
+
+	void TypeRegistry::internal_apply_property_value(const TypeData& type_data, void* object, std::string_view property_name, const Variant& value)
+	{
+		const MemberVariableBindBase* property_bind = internal_find_property(type_data, property_name);
+		if (property_bind == nullptr)
+		{
+			Vadon::Core::Logger::log_error(std::format("Type registry error: property \"{}\" not found in type \"{}\"!\n", property_name, type_data.info.name));
+			return;
+		}
+
+		invoke_property_setter(object, *property_bind, value);
 	}
 }

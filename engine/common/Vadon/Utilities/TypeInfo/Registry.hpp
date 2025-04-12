@@ -1,13 +1,11 @@
-#ifndef VADON_UTILITIES_TYPE_REGISTRY_REGISTRY_HPP
-#define VADON_UTILITIES_TYPE_REGISTRY_REGISTRY_HPP
+#ifndef VADON_UTILITIES_TYPEINFO_REGISTRY_HPP
+#define VADON_UTILITIES_TYPEINFO_REGISTRY_HPP
 #include <Vadon/Common.hpp>
 #include <Vadon/Utilities/TypeInfo/TypeName.hpp>
 
-#include <Vadon/Utilities/TypeInfo/Registry/FunctionBindBase.hpp>
-#include <Vadon/Utilities/TypeInfo/Registry/MemberBindBase.hpp>
-#include <Vadon/Utilities/TypeInfo/Registry/Property.hpp>
-
-#include <unordered_map>
+#include <Vadon/Utilities/TypeInfo/Reflection/FunctionBindBase.hpp>
+#include <Vadon/Utilities/TypeInfo/Reflection/MemberBindBase.hpp>
+#include <Vadon/Utilities/TypeInfo/Reflection/Property.hpp>
 
 namespace Vadon::Utilities
 {
@@ -85,14 +83,15 @@ namespace Vadon::Utilities
 		template<typename T>
 		static PropertyList get_properties(T& object)
 		{
-			return get_type_properties(&object, get_type_id<T>());
+			return get_properties(&object, get_type_id<T>());
 		}
 
 		VADONCOMMON_API static PropertyList get_properties(void* object, TypeID type_id);
 
 		VADONCOMMON_API static Variant get_property(void* object, TypeID type_id, std::string_view property_name);
 		VADONCOMMON_API static void set_property(void* object, TypeID type_id, std::string_view property_name, const Variant& value);
-	protected:
+
+		VADONCOMMON_API static void apply_property_values(void* object, TypeID type_id, const PropertyList& properties);
 	private:
 		struct TypeData
 		{
@@ -120,7 +119,9 @@ namespace Vadon::Utilities
 
 		void internal_get_type_properties(TypeID type_id, PropertyInfoList& property_list) const;
 		void internal_get_properties(void* object, TypeID type_id, PropertyList& property_list) const;
-		const MemberVariableBindBase* internal_find_property(const TypeData& data, std::string_view name) const;
+
+		const MemberVariableBindBase* internal_find_property(const TypeData& type_data, std::string_view name) const;
+		void internal_apply_property_value(const TypeData& type_data, void* object, std::string_view property_name, const Variant& value);
 
 		// FIXME: hide via PIMPL?
 		std::unordered_map<std::string, TypeID> m_id_lookup;

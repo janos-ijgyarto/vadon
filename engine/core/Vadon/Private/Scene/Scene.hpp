@@ -2,8 +2,7 @@
 #define VADON_PRIVATE_SCENE_SCENE_HPP
 #include <Vadon/Private/Scene/Resource/Resource.hpp>
 #include <Vadon/Scene/Scene.hpp>
-#include <Vadon/Utilities/Data/Variant.hpp>
-#include <Vadon/Utilities/TypeInfo/Registry/ErasedDataType.hpp>
+#include <Vadon/Utilities/TypeInfo/Reflection/Property.hpp>
 namespace Vadon::Private::Scene
 {
 	using Scene = Vadon::Scene::Scene;
@@ -16,15 +15,8 @@ namespace Vadon::Private::Scene
 	{
 		struct ComponentData
 		{
-			struct Property
-			{
-				std::string name;
-				Vadon::Utilities::Variant value;
-				Vadon::Utilities::ErasedDataTypeID data_type;
-			};
-
 			Vadon::Utilities::TypeID type_id = Vadon::Utilities::TypeID::INVALID;
-			std::vector<Property> properties;
+			std::vector<Vadon::Utilities::Property> properties;
 		};
 
 		struct EntityData

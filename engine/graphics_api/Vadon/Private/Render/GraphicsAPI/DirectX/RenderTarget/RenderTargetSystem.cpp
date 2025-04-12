@@ -81,6 +81,18 @@ namespace
 
 		return d3d_flags;
 	}
+
+	constexpr UINT get_d3d_present_flags(Vadon::Render::WindowUpdateFlags flags)
+	{
+		UINT present_flags = 0;
+		// TODO: other flags!
+		if (Vadon::Utilities::to_bool(flags & Vadon::Render::WindowUpdateFlags::TEST) == true)
+		{
+			present_flags |= DXGI_PRESENT_TEST;
+		}
+
+		return present_flags;
+	}
 }
 
 namespace Vadon::Private::Render::DirectX
@@ -153,15 +165,7 @@ namespace Vadon::Private::Render::DirectX
 			return WindowHandle();
 		}
 
-		// Create a render target for the back buffer
-		D3DRenderTargetView back_buffer_view;
-		if (create_back_buffer_view(swap_chain, back_buffer_view) == false)
-		{
-			log_error("GraphicsAPI: unable to create swap chain!\n");
-			return WindowHandle();
-		}
-
-		// Everything succeeded, create the window and back buffer RTV in the pools
+		// Everything succeeded, add window to pool
 		const WindowHandle new_window_handle = m_window_pool.add();
 
 		Window& new_window = m_window_pool.get(new_window_handle);
@@ -169,11 +173,6 @@ namespace Vadon::Private::Render::DirectX
 		new_window.info = window_info;
 		new_window.hwnd = platform_handle;
 		new_window.swap_chain = swap_chain;
-
-		new_window.back_buffer_rtv = m_rtv_pool.add();
-
-		RenderTargetView& back_buffer_rtv = m_rtv_pool.get(new_window.back_buffer_rtv);
-		back_buffer_rtv.d3d_rt_view = back_buffer_view;
 
 		return new_window_handle;
 	}
@@ -184,20 +183,28 @@ namespace Vadon::Private::Render::DirectX
 		return window.info;
 	}
 	
-	void RenderTargetSystem::update_window(WindowHandle window_handle)
+	WindowUpdateResult RenderTargetSystem::update_window(const WindowUpdateInfo& info)
 	{
-		const Window& selected_window = m_window_pool.get(window_handle);
+		const Window& selected_window = m_window_pool.get(info.window);
+		HRESULT hr = selected_window.swap_chain->Present(info.sync_interval, get_d3d_present_flags(info.flags));
+		if (hr == DXGI_STATUS_OCCLUDED)
+		{
+			return WindowUpdateResult::OCCLUDED;
+		}
+		else if (SUCCEEDED(hr))
+		{
+			return WindowUpdateResult::SUCCESSFUL;
+		}
 
-		// TODO: present parameters?
-		selected_window.swap_chain->Present(0, 0);
+		return WindowUpdateResult::UPDATE_ERROR;
 	}
 
 	void RenderTargetSystem::remove_window(WindowHandle window_handle)
 	{
 		Window& window = m_window_pool.get(window_handle);
 
-		// Window was found, remove the target
-		remove_render_target_view(window.back_buffer_rtv);
+		// Should not have an active back buffer RTV!
+		VADON_ASSERT(window.back_buffer_rtv.is_valid() == false, "Window still has an active back buffer view!");
 
 		// Unset fullscreen state before we release, just to be safe
 		window.swap_chain->SetFullscreenState(false, NULL);
@@ -228,8 +235,11 @@ namespace Vadon::Private::Render::DirectX
 
 		// Need to resize the swap chain
 		// Release any outstanding references to back buffer
-		RenderTargetView& back_buffer_target = m_rtv_pool.get(window.back_buffer_rtv);
-		back_buffer_target.d3d_rt_view.Reset();
+		RenderTargetView* back_buffer_target = window.back_buffer_rtv.is_valid() ? &m_rtv_pool.get(window.back_buffer_rtv) : nullptr;
+		if (back_buffer_target != nullptr)
+		{
+			back_buffer_target->d3d_rt_view.Reset();
+		}
 
 		// Clear state and flush just to be safe
 		GraphicsAPI::DeviceContext* device_context = m_graphics_api.get_device_context();
@@ -245,9 +255,12 @@ namespace Vadon::Private::Render::DirectX
 			return;
 		}
 
-		if (create_back_buffer_view(window.swap_chain, back_buffer_target.d3d_rt_view) == false)
+		if (back_buffer_target != nullptr)
 		{
-			// TODO: handle error!
+			if (create_back_buffer_view(window.swap_chain, back_buffer_target->d3d_rt_view) == false)
+			{
+				// TODO: handle error!
+			}
 		}
 	}
 
@@ -287,8 +300,17 @@ namespace Vadon::Private::Render::DirectX
 	void RenderTargetSystem::remove_render_target_view(RTVHandle rtv_handle)
 	{
 		// TODO: make sure we check whether the target was set, remove if so
-		// TODO2: make sure we can't remove a window RT directly, only if we remove the window itself?
 		RenderTargetView& render_target_view = m_rtv_pool.get(rtv_handle);
+
+		if (render_target_view.window.is_valid() == true)
+		{
+			// RT is a window back buffer, remove reference
+			Window& window = m_window_pool.get(render_target_view.window);
+			VADON_ASSERT(window.back_buffer_rtv == rtv_handle, "Window referenced by RTV has different back buffer view handle!");
+			window.back_buffer_rtv.invalidate();
+
+			render_target_view.window.invalidate();
+		}
 
 		// Release the D3D resource
 		render_target_view.d3d_rt_view.Reset();
@@ -397,9 +419,29 @@ namespace Vadon::Private::Render::DirectX
 		device_context->RSSetViewports(1, &d3d_viewport);
 	}
 
-	RTVHandle RenderTargetSystem::get_window_target(WindowHandle window_handle) const
+	RTVHandle RenderTargetSystem::get_window_back_buffer_view(WindowHandle window_handle)
 	{
-		const Window& window = m_window_pool.get(window_handle);
+		Window& window = m_window_pool.get(window_handle);
+
+		if (window.back_buffer_rtv.is_valid() == false)
+		{
+			// Create a render target for the back buffer
+			D3DRenderTargetView back_buffer_view;
+			const bool back_buffer_successful = create_back_buffer_view(window.swap_chain, back_buffer_view);
+			VADON_ASSERT(back_buffer_successful, "Unable to create back buffer RTV!");
+			if (back_buffer_successful == false)
+			{
+				return RTVHandle();
+			}
+
+			// FIXME: deduplicate with general API to create RT
+			window.back_buffer_rtv = m_rtv_pool.add();
+
+			RenderTargetView& back_buffer_rtv = m_rtv_pool.get(window.back_buffer_rtv);
+			back_buffer_rtv.d3d_rt_view = back_buffer_view;
+			back_buffer_rtv.window = window_handle;
+		}
+
 		return window.back_buffer_rtv;
 	}
 

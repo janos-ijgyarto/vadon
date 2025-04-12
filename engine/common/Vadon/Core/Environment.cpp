@@ -4,7 +4,7 @@
 #include <Vadon/Core/Logger.hpp>
 #include <Vadon/ECS/Component/Registry.hpp>
 #include <Vadon/Scene/Resource/Registry.hpp>
-#include <Vadon/Utilities/TypeInfo/Registry/Registry.hpp>
+#include <Vadon/Utilities/TypeInfo/Registry.hpp>
 
 #include <iostream>
 #include <syncstream>
@@ -74,6 +74,11 @@ namespace Vadon::Core
 	}
 
 	EngineEnvironment::~EngineEnvironment() = default;
+
+    bool EngineEnvironment::is_initialized()
+    {
+        return s_instance != nullptr;
+    }
 
     ::Vadon::ECS::ComponentRegistry& EngineEnvironment::get_component_registry()
     {

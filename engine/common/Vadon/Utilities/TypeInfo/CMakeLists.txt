@@ -1,8 +1,12 @@
-add_subdirectory(Registry)
+add_subdirectory(Reflection)
+add_subdirectory(TypeList)
 
 target_sources(${VADON_CURRENT_TARGET}
 	PRIVATE
+	ErasedDataType.hpp
+	Registry.hpp
+	Registry.cpp
+	TypeErasure.hpp
 	TypeInfo.hpp
 	TypeName.hpp
-	TypeList.hpp
 	)

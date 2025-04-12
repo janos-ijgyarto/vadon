@@ -39,6 +39,7 @@ namespace VadonDemo::UI
 		VADONDEMO_API UI(VadonDemo::Core::Core& core);
 
 		bool initialize();
+		void global_config_updated();
 
 		bool load_default_font();
 

@@ -10,5 +10,9 @@ namespace Vadon::Private::Render::Null
 	using WindowInfo = Vadon::Render::WindowInfo;
 
 	using WindowHandle = Vadon::Render::WindowHandle;
+
+	using WindowUpdateInfo = Vadon::Render::WindowUpdateInfo;
+
+	using WindowUpdateResult = Vadon::Render::WindowUpdateResult;
 }
 #endif

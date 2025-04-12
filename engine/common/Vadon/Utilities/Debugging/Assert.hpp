@@ -74,6 +74,7 @@
 #endif
 
 #define VADON_DISABLED_ASSERT(condition) do { (void) sizeof ((condition)); } while (VADON_NULL_WHILE_LOOP_CONDITION)
+#define VADON_DISABLED_ERROR(message)
 
 #if !defined(VADON_ASSERT_BREAKPOINT)
 #  if defined(ANDROID) && defined(assert)
@@ -87,20 +88,28 @@
 namespace Vadon::Utilities
 {
     VADONCOMMON_API void do_assert(const char* expression_string, std::string_view message, std::source_location location = std::source_location::current());
+    VADONCOMMON_API void do_error(std::string_view message, std::source_location location = std::source_location::current());
 }
 
 #define VADON_ENABLED_ASSERT(condition, message) do { if ( !(condition) ) { Vadon::Utilities::do_assert(#condition, message); } } while (VADON_NULL_WHILE_LOOP_CONDITION)
+#define VADON_ENABLED_ERROR(message) Vadon::Utilities::do_error(message)
 
 /* Enable various levels of assertions. */
 #if VADON_ASSERT_LEVEL == 0   /* assertions disabled */
 #   define VADON_ASSERT(condition, message) VADON_DISABLED_ASSERT(condition)
 #   define VADON_ASSERT_RELEASE(condition, message) VADON_DISABLED_ASSERT(condition)
+#   define VADON_ERROR(message) VADON_DISABLED_ERROR(message)
+#   define VADON_ERROR_RELEASE(message) VADON_DISABLED_ERROR(message)
 #elif VADON_ASSERT_LEVEL == 1  /* release settings. */
 #   define VADON_ASSERT(condition, message) VADON_DISABLED_ASSERT(condition)
 #   define VADON_ASSERT_RELEASE(condition, message) VADON_ENABLED_ASSERT(condition, message)
+#   define VADON_ERROR(message) VADON_DISABLED_ERROR(message)
+#   define VADON_ERROR_RELEASE(message) VADON_ENABLED_ERROR(message)
 #elif VADON_ASSERT_LEVEL == 2  /* debug settings. */
 #   define VADON_ASSERT(condition, message) VADON_ENABLED_ASSERT(condition, message)
 #   define VADON_ASSERT_RELEASE(condition, message) VADON_ENABLED_ASSERT(condition, message)
+#   define VADON_ERROR(message) VADON_ENABLED_ERROR(message)
+#   define VADON_ERROR_RELEASE(message) VADON_ENABLED_ERROR(message)
 #else
 #   error Unknown assertion level.
 #endif

@@ -4,16 +4,16 @@
 #include <Vadon/Render/Canvas/Transform.hpp>
 namespace Vadon::Render::Canvas
 {
+	enum class LayerFlags
+	{
+		NONE = 0,
+		VIEW_AGNOSTIC = 1 << 0 // Offset and scale is relative to view position
+	};
+
 	struct LayerInfo
 	{
-		enum class Flags
-		{
-			NONE = 0,
-			VIEW_AGNOSTIC = 1 << 0 // Offset and scale is relative to view position
-		};
-
 		Transform transform; // Applied to all of the layer's contents during rendering (independent from transform hierarchy)
-		Flags flags = Flags::NONE;
+		LayerFlags flags = LayerFlags::NONE;
 	};
 
 	VADON_DECLARE_TYPED_POOL_HANDLE(Layer, LayerHandle);

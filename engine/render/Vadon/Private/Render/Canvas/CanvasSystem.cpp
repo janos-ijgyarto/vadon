@@ -201,7 +201,7 @@ namespace Vadon::Private::Render::Canvas
 		m_shared_data.add_dirty_layer(layer_handle);
 	}
 
-	void CanvasSystem::set_layer_flags(LayerHandle layer_handle, LayerInfo::Flags flags)
+	void CanvasSystem::set_layer_flags(LayerHandle layer_handle, LayerFlags flags)
 	{
 		LayerData& layer = m_layer_pool.get(layer_handle);
 		layer.info.flags = flags;

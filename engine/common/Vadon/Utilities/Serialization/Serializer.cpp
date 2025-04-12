@@ -2,7 +2,7 @@
 
 #include <Vadon/Core/Logger.hpp>
 
-#include <Vadon/Utilities/TypeInfo/TypeList.hpp>
+#include <Vadon/Utilities/TypeInfo/TypeList/TypeList.hpp>
 #include <Vadon/Utilities/Serialization/JSON/JSONImpl.hpp>
 #include <Vadon/Utilities/System/UUID/UUID.hpp>
 

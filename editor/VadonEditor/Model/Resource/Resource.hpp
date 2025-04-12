@@ -2,7 +2,7 @@
 #define VADONEDITOR_MODEL_RESOURCE_RESOURCE_HPP
 #include <Vadon/Core/File/Path.hpp>
 #include <Vadon/Scene/Resource/Resource.hpp>
-#include <Vadon/Utilities/TypeInfo/Registry/Property.hpp>
+#include <Vadon/Utilities/TypeInfo/Reflection/Property.hpp>
 namespace VadonEditor::Core
 {
 	class Editor;

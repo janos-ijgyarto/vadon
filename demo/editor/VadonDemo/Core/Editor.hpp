@@ -36,9 +36,9 @@ namespace VadonDemo::Core
         Render::EditorRender& get_render() { return m_render; }
     protected:
         bool initialize(int argc, char* argv[]) override;
+        bool project_loaded() override;
+        void update() override;
     private:
-        void update();
-
         std::unique_ptr<VadonDemo::Core::Core> m_core;
 
         Platform::EditorPlatform m_platform;

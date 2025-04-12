@@ -85,8 +85,9 @@ namespace VadonEditor::View
 				{
 					// Property edited, send update to scene tree and update the editor
 					// FIXME: optimize this somehow?
-					entity.edit_component_property(m_type_id, current_property->get_name(), current_property->get_value());
-					current_property->set_value(entity.get_component_property(m_type_id, current_property->get_name()));
+					const Vadon::Utilities::Property& property_data = current_property->get_property();
+					entity.edit_component_property(m_type_id, property_data.name, property_data.value);
+					current_property->set_value(entity.get_component_property(m_type_id, property_data.name));
 				}
 			}
 

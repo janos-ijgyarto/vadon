@@ -52,6 +52,8 @@ namespace VadonDemo::Render
 		Render(VadonDemo::Core::Core& core);
 
 		bool initialize();
+		void global_config_updated();
+
 		Vadon::Render::Canvas::LayerHandle get_context_layer(CanvasContextHandle context_handle, CanvasLayerDefHandle layer_def_handle);
 		
 		void sort_context_layers(CanvasContextData& context);

@@ -16,12 +16,12 @@
 
 namespace
 {
-	Vadon::Render::Canvas::LayerInfo::Flags get_layer_flags_from_def(const VadonDemo::Render::CanvasLayerDefinition& layer_def)
+	Vadon::Render::Canvas::LayerFlags get_layer_flags_from_def(const VadonDemo::Render::CanvasLayerDefinition& layer_def)
 	{
-		Vadon::Render::Canvas::LayerInfo::Flags flags = Vadon::Render::Canvas::LayerInfo::Flags::NONE;
+		Vadon::Render::Canvas::LayerFlags flags = Vadon::Render::Canvas::LayerFlags::NONE;
 		if (layer_def.view_agnostic == true)
 		{
-			flags = Vadon::Render::Canvas::LayerInfo::Flags::VIEW_AGNOSTIC;
+			flags = Vadon::Render::Canvas::LayerFlags::VIEW_AGNOSTIC;
 		}
 
 		return flags;
@@ -193,6 +193,11 @@ namespace VadonDemo::Render
 		return true;
 	}
 
+	void Render::global_config_updated()
+	{
+		// TODO: anything?
+	}
+
 	Vadon::Render::Canvas::LayerHandle Render::get_context_layer(CanvasContextHandle context_handle, CanvasLayerDefHandle layer_def_handle)
 	{
 		if (layer_def_handle.is_valid() == false)
@@ -218,7 +223,7 @@ namespace VadonDemo::Render
 		const CanvasLayerDefinition* layer_definition = resource_system.get_resource(layer_def_handle);
 
 		Vadon::Render::Canvas::CanvasSystem& canvas_system = engine_core.get_system<Vadon::Render::Canvas::CanvasSystem>();
-		const Vadon::Render::Canvas::LayerInfo::Flags layer_flags = get_layer_flags_from_def(*layer_definition);
+		const Vadon::Render::Canvas::LayerFlags layer_flags = get_layer_flags_from_def(*layer_definition);
 
 		Vadon::Render::Canvas::LayerHandle new_layer_handle = canvas_system.create_layer(Vadon::Render::Canvas::LayerInfo{ .flags = layer_flags });
 		context_data.layer_definitions[new_layer_handle.handle.to_uint()] = layer_def_handle;

@@ -1,0 +1,88 @@
+{
+    "data": {
+        "entities": [
+            {
+                "components": [],
+                "name": "Controller",
+                "parent": -1
+            },
+            {
+                "components": [
+                    {
+                        "properties": {
+                            "dimensions": [
+                                110.0,
+                                35.0
+                            ],
+                            "position": [
+                                380.0,
+                                360.0
+                            ]
+                        },
+                        "type": "VadonDemo::UI::Base"
+                    },
+                    {
+                        "properties": {
+                            "offset": [
+                                0.0,
+                                -3.0
+                            ],
+                            "text": "Pause"
+                        },
+                        "type": "VadonDemo::UI::Text"
+                    },
+                    {
+                        "properties": {
+                            "clicked_key": "pause"
+                        },
+                        "type": "VadonDemo::UI::Selectable"
+                    }
+                ],
+                "name": "PauseButton",
+                "parent": 0,
+                "scene": "DVGQXXLXTOGkymiY2E5x/g=="
+            },
+            {
+                "components": [
+                    {
+                        "properties": {
+                            "dimensions": [
+                                190.0,
+                                75.0
+                            ],
+                            "position": [
+                                300.0,
+                                310.0
+                            ]
+                        },
+                        "type": "VadonDemo::UI::Base"
+                    },
+                    {
+                        "properties": {
+                            "offset": [
+                                0.0,
+                                -4.0
+                            ],
+                            "text": "Return to Main"
+                        },
+                        "type": "VadonDemo::UI::Text"
+                    },
+                    {
+                        "properties": {
+                            "clicked_key": "return_to_main"
+                        },
+                        "type": "VadonDemo::UI::Selectable"
+                    }
+                ],
+                "name": "ReturnButton",
+                "parent": 0,
+                "scene": "DVGQXXLXTOGkymiY2E5x/g=="
+            }
+        ]
+    },
+    "id": "77/pFO4USs67NlcVYdxWVw==",
+    "properties": {
+        "name": ""
+    },
+    "type": "Vadon::Scene::Scene"
+}

@@ -34,10 +34,19 @@ namespace VadonDemo::Render
 		void update_entity(Vadon::ECS::EntityHandle entity);
 		void remove_entity(Vadon::ECS::EntityHandle entity);
 
+		void set_layers_dirty() { m_layers_dirty = true; }
+		void update_dirty_layers();
+		void update_editor_layer();
+
 		Core::Editor& m_editor;
 		std::unordered_map<const VadonEditor::Model::Scene*, CanvasContextHandle> m_scene_canvas_contexts;
 
 		std::unordered_map<std::string, TextureResource> m_textures;
+
+		Vadon::Render::Canvas::LayerHandle m_editor_layer;
+		Vadon::Render::Canvas::ItemHandle m_editor_item;
+
+		bool m_layers_dirty;
 
 		friend Core::Editor;
 	};

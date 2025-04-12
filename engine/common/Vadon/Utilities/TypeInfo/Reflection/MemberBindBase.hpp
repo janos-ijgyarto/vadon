@@ -1,6 +1,6 @@
-#ifndef VADON_UTILITIES_TYPEINFO_MEMBERBINDBASE_HPP
-#define VADON_UTILITIES_TYPEINFO_MEMBERBINDBASE_HPP
-#include <Vadon/Utilities/TypeInfo/Registry/ErasedDataType.hpp>
+#ifndef VADON_UTILITIES_TYPEINFO_REFLECTION_MEMBERBINDBASE_HPP
+#define VADON_UTILITIES_TYPEINFO_REFLECTION_MEMBERBINDBASE_HPP
+#include <Vadon/Utilities/TypeInfo/Reflection/FunctionBindBase.hpp>
 namespace Vadon::Utilities
 {
 	using ErasedMemberGetter = Variant(*)(void*);

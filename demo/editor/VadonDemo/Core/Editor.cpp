@@ -3,6 +3,7 @@
 #include <VadonDemo/Core/Core.hpp>
 #include <VadonDemo/Model/Model.hpp>
 
+#include <VadonEditor/Core/Project/ProjectManager.hpp>
 #include <VadonEditor/Model/ModelSystem.hpp>
 #include <VadonEditor/Model/Scene/SceneSystem.hpp>
 
@@ -34,8 +35,33 @@ namespace VadonDemo::Core
             return false;
         }
 
+        // FIXME: this needs to be done here to ensure that the parent types are already available
+        // Should refactor to instead have "auto-registering" (via macros on the declarations and static vars)
+        // that enqueues type registry metadata, and then use one explicit call to process all of it.
+        VadonDemo::Core::Core::register_types();
+
+        VadonEditor::Core::ProjectManager& editor_project_manager = get_system<VadonEditor::Core::ProjectManager>();
+
+        editor_project_manager.set_project_custom_properties(VadonDemo::Core::GlobalConfiguration::get_default_properties());
+
+        editor_project_manager.register_project_properties_callback(
+            [this](const VadonEditor::Core::Project& project)
+            {
+                m_core->override_global_config(project.info);
+                m_render.update_editor_layer();
+            }
+        );
+
+        return true;
+    }
+
+    bool Editor::project_loaded()
+    {
+        // Retrieve config data to make it available to subsystems
+        const VadonEditor::Core::Project& active_project = get_system<VadonEditor::Core::ProjectManager>().get_active_project();
+
         m_core = std::make_unique<Core>(get_engine_core());
-        if (m_core->initialize() == false)
+        if (m_core->initialize(active_project.info) == false)
         {
             return false;
         }
@@ -59,10 +85,6 @@ namespace VadonDemo::Core
         {
             return false;
         }
-
-        // Add self to editor main loop
-        VadonEditor::Model::ModelSystem& editor_model = get_system<VadonEditor::Model::ModelSystem>();
-        editor_model.add_callback([this]() { update(); });
 
         return true;
     }

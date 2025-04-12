@@ -13,7 +13,7 @@
 
 #include <Vadon/Core/File/FileSystem.hpp>
 
-#include <Vadon/Utilities/TypeInfo/Registry/Registry.hpp>
+#include <Vadon/Utilities/TypeInfo/Registry.hpp>
 
 #include <filesystem>
 #include <format>

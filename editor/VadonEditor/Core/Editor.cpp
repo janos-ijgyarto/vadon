@@ -23,6 +23,8 @@ namespace VadonEditor::Core
 {
 	struct Editor::Internal
 	{
+		Editor& m_editor;
+
 		ProjectManager m_project_manager;
 
 		Model::ModelSystem m_model_system;
@@ -41,7 +43,8 @@ namespace VadonEditor::Core
 		std::unordered_map<std::string, std::string> m_command_line_args;
 
 		Internal(Editor& editor)
-			: m_project_manager(editor)
+			: m_editor(editor)
+			, m_project_manager(editor)
 			, m_model_system(editor)
 			, m_platform_interface(editor)
 			, m_render_system(editor)
@@ -206,7 +209,14 @@ namespace VadonEditor::Core
 				{
 					if (m_model_system.load_project() == true)
 					{
-						m_project_manager.m_state = ProjectManager::State::PROJECT_OPEN;
+						if (m_editor.project_loaded() == true)
+						{
+							m_project_manager.m_state = ProjectManager::State::PROJECT_OPEN;
+						}
+						else
+						{
+							// TODO: handle error!
+						}
 					}
 					else
 					{
@@ -215,8 +225,8 @@ namespace VadonEditor::Core
 				}
 					break;
 				case ProjectManager::State::PROJECT_OPEN:
-					// Update model for active project
-					m_model_system.update();
+					// Run client update
+					m_editor.update();
 					break;
 				case ProjectManager::State::PROJECT_CLOSED:
 					m_running = false;

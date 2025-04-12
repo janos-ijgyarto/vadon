@@ -1,7 +1,7 @@
 target_sources(${VADONDEMO_CURRENT_TARGET}
     PRIVATE
-    Component.hpp
-    Component.cpp
+    Configuration.hpp
+    Configuration.cpp
     Core.hpp
     Core.cpp
     )

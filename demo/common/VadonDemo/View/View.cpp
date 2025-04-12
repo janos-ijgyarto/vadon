@@ -204,6 +204,11 @@ namespace VadonDemo::View
 		return true;
 	}
 
+	void View::global_config_updated()
+	{
+		// TODO: anything?
+	}
+
 	View::CanvasResource* View::find_resource(ViewResourceHandle view_resource_handle)
 	{
 		auto resource_it = m_canvas_resource_lookup.find(view_resource_handle.to_uint());

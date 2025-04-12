@@ -1,4 +1,11 @@
 {
-  "name": "demo",
-  "startup_scene": "9guv7+B1QV2esA1FERDZ1Q=="
+    "custom_properties": {
+        "default_start_level": "jlis1+rNQpmey1q0JNLhxw==",
+        "main_menu_scene": "logqRpQYSLqnn8W+lZaOwg==",
+        "viewport_size": [
+            1024.0,
+            768.0
+        ]
+    },
+    "name": "demo"
 }

@@ -1,7 +1,6 @@
 #ifndef VADONDEMO_CORE_CORE_HPP
 #define VADONDEMO_CORE_CORE_HPP
-#include <VadonDemo/VadonDemoCommon.hpp>
-
+#include <VadonDemo/Core/Configuration.hpp>
 #include <VadonDemo/Model/Model.hpp>
 #include <VadonDemo/Render/Render.hpp>
 #include <VadonDemo/UI/UI.hpp>
@@ -12,6 +11,7 @@ namespace Vadon::Core
 {
 	class EngineEnvironment;
 	class EngineCoreInterface;
+	struct Project;
 }
 namespace VadonDemo::Core
 {
@@ -34,8 +34,11 @@ namespace VadonDemo::Core
 
 		VADONDEMO_API Core(Vadon::Core::EngineCoreInterface& engine_core);		
 		VADONDEMO_API static void init_environment(Vadon::Core::EngineEnvironment& environment);
+		VADONDEMO_API static void register_types();
 
-		VADONDEMO_API bool initialize();
+		VADONDEMO_API bool initialize(const Vadon::Core::Project& project_info);
+		VADONDEMO_API void override_global_config(const Vadon::Core::Project& project_info);
+		const GlobalConfiguration& get_global_config() const { return m_global_config; }
 
 		Vadon::Core::EngineCoreInterface& get_engine_core() { return m_engine_core; }
 
@@ -59,6 +62,8 @@ namespace VadonDemo::Core
 		View::View m_view;
 
 		std::vector<EntityEventCallback> m_entity_callbacks;
+
+		GlobalConfiguration m_global_config;
 	};
 }
 #endif

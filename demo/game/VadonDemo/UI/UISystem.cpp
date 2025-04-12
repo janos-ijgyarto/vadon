@@ -1,7 +1,6 @@
 #include <VadonDemo/UI/UISystem.hpp>
 
 #include <VadonDemo/Core/Core.hpp>
-#include <VadonDemo/Core/Component.hpp>
 #include <VadonDemo/Core/GameCore.hpp>
 
 #include <VadonDemo/Model/GameModel.hpp>
@@ -27,6 +26,8 @@
 
 #include <Vadon/Utilities/Data/Visitor.hpp>
 
+#include <format>
+
 namespace VadonDemo::UI
 {
 	UISystem::~UISystem() = default;
@@ -45,7 +46,7 @@ namespace VadonDemo::UI
 		: m_game_core(core)
 		, m_main_window(core)
 	{
-
+		m_dev_gui_window.title = "UI System";
 	}
 
 	bool UISystem::initialize()
@@ -208,6 +209,17 @@ namespace VadonDemo::UI
 		// Set main window for dev GUI
 		VadonApp::UI::Developer::GUISystem& dev_gui = m_game_core.get_engine_app().get_system<VadonApp::UI::Developer::GUISystem>();
 		dev_gui.set_platform_window(m_game_core.get_platform_interface().get_main_window());
+
+		register_dev_gui_callback(
+			[this](VadonApp::UI::Developer::GUISystem& dev_gui)
+			{
+				if (dev_gui.begin_window(m_dev_gui_window))
+				{
+					dev_gui.add_text(std::format("Mouse position: {} {}", m_mouse_pos.x, m_mouse_pos.y));
+				}
+				dev_gui.end_window();
+			}
+		);
 	}
 
 	void UISystem::update()
@@ -218,20 +230,21 @@ namespace VadonDemo::UI
 			update_dev_gui();
 		}
 
-		CursorState cursor_state;
-
-		VadonDemo::Platform::PlatformInterface& game_platform_interface = m_game_core.get_platform_interface();
 		VadonApp::Platform::PlatformInterface& platform_interface = m_game_core.get_engine_app().get_system<VadonApp::Platform::PlatformInterface>();
 		const VadonApp::Platform::MouseState mouse_state = platform_interface.get_mouse_state();
 
-		const Vadon::Utilities::Vector2i window_size = platform_interface.get_window_size(game_platform_interface.get_main_window());
+		const Vadon::Utilities::Vector2i mouse_position = m_game_core.get_render_system().map_to_game_viewport(mouse_state.position);
+		const Core::GlobalConfiguration& global_config = m_game_core.get_core().get_global_config();
 
-		cursor_state.position.x = mouse_state.position.x - (window_size.x * 0.5f);
-		cursor_state.position.y = (window_size.y * 0.5f) - mouse_state.position.y;
+		CursorState cursor_state;
+		cursor_state.position.x = mouse_position.x - (global_config.viewport_size.x * 0.5f);
+		cursor_state.position.y = (global_config.viewport_size.y * 0.5f) - mouse_position.y;
 
 		// TODO: could also handle platform events directly?
-		VadonApp::Platform::InputSystem& input_system = m_game_core.get_engine_app().get_system<VadonApp::Platform::InputSystem>();
+		VadonDemo::Platform::PlatformInterface& game_platform_interface = m_game_core.get_platform_interface();
 		const VadonApp::Platform::InputActionHandle ui_select_action = game_platform_interface.get_action(Platform::GameInputAction::UI_SELECT);
+
+		VadonApp::Platform::InputSystem& input_system = m_game_core.get_engine_app().get_system<VadonApp::Platform::InputSystem>();
 		const bool clicked = input_system.is_action_pressed(ui_select_action);
 		if ((m_was_clicked == true) && (clicked == false))
 		{
@@ -240,6 +253,8 @@ namespace VadonDemo::UI
 		m_was_clicked = clicked;
 
 		m_game_core.get_core().get_ui().update(m_game_core.get_ecs_world(), cursor_state);
+
+		m_mouse_pos = cursor_state.position;
 	}
 
 	void UISystem::update_dev_gui()
@@ -305,10 +320,10 @@ namespace VadonDemo::UI
 		m_main_menu_entity.invalidate();
 
 		// Load default level
-		const VadonDemo::Core::CoreComponent& core_component = m_game_core.get_core_component();
+		const Core::GlobalConfiguration& global_config = m_game_core.get_core().get_global_config();
 
 		Model::GameModel& game_model = m_game_core.get_model();
-		game_model.load_level(Model::GameModel::LevelConfiguration{ .scene_id = core_component.default_start_level });
+		game_model.load_level(Model::GameModel::LevelConfiguration{ .scene_id = global_config.default_start_level });
 	}
 
 	void UISystem::return_to_main_menu()
@@ -322,12 +337,13 @@ namespace VadonDemo::UI
 	void UISystem::load_main_menu()
 	{
 		VADON_ASSERT(m_main_menu_entity.is_valid() == false, "Main menu not loaded!");
-		const VadonDemo::Core::CoreComponent& core_component = m_game_core.get_core_component();
+		const Core::GlobalConfiguration& global_config = m_game_core.get_core().get_global_config();
+		VADON_ASSERT(global_config.main_menu_scene.is_valid() == true, "Need a valid main menu scene!");
 
 		Vadon::Scene::SceneSystem& scene_system = m_game_core.get_engine_app().get_engine_core().get_system<Vadon::Scene::SceneSystem>();
 		Vadon::ECS::World& ecs_world = m_game_core.get_ecs_world();
-
-		m_main_menu_entity = scene_system.instantiate_scene(core_component.main_menu, ecs_world);
+		Vadon::Scene::SceneHandle main_menu_scene = scene_system.load_scene(global_config.main_menu_scene);
+		m_main_menu_entity = scene_system.instantiate_scene(main_menu_scene, ecs_world);
 
 		// Dispatch events
 		m_game_core.get_core().entity_added(ecs_world, m_main_menu_entity);

@@ -1,7 +1,7 @@
-#ifndef VADON_UTILITIES_TYPEINFO_MEMBERBIND_HPP
-#define VADON_UTILITIES_TYPEINFO_MEMBERBIND_HPP
-#include <Vadon/Utilities/TypeInfo/Registry/FunctionBind.hpp>
-#include <Vadon/Utilities/TypeInfo/Registry/MemberBindBase.hpp>
+#ifndef VADON_UTILITIES_TYPEINFO_REFLECTION_MEMBERBIND_HPP
+#define VADON_UTILITIES_TYPEINFO_REFLECTION_MEMBERBIND_HPP
+#include <Vadon/Utilities/TypeInfo/Reflection/FunctionBind.hpp>
+#include <Vadon/Utilities/TypeInfo/Reflection/MemberBindBase.hpp>
 namespace Vadon::Utilities
 {
 	template <typename T, typename TMember>

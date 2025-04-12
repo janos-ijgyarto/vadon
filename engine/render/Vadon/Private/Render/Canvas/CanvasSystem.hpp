@@ -34,7 +34,7 @@ namespace Vadon::Private::Render::Canvas
 		LayerHandle get_default_layer() const override { return m_default_layer; }
 
 		void set_layer_transform(LayerHandle layer_handle, const Transform& transform) override;
-		void set_layer_flags(LayerHandle layer_handle, LayerInfo::Flags flags) override;
+		void set_layer_flags(LayerHandle layer_handle, LayerFlags flags) override;
 
 		ItemHandle create_item(ItemInfo info) override;
 		bool is_item_valid(ItemHandle item_handle) const override { return m_item_pool.is_handle_valid(item_handle); }

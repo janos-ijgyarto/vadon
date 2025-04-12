@@ -1,6 +1,7 @@
 #ifndef VADONDEMO_UI_UISYSTEM_HPP
 #define VADONDEMO_UI_UISYSTEM_HPP
 #include <VadonDemo/UI/MainWindow.hpp>
+#include <VadonApp/UI/Developer/GUIElements.hpp>
 #include <Vadon/ECS/Entity/Entity.hpp>
 #include <functional>
 namespace VadonDemo::Core
@@ -57,6 +58,9 @@ namespace VadonDemo::UI
 		bool m_was_clicked = false;
 
 		Vadon::ECS::EntityHandle m_main_menu_entity;
+
+		Vadon::Utilities::Vector2i m_mouse_pos;
+		VadonApp::UI::Developer::Window m_dev_gui_window;
 
 		friend Core::GameCore;
 	};

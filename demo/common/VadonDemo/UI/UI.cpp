@@ -167,6 +167,11 @@ namespace VadonDemo::UI
 		return true;
 	}
 
+	void UI::global_config_updated()
+	{
+		// TODO: anything?
+	}
+
 	// TODO: manage fonts via resources!
 	bool UI::load_default_font()
 	{

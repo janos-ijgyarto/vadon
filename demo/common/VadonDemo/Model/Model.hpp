@@ -34,6 +34,7 @@ namespace VadonDemo::Model
 	private:
 		Model(Core::Core& core);
 		bool initialize();
+		void global_config_updated();
 
 		bool load_level(Vadon::ECS::World& ecs_world, Vadon::Scene::SceneID level_scene_id);
 

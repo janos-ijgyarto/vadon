@@ -1,8 +1,6 @@
-#ifndef VADON_UTILITIES_TYPEINFO_FUNCTIONBIND_HPP
-#define VADON_UTILITIES_TYPEINFO_FUNCTIONBIND_HPP
-#include <Vadon/Utilities/Enum/EnumClass.hpp>
-#include <Vadon/Utilities/TypeInfo/Registry/Registry.hpp>
-#include <Vadon/Utilities/TypeInfo/TypeList.hpp>
+#ifndef VADON_UTILITIES_TYPEINFO_REFLECTION_FUNCTIONBIND_HPP
+#define VADON_UTILITIES_TYPEINFO_REFLECTION_FUNCTIONBIND_HPP
+#include <Vadon/Utilities/TypeInfo/TypeErasure.hpp>
 
 namespace Vadon::Utilities
 {
@@ -15,42 +13,6 @@ namespace Vadon::Utilities
 
 	template <typename T, typename Ret, typename... Args>
 	using ConstMemberFunction = Ret(T::*)(Args...) const;
-
-	template <typename T, typename... Alts>
-	static constexpr size_t type_list_index_v = Utilities::TypeList<Alts...>::template get_type_id<T>();
-
-	template <typename T, typename... Alts>
-	static constexpr size_t type_list_index_v<T, std::variant<Alts...>> = Utilities::TypeList<Alts...>::template get_type_id<T>();
-
-	template<typename T, typename... Alts>
-	static constexpr bool type_list_has_type_v = Utilities::TypeList<Alts...>::template has_type<T>();
-
-	template <typename T, typename... Alts>
-	static constexpr bool type_list_has_type_v<T, std::variant<Alts...>> = Utilities::TypeList<Alts...>::template has_type<T>();
-
-	template<typename T>
-	static constexpr ErasedDataTypeID get_erased_data_type_id()
-	{
-		if constexpr (std::is_base_of_v<Vadon::Scene::ResourceID, T> && (std::is_same_v<Vadon::Scene::ResourceID, T> == false))
-		{
-			return ErasedDataTypeID{ .type = ErasedDataType::RESOURCE_ID,
-				.id = Vadon::Utilities::to_integral(Vadon::Utilities::TypeRegistry::get_type_id<typename T::_ResourceType>()) };
-		}
-		else if constexpr (std::is_base_of_v<Vadon::Scene::ResourceHandle, T> && (std::is_same_v<Vadon::Scene::ResourceHandle, T> == false))
-		{
-			return ErasedDataTypeID{ .type = ErasedDataType::RESOURCE_HANDLE, 
-				.id = Vadon::Utilities::to_integral(Vadon::Utilities::TypeRegistry::get_type_id<typename T::_ResourceType>()) };
-		}
-		else if constexpr (type_list_has_type_v<variant_type_mapping_t<T>, Variant>)
-		{
-			return ErasedDataTypeID{ .type = ErasedDataType::TRIVIAL, 
-				.id = type_list_index_v<variant_type_mapping_t<T>, Variant> };
-		}
-		else
-		{
-			static_assert(false, "Type not supported!");
-		}
-	}
 
 	template <typename T, typename Ret, typename... Args>
 	static constexpr std::vector<ErasedDataTypeID> make_argument_type_index_list(MemberFunction<T, Ret, Args...>)

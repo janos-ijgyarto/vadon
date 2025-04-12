@@ -15,9 +15,10 @@ namespace Vadon::Private::Render::Null
 		return WindowInfo();
 	}
 
-	void RenderTargetSystem::update_window(WindowHandle /*window_handle*/)
+	WindowUpdateResult RenderTargetSystem::update_window(const WindowUpdateInfo& /*info*/)
 	{
 		// TODO
+		return WindowUpdateResult::SUCCESSFUL;
 	}
 
 	void RenderTargetSystem::remove_window(WindowHandle /*window_handle*/)
@@ -71,7 +72,7 @@ namespace Vadon::Private::Render::Null
 		// TODO
 	}
 
-	Vadon::Render::RTVHandle RenderTargetSystem::get_window_target(Vadon::Render::WindowHandle /*window_handle*/) const
+	Vadon::Render::RTVHandle RenderTargetSystem::get_window_back_buffer_view(Vadon::Render::WindowHandle /*window_handle*/)
 	{
 		// TODO
 		return Vadon::Render::RTVHandle();
