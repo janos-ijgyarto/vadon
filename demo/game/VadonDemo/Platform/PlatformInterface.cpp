@@ -106,12 +106,6 @@ namespace VadonDemo::Platform
 		}
 
 		{
-			VadonApp::Platform::InputActionHandle fire_action = input_system.create_input_action(VadonApp::Platform::InputActionInfo{ .name = "fire" });
-			input_system.add_key_entry(fire_action, VadonApp::Platform::KeyCode::SPACE);
-			m_input_actions[Vadon::Utilities::to_integral(GameInputAction::FIRE)] = fire_action;
-		}
-
-		{
 			VadonApp::Platform::InputActionHandle ui_action = input_system.create_input_action(VadonApp::Platform::InputActionInfo{ .name = "ui_select" });
 			input_system.add_mouse_entry(ui_action, VadonApp::Platform::MouseButton::LEFT);
 			m_input_actions[Vadon::Utilities::to_integral(GameInputAction::UI_SELECT)] = ui_action;

@@ -34,11 +34,22 @@ namespace VadonDemo::View
 			const Model::Transform2D& model_transform = std::get<Model::Transform2D&>(view_tuple);
 			ViewComponent& current_view_component = std::get<ViewComponent&>(view_tuple);
 
-			current_view_component.prev_transform = current_view_component.current_transform;
+			if (model_transform.teleported == false)
+			{
+				current_view_component.prev_transform = current_view_component.current_transform;
 
-			// TODO: rotation!
-			current_view_component.current_transform.position = model_transform.position;
-			current_view_component.current_transform.scale = model_transform.scale;
+				// TODO: rotation!
+				current_view_component.current_transform.position = model_transform.position;
+				current_view_component.current_transform.scale = model_transform.scale;
+			}
+			else
+			{
+				// TODO: rotation!
+				current_view_component.current_transform.position = model_transform.position;
+				current_view_component.current_transform.scale = model_transform.scale;
+
+				current_view_component.prev_transform = current_view_component.current_transform;
+			}
 		}
 	}
 

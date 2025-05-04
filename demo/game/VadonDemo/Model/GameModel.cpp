@@ -175,8 +175,6 @@ namespace VadonDemo::Model
 			{
 				player_input.move_dir.y = -1.0f;
 			}
-
-			player_input.fire = input_system.is_action_pressed(game_platform_interface.get_action(Platform::GameInputAction::FIRE));
 		}
 
 		auto player_query = m_game_core.get_ecs_world().get_component_manager().run_component_query<VadonDemo::Model::Player&>();

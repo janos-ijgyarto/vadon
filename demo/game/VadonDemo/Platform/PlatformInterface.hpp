@@ -17,7 +17,6 @@ namespace VadonDemo::Platform
 		MOVE_DOWN,
 		MOVE_LEFT,
 		MOVE_RIGHT,
-		FIRE,
 		UI_SELECT,
 		ACTION_COUNT
 	};

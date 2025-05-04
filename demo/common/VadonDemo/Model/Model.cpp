@@ -67,9 +67,11 @@ namespace VadonDemo::Model
 
 	void Model::update(Vadon::ECS::World& ecs_world, float delta_time)
 	{
+		// TODO: implement some kind of dependency logic?
+		// In the long-term, need to introduce the System part of ECS, where component processing is scheduled based on dependencies
+		update_dynamic(ecs_world, delta_time);
 		update_player(ecs_world, delta_time);
 		update_enemies(ecs_world, delta_time);
-		update_dynamic(ecs_world, delta_time);
 		update_collisions(ecs_world, delta_time);
 		update_health(ecs_world, delta_time);
 		update_spawners(ecs_world, delta_time);
@@ -368,7 +370,7 @@ namespace VadonDemo::Model
 	{
 		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
 
-		auto player_query = component_manager.run_component_query<Player&, Velocity2D*, Health*, Weapon*>();
+		auto player_query = component_manager.run_component_query<Player&, Transform2D*, Velocity2D*, Health*, Weapon*>();
 		for (auto player_it = player_query.get_iterator(); player_it.is_valid() == true; player_it.next())
 		{
 			auto player_tuple = player_it.get_tuple();
@@ -380,7 +382,7 @@ namespace VadonDemo::Model
 			}
 
 			Velocity2D* player_velocity = std::get<Velocity2D*>(player_tuple);
-			Vadon::Utilities::Vector2 facing = Vadon::Utilities::Vector2_Zero;
+			Vadon::Utilities::Vector2 facing = player_component.last_move_dir;
 			if (player_velocity != nullptr)
 			{
 				// TODO: use acceleration!
@@ -390,15 +392,37 @@ namespace VadonDemo::Model
 					facing = Vadon::Utilities::normalize(player_component.input.move_dir);
 				}
 			}
+			player_component.last_move_dir = facing;
 
+			Transform2D* player_transform = std::get<Transform2D*>(player_tuple);
 			Weapon* player_weapon = std::get<Weapon*>(player_tuple);
-			if (player_weapon != nullptr)
+			if ((player_transform != nullptr) && (player_weapon != nullptr))
 			{
-				player_weapon->active = player_component.input.fire;
-				// Only update facing if it changed
-				if (facing != Vadon::Utilities::Vector2_Zero)
+				// Face weapon toward nearest enemy (or in last move direction if no other option is available)
+				player_weapon->aim_direction = facing;
+
+				float min_distance = std::numeric_limits<float>::max();
+				auto enemy_query = component_manager.run_component_query<Enemy&, Transform2D&>();
+				for (auto enemy_it = enemy_query.get_iterator(); enemy_it.is_valid() == true; enemy_it.next())
 				{
-					player_weapon->aim_direction = facing;
+					auto enemy_tuple = enemy_it.get_tuple();
+					const Transform2D& enemy_transform = std::get<Transform2D&>(enemy_tuple);
+
+					const float distance_sq = Vadon::Utilities::distance_squared(player_transform->position, enemy_transform.position);
+					if (distance_sq < min_distance)
+					{
+						player_weapon->aim_direction = enemy_transform.position - player_transform->position;
+						min_distance = distance_sq;
+					}
+				}
+
+				if (Vadon::Utilities::length_squared(player_weapon->aim_direction) < 0.001f)
+				{
+					player_weapon->aim_direction = { 1, 0 };
+				}
+				else
+				{
+					player_weapon->aim_direction = Vadon::Utilities::normalize(player_weapon->aim_direction);
 				}
 			}
 		}
@@ -422,11 +446,14 @@ namespace VadonDemo::Model
 			}
 		}
 
+		const Core::GlobalConfiguration& global_config = m_core.get_global_config();
+		const float teleport_radius_sq = Vadon::Utilities::length_squared(global_config.viewport_size * 0.55f);
+
 		auto enemy_query = component_manager.run_component_query<Enemy&, Transform2D&, Velocity2D&>();
 		for (auto enemy_it = enemy_query.get_iterator(); enemy_it.is_valid() == true; enemy_it.next())
 		{
 			auto enemy_tuple = enemy_it.get_tuple();
-			const Transform2D& enemy_transform = std::get<Transform2D&>(enemy_tuple);
+			Transform2D& enemy_transform = std::get<Transform2D&>(enemy_tuple);
 			Velocity2D& enemy_velocity = std::get<Velocity2D&>(enemy_tuple);
 
 			const Vadon::Utilities::Vector2 enemy_to_player = player_position - enemy_transform.position;
@@ -437,6 +464,14 @@ namespace VadonDemo::Model
 			else
 			{
 				enemy_velocity.velocity = Vadon::Utilities::Vector2_Zero;
+			}
+
+			const float enemy_dist_sq = Vadon::Utilities::length_squared(enemy_to_player);
+			if (enemy_dist_sq > teleport_radius_sq)
+			{
+				const Vadon::Utilities::Vector2 new_position = player_position + (enemy_to_player * 0.9f);
+				enemy_transform.position = new_position;
+				enemy_transform.teleported = true;
 			}
 		}
 	}
@@ -453,6 +488,7 @@ namespace VadonDemo::Model
 			const Velocity2D& current_velocity = std::get<Velocity2D&>(dynamic_tuple);
 
 			current_transform.position += current_velocity.velocity * delta_time;
+			current_transform.teleported = false;
 		}
 	}
 
@@ -653,6 +689,9 @@ namespace VadonDemo::Model
 		};
 		std::vector<CreateEnemyData> deferred_spawned_enemies;
 
+		const Core::GlobalConfiguration& global_config = m_core.get_global_config();
+		const float spawn_radius = Vadon::Utilities::length(global_config.viewport_size * 0.5f);
+
 		// NOTE: currently all spawners just keep spawning once the delay counts down
 		// Need to implement limits on enemy numbers and a priority system
 		// Can put all spawners that timed out into a FIFO list
@@ -672,9 +711,6 @@ namespace VadonDemo::Model
 				if (current_spawner.spawn_timer <= 0.0f)
 				{
 					current_spawner.spawn_timer = std::max(current_spawner.spawn_timer + current_spawner.min_spawn_delay, 0.0f);
-
-					// TODO: make this editable!
-					constexpr float spawn_radius = 350.0f;
 
 					for (int32_t spawned_enemy_index = 0; spawned_enemy_index < current_spawner.current_spawn_count; ++spawned_enemy_index)
 					{
@@ -754,7 +790,7 @@ namespace VadonDemo::Model
 				current_weapon.firing_timer -= delta_time;
 			}
 
-			if ((current_weapon.active == true) && (current_weapon.firing_timer <= 0.0f))
+			if (current_weapon.firing_timer <= 0.0f)
 			{
 				CreateProjectileData& new_projectile_data = deferred_projectiles.emplace_back();
 
