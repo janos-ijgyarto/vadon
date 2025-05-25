@@ -17,7 +17,7 @@ namespace Vadon::Core
         Vadon::Private::Render::GraphicsAPIBase::init_engine_environment(environment);
     }
 
-    EngineCoreImpl create_engine_core()
+    EngineCorePtr create_engine_core()
     {
         return std::make_unique<Vadon::Private::Core::EngineCore>();
     }
@@ -36,63 +36,58 @@ namespace Vadon::Private::Core
 
     EngineCore::~EngineCore() = default;
 
-    bool EngineCore::initialize(const Vadon::Core::Configuration& config)
+    bool EngineCore::initialize(const Vadon::Core::CoreConfiguration& config)
     {
-        log_message("Vadon engine core initializing.\n");
+        Vadon::Core::Logger::log_message("Vadon engine core initializing.\n");
         constexpr const char* c_failure_message = "Vadon engine core initialization failed!\n";
 
         m_config = config;
 
         if (m_file_system.initialize() == false)
         {
-            log_message(c_failure_message);
+            Vadon::Core::Logger::log_message(c_failure_message);
             return false;
         }
 
         if (m_task_system.initialize() == false)
         {
-            log_message(c_failure_message);
+            Vadon::Core::Logger::log_message(c_failure_message);
             return false;
         }
 
+        // TODO: use configuration to select graphics backend
         m_graphics_api = Render::GraphicsAPIBase::get_graphics_api(*this);
         if (m_graphics_api->initialize() == false)
         {
-            log_error(c_failure_message);
+            Vadon::Core::Logger::log_error(c_failure_message);
             return false;
         }
 
         if (m_render_system.initialize() == false)
         {
-            log_error(c_failure_message);
+            Vadon::Core::Logger::log_error(c_failure_message);
             return false;
         }
 
         if (m_resource_system.initialize() == false)
         {
-            log_error(c_failure_message);
+            Vadon::Core::Logger::log_error(c_failure_message);
             return false;
         }
 
         if (m_scene_system.initialize() == false)
         {
-            log_error(c_failure_message);
+            Vadon::Core::Logger::log_error(c_failure_message);
             return false;
         }
 
-        log_message("Vadon initialized successfully.\n");
+        Vadon::Core::Logger::log_message("Vadon initialized successfully.\n");
         return true;
-    }
-
-    void EngineCore::update()
-    {
-        m_render_system.update();
-        m_graphics_api->update();
     }
 
     void EngineCore::shutdown()
     {
-        log_message("Vadon shutting down.\n");
+        Vadon::Core::Logger::log_message("Vadon shutting down.\n");
 
         m_scene_system.shutdown();
         m_resource_system.shutdown();
@@ -103,6 +98,6 @@ namespace Vadon::Private::Core
             m_graphics_api->shutdown();
         }
 
-        log_message("Vadon shut down successfully.\n");
+        Vadon::Core::Logger::log_message("Vadon shut down successfully.\n");
     }
 }

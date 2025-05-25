@@ -290,7 +290,7 @@ namespace VadonDemo::UI
 
 				if (dev_gui.draw_button(m_dev_gui.console_button))
 				{
-					m_game_core.get_engine_app().get_system<VadonApp::UI::UISystem>().get_console().show();
+					m_game_core.get_ui_system().show_console();
 				}
 			}
 			dev_gui.end_window();

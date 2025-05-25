@@ -1,7 +1,6 @@
 #ifndef VADONAPP_PRIVATE_PLATFORM_SDL_PLATFORMINTERFACE_HPP
 #define VADONAPP_PRIVATE_PLATFORM_SDL_PLATFORMINTERFACE_HPP
 #include <VadonApp/Private/Platform/PlatformInterface.hpp>
-#include <VadonApp/Private/Platform/Event/Event.hpp>
 
 #include <VadonApp/Private/Platform/SDL/Window.hpp>
 
@@ -41,8 +40,8 @@ namespace VadonApp::Private::Platform::SDL
 
 		bool is_window_focused(WindowHandle window_handle) const override;
 
-		void poll_events() override;
-		void register_event_callback(EventCallback callback) override;
+		void new_frame() override { m_events_polled = false; }
+		const VadonApp::Platform::PlatformEventList& poll_events() override;
 
 		VadonApp::Platform::FeatureFlags get_feature_flags() const override;
 		uint64_t get_performance_frequency() const override;
@@ -69,9 +68,6 @@ namespace VadonApp::Private::Platform::SDL
 		char* m_clipboard;
 
 		std::array<SDL_Cursor*, Vadon::Utilities::to_integral(VadonApp::Platform::Cursor::CURSOR_COUNT)> m_cursors;
-
-		std::vector<EventCallback> m_event_callbacks;
-		VadonApp::Platform::PlatformEventList m_platform_events;
 
 		Vadon::Utilities::ObjectPool<VadonApp::Platform::Window, SDLWindow> m_window_pool;
 		std::unordered_map<WindowID, WindowHandle> m_window_lookup;

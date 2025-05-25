@@ -8,6 +8,7 @@
 #include <Vadon/ECS/World/World.hpp>
 
 #include <Vadon/Render/Canvas/CanvasSystem.hpp>
+#include <Vadon/Render/GraphicsAPI/Shader/ShaderSystem.hpp>
 #include <Vadon/Render/GraphicsAPI/Texture/TextureSystem.hpp>
 
 #include <Vadon/Scene/Resource/ResourceSystem.hpp>
@@ -33,8 +34,10 @@ namespace VadonDemo::Render
 	void Render::register_types()
 	{
 		CanvasLayerDefinition::register_resource();
+		FullscreenEffect::register_resource();
 
 		CanvasComponent::register_component();
+		FullscreenEffectComponent::register_component();
 	}
 
 	CanvasContextHandle Render::create_canvas_context()
@@ -179,6 +182,38 @@ namespace VadonDemo::Render
 		resource_data.srv = srv_handle;
 
 		return resource_data;
+	}
+
+	Vadon::Render::ShaderHandle Render::load_fullscreen_shader(const Vadon::Core::FileSystemPath& path) const
+	{
+		// FIXME: accept other extensions!
+		std::filesystem::path shader_fs_path = path.path;
+		shader_fs_path.replace_extension(".hlsl");
+
+		Vadon::Core::EngineCoreInterface& engine_core = m_core.get_engine_core();
+		Vadon::Core::FileSystem& file_system = engine_core.get_system<Vadon::Core::FileSystem>();
+		Vadon::Core::FileSystemPath file_path{ .root_directory = path.root_directory, .path = shader_fs_path.string() };
+
+		if (file_system.does_file_exist(file_path) == false)
+		{
+			return Vadon::Render::ShaderHandle();
+		}
+
+		Vadon::Core::FileSystem::RawFileDataBuffer shader_file_buffer;
+		if (file_system.load_file(file_path, shader_file_buffer) == false)
+		{
+			return Vadon::Render::ShaderHandle();
+		}
+
+		Vadon::Render::ShaderSystem& shader_system = engine_core.get_system<Vadon::Render::ShaderSystem>();
+		Vadon::Render::ShaderInfo shader_info;
+
+		shader_info.name = shader_fs_path.stem().string();
+		shader_info.entrypoint = "ps_main";
+		shader_info.type = Vadon::Render::ShaderType::VERTEX;
+		shader_info.source = reinterpret_cast<const char*>(shader_file_buffer.data());
+
+		return shader_system.create_shader(shader_info);
 	}
 
 	Render::Render(VadonDemo::Core::Core& core)

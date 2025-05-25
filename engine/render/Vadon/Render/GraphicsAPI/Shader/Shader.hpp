@@ -24,9 +24,9 @@ namespace Vadon::Render
 	struct ShaderInfo
 	{
 		ShaderType type = ShaderType::VERTEX;
-		std::string source;
-		std::string name;
-		std::string entrypoint;
+		std::string_view source;
+		std::string_view name;
+		std::string_view entrypoint;
 		std::vector<ShaderDefine> defines;
 	};
 

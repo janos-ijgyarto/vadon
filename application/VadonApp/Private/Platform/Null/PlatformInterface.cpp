@@ -11,16 +11,6 @@ namespace VadonApp::Private::Platform::Null
 
 	}
 
-	void PlatformInterface::poll_events()
-	{
-		// TODO!!!
-	}
-
-	void PlatformInterface::register_event_callback(EventCallback /*callback*/)
-	{
-		// TODO
-	}
-
 	bool PlatformInterface::internal_initialize()
 	{
 		log_message("Null platform interface initialized successfully!\n");

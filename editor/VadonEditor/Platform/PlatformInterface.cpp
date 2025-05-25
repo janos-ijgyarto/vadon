@@ -24,8 +24,9 @@ namespace VadonEditor::Platform
 
 			// FIXME: add casting to CLI parsing so we don't need to do it here
 			// TODO: make these args global vars that are possible to toggle at all times (similar to Unreal)?
-			const std::string window_width_str = editor.get_command_line_arg("window_w");
-			const std::string window_height_str = editor.get_command_line_arg("window_h");
+			VadonApp::Core::Application& application = editor.get_engine_app();
+			const std::string window_width_str = application.get_command_line_arg("window_w");
+			const std::string window_height_str = application.get_command_line_arg("window_h");
 
 			main_window_info.size = Vadon::Utilities::Vector2i(window_width_str.empty() ? c_default_window_width : std::stoi(window_width_str),
 			window_height_str.empty() ? c_default_window_height : std::stoi(window_height_str));

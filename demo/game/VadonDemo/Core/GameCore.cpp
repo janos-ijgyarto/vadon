@@ -15,6 +15,8 @@
 #include <VadonApp/UI/Console.hpp>
 #include <VadonApp/UI/Developer/GUI.hpp>
 
+#include <Vadon/Core/Core.hpp>
+#include <Vadon/Core/CoreConfiguration.hpp>
 #include <Vadon/Core/Environment.hpp>
 #include <Vadon/Core/File/FileSystem.hpp>
 #include <Vadon/Core/Project/Project.hpp>
@@ -174,7 +176,9 @@ namespace VadonDemo::Core
 
 	struct GameCore::Internal
 	{
+		Vadon::Core::EngineCorePtr m_engine_core;
 		std::unique_ptr<Core> m_core;
+
 		GameResourceDatabase m_resource_db;
 
 		Model::GameModel m_game_model;
@@ -193,17 +197,14 @@ namespace VadonDemo::Core
 		Vadon::Core::RootDirectoryHandle m_root_directory;
 		GlobalConfiguration m_global_config;
 
-		// FIXME: implement a proper CLI parser!
-		std::string m_program_name;
-		std::unordered_map<std::string, std::string> m_command_line_args;
-
 		TimePoint m_last_time_point;
 		float m_delta_time = 0.0f;
 
 		bool m_shutdown_requested = false;
 
 		Internal(GameCore& game_core, Vadon::Core::EngineEnvironment& environment)
-			: m_resource_db(game_core)
+			: m_engine_core(Vadon::Core::create_engine_core())
+			, m_resource_db(game_core)
 			, m_game_model(game_core)
 			, m_platform_interface(game_core)
 			, m_render_system(game_core)
@@ -215,10 +216,20 @@ namespace VadonDemo::Core
 
 		bool initialize(int argc, char* argv[])
 		{
-			// FIXME: implement a proper CLI parser!
-			parse_command_line(argc, argv);
+			m_engine_app = VadonApp::Core::Application::create_instance(*m_engine_core);
+			m_engine_app->parse_command_line(argc, argv);
 
-			if (init_engine_application(argc, argv) == false)
+			// TODO: use command line to set up configs!
+			Vadon::Core::CoreConfiguration engine_config;
+			if (m_engine_core->initialize(engine_config) == false)
+			{
+				Vadon::Core::Logger::log_error("Failed to initialize engine core!\n");
+				return false;
+			}
+
+			// Initialize the editor
+			VadonApp::Core::Configuration app_config;
+			if (m_engine_app->initialize(app_config) == false)
 			{
 				Vadon::Core::Logger::log_error("Failed to initialize engine application!\n");
 				return false;
@@ -307,63 +318,6 @@ namespace VadonDemo::Core
 			return true;
 		}
 
-		void parse_command_line(int argc, char* argv[])
-		{
-			m_program_name = argv[0];
-
-			for (int32_t current_arg_index = 1; current_arg_index < argc; ++current_arg_index)
-			{
-				parse_command_line_argument(argv[current_arg_index]);
-			}
-		}
-
-		void parse_command_line_argument(const char* argument_ptr)
-		{
-			const std::string argument_string(argument_ptr);
-
-			const size_t equals_char_offset = argument_string.find('=');
-
-			// TODO: check that the arg isn't just whitespace
-
-			if (equals_char_offset == std::string::npos)
-			{
-				// No equals char found, assume it's a command
-				m_command_line_args.emplace(argument_string, "");
-				return;
-			}
-
-			// Emplace the argument name and value
-			const std::string arg_name = argument_string.substr(0, equals_char_offset);
-			const std::string arg_value = argument_string.substr(equals_char_offset + 1);
-
-			m_command_line_args.emplace(arg_name, arg_value);
-		}
-
-		bool init_engine_application(int /*argc*/, char* argv[])
-		{
-			// Prepare app config
-			// TODO: move to a dedicated subsystem!
-			VadonApp::Core::Configuration app_configuration;
-
-			// Prepare app config
-			{
-				app_configuration.app_config.program_name = argv[0];
-			}
-
-			// Prepare engine config
-			{
-				app_configuration.engine_config.core_config.program_name = argv[0];
-			}
-
-			// Prepare UI config
-			{
-				// TODO
-			}
-
-			m_engine_app = VadonApp::Core::Application::create_instance();
-			return m_engine_app->initialize(app_configuration);
-		}
-
 		int execute(int argc, char* argv[])
 		{
 			if (initialize(argc, argv) == false)
@@ -409,46 +363,25 @@ namespace VadonDemo::Core
 		{
 			// TODO: shut down game-side systems
 			m_engine_app->shutdown();
+			m_engine_core->shutdown();
 
 			Vadon::Core::Logger::log_message("Vadon Demo app successfully shut down.\n");
-		}
-
-		bool has_command_line_arg(std::string_view name) const
-		{
-			auto arg_it = m_command_line_args.find(name.data());
-			if (arg_it == m_command_line_args.end())
-			{
-				return false;
-			}
-
-			return true;
-		}
-
-		std::string get_command_line_arg(std::string_view name) const
-		{
-			auto arg_it = m_command_line_args.find(name.data());
-			if (arg_it == m_command_line_args.end())
-			{
-				return std::string();
-			}
-
-			return arg_it->second;
 		}
 
 		bool load_project()
 		{
 			// First validate the path
-			Vadon::Core::EngineCoreInterface& engine_core = m_engine_app->get_engine_core();
+			Vadon::Core::EngineCoreInterface& engine_core = *m_engine_core;
 
 			// Check command line arg, load startup project if requested
 			constexpr const char c_startup_project_arg[] = "project";
-			if (has_command_line_arg(c_startup_project_arg) == false)
+			if (m_engine_app->has_command_line_arg(c_startup_project_arg) == false)
 			{
 				// TODO: error message!
 				return false;
 			}
 
-			std::filesystem::path fs_root_path(get_command_line_arg(c_startup_project_arg));
+			std::filesystem::path fs_root_path(m_engine_app->get_command_line_arg(c_startup_project_arg));
 			if (Vadon::Core::Project::is_valid_project_path(fs_root_path.string()) == false)
 			{
 				constexpr const char c_invalid_path_error[] = "Game demo: invalid project path!\n";
@@ -520,6 +453,11 @@ namespace VadonDemo::Core
 		return m_internal->execute(argc, argv);
 	}
 
+	Vadon::Core::EngineCoreInterface& GameCore::get_engine_core()
+	{
+		return *m_internal->m_engine_core;
+	}
+
 	VadonApp::Core::Application& GameCore::get_engine_app()
 	{ 
 		return *m_internal->m_engine_app;
@@ -573,16 +511,6 @@ namespace VadonDemo::Core
 	Vadon::Core::RootDirectoryHandle GameCore::get_project_root_dir() const
 	{
 		return m_internal->m_root_directory;
-	}
-
-	bool GameCore::has_command_line_arg(std::string_view name) const
-	{
-		return m_internal->has_command_line_arg(name);
-	}
-
-	std::string GameCore::get_command_line_arg(std::string_view name) const
-	{
-		return m_internal->get_command_line_arg(name);
 	}
 
 	void GameCore::request_shutdown()

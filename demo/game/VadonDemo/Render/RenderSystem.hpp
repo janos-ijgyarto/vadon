@@ -43,6 +43,7 @@ namespace VadonDemo::Render
 		void update_viewport(const Vadon::Utilities::Vector2i& window_size);
 
 		void update();
+		void process_platform_events();
 		void remove_entity(Vadon::ECS::EntityHandle entity);
 
 		Core::GameCore& m_game_core;

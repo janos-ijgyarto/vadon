@@ -23,7 +23,6 @@ namespace Vadon::Private::Render
 		FrameSystem(Vadon::Core::EngineCoreInterface& core);
 
 		bool initialize();
-		void update();
 		void shutdown();
 
 		using FrameGraphPool = Vadon::Utilities::ObjectPool<Vadon::Render::FrameGraph, FrameGraph>;

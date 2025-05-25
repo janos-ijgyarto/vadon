@@ -42,6 +42,7 @@ namespace VadonDemo::Render
 		VADONDEMO_API void update_layer_definition(CanvasLayerDefHandle layer_def_handle);
 
 		VADONDEMO_API TextureResource load_texture_resource(const Vadon::Core::FileSystemPath& path) const;
+		VADONDEMO_API Vadon::Render::ShaderHandle load_fullscreen_shader(const Vadon::Core::FileSystemPath& path) const;
 	private:
 		struct CanvasContextData
 		{

@@ -15,9 +15,18 @@ namespace Vadon::Core
 	class LoggerInterface
 	{
 	public:
-		virtual void log_message(std::string_view message) const = 0;
-		virtual void log_warning(std::string_view message) const = 0;
-		virtual void log_error(std::string_view message) const = 0;
+		virtual void log_message(std::string_view message) = 0;
+		virtual void log_warning(std::string_view message) = 0;
+		virtual void log_error(std::string_view message) = 0;
 	};
+
+    // TODO: instead of making std::osyncstream on each call, could make a "thread local" instance?
+    class DefaultLogger : public LoggerInterface
+    {
+    public:
+		VADONCOMMON_API void log_message(std::string_view message) override;
+		VADONCOMMON_API void log_warning(std::string_view message) override;
+		VADONCOMMON_API void log_error(std::string_view message) override;
+    };
 }
 #endif

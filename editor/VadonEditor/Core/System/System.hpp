@@ -7,12 +7,12 @@ namespace VadonEditor::Core
 {
 	class Editor;
 
-	class SystemBase : public Vadon::Core::LoggerInterface
+	class SystemBase
 	{
 	public:
-		void log_message(std::string_view message) const override;
-		void log_warning(std::string_view message) const override;
-		void log_error(std::string_view message) const override;
+		void log_message(std::string_view message) const { Vadon::Core::Logger::log_message(message); }
+		void log_warning(std::string_view message) const { Vadon::Core::Logger::log_warning(message); }
+		void log_error(std::string_view message) const { Vadon::Core::Logger::log_error(message); }
 
 		Editor& get_editor() { return m_editor; }
 	protected:

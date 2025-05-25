@@ -71,7 +71,7 @@ namespace VadonEditor::View
 		{
 			Core::ProjectManager& project_manager = m_editor.get_system<Core::ProjectManager>();
 
-			if (project_manager.get_state() == Core::ProjectManager::State::PROJECT_OPEN)
+			if (project_manager.get_state() == Core::ProjectManager::State::PROJECT_LOADED)
 			{
 				draw_project_widgets(dev_gui);
 			}

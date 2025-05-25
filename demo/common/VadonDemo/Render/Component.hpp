@@ -17,5 +17,15 @@ namespace VadonDemo::Render
 
 		static void register_component();
 	};
+
+	struct FullscreenEffectComponent
+	{
+		FullscreenEffectHandle effect;
+
+		// NOTE: For now we just implicitly draw FS effect first, then canvas
+		// Need some form of "render config" later
+
+		static void register_component();
+	};
 }
 #endif

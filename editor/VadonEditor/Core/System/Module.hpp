@@ -9,10 +9,6 @@ namespace VadonEditor::Platform
 {
 	class PlatformModule;
 }
-namespace VadonEditor::Render
-{
-	class RenderModule;
-}
 namespace VadonEditor::UI
 {
 	class UIModule;
@@ -28,6 +24,6 @@ namespace VadonEditor::Core
 	template<typename ModuleList, typename ModuleImpl, typename... Systems>
 	using SystemModule = Vadon::Utilities::SingletonModule<ModuleList, ModuleImpl, Systems...>;
 
-	using SystemModuleList = Vadon::Utilities::TypeList<CoreModule, Model::ModelModule, Platform::PlatformModule, Render::RenderModule, UI::UIModule, View::ViewModule>;
+	using SystemModuleList = Vadon::Utilities::TypeList<CoreModule, Model::ModelModule, Platform::PlatformModule, UI::UIModule, View::ViewModule>;
 }
 #endif

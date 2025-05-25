@@ -82,7 +82,7 @@ namespace Vadon::Private::Render::Canvas
 		float thickness = 0.0f;
 
 		PrimitiveRectangle dimensions;
-		Vector2 uvs[4];
+		PrimitiveRectangle uv_dimensions;
 
 		ColorRGBA color = { 0, 0, 0, 0 };
 	};

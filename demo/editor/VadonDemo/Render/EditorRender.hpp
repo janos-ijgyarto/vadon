@@ -2,6 +2,8 @@
 #define VADONDEMO_RENDER_EDITORRENDER_HPP
 #include <VadonDemo/Render/Component.hpp>
 #include <Vadon/ECS/Entity/Entity.hpp>
+#include <Vadon/Render/Frame/Graph.hpp>
+#include <Vadon/Render/GraphicsAPI/RenderTarget/Window.hpp>
 #include <unordered_map>
 namespace VadonEditor::Model
 {
@@ -28,7 +30,12 @@ namespace VadonDemo::Render
 		void init_entity(Vadon::ECS::EntityHandle entity);
 	private:
 		EditorRender(Core::Editor& editor);
+
 		bool initialize();
+		bool init_frame_graph();
+
+		bool project_loaded();
+
 		void update();
 
 		void update_entity(Vadon::ECS::EntityHandle entity);
@@ -38,7 +45,13 @@ namespace VadonDemo::Render
 		void update_dirty_layers();
 		void update_editor_layer();
 
+		void process_platform_events();
+
 		Core::Editor& m_editor;
+		
+		Vadon::Render::FrameGraphHandle m_frame_graph;
+		Vadon::Render::WindowHandle m_render_window;
+		
 		std::unordered_map<const VadonEditor::Model::Scene*, CanvasContextHandle> m_scene_canvas_contexts;
 
 		std::unordered_map<std::string, TextureResource> m_textures;

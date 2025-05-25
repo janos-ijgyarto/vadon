@@ -4,13 +4,16 @@
 #include <Vadon/Utilities/Math/Vector.hpp>
 #include <string>
 #include <memory>
+#include <span>
 
 namespace VadonApp::UI::Developer
 {
 	enum class WindowFlags
 	{
-		DEFAULT = 0,
-		ENABLE_CLOSE = 1 << 0
+		NONE = 0,
+		ENABLE_CLOSE = 1 << 0,
+		HORIZONTAL_SCROLLBAR = 1 << 1,
+		DEFAULT = NONE
 	};
 }
 
@@ -144,6 +147,12 @@ namespace VadonApp::UI::Developer
 		// TODO: shortcut
 		bool selected = false;
 		bool enabled = true;
+	};
+
+	struct TextBuffer
+	{
+		std::string_view buffer;
+		std::span<const size_t> line_offsets;
 	};
 }
 #endif

@@ -104,10 +104,8 @@ namespace VadonDemo::UI
 				glyph_sprite.dimensions = current_glyph.glyph_rect;
 				glyph_sprite.dimensions.position += text_component->offset;
 
-				glyph_sprite.uv_top_left = current_glyph.uv_rect.position;
-				glyph_sprite.uv_bottom_right = glyph_sprite.uv_top_left + current_glyph.uv_rect.size;
-				glyph_sprite.uv_top_right = Vadon::Utilities::Vector2(glyph_sprite.uv_bottom_right.x, glyph_sprite.uv_top_left.y);
-				glyph_sprite.uv_bottom_left = Vadon::Utilities::Vector2(glyph_sprite.uv_top_left.x, glyph_sprite.uv_bottom_right.y);
+				glyph_sprite.uv_dimensions.position = current_glyph.uv_rect.position;
+				glyph_sprite.uv_dimensions.size = current_glyph.uv_rect.size;
 				canvas_system.draw_item_sprite(canvas_component->canvas_item, glyph_sprite);
 			}
 		}

@@ -256,8 +256,8 @@ namespace Vadon::Private::Render::DirectX
 		compile_flags |= D3DCOMPILE_DEBUG;
 #endif
 
-		const char* source_data = shader_info.source.c_str();
-		const char* source_name = (shader_info.name.empty() == false) ? shader_info.name.c_str() : nullptr;
+		const char* source_data = shader_info.source.data();
+		const char* source_name = (shader_info.name.empty() == false) ? shader_info.name.data() : nullptr;
 		
 		D3DShaderMacroList shader_macros;
 		if (shader_info.defines.empty() == false)
@@ -270,7 +270,7 @@ namespace Vadon::Private::Render::DirectX
 
 		const char* shader_target = get_shader_target(shader_info);
 
-		HRESULT result = D3DCompile(source_data, strlen(shader_info.source.c_str()), source_name, shader_macro_ptr, d3d_include, shader_info.entrypoint.c_str(), shader_target, compile_flags, 0, shader_blob.ReleaseAndGetAddressOf(), error_blob.ReleaseAndGetAddressOf());
+		HRESULT result = D3DCompile(source_data, shader_info.source.length(), source_name, shader_macro_ptr, d3d_include, shader_info.entrypoint.data(), shader_target, compile_flags, 0, shader_blob.ReleaseAndGetAddressOf(), error_blob.ReleaseAndGetAddressOf());
 		if (FAILED(result))
 		{
 			if (error_blob != nullptr)

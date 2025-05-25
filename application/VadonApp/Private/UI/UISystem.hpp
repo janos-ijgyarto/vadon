@@ -1,8 +1,7 @@
 #ifndef VADONAPP_PRIVATE_UI_UISYSTEM_HPP
 #define VADONAPP_PRIVATE_UI_UISYSTEM_HPP
 #include <VadonApp/UI/UISystem.hpp>
-
-#include <VadonApp/Private/UI/Console.hpp>
+#include <VadonApp/UI/Console.hpp>
 #include <VadonApp/Private/UI/Developer/GUI.hpp>
 
 namespace VadonApp::Private::Core
@@ -27,7 +26,7 @@ namespace VadonApp::Private::UI
 		// FIXME: this does mean the app may have to know about every 
 		UISystem(Core::Application& application);
 
-		Console m_console;
+		VadonApp::UI::Console m_console;
 		Developer::GUISystem::Implementation m_dev_gui;
 
 		friend class Core::Application;

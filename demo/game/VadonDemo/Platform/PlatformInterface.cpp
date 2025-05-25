@@ -67,12 +67,17 @@ namespace VadonDemo::Platform
 
 		if (m_dispatch_timer > c_platform_dispatch_interval)
 		{
+			// Reset dispatch timer
+			m_dispatch_timer = 0.0f;
+
 			VadonApp::Core::Application& engine_app = m_game_core.get_engine_app();
 
 			VadonApp::Platform::PlatformInterface& platform_interface = engine_app.get_system<VadonApp::Platform::PlatformInterface>();
-			platform_interface.poll_events();
+			platform_interface.new_frame();
 
-			m_dispatch_timer = 0.0f;
+			// Update inputs (this will poll the platform events)
+			VadonApp::Platform::InputSystem& input_system = engine_app.get_system<VadonApp::Platform::InputSystem>();
+			input_system.update();
 		}
 	}
 

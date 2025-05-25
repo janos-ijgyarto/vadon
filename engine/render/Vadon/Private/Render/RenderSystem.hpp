@@ -18,7 +18,6 @@ namespace Vadon::Private::Render
 		VADONRENDER_API ~RenderSystem();
 
 		bool VADONRENDER_API initialize();
-		void VADONRENDER_API update();
 		void VADONRENDER_API shutdown();
 
 		static VADONRENDER_API void init_engine_environment(Vadon::Core::EngineEnvironment& environment);

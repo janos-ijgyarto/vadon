@@ -32,7 +32,7 @@ namespace VadonDemo::View
 
 	bool EditorView::initialize()
 	{
-        VadonEditor::Model::ModelSystem& editor_model = m_editor.get_system<VadonEditor::Model::ModelSystem>();
+        VadonEditor::Model::ModelSystem& editor_model = m_editor.get_common_editor().get_system<VadonEditor::Model::ModelSystem>();
         VadonEditor::Model::SceneSystem& editor_scene_system = editor_model.get_scene_system();
 
         editor_scene_system.add_entity_event_callback(
@@ -70,7 +70,7 @@ namespace VadonDemo::View
                 }
                 else if (component_event.component_type == Vadon::Utilities::TypeRegistry::get_type_id<Model::Transform2D>())
                 {
-                    VadonEditor::Model::ModelSystem& editor_model = m_editor.get_system<VadonEditor::Model::ModelSystem>();
+                    VadonEditor::Model::ModelSystem& editor_model = m_editor.get_common_editor().get_system<VadonEditor::Model::ModelSystem>();
                     Vadon::ECS::World& ecs_world = editor_model.get_ecs_world();
 
                     m_editor.get_core().get_view().update_entity_transform(ecs_world, component_event.owner);
@@ -92,7 +92,7 @@ namespace VadonDemo::View
         editor_resource_system.register_edit_callback(
             [this, &editor_resource_system](Vadon::Scene::ResourceID resource_id)
             {
-                Vadon::Scene::ResourceSystem& resource_system = m_editor.get_engine_core().get_system<Vadon::Scene::ResourceSystem>();
+                Vadon::Scene::ResourceSystem& resource_system = m_editor.get_common_editor().get_engine_core().get_system<Vadon::Scene::ResourceSystem>();
                 Vadon::Scene::ResourceHandle resource_handle = resource_system.find_resource(resource_id);
                 VADON_ASSERT(resource_handle.is_valid() == true, "Resource not found!");
 
@@ -109,7 +109,7 @@ namespace VadonDemo::View
 
     void EditorView::update()
     {
-        VadonEditor::View::ViewModel& view_model = m_editor.get_system<VadonEditor::View::ViewSystem>().get_view_model();
+        VadonEditor::View::ViewModel& view_model = m_editor.get_common_editor().get_system<VadonEditor::View::ViewSystem>().get_view_model();
         VadonEditor::Model::Scene* active_scene = view_model.get_active_scene();
 
         if (active_scene == nullptr)
@@ -132,7 +132,7 @@ namespace VadonDemo::View
     {
         // Try to update the draw data
         // If it fails, we can just try again the next time the components/resources are updated
-        VadonEditor::Model::ModelSystem& editor_model = m_editor.get_system<VadonEditor::Model::ModelSystem>();
+        VadonEditor::Model::ModelSystem& editor_model = m_editor.get_common_editor().get_system<VadonEditor::Model::ModelSystem>();
         Vadon::ECS::World& ecs_world = editor_model.get_ecs_world();
 
         ViewComponent* view_component = ecs_world.get_component_manager().get_component<ViewComponent>(entity);
@@ -155,7 +155,7 @@ namespace VadonDemo::View
 
     void EditorView::remove_entity(Vadon::ECS::EntityHandle entity)
     {
-        VadonEditor::Model::ModelSystem& editor_model = m_editor.get_system<VadonEditor::Model::ModelSystem>();
+        VadonEditor::Model::ModelSystem& editor_model = m_editor.get_common_editor().get_system<VadonEditor::Model::ModelSystem>();
         Vadon::ECS::World& ecs_world = editor_model.get_ecs_world();
 
         m_editor.get_core().get_view().remove_entity(ecs_world, entity);
@@ -163,7 +163,7 @@ namespace VadonDemo::View
 
     void EditorView::update_resource(VadonDemo::View::ViewResourceHandle resource_handle)
     {
-        Vadon::Scene::ResourceSystem& resource_system = m_editor.get_engine_core().get_system<Vadon::Scene::ResourceSystem>();
+        Vadon::Scene::ResourceSystem& resource_system = m_editor.get_common_editor().get_engine_core().get_system<Vadon::Scene::ResourceSystem>();
         const Vadon::Scene::ResourceInfo resource_info = resource_system.get_resource_info(resource_handle);
 
         if (Vadon::Utilities::TypeRegistry::is_base_of(Vadon::Utilities::TypeRegistry::get_type_id<VadonDemo::View::Sprite>(), resource_info.type_id))
@@ -171,14 +171,14 @@ namespace VadonDemo::View
             load_sprite_resource(VadonDemo::View::SpriteResourceHandle::from_resource_handle(resource_handle));
         }
 
-        VadonEditor::Model::ModelSystem& editor_model = m_editor.get_system<VadonEditor::Model::ModelSystem>();
+        VadonEditor::Model::ModelSystem& editor_model = m_editor.get_common_editor().get_system<VadonEditor::Model::ModelSystem>();
         m_editor.get_core().get_view().update_resource(editor_model.get_ecs_world(), resource_handle);
     }
 
     void EditorView::load_sprite_resource(VadonDemo::View::SpriteResourceHandle sprite_handle)
     {
         // TODO: implement general system for loading textures as resources!
-        Vadon::Scene::ResourceSystem& resource_system = m_editor.get_engine_core().get_system<Vadon::Scene::ResourceSystem>();
+        Vadon::Scene::ResourceSystem& resource_system = m_editor.get_common_editor().get_engine_core().get_system<Vadon::Scene::ResourceSystem>();
         VadonDemo::View::Sprite* sprite_resource = resource_system.get_resource(sprite_handle);
 
         if (sprite_resource->texture_path.empty())
@@ -200,7 +200,7 @@ namespace VadonDemo::View
 
     void EditorView::update_camera(VadonEditor::Model::Scene* active_scene)
     {
-        VadonApp::Core::Application& engine_app = m_editor.get_engine_app();
+        VadonApp::Core::Application& engine_app = m_editor.get_common_editor().get_engine_app();
         if (Vadon::Utilities::to_bool(engine_app.get_system<VadonApp::UI::Developer::GUISystem>().get_io_flags() &
             (VadonApp::UI::Developer::GUISystem::IOFlags::KEYBOARD_CAPTURE | VadonApp::UI::Developer::GUISystem::IOFlags::MOUSE_CAPTURE)) == true)
         {

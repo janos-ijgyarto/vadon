@@ -30,11 +30,6 @@ namespace Vadon::Private::Render::Null
 		return true;
 	}
 
-	void GraphicsAPI::update()
-	{
-		// TODO!!!
-	}
-
 	void GraphicsAPI::shutdown()
 	{
 		log_message("Shutting down null graphics API.\n");

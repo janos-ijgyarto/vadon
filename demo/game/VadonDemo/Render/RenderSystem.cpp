@@ -141,45 +141,6 @@ namespace VadonDemo::Render
 			return false;
 		}
 
-		// Add event handler for window move & resize (affects rendering so it has to happen at the appropriate time)
-		platform_interface.register_event_callback(
-			[this](const VadonApp::Platform::PlatformEventList& platform_events)
-			{
-				for (const VadonApp::Platform::PlatformEvent& current_event : platform_events)
-				{
-					const VadonApp::Platform::PlatformEventType current_event_type = Vadon::Utilities::to_enum<VadonApp::Platform::PlatformEventType>(static_cast<int32_t>(current_event.index()));
-					switch (current_event_type)
-					{
-					case VadonApp::Platform::PlatformEventType::WINDOW:
-					{
-						const VadonApp::Platform::WindowEvent& window_event = std::get<VadonApp::Platform::WindowEvent>(current_event);
-						switch (window_event.type)
-						{
-						case VadonApp::Platform::WindowEventType::MOVED:
-						case VadonApp::Platform::WindowEventType::RESIZED:
-						case VadonApp::Platform::WindowEventType::SIZE_CHANGED:
-						{
-							// Get drawable size							
-							VadonApp::Core::Application& engine_app = m_game_core.get_engine_app();
-							VadonApp::Platform::WindowHandle main_window = m_game_core.get_platform_interface().get_main_window();
-							const Vadon::Utilities::Vector2i drawable_size = engine_app.get_system<VadonApp::Platform::PlatformInterface>().get_window_drawable_size(main_window);
-
-							// Resize the window render target
-							Vadon::Render::RenderTargetSystem& rt_system = engine_app.get_engine_core().get_system<Vadon::Render::RenderTargetSystem>();
-							rt_system.resize_window(m_render_window, drawable_size);
-
-							// Update the game viewport
-							update_viewport(drawable_size);
-						}
-						break;
-						}
-					}
-					break;
-					}
-				}
-			}
-		);
-
 		Vadon::Render::ShaderSystem& shader_system = engine_core.get_system<Vadon::Render::ShaderSystem>();
 		{
 			Vadon::Render::ShaderInfo copy_shader_vs_info;
@@ -462,6 +423,8 @@ namespace VadonDemo::Render
 	
 	void RenderSystem::update()
 	{
+		process_platform_events();
+
 		VadonApp::Core::Application& engine_app = m_game_core.get_engine_app();
 		Vadon::Core::EngineCoreInterface& engine_core = engine_app.get_engine_core();
 
@@ -472,6 +435,45 @@ namespace VadonDemo::Render
 		// Present to the main window
 		Vadon::Render::RenderTargetSystem& rt_system = engine_core.get_system<Vadon::Render::RenderTargetSystem>();
 		rt_system.update_window(Vadon::Render::WindowUpdateInfo{ .window = m_render_window });
+	}
+
+	void RenderSystem::process_platform_events()
+	{
+		VadonApp::Core::Application& engine_app = m_game_core.get_engine_app();
+		VadonApp::Platform::PlatformInterface& platform_interface = engine_app.get_system<VadonApp::Platform::PlatformInterface>();
+
+		// Handle window move & resize (affects rendering so it has to happen at the appropriate time)
+		for (const VadonApp::Platform::PlatformEvent& current_event : platform_interface.poll_events())
+		{
+			const VadonApp::Platform::PlatformEventType current_event_type = Vadon::Utilities::to_enum<VadonApp::Platform::PlatformEventType>(static_cast<int32_t>(current_event.index()));
+			switch (current_event_type)
+			{
+			case VadonApp::Platform::PlatformEventType::WINDOW:
+			{
+				const VadonApp::Platform::WindowEvent& window_event = std::get<VadonApp::Platform::WindowEvent>(current_event);
+				switch (window_event.type)
+				{
+				case VadonApp::Platform::WindowEventType::MOVED:
+				case VadonApp::Platform::WindowEventType::RESIZED:
+				case VadonApp::Platform::WindowEventType::SIZE_CHANGED:
+				{
+					// Get drawable size							
+					VadonApp::Platform::WindowHandle main_window = m_game_core.get_platform_interface().get_main_window();
+					const Vadon::Utilities::Vector2i drawable_size = engine_app.get_system<VadonApp::Platform::PlatformInterface>().get_window_drawable_size(main_window);
+
+					// Resize the window render target
+					Vadon::Render::RenderTargetSystem& rt_system = engine_app.get_engine_core().get_system<Vadon::Render::RenderTargetSystem>();
+					rt_system.resize_window(m_render_window, drawable_size);
+
+					// Update the game viewport
+					update_viewport(drawable_size);
+				}
+				break;
+				}
+			}
+			break;
+			}
+		}
 	}
 
 	void RenderSystem::remove_entity(Vadon::ECS::EntityHandle entity)

@@ -16,7 +16,7 @@ namespace Vadon::Core
 		// Mainly useful for giving work to the main thread
 		virtual void consume_task() = 0;
 
-		virtual bool start(const TaskConfiguration& task_config) = 0;
+		virtual bool start(size_t thread_count) = 0;
 		virtual void request_stop() = 0;
 		virtual bool stop_requested() const = 0;
 	protected:

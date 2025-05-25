@@ -10,6 +10,9 @@ namespace Vadon::Render::Canvas
 	// FIXME: move these into their own headers?
 	using ColorRGBA = Vector4;
 
+	// FIXME: revise this!
+	// - Material setting should be provided per-batch of primitives (can make it a separate command)
+	// - Allow color per-vertex
 	struct PrimitiveBase
 	{
 		ColorRGBA color = ColorRGBA(1.0f, 1.0f, 1.0f, 1.0f);
@@ -41,10 +44,7 @@ namespace Vadon::Render::Canvas
 	struct Sprite : public PrimitiveBase
 	{
 		Render::Rectangle dimensions = { .position = Vector2_Zero, .size = Vector2_One };
-		Render::Vector2 uv_top_left = Render::Vector2_Zero;
-		Render::Vector2 uv_top_right = { 1, 0 };
-		Render::Vector2 uv_bottom_left = { 0, 1 };
-		Render::Vector2 uv_bottom_right = Render::Vector2_One;
+		Render::Rectangle uv_dimensions = { .position = Vector2_Zero, .size = Vector2_One };
 		SRVHandle texture_view_handle;
 	};
 

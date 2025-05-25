@@ -272,7 +272,7 @@ namespace VadonEditor::View
 
 		if (new_resource == nullptr)
 		{
-			m_editor.get_engine_core().log_error("Asset browser: failed to create resource!\n");
+			Vadon::Core::Logger::log_error("Asset browser: failed to create resource!\n");
 			return false;
 		}
 
@@ -283,11 +283,11 @@ namespace VadonEditor::View
 		if (new_resource->save_as(new_resource_path) == false)
 		{
 			// TODO: delete resource?
-			m_editor.get_engine_core().log_error("Asset browser: failed to save resource!\n");
+			Vadon::Core::Logger::log_error("Asset browser: failed to save resource!\n");
 			return false;
 		}
 
-		m_editor.get_engine_core().log_message(std::format("Saved new resource to \"{}\"\n", path));
+		Vadon::Core::Logger::log_message(std::format("Saved new resource to \"{}\"\n", path));
 		return true;
 	}
 

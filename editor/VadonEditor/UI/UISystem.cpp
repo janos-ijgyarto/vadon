@@ -12,10 +12,104 @@
 #include <VadonApp/UI/UISystem.hpp>
 #include <VadonApp/UI/Console.hpp>
 
+#include <Vadon/Core/Environment.hpp>
 #include <Vadon/Utilities/Data/Visitor.hpp>
 
 #include <format>
+#include <shared_mutex>
 #include <unordered_map>
+
+namespace
+{
+	// TODO: backport to application library?
+	class EditorLogger : public Vadon::Core::DefaultLogger
+	{
+	public:
+		EditorLogger(VadonEditor::Core::Editor& editor)
+			: m_editor(editor)
+		{ 
+			m_console_window.title = "Editor Console";
+			m_console_window.open = true;
+
+			m_log_child_window.id = "##log";
+			m_log_child_window.flags |= VadonApp::UI::Developer::WindowFlags::HORIZONTAL_SCROLLBAR;
+
+			m_input.label = "Input";
+
+			Vadon::Core::EngineEnvironment::set_logger(this);
+		}
+
+		~EditorLogger()
+		{
+			Vadon::Core::EngineEnvironment::set_logger(nullptr);
+		}
+
+		void log_message(std::string_view message) override
+		{
+			Vadon::Core::DefaultLogger::log_message(message);
+			append_console(message);
+		}
+
+		void log_warning(std::string_view message) override
+		{
+			Vadon::Core::DefaultLogger::log_warning(message);
+			append_console(message);
+		}
+
+		void log_error(std::string_view message) override
+		{
+			Vadon::Core::DefaultLogger::log_error(message);
+			append_console(message);
+		}
+
+		void draw_console(VadonApp::UI::Developer::GUISystem& dev_gui)
+		{
+			if (dev_gui.begin_window(m_console_window) == true)
+			{
+				VadonApp::Core::Application& engine_app = m_editor.get_engine_app();
+				VadonApp::UI::Console& console = engine_app.get_system<VadonApp::UI::UISystem>().get_console();
+
+				m_log_child_window.size = dev_gui.get_available_content_region();
+
+				// TODO: use separator, ensure enough space is left for it!
+				const VadonApp::UI::Developer::GUIStyle gui_style = dev_gui.get_style();
+				m_log_child_window.size.y -= dev_gui.calculate_text_size(m_input.label).y + gui_style.frame_padding.y * 2 + 5.0f;
+
+				if (dev_gui.begin_child_window(m_log_child_window) == true)
+				{
+					std::shared_lock lock(m_mutex);
+
+					const VadonApp::UI::Console::LineBuffer& console_log = console.get_log();
+					dev_gui.draw_clipped_text_list(VadonApp::UI::Developer::TextBuffer{ .buffer = console_log.buffer, .line_offsets = console_log.line_offsets });
+				}
+				dev_gui.end_child_window();
+
+				if (dev_gui.draw_input_text(m_input))
+				{
+					console.submit_command(m_input.input);
+					m_input.input.clear();
+				}
+			}
+			dev_gui.end_window();
+		}
+	private:
+		void append_console(std::string_view message)
+		{
+			VadonApp::Core::Application& engine_app = m_editor.get_engine_app();
+			VadonApp::UI::Console& console = engine_app.get_system<VadonApp::UI::UISystem>().get_console();
+
+			std::unique_lock lock(m_mutex);
+			console.add_text(message);
+		}
+
+		VadonEditor::Core::Editor& m_editor;
+		std::shared_mutex m_mutex;
+
+		VadonApp::UI::Developer::Window m_console_window;
+		VadonApp::UI::Developer::ChildWindow m_log_child_window;
+		VadonApp::UI::Developer::InputText m_input;
+	};
+}
 
 namespace VadonEditor::UI
 {
@@ -26,9 +120,13 @@ namespace VadonEditor::UI
 		std::unordered_map<std::string, ConsoleCallback> m_console_commands;
 		std::vector<UICallback> m_ui_elements;
 
+		EditorLogger m_logger;
+
 		Internal(Core::Editor& editor)
 			: m_editor(editor)
-		{}
+			, m_logger(editor)
+		{
+		}
 
 		void register_console_command(std::string_view command, const ConsoleCallback& callback)
 		{
@@ -44,30 +142,6 @@ namespace VadonEditor::UI
 				dev_gui.set_platform_window(m_editor.get_system<Platform::PlatformInterface>().get_main_window());
 			}
 
-			VadonApp::Platform::PlatformInterface& platform_interface = engine_app.get_system<VadonApp::Platform::PlatformInterface>();
-			platform_interface.register_event_callback(
-				[this, &engine_app](const VadonApp::Platform::PlatformEventList& platform_events)
-				{
-					auto event_handler = Vadon::Utilities::VisitorOverloadList{
-						[this, &engine_app](const VadonApp::Platform::KeyboardEvent& keyboard_event)
-						{
-							if (keyboard_event.key == VadonApp::Platform::KeyCode::BACKQUOTE)
-							{
-								VadonApp::UI::UISystem& ui_system = engine_app.get_system<VadonApp::UI::UISystem>();
-								VadonApp::UI::Console& app_console = ui_system.get_console();
-								app_console.show();
-							}
-						},
-						[](auto) {}
-					};
-
-					for (const VadonApp::Platform::PlatformEvent& current_event : platform_events)
-					{
-						std::visit(event_handler, current_event);
-					}
-				}
-			);
-
 			// App console
 			{
 				// Handle console events
@@ -82,7 +156,7 @@ namespace VadonEditor::UI
 							return true;
 						}
 
-						app_console.log_error(std::format("Command not recognized: \"{}\"\n", command_event.text));
+						Vadon::Core::Logger::log_error(std::format("Command not recognized: \"{}\"\n", command_event.text));
 						return true;
 					}
 				);
@@ -91,32 +165,15 @@ namespace VadonEditor::UI
 			return true;
 		}
 
-		void update()
+		void draw_ui(VadonApp::UI::Developer::GUISystem& dev_gui)
 		{
-			update_dev_gui();
-		}
-
-		void update_dev_gui()
-		{
-			// FIXME: should we have some way to early out?
-			VadonApp::Core::Application& engine_app = m_editor.get_engine_app();
-			VadonApp::UI::UISystem& ui_system = engine_app.get_system<VadonApp::UI::UISystem>();
-			VadonApp::UI::Console& app_console = ui_system.get_console();
-
-			VadonApp::UI::Developer::GUISystem& dev_gui = engine_app.get_system<VadonApp::UI::Developer::GUISystem>();
-
-			dev_gui.start_frame();
-
-			// Draw console
-			app_console.render();
+			m_logger.draw_console(dev_gui);
 
 			// Run the registered UI elements
 			for (const UICallback& current_ui_element : m_ui_elements)
 			{
 				current_ui_element(m_editor);
 			}
-
-			dev_gui.end_frame();
 		}
 
 		bool parse_console_command(std::string_view command)
@@ -145,6 +202,11 @@ namespace VadonEditor::UI
 		m_internal->m_ui_elements.push_back(callback);
 	}
 
+	void UISystem::draw_ui(VadonApp::UI::Developer::GUISystem& dev_gui)
+	{
+		m_internal->draw_ui(dev_gui);
+	}
+
 	UISystem::UISystem(Core::Editor& editor)
 		: System(editor)
 		, m_internal(std::make_unique<Internal>(editor))
@@ -154,10 +216,5 @@ namespace VadonEditor::UI
 	bool UISystem::initialize()
 	{
 		return m_internal->initialize();
-	}
-
-	void UISystem::update()
-	{
-		return m_internal->update();
 	}
 }

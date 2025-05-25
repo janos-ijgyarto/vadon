@@ -70,7 +70,7 @@ namespace Vadon::Private::Core
 		}
 	}
 
-	bool TaskSystem::start(const Vadon::Core::TaskConfiguration& task_config)
+	bool TaskSystem::start(size_t thread_count)
 	{
 		if (!m_thread_pool.empty() && !stop_requested())
 		{
@@ -80,21 +80,21 @@ namespace Vadon::Private::Core
 
 		log_message("Initializing Task System\n");
 
-		if (task_config.thread_count <= 0)
+		if (thread_count <= 0)
 		{
 			log_error("Invalid task thread count!\n");
 			return true;
 		}
 
-		log_message(std::format("Creating {} task threads\n", task_config.thread_count));
+		log_message(std::format("Creating {} task threads\n", thread_count));
 
 		// Reset stop source
 		m_stop_source = std::stop_source();
 
 		// Create the threads
 		m_thread_pool.clear();
-		m_thread_pool.reserve(task_config.thread_count);
-		while (static_cast<int32_t>(m_thread_pool.size()) < task_config.thread_count)
+		m_thread_pool.reserve(thread_count);
+		while (static_cast<int32_t>(m_thread_pool.size()) < thread_count)
 		{
 			m_thread_pool.emplace_back(*this);
 		}

@@ -13,7 +13,7 @@ namespace Vadon::Private::Core
 
 		void consume_task() override;
 
-		bool start(const Vadon::Core::TaskConfiguration& task_config) override;
+		bool start(size_t thread_count) override;
 		void request_stop() override;
 		bool stop_requested() const override;
 	private:

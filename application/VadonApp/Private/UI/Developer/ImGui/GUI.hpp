@@ -116,6 +116,8 @@ namespace VadonApp::Private::UI::Developer::ImGUI
 		void add_text_wrapped(std::string_view text) override;
 		void add_separator_text(std::string_view text) override;
 
+		void draw_clipped_text_list(const TextBuffer& text_buffer) override;
+
 		void set_item_tooltip(std::string_view tooltip_text) override;
 		
 		void same_line() override;

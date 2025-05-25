@@ -1,5 +1,9 @@
 #include <VadonEditor/Core/Project/ProjectManager.hpp>
 
+#include <VadonEditor/Model/ModelSystem.hpp>
+
+#include <VadonApp/Core/Application.hpp>
+
 #include <Vadon/Core/File/FileSystem.hpp>
 
 #include <Vadon/Utilities/Serialization/Serializer.hpp>
@@ -99,7 +103,7 @@ namespace VadonEditor::Core
 		log_message("Project manager: new project created successfully!\n");
 
 		// Successfully saved project file, now we load it (to reuse the same logic)
-		return load_project(root_path);
+		return load_project_metadata(root_path);
 	}
 
 	bool ProjectManager::open_project(std::string_view root_path)
@@ -113,7 +117,7 @@ namespace VadonEditor::Core
 
 		log_message(std::format("Project manager: project opening requested at path \"{}\"\n", root_path));
 
-		if (load_project(root_path) == false)
+		if (load_project_metadata(root_path) == false)
 		{
 			log_error("Project manager: invalid path!\n");
 			return false;
@@ -122,9 +126,26 @@ namespace VadonEditor::Core
 		return true;
 	}
 
-	void ProjectManager::close_project()
+	bool ProjectManager::load_project_data()
 	{
 		if (m_state != State::PROJECT_OPEN)
+		{
+			log_error("Project manager: must have project opened before attempting to load contents!\n");
+			return false;
+		}
+
+		if (m_editor.get_system<Model::ModelSystem>().load_project() == false)
+		{
+			return false;
+		}
+
+		m_state = State::PROJECT_LOADED;
+		return true;
+	}
+
+	void ProjectManager::close_project()
+	{
+		if (m_state != State::PROJECT_LOADED)
 		{
 			log_error("Project manager: no active project!\n");
 			return;
@@ -243,9 +264,9 @@ namespace VadonEditor::Core
 	{
 		// Check command line arg, load startup project if requested
 		constexpr const char c_startup_project_arg[] = "project";
-		if (m_editor.has_command_line_arg(c_startup_project_arg) == true)
+		if (m_editor.get_engine_app().has_command_line_arg(c_startup_project_arg) == true)
 		{
-			if (load_project(m_editor.get_command_line_arg(c_startup_project_arg)) == false)
+			if (load_project_metadata(m_editor.get_engine_app().get_command_line_arg(c_startup_project_arg)) == false)
 			{
 				return false;
 			}
@@ -254,7 +275,7 @@ namespace VadonEditor::Core
 		return true;
 	}
 
-	bool ProjectManager::load_project(std::string_view root_path)
+	bool ProjectManager::load_project_metadata(std::string_view root_path)
 	{
 		log_message(std::format("Project manager: loading project at path \"{}\"\n", root_path));
 
@@ -313,7 +334,7 @@ namespace VadonEditor::Core
 		m_asset_library.rebuild_asset_tree();
 
 		// Set the editor state
-		m_state = State::PROJECT_LOADED;
+		m_state = State::PROJECT_OPEN;
 		return true;
 	}
 

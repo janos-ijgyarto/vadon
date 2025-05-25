@@ -7,6 +7,10 @@
 #include <VadonEditor/Model/ModelSystem.hpp>
 #include <VadonEditor/Model/Scene/SceneSystem.hpp>
 
+#include <VadonEditor/UI/UISystem.hpp>
+
+#include <VadonApp/UI/Developer/GUI.hpp>
+
 #include <Vadon/ECS/World/World.hpp>
 
 namespace VadonDemo::UI
@@ -17,7 +21,7 @@ namespace VadonDemo::UI
 
 	bool EditorUI::initialize()
 	{
-        VadonEditor::Model::SceneSystem& editor_scene_system = m_editor.get_system<VadonEditor::Model::ModelSystem>().get_scene_system();
+        VadonEditor::Model::SceneSystem& editor_scene_system = m_editor.get_common_editor().get_system<VadonEditor::Model::ModelSystem>().get_scene_system();
 
         editor_scene_system.add_entity_event_callback(
             [this](const VadonEditor::Model::EntityEvent& entity_event)
@@ -75,7 +79,18 @@ namespace VadonDemo::UI
 
     void EditorUI::update()
     {
-        // TODO: anything?
+        VadonEditor::Core::Editor& common_editor = m_editor.get_common_editor();
+
+        // Draw GUI
+        VadonApp::UI::Developer::GUISystem& dev_gui = common_editor.get_engine_app().get_system<VadonApp::UI::Developer::GUISystem>();
+
+        dev_gui.start_frame();
+
+        common_editor.get_system<VadonEditor::UI::UISystem>().draw_ui(dev_gui);
+
+        // TODO: custom widgets?
+
+        dev_gui.end_frame();
     }
 
     void EditorUI::init_entity(Vadon::ECS::EntityHandle entity)
@@ -86,7 +101,7 @@ namespace VadonDemo::UI
 
     void EditorUI::update_entity(Vadon::ECS::EntityHandle entity)
     {
-        VadonEditor::Model::ModelSystem& editor_model = m_editor.get_system<VadonEditor::Model::ModelSystem>();
+        VadonEditor::Model::ModelSystem& editor_model = m_editor.get_common_editor().get_system<VadonEditor::Model::ModelSystem>();
         Vadon::ECS::World& ecs_world = editor_model.get_ecs_world();
 
         // Make sure we at least have a base UI component!
@@ -104,7 +119,7 @@ namespace VadonDemo::UI
 
     void EditorUI::remove_entity(Vadon::ECS::EntityHandle entity)
     {
-        VadonEditor::Model::ModelSystem& editor_model = m_editor.get_system<VadonEditor::Model::ModelSystem>();
+        VadonEditor::Model::ModelSystem& editor_model = m_editor.get_common_editor().get_system<VadonEditor::Model::ModelSystem>();
         Vadon::ECS::World& ecs_world = editor_model.get_ecs_world();
 
         m_editor.get_core().get_ui().remove_ui_element(ecs_world, entity);

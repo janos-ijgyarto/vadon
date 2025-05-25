@@ -117,7 +117,7 @@ struct RectanglePrimitiveData
     float thickness;
     
     PrimitiveRectangle dimensions;
-    float2 uvs[4];
+    PrimitiveRectangle uv_dimensions;
     
     float4 color;
 };
@@ -200,29 +200,25 @@ RectanglePrimitiveData unpack_rectangle_data(uint vertex_index)
     rectangle_data.dimensions.size = rectangle_data1.zw;
     
     const float4 rectangle_data2 = primitive_buffer[rectangle_data_offset + 2];
-    rectangle_data.uvs[0] = rectangle_data2.xy;
-    rectangle_data.uvs[1] = rectangle_data2.zw;
+    rectangle_data.uv_dimensions.position  = rectangle_data2.xy;
+    rectangle_data.uv_dimensions.size = rectangle_data2.zw;
     
-    const float4 rectangle_data3 = primitive_buffer[rectangle_data_offset + 3];
-    rectangle_data.uvs[2] = rectangle_data3.xy;
-    rectangle_data.uvs[3] = rectangle_data3.zw;
-    
-    rectangle_data.color = primitive_buffer[rectangle_data_offset + 4];
+    rectangle_data.color = primitive_buffer[rectangle_data_offset + 3];
 
     return rectangle_data;
 }
 
 static const float2 c_rectangle_offsets[] = { float2(-1, 1), float2(1, 1), float2(-1, -1), float2(1, -1) };
+static const float2 c_rectangle_uv_offsets[] = { float2(0, 0), float2(1, 0), float2(0, 1), float2(1, 1) };
 
 PS_INPUT get_rectangle_fill_vertex(uint vertex_index)
 {
     const RectanglePrimitiveData rectangle_data = unpack_rectangle_data(vertex_index);
     const uint corner_index = get_primitive_vertex_index(vertex_index);
     
-    const float2 corner_position = rectangle_data.dimensions.position + (rectangle_data.dimensions.size * 0.5f * c_rectangle_offsets[corner_index]);
-    
-    // FIXME: change this so sprites can also be rotated, mirrored, etc.
-    const float2 corner_uv = rectangle_data.uvs[corner_index];
+    // TODO: add logic so sprites can also be rotated, mirrored, etc.
+    const float2 corner_position = rectangle_data.dimensions.position + (rectangle_data.dimensions.size * 0.5f * c_rectangle_offsets[corner_index]);    
+    const float2 corner_uv = rectangle_data.uv_dimensions.position + (rectangle_data.uv_dimensions.size * c_rectangle_uv_offsets[corner_index]);
     
     PS_INPUT output;
     output.pos = float4(corner_position, rectangle_data.depth, 1);

@@ -48,15 +48,10 @@ namespace VadonEditor::Model
 		{
 			Core::ProjectManager& project_manager = editor.get_system<Core::ProjectManager>();
 
-			if (project_manager.get_state() != Core::ProjectManager::State::PROJECT_LOADED)
-			{
-				editor.get_engine_core().log_error("Model system: unable to load project!\n");
-				return false;
-			}
-
+			VADON_ASSERT(project_manager.get_state() == Core::ProjectManager::State::PROJECT_OPEN, "Project is in incorrect state!");
 			if (m_resource_system.load_project_resources() == false)
 			{
-				editor.get_engine_core().log_error("Model system: unable to load project!\n");
+				Vadon::Core::Logger::log_error("Model system: unable to load project!\n");
 				return false;
 			}
 

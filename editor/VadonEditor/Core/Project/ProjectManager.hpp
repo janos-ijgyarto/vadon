@@ -12,8 +12,8 @@ namespace VadonEditor::Core
 		enum class State
 		{
 			LAUNCHER,
-			PROJECT_LOADED,
 			PROJECT_OPEN,
+			PROJECT_LOADED,
 			PROJECT_CLOSED
 		};
 
@@ -33,6 +33,7 @@ namespace VadonEditor::Core
 
 		bool create_project(std::string_view project_name, std::string_view root_path);
 		bool open_project(std::string_view path);
+		VADONEDITOR_API bool load_project_data();
 		void close_project();
 
 		AssetLibrary& get_asset_library() { return m_asset_library; }
@@ -43,7 +44,7 @@ namespace VadonEditor::Core
 		void load_project_cache();
 		bool open_startup_project();
 
-		bool load_project(std::string_view root_path);
+		bool load_project_metadata(std::string_view root_path);
 		void add_project_to_cache(const ProjectInfo& project);
 
 		State m_state;

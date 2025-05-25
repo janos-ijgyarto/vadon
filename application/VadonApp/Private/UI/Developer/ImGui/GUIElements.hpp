@@ -31,5 +31,7 @@ namespace VadonApp::Private::UI::Developer::ImGUI
 	using Table = VadonApp::UI::Developer::Table;
 
 	using MenuItem = VadonApp::UI::Developer::MenuItem;
+
+	using TextBuffer = VadonApp::UI::Developer::TextBuffer;
 }
 #endif

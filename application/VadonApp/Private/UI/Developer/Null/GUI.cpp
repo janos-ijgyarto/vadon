@@ -344,6 +344,11 @@ namespace VadonApp::Private::UI::Developer::Null
         // TODO
     }
 
+    void GUISystem::draw_clipped_text_list(const TextBuffer& /*text_buffer*/)
+    {
+        // TODO
+    }
+
     void GUISystem::set_item_tooltip(std::string_view /*tooltip_text*/)
     {
         // TODO

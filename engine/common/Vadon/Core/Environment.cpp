@@ -6,37 +6,6 @@
 #include <Vadon/Scene/Resource/Registry.hpp>
 #include <Vadon/Utilities/TypeInfo/Registry.hpp>
 
-#include <iostream>
-#include <syncstream>
-
-namespace
-{
-    class DefaultLogger : public Vadon::Core::LoggerInterface
-    {
-    public:
-        void log_message(std::string_view message) const override
-        {
-            std::osyncstream cout_sync(std::cout);
-            cout_sync << message;
-        }
-
-        void log_warning(std::string_view message) const override
-        {
-            // TODO: timestamp?
-            std::osyncstream cout_sync(std::cout);
-            cout_sync << "WARNING: " << message;
-        }
-
-        void log_error(std::string_view message) const override
-        {
-            // TODO: timestamp?
-            std::osyncstream cerr_sync(std::cerr);
-            cerr_sync << "ERROR: " << message;
-        }
-    };
-
-}
-
 namespace Vadon::Core
 {
 	EngineEnvironment* EngineEnvironment::s_instance = nullptr;
