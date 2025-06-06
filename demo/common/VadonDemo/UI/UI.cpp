@@ -76,7 +76,7 @@ namespace VadonDemo::UI
 			Vadon::Render::Canvas::Rectangle frame_rect;
 			frame_rect.dimensions.size = base_component->dimensions;
 			frame_rect.dimensions.position = Vadon::Utilities::Vector2(base_component->dimensions.x, -base_component->dimensions.y) * 0.5f;
-			frame_rect.color = Vadon::Render::Canvas::ColorRGBA(frame_component->outline_color, 1.0f);
+			frame_rect.color = frame_component->outline_color;
 			frame_rect.filled = false;
 
 			canvas_system.draw_item_rectangle(canvas_component->canvas_item, frame_rect);
@@ -95,9 +95,9 @@ namespace VadonDemo::UI
 			Vadon::Render::TextRenderData text_render_data = text_system.create_text_render_data(text_component->text, text_info);
 
 			Vadon::Render::Canvas::Sprite glyph_sprite;
-			glyph_sprite.material = m_text_sdf_material;
-			glyph_sprite.texture_view_handle = text_render_data.font_texture_view;
-			glyph_sprite.color = Vadon::Render::Canvas::ColorRGBA(text_component->color, 1.0f);
+
+			canvas_system.set_item_material(canvas_component->canvas_item, m_text_sdf_material);
+			canvas_system.set_item_texture(canvas_component->canvas_item, Vadon::Render::Canvas::Texture{ .srv = text_render_data.font_texture_view });
 
 			for (Vadon::Render::TextGlyph& current_glyph : text_render_data.glyphs)
 			{
@@ -106,6 +106,7 @@ namespace VadonDemo::UI
 
 				glyph_sprite.uv_dimensions.position = current_glyph.uv_rect.position;
 				glyph_sprite.uv_dimensions.size = current_glyph.uv_rect.size;
+				glyph_sprite.color = text_component->color;
 				canvas_system.draw_item_sprite(canvas_component->canvas_item, glyph_sprite);
 			}
 		}

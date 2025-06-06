@@ -27,11 +27,7 @@
                     },
                     {
                         "properties": {
-                            "color": [
-                                1.0,
-                                1.0,
-                                1.0
-                            ],
+                            "color": "#ffffffff",
                             "offset": [
                                 0.0,
                                 0.0

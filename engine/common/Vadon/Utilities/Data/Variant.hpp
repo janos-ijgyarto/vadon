@@ -2,6 +2,7 @@
 #define VADON_UTILITIES_DATA_VARIANT_HPP
 #include <Vadon/Scene/Resource/Resource.hpp>
 #include <Vadon/Utilities/Container/Box.hpp>
+#include <Vadon/Utilities/Math/Color.hpp>
 #include <Vadon/Utilities/Math/Vector.hpp>
 #include <Vadon/Utilities/System/UUID/UUID.hpp>
 #include <vector>
@@ -18,6 +19,7 @@ namespace Vadon::Utilities
 
 	using Variant = std::variant<std::monostate, int, float, bool, std::string,
 		Utilities::Vector2, Utilities::Vector2i, Utilities::Vector3, Utilities::Vector3i, Utilities::Vector4,
+		Utilities::ColorRGBA,
 		Vadon::Scene::ResourceHandle, Utilities::UUID,
 		Utilities::Box<VariantArray>, Utilities::Box<VariantDictionary>, NoReturnValue>;
 

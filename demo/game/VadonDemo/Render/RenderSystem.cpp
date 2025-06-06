@@ -104,7 +104,7 @@ namespace VadonDemo::Render
 			return;
 		}
 
-		m_game_core.get_core().get_render().init_entity(ecs_world, entity, m_canvas_context);
+		m_game_core.get_core().get_render().init_canvas_entity(ecs_world, entity, m_canvas_context);
 	}
 
 	Vadon::Utilities::Vector2i RenderSystem::map_to_game_viewport(const Vadon::Utilities::Vector2i& position) const
@@ -479,6 +479,6 @@ namespace VadonDemo::Render
 	void RenderSystem::remove_entity(Vadon::ECS::EntityHandle entity)
 	{
 		Vadon::ECS::World& ecs_world = m_game_core.get_ecs_world();
-		m_game_core.get_core().get_render().remove_entity(ecs_world, entity);
+		m_game_core.get_core().get_render().remove_canvas_entity(ecs_world, entity);
 	}
 }

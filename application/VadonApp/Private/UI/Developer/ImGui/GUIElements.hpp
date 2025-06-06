@@ -21,6 +21,8 @@ namespace VadonApp::Private::UI::Developer::ImGUI
 	using SliderFloat = VadonApp::UI::Developer::SliderFloat;
 	using SliderFloat2 = VadonApp::UI::Developer::SliderFloat2;
 
+	using ColorEdit = VadonApp::UI::Developer::ColorEdit;
+
 	using Button = VadonApp::UI::Developer::Button;
 
 	using Checkbox = VadonApp::UI::Developer::Checkbox;

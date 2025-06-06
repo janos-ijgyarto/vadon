@@ -1,6 +1,7 @@
 #ifndef VADONAPP_UI_DEVELOPER_GUIELEMENTS_HPP
 #define VADONAPP_UI_DEVELOPER_GUIELEMENTS_HPP
 #include <Vadon/Utilities/Enum/EnumClassBitFlag.hpp>
+#include <Vadon/Utilities/Math/Color.hpp>
 #include <Vadon/Utilities/Math/Vector.hpp>
 #include <string>
 #include <memory>
@@ -59,6 +60,12 @@ namespace VadonApp::UI::Developer
 	using InputFloat = Input<float>;
 	using InputFloat2 = Input<Vadon::Utilities::Vector2>;
 	using InputFloat3 = Input<Vadon::Utilities::Vector3>;
+
+	struct ColorEdit
+	{
+		std::string label;
+		Vadon::Utilities::ColorRGBA value;
+	};
 
 	struct SliderBase
 	{

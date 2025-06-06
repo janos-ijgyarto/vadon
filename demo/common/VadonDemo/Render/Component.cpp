@@ -22,6 +22,6 @@ namespace VadonDemo::Render
 
 		Vadon::ECS::ComponentRegistry::register_component_type<FullscreenEffectComponent>();
 
-		TypeRegistry::add_property<FullscreenEffectComponent>("effect", Vadon::Utilities::MemberVariableBind<&FullscreenEffectComponent::effect>().bind_member_getter().bind_member_setter());
+		TypeRegistry::add_property<FullscreenEffectComponent>("shader", Vadon::Utilities::MemberVariableBind<&FullscreenEffectComponent::shader>().bind_member_getter().bind_member_setter());
 	}
 }

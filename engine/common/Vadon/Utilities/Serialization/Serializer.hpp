@@ -1,6 +1,7 @@
 #ifndef VADON_UTILITIES_SERIALIZATION_SERIALIZER_HPP
 #define VADON_UTILITIES_SERIALIZATION_SERIALIZER_HPP
 #include <Vadon/Common.hpp>
+#include <Vadon/Utilities/Math/Color.hpp>
 #include <Vadon/Utilities/Math/Vector.hpp>
 #include <vector>
 #include <memory>
@@ -141,10 +142,13 @@ namespace Vadon::Utilities
 
 		template<> Result internal_serialize_value(Vadon::Utilities::Vector3& value) { return serialize_array_values(std::span(&value.x, 3)); }
 
+		template<> Result internal_serialize_value(Vadon::Utilities::ColorRGBA& value) { return serialize_color(value); }
+
 		virtual Result serialize_int(int& value) = 0;
 		virtual Result serialize_float(float& value) = 0;
 		virtual Result serialize_bool(bool& value) = 0;
 		virtual Result serialize_string(std::string& value) = 0;
+		virtual Result serialize_color(ColorRGBA& color) = 0;
 
 		VADONCOMMON_API Result serialize_uuid(Vadon::Utilities::UUID& value);
 

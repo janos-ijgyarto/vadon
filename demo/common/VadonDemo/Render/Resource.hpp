@@ -30,16 +30,17 @@ namespace VadonDemo::Render
 		Vadon::Render::SRVHandle srv;
 	};
 
-	struct FullscreenEffect : public Vadon::Scene::Resource
+	// TODO: implement proper shader resources!
+	struct ShaderResource : public Vadon::Scene::Resource
 	{
-		// TODO: implement shader resource!
 		std::string shader_path;
+
 		Vadon::Render::ShaderHandle pixel_shader;
 
 		static void register_resource();
 	};
 
-	VADON_SCENE_DECLARE_TYPED_RESOURCE_ID(FullscreenEffect, FullscreenEffectID);
-	VADON_SCENE_DECLARE_TYPED_RESOURCE_HANDLE(FullscreenEffect, FullscreenEffectHandle);
+	VADON_SCENE_DECLARE_TYPED_RESOURCE_ID(ShaderResource, ShaderResourceID);
+	VADON_SCENE_DECLARE_TYPED_RESOURCE_HANDLE(ShaderResource, ShaderResourceHandle);
 }
 #endif

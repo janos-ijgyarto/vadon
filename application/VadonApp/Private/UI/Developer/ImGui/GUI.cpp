@@ -935,10 +935,10 @@ float4 main(PS_INPUT input) : SV_Target
         return ImGui::InputFloat2(input_float.label.c_str(), &input_float.input.x);
     }
 
-    bool GUISystem::draw_color3_picker(InputFloat3& color)
+    bool GUISystem::draw_input_float3(InputFloat3& input_float)
     {
         // FIXME: is this safe to use this way?
-        return ImGui::ColorPicker3(color.label.c_str(), &color.input.x);
+        return ImGui::InputFloat3(input_float.label.c_str(), &input_float.input.x);
     }
 
     bool GUISystem::draw_input_text(InputText& input_text) 
@@ -973,6 +973,22 @@ float4 main(PS_INPUT input) : SV_Target
     {
         // FIXME: is this safe to use this way?
         return ImGui::SliderFloat2(slider.label.c_str(), &slider.value.x, slider.min, slider.max, slider.format.empty() ? "%.3f" : slider.format.c_str());
+    }
+
+    bool GUISystem::draw_color_edit(ColorEdit& color_edit)
+    {
+        // TODO: have ColorEdit cache the vector format so we don't have to convert every frame?
+        const uint32_t original_color = color_edit.value.value;
+        ImVec4 imgui_color_vec = ImGui::ColorConvertU32ToFloat4(original_color);
+        ImVec4 swizzled_color(imgui_color_vec.w, imgui_color_vec.z, imgui_color_vec.y, imgui_color_vec.x);
+        if (ImGui::ColorEdit4(color_edit.label.c_str(), &swizzled_color.x) == true)
+        {
+            imgui_color_vec = ImVec4(swizzled_color.w, swizzled_color.z, swizzled_color.y, swizzled_color.x);
+            color_edit.value.value = ImGui::ColorConvertFloat4ToU32(imgui_color_vec);
+            return true;
+        }
+
+        return false;
     }
 
     bool GUISystem::draw_button(const Button& button)

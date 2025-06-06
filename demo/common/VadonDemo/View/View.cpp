@@ -18,6 +18,7 @@ namespace VadonDemo::View
 		ViewResource::register_resource();
 		Shape::register_resource();
 		Sprite::register_resource();
+		BackgroundSprite::register_resource();
 
 		ViewComponent::register_component();
 	}
@@ -153,6 +154,10 @@ namespace VadonDemo::View
 			else if (resource_info.type_id == Vadon::Utilities::TypeRegistry::get_type_id<Sprite>())
 			{
 				update_sprite_resource(SpriteResourceHandle::from_resource_handle(resource_handle), *resource);
+			}
+			else if (resource_info.type_id == Vadon::Utilities::TypeRegistry::get_type_id<BackgroundSprite>())
+			{
+
 			}
 		}
 		else
@@ -290,11 +295,14 @@ namespace VadonDemo::View
 		case ShapeType::TRIANGLE:
 		{
 			Vadon::Render::Canvas::Triangle triangle;
-			triangle.color = Vadon::Render::Canvas::ColorRGBA(shape->color, 1.0f);
+			triangle.points[0].position = {0, 0.5f};
+			triangle.points[0].color = shape->color;
 
-			triangle.point_a.position = { 0, 0.5f };
-			triangle.point_b.position = { 0.5f, -0.5f };
-			triangle.point_c.position = { -0.5f, -0.5f };
+			triangle.points[1].position = { 0.5f, -0.5f };
+			triangle.points[1].color = shape->color;
+
+			triangle.points[2].position = { -0.5f, -0.5f };
+			triangle.points[2].color = shape->color;
 
 			canvas_system.draw_batch_triangle(shape_canvas_resource.batch, triangle);
 			shape_canvas_resource.batch_range.count = 1;
@@ -303,7 +311,7 @@ namespace VadonDemo::View
 		case ShapeType::RECTANGLE:
 		{
 			Vadon::Render::Canvas::Rectangle box_rectangle;
-			box_rectangle.color = Vadon::Render::Canvas::ColorRGBA(shape->color, 1.0f);
+			box_rectangle.color = shape->color;
 			box_rectangle.dimensions.size = { 1.0f, 1.0f };
 			box_rectangle.filled = true;
 
@@ -314,17 +322,20 @@ namespace VadonDemo::View
 		case ShapeType::DIAMOND:
 		{
 			Vadon::Render::Canvas::Triangle diamond_half_triangle;
-			diamond_half_triangle.color = Vadon::Render::Canvas::ColorRGBA(shape->color, 1.0f);
-
-			diamond_half_triangle.point_a.position = { 0, 1.0f };
-			diamond_half_triangle.point_b.position = { 1.0f, 0 };
-			diamond_half_triangle.point_c.position = { -1.0f, 0 };
+			diamond_half_triangle.points[0].position = { 0, 1.0f };
+			diamond_half_triangle.points[1].position = { 1.0f, 0 };
+			diamond_half_triangle.points[2].position = { -1.0f, 0 };
+			
+			for (size_t triangle_index = 0; triangle_index < 3; ++triangle_index)
+			{
+				diamond_half_triangle.points[triangle_index].color = shape->color;
+			}
 
 			canvas_system.draw_batch_triangle(shape_canvas_resource.batch, diamond_half_triangle);
 
-			diamond_half_triangle.point_a.position = { -1.0f, 0 };
-			diamond_half_triangle.point_b.position = { 1.0f, 0 };
-			diamond_half_triangle.point_c.position = { 0, -1.0f };
+			diamond_half_triangle.points[0].position = { -1.0f, 0 };
+			diamond_half_triangle.points[1].position = { 1.0f, 0 };
+			diamond_half_triangle.points[2].position = { 0, -1.0f };
 
 			canvas_system.draw_batch_triangle(shape_canvas_resource.batch, diamond_half_triangle);
 			shape_canvas_resource.batch_range.count = 2;
@@ -358,14 +369,54 @@ namespace VadonDemo::View
 			return;
 		}
 
-		sprite_canvas_resource.batch_range.count = 1;
+		sprite_canvas_resource.batch_range.count = 2;
 
 		Vadon::Render::Canvas::Sprite canvas_sprite;
 		canvas_sprite.dimensions.size = Vadon::Utilities::Vector2_One;
 		canvas_sprite.uv_dimensions.size = Vadon::Utilities::Vector2_One;
-		canvas_sprite.texture_view_handle = sprite->texture_srv;
-		canvas_sprite.color = Vadon::Render::Canvas::ColorRGBA{ 1.0f, 1.0f, 1.0f, 1.0f };
+		canvas_sprite.color = Vadon::Utilities::Color_White;
 
+		canvas_system.set_batch_texture(sprite_canvas_resource.batch, Vadon::Render::Canvas::Texture{ .srv = sprite->texture_srv });
+		canvas_system.draw_batch_sprite(sprite_canvas_resource.batch, canvas_sprite);
+	}
+
+	View::CanvasResource& View::add_background_sprite_resource(BackgroundSpriteResourceHandle sprite_handle)
+	{
+		CanvasResource& canvas_resource = add_canvas_resource(ViewResourceHandle::from_resource_handle(sprite_handle));
+		update_background_sprite_resource(sprite_handle, canvas_resource);
+
+		return canvas_resource;
+	}
+
+	void View::update_background_sprite_resource(BackgroundSpriteResourceHandle sprite_handle, CanvasResource& sprite_canvas_resource)
+	{
+		Vadon::Core::EngineCoreInterface& engine_core = m_core.get_engine_core();
+		Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
+		const BackgroundSprite* background_sprite = resource_system.get_resource(sprite_handle);
+
+		Vadon::Render::Canvas::CanvasSystem& canvas_system = engine_core.get_system<Vadon::Render::Canvas::CanvasSystem>();
+		canvas_system.clear_batch(sprite_canvas_resource.batch);
+
+		sprite_canvas_resource.batch_range.offset = static_cast<int32_t>(canvas_system.get_batch_buffer_size(sprite_canvas_resource.batch));
+		if (background_sprite->texture_srv.is_valid() == false)
+		{
+			// Nothing to draw
+			sprite_canvas_resource.batch_range.count = 0;
+			return;
+		}
+
+		// TODO: view needs to track the camera
+		// Use camera to determine how the background sprite needs to be drawn
+		// If the required "tiles" are different, redraw the canvas batch
+
+		sprite_canvas_resource.batch_range.count = 2;
+
+		Vadon::Render::Canvas::Sprite canvas_sprite;
+		canvas_sprite.dimensions.size = Vadon::Utilities::Vector2_One;
+		canvas_sprite.uv_dimensions.size = Vadon::Utilities::Vector2_One;
+		canvas_sprite.color = Vadon::Utilities::Color_White;
+
+		canvas_system.set_batch_texture(sprite_canvas_resource.batch, Vadon::Render::Canvas::Texture{ .srv = background_sprite->texture_srv });
 		canvas_system.draw_batch_sprite(sprite_canvas_resource.batch, canvas_sprite);
 	}
 

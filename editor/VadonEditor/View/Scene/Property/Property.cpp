@@ -130,8 +130,7 @@ namespace VadonEditor::View
 
 		bool render(VadonApp::UI::Developer::GUISystem& dev_gui) override
 		{
-			// FIXME: allow simple Vec3 input!
-			if (dev_gui.draw_color3_picker(m_input) == true)
+			if (dev_gui.draw_input_float3(m_input) == true)
 			{
 				m_property.value = m_input.input;
 				return true;
@@ -142,6 +141,31 @@ namespace VadonEditor::View
 		void value_updated() override { m_input.input = std::get<Vadon::Utilities::Vector3>(m_property.value); }
 	private:
 		UI::Developer::InputFloat3 m_input;
+	};
+
+	class ColorPropertyEditor final : public PropertyEditor
+	{
+	public:
+		ColorPropertyEditor(const Vadon::Utilities::Property& model_property)
+			: PropertyEditor(model_property)
+		{
+			m_input.label = model_property.name; // TODO: parse name to create a more readable label?
+			m_input.value = std::get<Vadon::Utilities::ColorRGBA>(model_property.value);
+		}
+
+		bool render(VadonApp::UI::Developer::GUISystem& dev_gui) override
+		{
+			if (dev_gui.draw_color_edit(m_input) == true)
+			{
+				m_property.value = m_input.value;
+				return true;
+			}
+			return false;
+		}
+	protected:
+		void value_updated() override { m_input.value = std::get<Vadon::Utilities::ColorRGBA>(m_property.value); }
+	private:
+		UI::Developer::ColorEdit m_input;
 	};
 
 	class StringPropertyEditor final : public PropertyEditor
@@ -321,6 +345,8 @@ namespace VadonEditor::View
 				return Instance(new Float2PropertyEditor(model_property));
 			case variant_type_list_index_v<Vadon::Utilities::Vector3>:
 				return Instance(new Float3PropertyEditor(model_property));
+			case variant_type_list_index_v<Vadon::Utilities::ColorRGBA>:
+				return Instance(new ColorPropertyEditor(model_property));
 			case variant_type_list_index_v<std::string>:
 				return Instance(new StringPropertyEditor(model_property));
 			}

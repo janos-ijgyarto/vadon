@@ -89,6 +89,7 @@ namespace VadonApp::Private::UI::Developer::ImGUI
 		bool draw_input_int2(InputInt2& input_int) override;
 		bool draw_input_float(InputFloat& input_float) override;
 		bool draw_input_float2(InputFloat2& input_float) override;
+		bool draw_input_float3(InputFloat3& input_float) override;
 
 		bool draw_input_text(InputText& input_text) override;
 
@@ -97,7 +98,7 @@ namespace VadonApp::Private::UI::Developer::ImGUI
 		bool draw_slider_float(SliderFloat& slider) override;
 		bool draw_slider_float2(SliderFloat2& slider) override;
 
-		bool draw_color3_picker(InputFloat3& color) override;
+		bool draw_color_edit(ColorEdit& color) override;
 
 		bool draw_button(const Button& button) override;
 

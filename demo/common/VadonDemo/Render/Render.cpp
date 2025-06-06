@@ -34,7 +34,7 @@ namespace VadonDemo::Render
 	void Render::register_types()
 	{
 		CanvasLayerDefinition::register_resource();
-		FullscreenEffect::register_resource();
+		ShaderResource::register_resource();
 
 		CanvasComponent::register_component();
 		FullscreenEffectComponent::register_component();
@@ -50,7 +50,7 @@ namespace VadonDemo::Render
 		return m_context_pool.get(context_handle).render_context;
 	}
 
-	void Render::init_entity(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle entity, CanvasContextHandle context_handle)
+	void Render::init_canvas_entity(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle entity, CanvasContextHandle context_handle)
 	{
 		VADON_ASSERT(context_handle.is_valid(), "Must provide valid canvas context!"); 
 		CanvasComponent* canvas_component = ecs_world.get_component_manager().get_component<CanvasComponent>(entity);
@@ -65,7 +65,7 @@ namespace VadonDemo::Render
 		canvas_component->canvas_item = canvas_system.create_item(Vadon::Render::Canvas::ItemInfo{ .layer = context_layer, .z_order = canvas_component->z_order });
 	}
 		
-	void Render::update_entity(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle entity)
+	void Render::update_canvas_entity(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle entity)
 	{
 		CanvasComponent* canvas_component = ecs_world.get_component_manager().get_component<CanvasComponent>(entity);
 		if (canvas_component == nullptr)
@@ -87,7 +87,7 @@ namespace VadonDemo::Render
 		canvas_system.set_item_z_order(canvas_component->canvas_item, canvas_component->z_order);
 	}
 
-	void Render::remove_entity(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle entity)
+	void Render::remove_canvas_entity(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle entity)
 	{
 		CanvasComponent* canvas_component = ecs_world.get_component_manager().get_component<CanvasComponent>(entity);
 		if (canvas_component == nullptr)
@@ -129,6 +129,43 @@ namespace VadonDemo::Render
 				}
 			}
 		}
+	}
+
+	void Render::init_fullscreen_effect_entity(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle entity)
+	{
+		FullscreenEffectComponent* fullscreen_component = ecs_world.get_component_manager().get_component<FullscreenEffectComponent>(entity);
+		VADON_ASSERT(fullscreen_component != nullptr, "Entity does not have fullscreen component!");
+
+		// TODO: anything?
+	}
+
+	void Render::update_fullscreen_effect_entity(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle entity)
+	{
+		FullscreenEffectComponent* fullscreen_component = ecs_world.get_component_manager().get_component<FullscreenEffectComponent>(entity);
+		if (fullscreen_component == nullptr)
+		{
+			return;
+		}
+
+		VADON_ASSERT(fullscreen_component->shader.is_valid() == true, "Component must have valid shader!");
+
+		// TODO: anything to do?
+	}
+
+	void Render::remove_fullscreen_effect_entity(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle entity)
+	{
+		FullscreenEffectComponent* fullscreen_component = ecs_world.get_component_manager().get_component<FullscreenEffectComponent>(entity);
+		if (fullscreen_component == nullptr)
+		{
+			return;
+		}
+
+		if (fullscreen_component->shader.is_valid() == false)
+		{
+			return;
+		}
+
+		// TODO: implement refcounting where if the shader is no longer referenced, we unload it
 	}
 
 	TextureResource Render::load_texture_resource(const Vadon::Core::FileSystemPath& path) const
@@ -184,7 +221,7 @@ namespace VadonDemo::Render
 		return resource_data;
 	}
 
-	Vadon::Render::ShaderHandle Render::load_fullscreen_shader(const Vadon::Core::FileSystemPath& path) const
+	Vadon::Render::ShaderHandle Render::load_shader(const Vadon::Core::FileSystemPath& path) const
 	{
 		// FIXME: accept other extensions!
 		std::filesystem::path shader_fs_path = path.path;
@@ -208,9 +245,11 @@ namespace VadonDemo::Render
 		Vadon::Render::ShaderSystem& shader_system = engine_core.get_system<Vadon::Render::ShaderSystem>();
 		Vadon::Render::ShaderInfo shader_info;
 
+		// TODO: at the moment we always expect a pixel shader in this exact format
+		// Need to extend API to support shader files in general!
 		shader_info.name = shader_fs_path.stem().string();
 		shader_info.entrypoint = "ps_main";
-		shader_info.type = Vadon::Render::ShaderType::VERTEX;
+		shader_info.type = Vadon::Render::ShaderType::PIXEL;
 		shader_info.source = reinterpret_cast<const char*>(shader_file_buffer.data());
 
 		return shader_system.create_shader(shader_info);

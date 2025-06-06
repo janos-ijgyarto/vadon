@@ -4,44 +4,42 @@
 #include <Vadon/Private/Render/Utilities/Vector.hpp>
 namespace Vadon::Private::Render::Canvas
 {
-	using ColorRGBA = Vadon::Render::Canvas::ColorRGBA;
-	using PrimitiveBase = Vadon::Render::Canvas::PrimitiveBase;
 	using Triangle = Vadon::Render::Canvas::Triangle;
 	using Rectangle = Vadon::Render::Canvas::Rectangle;
+	using Texture = Vadon::Render::Canvas::Texture;
 	using Sprite = Vadon::Render::Canvas::Sprite;
 	using SpriteList = Vadon::Render::Canvas::SpriteList;
-	using TextInfo = Vadon::Render::Canvas::TextInfo;
 
 	enum class PrimitiveType : uint32_t
 	{
 		TRIANGLE,
 		RECTANGLE_FILL,
 		RECTANGLE_OUTLINE,
+		SPRITE,
 		INVALID
 	};
 
-	// FIXME: could embed type index in vertex index, and bind the buffer with offsets if we exceed index limit
+	// TODO: might be easier to just use a union?
 	struct PrimitiveInfo
 	{
 		PrimitiveType type = PrimitiveType::INVALID;
 		uint32_t layer = 0;
-		// TODO: other info?
+		uint32_t material = 0;
 
-		static constexpr uint32_t c_layer_index_width = 24;
+		static constexpr uint32_t c_layer_index_width = 8;
+		static constexpr uint32_t c_material_index_width = 16;
+
 		static constexpr uint32_t c_layer_index_mask = (1 << c_layer_index_width) - 1;
+		static constexpr uint32_t c_material_index_mask = (1 << c_material_index_width) - 1;
 
 		constexpr uint32_t to_index() const
 		{
-			uint32_t index = Vadon::Utilities::to_integral(type) << c_layer_index_width;
-			index |= (layer & c_layer_index_mask);
+			uint32_t index = layer & c_layer_index_mask;
+
+			index |= (material & c_material_index_mask) << c_layer_index_width;
+			index |= Vadon::Utilities::to_integral(type) << (c_layer_index_width + c_material_index_width);
 
 			return index;
-		}
-
-		void initialize(uint32_t data)
-		{
-			layer = data & c_layer_index_mask;
-			type = Vadon::Utilities::to_enum<PrimitiveType>(data >> c_layer_index_width);
 		}
 	};
 
@@ -51,40 +49,37 @@ namespace Vadon::Private::Render::Canvas
 		Vector2 uv = { 0, 0 };
 	};
 
+	struct alignas(16) TrianglePrimitiveData
+	{
+		uint32_t info = 0;
+		Vector3u color = { 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF };
+		PrimitiveVertex points[3];
+	};
+
 	struct alignas(16) PrimitiveRectangle
 	{
 		Vector2 position = { 0, 0 };
 		Vector2 size = { 0, 0 };
 	};
 
-	// FIXME: compress primitive data members?
-	struct alignas(16) TrianglePrimitiveData
-	{
-		uint32_t info = 0;
-		uint32_t material = 0;
-		float depth = 0.0f;
-		uint32_t _padding = 0;
-
-		PrimitiveVertex point_a;
-		PrimitiveVertex point_b;
-		PrimitiveVertex point_c;
-
-		// TODO: color per-vertex?
-		ColorRGBA color = { 0, 0, 0, 0 };
-	};
-
-	// TODO: rotatable rectangle?
 	struct alignas(16) RectanglePrimitiveData
 	{
 		uint32_t info = 0;
-		uint32_t material = 0;
-		float depth = 0.0f;
-		float thickness = 0.0f;
+		uint32_t color = 0xFFFFFFFF;
+		float thickness = 1.0f;
+		uint32_t _padding = 0;
+
+		PrimitiveRectangle dimensions;
+	};
+
+	struct alignas(16) SpritePrimitiveData
+	{
+		uint32_t info = 0;
+		uint32_t color = 0xFFFFFFF;
+		Vector2u _padding = { 0, 0 };
 
 		PrimitiveRectangle dimensions;
 		PrimitiveRectangle uv_dimensions;
-
-		ColorRGBA color = { 0, 0, 0, 0 };
 	};
 }
 #endif

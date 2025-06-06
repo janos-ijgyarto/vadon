@@ -53,6 +53,9 @@ namespace Vadon::Private::Render::Canvas
 		void draw_item_rectangle(ItemHandle item_handle, const Rectangle& rectangle) override;
 		void draw_item_sprite(ItemHandle item_handle, const Sprite& sprite) override;
 
+		void set_item_texture(ItemHandle item_handle, const Texture& texture) override;
+		void set_item_material(ItemHandle item_handle, MaterialHandle material_handle) override;
+
 		MaterialHandle create_material(MaterialInfo info) override;
 		bool is_material_valid(MaterialHandle material_handle) const override { return m_material_pool.is_handle_valid(material_handle); }
 		MaterialInfo get_material_info(MaterialHandle material_handle) const override;
@@ -70,6 +73,9 @@ namespace Vadon::Private::Render::Canvas
 		void draw_batch_rectangle(BatchHandle batch_handle, const Rectangle& rectangle) override;
 		void draw_batch_sprite(BatchHandle batch_handle, const Sprite& sprite) override;
 
+		void set_batch_texture(BatchHandle batch_handle, const Texture& texture) override;
+		void set_batch_material(BatchHandle batch_handle, MaterialHandle material_handle) override;
+
 		void render(const RenderContext& context) override;
 	protected:
 		CanvasSystem(Vadon::Core::EngineCoreInterface& core)
@@ -86,8 +92,6 @@ namespace Vadon::Private::Render::Canvas
 		void update_layers();
 		void update_materials();
 		void buffer_frame_data();
-
-		uint32_t get_material_index(const PrimitiveBase& primitive);
 
 		void set_item_layer_dirty(const ItemData& item);
 		void update_layer_items(LayerData& layer);
@@ -124,6 +128,8 @@ namespace Vadon::Private::Render::Canvas
 			std::vector<uint32_t> indices;
 
 			std::vector<PrimitiveBatch> primitive_batches;
+			MaterialHandle current_material;
+			Texture current_texture;
 
 			bool is_valid() const { return primitive_batches.empty() == false; }
 
@@ -131,6 +137,7 @@ namespace Vadon::Private::Render::Canvas
 			{
 				primitive_data.clear();
 				indices.clear();
+				current_material.invalidate();
 
 				primitive_batches.clear();
 			}
@@ -145,6 +152,8 @@ namespace Vadon::Private::Render::Canvas
 				primitive_data.insert(primitive_data.end(), data_ptr, data_ptr + (sizeof(T) / sizeof(Vector4)));
 			}
 		};
+
+		void reset_frame_state();
 
 		Vadon::Utilities::ObjectPool<Vadon::Render::Canvas::Batch, BatchData> m_batch_pool;
 		Vadon::Utilities::ObjectPool<Vadon::Render::Canvas::Item, ItemData> m_item_pool;

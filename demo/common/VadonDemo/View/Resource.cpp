@@ -32,4 +32,15 @@ namespace VadonDemo::View
 
 		TypeRegistry::add_property<Sprite>("texture_path", Vadon::Utilities::MemberVariableBind<&Sprite::texture_path>().bind_member_getter().bind_member_setter());
 	}
+
+	void BackgroundSprite::register_resource()
+	{
+		using ResourceRegistry = Vadon::Scene::ResourceRegistry;
+		using TypeRegistry = Vadon::Utilities::TypeRegistry;
+
+		ResourceRegistry::register_resource_type<BackgroundSprite, Sprite>();
+
+		TypeRegistry::add_property<BackgroundSprite>("repeat", Vadon::Utilities::MemberVariableBind<&BackgroundSprite::repeat>().bind_member_getter().bind_member_setter());
+		TypeRegistry::add_property<BackgroundSprite>("rotate", Vadon::Utilities::MemberVariableBind<&BackgroundSprite::rotate>().bind_member_getter().bind_member_setter());
+	}
 }

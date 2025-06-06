@@ -120,6 +120,7 @@ namespace VadonApp::UI::Developer
 		virtual bool draw_input_int2(InputInt2& input_int) = 0;
 		virtual bool draw_input_float(InputFloat& input_float) = 0;
 		virtual bool draw_input_float2(InputFloat2& input_float) = 0;
+		virtual bool draw_input_float3(InputFloat3& input_float) = 0;
 
 		virtual bool draw_input_text(InputText& input_text) = 0;
 
@@ -129,7 +130,7 @@ namespace VadonApp::UI::Developer
 		virtual bool draw_slider_float(SliderFloat& slider) = 0;
 		virtual bool draw_slider_float2(SliderFloat2& slider) = 0;
 
-		virtual bool draw_color3_picker(InputFloat3& color) = 0;
+		virtual bool draw_color_edit(ColorEdit& color) = 0;
 		
 		virtual bool draw_button(const Button& button) = 0;
 

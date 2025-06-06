@@ -61,6 +61,9 @@ namespace VadonDemo::View
 		CanvasResource& add_sprite_resource(SpriteResourceHandle sprite_handle);
 		void update_sprite_resource(SpriteResourceHandle sprite_handle, CanvasResource& sprite_canvas_resource);
 
+		CanvasResource& add_background_sprite_resource(BackgroundSpriteResourceHandle sprite_handle);
+		void update_background_sprite_resource(BackgroundSpriteResourceHandle sprite_handle, CanvasResource& sprite_canvas_resource);
+
 		void update_entity_transform(const Model::Transform2D* transform, ViewComponent* view_component, Render::CanvasComponent* canvas_component);
 		void update_entity_draw_data(const Model::Transform2D* transform, ViewComponent* view_component, Render::CanvasComponent* canvas_component);
 

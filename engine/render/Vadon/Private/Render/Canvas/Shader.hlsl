@@ -5,19 +5,37 @@
 static const uint c_primitive_type_triangle = 0;
 static const uint c_primitive_type_rectangle_fill = 1;
 static const uint c_primitive_type_rectangle_outline = 2;
+static const uint c_primitive_type_sprite = 3;
 
-static const uint c_layer_index_mask = (1 << 24) - 1;
+static const uint c_layer_index_width = 8;
+static const uint c_material_index_width = 16;
+
+static const uint c_layer_index_mask = (1 << c_layer_index_width) - 1;
+static const uint c_material_index_mask = (1 << c_material_index_width) - 1;
+
+float4 decode_rgba_uint(uint color_uint)
+{
+    float4 color;
+    color.r = (float) (color_uint >> 24) / 255.0f;
+    color.g = (float) ((color_uint >> 16) & 0xFF) / 255.0f;
+    color.b = (float) ((color_uint >> 8) & 0xFF) / 255.0f;
+    color.a = (float) (color_uint & 0xFF) / 255.0f;
+    
+    return color;
+}
 
 struct PrimitiveInfo
 {
     uint type;
     uint layer;
+    uint material;
 };
 
 PrimitiveInfo create_primitive_info(uint data)
 {
     PrimitiveInfo info;
-    info.type = data >> 24;
+    info.type = data >> (c_layer_index_width + c_material_index_width);
+    info.material = (data >> c_layer_index_width) & c_material_index_mask;
     info.layer = data & c_layer_index_mask;
     
     return info;
@@ -81,14 +99,17 @@ struct PS_INPUT
 #define PRIMITIVE_INDEX_DATA_OFFSET_WIDTH 24
 #define PRIMITIVE_OFFSET_MASK ((1 << PRIMITIVE_INDEX_DATA_OFFSET_WIDTH) - 1);
 
-#define PRIMITIVE_TYPE_TRIANGLE 0
-#define PRIMITIVE_TYPE_RECTANGLE_FILL 1
-#define PRIMITIVE_TYPE_RECTANGLE_OUTLINE 2
-
 struct PrimitiveVertex
 { 
     float2 position;
     float2 uv;
+};
+
+struct TrianglePrimitiveData
+{
+    uint info;
+    uint3 color;
+    PrimitiveVertex points[3];
 };
 
 struct PrimitiveRectangle
@@ -97,29 +118,24 @@ struct PrimitiveRectangle
     float2 size;    
 };
 
-struct TrianglePrimitiveData
-{
-    uint info;
-    uint material;
-    float depth;
-    uint _padding;
-    
-    PrimitiveVertex vertices[3];
-
-    float4 color;
-};
-
 struct RectanglePrimitiveData
 {
     uint info;
-    uint material;
-    float depth;
+    uint color;
     float thickness;
-    
+    uint _padding;
+
+    PrimitiveRectangle dimensions;
+};
+
+struct SpritePrimitiveData
+{
+    uint info;
+    uint color;
+    uint2 _padding;
+
     PrimitiveRectangle dimensions;
     PrimitiveRectangle uv_dimensions;
-    
-    float4 color;
 };
 
 uint get_primitive_data_offset(uint index)
@@ -140,8 +156,8 @@ uint get_primitive_vertex_index(uint index)
 
 uint get_material_index(uint index)
 {
-    const float4 data = primitive_buffer[get_primitive_data_offset(index)];
-    return asuint(data.y);
+    const PrimitiveInfo primitive_info = get_primitive_info(index);
+    return primitive_info.material;
 }
 
 TrianglePrimitiveData unpack_triangle_data(uint vertex_index)
@@ -153,18 +169,14 @@ TrianglePrimitiveData unpack_triangle_data(uint vertex_index)
     
     const float4 triangle_data0 = primitive_buffer[triangle_data_offset];
     triangle_data.info = asuint(triangle_data0.x);
-    triangle_data.material = asuint(triangle_data0.y);
-    triangle_data.depth = triangle_data0.z;
-    triangle_data._padding = asuint(triangle_data0.w);
+    triangle_data.color = asuint(triangle_data0.yzw);
     
     for (int i = 0; i < 3; ++i)
     {
         const float4 triangle_vertex_data = primitive_buffer[triangle_data_offset + 1 + i];
-        triangle_data.vertices[i].position = triangle_vertex_data.xy;
-        triangle_data.vertices[i].uv = triangle_vertex_data.zw;
+        triangle_data.points[i].position = triangle_vertex_data.xy;
+        triangle_data.points[i].uv = triangle_vertex_data.zw;
     }
-    
-    triangle_data.color = primitive_buffer[triangle_data_offset + 4];
     
     return triangle_data;
 }
@@ -175,9 +187,9 @@ PS_INPUT get_triangle_vertex(uint vertex_index)
     const uint triangle_vertex_index = get_primitive_vertex_index(vertex_index);
     
     PS_INPUT output;
-    output.pos = float4(triangle_data.vertices[triangle_vertex_index].position, triangle_data.depth, 1);
-    output.uv = float3(triangle_data.vertices[triangle_vertex_index].uv, 0);
-    output.col = triangle_data.color;
+    output.pos = float4(triangle_data.points[triangle_vertex_index].position, 0, 1);
+    output.uv = float3(triangle_data.points[triangle_vertex_index].uv, 0);
+    output.col = decode_rgba_uint(triangle_data.color[triangle_vertex_index]);
     
     return output;
 }
@@ -191,21 +203,38 @@ RectanglePrimitiveData unpack_rectangle_data(uint vertex_index)
     
     const float4 rectangle_data0 = primitive_buffer[rectangle_data_offset];
     rectangle_data.info = asuint(rectangle_data0.x);
-    rectangle_data.material = asuint(rectangle_data0.y);
-    rectangle_data.depth = rectangle_data0.z;
-    rectangle_data.thickness = rectangle_data0.w;
+    rectangle_data.color = asuint(rectangle_data0.y);
+    rectangle_data.thickness = rectangle_data0.z;
+    rectangle_data._padding = asuint(rectangle_data0.w);
     
     const float4 rectangle_data1 = primitive_buffer[rectangle_data_offset + 1];
     rectangle_data.dimensions.position = rectangle_data1.xy;
     rectangle_data.dimensions.size = rectangle_data1.zw;
-    
-    const float4 rectangle_data2 = primitive_buffer[rectangle_data_offset + 2];
-    rectangle_data.uv_dimensions.position  = rectangle_data2.xy;
-    rectangle_data.uv_dimensions.size = rectangle_data2.zw;
-    
-    rectangle_data.color = primitive_buffer[rectangle_data_offset + 3];
 
     return rectangle_data;
+}
+
+SpritePrimitiveData unpack_sprite_data(uint vertex_index)
+{
+    SpritePrimitiveData sprite_data;
+    
+    // Extract all the parts from the buffer
+    const uint sprite_data_offset = get_primitive_data_offset(vertex_index);
+    
+    const float4 sprite_data0 = primitive_buffer[sprite_data_offset];
+    sprite_data.info = asuint(sprite_data0.x);
+    sprite_data.color = asuint(sprite_data0.y);
+    sprite_data._padding = asuint(sprite_data0.zw);
+    
+    const float4 sprite_data1 = primitive_buffer[sprite_data_offset + 1];
+    sprite_data.dimensions.position = sprite_data1.xy;
+    sprite_data.dimensions.size = sprite_data1.zw;
+    
+    const float4 sprite_data2 = primitive_buffer[sprite_data_offset + 2];
+    sprite_data.uv_dimensions.position = sprite_data2.xy;
+    sprite_data.uv_dimensions.size = sprite_data2.zw;
+
+    return sprite_data;
 }
 
 static const float2 c_rectangle_offsets[] = { float2(-1, 1), float2(1, 1), float2(-1, -1), float2(1, -1) };
@@ -217,13 +246,12 @@ PS_INPUT get_rectangle_fill_vertex(uint vertex_index)
     const uint corner_index = get_primitive_vertex_index(vertex_index);
     
     // TODO: add logic so sprites can also be rotated, mirrored, etc.
-    const float2 corner_position = rectangle_data.dimensions.position + (rectangle_data.dimensions.size * 0.5f * c_rectangle_offsets[corner_index]);    
-    const float2 corner_uv = rectangle_data.uv_dimensions.position + (rectangle_data.uv_dimensions.size * c_rectangle_uv_offsets[corner_index]);
+    const float2 corner_position = rectangle_data.dimensions.position + (rectangle_data.dimensions.size * 0.5f * c_rectangle_offsets[corner_index]);
     
     PS_INPUT output;
-    output.pos = float4(corner_position, rectangle_data.depth, 1);
-    output.uv = corner_uv;
-    output.col = rectangle_data.color;
+    output.pos = float4(corner_position, 0, 1);
+    output.uv = float2(0, 0);
+    output.col = decode_rgba_uint(rectangle_data.color);
     return output;
 }
 
@@ -238,9 +266,25 @@ PS_INPUT get_rectangle_outline_vertex(uint vertex_index)
     corner_position += c_rectangle_thickness_offsets[corner_index] * rectangle_data.thickness;
     
     PS_INPUT output;
-    output.pos = float4(corner_position, rectangle_data.depth, 1);
-    output.uv = float3(0, 0, 0); // FIXME: allow texturing?
-    output.col = rectangle_data.color;
+    output.pos = float4(corner_position, 0, 1);
+    output.uv = float2(0, 0);
+    output.col = decode_rgba_uint(rectangle_data.color);
+    return output;
+}
+
+PS_INPUT get_sprite_vertex(uint vertex_index)
+{
+    const SpritePrimitiveData sprite_data = unpack_sprite_data(vertex_index);
+    const uint corner_index = get_primitive_vertex_index(vertex_index);
+    
+    // TODO: add logic so sprites can also be rotated, mirrored, etc.
+    const float2 corner_position = sprite_data.dimensions.position + (sprite_data.dimensions.size * 0.5f * c_rectangle_offsets[corner_index]);
+    const float2 corner_uv = sprite_data.uv_dimensions.position + (sprite_data.uv_dimensions.size * c_rectangle_uv_offsets[corner_index]);
+    
+    PS_INPUT output;
+    output.pos = float4(corner_position, 0, 1);
+    output.uv = corner_uv;
+    output.col = decode_rgba_uint(sprite_data.color);
     return output;
 }
 
@@ -259,6 +303,9 @@ PS_INPUT vs_main(uint vertex_index : SV_VertexID)
             break;
         case c_primitive_type_rectangle_outline:
             output = get_rectangle_outline_vertex(vertex_index);
+            break;
+        case c_primitive_type_sprite:
+            output = get_sprite_vertex(vertex_index);
             break;
         default:
             {

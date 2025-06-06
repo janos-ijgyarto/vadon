@@ -247,6 +247,11 @@ namespace VadonApp::Private::UI::Developer::Null
         return false;
     }
 
+    bool GUISystem::draw_input_float3(InputFloat3& /*input_float*/)
+    {
+        return false;
+    }
+
     bool GUISystem::draw_input_text(InputText& /*input_text*/)
     {
         // TODO!!!
@@ -277,7 +282,7 @@ namespace VadonApp::Private::UI::Developer::Null
         return false;
     }
 
-    bool GUISystem::draw_color3_picker(InputFloat3& /*color*/)
+    bool GUISystem::draw_color_edit(ColorEdit& /*color*/)
     {
         return false;
     }

@@ -82,6 +82,7 @@ namespace Vadon::Private::Render::Canvas
 			case PrimitiveType::TRIANGLE:
 				return 3;
 			case PrimitiveType::RECTANGLE_FILL:
+			case PrimitiveType::SPRITE:
 				return 6;
 			case PrimitiveType::RECTANGLE_OUTLINE:
 				return 24;
@@ -100,6 +101,7 @@ namespace Vadon::Private::Render::Canvas
 				return c_triangle_indices[index];
 			}
 			case PrimitiveType::RECTANGLE_FILL:
+			case PrimitiveType::SPRITE:
 			{
 				constexpr std::array<uint32_t, get_primitive_index_count(PrimitiveType::RECTANGLE_FILL)> c_rect_indices{ 0, 1, 2, 1, 3, 2 };
 				return c_rect_indices[index];
@@ -120,9 +122,9 @@ namespace Vadon::Private::Render::Canvas
 			return 0;
 		}
 
-		uint32_t get_primitive_info(const ItemData& item, PrimitiveType type)
+		uint32_t get_primitive_info(const ItemData& item, PrimitiveType type, MaterialHandle material)
 		{
-			return PrimitiveInfo{ .type = type, .layer = item.info.layer.handle.index }.to_index();
+			return PrimitiveInfo{ .type = type, .layer = item.info.layer.handle.index, .material = material.handle.index }.to_index();
 		}
 
 		using ItemTriangleCommand = ItemDirectDrawCommand<Triangle, BatchCommandType::TRIANGLE>;
@@ -329,6 +331,18 @@ namespace Vadon::Private::Render::Canvas
 		item.command_buffer.write_object(Vadon::Utilities::to_integral(ItemCommandType::DRAW_DIRECT), ItemSpriteCommand(sprite));
 	}
 
+	void CanvasSystem::set_item_texture(ItemHandle item_handle, const Texture& texture)
+	{
+		ItemData& item = m_item_pool.get(item_handle);
+		item.command_buffer.write_object(Vadon::Utilities::to_integral(ItemCommandType::SET_TEXTURE), ItemSetTextureCommand(texture));
+	}
+
+	void CanvasSystem::set_item_material(ItemHandle item_handle, MaterialHandle material_handle)
+	{
+		ItemData& item = m_item_pool.get(item_handle);
+		item.command_buffer.write_object(Vadon::Utilities::to_integral(ItemCommandType::SET_MATERIAL), ItemSetMaterialCommand(material_handle));
+	}
+
 	MaterialHandle CanvasSystem::create_material(MaterialInfo info)
 	{
 		MaterialHandle new_material_handle = m_material_pool.add();
@@ -400,6 +414,18 @@ namespace Vadon::Private::Render::Canvas
 	{
 		BatchData& batch = m_batch_pool.get(batch_handle);
 		batch.command_buffer.write_object(Vadon::Utilities::to_integral(BatchCommandType::SPRITE), sprite);
+	}
+
+	void CanvasSystem::set_batch_texture(BatchHandle batch_handle, const Texture& texture)
+	{
+		BatchData& batch = m_batch_pool.get(batch_handle);
+		batch.command_buffer.write_object(Vadon::Utilities::to_integral(BatchCommandType::SET_TEXTURE), BatchSetTextureCommand{ .texture = texture });
+	}
+
+	void CanvasSystem::set_batch_material(BatchHandle batch_handle, MaterialHandle material_handle)
+	{
+		BatchData& batch = m_batch_pool.get(batch_handle);
+		batch.command_buffer.write_object(Vadon::Utilities::to_integral(BatchCommandType::SET_TEXTURE), BatchSetMaterialCommand{ .material = material_handle });
 	}
 
 	void CanvasSystem::render(const RenderContext& context)
@@ -823,17 +849,16 @@ namespace Vadon::Private::Render::Canvas
 				const Triangle& triangle = *reinterpret_cast<const Triangle*>(command_data);
 
 				// Add command
-				canvas_system.m_frame_data.add_command(PrimitiveType::TRIANGLE, Vadon::Render::SRVHandle());
+				canvas_system.m_frame_data.add_command(PrimitiveType::TRIANGLE, canvas_system.m_frame_data.current_texture.srv);
 
 				// Generate primitive data, offset with position
 				TrianglePrimitiveData triangle_primitive;
-				triangle_primitive.info = get_primitive_info(item_data, PrimitiveType::TRIANGLE);
-				triangle_primitive.material = canvas_system.get_material_index(triangle);
-				triangle_primitive.point_a = PrimitiveVertex{ .position = (triangle.point_a.position * transform.scale) + transform.position, .uv = triangle.point_a.uv };
-				triangle_primitive.point_b = PrimitiveVertex{ .position = (triangle.point_b.position * transform.scale) + transform.position, .uv = triangle.point_b.uv };
-				triangle_primitive.point_c = PrimitiveVertex{ .position = (triangle.point_c.position * transform.scale) + transform.position, .uv = triangle.point_c.uv };
-				triangle_primitive.depth = 0.0f; // TODO: depth?
-				triangle_primitive.color = triangle.color;
+				triangle_primitive.info = get_primitive_info(item_data, PrimitiveType::TRIANGLE, canvas_system.m_frame_data.current_material);
+				for (size_t vertex = 0; vertex < 3; ++vertex)
+				{
+					triangle_primitive.points[vertex] = PrimitiveVertex{ .position = (triangle.points[vertex].position * transform.scale) + transform.position, .uv = triangle.points[vertex].uv};
+					triangle_primitive.color[vertex] = triangle.points[vertex].color.value;
+				}
 
 				canvas_system.m_frame_data.add_primitive_data(triangle_primitive);
 			}
@@ -844,18 +869,14 @@ namespace Vadon::Private::Render::Canvas
 
 				// Add command
 				const PrimitiveType rectangle_type = rectangle.filled ? PrimitiveType::RECTANGLE_FILL : PrimitiveType::RECTANGLE_OUTLINE;
-				canvas_system.m_frame_data.add_command(rectangle_type, Vadon::Render::SRVHandle());
+				canvas_system.m_frame_data.add_command(rectangle_type, canvas_system.m_frame_data.current_texture.srv);
 
 				RectanglePrimitiveData rectangle_primitive;
-				rectangle_primitive.info = get_primitive_info(item_data, rectangle_type);
-				rectangle_primitive.material = canvas_system.get_material_index(rectangle);
+				rectangle_primitive.info = get_primitive_info(item_data, rectangle_type, canvas_system.m_frame_data.current_material);
 				rectangle_primitive.dimensions.position = (rectangle.dimensions.position * transform.scale) + transform.position;
 				rectangle_primitive.dimensions.size = rectangle.dimensions.size * transform.scale;
-				rectangle_primitive.uv_dimensions.position = Vadon::Utilities::Vector2_Zero;
-				rectangle_primitive.uv_dimensions.size = Vadon::Utilities::Vector2_One;
-				rectangle_primitive.depth = 0.0f; // TODO: depth?
 				rectangle_primitive.thickness = rectangle.thickness;
-				rectangle_primitive.color = rectangle.color;
+				rectangle_primitive.color = rectangle.color.value;
 
 				canvas_system.m_frame_data.add_primitive_data(rectangle_primitive);
 			}
@@ -864,20 +885,29 @@ namespace Vadon::Private::Render::Canvas
 			{
 				const Sprite& sprite = *reinterpret_cast<const Sprite*>(command_data);
 
-				canvas_system.m_frame_data.add_command(PrimitiveType::RECTANGLE_FILL, sprite.texture_view_handle);
+				canvas_system.m_frame_data.add_command(PrimitiveType::SPRITE, canvas_system.m_frame_data.current_texture.srv);
 
-				RectanglePrimitiveData rectangle_primitive;
-				rectangle_primitive.info = get_primitive_info(item_data, PrimitiveType::RECTANGLE_FILL);
-				rectangle_primitive.material = canvas_system.get_material_index(sprite);
-				rectangle_primitive.dimensions.position = (sprite.dimensions.position * transform.scale) + transform.position;
-				rectangle_primitive.dimensions.size = sprite.dimensions.size * transform.scale;
-				rectangle_primitive.uv_dimensions.position = sprite.uv_dimensions.position;
-				rectangle_primitive.uv_dimensions.size = sprite.uv_dimensions.size;
-				rectangle_primitive.depth = 0.0f; // TODO: depth?
-				rectangle_primitive.thickness = 0.0f;
-				rectangle_primitive.color = sprite.color;
+				SpritePrimitiveData sprite_primitive;
+				sprite_primitive.info = get_primitive_info(item_data, PrimitiveType::SPRITE, canvas_system.m_frame_data.current_material);
+				sprite_primitive.dimensions.position = (sprite.dimensions.position * transform.scale) + transform.position;
+				sprite_primitive.dimensions.size = sprite.dimensions.size * transform.scale;
+				sprite_primitive.uv_dimensions.position = sprite.uv_dimensions.position;
+				sprite_primitive.uv_dimensions.size = sprite.uv_dimensions.size;
+				sprite_primitive.color = sprite.color.value;
 
-				canvas_system.m_frame_data.add_primitive_data(rectangle_primitive);
+				canvas_system.m_frame_data.add_primitive_data(sprite_primitive);
+			}
+			break;
+			case BatchCommandType::SET_TEXTURE:
+			{
+				const BatchSetTextureCommand* set_texture = reinterpret_cast<const BatchSetTextureCommand*>(command_data);
+				canvas_system.m_frame_data.current_texture = set_texture->texture;
+			}
+			break;
+			case BatchCommandType::SET_MATERIAL:
+			{
+				const BatchSetMaterialCommand* set_material = reinterpret_cast<const BatchSetMaterialCommand*>(command_data);
+				canvas_system.m_frame_data.current_material = set_material->material;
 			}
 			break;
 			}
@@ -913,6 +943,9 @@ namespace Vadon::Private::Render::Canvas
 				{
 					continue;
 				}
+
+				// On each item, reset the render state (material, texture, etc.)
+				reset_frame_state();
 				
 				ItemCommandBuffer::Iterator item_command_it = current_item_data.command_buffer.get_iterator();
 				for(item_command_it; item_command_it.is_valid() == true; item_command_it.advance())
@@ -933,6 +966,18 @@ namespace Vadon::Private::Render::Canvas
 						// First value is the command type
 						const uint32_t command_type_int = *reinterpret_cast<const uint32_t*>(batch_command_ptr);
 						parse_batch_command(*this, current_item_data, current_item_data.info.transform, Vadon::Utilities::to_enum<BatchCommandType>(command_type_int), batch_command_ptr + sizeof(uint32_t));
+					}
+					break;
+					case ItemCommandType::SET_TEXTURE:
+					{
+						const ItemSetTextureCommand* set_texture = reinterpret_cast<const ItemSetTextureCommand*>(item_command_it.get_packet_data());
+						m_frame_data.current_texture = set_texture->texture;
+					}
+					break;
+					case ItemCommandType::SET_MATERIAL:
+					{
+						const ItemSetMaterialCommand* set_material = reinterpret_cast<const ItemSetMaterialCommand*>(item_command_it.get_packet_data());
+						m_frame_data.current_material = set_material->material;
 					}
 					break;
 					}
@@ -1058,11 +1103,6 @@ namespace Vadon::Private::Render::Canvas
 		}
 	}
 
-	uint32_t CanvasSystem::get_material_index(const PrimitiveBase& primitive)
-	{
-		return primitive.material.is_valid() == true ? primitive.material.handle.index : m_default_material.handle.index;
-	}
-
 	void CanvasSystem::set_item_layer_dirty(const ItemData& item)
 	{
 		if (item.info.layer.is_valid() == true)
@@ -1111,5 +1151,12 @@ namespace Vadon::Private::Render::Canvas
 	LayerHandle CanvasSystem::get_layer_or_default(LayerHandle layer_handle) const
 	{
 		return layer_handle.is_valid() ? layer_handle : get_default_layer();
+	}
+
+	void CanvasSystem::reset_frame_state()
+	{
+		// Reset the material and texture
+		m_frame_data.current_material = m_default_material;
+		m_frame_data.current_texture = Texture();
 	}
 }

@@ -52,6 +52,7 @@ namespace Vadon::Utilities
 			Result serialize_float(float& /*value*/) override { return Result::NOT_IMPLEMENTED; }
 			Result serialize_bool(bool& /*value*/) override { return Result::NOT_IMPLEMENTED; }
 			Result serialize_string(std::string& /*value*/) override { return Result::NOT_IMPLEMENTED; }
+			Result serialize_color(ColorRGBA& /*value*/) override { return Result::NOT_IMPLEMENTED; }
 
 			Result set_value_reference(std::string_view /*key*/) override { return Result::NOT_IMPLEMENTED; }
 			Result set_value_reference(size_t /*index*/) override { return Result::NOT_IMPLEMENTED; }
@@ -254,6 +255,46 @@ namespace Vadon::Utilities
 			Result serialize_float(float& value) override { return serialize_trivial(value); }
 			Result serialize_bool(bool& value) override { return serialize_trivial(value); }
 			Result serialize_string(std::string& value) override { return serialize_trivial(value); }
+
+			Result serialize_color(ColorRGBA& color) override
+			{
+				if (is_reading() == true)
+				{
+					if (m_value_it->is_string() == false)
+					{
+						return Result::INVALID_DATA;
+					}
+
+					const std::string color_string = m_value_it->get<std::string>();
+					if (color_string.front() != '#')
+					{
+						return Result::INVALID_DATA;
+					}
+					
+					const std::string_view hex_substr = std::string_view(color_string).substr(1);
+					if (hex_substr.length() != 8)
+					{
+						return Result::INVALID_DATA;
+					}
+
+					Result result = Result::SUCCESSFUL;
+					try
+					{
+						color.value = std::strtoul(hex_substr.data(), nullptr, 16);
+					}
+					catch (std::exception& e)
+					{
+						Vadon::Core::Logger::log_error(std::format("Serializer error: invalid conversion (\"{}\")", e.what()));
+						result = Result::INVALID_DATA;
+					}
+					return result;
+				}
+				else
+				{
+					std::string color_string = std::format("#{:0>8x}", color.value);
+					return serialize_trivial(color_string);
+				}
+			}
 
 			template<typename T>
 			Result serialize_trivial(T& value)

@@ -43,6 +43,11 @@ namespace Vadon::Render::Canvas
 		virtual void draw_item_rectangle(ItemHandle item_handle, const Rectangle& rectangle) = 0;
 		virtual void draw_item_sprite(ItemHandle item_handle, const Sprite& sprite) = 0;
 
+		// NOTE: this follows a D3D-style pattern of setting "render state" which applies to all subsequent operations
+		// Might need further revision
+		virtual void set_item_texture(ItemHandle item_handle, const Texture& texture) = 0;
+		virtual void set_item_material(ItemHandle item_handle, MaterialHandle material_handle) = 0;
+
 		virtual MaterialHandle create_material(MaterialInfo info) = 0;
 		virtual bool is_material_valid(MaterialHandle material_handle) const = 0;
 		virtual MaterialInfo get_material_info(MaterialHandle material_handle) const = 0;
@@ -61,6 +66,12 @@ namespace Vadon::Render::Canvas
 		virtual void draw_batch_triangle(BatchHandle batch_handle, const Triangle& triangle) = 0;
 		virtual void draw_batch_rectangle(BatchHandle batch_handle, const Rectangle& rectangle) = 0;
 		virtual void draw_batch_sprite(BatchHandle batch_handle, const Sprite& sprite) = 0;
+
+		virtual void set_batch_texture(BatchHandle batch_handle, const Texture& texture) = 0;
+		virtual void set_batch_material(BatchHandle batch_handle, MaterialHandle material_handle) = 0;
+
+		// TODO: add separate function to just process a set of layers into a list of graphics commands
+		// Can then draw them to a provided context (camera + viewports)
 
 		virtual void render(const RenderContext& context) = 0;
 	protected:

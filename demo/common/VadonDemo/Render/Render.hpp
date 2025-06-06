@@ -35,14 +35,18 @@ namespace VadonDemo::Render
 		VADONDEMO_API CanvasContextHandle create_canvas_context();
 		VADONDEMO_API Vadon::Render::Canvas::RenderContext& get_context(CanvasContextHandle context_handle);
 
-		VADONDEMO_API void init_entity(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle entity, CanvasContextHandle context_handle);
-		VADONDEMO_API void update_entity(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle entity);
-		VADONDEMO_API void remove_entity(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle entity);
+		VADONDEMO_API void init_canvas_entity(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle entity, CanvasContextHandle context_handle);
+		VADONDEMO_API void update_canvas_entity(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle entity);
+		VADONDEMO_API void remove_canvas_entity(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle entity);
 
 		VADONDEMO_API void update_layer_definition(CanvasLayerDefHandle layer_def_handle);
 
+		VADONDEMO_API void init_fullscreen_effect_entity(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle entity);
+		VADONDEMO_API void update_fullscreen_effect_entity(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle entity);
+		VADONDEMO_API void remove_fullscreen_effect_entity(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle entity);
+
 		VADONDEMO_API TextureResource load_texture_resource(const Vadon::Core::FileSystemPath& path) const;
-		VADONDEMO_API Vadon::Render::ShaderHandle load_fullscreen_shader(const Vadon::Core::FileSystemPath& path) const;
+		VADONDEMO_API Vadon::Render::ShaderHandle load_shader(const Vadon::Core::FileSystemPath& path) const;
 	private:
 		struct CanvasContextData
 		{

@@ -102,7 +102,7 @@ namespace VadonDemo::Render
         VADON_ASSERT(entity_scene != nullptr, "Cannot find scene!");
 
         const CanvasContextHandle scene_context = get_scene_canvas_context(entity_scene);
-        m_editor.get_core().get_render().init_entity(ecs_world, entity, scene_context);
+        m_editor.get_core().get_render().init_canvas_entity(ecs_world, entity, scene_context);
         set_layers_dirty();
     }
 
@@ -346,7 +346,7 @@ namespace VadonDemo::Render
         VadonEditor::Model::ModelSystem& editor_model = m_editor.get_common_editor().get_system<VadonEditor::Model::ModelSystem>();
         Vadon::ECS::World& ecs_world = editor_model.get_ecs_world();
 
-        m_editor.get_core().get_render().update_entity(ecs_world, entity);
+        m_editor.get_core().get_render().update_canvas_entity(ecs_world, entity);
         set_layers_dirty();
     }
 
@@ -355,7 +355,7 @@ namespace VadonDemo::Render
         VadonEditor::Model::ModelSystem& editor_model = m_editor.get_common_editor().get_system<VadonEditor::Model::ModelSystem>();
         Vadon::ECS::World& ecs_world = editor_model.get_ecs_world();
 
-        m_editor.get_core().get_render().remove_entity(ecs_world, entity);
+        m_editor.get_core().get_render().remove_canvas_entity(ecs_world, entity);
     }
 
     void EditorRender::update_dirty_layers()
@@ -394,7 +394,7 @@ namespace VadonDemo::Render
             const Vadon::Utilities::Vector2& viewport_size = m_editor.get_core().get_global_config().viewport_size;
 
             Vadon::Render::Canvas::Rectangle viewport_rectangle;
-            viewport_rectangle.color = Vadon::Render::Canvas::ColorRGBA{ 0.0f, 0.0f, 1.0f, 1.0f };
+            viewport_rectangle.color = Vadon::Render::ColorRGBA::from_rgba_vector(Vadon::Utilities::ColorVector{ 0.0f, 0.0f, 1.0f, 1.0f });
             viewport_rectangle.dimensions.size = viewport_size;
             viewport_rectangle.thickness = 1.0f;
             viewport_rectangle.filled = false;
