@@ -980,10 +980,8 @@ float4 main(PS_INPUT input) : SV_Target
         // TODO: have ColorEdit cache the vector format so we don't have to convert every frame?
         const uint32_t original_color = color_edit.value.value;
         ImVec4 imgui_color_vec = ImGui::ColorConvertU32ToFloat4(original_color);
-        ImVec4 swizzled_color(imgui_color_vec.w, imgui_color_vec.z, imgui_color_vec.y, imgui_color_vec.x);
-        if (ImGui::ColorEdit4(color_edit.label.c_str(), &swizzled_color.x) == true)
+        if (ImGui::ColorEdit4(color_edit.label.c_str(), &imgui_color_vec.x) == true)
         {
-            imgui_color_vec = ImVec4(swizzled_color.w, swizzled_color.z, swizzled_color.y, swizzled_color.x);
             color_edit.value.value = ImGui::ColorConvertFloat4ToU32(imgui_color_vec);
             return true;
         }

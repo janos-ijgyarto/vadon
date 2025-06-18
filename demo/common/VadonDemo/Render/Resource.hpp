@@ -24,11 +24,18 @@ namespace VadonDemo::Render
 	// TODO: implement resources that actually store texture data
 	// Loading the resource means it's actually "ready" (i.e loaded as a GPU resource),
 	// we don't keep the file data around
-	struct TextureResource
+	struct TextureResource : public Vadon::Scene::Resource
 	{
+		std::string file_path;
+
 		Vadon::Render::TextureHandle texture;
-		Vadon::Render::SRVHandle srv;
+		Vadon::Render::SRVHandle texture_srv;
+
+		static void register_resource();
 	};
+
+	VADON_SCENE_DECLARE_TYPED_RESOURCE_ID(TextureResource, TextureResourceID);
+	VADON_SCENE_DECLARE_TYPED_RESOURCE_HANDLE(TextureResource, TextureResourceHandle);
 
 	// TODO: implement proper shader resources!
 	struct ShaderResource : public Vadon::Scene::Resource

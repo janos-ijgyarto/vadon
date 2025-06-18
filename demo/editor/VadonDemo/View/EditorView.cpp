@@ -20,12 +20,15 @@
 
 #include <Vadon/ECS/World/World.hpp>
 
+#include <Vadon/Render/GraphicsAPI/Resource/ResourceSystem.hpp>
+
 #include <Vadon/Scene/Resource/ResourceSystem.hpp>
 
 namespace VadonDemo::View
 {
     EditorView::EditorView(Core::Editor& editor)
         : m_editor(editor)
+        , m_entities_dirty(false)
     {
 
     }
@@ -92,15 +95,19 @@ namespace VadonDemo::View
         editor_resource_system.register_edit_callback(
             [this, &editor_resource_system](Vadon::Scene::ResourceID resource_id)
             {
+                // TODO: implement a system for tracking resource references!
+                // When it's modified in the editor, we need to know what was previously referenced and de-reference it
+                // Brute-force solution: LUT where resource uses some unique key to track what it referenced previously
+                // - On type registry, also register a function which handles checking references. This is later found using resource ID
+
+                // NOTE: the above is mostly relevant for the Editor where anything can change at any time
+                // In-game a resource will have "static" data, so we can use much simpler reference tracking (each client adds ref to resource, deallocate resource once last client dereferences)
+
                 Vadon::Scene::ResourceSystem& resource_system = m_editor.get_common_editor().get_engine_core().get_system<Vadon::Scene::ResourceSystem>();
                 Vadon::Scene::ResourceHandle resource_handle = resource_system.find_resource(resource_id);
                 VADON_ASSERT(resource_handle.is_valid() == true, "Resource not found!");
 
-                const Vadon::Scene::ResourceInfo resource_info = resource_system.get_resource_info(resource_handle);
-                if (Vadon::Utilities::TypeRegistry::is_base_of(Vadon::Utilities::TypeRegistry::get_type_id<VadonDemo::View::ViewResource>(), resource_info.type_id))
-                {
-                    update_resource(VadonDemo::View::ViewResourceHandle::from_resource_handle(resource_handle));
-                }
+                resource_edited(resource_handle);
             }
         );
 
@@ -109,6 +116,8 @@ namespace VadonDemo::View
 
     void EditorView::update()
     {
+        update_dirty_entities();
+
         VadonEditor::View::ViewModel& view_model = m_editor.get_common_editor().get_system<VadonEditor::View::ViewSystem>().get_view_model();
         VadonEditor::Model::Scene* active_scene = view_model.get_active_scene();
 
@@ -120,6 +129,44 @@ namespace VadonDemo::View
 
         // Control camera per-scene
         update_camera(active_scene);
+    }
+
+    void EditorView::update_dirty_entities()
+    {
+        if (m_entities_dirty == false)
+        {
+            return;
+        }
+
+        m_entities_dirty = false;
+
+        VadonEditor::Core::Editor& common_editor = m_editor.get_common_editor();
+        VadonEditor::Model::ModelSystem& editor_model = common_editor.get_system<VadonEditor::Model::ModelSystem>();
+
+        Vadon::ECS::World& ecs_world = editor_model.get_ecs_world();
+        auto view_query = ecs_world.get_component_manager().run_component_query<ViewComponent&>();
+
+        VadonDemo::View::View& common_view = m_editor.get_core().get_view();
+
+        for (auto view_it = view_query.get_iterator(); view_it.is_valid() == true; view_it.next())
+        {
+            auto view_tuple = view_it.get_tuple();
+            ViewComponent& current_view_component = std::get<ViewComponent&>(view_tuple);
+
+            if (current_view_component.dirty == false)
+            {
+                continue;
+            }
+
+            // Make sure the resource is up-to-date
+            load_view_resource(current_view_component.resource);
+
+            // Attempt to redraw based on resource type
+            common_view.update_entity_draw_data(ecs_world, view_it.get_entity());
+
+            // Unset the flag
+            current_view_component.dirty = false;
+        }
     }
 
     void EditorView::init_entity(Vadon::ECS::EntityHandle entity)
@@ -141,16 +188,8 @@ namespace VadonDemo::View
             return;
         }
 
-        // Make sure the resource is up to date
-        if (view_component->resource.is_valid() == true)
-        {
-            update_resource(view_component->resource);
-        }
-
-        // Make sure render component is initialized
-        m_editor.get_render().init_entity(entity);
-
-        m_editor.get_core().get_view().update_entity_draw_data(ecs_world, entity);
+        view_component->dirty = true;
+        m_entities_dirty = true;
     }
 
     void EditorView::remove_entity(Vadon::ECS::EntityHandle entity)
@@ -161,41 +200,114 @@ namespace VadonDemo::View
         m_editor.get_core().get_view().remove_entity(ecs_world, entity);
     }
 
-    void EditorView::update_resource(VadonDemo::View::ViewResourceHandle resource_handle)
-    {
+    void EditorView::resource_edited(Vadon::Scene::ResourceHandle resource_handle)
+    {        
         Vadon::Scene::ResourceSystem& resource_system = m_editor.get_common_editor().get_engine_core().get_system<Vadon::Scene::ResourceSystem>();
         const Vadon::Scene::ResourceInfo resource_info = resource_system.get_resource_info(resource_handle);
 
-        if (Vadon::Utilities::TypeRegistry::is_base_of(Vadon::Utilities::TypeRegistry::get_type_id<VadonDemo::View::Sprite>(), resource_info.type_id))
+        if (Vadon::Utilities::TypeRegistry::is_base_of(Vadon::Utilities::TypeRegistry::get_type_id<ViewResource>(), resource_info.type_id))
         {
-            load_sprite_resource(VadonDemo::View::SpriteResourceHandle::from_resource_handle(resource_handle));
+            view_resource_edited(ViewResourceHandle::from_resource_handle(resource_handle));
         }
-
-        VadonEditor::Model::ModelSystem& editor_model = m_editor.get_common_editor().get_system<VadonEditor::Model::ModelSystem>();
-        m_editor.get_core().get_view().update_resource(editor_model.get_ecs_world(), resource_handle);
+        else if (resource_info.type_id == Vadon::Utilities::TypeRegistry::get_type_id<VadonDemo::Render::TextureResource>())
+        {
+            texture_resource_edited(VadonDemo::Render::TextureResourceHandle::from_resource_handle(resource_handle));
+        }
     }
 
-    void EditorView::load_sprite_resource(VadonDemo::View::SpriteResourceHandle sprite_handle)
+    void EditorView::view_resource_edited(ViewResourceHandle view_resource)
     {
-        // TODO: implement general system for loading textures as resources!
-        Vadon::Scene::ResourceSystem& resource_system = m_editor.get_common_editor().get_engine_core().get_system<Vadon::Scene::ResourceSystem>();
-        VadonDemo::View::Sprite* sprite_resource = resource_system.get_resource(sprite_handle);
+        // First reset the resource
+        VadonDemo::View::View& common_view = m_editor.get_core().get_view();
+        common_view.reset_resource(view_resource);
 
-        if (sprite_resource->texture_path.empty())
+        // Tag all entities that use this resource
+        VadonEditor::Core::Editor& common_editor = m_editor.get_common_editor();
+        VadonEditor::Model::ModelSystem& editor_model = common_editor.get_system<VadonEditor::Model::ModelSystem>();
+        Vadon::ECS::World& ecs_world = editor_model.get_ecs_world();
+
+        auto view_query = ecs_world.get_component_manager().run_component_query<ViewComponent&, VadonDemo::Render::CanvasComponent&>();
+
+        for (auto view_it = view_query.get_iterator(); view_it.is_valid() == true; view_it.next())
         {
-            sprite_resource->texture_srv.invalidate();
+            auto view_tuple = view_it.get_tuple();
+            ViewComponent& current_view_component = std::get<ViewComponent&>(view_tuple);
+
+            if (current_view_component.resource != view_resource)
+            {
+                continue;
+            }
+
+            current_view_component.dirty = true;
+            m_entities_dirty = true;
+        }
+    }
+
+    void EditorView::texture_resource_edited(VadonDemo::Render::TextureResourceHandle texture_handle)
+    {
+        // Run a query to find all entities that use this texture
+        // Tag as "dirty" so they get updated
+        VadonEditor::Core::Editor& common_editor = m_editor.get_common_editor();
+        Vadon::Core::EngineCoreInterface& engine_core = common_editor.get_engine_core();
+        Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
+
+        VadonDemo::View::View& common_view = m_editor.get_core().get_view();
+
+        VadonEditor::Model::ModelSystem& editor_model = common_editor.get_system<VadonEditor::Model::ModelSystem>();
+        Vadon::ECS::World& ecs_world = editor_model.get_ecs_world();
+
+        auto view_query = ecs_world.get_component_manager().run_component_query<ViewComponent&, VadonDemo::Render::CanvasComponent&>();
+
+        for (auto view_it = view_query.get_iterator(); view_it.is_valid() == true; view_it.next())
+        {
+            auto view_tuple = view_it.get_tuple();
+            ViewComponent& current_view_component = std::get<ViewComponent&>(view_tuple);
+
+            if (current_view_component.resource.is_valid() == false)
+            {
+                continue;
+            }
+
+            if (resource_system.get_resource_info(current_view_component.resource).type_id != Vadon::Utilities::TypeRegistry::get_type_id<Sprite>())
+            {
+                continue;
+            }
+
+            const Sprite* sprite_resource = resource_system.get_resource<Sprite>(SpriteResourceHandle::from_resource_handle(current_view_component.resource));
+            if (sprite_resource->texture != texture_handle)
+            {
+                continue;
+            }
+
+            // Reset the sprite that uses this texture
+            common_view.reset_resource(current_view_component.resource);
+
+            // Mark the entity as "dirty"
+            current_view_component.dirty = true;
+            m_entities_dirty = true;
+        }
+    }
+
+    void EditorView::load_view_resource(ViewResourceHandle view_resource)
+    {
+        if (view_resource.is_valid() == false)
+        {
             return;
         }
 
-        Render::TextureResource* sprite_texture = m_editor.get_render().get_texture_resource(sprite_resource->texture_path);
-        if (sprite_texture != nullptr)
+        Vadon::Core::EngineCoreInterface& engine_core = m_editor.get_common_editor().get_engine_core();
+        Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
+
+        const Vadon::Scene::ResourceInfo resource_info = resource_system.get_resource_info(view_resource);
+        if (resource_info.type_id == Vadon::Utilities::TypeRegistry::get_type_id<Sprite>())
         {
-            sprite_resource->texture_srv = sprite_texture->srv;
+            // Try to load the texture for the sprite
+            const Sprite* sprite_resource = resource_system.get_resource(SpriteResourceHandle::from_resource_handle(view_resource));
+            m_editor.get_render().load_texture_resource(sprite_resource->texture);
         }
-        else
-        {
-            sprite_resource->texture_srv.invalidate();
-        }
+
+        VadonDemo::View::View& common_view = m_editor.get_core().get_view();
+        common_view.load_resource(view_resource);
     }
 
     void EditorView::update_camera(VadonEditor::Model::Scene* active_scene)

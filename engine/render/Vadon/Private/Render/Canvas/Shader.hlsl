@@ -16,10 +16,11 @@ static const uint c_material_index_mask = (1 << c_material_index_width) - 1;
 float4 decode_rgba_uint(uint color_uint)
 {
     float4 color;
-    color.r = (float) (color_uint >> 24) / 255.0f;
-    color.g = (float) ((color_uint >> 16) & 0xFF) / 255.0f;
-    color.b = (float) ((color_uint >> 8) & 0xFF) / 255.0f;
-    color.a = (float) (color_uint & 0xFF) / 255.0f;
+    const float norm = 1.0f / 255.0f;
+    color.r = ((float) (color_uint & 0xFF)) * norm;
+    color.g = ((float) ((color_uint >> 8) & 0xFF)) * norm;
+    color.b = ((float) ((color_uint >> 16) & 0xFF)) * norm;
+    color.a = ((float) ((color_uint >> 24) & 0xFF)) * norm;
     
     return color;
 }

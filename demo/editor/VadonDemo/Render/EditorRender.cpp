@@ -59,51 +59,77 @@ namespace VadonDemo::Render
         return scene_context_it->second;
     }
 
-    TextureResource* EditorRender::get_texture_resource(std::string_view path)
-    {
-        const std::string path_string(path);
-        auto texture_it = m_textures.find(path_string);
-        if (texture_it == m_textures.end())
-        {
-            VadonEditor::Core::ProjectManager& project_manager = m_editor.get_common_editor().get_system<VadonEditor::Core::ProjectManager>();
-            TextureResource new_resource = m_editor.get_core().get_render().load_texture_resource(Vadon::Core::FileSystemPath{ .root_directory = project_manager.get_active_project().root_dir_handle, .path = std::string(path) });
-
-            if (new_resource.texture.is_valid() == false)
-            {
-                return nullptr;
-            }
-
-            // Add to lookup
-            texture_it = m_textures.insert(std::make_pair(path_string, new_resource)).first;
-        }
-
-        return &texture_it->second;
-    }
-
     void EditorRender::init_entity(Vadon::ECS::EntityHandle entity)
     {
         VadonEditor::Model::ModelSystem& editor_model = m_editor.get_common_editor().get_system<VadonEditor::Model::ModelSystem>();
         Vadon::ECS::World& ecs_world = editor_model.get_ecs_world();
+        Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
 
-        CanvasComponent* canvas_component = ecs_world.get_component_manager().get_component<CanvasComponent>(entity);
-        if (canvas_component == nullptr)
-        {
-            return;
-        }
+        Render& common_render = m_editor.get_core().get_render();
 
-        if (canvas_component->canvas_item.is_valid() == true)
+        // TODO: implement better decoupling of the main system from the component-specific logic
+        // Have shared code for managing certain resources, but otherwise delegate to subsystems
+        // (e.g SpriteTiling could use shared texture logic, the component should just provide parameters)
+
+        if(CanvasComponent* canvas_component = component_manager.get_component<CanvasComponent>(entity))
         {
-            // Canvas item already initialized
+            // If Canvas item is set, assume it's already initialized
             // FIXME: check if context is correctly set?
+            if (canvas_component->canvas_item.is_valid() == false)
+            {
+                const VadonEditor::Model::Scene* entity_scene = m_editor.find_entity_scene(entity);
+                VADON_ASSERT(entity_scene != nullptr, "Cannot find scene!");
+
+                const CanvasContextHandle scene_context = get_scene_canvas_context(entity_scene);
+                common_render.init_canvas_entity(ecs_world, entity, scene_context);
+
+                // Enqueue an update for our layers (just in case this entity caused the layer to be added)
+                // FIXME: revise so we can track this explicitly and only do it when needed!
+                set_layers_dirty();
+            }
+        }
+
+        if (SpriteTilingComponent* sprite_component = component_manager.get_component<SpriteTilingComponent>(entity))
+        {
+            load_texture_resource(sprite_component->texture);
+            common_render.init_sprite_tiling_entity(ecs_world, entity);
+        }
+
+        if (FullscreenEffectComponent* fullscreen_effect_component = component_manager.get_component<FullscreenEffectComponent>(entity))
+        {
+            load_shader_resource(fullscreen_effect_component->shader);
+            common_render.init_fullscreen_effect_entity(ecs_world, entity);
+        }
+    }
+
+    void EditorRender::load_texture_resource(TextureResourceHandle texture_handle)
+    {
+        if (texture_handle.is_valid() == false)
+        {
             return;
         }
 
-        const VadonEditor::Model::Scene* entity_scene = m_editor.find_entity_scene(entity);
-        VADON_ASSERT(entity_scene != nullptr, "Cannot find scene!");
+        // Reload texture, passing in the project root dir
+        // FIXME: implement file resource which already has the necessary file system metadata!
+        VadonEditor::Core::ProjectManager& project_manager = m_editor.get_common_editor().get_system<VadonEditor::Core::ProjectManager>();
 
-        const CanvasContextHandle scene_context = get_scene_canvas_context(entity_scene);
-        m_editor.get_core().get_render().init_canvas_entity(ecs_world, entity, scene_context);
-        set_layers_dirty();
+        VadonDemo::Render::Render& common_render = m_editor.get_core().get_render();
+        common_render.init_texture_resource(texture_handle, project_manager.get_active_project().root_dir_handle);
+    }
+
+    void EditorRender::load_shader_resource(ShaderResourceHandle shader_handle)
+    {
+        if (shader_handle.is_valid() == false)
+        {
+            return;
+        }
+
+        // Reload shader, passing in the project root dir
+        // FIXME: implement file resource which already has the necessary file system metadata!
+        VadonEditor::Core::ProjectManager& project_manager = m_editor.get_common_editor().get_system<VadonEditor::Core::ProjectManager>();
+
+        VadonDemo::Render::Render& common_render = m_editor.get_core().get_render();
+        common_render.init_shader_resource(shader_handle, project_manager.get_active_project().root_dir_handle);
     }
 
     EditorRender::EditorRender(Core::Editor& editor)
@@ -195,8 +221,8 @@ namespace VadonDemo::Render
 
                     CanvasContextHandle active_context = get_scene_canvas_context(active_scene);
                     Vadon::Render::Canvas::RenderContext render_context;
+                    Render& common_render = m_editor.get_core().get_render();
                     {
-                        Render& common_render = m_editor.get_core().get_render();
 
                         const Vadon::Render::Canvas::RenderContext& active_render_context = common_render.get_context(active_context);
                         render_context = active_render_context;
@@ -214,6 +240,24 @@ namespace VadonDemo::Render
                         render_context.viewports.back().render_viewport.dimensions.size = window_size;
 
                         render_context.layers.push_back(m_editor_layer);
+                    }
+
+                    // Update sprite tiling (needs the camera view rectangle)
+                    {
+                        Vadon::ECS::World& ecs_world = common_editor.get_system<VadonEditor::Model::ModelSystem>().get_ecs_world();
+                        auto sprite_query = ecs_world.get_component_manager().run_component_query<CanvasComponent&, SpriteTilingComponent&>();
+
+                        Vadon::Render::Rectangle culling_rect = render_context.camera.view_rectangle;
+                        culling_rect.size /= render_context.camera.zoom;
+
+                        for (auto sprite_it = sprite_query.get_iterator(); sprite_it.is_valid() == true; sprite_it.next())
+                        {
+                            auto sprite_tuple = sprite_it.get_tuple();
+                            SpriteTilingComponent& current_sprite_component = std::get<SpriteTilingComponent&>(sprite_tuple);
+                            const CanvasComponent& current_canvas_component = std::get<CanvasComponent&>(sprite_tuple);
+
+                            common_render.update_sprite_tiling_entity(current_canvas_component, current_sprite_component, culling_rect);
+                        }
                     }
 
                     Vadon::Render::Canvas::CanvasSystem& canvas_system = common_editor.get_engine_core().get_system<Vadon::Render::Canvas::CanvasSystem>();
@@ -272,7 +316,9 @@ namespace VadonDemo::Render
         editor_scene_system.add_component_event_callback(
             [this](const VadonEditor::Model::ComponentEvent& event)
             {
-                if (event.component_type != Vadon::Utilities::TypeRegistry::get_type_id<CanvasComponent>())
+                if (event.component_type != Vadon::Utilities::TypeRegistry::get_type_id<CanvasComponent>()
+                    || event.component_type != Vadon::Utilities::TypeRegistry::get_type_id<SpriteTilingComponent>()
+                    || event.component_type != Vadon::Utilities::TypeRegistry::get_type_id<FullscreenEffectComponent>())
                 {
                     return;
                 }
@@ -294,7 +340,7 @@ namespace VadonDemo::Render
 
         VadonEditor::Model::ResourceSystem& editor_resource_system = editor_model.get_resource_system();
         editor_resource_system.register_edit_callback(
-            [this](Vadon::Scene::ResourceID resource_id)
+            [this, &editor_model](Vadon::Scene::ResourceID resource_id)
             {
                 Vadon::Core::EngineCoreInterface& engine_core = m_editor.get_common_editor().get_engine_core();
                 Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
@@ -302,12 +348,57 @@ namespace VadonDemo::Render
                 VADON_ASSERT(resource_handle.is_valid() == true, "Resource not found!");
 
                 const Vadon::Scene::ResourceInfo resource_info = resource_system.get_resource_info(resource_handle);
-                if (Vadon::Utilities::TypeRegistry::is_base_of(Vadon::Utilities::TypeRegistry::get_type_id<VadonDemo::Render::CanvasLayerDefinition>(), resource_info.type_id))
+                if (Vadon::Utilities::TypeRegistry::is_base_of(Vadon::Utilities::TypeRegistry::get_type_id<CanvasLayerDefinition>(), resource_info.type_id))
                 {
                     VadonDemo::Render::Render& common_render = m_editor.get_core().get_render();
                     common_render.update_layer_definition(CanvasLayerDefHandle::from_resource_handle(resource_handle));
 
                     set_layers_dirty();
+                }
+                else if (resource_info.type_id == Vadon::Utilities::TypeRegistry::get_type_id<TextureResource>())
+                {
+                    const TextureResourceHandle texture_handle = TextureResourceHandle::from_resource_handle(resource_handle);
+
+                    // First unload the old texture
+                    VadonDemo::Render::Render& common_render = m_editor.get_core().get_render();
+                    common_render.unload_texture_resource(texture_handle);
+
+                    Vadon::Render::Canvas::CanvasSystem& canvas_system = engine_core.get_system<Vadon::Render::Canvas::CanvasSystem>();
+
+                    Vadon::ECS::World& ecs_world = editor_model.get_ecs_world();
+                    auto sprite_query = ecs_world.get_component_manager().run_component_query<CanvasComponent&, SpriteTilingComponent&>();
+                    
+                    for (auto sprite_it = sprite_query.get_iterator(); sprite_it.is_valid() == true; sprite_it.next())
+                    {
+                        auto sprite_tuple = sprite_it.get_tuple();
+                        SpriteTilingComponent& current_sprite_component = std::get<SpriteTilingComponent&>(sprite_tuple);
+
+                        if (current_sprite_component.texture != texture_handle)
+                        {
+                            continue;
+                        }
+
+                        // Make sure texture is loaded
+                        load_texture_resource(texture_handle);
+
+                        // Clear the canvas item
+                        const CanvasComponent& current_canvas_component = std::get<CanvasComponent&>(sprite_tuple);
+                        canvas_system.clear_item(current_canvas_component.canvas_item);
+
+                        // Reset rect (this will force an update)
+                        current_sprite_component.reset_rect();
+                    }
+                }
+                else if (resource_info.type_id == Vadon::Utilities::TypeRegistry::get_type_id<ShaderResource>())
+                {
+                    ShaderResourceHandle shader_handle = ShaderResourceHandle::from_resource_handle(resource_handle);
+
+                    // First unload the old shader
+                    VadonDemo::Render::Render& common_render = m_editor.get_core().get_render();
+                    common_render.unload_shader_resource(shader_handle);
+
+                    // Then re-load using new params
+                    load_shader_resource(shader_handle);
                 }
             }
         );
@@ -345,17 +436,72 @@ namespace VadonDemo::Render
     {
         VadonEditor::Model::ModelSystem& editor_model = m_editor.get_common_editor().get_system<VadonEditor::Model::ModelSystem>();
         Vadon::ECS::World& ecs_world = editor_model.get_ecs_world();
+        Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
 
-        m_editor.get_core().get_render().update_canvas_entity(ecs_world, entity);
-        set_layers_dirty();
+        if (CanvasComponent* canvas_component = component_manager.get_component<CanvasComponent>(entity))
+        {
+            m_editor.get_core().get_render().update_canvas_entity(ecs_world, entity);
+            set_layers_dirty();
+        }
+
+        if (SpriteTilingComponent* sprite_component = component_manager.get_component<SpriteTilingComponent>(entity))
+        {
+            if (sprite_component->texture.is_valid() == true)
+            {
+                load_texture_resource(sprite_component->texture);
+            }
+
+            // Reset rect to make sure we redraw next frame
+            sprite_component->reset_rect();
+        }
+
+        if (FullscreenEffectComponent* fullscreen_effect_component = component_manager.get_component<FullscreenEffectComponent>(entity))
+        {
+            
+            m_editor.get_core().get_render().update_fullscreen_effect_entity(ecs_world, entity);
+        }
     }
 
     void EditorRender::remove_entity(Vadon::ECS::EntityHandle entity)
     {
         VadonEditor::Model::ModelSystem& editor_model = m_editor.get_common_editor().get_system<VadonEditor::Model::ModelSystem>();
         Vadon::ECS::World& ecs_world = editor_model.get_ecs_world();
+        Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
 
-        m_editor.get_core().get_render().remove_canvas_entity(ecs_world, entity);
+        if (CanvasComponent* canvas_component = component_manager.get_component<CanvasComponent>(entity))
+        {
+            m_editor.get_core().get_render().remove_canvas_entity(ecs_world, entity);
+        }
+
+        if (SpriteTilingComponent* sprite_component = component_manager.get_component<SpriteTilingComponent>(entity))
+        {
+            m_editor.get_core().get_render().remove_sprite_tiling_entity(ecs_world, entity);
+        }
+
+        if (FullscreenEffectComponent* fullscreen_effect_component = component_manager.get_component<FullscreenEffectComponent>(entity))
+        {
+            m_editor.get_core().get_render().remove_fullscreen_effect_entity(ecs_world, entity);
+        }
+    }
+
+    void EditorRender::update_background_sprite_entity(Vadon::ECS::EntityHandle entity)
+    {
+        VadonEditor::Model::ModelSystem& editor_model = m_editor.get_common_editor().get_system<VadonEditor::Model::ModelSystem>();
+        Vadon::ECS::World& ecs_world = editor_model.get_ecs_world();
+
+        SpriteTilingComponent* sprite_component = ecs_world.get_component_manager().get_component<SpriteTilingComponent>(entity);
+        VADON_ASSERT(sprite_component, "Missing component!");
+        
+        // Make the rect empty so we're forced to recalculate next frame
+        sprite_component->reset_rect();
+    }
+
+    void EditorRender::update_fullscreen_effect_entity(Vadon::ECS::EntityHandle entity)
+    {
+        VadonEditor::Model::ModelSystem& editor_model = m_editor.get_common_editor().get_system<VadonEditor::Model::ModelSystem>();
+        Vadon::ECS::World& ecs_world = editor_model.get_ecs_world();
+
+        m_editor.get_core().get_render().update_fullscreen_effect_entity(ecs_world, entity);
     }
 
     void EditorRender::update_dirty_layers()

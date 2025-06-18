@@ -18,7 +18,6 @@ namespace VadonDemo::View
 		ViewResource::register_resource();
 		Shape::register_resource();
 		Sprite::register_resource();
-		BackgroundSprite::register_resource();
 
 		ViewComponent::register_component();
 	}
@@ -139,72 +138,58 @@ namespace VadonDemo::View
 		canvas_system.clear_item(canvas_component->canvas_item);
 	}
 
-	void View::update_resource(Vadon::ECS::World& ecs_world, ViewResourceHandle resource_handle)
+	void View::load_resource(ViewResourceHandle resource_handle)
 	{
-		CanvasResource* resource = find_resource(resource_handle);
-		if (resource != nullptr)
-		{
-			Vadon::Core::EngineCoreInterface& engine_core = m_core.get_engine_core();
-			Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
-			const Vadon::Scene::ResourceInfo resource_info = resource_system.get_resource_info(resource_handle);
-			if (resource_info.type_id == Vadon::Utilities::TypeRegistry::get_type_id<Shape>())
-			{
-				update_shape_resource(ShapeResourceHandle::from_resource_handle(resource_handle), *resource);
-			}
-			else if (resource_info.type_id == Vadon::Utilities::TypeRegistry::get_type_id<Sprite>())
-			{
-				update_sprite_resource(SpriteResourceHandle::from_resource_handle(resource_handle), *resource);
-			}
-			else if (resource_info.type_id == Vadon::Utilities::TypeRegistry::get_type_id<BackgroundSprite>())
-			{
+		Vadon::Core::EngineCoreInterface& engine_core = m_core.get_engine_core();
+		Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
 
-			}
+		ViewResource* view_resource = resource_system.get_resource(resource_handle);
+
+		if (view_resource->batch.is_valid() == false)
+		{
+			Vadon::Render::Canvas::CanvasSystem& canvas_system = engine_core.get_system<Vadon::Render::Canvas::CanvasSystem>();
+
+			view_resource->batch = canvas_system.create_batch();
+			view_resource->batch_range = Vadon::Utilities::DataRange();
+		}
+
+		if (view_resource->batch_range.is_valid() == true)
+		{
+			// Resource already loaded
+			return;
+		}
+
+		const Vadon::Scene::ResourceInfo resource_info = resource_system.get_resource_info(resource_handle);
+		if (resource_info.type_id == Vadon::Utilities::TypeRegistry::get_type_id<Shape>())
+		{
+			load_shape_resource(static_cast<Shape*>(view_resource));
+		}
+		else if (resource_info.type_id == Vadon::Utilities::TypeRegistry::get_type_id<Sprite>())
+		{
+			load_sprite_resource(static_cast<Sprite*>(view_resource));
 		}
 		else
 		{
-			resource = &get_resource(resource_handle);
+			VADON_UNREACHABLE;
 		}
+	}
 
+	void View::reset_resource(ViewResourceHandle resource_handle)
+	{
 		Vadon::Core::EngineCoreInterface& engine_core = m_core.get_engine_core();
-		Vadon::Render::Canvas::CanvasSystem& canvas_system = engine_core.get_system<Vadon::Render::Canvas::CanvasSystem>();
+		Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
 
-		// Find all entities that use this resource and re-initialize their draw data
-		// FIXME: could do this deferred so we only have to iterate over the entities once
-		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
-		auto view_query = component_manager.run_component_query<ViewComponent&, Render::CanvasComponent&>();
-		for (auto view_it = view_query.get_iterator(); view_it.is_valid() == true; view_it.next())
+		ViewResource* view_resource = resource_system.get_resource(resource_handle);
+		if (view_resource->batch_range.is_valid() == false)
 		{
-			auto view_tuple = view_it.get_tuple();
-			ViewComponent& current_view_component = std::get<ViewComponent&>(view_tuple);
-
-			if (current_view_component.resource != resource_handle)
-			{
-				continue;
-			}
-
-			Render::CanvasComponent& canvas_component = std::get<Render::CanvasComponent&>(view_tuple);
-			if (canvas_component.canvas_item.is_valid() == false)
-			{
-				// Entity not yet initialized
-				continue;
-			}
-
-			// FIXME: duplicating draw commands across items, need to update each one that uses this resource
-			// Could implement additional layers of indirection:
-			// Allow a batch to record batch draw commands, so one batch can be used as "template"
-			// Then all items can just reference the batch with a "draw all" setting
-			canvas_system.clear_item(canvas_component.canvas_item);
-			if (resource->batch_range.count > 0)
-			{
-				canvas_system.add_item_batch_draw(canvas_component.canvas_item,
-					Vadon::Render::Canvas::BatchDrawCommand
-					{
-						.batch = resource->batch,
-						.range = resource->batch_range
-					}
-				);
-			}
+			// Nothing to do
+			return;
 		}
+
+		Vadon::Render::Canvas::CanvasSystem& canvas_system = engine_core.get_system<Vadon::Render::Canvas::CanvasSystem>();
+		canvas_system.clear_batch(view_resource->batch);
+
+		view_resource->batch_range = Vadon::Utilities::DataRange();
 	}
 
 	View::View(VadonDemo::Core::Core& core)
@@ -225,70 +210,14 @@ namespace VadonDemo::View
 		// TODO: anything?
 	}
 
-	View::CanvasResource* View::find_resource(ViewResourceHandle view_resource_handle)
+	void View::load_shape_resource(Shape* shape)
 	{
-		auto resource_it = m_canvas_resource_lookup.find(view_resource_handle.to_uint());
-		if (resource_it != m_canvas_resource_lookup.end())
-		{
-			return &resource_it->second;
-		}
-
-		return nullptr;
-	}
-
-	View::CanvasResource& View::get_resource(ViewResourceHandle view_resource_handle)
-	{
-		CanvasResource* resource = find_resource(view_resource_handle);
-		if (resource != nullptr)
-		{
-			return *resource;
-		}
-
-		Vadon::Core::EngineCoreInterface& engine_core = m_core.get_engine_core();
-		Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
-		const Vadon::Scene::ResourceInfo resource_info = resource_system.get_resource_info(view_resource_handle);
-		if (resource_info.type_id == Vadon::Utilities::TypeRegistry::get_type_id<Shape>())
-		{
-			return add_shape_resource(ShapeResourceHandle::from_resource_handle(view_resource_handle));
-		}
-		else if (resource_info.type_id == Vadon::Utilities::TypeRegistry::get_type_id<Sprite>())
-		{
-			return add_sprite_resource(SpriteResourceHandle::from_resource_handle(view_resource_handle));
-		}
-
-		VADON_UNREACHABLE;
-	}
-
-	View::CanvasResource& View::add_canvas_resource(ViewResourceHandle view_resource_handle)
-	{
-		CanvasResource& canvas_resource = m_canvas_resource_lookup[view_resource_handle.to_uint()];
+		VADON_ASSERT(shape->batch_range.is_valid() == false, "Shape already loaded!");
 
 		Vadon::Core::EngineCoreInterface& engine_core = m_core.get_engine_core();
 		Vadon::Render::Canvas::CanvasSystem& canvas_system = engine_core.get_system<Vadon::Render::Canvas::CanvasSystem>();
-		canvas_resource.batch = canvas_system.create_batch();
 
-		return canvas_resource;
-	}
-
-	View::CanvasResource& View::add_shape_resource(ShapeResourceHandle shape_handle)
-	{
-		CanvasResource& canvas_resource = add_canvas_resource(ViewResourceHandle::from_resource_handle(shape_handle));
-		update_shape_resource(shape_handle, canvas_resource);
-
-		return canvas_resource;
-	}
-
-	void View::update_shape_resource(ShapeResourceHandle shape_handle, CanvasResource& shape_canvas_resource)
-	{
-		Vadon::Core::EngineCoreInterface& engine_core = m_core.get_engine_core();
-		Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
-		const Shape* shape = resource_system.get_resource(shape_handle);
-
-		Vadon::Render::Canvas::CanvasSystem& canvas_system = engine_core.get_system<Vadon::Render::Canvas::CanvasSystem>();
-
-		canvas_system.clear_batch(shape_canvas_resource.batch);
-
-		shape_canvas_resource.batch_range.offset = static_cast<int32_t>(canvas_system.get_batch_buffer_size(shape_canvas_resource.batch));
+		shape->batch_range.offset = static_cast<int32_t>(canvas_system.get_batch_buffer_size(shape->batch));
 
 		switch (Vadon::Utilities::to_enum<ShapeType>(shape->type))
 		{
@@ -304,8 +233,8 @@ namespace VadonDemo::View
 			triangle.points[2].position = { -0.5f, -0.5f };
 			triangle.points[2].color = shape->color;
 
-			canvas_system.draw_batch_triangle(shape_canvas_resource.batch, triangle);
-			shape_canvas_resource.batch_range.count = 1;
+			canvas_system.draw_batch_triangle(shape->batch, triangle);
+			shape->batch_range.count = 1;
 		}
 		break;
 		case ShapeType::RECTANGLE:
@@ -315,8 +244,8 @@ namespace VadonDemo::View
 			box_rectangle.dimensions.size = { 1.0f, 1.0f };
 			box_rectangle.filled = true;
 
-			canvas_system.draw_batch_rectangle(shape_canvas_resource.batch, box_rectangle);
-			shape_canvas_resource.batch_range.count = 1;
+			canvas_system.draw_batch_rectangle(shape->batch, box_rectangle);
+			shape->batch_range.count = 1;
 		}
 		break;
 		case ShapeType::DIAMOND:
@@ -331,93 +260,50 @@ namespace VadonDemo::View
 				diamond_half_triangle.points[triangle_index].color = shape->color;
 			}
 
-			canvas_system.draw_batch_triangle(shape_canvas_resource.batch, diamond_half_triangle);
+			canvas_system.draw_batch_triangle(shape->batch, diamond_half_triangle);
 
 			diamond_half_triangle.points[0].position = { -1.0f, 0 };
 			diamond_half_triangle.points[1].position = { 1.0f, 0 };
 			diamond_half_triangle.points[2].position = { 0, -1.0f };
 
-			canvas_system.draw_batch_triangle(shape_canvas_resource.batch, diamond_half_triangle);
-			shape_canvas_resource.batch_range.count = 2;
+			canvas_system.draw_batch_triangle(shape->batch, diamond_half_triangle);
+			shape->batch_range.count = 2;
 		}
 		break;
 		}
 	}
 
-	View::CanvasResource& View::add_sprite_resource(SpriteResourceHandle sprite_handle)
+	void View::load_sprite_resource(Sprite* sprite)
 	{
-		CanvasResource& canvas_resource = add_canvas_resource(ViewResourceHandle::from_resource_handle(sprite_handle));
-		update_sprite_resource(sprite_handle, canvas_resource);
+		VADON_ASSERT(sprite->batch_range.is_valid() == false, "Sprite already loaded!");
 
-		return canvas_resource;
-	}
-
-	void View::update_sprite_resource(SpriteResourceHandle sprite_handle, CanvasResource& sprite_canvas_resource)
-	{
 		Vadon::Core::EngineCoreInterface& engine_core = m_core.get_engine_core();
-		Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
-		const Sprite* sprite = resource_system.get_resource(sprite_handle);
-
 		Vadon::Render::Canvas::CanvasSystem& canvas_system = engine_core.get_system<Vadon::Render::Canvas::CanvasSystem>();
-		canvas_system.clear_batch(sprite_canvas_resource.batch);
 
-		sprite_canvas_resource.batch_range.offset = static_cast<int32_t>(canvas_system.get_batch_buffer_size(sprite_canvas_resource.batch));
-		if (sprite->texture_srv.is_valid() == false)
+		if (sprite->texture.is_valid() == false)
 		{
 			// Nothing to draw
-			sprite_canvas_resource.batch_range.count = 0;
 			return;
 		}
 
-		sprite_canvas_resource.batch_range.count = 2;
+		Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
+		const VadonDemo::Render::TextureResource* sprite_texture = resource_system.get_resource(sprite->texture);
+		if (sprite_texture->texture.is_valid() == false)
+		{
+			// No valid texture loaded
+			return;
+		}
+
+		sprite->batch_range.offset = static_cast<int32_t>(canvas_system.get_batch_buffer_size(sprite->batch));
+		sprite->batch_range.count = 2;
 
 		Vadon::Render::Canvas::Sprite canvas_sprite;
 		canvas_sprite.dimensions.size = Vadon::Utilities::Vector2_One;
 		canvas_sprite.uv_dimensions.size = Vadon::Utilities::Vector2_One;
 		canvas_sprite.color = Vadon::Utilities::Color_White;
 
-		canvas_system.set_batch_texture(sprite_canvas_resource.batch, Vadon::Render::Canvas::Texture{ .srv = sprite->texture_srv });
-		canvas_system.draw_batch_sprite(sprite_canvas_resource.batch, canvas_sprite);
-	}
-
-	View::CanvasResource& View::add_background_sprite_resource(BackgroundSpriteResourceHandle sprite_handle)
-	{
-		CanvasResource& canvas_resource = add_canvas_resource(ViewResourceHandle::from_resource_handle(sprite_handle));
-		update_background_sprite_resource(sprite_handle, canvas_resource);
-
-		return canvas_resource;
-	}
-
-	void View::update_background_sprite_resource(BackgroundSpriteResourceHandle sprite_handle, CanvasResource& sprite_canvas_resource)
-	{
-		Vadon::Core::EngineCoreInterface& engine_core = m_core.get_engine_core();
-		Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
-		const BackgroundSprite* background_sprite = resource_system.get_resource(sprite_handle);
-
-		Vadon::Render::Canvas::CanvasSystem& canvas_system = engine_core.get_system<Vadon::Render::Canvas::CanvasSystem>();
-		canvas_system.clear_batch(sprite_canvas_resource.batch);
-
-		sprite_canvas_resource.batch_range.offset = static_cast<int32_t>(canvas_system.get_batch_buffer_size(sprite_canvas_resource.batch));
-		if (background_sprite->texture_srv.is_valid() == false)
-		{
-			// Nothing to draw
-			sprite_canvas_resource.batch_range.count = 0;
-			return;
-		}
-
-		// TODO: view needs to track the camera
-		// Use camera to determine how the background sprite needs to be drawn
-		// If the required "tiles" are different, redraw the canvas batch
-
-		sprite_canvas_resource.batch_range.count = 2;
-
-		Vadon::Render::Canvas::Sprite canvas_sprite;
-		canvas_sprite.dimensions.size = Vadon::Utilities::Vector2_One;
-		canvas_sprite.uv_dimensions.size = Vadon::Utilities::Vector2_One;
-		canvas_sprite.color = Vadon::Utilities::Color_White;
-
-		canvas_system.set_batch_texture(sprite_canvas_resource.batch, Vadon::Render::Canvas::Texture{ .srv = background_sprite->texture_srv });
-		canvas_system.draw_batch_sprite(sprite_canvas_resource.batch, canvas_sprite);
+		canvas_system.set_batch_texture(sprite->batch, Vadon::Render::Canvas::Texture{ .srv = sprite_texture->texture_srv });
+		canvas_system.draw_batch_sprite(sprite->batch, canvas_sprite);
 	}
 
 	void View::update_entity_transform(const Model::Transform2D* transform, ViewComponent* view_component, Render::CanvasComponent* canvas_component)
@@ -461,6 +347,8 @@ namespace VadonDemo::View
 
 		update_entity_transform(transform, view_component, canvas_component);
 
+		// Clear the canvas item (we shouldn't show anything if we have no valid data)
+		// TODO: show some placeholder instead?
 		Vadon::Core::EngineCoreInterface& engine_core = m_core.get_engine_core();
 		Vadon::Render::Canvas::CanvasSystem& canvas_system = engine_core.get_system<Vadon::Render::Canvas::CanvasSystem>();
 		canvas_system.clear_item(canvas_component->canvas_item);
@@ -469,13 +357,21 @@ namespace VadonDemo::View
 		{
 			return;
 		}
+
+		Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
+		const ViewResource* view_resource = resource_system.get_resource(view_component->resource);
 		
-		CanvasResource& resource = get_resource(view_component->resource);
+		if (view_resource->batch_range.is_valid() == false)
+		{
+			return;
+		}
+
+		// Add batch draw command
 		canvas_system.add_item_batch_draw(canvas_component->canvas_item,
 			Vadon::Render::Canvas::BatchDrawCommand
 			{
-				.batch = resource.batch,
-				.range = resource.batch_range
+				.batch = view_resource->batch,
+				.range = view_resource->batch_range
 			}
 		);
 	}

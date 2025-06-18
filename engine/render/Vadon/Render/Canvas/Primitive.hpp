@@ -49,7 +49,7 @@ namespace Vadon::Render::Canvas
 	{
 		Render::Rectangle dimensions = { .position = Vector2_Zero, .size = Vector2_One };
 		Render::Rectangle uv_dimensions = { .position = Vector2_Zero, .size = Vector2_One };
-		Vadon::Render::ColorRGBA color;
+		Vadon::Render::ColorRGBA color = Vadon::Utilities::Color_White;
 	};
 
 	using SpriteList = std::vector<Sprite>;

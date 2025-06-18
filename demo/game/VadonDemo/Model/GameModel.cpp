@@ -36,7 +36,7 @@ namespace VadonDemo::Model
 		VadonDemo::Model::Model& model = m_game_core.get_core().get_model();
 		if (model.init_simulation(ecs_world, level_config.scene_id) == false)
 		{
-			// TODO: error?
+			Vadon::Core::Logger::log_error("Failed to load level!");
 			m_state = State::INIT;
 			m_sim_state = SimState::INVALID;
 			return false;

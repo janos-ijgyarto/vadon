@@ -16,11 +16,14 @@ namespace VadonDemo::UI
 		bool initialize();
 		void update();
 
+		void update_dirty_entities();
+
 		void init_entity(Vadon::ECS::EntityHandle entity);
 		void update_entity(Vadon::ECS::EntityHandle entity);
 		void remove_entity(Vadon::ECS::EntityHandle entity);
 
 		Core::Editor& m_editor;
+		bool m_entities_dirty;
 
 		friend Core::Editor;
 	};

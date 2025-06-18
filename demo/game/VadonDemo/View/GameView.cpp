@@ -21,6 +21,7 @@ namespace VadonDemo::View
 
 	GameView::GameView(Core::GameCore& core)
 		: m_game_core(core)
+		, m_entities_dirty(false)
 	{ }
 
 	bool GameView::initialize()
@@ -45,6 +46,8 @@ namespace VadonDemo::View
 
 	void GameView::update()
 	{
+		update_dirty_entities();
+
 		Model::GameModel& game_model = m_game_core.get_model();
 		View& view = m_game_core.get_core().get_view();
 		if (game_model.is_updated() == true)
@@ -60,6 +63,41 @@ namespace VadonDemo::View
 
 		// Update frame counter
 		++m_view_frame_count;
+	}
+
+	void GameView::update_dirty_entities()
+	{
+		if (m_entities_dirty == false)
+		{
+			return;
+		}
+
+		m_entities_dirty = false;
+
+		Vadon::ECS::World& ecs_world = m_game_core.get_ecs_world();
+		auto view_query = ecs_world.get_component_manager().run_component_query<ViewComponent&>();
+
+		VadonDemo::View::View& common_view = m_game_core.get_core().get_view();
+
+		for (auto view_it = view_query.get_iterator(); view_it.is_valid() == true; view_it.next())
+		{
+			auto view_tuple = view_it.get_tuple();
+			ViewComponent& current_view_component = std::get<ViewComponent&>(view_tuple);
+
+			if (current_view_component.dirty == false)
+			{
+				continue;
+			}
+
+			// Make sure the resource is up-to-date
+			init_resource(current_view_component.resource);
+
+			// Attempt to redraw based on resource type
+			common_view.update_entity_draw_data(ecs_world, view_it.get_entity());
+
+			// Unset the flag
+			current_view_component.dirty = false;
+		}
 	}
 
 	void GameView::update_camera()
@@ -86,23 +124,15 @@ namespace VadonDemo::View
 	void GameView::init_entity(Vadon::ECS::EntityHandle entity)
 	{
 		Vadon::ECS::World& ecs_world = m_game_core.get_ecs_world();
-		Vadon::ECS::ComponentManager& component_manager = m_game_core.get_ecs_world().get_component_manager();
+		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
 		VadonDemo::View::ViewComponent* view_component = component_manager.get_component<VadonDemo::View::ViewComponent>(entity);
 		if (view_component == nullptr)
 		{
 			return;
 		}
 
-		// Make sure resource is initialized
-		if (view_component->resource.is_valid() == true)
-		{
-			init_resource(view_component->resource);
-		}
-
-		// Make sure render component is initialized
-		m_game_core.get_render_system().init_entity(entity);
-
-		m_game_core.get_core().get_view().update_entity_draw_data(ecs_world, entity);
+		view_component->dirty = true;
+		m_entities_dirty = true;
 	}
 
 	void GameView::remove_entity(Vadon::ECS::EntityHandle /*entity*/)
@@ -110,33 +140,25 @@ namespace VadonDemo::View
 		// TODO: anything?
 	}
 
-	void GameView::init_resource(VadonDemo::View::ViewResourceHandle resource_handle)
+	void GameView::init_resource(ViewResourceHandle resource_handle)
 	{
-		Vadon::Scene::ResourceSystem& resource_system = m_game_core.get_engine_app().get_engine_core().get_system<Vadon::Scene::ResourceSystem>();
-		const Vadon::Scene::ResourceInfo resource_info = resource_system.get_resource_info(resource_handle);
-
-		if (Vadon::Utilities::TypeRegistry::is_base_of(Vadon::Utilities::TypeRegistry::get_type_id<VadonDemo::View::Sprite>(), resource_info.type_id))
+		if (resource_handle.is_valid() == false)
 		{
-			load_sprite_resource(VadonDemo::View::SpriteResourceHandle::from_resource_handle(resource_handle));
-		}
-
-		m_game_core.get_core().get_view().update_resource(m_game_core.get_ecs_world(), resource_handle);
-	}
-
-	void GameView::load_sprite_resource(VadonDemo::View::SpriteResourceHandle sprite_handle)
-	{
-		// TODO: implement general system for loading textures as resources!
-		Vadon::Scene::ResourceSystem& resource_system = m_game_core.get_engine_app().get_engine_core().get_system<Vadon::Scene::ResourceSystem>();
-		VadonDemo::View::Sprite* sprite_resource = resource_system.get_resource(sprite_handle);
-
-		if (sprite_resource->texture_srv.is_valid() == true)
-		{
-			// Only try to load once, assume it already has correct data
 			return;
 		}
 
-		Render::TextureResource* sprite_texture = m_game_core.get_render_system().get_texture_resource(sprite_resource->texture_path);
-		VADON_ASSERT(sprite_texture != nullptr, "Cannot load texture!");
-		sprite_resource->texture_srv = sprite_texture->srv;
+		Vadon::Core::EngineCoreInterface& engine_core = m_game_core.get_engine_core();
+		Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
+
+		const Vadon::Scene::ResourceInfo resource_info = resource_system.get_resource_info(resource_handle);
+		if (resource_info.type_id == Vadon::Utilities::TypeRegistry::get_type_id<Sprite>())
+		{
+			// Try to load the texture for the sprite
+			const Sprite* sprite_resource = resource_system.get_resource(SpriteResourceHandle::from_resource_handle(resource_handle));
+			m_game_core.get_render_system().load_texture_resource(sprite_resource->texture);
+		}
+
+		VadonDemo::View::View& common_view = m_game_core.get_core().get_view();
+		common_view.load_resource(resource_handle);
 	}
 }

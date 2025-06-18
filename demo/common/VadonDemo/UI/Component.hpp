@@ -15,6 +15,8 @@ namespace VadonDemo::UI
 
 		// TODO: position and sizing style, whether to use absolute coords or relative to screen size
 
+		bool dirty = false; // FIXME: replace with editor-specific "tag component" implementation!
+
 		static void register_component();
 	};
 

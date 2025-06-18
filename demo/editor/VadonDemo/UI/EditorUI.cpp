@@ -17,6 +17,7 @@ namespace VadonDemo::UI
 {
     EditorUI::EditorUI(Core::Editor& editor)
         : m_editor(editor)
+        , m_entities_dirty(false)
     { }
 
 	bool EditorUI::initialize()
@@ -79,6 +80,8 @@ namespace VadonDemo::UI
 
     void EditorUI::update()
     {
+        update_dirty_entities();
+
         VadonEditor::Core::Editor& common_editor = m_editor.get_common_editor();
 
         // Draw GUI
@@ -91,6 +94,41 @@ namespace VadonDemo::UI
         // TODO: custom widgets?
 
         dev_gui.end_frame();
+    }
+
+    void EditorUI::update_dirty_entities()
+    {
+        if (m_entities_dirty == false)
+        {
+            return;
+        }
+
+        m_entities_dirty = false;
+
+        VadonEditor::Core::Editor& common_editor = m_editor.get_common_editor();
+        VadonEditor::Model::ModelSystem& editor_model = common_editor.get_system<VadonEditor::Model::ModelSystem>();
+
+        Vadon::ECS::World& ecs_world = editor_model.get_ecs_world();
+        auto base_ui_query = ecs_world.get_component_manager().run_component_query<Base&>();
+
+        UI& common_ui = m_editor.get_core().get_ui();
+
+        for (auto base_it = base_ui_query.get_iterator(); base_it.is_valid() == true; base_it.next())
+        {
+            auto base_tuple = base_it.get_tuple();
+            Base& current_base_component = std::get<Base&>(base_tuple);
+
+            if (current_base_component.dirty == false)
+            {
+                continue;
+            }
+
+            // Update draw data (if applicable)
+            common_ui.update_ui_element(ecs_world, base_it.get_entity());
+
+            // Unset the flag
+            current_base_component.dirty = false;
+        }
     }
 
     void EditorUI::init_entity(Vadon::ECS::EntityHandle entity)
@@ -111,10 +149,9 @@ namespace VadonDemo::UI
             return;
         }
 
-        // Make sure render component is initialized
-        m_editor.get_render().init_entity(entity);
-
-        m_editor.get_core().get_ui().update_ui_element(ecs_world, entity);
+        // Flag entity so it gets updated
+        base_component->dirty = true;
+        m_entities_dirty = true;
     }
 
     void EditorUI::remove_entity(Vadon::ECS::EntityHandle entity)

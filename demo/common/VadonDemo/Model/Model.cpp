@@ -51,14 +51,9 @@ namespace VadonDemo::Model
 
 	bool Model::init_simulation(Vadon::ECS::World& ecs_world, Vadon::Scene::SceneID level_scene_id)
 	{
-		if (load_level(ecs_world, level_scene_id) == false)
+		if (internal_init_simulation(ecs_world, level_scene_id) == false)
 		{
-			// TODO: error!
-			return false;
-		}
-
-		if (validate_sim_state(ecs_world) == false)
-		{
+			end_simulation(ecs_world);
 			return false;
 		}
 
@@ -135,6 +130,22 @@ namespace VadonDemo::Model
 	void Model::global_config_updated()
 	{
 		// TODO: anything?
+	}
+
+	bool Model::internal_init_simulation(Vadon::ECS::World& ecs_world, Vadon::Scene::SceneID level_scene_id)
+	{
+		if (load_level(ecs_world, level_scene_id) == false)
+		{
+			// TODO: error!
+			return false;
+		}
+
+		if (validate_sim_state(ecs_world) == false)
+		{
+			return false;
+		}
+
+		return true;
 	}
 
 	bool Model::load_level(Vadon::ECS::World& ecs_world, Vadon::Scene::SceneID level_scene_id)
@@ -236,11 +247,6 @@ namespace VadonDemo::Model
 				map_entity = map_it.get_entity();
 
 				auto map_components = component_manager.get_component_tuple<Transform2D, Map>(map_entity);
-				if (std::get<Transform2D*>(map_components) == nullptr)
-				{
-					// TODO: error!
-					return false;
-				}
 				if (std::get<Map*>(map_components) == nullptr)
 				{
 					// TODO: error!

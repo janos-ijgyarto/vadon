@@ -5,12 +5,6 @@
                 "components": [
                     {
                         "properties": {
-                            "resource": "QA85kaI8S9Gbv+1BcKK+3A=="
-                        },
-                        "type": "VadonDemo::View::ViewComponent"
-                    },
-                    {
-                        "properties": {
                             "layer_def": "2bdWkqSdTuSxnfVFk+5q+g==",
                             "visible": true,
                             "z_order": 0.0
@@ -29,14 +23,15 @@
                     },
                     {
                         "properties": {
-                            "position": [
-                                0.0,
-                                0.0
-                            ],
-                            "rotation": 0.0,
-                            "scale": 1000.0
+                            "repeat": false,
+                            "rotate": false,
+                            "texture": "SG21el1JQwC4xfVZeEqj2A==",
+                            "tile_size": [
+                                500.0,
+                                500.0
+                            ]
                         },
-                        "type": "VadonDemo::Model::Transform2D"
+                        "type": "VadonDemo::Render::SpriteTilingComponent"
                     }
                 ],
                 "name": "Map",

@@ -39,6 +39,8 @@ namespace VadonDemo::UI
 		bool initialize();
 		void update();
 
+		void update_dirty_entities();
+
 		void init_game_ui();
 		void init_dev_gui();
 		void update_dev_gui();
@@ -60,6 +62,7 @@ namespace VadonDemo::UI
 		std::unordered_map<std::string, ConsoleCommandCallback> m_console_commands;
 
 		bool m_was_clicked = false;
+		bool m_entities_dirty = false;
 
 		Vadon::ECS::EntityHandle m_main_menu_entity;
 

@@ -28,11 +28,11 @@ namespace VadonDemo::Render
 		~RenderSystem();
 
 		Vadon::Render::Canvas::RenderContext& get_canvas_context();
-		TextureResource* get_texture_resource(std::string_view path);
-
-		void init_entity(Vadon::ECS::EntityHandle entity);
 
 		Vadon::Utilities::Vector2i map_to_game_viewport(const Vadon::Utilities::Vector2i& position) const;
+
+		void load_texture_resource(TextureResourceHandle texture_handle);
+		void load_shader_resource(ShaderResourceHandle shader_handle);
 	private:
 		RenderSystem(Core::GameCore& game_core);
 
@@ -41,6 +41,8 @@ namespace VadonDemo::Render
 
 		bool init_viewport();
 		void update_viewport(const Vadon::Utilities::Vector2i& window_size);
+
+		void init_entity(Vadon::ECS::EntityHandle entity);
 
 		void update();
 		void process_platform_events();

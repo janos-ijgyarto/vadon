@@ -10,6 +10,9 @@ namespace Vadon::Utilities
 		VEC2_TYPE size{ 0, 0 }; // Width and height
 
 		// TODO: utility functions!
+
+		bool operator==(const RectangleBase<VEC2_TYPE>& other) const { return (position == other.position) && (size == other.size); }
+		bool operator!=(const RectangleBase<VEC2_TYPE>& other) const { return (position != other.position) || (size != other.size); }
 	};
 
 	using Rectangle = RectangleBase<Vector2>;

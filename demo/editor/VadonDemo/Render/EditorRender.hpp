@@ -24,10 +24,11 @@ namespace VadonDemo::Render
 	public:
 		CanvasContextHandle get_scene_canvas_context(const VadonEditor::Model::Scene* active_scene);
 
-		TextureResource* get_texture_resource(std::string_view path);
 		// TODO: unload unused resources!
-
 		void init_entity(Vadon::ECS::EntityHandle entity);
+
+		void load_texture_resource(TextureResourceHandle texture_handle);
+		void load_shader_resource(ShaderResourceHandle shader_handle);
 	private:
 		EditorRender(Core::Editor& editor);
 
@@ -40,6 +41,9 @@ namespace VadonDemo::Render
 
 		void update_entity(Vadon::ECS::EntityHandle entity);
 		void remove_entity(Vadon::ECS::EntityHandle entity);
+
+		void update_background_sprite_entity(Vadon::ECS::EntityHandle entity);
+		void update_fullscreen_effect_entity(Vadon::ECS::EntityHandle entity);
 
 		void set_layers_dirty() { m_layers_dirty = true; }
 		void update_dirty_layers();

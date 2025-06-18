@@ -148,6 +148,7 @@ namespace VadonDemo::UI
 		: m_game_core(core)
 		, m_main_window(core)
 		, m_logger(std::make_unique<GameLogger>(core))
+		, m_entities_dirty(false)
 	{
 		m_dev_gui_window.title = "UI System";
 	}
@@ -330,6 +331,8 @@ namespace VadonDemo::UI
 			update_dev_gui();
 		}
 
+		update_dirty_entities();
+
 		const VadonApp::Platform::MouseState mouse_state = platform_interface.get_mouse_state();
 
 		const Vadon::Utilities::Vector2i mouse_position = m_game_core.get_render_system().map_to_game_viewport(mouse_state.position);
@@ -354,6 +357,38 @@ namespace VadonDemo::UI
 		m_game_core.get_core().get_ui().update(m_game_core.get_ecs_world(), cursor_state);
 
 		m_mouse_pos = cursor_state.position;
+	}
+
+	void UISystem::update_dirty_entities()
+	{
+		if (m_entities_dirty == false)
+		{
+			return;
+		}
+
+		m_entities_dirty = false;
+
+		Vadon::ECS::World& ecs_world = m_game_core.get_ecs_world();
+		auto base_ui_query = ecs_world.get_component_manager().run_component_query<Base&>();
+
+		UI& common_ui = m_game_core.get_core().get_ui();
+
+		for (auto base_it = base_ui_query.get_iterator(); base_it.is_valid() == true; base_it.next())
+		{
+			auto base_tuple = base_it.get_tuple();
+			Base& current_base_component = std::get<Base&>(base_tuple);
+
+			if (current_base_component.dirty == false)
+			{
+				continue;
+			}
+
+			// Update draw data (if applicable)
+			common_ui.update_ui_element(ecs_world, base_it.get_entity());
+
+			// Unset the flag
+			current_base_component.dirty = false;
+		}
 	}
 
 	void UISystem::update_dev_gui()
@@ -385,10 +420,8 @@ namespace VadonDemo::UI
 			return;
 		}
 
-		// Make sure render component is initialized
-		m_game_core.get_render_system().init_entity(entity);
-
-		m_game_core.get_core().get_ui().update_ui_element(ecs_world, entity);
+		base_component->dirty = true;
+		m_entities_dirty = true;
 	}
 
 	void UISystem::remove_entity(Vadon::ECS::EntityHandle entity)
@@ -421,7 +454,11 @@ namespace VadonDemo::UI
 		const Core::GlobalConfiguration& global_config = m_game_core.get_core().get_global_config();
 
 		Model::GameModel& game_model = m_game_core.get_model();
-		game_model.load_level(Model::GameModel::LevelConfiguration{ .scene_id = global_config.default_start_level });
+		if (game_model.load_level(Model::GameModel::LevelConfiguration{ .scene_id = global_config.default_start_level }) == false)
+		{
+			// In case of failure, go back to main menu
+			load_main_menu();
+		}
 	}
 
 	void UISystem::return_to_main_menu()
