@@ -38,6 +38,18 @@ namespace VadonApp::Private::UI::Developer::ImGUI
 {
     namespace
     {
+        ImGuiWindowFlags get_imgui_window_flags(VadonApp::UI::Developer::WindowFlags flags)
+        {
+            // TODO: implement other flags and proper conversion!
+            ImGuiWindowFlags imgui_flags = ImGuiWindowFlags_None;
+            if (Vadon::Utilities::to_bool(flags & VadonApp::UI::Developer::WindowFlags::HORIZONTAL_SCROLLBAR))
+            {
+                imgui_flags |= ImGuiWindowFlags_HorizontalScrollbar;
+            }
+
+            return imgui_flags;
+        }
+
         ImGuiMouseButton_ get_imgui_mouse_button(VadonApp::Platform::MouseButton mouse_button)
         {
             switch (mouse_button)
@@ -218,8 +230,6 @@ namespace VadonApp::Private::UI::Developer::ImGUI
 
             return imgui_flags;
         }
-
-        GUISystem* dev_gui_instance = nullptr;
 
         constexpr int32_t INIT_VERTEX_BUFFER_CAPACITY = 5000;
         constexpr int32_t INIT_INDEX_BUFFER_CAPACITY = 5000;
@@ -567,7 +577,6 @@ float4 main(PS_INPUT input) : SV_Target
         , m_texture_counter(0)
         , m_internal(std::make_unique<Internal>(*this))
     {
-        dev_gui_instance = this;
     }
 
     GUISystem::~GUISystem() = default;
@@ -587,7 +596,7 @@ float4 main(PS_INPUT input) : SV_Target
         //ImGui::StyleColorsLight();
 
         // Setup Platform/Renderer backends
-        if (!init_platform())
+        if (init_platform() == false)
         {
             return false;
         }
@@ -638,7 +647,6 @@ float4 main(PS_INPUT input) : SV_Target
     void GUISystem::shutdown()
     {
         ImGui::DestroyContext();
-        dev_gui_instance = nullptr;
         log_message("ImGui shut down successfully!\n");
     }
 
@@ -811,8 +819,7 @@ float4 main(PS_INPUT input) : SV_Target
 
     bool GUISystem::begin_child_window(const ChildWindow& window)
     {
-        // TODO: flags!
-        return ImGui::BeginChild(window.id.c_str(), ImVec2(window.size.x, window.size.y), window.border);
+        return ImGui::BeginChild(window.id.c_str(), ImVec2(window.size.x, window.size.y), window.border, get_imgui_window_flags(window.flags));
     }
 
     void GUISystem::end_child_window()
@@ -928,10 +935,10 @@ float4 main(PS_INPUT input) : SV_Target
         return ImGui::InputFloat2(input_float.label.c_str(), &input_float.input.x);
     }
 
-    bool GUISystem::draw_color3_picker(InputFloat3& color)
+    bool GUISystem::draw_input_float3(InputFloat3& input_float)
     {
         // FIXME: is this safe to use this way?
-        return ImGui::ColorPicker3(color.label.c_str(), &color.input.x);
+        return ImGui::InputFloat3(input_float.label.c_str(), &input_float.input.x);
     }
 
     bool GUISystem::draw_input_text(InputText& input_text) 
@@ -966,6 +973,20 @@ float4 main(PS_INPUT input) : SV_Target
     {
         // FIXME: is this safe to use this way?
         return ImGui::SliderFloat2(slider.label.c_str(), &slider.value.x, slider.min, slider.max, slider.format.empty() ? "%.3f" : slider.format.c_str());
+    }
+
+    bool GUISystem::draw_color_edit(ColorEdit& color_edit)
+    {
+        // TODO: have ColorEdit cache the vector format so we don't have to convert every frame?
+        const uint32_t original_color = color_edit.value.value;
+        ImVec4 imgui_color_vec = ImGui::ColorConvertU32ToFloat4(original_color);
+        if (ImGui::ColorEdit4(color_edit.label.c_str(), &imgui_color_vec.x) == true)
+        {
+            color_edit.value.value = ImGui::ColorConvertFloat4ToU32(imgui_color_vec);
+            return true;
+        }
+
+        return false;
     }
 
     bool GUISystem::draw_button(const Button& button)
@@ -1085,6 +1106,23 @@ float4 main(PS_INPUT input) : SV_Target
         ImGui::SeparatorText(text.data());
     }
 
+    void GUISystem::draw_clipped_text_list(const TextBuffer& text_buffer)
+    {
+        ImGuiListClipper clipper;
+        const int line_count = static_cast<int>(text_buffer.line_offsets.size());
+        clipper.Begin(line_count);
+        while (clipper.Step() == true)
+        {
+            for (int line_index = clipper.DisplayStart; line_index < clipper.DisplayEnd; ++line_index)
+            {
+                const char* line_start = text_buffer.buffer.data() + text_buffer.line_offsets[line_index];
+                const char* line_end = ((line_index + 1) < line_count) ? (text_buffer.buffer.data() + text_buffer.line_offsets[line_index + 1] - 1) : std::to_address(text_buffer.buffer.end());
+                ImGui::TextUnformatted(line_start, line_end);
+            }
+        }
+        clipper.End();
+    }
+
     void GUISystem::set_item_tooltip(std::string_view tooltip_text)
     {
         ImGui::SetItemTooltip(tooltip_text.data());
@@ -1177,13 +1215,6 @@ float4 main(PS_INPUT input) : SV_Target
 
         VadonApp::Platform::PlatformInterface& platform_interface = m_application.get_system<VadonApp::Platform::PlatformInterface>();
 
-        platform_interface.register_event_callback(
-            [this](const VadonApp::Platform::PlatformEventList& platform_events)
-            {
-                process_platform_events(platform_events);
-            }
-        );
-
         // Setup backend capabilities flags
         io.BackendPlatformUserData = nullptr;
         io.BackendPlatformName = "imgui_impl_platform_engineapp";
@@ -1192,7 +1223,7 @@ float4 main(PS_INPUT input) : SV_Target
 
         io.SetClipboardTextFn = &GUISystem::set_clipboard_text;
         io.GetClipboardTextFn = &GUISystem::get_clipboard_text;
-        io.ClipboardUserData = nullptr;
+        io.ClipboardUserData = this;
 
         // From 2.0.5: Set SDL hint to receive mouse click events on window focus, otherwise SDL doesn't emit the event.
         // Without this, when clicking to gain focus, our widgets wouldn't activate even though they showed as hovered.
@@ -1434,8 +1465,10 @@ float4 main(PS_INPUT input) : SV_Target
 
     void GUISystem::update_platform()
     {
-        ImGuiIO& io = ImGui::GetIO();
         VadonApp::Platform::PlatformInterface& platform_interface = m_application.get_system<VadonApp::Platform::PlatformInterface>();
+        process_platform_events(platform_interface.poll_events());
+
+        ImGuiIO& io = ImGui::GetIO();
         const VadonApp::Platform::WindowFlags platform_window_flags = platform_interface.get_window_flags(m_platform_data.window_handle);
 
         // Setup display size (every frame to accommodate for window resizing)
@@ -1701,15 +1734,17 @@ float4 main(PS_INPUT input) : SV_Target
         }
     }
 
-    const char* GUISystem::get_clipboard_text(void* /*user_data*/)
+    const char* GUISystem::get_clipboard_text(void* user_data)
     {
-        VadonApp::Platform::PlatformInterface& platform_interface = dev_gui_instance->m_application.get_system<VadonApp::Platform::PlatformInterface>();
+        GUISystem* this_gui = static_cast<GUISystem*>(user_data);
+        VadonApp::Platform::PlatformInterface& platform_interface = this_gui->m_application.get_system<VadonApp::Platform::PlatformInterface>();
         return platform_interface.get_clipboard_text();
     }
 
-    void GUISystem::set_clipboard_text(void* /*user_data*/, const char* text)
+    void GUISystem::set_clipboard_text(void* user_data, const char* text)
     {
-        VadonApp::Platform::PlatformInterface& platform_interface = dev_gui_instance->m_application.get_system<VadonApp::Platform::PlatformInterface>();
+        GUISystem* this_gui = static_cast<GUISystem*>(user_data);
+        VadonApp::Platform::PlatformInterface& platform_interface = this_gui->m_application.get_system<VadonApp::Platform::PlatformInterface>();
         platform_interface.set_clipboard_text(text);
     }
 }

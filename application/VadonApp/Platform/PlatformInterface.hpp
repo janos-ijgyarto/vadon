@@ -26,8 +26,6 @@ namespace VadonApp::Platform
 	class PlatformInterface : public PlatformSystem<PlatformInterface>
 	{
 	public:
-		using EventCallback = std::function<void(const PlatformEventList&)>;
-
 		virtual ~PlatformInterface() {}
 
 		virtual WindowHandle create_window(const WindowInfo& window_info) = 0;
@@ -58,10 +56,8 @@ namespace VadonApp::Platform
 		virtual bool is_window_focused(WindowHandle window_handle) const = 0;
 
 		// TODO: window show/hide/minimize/maximize/etc.!
-
-		// NOTE: this will dispatch to all registered callbacks!
-		virtual void poll_events() = 0;
-		virtual void register_event_callback(EventCallback callback) = 0;
+		virtual void new_frame() = 0; // TODO: merge with poll_events?
+		virtual const PlatformEventList& poll_events() = 0;
 
 		virtual FeatureFlags get_feature_flags() const = 0;
 		virtual uint64_t get_performance_frequency() const = 0;
@@ -80,7 +76,11 @@ namespace VadonApp::Platform
 	protected:
 		PlatformInterface(Core::Application& application)
 			: System(application)
+			, m_events_polled(false)
 		{}
+
+		PlatformEventList m_event_list;
+		bool m_events_polled;
 	};
 }
 

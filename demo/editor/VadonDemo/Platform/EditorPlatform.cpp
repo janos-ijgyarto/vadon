@@ -14,7 +14,7 @@ namespace VadonDemo::Platform
 
     bool EditorPlatform::initialize()
     {
-        VadonApp::Core::Application& engine_app = m_editor.get_engine_app();
+        VadonApp::Core::Application& engine_app = m_editor.get_common_editor().get_engine_app();
         VadonApp::Platform::InputSystem& input_system = engine_app.get_system<VadonApp::Platform::InputSystem>();
 
         {

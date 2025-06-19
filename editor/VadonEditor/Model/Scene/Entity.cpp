@@ -165,7 +165,7 @@ namespace VadonEditor::Model
 	{
 		if (is_sub_scene() == true)
 		{
-			m_editor.get_engine_core().log_error("Cannot modify component structure of sub-scene Entity!\n");
+			Vadon::Core::Logger::log_error("Cannot modify component structure of sub-scene Entity!\n");
 			return false;
 		}
 
@@ -195,7 +195,7 @@ namespace VadonEditor::Model
 	{
 		if (is_sub_scene() == true)
 		{
-			m_editor.get_engine_core().log_error("Cannot modify component structure of sub-scene Entity!\n");
+			Vadon::Core::Logger::log_error("Cannot modify component structure of sub-scene Entity!\n");
 			return;
 		}
 

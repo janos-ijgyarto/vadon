@@ -20,16 +20,22 @@ namespace VadonDemo::View
 		bool initialize();
         void update();
 
+		void update_dirty_entities();
+
 		void init_entity(Vadon::ECS::EntityHandle entity);
 		void update_entity(Vadon::ECS::EntityHandle entity);
 		void remove_entity(Vadon::ECS::EntityHandle entity);
 
-		void update_resource(VadonDemo::View::ViewResourceHandle resource_handle);
-		void load_sprite_resource(VadonDemo::View::SpriteResourceHandle sprite_handle);
+		void resource_edited(Vadon::Scene::ResourceHandle resource_handle);
+		void view_resource_edited(ViewResourceHandle view_resource);
+		void texture_resource_edited(VadonDemo::Render::TextureResourceHandle texture_handle);
+
+		void load_view_resource(ViewResourceHandle view_resource);
 
 		void update_camera(VadonEditor::Model::Scene* active_scene);
 
 		Core::Editor& m_editor;
+		bool m_entities_dirty;
 
 		friend Core::Editor;
 	};

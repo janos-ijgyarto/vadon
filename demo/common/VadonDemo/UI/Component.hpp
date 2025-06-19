@@ -1,6 +1,7 @@
 #ifndef VADONDEMO_UI_COMPONENT_HPP
 #define VADONDEMO_UI_COMPONENT_HPP
 #include <Vadon/Render/Canvas/Item.hpp>
+#include <Vadon/Render/Utilities/Color.hpp>
 namespace VadonDemo::UI
 {
 	// TODO: implement some kind of logic which allows controlling "groups" of UI entities
@@ -14,15 +15,17 @@ namespace VadonDemo::UI
 
 		// TODO: position and sizing style, whether to use absolute coords or relative to screen size
 
+		bool dirty = false; // FIXME: replace with editor-specific "tag component" implementation!
+
 		static void register_component();
 	};
 
 	struct Frame
 	{
-		Vadon::Utilities::Vector3 outline_color = Vadon::Utilities::Vector3_One;
+		Vadon::Render::ColorRGBA outline_color = Vadon::Utilities::Color_White;
 		float outline_thickness = 1.0f;
 
-		Vadon::Utilities::Vector3 fill_color = Vadon::Utilities::Vector3_One;
+		Vadon::Render::ColorRGBA fill_color = Vadon::Utilities::Color_White;
 		bool fill_enable = false;
 
 		// TODO: draw anchor, to decide whether to draw relative to center or top left corner
@@ -33,7 +36,7 @@ namespace VadonDemo::UI
 	struct Text
 	{
 		std::string text;
-		Vadon::Utilities::Vector3 color = Vadon::Utilities::Vector3_One;
+		Vadon::Render::ColorRGBA color = Vadon::Utilities::Color_White;
 		Vadon::Utilities::Vector2 offset = Vadon::Utilities::Vector2_Zero;
 		// TODO: font, text size, etc.
 		// TODO: alignment (left vs center)

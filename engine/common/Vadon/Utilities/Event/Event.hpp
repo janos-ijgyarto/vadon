@@ -1,5 +1,6 @@
 #ifndef VADON_UTILITIES_EVENT_EVENT_HPP
 #define VADON_UTILITIES_EVENT_EVENT_HPP
+#include <Vadon/Utilities/Event/EventHandler.hpp>
 #include <Vadon/Utilities/Event/EventDispatcher.hpp>
 namespace Vadon::Utilities
 {

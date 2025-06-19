@@ -37,7 +37,7 @@ namespace
 		VadonApp::UI::Developer::SliderFloat2 slider_float2;
 		float slider_float_cache = 0.0f;
 
-		VadonApp::UI::Developer::InputFloat3 color_picker;
+		VadonApp::UI::Developer::ColorEdit color_edit;
 
 		VadonApp::UI::Developer::Button console_button;
 
@@ -97,8 +97,8 @@ namespace
 			slider_float2.max = 10.0f;
 			slider_float2.format = "%.4f";
 
-			color_picker.label = "Color picker";
-			color_picker.input = { 0,0,0 };
+			color_edit.label = "Color edit";
+			color_edit.value = Vadon::Utilities::Color_White;
 
 			console_button.label = "Show console";
 
@@ -256,7 +256,7 @@ namespace VadonDemo::UI
 
 				if (dev_gui.push_tree_node("Color"))
 				{
-					dev_gui.draw_color3_picker(m_dev_gui.color_picker);
+					dev_gui.draw_color_edit(m_dev_gui.color_edit);
 					dev_gui.pop_tree_node();
 				}
 
@@ -290,7 +290,7 @@ namespace VadonDemo::UI
 
 				if (dev_gui.draw_button(m_dev_gui.console_button))
 				{
-					m_game_core.get_engine_app().get_system<VadonApp::UI::UISystem>().get_console().show();
+					m_game_core.get_ui_system().show_console();
 				}
 			}
 			dev_gui.end_window();

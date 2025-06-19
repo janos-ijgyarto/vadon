@@ -15,11 +15,6 @@ namespace VadonApp::Private::UI
 			return false;
 		}
 
-		if (!m_console.initialize())
-		{
-			return false;
-		}
-
 		return true;
 	}
 
@@ -35,7 +30,6 @@ namespace VadonApp::Private::UI
 
 	UISystem::UISystem(Core::Application& application)
 		: VadonApp::UI::UISystem(application)
-		, m_console(application)
 	{
 		m_dev_gui = Developer::GUISystem::get_gui(application);
 	}

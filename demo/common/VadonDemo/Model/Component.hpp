@@ -14,6 +14,8 @@ namespace VadonDemo::Model
 		float rotation = 0;
 		float scale = 1.0f;
 
+		bool teleported = false;
+
 		static void register_component();
 	};
 
@@ -45,7 +47,6 @@ namespace VadonDemo::Model
 	struct PlayerInput
 	{
 		Vadon::Utilities::Vector2 move_dir = Vadon::Utilities::Vector2_Zero;
-		bool fire = false;
 	};
 
 	struct Player
@@ -54,21 +55,21 @@ namespace VadonDemo::Model
 
 		int score = 0;
 		PlayerInput input;
+		Vadon::Utilities::Vector2 last_move_dir = { 1, 0 };
 
 		float damage_timer = 0.0f;
 
 		static void register_component();
 	};
 
-	// TODO: should weapon also be its own entity?
+	// TODO: make weapon its own entity once we have different weapons with their own components
 	struct Weapon
 	{
 		Vadon::Scene::SceneHandle projectile_prefab;
 		float rate_of_fire = 1.0f;
-
-		bool active = true;
-		Vadon::Utilities::Vector2 aim_direction = { 1.0f, 0.0f };
 		float firing_timer = 0.0f;
+
+		Vadon::Utilities::Vector2 aim_direction = { 1, 0 };
 
 		static void register_component();
 	};

@@ -45,11 +45,6 @@ namespace Vadon::Private::Render
 		return true;
 	}
 
-	void RenderSystem::update()
-	{
-		m_frame_system.update();
-	}
-
 	void RenderSystem::shutdown()
 	{
 		using Logger = Vadon::Core::Logger;

@@ -17,6 +17,8 @@ namespace Vadon::Private::Render::DirectX
 
     struct Resource
     {
+		virtual ~Resource() {}
+
 		ResourceType type;
         D3DResource d3d_resource;
 		// TODO: any other data?

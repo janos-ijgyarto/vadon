@@ -20,6 +20,8 @@ namespace VadonApp::Platform
 
 		virtual float get_action_strength(InputActionHandle action_handle) const = 0;
 		virtual bool is_action_pressed(InputActionHandle action_handle) const = 0;
+
+		virtual void update() = 0;
 	protected:
 		InputSystem(Core::Application& application)
 			: System(application)

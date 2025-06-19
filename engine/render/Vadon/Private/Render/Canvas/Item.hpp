@@ -10,7 +10,9 @@ namespace Vadon::Private::Render::Canvas
 	enum class ItemCommandType
 	{
 		DRAW_BATCH,
-		DRAW_DIRECT
+		DRAW_DIRECT,
+		SET_TEXTURE,
+		SET_MATERIAL
 	};
 
 	using ItemCommandBuffer = Vadon::Utilities::PacketQueue;
@@ -25,6 +27,16 @@ namespace Vadon::Private::Render::Canvas
 
 		uint32_t batch_type;
 		T command_data;
+	};
+
+	struct ItemSetTextureCommand
+	{
+		Texture texture;
+	};
+
+	struct ItemSetMaterialCommand
+	{
+		MaterialHandle material;
 	};
 
 	struct ItemData

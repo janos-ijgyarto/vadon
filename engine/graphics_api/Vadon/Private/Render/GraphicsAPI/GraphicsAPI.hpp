@@ -14,7 +14,6 @@ namespace Vadon::Private::Render
 		using Implementation = std::unique_ptr<GraphicsAPIBase>;
 
 		virtual bool initialize() = 0;
-		virtual void update() = 0;
 		virtual void shutdown() = 0;
 
 		static VADONGRAPHICSAPI_API void init_engine_environment(Vadon::Core::EngineEnvironment& environment);

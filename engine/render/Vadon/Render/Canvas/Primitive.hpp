@@ -1,59 +1,57 @@
 #ifndef VADON_RENDER_CANVAS_PRIMITIVE_HPP
 #define VADON_RENDER_CANVAS_PRIMITIVE_HPP
 #include <Vadon/Render/Canvas/Material.hpp>
+#include <Vadon/Render/Utilities/Color.hpp>
 #include <Vadon/Render/Utilities/Vector.hpp>
 #include <Vadon/Render/Utilities/Rectangle.hpp>
 #include <Vadon/Render/GraphicsAPI/Resource/SRV.hpp>
 #include <vector>
 namespace Vadon::Render::Canvas
 {
-	// FIXME: move these into their own headers?
-	using ColorRGBA = Vector4;
+	// TODO: some kind of utility object for colors?
 
-	struct PrimitiveBase
-	{
-		ColorRGBA color = ColorRGBA(1.0f, 1.0f, 1.0f, 1.0f);
-		MaterialHandle material;
-	};
+	// FIXME: move each primitive into their own headers?
 
-	struct Vertex
+	// TODO: separate triangle primitive that only has colors?
+	struct TriangleVertex
 	{
 		Vector2 position = { 0,0 };
 		Vector2 uv = { 0, 0 };
+		ColorRGBA color = Vadon::Utilities::Color_White;
 	};
 
-	// TODO: textured triangles?
-	struct Triangle : public PrimitiveBase
+	struct Triangle
 	{
-		Vertex point_a;
-		Vertex point_b;
-		Vertex point_c;
+		TriangleVertex points[3];
 	};
 
-	// TODO: merge rectangle and sprite somehow?
-	struct Rectangle : public PrimitiveBase
+	// Utility primitive for when we just want to have a colored quad
+	// Optionally an "outline" instead of the filled rectangle
+	struct Rectangle
 	{
-		Render::Rectangle dimensions;
-		bool filled = true;
+		Render::Rectangle dimensions = { .position = Vector2_Zero, .size = Vector2_One };
+		ColorRGBA color = Vadon::Utilities::Color_White;
+		bool filled = true; // TODO: replace with flags?
 		float thickness = 1.0f;
 	};
 
-	struct Sprite : public PrimitiveBase
+	// TODO: we could also require that textures used by the Canvas are "registered" with the system
+	// and we then use an internal handle to reference it
+	// This would allow adding safety checks to make sure the texture is compatible
+	struct Texture
+	{
+		// TODO: any other info?
+		SRVHandle srv;
+	};
+
+	// Utility primitive for when we just want a textured quad
+	struct Sprite
 	{
 		Render::Rectangle dimensions = { .position = Vector2_Zero, .size = Vector2_One };
-		Render::Vector2 uv_top_left = Render::Vector2_Zero;
-		Render::Vector2 uv_top_right = { 1, 0 };
-		Render::Vector2 uv_bottom_left = { 0, 1 };
-		Render::Vector2 uv_bottom_right = Render::Vector2_One;
-		SRVHandle texture_view_handle;
+		Render::Rectangle uv_dimensions = { .position = Vector2_Zero, .size = Vector2_One };
+		Vadon::Render::ColorRGBA color = Vadon::Utilities::Color_White;
 	};
 
 	using SpriteList = std::vector<Sprite>;
-
-	// NOTE: only used as utility object to convert text to sprites
-	struct TextInfo : public PrimitiveBase
-	{
-		Vector2 position;
-	};
 }
 #endif

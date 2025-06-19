@@ -6,6 +6,7 @@ namespace VadonDemo::View
 	struct ViewComponent
 	{
 		ViewResourceHandle resource;
+		bool dirty = false; // FIXME: replace with editor-specific "tag component" implementation!
 
 		Vadon::Render::Canvas::Transform prev_transform;
 		Vadon::Render::Canvas::Transform current_transform;

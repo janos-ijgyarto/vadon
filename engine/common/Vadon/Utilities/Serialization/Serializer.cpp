@@ -12,6 +12,21 @@ namespace Vadon::Utilities
 {
 	namespace
 	{
+		uint32_t reverse_uint_bytes(uint32_t input)
+		{
+			uint32_t output = 0;
+
+			uint8_t* input_bytes = reinterpret_cast<uint8_t*>(&input);
+			uint8_t* output_bytes = reinterpret_cast<uint8_t*>(&output);
+
+			output_bytes[0] = input_bytes[3];
+			output_bytes[1] = input_bytes[2];
+			output_bytes[2] = input_bytes[1];
+			output_bytes[3] = input_bytes[0];
+
+			return output;
+		}
+
 		// FIXME: create proper serialization API!
 		template <typename T>
 		concept IsTrivialJSONWrite = Vadon::Utilities::IsAnyOf<T, int, float, bool, std::string>;
@@ -52,6 +67,7 @@ namespace Vadon::Utilities
 			Result serialize_float(float& /*value*/) override { return Result::NOT_IMPLEMENTED; }
 			Result serialize_bool(bool& /*value*/) override { return Result::NOT_IMPLEMENTED; }
 			Result serialize_string(std::string& /*value*/) override { return Result::NOT_IMPLEMENTED; }
+			Result serialize_color(ColorRGBA& /*value*/) override { return Result::NOT_IMPLEMENTED; }
 
 			Result set_value_reference(std::string_view /*key*/) override { return Result::NOT_IMPLEMENTED; }
 			Result set_value_reference(size_t /*index*/) override { return Result::NOT_IMPLEMENTED; }
@@ -254,6 +270,52 @@ namespace Vadon::Utilities
 			Result serialize_float(float& value) override { return serialize_trivial(value); }
 			Result serialize_bool(bool& value) override { return serialize_trivial(value); }
 			Result serialize_string(std::string& value) override { return serialize_trivial(value); }
+
+			Result serialize_color(ColorRGBA& color) override
+			{
+				if (is_reading() == true)
+				{
+					if (m_value_it->is_string() == false)
+					{
+						return Result::INVALID_DATA;
+					}
+
+					const std::string color_string = m_value_it->get<std::string>();
+					if (color_string.front() != '#')
+					{
+						return Result::INVALID_DATA;
+					}
+					
+					const std::string_view hex_substr = std::string_view(color_string).substr(1);
+					if (hex_substr.length() != 8)
+					{
+						return Result::INVALID_DATA;
+					}
+
+					Result result = Result::SUCCESSFUL;
+					uint32_t color_uint = 0;
+					try
+					{
+						color_uint = std::strtoul(hex_substr.data(), nullptr, 16);
+					}
+					catch (std::exception& e)
+					{
+						Vadon::Core::Logger::log_error(std::format("Serializer error: invalid conversion (\"{}\")", e.what()));
+						result = Result::INVALID_DATA;
+					}
+
+					// Readable representation has RGBA order, need to reverse to get the memory order used by the engine
+					color.value = reverse_uint_bytes(color_uint);
+					return result;
+				}
+				else
+				{
+					// For readable representation, we want the bytes to be in RGBA order
+					uint32_t color_uint = reverse_uint_bytes(color.value);
+					std::string color_string = std::format("#{:0>8x}", color_uint);
+					return serialize_trivial(color_string);
+				}
+			}
 
 			template<typename T>
 			Result serialize_trivial(T& value)

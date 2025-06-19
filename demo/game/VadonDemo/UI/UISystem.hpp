@@ -30,11 +30,16 @@ namespace VadonDemo::UI
 		bool is_dev_gui_enabled() const { return m_dev_gui_enabled; }
 
 		void register_console_command(std::string_view command_name, const ConsoleCommandCallback& callback);
+		void show_console();
 	private:
+		class GameLogger;
+
 		UISystem(Core::GameCore& core);
 
 		bool initialize();
 		void update();
+
+		void update_dirty_entities();
 
 		void init_game_ui();
 		void init_dev_gui();
@@ -48,6 +53,7 @@ namespace VadonDemo::UI
 		void load_main_menu();
 
 		Core::GameCore& m_game_core;
+		std::unique_ptr<GameLogger> m_logger;
 
 		MainWindow m_main_window;
 		std::vector<DevGUICallback> m_dev_gui_callbacks;
@@ -56,6 +62,7 @@ namespace VadonDemo::UI
 		std::unordered_map<std::string, ConsoleCommandCallback> m_console_commands;
 
 		bool m_was_clicked = false;
+		bool m_entities_dirty = false;
 
 		Vadon::ECS::EntityHandle m_main_menu_entity;
 

@@ -21,6 +21,8 @@ namespace VadonApp::Private::Platform
 
 		float get_action_strength(InputActionHandle action_handle) const override;
 		bool is_action_pressed(InputActionHandle action_handle) const override;
+
+		void update() override;
 	private:
 		enum class InputType
 		{
@@ -55,7 +57,6 @@ namespace VadonApp::Private::Platform
 		void shutdown();
 		void reset_states();
 
-		void process_platform_events(const VadonApp::Platform::PlatformEventList& platform_events);
 		static InputActionValue parse_input_event(const VadonApp::Platform::PlatformEvent& input_event);
 
 		Vadon::Utilities::ObjectPool<VadonApp::Platform::InputAction, InputActionData> m_action_pool;

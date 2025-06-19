@@ -119,7 +119,7 @@ namespace VadonEditor::View
 				}
 				else
 				{
-					m_editor.get_engine_core().log_error("SceneListWindow: failed to save Scene!\n");
+					Vadon::Core::Logger::log_error("SceneListWindow: failed to save Scene!\n");
 				}
 
 				m_saved_scene = nullptr;
@@ -137,7 +137,7 @@ namespace VadonEditor::View
 				}
 				else
 				{
-					m_editor.get_engine_core().log_error("SceneListWindow: failed to load Scene!\n");
+					Vadon::Core::Logger::log_error("SceneListWindow: failed to load Scene!\n");
 				}
 			}
 
@@ -159,7 +159,7 @@ namespace VadonEditor::View
 		Model::Scene* new_scene = scene_system.create_scene();
 		if (new_scene == nullptr)
 		{
-			m_editor.get_engine_core().log_error("SceneListWindow: failed to create new Scene!\n");
+			Vadon::Core::Logger::log_error("SceneListWindow: failed to create new Scene!\n");
 			return;
 		}
 
@@ -199,7 +199,7 @@ namespace VadonEditor::View
 			// Existing scene, attempt to save to previous path
 			if (active_scene->save() == false)
 			{
-				m_editor.get_engine_core().log_error("SceneListWindow: failed to save Scene!\n");
+				Vadon::Core::Logger::log_error("SceneListWindow: failed to save Scene!\n");
 			}
 		}
 	}

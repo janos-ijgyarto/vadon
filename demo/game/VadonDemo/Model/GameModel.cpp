@@ -36,7 +36,7 @@ namespace VadonDemo::Model
 		VadonDemo::Model::Model& model = m_game_core.get_core().get_model();
 		if (model.init_simulation(ecs_world, level_config.scene_id) == false)
 		{
-			// TODO: error?
+			Vadon::Core::Logger::log_error("Failed to load level!");
 			m_state = State::INIT;
 			m_sim_state = SimState::INVALID;
 			return false;
@@ -175,8 +175,6 @@ namespace VadonDemo::Model
 			{
 				player_input.move_dir.y = -1.0f;
 			}
-
-			player_input.fire = input_system.is_action_pressed(game_platform_interface.get_action(Platform::GameInputAction::FIRE));
 		}
 
 		auto player_query = m_game_core.get_ecs_world().get_component_manager().run_component_query<VadonDemo::Model::Player&>();

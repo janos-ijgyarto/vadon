@@ -56,7 +56,7 @@ namespace VadonEditor::Model
 		// Attempt to save the resource
 		if (m_resource->save() == false)
 		{
-			m_editor.get_engine_core().log_error("Editor scene: failed to save Scene!\n");
+			Vadon::Core::Logger::log_error("Editor scene: failed to save Scene!\n");
 			return false;
 		}
 
@@ -101,7 +101,7 @@ namespace VadonEditor::Model
 		// Scene can only modify its own contents
 		if (is_owner_of_entity(parent) == false)
 		{
-			m_editor.get_engine_core().log_error("Editor scene: cannot modify Entities of other scenes!\n");
+			Vadon::Core::Logger::log_error("Editor scene: cannot modify Entities of other scenes!\n");
 			return nullptr;
 		}
 
@@ -113,27 +113,27 @@ namespace VadonEditor::Model
 		// Should not try to instantiate itself within itself!
 		if (scene->get_id() == get_id())
 		{
-			m_editor.get_engine_core().log_error("Editor scene: cannot add itself as sub-scene!\n");
+			Vadon::Core::Logger::log_error("Editor scene: cannot add itself as sub-scene!\n");
 			return nullptr;
 		}
 
 		// Scene can only modify its own contents
 		if (is_owner_of_entity(parent) == false)
 		{
-			m_editor.get_engine_core().log_error("Editor scene: cannot add sub-scene to Entity not owned by this scene!\n");
+			Vadon::Core::Logger::log_error("Editor scene: cannot add sub-scene to Entity not owned by this scene!\n");
 			return nullptr;
 		}
 
 		if (is_scene_dependent(scene->get_id()) == true)
 		{
-			m_editor.get_engine_core().log_error("Editor scene: cannot instantiate sub-scene that is dependent on this scene!\n");
+			Vadon::Core::Logger::log_error("Editor scene: cannot instantiate sub-scene that is dependent on this scene!\n");
 			return nullptr;
 		}
 
 		Vadon::ECS::EntityHandle sub_scene_root_handle = scene->instantiate(true);
 		if (sub_scene_root_handle.is_valid() == false)
 		{
-			m_editor.get_engine_core().log_error("Editor scene: failed to instantiate sub-scene!\n");
+			Vadon::Core::Logger::log_error("Editor scene: failed to instantiate sub-scene!\n");
 			return nullptr;
 		}
 
@@ -151,7 +151,7 @@ namespace VadonEditor::Model
 	{
 		if (is_owner_of_entity(entity) == false)
 		{
-			m_editor.get_engine_core().log_error("Editor scene: cannot modify Entities of other scenes!\n");
+			Vadon::Core::Logger::log_error("Editor scene: cannot modify Entities of other scenes!\n");
 			return false;
 		}
 
@@ -173,7 +173,7 @@ namespace VadonEditor::Model
 	{
 		if (load() == false)
 		{
-			m_editor.get_engine_core().log_error("Editor scene: failed to load scene for instantiation!\n");
+			Vadon::Core::Logger::log_error("Editor scene: failed to load scene for instantiation!\n");
 			return Vadon::ECS::EntityHandle();
 		}
 
@@ -183,7 +183,7 @@ namespace VadonEditor::Model
 		Vadon::ECS::EntityHandle instantiated_entity_handle = scene_system.instantiate_scene(get_handle(), ecs_world, is_sub_scene);
 		if (instantiated_entity_handle.is_valid() == false)
 		{
-			m_editor.get_engine_core().log_error("Editor scene: failed to instantiate scene!\n");
+			Vadon::Core::Logger::log_error("Editor scene: failed to instantiate scene!\n");
 		}
 
 		return instantiated_entity_handle;
@@ -347,7 +347,7 @@ namespace VadonEditor::Model
 
 		if (scene_system.package_scene_data(get_handle(), ecs_world, m_root_entity->get_handle()) == false)
 		{
-			m_editor.get_engine_core().log_error("Editor scene: failed to package Scene data!\n");
+			Vadon::Core::Logger::log_error("Editor scene: failed to package Scene data!\n");
 			return false;
 		}
 

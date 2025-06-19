@@ -67,50 +67,34 @@ namespace VadonDemo::Render
 		return common_render.get_context(m_canvas_context);
 	}
 
-	TextureResource* RenderSystem::get_texture_resource(std::string_view path)
-	{
-		// FIXME: deduplicate from Editor implementation
-		const std::string path_string(path);
-		auto texture_it = m_textures.find(path_string);
-		if (texture_it == m_textures.end())
-		{
-			TextureResource new_resource = m_game_core.get_core().get_render().load_texture_resource(Vadon::Core::FileSystemPath{ .root_directory =	m_game_core.get_project_root_dir(), .path = std::string(path)});
-
-			if (new_resource.texture.is_valid() == false)
-			{
-				return nullptr;
-			}
-
-			// Add to lookup
-			texture_it = m_textures.insert(std::make_pair(path_string, new_resource)).first;
-		}
-
-		return &texture_it->second;
-	}
-
-	void RenderSystem::init_entity(Vadon::ECS::EntityHandle entity)
-	{
-		Vadon::ECS::World& ecs_world = m_game_core.get_ecs_world();
-		CanvasComponent* canvas_component = ecs_world.get_component_manager().get_component<CanvasComponent>(entity);
-		if (canvas_component == nullptr)
-		{
-			return;
-		}
-
-		if (canvas_component->canvas_item.is_valid() == true)
-		{
-			// Canvas item already initialized
-			// FIXME: check if context is correctly set?
-			return;
-		}
-
-		m_game_core.get_core().get_render().init_entity(ecs_world, entity, m_canvas_context);
-	}
-
 	Vadon::Utilities::Vector2i RenderSystem::map_to_game_viewport(const Vadon::Utilities::Vector2i& position) const
 	{
 		const Core::GlobalConfiguration& global_config = m_game_core.get_core().get_global_config();
 		return ((Vadon::Utilities::Vector2(position) - m_game_viewport.dimensions.position) / m_game_viewport.dimensions.size) * global_config.viewport_size;
+	}
+
+	void RenderSystem::load_texture_resource(TextureResourceHandle texture_handle)
+	{
+		if (texture_handle.is_valid() == false)
+		{
+			return;
+		}
+
+		// FIXME: implement file resource which already has the necessary file system metadata!		
+		VadonDemo::Render::Render& common_render = m_game_core.get_core().get_render();
+		common_render.init_texture_resource(texture_handle, m_game_core.get_project_root_dir());
+	}
+
+	void RenderSystem::load_shader_resource(ShaderResourceHandle shader_handle)
+	{
+		if (shader_handle.is_valid() == false)
+		{
+			return;
+		}
+
+		// FIXME: implement file resource which already has the necessary file system metadata!
+		VadonDemo::Render::Render& common_render = m_game_core.get_core().get_render();
+		common_render.init_shader_resource(shader_handle, m_game_core.get_project_root_dir());
 	}
 
 	RenderSystem::RenderSystem(Core::GameCore& game_core)
@@ -140,45 +124,6 @@ namespace VadonDemo::Render
 		{
 			return false;
 		}
-
-		// Add event handler for window move & resize (affects rendering so it has to happen at the appropriate time)
-		platform_interface.register_event_callback(
-			[this](const VadonApp::Platform::PlatformEventList& platform_events)
-			{
-				for (const VadonApp::Platform::PlatformEvent& current_event : platform_events)
-				{
-					const VadonApp::Platform::PlatformEventType current_event_type = Vadon::Utilities::to_enum<VadonApp::Platform::PlatformEventType>(static_cast<int32_t>(current_event.index()));
-					switch (current_event_type)
-					{
-					case VadonApp::Platform::PlatformEventType::WINDOW:
-					{
-						const VadonApp::Platform::WindowEvent& window_event = std::get<VadonApp::Platform::WindowEvent>(current_event);
-						switch (window_event.type)
-						{
-						case VadonApp::Platform::WindowEventType::MOVED:
-						case VadonApp::Platform::WindowEventType::RESIZED:
-						case VadonApp::Platform::WindowEventType::SIZE_CHANGED:
-						{
-							// Get drawable size							
-							VadonApp::Core::Application& engine_app = m_game_core.get_engine_app();
-							VadonApp::Platform::WindowHandle main_window = m_game_core.get_platform_interface().get_main_window();
-							const Vadon::Utilities::Vector2i drawable_size = engine_app.get_system<VadonApp::Platform::PlatformInterface>().get_window_drawable_size(main_window);
-
-							// Resize the window render target
-							Vadon::Render::RenderTargetSystem& rt_system = engine_app.get_engine_core().get_system<Vadon::Render::RenderTargetSystem>();
-							rt_system.resize_window(m_render_window, drawable_size);
-
-							// Update the game viewport
-							update_viewport(drawable_size);
-						}
-						break;
-						}
-					}
-					break;
-					}
-				}
-			}
-		);
 
 		Vadon::Render::ShaderSystem& shader_system = engine_core.get_system<Vadon::Render::ShaderSystem>();
 		{
@@ -459,11 +404,53 @@ namespace VadonDemo::Render
 			m_game_viewport.dimensions.position = { 0, (window_size.y - m_game_viewport.dimensions.size.y) / 2 };
 		}
 	}
+
+	void RenderSystem::init_entity(Vadon::ECS::EntityHandle entity)
+	{
+		Vadon::ECS::World& ecs_world = m_game_core.get_ecs_world();
+		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
+		CanvasComponent* canvas_component = component_manager.get_component<CanvasComponent>(entity);
+
+		VadonDemo::Render::Render& common_render = m_game_core.get_core().get_render();
+		if (canvas_component != nullptr)
+		{
+			common_render.init_canvas_entity(ecs_world, entity, m_canvas_context);
+		}
+
+		if (SpriteTilingComponent* sprite_component = component_manager.get_component<SpriteTilingComponent>(entity))
+		{
+			load_texture_resource(sprite_component->texture);
+			common_render.init_sprite_tiling_entity(ecs_world, entity);
+		}
+	}
 	
 	void RenderSystem::update()
 	{
+		process_platform_events();
+
 		VadonApp::Core::Application& engine_app = m_game_core.get_engine_app();
 		Vadon::Core::EngineCoreInterface& engine_core = engine_app.get_engine_core();
+
+		// Update sprite tiling (needs the camera view rectangle)
+		{
+			Vadon::ECS::World& ecs_world = m_game_core.get_ecs_world();
+			auto sprite_query = ecs_world.get_component_manager().run_component_query<CanvasComponent&, SpriteTilingComponent&>();
+
+			const Vadon::Render::Canvas::RenderContext& render_context = get_canvas_context();
+			Vadon::Render::Rectangle culling_rect = render_context.camera.view_rectangle;
+			culling_rect.size /= render_context.camera.zoom;
+
+			VadonDemo::Render::Render& common_render = m_game_core.get_core().get_render();
+
+			for (auto sprite_it = sprite_query.get_iterator(); sprite_it.is_valid() == true; sprite_it.next())
+			{
+				auto sprite_tuple = sprite_it.get_tuple();
+				SpriteTilingComponent& current_sprite_component = std::get<SpriteTilingComponent&>(sprite_tuple);
+				const CanvasComponent& current_canvas_component = std::get<CanvasComponent&>(sprite_tuple);
+
+				common_render.update_sprite_tiling_entity(current_canvas_component, current_sprite_component, culling_rect);
+			}
+		}
 
 		// Execute frame graph
 		Vadon::Render::FrameSystem& frame_system = engine_core.get_system<Vadon::Render::FrameSystem>();
@@ -474,9 +461,48 @@ namespace VadonDemo::Render
 		rt_system.update_window(Vadon::Render::WindowUpdateInfo{ .window = m_render_window });
 	}
 
+	void RenderSystem::process_platform_events()
+	{
+		VadonApp::Core::Application& engine_app = m_game_core.get_engine_app();
+		VadonApp::Platform::PlatformInterface& platform_interface = engine_app.get_system<VadonApp::Platform::PlatformInterface>();
+
+		// Handle window move & resize (affects rendering so it has to happen at the appropriate time)
+		for (const VadonApp::Platform::PlatformEvent& current_event : platform_interface.poll_events())
+		{
+			const VadonApp::Platform::PlatformEventType current_event_type = Vadon::Utilities::to_enum<VadonApp::Platform::PlatformEventType>(static_cast<int32_t>(current_event.index()));
+			switch (current_event_type)
+			{
+			case VadonApp::Platform::PlatformEventType::WINDOW:
+			{
+				const VadonApp::Platform::WindowEvent& window_event = std::get<VadonApp::Platform::WindowEvent>(current_event);
+				switch (window_event.type)
+				{
+				case VadonApp::Platform::WindowEventType::MOVED:
+				case VadonApp::Platform::WindowEventType::RESIZED:
+				case VadonApp::Platform::WindowEventType::SIZE_CHANGED:
+				{
+					// Get drawable size							
+					VadonApp::Platform::WindowHandle main_window = m_game_core.get_platform_interface().get_main_window();
+					const Vadon::Utilities::Vector2i drawable_size = engine_app.get_system<VadonApp::Platform::PlatformInterface>().get_window_drawable_size(main_window);
+
+					// Resize the window render target
+					Vadon::Render::RenderTargetSystem& rt_system = engine_app.get_engine_core().get_system<Vadon::Render::RenderTargetSystem>();
+					rt_system.resize_window(m_render_window, drawable_size);
+
+					// Update the game viewport
+					update_viewport(drawable_size);
+				}
+				break;
+				}
+			}
+			break;
+			}
+		}
+	}
+
 	void RenderSystem::remove_entity(Vadon::ECS::EntityHandle entity)
 	{
 		Vadon::ECS::World& ecs_world = m_game_core.get_ecs_world();
-		m_game_core.get_core().get_render().remove_entity(ecs_world, entity);
+		m_game_core.get_core().get_render().remove_canvas_entity(ecs_world, entity);
 	}
 }

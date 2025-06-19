@@ -271,7 +271,7 @@ namespace VadonEditor::Model
 		Vadon::Scene::ResourceHandle new_resource_handle = resource_system.create_resource(resource_type);
 		if (new_resource_handle.is_valid() == false)
 		{
-			engine_core.log_error("Editor resource system: failed to create resource!\n");
+			Vadon::Core::Logger::log_error("Editor resource system: failed to create resource!\n");
 			return nullptr;
 		}
 

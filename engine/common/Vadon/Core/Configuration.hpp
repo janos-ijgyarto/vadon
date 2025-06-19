@@ -1,16 +1,12 @@
 #ifndef VADON_CORE_CONFIGURATION_HPP
 #define VADON_CORE_CONFIGURATION_HPP
-#include <Vadon/Core/Task/Configuration.hpp>
 namespace Vadon::Core
 {
-	struct CoreConfiguration
+	struct CommonConfiguration
 	{
-		std::string program_name;
-	};
-
-	struct Configuration
-	{
-		CoreConfiguration core_config;
+		// TODO: settings which need to be applied when "initialize" is called
+		// This is mostly relevant for subsystems which must be created in this phase, e.g selecting graphics backend
+		// Afterward, client code can directly initialize specific subsystems (e.g starting up task threads)
 	};
 }
 #endif

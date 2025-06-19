@@ -67,12 +67,17 @@ namespace VadonDemo::Platform
 
 		if (m_dispatch_timer > c_platform_dispatch_interval)
 		{
+			// Reset dispatch timer
+			m_dispatch_timer = 0.0f;
+
 			VadonApp::Core::Application& engine_app = m_game_core.get_engine_app();
 
 			VadonApp::Platform::PlatformInterface& platform_interface = engine_app.get_system<VadonApp::Platform::PlatformInterface>();
-			platform_interface.poll_events();
+			platform_interface.new_frame();
 
-			m_dispatch_timer = 0.0f;
+			// Update inputs (this will poll the platform events)
+			VadonApp::Platform::InputSystem& input_system = engine_app.get_system<VadonApp::Platform::InputSystem>();
+			input_system.update();
 		}
 	}
 
@@ -103,12 +108,6 @@ namespace VadonDemo::Platform
 			VadonApp::Platform::InputActionHandle move_right_action = input_system.create_input_action(VadonApp::Platform::InputActionInfo{ .name = "move_right" });
 			input_system.add_key_entry(move_right_action, VadonApp::Platform::KeyCode::RIGHT);
 			m_input_actions[Vadon::Utilities::to_integral(GameInputAction::MOVE_RIGHT)] = move_right_action;
-		}
-
-		{
-			VadonApp::Platform::InputActionHandle fire_action = input_system.create_input_action(VadonApp::Platform::InputActionInfo{ .name = "fire" });
-			input_system.add_key_entry(fire_action, VadonApp::Platform::KeyCode::SPACE);
-			m_input_actions[Vadon::Utilities::to_integral(GameInputAction::FIRE)] = fire_action;
 		}
 
 		{

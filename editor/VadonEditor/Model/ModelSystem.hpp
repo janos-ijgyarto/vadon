@@ -9,6 +9,7 @@ namespace Vadon::ECS
 namespace VadonEditor::Core
 {
 	class Editor;
+	class ProjectManager;
 }
 namespace VadonEditor::Model
 {
@@ -33,6 +34,7 @@ namespace VadonEditor::Model
 		std::unique_ptr<Internal> m_internal;
 
 		friend Core::Editor;
+		friend Core::ProjectManager;
 	};
 }
 #endif

@@ -35,6 +35,7 @@ namespace VadonDemo::UI
 
 namespace Vadon::Core
 {
+	class EngineCoreInterface;
 	class EngineEnvironment;
 	struct Project;
 }
@@ -57,6 +58,7 @@ namespace VadonDemo::Core
 
 		int execute(int argc, char* argv[]);
 
+		Vadon::Core::EngineCoreInterface& get_engine_core();
 		VadonApp::Core::Application& get_engine_app();
 
 		Platform::PlatformInterface& get_platform_interface();
@@ -73,10 +75,6 @@ namespace VadonDemo::Core
 
 		const Vadon::Core::Project& get_project_info() const;
 		Vadon::Core::RootDirectoryHandle get_project_root_dir() const;
-
-		// FIXME: implement a proper CLI parser!
-		bool has_command_line_arg(std::string_view name) const;
-		std::string get_command_line_arg(std::string_view name) const;
 
 		void request_shutdown();
 	private:

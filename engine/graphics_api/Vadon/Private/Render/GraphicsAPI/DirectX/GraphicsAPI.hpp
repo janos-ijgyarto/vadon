@@ -27,7 +27,6 @@ namespace Vadon::Private::Render::DirectX
 		void draw(const Vadon::Render::DrawCommand& command) override;
 
 		bool initialize() override;
-		void update() override;
 		void shutdown() override;
 
 		IDXGIFactory6* get_dxgi_factory() const { return m_dxgi_factory.Get(); }

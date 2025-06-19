@@ -1,7 +1,7 @@
 #ifndef VADON_PRIVATE_CORE_CORE_HPP
 #define VADON_PRIVATE_CORE_CORE_HPP
-#include <Vadon/Core/CoreInterface.hpp>
-#include <Vadon/Core/Logger.hpp>
+#include <Vadon/Core/Core.hpp>
+#include <Vadon/Core/CoreConfiguration.hpp>
 
 #include <Vadon/Private/Core/File/FileSystem.hpp>
 #include <Vadon/Private/Core/Task/TaskSystem.hpp>
@@ -14,19 +14,18 @@
 
 namespace Vadon::Private::Core
 {
-	class EngineCore : public Vadon::Core::EngineCoreInterface
+	class EngineCore : public Vadon::Core::EngineCoreImplementation
 	{
 	public:
 		EngineCore();
 		~EngineCore();
 
-		bool initialize(const Vadon::Core::Configuration& config = Vadon::Core::Configuration()) override;
-		void update() override;
+		bool initialize(const Vadon::Core::CoreConfiguration& config) override;
 		void shutdown() override;
 
-		const Vadon::Core::Configuration& get_config() const override { return m_config; }
+		const Vadon::Core::CommonConfiguration& get_config() const override { return m_config.common_config; }
 	private:
-		Vadon::Core::Configuration m_config;
+		Vadon::Core::CoreConfiguration m_config;
 
 		FileSystem m_file_system;
 		TaskSystem m_task_system;

@@ -27,17 +27,9 @@
                     },
                     {
                         "properties": {
-                            "fill_color": [
-                                1.0,
-                                1.0,
-                                1.0
-                            ],
+                            "fill_color": "#ffffffff",
                             "fill_enable": false,
-                            "outline_color": [
-                                1.0,
-                                1.0,
-                                1.0
-                            ],
+                            "outline_color": "#ffffffff",
                             "outline_thickness": 1.0
                         },
                         "type": "VadonDemo::UI::Frame"

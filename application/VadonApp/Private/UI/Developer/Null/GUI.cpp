@@ -247,6 +247,11 @@ namespace VadonApp::Private::UI::Developer::Null
         return false;
     }
 
+    bool GUISystem::draw_input_float3(InputFloat3& /*input_float*/)
+    {
+        return false;
+    }
+
     bool GUISystem::draw_input_text(InputText& /*input_text*/)
     {
         // TODO!!!
@@ -277,7 +282,7 @@ namespace VadonApp::Private::UI::Developer::Null
         return false;
     }
 
-    bool GUISystem::draw_color3_picker(InputFloat3& /*color*/)
+    bool GUISystem::draw_color_edit(ColorEdit& /*color*/)
     {
         return false;
     }
@@ -340,6 +345,11 @@ namespace VadonApp::Private::UI::Developer::Null
     }
 
     void GUISystem::add_separator_text(std::string_view /*text*/)
+    {
+        // TODO
+    }
+
+    void GUISystem::draw_clipped_text_list(const TextBuffer& /*text_buffer*/)
     {
         // TODO
     }

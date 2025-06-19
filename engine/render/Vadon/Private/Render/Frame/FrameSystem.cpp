@@ -192,11 +192,6 @@ namespace Vadon::Private::Render
 		return true;
 	}
 
-	void FrameSystem::update()
-	{
-		// TODO!!!
-	}
-
 	void FrameSystem::shutdown()
 	{
 		// TODO!!!

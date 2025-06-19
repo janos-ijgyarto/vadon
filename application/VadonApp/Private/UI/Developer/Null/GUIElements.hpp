@@ -21,6 +21,8 @@ namespace VadonApp::Private::UI::Developer::Null
 	using SliderFloat = VadonApp::UI::Developer::SliderFloat;
 	using SliderFloat2 = VadonApp::UI::Developer::SliderFloat2;
 
+	using ColorEdit = VadonApp::UI::Developer::ColorEdit;
+
 	using Button = VadonApp::UI::Developer::Button;
 
 	using Checkbox = VadonApp::UI::Developer::Checkbox;
@@ -31,5 +33,7 @@ namespace VadonApp::Private::UI::Developer::Null
 	using Table = VadonApp::UI::Developer::Table;
 
 	using MenuItem = VadonApp::UI::Developer::MenuItem;
+
+	using TextBuffer = VadonApp::UI::Developer::TextBuffer;
 }
 #endif

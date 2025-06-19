@@ -2,8 +2,7 @@
     "id": "QA85kaI8S9Gbv+1BcKK+3A==",
     "properties": {
         "name": "",
-        "repeat": 3,
-        "texture_path": "assets/grass_texture_repeating"
+        "texture": "SG21el1JQwC4xfVZeEqj2A=="
     },
     "type": "VadonDemo::View::Sprite"
 }

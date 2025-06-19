@@ -50,7 +50,7 @@ namespace Vadon::Utilities
 
 	inline Vadon::Utilities::Serializer::Result process_trivial_property(Vadon::Utilities::Serializer& serializer, std::string_view property_name, Vadon::Utilities::Variant& property_value, Vadon::Utilities::ErasedDataTypeID data_type)
 	{
-		return serialize_trivial_property_fold<int, float, bool, std::string, Vadon::Utilities::Vector2, Vadon::Utilities::Vector2i, Vadon::Utilities::Vector3, Vadon::Utilities::UUID>(serializer, property_name, property_value, data_type);
+		return serialize_trivial_property_fold<int, float, bool, std::string, Vadon::Utilities::Vector2, Vadon::Utilities::Vector2i, Vadon::Utilities::Vector3, Vadon::Utilities::ColorRGBA, Vadon::Utilities::UUID>(serializer, property_name, property_value, data_type);
 	}
 }
 #endif

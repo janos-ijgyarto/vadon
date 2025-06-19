@@ -33,8 +33,8 @@ namespace VadonApp::Private::Platform::Null
 
 		bool is_window_focused(VadonApp::Platform::WindowHandle /*window_handle*/) const override { return false; }
 
-		void poll_events() override;
-		void register_event_callback(EventCallback callback) override;
+		void new_frame() override { m_events_polled = false; }
+		const VadonApp::Platform::PlatformEventList& poll_events() override { return m_event_list; }
 
 		VadonApp::Platform::FeatureFlags get_feature_flags() const override { return VadonApp::Platform::FeatureFlags::NONE; }
 

@@ -233,11 +233,6 @@ namespace Vadon::Private::Render::DirectX
 		return m_internal->initialize();
 	}
 
-	void GraphicsAPI::update()
-	{
-		// TODO!!!
-	}
-
 	void GraphicsAPI::shutdown()
 	{
 		log_message("Shutting down DirectX graphics API.\n");

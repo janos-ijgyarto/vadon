@@ -36,6 +36,7 @@ namespace VadonDemo::Model
 		bool initialize();
 		void global_config_updated();
 
+		bool internal_init_simulation(Vadon::ECS::World& ecs_world, Vadon::Scene::SceneID level_scene_id);
 		bool load_level(Vadon::ECS::World& ecs_world, Vadon::Scene::SceneID level_scene_id);
 
 		bool validate_sim_state(Vadon::ECS::World& ecs_world);

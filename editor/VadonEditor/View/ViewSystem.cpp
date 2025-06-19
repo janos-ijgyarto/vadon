@@ -98,7 +98,7 @@ namespace VadonEditor::View
 		{
 			if (entity->get_owning_scene() != m_active_scene)
 			{
-				m_editor.get_engine_core().log_error("View model: activated entity not from current active scene!\n");
+				Vadon::Core::Logger::log_error("View model: activated entity not from current active scene!\n");
 				return;
 			}
 		}

@@ -19,7 +19,6 @@ namespace Vadon::Private::Render::Null
 		void draw(const Vadon::Render::DrawCommand& command) override;
 
 		bool initialize() override;
-		void update() override;
 		void shutdown() override;
 	private:
 		BufferSystem m_buffer_system;

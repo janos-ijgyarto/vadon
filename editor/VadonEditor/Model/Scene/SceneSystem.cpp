@@ -28,7 +28,7 @@ namespace VadonEditor::Model
 		Resource* scene_resource = editor_resource_system.create_resource(get_scene_type_id());
 		if (scene_resource == nullptr)
 		{
-			m_editor.get_engine_core().log_error("Editor scene system: failed to create scene resource!\n");
+			Vadon::Core::Logger::log_error("Editor scene system: failed to create scene resource!\n");
 			return nullptr;
 		}
 
@@ -55,7 +55,7 @@ namespace VadonEditor::Model
 		Resource* scene_resource = editor_resource_system.get_resource(scene_handle);
 		if (scene_resource == nullptr)
 		{
-			m_editor.get_engine_core().log_error("Editor scene system: failed to get scene resource!\n");
+			Vadon::Core::Logger::log_error("Editor scene system: failed to get scene resource!\n");
 			return nullptr;
 		}
 
@@ -72,7 +72,7 @@ namespace VadonEditor::Model
 
 		if (scene->load() == false)
 		{
-			m_editor.get_engine_core().log_error("Editor scene system: failed to load scene!\n");
+			Vadon::Core::Logger::log_error("Editor scene system: failed to load scene!\n");
 			return;
 		}
 
@@ -203,7 +203,7 @@ namespace VadonEditor::Model
 		const Vadon::Scene::ResourceInfo scene_resource_info = (resource->is_loaded() == true) ? resource->get_info() : editor_resource_system.get_database().find_resource_info(resource->get_id()).info;
 		if (scene_resource_info.type_id != get_scene_type_id())
 		{
-			m_editor.get_engine_core().log_error("Editor scene system: selected resource is not a scene!\n");
+			Vadon::Core::Logger::log_error("Editor scene system: selected resource is not a scene!\n");
 			return nullptr;
 		}
 
@@ -211,7 +211,7 @@ namespace VadonEditor::Model
 		Scene& new_scene = scene_it->second;
 		if (new_scene.initialize() == false)
 		{
-			m_editor.get_engine_core().log_error("Scene system: failed to initialize Scene object!\n");
+			Vadon::Core::Logger::log_error("Scene system: failed to initialize Scene object!\n");
 			// TODO: remove from lookup!
 			return nullptr;
 		}
