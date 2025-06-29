@@ -77,6 +77,7 @@ namespace VadonEditor::View
 		Core::Editor& m_editor;
 
 		UI::Developer::Window m_window;
+		UI::Developer::Button m_refresh_button;
 		UI::Developer::ChildWindow m_asset_tree;
 		TreeState m_asset_tree_state;
 

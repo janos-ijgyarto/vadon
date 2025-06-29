@@ -31,8 +31,8 @@ namespace VadonDemo::Render
 
 		Vadon::Utilities::Vector2i map_to_game_viewport(const Vadon::Utilities::Vector2i& position) const;
 
-		void load_texture_resource(TextureResourceHandle texture_handle);
-		void load_shader_resource(ShaderResourceHandle shader_handle);
+		void load_texture_resource(TextureResourceID texture_id);
+		void load_shader_resource(ShaderResourceID shader_id);
 	private:
 		RenderSystem(Core::GameCore& game_core);
 

@@ -170,6 +170,10 @@ namespace VadonEditor::View
 	{
 		ViewModel& view_model = m_editor.get_system<ViewSystem>().get_view_model();
 		Model::Scene* active_scene = view_model.get_active_scene();
+		if (active_scene == nullptr)
+		{
+			return;
+		}
 
 		if (active_scene->is_modified() == false)
 		{

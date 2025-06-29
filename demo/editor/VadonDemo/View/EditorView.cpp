@@ -102,12 +102,7 @@ namespace VadonDemo::View
 
                 // NOTE: the above is mostly relevant for the Editor where anything can change at any time
                 // In-game a resource will have "static" data, so we can use much simpler reference tracking (each client adds ref to resource, deallocate resource once last client dereferences)
-
-                Vadon::Scene::ResourceSystem& resource_system = m_editor.get_common_editor().get_engine_core().get_system<Vadon::Scene::ResourceSystem>();
-                Vadon::Scene::ResourceHandle resource_handle = resource_system.find_resource(resource_id);
-                VADON_ASSERT(resource_handle.is_valid() == true, "Resource not found!");
-
-                resource_edited(resource_handle);
+                resource_edited(resource_id);
             }
         );
 
@@ -200,26 +195,29 @@ namespace VadonDemo::View
         m_editor.get_core().get_view().remove_entity(ecs_world, entity);
     }
 
-    void EditorView::resource_edited(Vadon::Scene::ResourceHandle resource_handle)
-    {        
+    void EditorView::resource_edited(Vadon::Scene::ResourceID resource_id)
+    {   
         Vadon::Scene::ResourceSystem& resource_system = m_editor.get_common_editor().get_engine_core().get_system<Vadon::Scene::ResourceSystem>();
+        Vadon::Scene::ResourceHandle resource_handle = resource_system.find_resource(resource_id);
+        VADON_ASSERT(resource_handle.is_valid() == true, "Resource not found!");
+
         const Vadon::Scene::ResourceInfo resource_info = resource_system.get_resource_info(resource_handle);
 
         if (Vadon::Utilities::TypeRegistry::is_base_of(Vadon::Utilities::TypeRegistry::get_type_id<ViewResource>(), resource_info.type_id))
         {
-            view_resource_edited(ViewResourceHandle::from_resource_handle(resource_handle));
+            view_resource_edited(ViewResourceID::from_resource_id(resource_id));
         }
         else if (resource_info.type_id == Vadon::Utilities::TypeRegistry::get_type_id<VadonDemo::Render::TextureResource>())
         {
-            texture_resource_edited(VadonDemo::Render::TextureResourceHandle::from_resource_handle(resource_handle));
+            texture_resource_edited(VadonDemo::Render::TextureResourceID(resource_id));
         }
     }
 
-    void EditorView::view_resource_edited(ViewResourceHandle view_resource)
+    void EditorView::view_resource_edited(ViewResourceID view_resource)
     {
         // First reset the resource
         VadonDemo::View::View& common_view = m_editor.get_core().get_view();
-        common_view.reset_resource(view_resource);
+        common_view.reset_resource_data(view_resource);
 
         // Tag all entities that use this resource
         VadonEditor::Core::Editor& common_editor = m_editor.get_common_editor();
@@ -243,7 +241,7 @@ namespace VadonDemo::View
         }
     }
 
-    void EditorView::texture_resource_edited(VadonDemo::Render::TextureResourceHandle texture_handle)
+    void EditorView::texture_resource_edited(VadonDemo::Render::TextureResourceID texture_id)
     {
         // Run a query to find all entities that use this texture
         // Tag as "dirty" so they get updated
@@ -268,19 +266,20 @@ namespace VadonDemo::View
                 continue;
             }
 
-            if (resource_system.get_resource_info(current_view_component.resource).type_id != Vadon::Utilities::TypeRegistry::get_type_id<Sprite>())
+            const ViewResourceHandle view_resource_handle = common_view.load_view_resource(current_view_component.resource);
+            if (resource_system.get_resource_info(view_resource_handle).type_id != Vadon::Utilities::TypeRegistry::get_type_id<Sprite>())
             {
                 continue;
             }
 
-            const Sprite* sprite_resource = resource_system.get_resource<Sprite>(SpriteResourceHandle::from_resource_handle(current_view_component.resource));
-            if (sprite_resource->texture != texture_handle)
+            const Sprite* sprite_resource = resource_system.get_resource<Sprite>(SpriteResourceHandle::from_resource_handle(view_resource_handle));
+            if (sprite_resource->texture != texture_id)
             {
                 continue;
             }
 
             // Reset the sprite that uses this texture
-            common_view.reset_resource(current_view_component.resource);
+            common_view.reset_resource_data(current_view_component.resource);
 
             // Mark the entity as "dirty"
             current_view_component.dirty = true;
@@ -288,7 +287,7 @@ namespace VadonDemo::View
         }
     }
 
-    void EditorView::load_view_resource(ViewResourceHandle view_resource)
+    void EditorView::load_view_resource(ViewResourceID view_resource)
     {
         if (view_resource.is_valid() == false)
         {
@@ -298,16 +297,18 @@ namespace VadonDemo::View
         Vadon::Core::EngineCoreInterface& engine_core = m_editor.get_common_editor().get_engine_core();
         Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
 
-        const Vadon::Scene::ResourceInfo resource_info = resource_system.get_resource_info(view_resource);
+        VadonDemo::View::View& common_view = m_editor.get_core().get_view();
+        const ViewResourceHandle view_resource_handle = common_view.load_view_resource(view_resource);
+
+        const Vadon::Scene::ResourceInfo resource_info = resource_system.get_resource_info(view_resource_handle);
         if (resource_info.type_id == Vadon::Utilities::TypeRegistry::get_type_id<Sprite>())
         {
-            // Try to load the texture for the sprite
-            const Sprite* sprite_resource = resource_system.get_resource(SpriteResourceHandle::from_resource_handle(view_resource));
-            m_editor.get_render().load_texture_resource(sprite_resource->texture);
+            // Try to load the texture data for the sprite
+            const Sprite* sprite_resource = resource_system.get_resource(SpriteResourceHandle::from_resource_handle(view_resource_handle));
+            m_editor.get_render().load_texture_resource_data(sprite_resource->texture);
         }
 
-        VadonDemo::View::View& common_view = m_editor.get_core().get_view();
-        common_view.load_resource(view_resource);
+        common_view.load_resource_data(view_resource);
     }
 
     void EditorView::update_camera(VadonEditor::Model::Scene* active_scene)

@@ -5,7 +5,8 @@ namespace VadonDemo::View
 {
 	struct ViewComponent
 	{
-		ViewResourceHandle resource;
+		// TODO: implement a utility type which takes care of both the persistent resource ID and the loaded resource handle?
+		ViewResourceID resource;
 		bool dirty = false; // FIXME: replace with editor-specific "tag component" implementation!
 
 		Vadon::Render::Canvas::Transform prev_transform;

@@ -138,11 +138,20 @@ namespace VadonDemo::View
 		canvas_system.clear_item(canvas_component->canvas_item);
 	}
 
-	void View::load_resource(ViewResourceHandle resource_handle)
+	ViewResourceHandle View::load_view_resource(ViewResourceID resource_id) const
 	{
 		Vadon::Core::EngineCoreInterface& engine_core = m_core.get_engine_core();
 		Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
 
+		return resource_system.load_resource(resource_id);
+	}
+
+	void View::load_resource_data(ViewResourceID resource_id)
+	{
+		Vadon::Core::EngineCoreInterface& engine_core = m_core.get_engine_core();
+		Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
+
+		const ViewResourceHandle resource_handle = load_view_resource(resource_id);
 		ViewResource* view_resource = resource_system.get_resource(resource_handle);
 
 		if (view_resource->batch.is_valid() == false)
@@ -174,11 +183,12 @@ namespace VadonDemo::View
 		}
 	}
 
-	void View::reset_resource(ViewResourceHandle resource_handle)
+	void View::reset_resource_data(ViewResourceID resource_id)
 	{
 		Vadon::Core::EngineCoreInterface& engine_core = m_core.get_engine_core();
 		Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
 
+		const ViewResourceHandle resource_handle = load_view_resource(resource_id);
 		ViewResource* view_resource = resource_system.get_resource(resource_handle);
 		if (view_resource->batch_range.is_valid() == false)
 		{
@@ -287,7 +297,8 @@ namespace VadonDemo::View
 		}
 
 		Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
-		const VadonDemo::Render::TextureResource* sprite_texture = resource_system.get_resource(sprite->texture);
+		VadonDemo::Render::TextureResourceHandle sprite_texture_handle = VadonDemo::Render::TextureResourceHandle::from_resource_handle(resource_system.load_resource(sprite->texture));
+		const VadonDemo::Render::TextureResource* sprite_texture = resource_system.get_resource(sprite_texture_handle);
 		if (sprite_texture->texture.is_valid() == false)
 		{
 			// No valid texture loaded
@@ -359,7 +370,8 @@ namespace VadonDemo::View
 		}
 
 		Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
-		const ViewResource* view_resource = resource_system.get_resource(view_component->resource);
+		ViewResourceHandle view_resource_handle = ViewResourceHandle::from_resource_handle(resource_system.load_resource(view_component->resource));
+		const ViewResource* view_resource = resource_system.get_resource(view_resource_handle);
 		
 		if (view_resource->batch_range.is_valid() == false)
 		{

@@ -83,6 +83,7 @@ namespace Vadon::Private::Render::Canvas
 		{}
 
 		bool initialize();
+		void shutdown();
 
 		void init_render_state(const RenderContext& context);
 

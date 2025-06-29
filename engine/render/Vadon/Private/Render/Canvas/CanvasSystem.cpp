@@ -826,6 +826,11 @@ namespace Vadon::Private::Render::Canvas
 		texture_system.set_sampler(Vadon::Render::ShaderType::PIXEL, m_sampler, 2);
 	}
 
+	void CanvasSystem::shutdown()
+	{
+		// TODO!
+	}
+
 	void CanvasSystem::update_shared_data()
 	{
 		// FIXME: use an event queue system instead?

@@ -5,7 +5,7 @@
                 "components": [
                     {
                         "properties": {
-                            "resource": "JEb0jPI3QZa/2FHo2MAemw=="
+                            "resource": "M2gzDQ6+RImDK0PPGqMVMQ=="
                         },
                         "type": "VadonDemo::View::ViewComponent"
                     },
@@ -13,15 +13,9 @@
                         "properties": {
                             "layer_def": "2bdWkqSdTuSxnfVFk+5q+g==",
                             "visible": true,
-                            "z_order": 3.0
+                            "z_order": 2.0
                         },
                         "type": "VadonDemo::Render::CanvasComponent"
-                    },
-                    {
-                        "properties": {
-                            "definition": ""
-                        },
-                        "type": "VadonDemo::Model::Weapon"
                     },
                     {
                         "properties": {
@@ -30,47 +24,37 @@
                                 0.0
                             ],
                             "rotation": 0.0,
-                            "scale": 25.0
+                            "scale": 9.0
                         },
                         "type": "VadonDemo::Model::Transform2D"
                     },
                     {
                         "properties": {
                             "acceleration": 0.0,
-                            "top_speed": 100.0
+                            "top_speed": 400.0
                         },
                         "type": "VadonDemo::Model::Velocity2D"
                     },
                     {
                         "properties": {
-                            "max_health": 100.0
-                        },
-                        "type": "VadonDemo::Model::Health"
-                    },
-                    {
-                        "properties": {
-                            "radius": 0.5
+                            "radius": 1.0
                         },
                         "type": "VadonDemo::Model::Collision"
                     },
                     {
                         "properties": {
-                            "damage_delay": 3.0,
-                            "starting_weapons": [
-                                "7DonxuyWRpmniQZnSGAvDQ==",
-                                "Iue31YfmT3eAHY7B/BhufA==",
-                                "XO6V0vTQSyqnXWG+K6vAZA=="
-                            ]
+                            "damage": 5.0,
+                            "range": 150.0
                         },
-                        "type": "VadonDemo::Model::Player"
+                        "type": "VadonDemo::Model::Projectile"
                     }
                 ],
-                "name": "Player",
+                "name": "Projectile_B",
                 "parent": -1
             }
         ]
     },
-    "id": "ksqzkk6GQRerCUwjgv4FPA==",
+    "id": "wkL/lZqmQleVAKw/18pEtg==",
     "properties": {
         "name": ""
     },

@@ -37,8 +37,10 @@ namespace VadonDemo::View
 		VADONDEMO_API void update_entity_draw_data(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle view_entity);
 		VADONDEMO_API void remove_entity(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle view_entity);
 
-		VADONDEMO_API void load_resource(ViewResourceHandle resource_handle);
-		VADONDEMO_API void reset_resource(ViewResourceHandle resource_handle);
+		VADONDEMO_API ViewResourceHandle load_view_resource(ViewResourceID resource_id) const;
+
+		VADONDEMO_API void load_resource_data(ViewResourceID resource_id);
+		VADONDEMO_API void reset_resource_data(ViewResourceID resource_id);
 	private:
 		View(VadonDemo::Core::Core& core);
 

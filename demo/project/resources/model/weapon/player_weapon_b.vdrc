@@ -1,0 +1,9 @@
+{
+    "id": "Iue31YfmT3eAHY7B/BhufA==",
+    "properties": {
+        "name": "",
+        "projectile_prefab": "wkL/lZqmQleVAKw/18pEtg==",
+        "rate_of_fire": 300.0
+    },
+    "type": "VadonDemo::Model::WeaponDefinition"
+}

@@ -7,6 +7,7 @@
 
 #include <Vadon/ECS/World/World.hpp>
 
+#include <Vadon/Scene/Resource/ResourceSystem.hpp>
 #include <Vadon/Scene/SceneSystem.hpp>
 
 #include <numbers>
@@ -37,6 +38,8 @@ namespace VadonDemo::Model
 {
 	void Model::register_types()
 	{
+		WeaponDefinition::register_resource();
+
 		Transform2D::register_component();
 		Velocity2D::register_component();
 		Collision::register_component();
@@ -145,6 +148,25 @@ namespace VadonDemo::Model
 			return false;
 		}
 
+		// Randomly select one of the player's starting weapons
+		{
+			Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
+			Vadon::ECS::EntityHandle player_entity;
+			auto player_query = component_manager.run_component_query<Player&, Weapon&>();
+			for (auto player_it = player_query.get_iterator(); player_it.is_valid() == true; player_it.next())
+			{
+				player_entity = player_it.get_entity();
+				auto player_tuple = player_it.get_tuple();
+
+				const Player& player_component = std::get<Player&>(player_tuple);
+				Weapon& player_weapon = std::get<Weapon&>(player_tuple);
+
+				std::uniform_int_distribution<int> m_int_distribution(0, static_cast<int>(player_component.starting_weapons.size()) - 1);
+
+				player_weapon.definition = player_component.starting_weapons[m_int_distribution(m_random_engine)];
+			}
+		}
+
 		return true;
 	}
 
@@ -218,7 +240,8 @@ namespace VadonDemo::Model
 					return false;
 				}
 
-				if (validate_weapon(*player_weapon) == false)
+				auto player_tuple = player_it.get_tuple();
+				if (validate_weapon(std::get<Player&>(player_tuple), *player_weapon) == false)
 				{
 					// TODO: error!
 					return false;
@@ -288,9 +311,16 @@ namespace VadonDemo::Model
 		return true;
 	}
 
-	bool Model::validate_weapon(const Weapon& weapon_component)
+	bool Model::validate_weapon(const Player& player, const Weapon& weapon_component)
 	{
-		if (weapon_component.projectile_prefab.is_valid() == false)
+		if (player.starting_weapons.empty() == true)
+		{
+			// TODO: error!
+			return false;
+		}
+
+		// TODO: validate starting weapon defs in player!
+		if (weapon_component.definition.is_valid() == true)
 		{
 			// TODO: error!
 			return false;
@@ -691,7 +721,7 @@ namespace VadonDemo::Model
 		struct CreateEnemyData
 		{
 			Vadon::Utilities::Vector2 position;
-			Vadon::Scene::SceneHandle prefab;
+			Vadon::Scene::SceneID prefab;
 		};
 		std::vector<CreateEnemyData> deferred_spawned_enemies;
 
@@ -745,7 +775,8 @@ namespace VadonDemo::Model
 
 		for (const CreateEnemyData& current_enemy_data : deferred_spawned_enemies)
 		{
-			const Vadon::ECS::EntityHandle spawned_enemy = scene_system.instantiate_scene(current_enemy_data.prefab, ecs_world);
+			const Vadon::Scene::SceneHandle enemy_prefab_scene = scene_system.load_scene(current_enemy_data.prefab);
+			const Vadon::ECS::EntityHandle spawned_enemy = scene_system.instantiate_scene(enemy_prefab_scene, ecs_world);
 
 			// FIXME: make a parent entity for enemies?
 			// Could be the enemy subsystem
@@ -774,7 +805,9 @@ namespace VadonDemo::Model
 	void Model::update_weapons(Vadon::ECS::World& ecs_world, float delta_time)
 	{
 		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
-		Vadon::Scene::SceneSystem& scene_system = m_core.get_engine_core().get_system<Vadon::Scene::SceneSystem>();
+		Vadon::Core::EngineCoreInterface& engine_core = m_core.get_engine_core();
+		Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
+		Vadon::Scene::SceneSystem& scene_system = engine_core.get_system<Vadon::Scene::SceneSystem>();
 
 		// Have to defer creating the projectiles, because we can't add to the ECS while iterating in it
 		// FIXME: implement deferred operations in ECS?
@@ -782,7 +815,7 @@ namespace VadonDemo::Model
 		{
 			Vadon::Utilities::Vector2 position;
 			Vadon::Utilities::Vector2 aim_direction;
-			Vadon::Scene::SceneHandle prefab;
+			Vadon::Scene::SceneID prefab;
 		};
 		std::vector<CreateProjectileData> deferred_projectiles;
 
@@ -811,10 +844,14 @@ namespace VadonDemo::Model
 				}
 
 				new_projectile_data.aim_direction = current_weapon.aim_direction;
-				new_projectile_data.prefab = current_weapon.projectile_prefab;
+
+				const WeaponDefHandle weapon_def_handle = resource_system.load_resource(current_weapon.definition);
+				const WeaponDefinition* weapon_def = resource_system.get_resource(weapon_def_handle);
+
+				new_projectile_data.prefab = weapon_def->projectile_prefab;
 
 				// Reset firing timer
-				current_weapon.firing_timer += 60.0f / std::max(current_weapon.rate_of_fire, 0.001f);
+				current_weapon.firing_timer += 60.0f / std::max(weapon_def->rate_of_fire, 0.001f);
 			}
 		}
 
@@ -823,7 +860,8 @@ namespace VadonDemo::Model
 			// Spawn projectile
 			// FIXME: at the moment we make an entity for every projectile
 			// Could use a special "pool" Entity that contains projectile instances
-			const Vadon::ECS::EntityHandle spawned_projectile = scene_system.instantiate_scene(current_projectile_data.prefab, ecs_world);
+			const Vadon::Scene::SceneHandle spawned_projectile_scene = scene_system.load_scene(current_projectile_data.prefab);
+			const Vadon::ECS::EntityHandle spawned_projectile = scene_system.instantiate_scene(spawned_projectile_scene, ecs_world);
 
 			// FIXME: make a parent entity for projectiles?
 			// Could be the projectile subsystem

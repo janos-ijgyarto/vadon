@@ -42,12 +42,17 @@ namespace Vadon::Scene
 
 		// This will query all the registered ResourceSerializers for this ID and attempt to serialize the resource through them
 		virtual bool save_resource(ResourceHandle resource_handle) = 0;
-		virtual ResourceHandle load_resource(ResourceID resource_id) = 0;
+		virtual ResourceHandle load_resource_base(ResourceID resource_id) = 0;
+
+		template<typename T>
+		TypedResourceHandle<T> load_resource(TypedResourceID<T> resource_id)
+		{
+			static_assert(std::is_base_of_v<Resource, T>);
+			return TypedResourceHandle<T>::from_resource_handle(load_resource_base(resource_id));
+		}
 
 		virtual bool save_resource(Vadon::Utilities::Serializer& serializer, ResourceHandle resource_handle) = 0;
 		virtual ResourceHandle load_resource(Vadon::Utilities::Serializer& serializer) = 0;
-
-		virtual bool serialize_resource_property(Vadon::Utilities::Serializer& serializer, std::string_view property_name, ResourceHandle& property_value) = 0;
 
 		virtual void remove_resource(ResourceHandle resource_handle) = 0;
 

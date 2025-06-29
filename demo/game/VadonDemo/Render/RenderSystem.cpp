@@ -73,28 +73,28 @@ namespace VadonDemo::Render
 		return ((Vadon::Utilities::Vector2(position) - m_game_viewport.dimensions.position) / m_game_viewport.dimensions.size) * global_config.viewport_size;
 	}
 
-	void RenderSystem::load_texture_resource(TextureResourceHandle texture_handle)
+	void RenderSystem::load_texture_resource(TextureResourceID texture_id)
 	{
-		if (texture_handle.is_valid() == false)
+		if (texture_id.is_valid() == false)
 		{
 			return;
 		}
 
 		// FIXME: implement file resource which already has the necessary file system metadata!		
 		VadonDemo::Render::Render& common_render = m_game_core.get_core().get_render();
-		common_render.init_texture_resource(texture_handle, m_game_core.get_project_root_dir());
+		common_render.init_texture_resource(texture_id, m_game_core.get_project_root_dir());
 	}
 
-	void RenderSystem::load_shader_resource(ShaderResourceHandle shader_handle)
+	void RenderSystem::load_shader_resource(ShaderResourceID shader_id)
 	{
-		if (shader_handle.is_valid() == false)
+		if (shader_id.is_valid() == false)
 		{
 			return;
 		}
 
 		// FIXME: implement file resource which already has the necessary file system metadata!
 		VadonDemo::Render::Render& common_render = m_game_core.get_core().get_render();
-		common_render.init_shader_resource(shader_handle, m_game_core.get_project_root_dir());
+		common_render.init_shader_resource(shader_id, m_game_core.get_project_root_dir());
 	}
 
 	RenderSystem::RenderSystem(Core::GameCore& game_core)

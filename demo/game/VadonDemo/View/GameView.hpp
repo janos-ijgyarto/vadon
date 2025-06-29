@@ -30,7 +30,7 @@ namespace VadonDemo::View
 		void init_entity(Vadon::ECS::EntityHandle entity);
 		void remove_entity(Vadon::ECS::EntityHandle entity);
 
-		void init_resource(ViewResourceHandle resource_handle);
+		void init_resource(ViewResourceID resource_id);
 
 		Core::GameCore& m_game_core;
 		bool m_entities_dirty;

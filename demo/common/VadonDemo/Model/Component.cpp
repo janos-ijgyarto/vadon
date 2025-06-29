@@ -41,14 +41,14 @@ namespace VadonDemo::Model
 		Vadon::ECS::ComponentRegistry::register_component_type<Player>();
 
 		Vadon::Utilities::TypeRegistry::add_property<Player>("damage_delay", Vadon::Utilities::MemberVariableBind<&Player::damage_delay>().bind_member_getter().bind_member_setter());
+		Vadon::Utilities::TypeRegistry::add_property<Player>("starting_weapons", Vadon::Utilities::MemberVariableBind<&Player::starting_weapons>().bind_member_getter().bind_member_setter());
 	}
 
 	void Weapon::register_component()
 	{
 		Vadon::ECS::ComponentRegistry::register_component_type<Weapon>();
 
-		Vadon::Utilities::TypeRegistry::add_property<Weapon>("projectile_prefab", Vadon::Utilities::MemberVariableBind<&Weapon::projectile_prefab>().bind_member_getter().bind_member_setter());
-		Vadon::Utilities::TypeRegistry::add_property<Weapon>("rate_of_fire", Vadon::Utilities::MemberVariableBind<&Weapon::rate_of_fire>().bind_member_getter().bind_member_setter());
+		Vadon::Utilities::TypeRegistry::add_property<Weapon>("definition", Vadon::Utilities::MemberVariableBind<&Weapon::definition>().bind_member_getter().bind_member_setter());
 	}
 
 	void Projectile::register_component()

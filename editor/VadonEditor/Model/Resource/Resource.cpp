@@ -57,7 +57,7 @@ namespace VadonEditor::Model
 		}
 
 		Vadon::Scene::ResourceSystem& resource_system = m_editor.get_engine_core().get_system<Vadon::Scene::ResourceSystem>();
-		Vadon::Scene::ResourceHandle resource_handle = resource_system.load_resource(m_resource_id);
+		Vadon::Scene::ResourceHandle resource_handle = resource_system.load_resource_base(m_resource_id);
 
 		if (resource_handle.is_valid() == false)
 		{

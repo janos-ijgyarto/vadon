@@ -18,6 +18,7 @@ namespace VadonDemo::Core
 }
 namespace VadonDemo::Model
 {
+	struct Player;
 	struct PlayerInput;
 	struct Spawner;
 	struct Weapon;
@@ -40,7 +41,7 @@ namespace VadonDemo::Model
 		bool load_level(Vadon::ECS::World& ecs_world, Vadon::Scene::SceneID level_scene_id);
 
 		bool validate_sim_state(Vadon::ECS::World& ecs_world);
-		bool validate_weapon(const Weapon& weapon_component);
+		bool validate_weapon(const Player& player, const Weapon& weapon_component);
 		bool validate_spawner(const Spawner& spawner);
 		void deferred_remove_entity(Vadon::ECS::EntityHandle entity_handle);
 

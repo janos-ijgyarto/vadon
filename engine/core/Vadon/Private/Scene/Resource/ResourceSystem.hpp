@@ -27,12 +27,10 @@ namespace Vadon::Private::Scene
 		bool load_resource_info(Vadon::Utilities::Serializer& serializer, ResourceInfo& resource_info) const override;
 
 		bool save_resource(ResourceHandle resource_handle) override;
-		ResourceHandle load_resource(ResourceID resource_id) override;
+		ResourceHandle load_resource_base(ResourceID resource_id) override;
 
 		bool save_resource(Vadon::Utilities::Serializer& serializer, ResourceHandle resource_handle) override;
 		ResourceHandle load_resource(Vadon::Utilities::Serializer& serializer) override;
-
-		bool serialize_resource_property(Vadon::Utilities::Serializer& serializer, std::string_view property_name, ResourceHandle& property_value) override;
 
 		void remove_resource(ResourceHandle resource_handle) override;
 

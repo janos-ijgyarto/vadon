@@ -17,10 +17,11 @@ namespace VadonEditor::Core
 		const AssetNode* find_node(std::string_view path) const;
 		AssetNode* find_node(std::string_view path) { return const_cast<AssetNode*>(std::as_const(*this).find_node(path)); }
 
+		void rebuild_asset_tree();
+
 		static const char* get_asset_type_file_extension(AssetType type);
 	private:
 		AssetLibrary(Editor& editor);
-		void rebuild_asset_tree();
 
 		static void build_asset_tree_recursive(AssetNode& node, const std::filesystem::path& path);
 		static AssetNode* create_asset_node(AssetType type, std::string_view name, AssetNode* parent);

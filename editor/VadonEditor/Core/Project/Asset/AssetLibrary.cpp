@@ -90,15 +90,6 @@ namespace VadonEditor::Core
 		return candidate_node;
 	}
 
-	const char* AssetLibrary::get_asset_type_file_extension(AssetType type)
-	{
-		return internal_get_asset_type_file_extension(type);
-	}
-
-	AssetLibrary::AssetLibrary(Editor& editor)
-		: m_editor(editor)
-	{}
-
 	void AssetLibrary::rebuild_asset_tree()
 	{
 		m_root.clear();
@@ -111,6 +102,15 @@ namespace VadonEditor::Core
 
 		build_asset_tree_recursive(m_root, root_path);
 	}
+
+	const char* AssetLibrary::get_asset_type_file_extension(AssetType type)
+	{
+		return internal_get_asset_type_file_extension(type);
+	}
+
+	AssetLibrary::AssetLibrary(Editor& editor)
+		: m_editor(editor)
+	{}
 
 	void AssetLibrary::build_asset_tree_recursive(AssetNode& parent, const std::filesystem::path& path)
 	{

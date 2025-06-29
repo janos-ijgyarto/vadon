@@ -11,7 +11,9 @@ namespace VadonDemo::Render
 	{
 		bool visible = true;
 		float z_order = 0.0f;
-		CanvasLayerDefHandle layer_def;
+
+		// TODO: implement a utility type which takes care of both the persistent resource ID and the loaded resource handle?
+		CanvasLayerDefID layer_def;
 
 		Vadon::Render::Canvas::ItemHandle canvas_item;
 		CanvasContextHandle context_handle;
@@ -23,7 +25,8 @@ namespace VadonDemo::Render
 	// An easier way to implement this could be just a view-agnostic sprite with a seamless texture where we modify the UVs
 	struct SpriteTilingComponent
 	{
-		TextureResourceHandle texture;
+		// TODO: implement a utility type which takes care of both the persistent resource ID and the loaded resource handle?
+		TextureResourceID texture;
 		Vadon::Render::Vector2 tile_size = Vadon::Render::Vector2_One;
 		bool repeat = false;
 		bool rotate = false;
@@ -41,7 +44,8 @@ namespace VadonDemo::Render
 
 	struct FullscreenEffectComponent
 	{
-		ShaderResourceHandle shader;
+		// TODO: implement a utility type which takes care of both the persistent resource ID and the loaded resource handle?
+		ShaderResourceID shader;
 		bool view_agnostic = false;
 
 		static void register_component();

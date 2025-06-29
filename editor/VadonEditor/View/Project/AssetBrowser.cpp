@@ -102,6 +102,8 @@ namespace VadonEditor::View
 		m_window.title = "Asset Browser";
 		m_window.open = false;
 
+		m_refresh_button.label = "Refresh";
+
 		m_asset_tree.id = "AssetTree";
 
 		m_save_file_dialog.set_accept_label("Save");
@@ -127,6 +129,12 @@ namespace VadonEditor::View
 			if (m_create_resource_dialog.draw(dev_gui) == UI::Developer::Dialog::Result::ACCEPTED)
 			{
 				create_resource();
+			}
+
+			if (dev_gui.draw_button(m_refresh_button) == true)
+			{
+				Core::AssetLibrary& asset_library = m_editor.get_system<Core::ProjectManager>().get_asset_library();
+				asset_library.rebuild_asset_tree();
 			}
 
 			// Make tree fill available content region

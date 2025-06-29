@@ -16,6 +16,7 @@ namespace Vadon::Scene
 		bool is_valid() const { return id.is_valid(); }
 	};
 
+	// TODO: revise as class to restrict access to base members?
 	struct Resource
 	{
 		ResourceID id;
@@ -51,6 +52,12 @@ namespace Vadon::Scene
 
 		uint64_t to_uint() const { return this->handle.to_uint(); }
 	};
+
+	template<typename T>
+	concept is_resource_id = std::is_base_of_v<Vadon::Scene::ResourceID, T> && (std::is_same_v<Vadon::Scene::ResourceID, T> == false);
+
+	template<typename T>
+	concept is_resource_handle = std::is_base_of_v<Vadon::Scene::ResourceHandle, T> && (std::is_same_v<Vadon::Scene::ResourceHandle, T> == false);
 }
 
 #define VADON_SCENE_DECLARE_TYPED_RESOURCE_ID(_resource, _name) using _name = Vadon::Scene::TypedResourceID<_resource>

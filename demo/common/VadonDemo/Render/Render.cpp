@@ -175,7 +175,8 @@ namespace VadonDemo::Render
 
 		Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
 
-		const TextureResource* sprite_texture = resource_system.get_resource<TextureResource>(sprite_component.texture);
+		const TextureResourceHandle texture_handle = resource_system.load_resource(sprite_component.texture);
+		const TextureResource* sprite_texture = resource_system.get_resource(texture_handle);
 		if (sprite_texture->texture.is_valid() == false)
 		{
 			// No valid sprite texture
@@ -250,12 +251,13 @@ namespace VadonDemo::Render
 		// TODO: implement refcounting where if the shader is no longer referenced, we unload it
 	}
 
-	bool Render::init_texture_resource(TextureResourceHandle texture_handle, Vadon::Core::RootDirectoryHandle root_dir) const
+	bool Render::init_texture_resource(TextureResourceID texture_id, Vadon::Core::RootDirectoryHandle root_dir) const
 	{
 		Vadon::Core::EngineCoreInterface& engine_core = m_core.get_engine_core();
 		Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
 
-		TextureResource* texture_resource = resource_system.get_resource<TextureResource>(texture_handle);
+		const TextureResourceHandle texture_handle = resource_system.load_resource(texture_id);
+		TextureResource* texture_resource = resource_system.get_resource(texture_handle);
 		if(texture_resource->texture.is_valid() == true)
 		{ 
 			// Texture already loaded
@@ -317,12 +319,13 @@ namespace VadonDemo::Render
 		return true;
 	}
 
-	void Render::unload_texture_resource(TextureResourceHandle texture_handle) const
+	void Render::unload_texture_resource(TextureResourceID texture_id) const
 	{
 		Vadon::Core::EngineCoreInterface& engine_core = m_core.get_engine_core();
 		Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
 
-		TextureResource* texture_resource = resource_system.get_resource<TextureResource>(texture_handle);
+		const TextureResourceHandle texture_handle = resource_system.load_resource(texture_id);
+		TextureResource* texture_resource = resource_system.get_resource(texture_handle);
 		if (texture_resource->texture.is_valid() == false)
 		{
 			// Nothing to do
@@ -338,12 +341,13 @@ namespace VadonDemo::Render
 		texture_resource->texture_srv.invalidate();
 	}
 
-	bool Render::init_shader_resource(ShaderResourceHandle shader_handle, Vadon::Core::RootDirectoryHandle root_dir) const
+	bool Render::init_shader_resource(ShaderResourceID shader_id, Vadon::Core::RootDirectoryHandle root_dir) const
 	{
 		Vadon::Core::EngineCoreInterface& engine_core = m_core.get_engine_core();
 		Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
 
-		ShaderResource* shader_resource = resource_system.get_resource<ShaderResource>(shader_handle);
+		const ShaderResourceHandle shader_handle = resource_system.load_resource(shader_id);
+		ShaderResource* shader_resource = resource_system.get_resource(shader_handle);
 		if (shader_resource->pixel_shader.is_valid() == true)
 		{
 			// Nothing to do
@@ -387,11 +391,12 @@ namespace VadonDemo::Render
 		return true;
 	}
 
-	void Render::unload_shader_resource(ShaderResourceHandle shader_handle) const
+	void Render::unload_shader_resource(ShaderResourceID shader_id) const
 	{
 		Vadon::Core::EngineCoreInterface& engine_core = m_core.get_engine_core();
 		Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
 
+		const ShaderResourceHandle shader_handle = resource_system.load_resource(shader_id);
 		ShaderResource* shader_resource = resource_system.get_resource<ShaderResource>(shader_handle);
 		if (shader_resource->pixel_shader.is_valid() == false)
 		{
@@ -422,12 +427,16 @@ namespace VadonDemo::Render
 		// TODO: anything?
 	}
 
-	Vadon::Render::Canvas::LayerHandle Render::get_context_layer(CanvasContextHandle context_handle, CanvasLayerDefHandle layer_def_handle)
+	Vadon::Render::Canvas::LayerHandle Render::get_context_layer(CanvasContextHandle context_handle, CanvasLayerDefID layer_def_id)
 	{
-		if (layer_def_handle.is_valid() == false)
+		if (layer_def_id.is_valid() == false)
 		{
 			return Vadon::Render::Canvas::LayerHandle();
 		}
+
+		Vadon::Core::EngineCoreInterface& engine_core = m_core.get_engine_core();
+		Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
+		const CanvasLayerDefHandle layer_def_handle = resource_system.load_resource(layer_def_id);
 
 		CanvasContextData& context_data = m_context_pool.get(context_handle);
 		VADON_ASSERT(context_data.layer_definitions.size() == context_data.render_context.layers.size(), "Mismatch between layers and definitions!");
@@ -442,8 +451,6 @@ namespace VadonDemo::Render
 		}
 
 		// Layer not in context, add it
-		Vadon::Core::EngineCoreInterface& engine_core = m_core.get_engine_core();
-		Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
 		const CanvasLayerDefinition* layer_definition = resource_system.get_resource(layer_def_handle);
 
 		Vadon::Render::Canvas::CanvasSystem& canvas_system = engine_core.get_system<Vadon::Render::Canvas::CanvasSystem>();
