@@ -10,12 +10,12 @@ namespace Vadon::Private::Render::Null
 	class ShaderSystem : public Vadon::Render::ShaderSystem
 	{
 	public:
-		ShaderHandle create_shader(const ShaderInfo& shader_info) override;
+		ShaderHandle create_shader(const ShaderInfo& shader_info, const void* shader_data, size_t shader_data_size) override;
 		bool is_shader_valid(ShaderHandle /*shader_handle*/) const override { return false; }
 		void apply_shader(ShaderHandle shader_handle) override;
 		void remove_shader(ShaderHandle shader_handle) override;
 
-		VertexLayoutHandle create_vertex_layout(ShaderHandle shader_handle, const VertexLayoutInfo& layout_info) override;
+		VertexLayoutHandle create_vertex_layout(const VertexLayoutInfo& layout_info, const void* shader_data, size_t shader_data_size) override;
 		bool is_vertex_layout_valid(VertexLayoutHandle /*layout_handle*/) const override { return false; }
 		void set_vertex_layout(VertexLayoutHandle layout_handle) override;
 	private:

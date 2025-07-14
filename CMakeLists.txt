@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.21)
+cmake_minimum_required(VERSION 4.1)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
@@ -37,6 +37,26 @@ if(${VADON_LINK_STATIC} STREQUAL "ON")
 else()
 	MESSAGE("Building Vadon with dynamic linkage")
 endif()
+
+# Set the runtime output dir for all sub-projects
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+
+# For tools, we want to put them next to the preset configs (the tools themselves are built in Release by default)
+set(VADON_TOOLS_BINARY_DIR "${VADON_BUILD_DIR_ROOT}/tools")
+set(VADON_TOOLS_EXPORT_FILE_DIR "${VADON_TOOLS_BINARY_DIR}/cmake")
+
+# Run CMake to configure all of our tools
+execute_process(COMMAND ${CMAKE_COMMAND}
+	-S "${CMAKE_SOURCE_DIR}/tools"
+	-B ${VADON_TOOLS_BINARY_DIR}
+	-G ${CMAKE_GENERATOR}
+	-DCMAKE_BUILD_TYPE=Release
+	-DVADON_TOOLS_EXPORT=ON
+	)
+
+add_custom_target(VadonToolsBuild
+	COMMAND ${CMAKE_COMMAND} --build ${VADON_TOOLS_BINARY_DIR}
+)
 
 add_subdirectory(engine)
 

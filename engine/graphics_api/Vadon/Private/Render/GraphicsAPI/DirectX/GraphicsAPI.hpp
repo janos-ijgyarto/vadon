@@ -22,6 +22,8 @@ namespace Vadon::Private::Render::DirectX
 		GraphicsAPI(Vadon::Core::EngineCoreInterface& core);
 		~GraphicsAPI();
 
+		const char* get_name() const override { return "D3D11"; }
+
 		const D3DInfo& get_d3d_info() const { return m_d3d_info; }
 
 		void draw(const Vadon::Render::DrawCommand& command) override;

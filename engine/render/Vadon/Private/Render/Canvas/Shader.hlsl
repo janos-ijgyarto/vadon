@@ -1,3 +1,5 @@
+#include <Vadon/Render/Utilities/Common.hlsl>
+
 #ifndef MAX_LAYER_COUNT
 #define MAX_LAYER_COUNT 4096
 #endif
@@ -12,18 +14,6 @@ static const uint c_material_index_width = 16;
 
 static const uint c_layer_index_mask = (1 << c_layer_index_width) - 1;
 static const uint c_material_index_mask = (1 << c_material_index_width) - 1;
-
-float4 decode_rgba_uint(uint color_uint)
-{
-    float4 color;
-    const float norm = 1.0f / 255.0f;
-    color.r = ((float) (color_uint & 0xFF)) * norm;
-    color.g = ((float) ((color_uint >> 8) & 0xFF)) * norm;
-    color.b = ((float) ((color_uint >> 16) & 0xFF)) * norm;
-    color.a = ((float) ((color_uint >> 24) & 0xFF)) * norm;
-    
-    return color;
-}
 
 struct PrimitiveInfo
 {

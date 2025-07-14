@@ -17,4 +17,5 @@ target_sources(${VADON_CURRENT_TARGET}
 target_compile_definitions(${VADON_CURRENT_TARGET} PRIVATE VADON_GRAPHICS_API_DIRECTX)
 
 # Link DirectX-related libraries
-target_link_libraries(${VADON_CURRENT_TARGET} PRIVATE d3d11 dxgi dxguid d3dcompiler)
+# TODO: allow dev builds to compile-from-source from within the engine?
+target_link_libraries(${VADON_CURRENT_TARGET} PRIVATE d3d11 dxgi dxguid)

@@ -27,6 +27,8 @@ namespace Vadon::Render
 	public:
 		virtual ~GraphicsAPI() {}
 
+		virtual const char* get_name() const = 0;
+
 		virtual void draw(const DrawCommand& command) = 0;
 	protected:
 		GraphicsAPI(Core::EngineCoreInterface& core) 

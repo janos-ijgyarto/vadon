@@ -16,6 +16,11 @@ CPMAddPackage(
   VERSION 2.28.2
 )
 
+if(MSVC)
+	# Need to unset RTC, causes linker errors in SDL
+	set_property(TARGET ${SDL_LIBS} PROPERTY MSVC_RUNTIME_CHECKS "")
+endif()
+
 target_link_libraries(${VADONAPP_CURRENT_TARGET} PRIVATE ${SDL_LIBS})
 
 # Reset folder

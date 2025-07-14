@@ -354,9 +354,8 @@ namespace VadonDemo::Render
 			return true;
 		}
 
-		// FIXME: accept other extensions!
+		// TODO: validate file?
 		std::filesystem::path shader_fs_path = shader_resource->shader_path;
-		shader_fs_path.replace_extension(".hlsl");
 
 		Vadon::Core::FileSystem& file_system = engine_core.get_system<Vadon::Core::FileSystem>();
 		Vadon::Core::FileSystemPath file_path{ .root_directory = root_dir, .path = shader_fs_path.string() };
@@ -377,12 +376,10 @@ namespace VadonDemo::Render
 		// TODO: at the moment we always expect a pixel shader in this exact format
 		// Need to extend API to support shader files in general!
 		shader_info.name = shader_fs_path.stem().string();
-		shader_info.entrypoint = "ps_main";
 		shader_info.type = Vadon::Render::ShaderType::PIXEL;
-		shader_info.source = reinterpret_cast<const char*>(shader_file_buffer.data());
 
 		Vadon::Render::ShaderSystem& shader_system = engine_core.get_system<Vadon::Render::ShaderSystem>();
-		shader_resource->pixel_shader = shader_system.create_shader(shader_info);
+		shader_resource->pixel_shader = shader_system.create_shader(shader_info, shader_file_buffer.data(), shader_file_buffer.size());
 		if (shader_resource->pixel_shader.is_valid() == false)
 		{
 			return false;

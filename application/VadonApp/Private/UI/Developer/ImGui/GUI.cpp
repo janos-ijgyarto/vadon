@@ -21,11 +21,16 @@
 #include <Vadon/Render/GraphicsAPI/Shader/ShaderSystem.hpp>
 #include <Vadon/Render/GraphicsAPI/Texture/TextureSystem.hpp>
 
+#include <Vadon/Render/Utilities/EmbeddedShader.hpp>
+
 #include <Vadon/Utilities/Data/DataUtilities.hpp>
 #include <Vadon/Utilities/Data/Visitor.hpp>
 #include <Vadon/Utilities/Math/Matrix.hpp>
 
 #include <Vadon/Utilities/Debugging/Assert.hpp>
+
+#include <VadonApp/Private/UI/Developer/ImGui/GUIShader_VS.hpp>
+#include <VadonApp/Private/UI/Developer/ImGui/GUIShader_PS.hpp>
 
 #ifndef IM_ASSERT
 #define IM_ASSERT(Expr) VADON_ASSERT(Expr, "Dear ImGui error!")
@@ -233,52 +238,6 @@ namespace VadonApp::Private::UI::Developer::ImGUI
 
         constexpr int32_t INIT_VERTEX_BUFFER_CAPACITY = 5000;
         constexpr int32_t INIT_INDEX_BUFFER_CAPACITY = 5000;
-
-        constexpr const char* HLSL_VERTEX_SHADER_SOURCE =
-            R"(cbuffer vertexBuffer : register(b0)
-{
-    float4x4 ProjectionMatrix;
-};
-
-struct VS_INPUT
-{
-    float2 pos : POSITION;
-    float4 col : COLOR0;
-    float2 uv  : TEXCOORD0;
-};
-
-struct PS_INPUT
-{
-    float4 pos : SV_POSITION;
-    float4 col : COLOR0;
-    float2 uv  : TEXCOORD0;
-};
-
-PS_INPUT main(VS_INPUT input)
-{
-    PS_INPUT output;
-    output.pos = mul( ProjectionMatrix, float4(input.pos.xy, 0.f, 1.f));
-    output.col = input.col;
-    output.uv  = input.uv;
-    return output;
-})";
-
-        constexpr const char* HLSL_PIXEL_SHADER_SOURCE =
-            R"(struct PS_INPUT
-{
-    float4 pos : SV_POSITION;
-    float4 col : COLOR0;
-    float2 uv  : TEXCOORD0;
-};
-
-sampler sampler0;
-Texture2D texture0;
-            
-float4 main(PS_INPUT input) : SV_Target
-{
-    float4 out_col = input.col * texture0.Sample(sampler0, input.uv);
-    return out_col;
-})";
 
         struct VertexConstantBuffer
         {
@@ -1260,17 +1219,22 @@ float4 main(PS_INPUT input) : SV_Target
         Vadon::Core::EngineCoreInterface& engine_core = m_application.get_engine_core();
         {
             // Create shaders
+            Vadon::Render::GraphicsAPI& graphics_api = engine_core.get_system<Vadon::Render::GraphicsAPI>();
             Vadon::Render::ShaderSystem& shader_system = engine_core.get_system<Vadon::Render::ShaderSystem>();
 
             // Initialize shader and vertex layout
             {
                 Vadon::Render::ShaderInfo vertex_shader_info;
-                vertex_shader_info.source = HLSL_VERTEX_SHADER_SOURCE;
-                vertex_shader_info.entrypoint = "main";
                 vertex_shader_info.name = "ImGuiVShader";
                 vertex_shader_info.type = Vadon::Render::ShaderType::VERTEX;
 
-                m_vertex_shader = shader_system.create_shader(vertex_shader_info);
+                const Vadon::Render::EmbeddedShaderData vs_data = VADON_GET_EMBEDDED_SHADER_DATA(ShaderVS);
+
+                const size_t shader_index = vs_data.get_shader_index(graphics_api.get_name());
+                VADON_ASSERT(shader_index != size_t(-1), "Shader not compiled!");
+                const size_t shader_data_offset = vs_data.get_shader_data_offset(shader_index);
+
+                m_vertex_shader = shader_system.create_shader(vertex_shader_info, vs_data.shader_data + shader_data_offset, vs_data.shader_data_sizes[shader_index]);
                 VADON_ASSERT(m_vertex_shader.is_valid(), "Failed to create vertex shader!");
                 if (m_vertex_shader.is_valid() == false)
                 {
@@ -1301,7 +1265,7 @@ float4 main(PS_INPUT input) : SV_Target
                     color_element.name = "COLOR";
                 }
 
-                m_vertex_layout = shader_system.create_vertex_layout(m_vertex_shader, vertex_layout_info);
+                m_vertex_layout = shader_system.create_vertex_layout(vertex_layout_info, vs_data.shader_data + shader_data_offset, vs_data.shader_data_sizes[shader_index]);
                 VADON_ASSERT(m_vertex_layout.is_valid(), "Failed to create vertex layout!");
                 if (m_vertex_layout.is_valid() == false)
                 {
@@ -1311,12 +1275,16 @@ float4 main(PS_INPUT input) : SV_Target
 
             {
                 Vadon::Render::ShaderInfo pixel_shader_info;
-                pixel_shader_info.source = HLSL_PIXEL_SHADER_SOURCE;
-                pixel_shader_info.entrypoint = "main";
                 pixel_shader_info.name = "ImGuiPShader";
                 pixel_shader_info.type = Vadon::Render::ShaderType::PIXEL;
 
-                m_pixel_shader = shader_system.create_shader(pixel_shader_info);
+                const Vadon::Render::EmbeddedShaderData ps_data = VADON_GET_EMBEDDED_SHADER_DATA(ShaderPS);
+
+                const size_t shader_index = ps_data.get_shader_index(graphics_api.get_name());
+                VADON_ASSERT(shader_index != size_t(-1), "Shader not compiled!");
+                const size_t shader_data_offset = ps_data.get_shader_data_offset(shader_index);
+
+                m_pixel_shader = shader_system.create_shader(pixel_shader_info, ps_data.shader_data + shader_data_offset, ps_data.shader_data_sizes[shader_index]);
                 VADON_ASSERT(m_pixel_shader.is_valid(), "Failed to create pixel shader!");
                 if (m_pixel_shader.is_valid() == false)
                 {

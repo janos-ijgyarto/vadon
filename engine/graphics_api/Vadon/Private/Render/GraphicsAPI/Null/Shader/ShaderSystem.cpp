@@ -3,7 +3,7 @@
 
 namespace Vadon::Private::Render::Null
 {
-	ShaderHandle ShaderSystem::create_shader(const ShaderInfo& /*shader_info*/)
+	ShaderHandle ShaderSystem::create_shader(const ShaderInfo& /*shader_info*/, const void* /*shader_data*/, size_t /*shader_data_size*/)
 	{
 		// TODO!!!
 		return ShaderHandle();
@@ -19,7 +19,7 @@ namespace Vadon::Private::Render::Null
 		// TODO!!!
 	}
 
-	VertexLayoutHandle ShaderSystem::create_vertex_layout(ShaderHandle /*shader_handle*/, const VertexLayoutInfo& /*layout_info*/)
+	VertexLayoutHandle ShaderSystem::create_vertex_layout(const VertexLayoutInfo& /*layout_info*/, const void* /*shader_data*/, size_t /*shader_data_size*/)
 	{
 		// TODO!!!
 		return VertexLayoutHandle();

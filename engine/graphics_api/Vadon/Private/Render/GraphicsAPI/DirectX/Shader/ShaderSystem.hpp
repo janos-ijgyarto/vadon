@@ -13,12 +13,12 @@ namespace Vadon::Private::Render::DirectX
 	class ShaderSystem : public Vadon::Render::ShaderSystem
 	{
 	public:
-		ShaderHandle create_shader(const ShaderInfo& shader_info) override;
+		ShaderHandle create_shader(const ShaderInfo& shader_info, const void* shader_data, size_t shader_data_size) override;
 		bool is_shader_valid(ShaderHandle shader_handle) const override { return m_shader_pool.is_handle_valid(shader_handle); }
 		void apply_shader(ShaderHandle shader_handle) override;
 		void remove_shader(ShaderHandle shader_handle) override;
 
-		VertexLayoutHandle create_vertex_layout(ShaderHandle shader_handle, const VertexLayoutInfo& layout_info) override;
+		VertexLayoutHandle create_vertex_layout(const VertexLayoutInfo& layout_info, const void* shader_data, size_t shader_data_size) override;
 		bool is_vertex_layout_valid(VertexLayoutHandle layout_handle) const override { return m_layout_pool.is_handle_valid(layout_handle); }
 		void set_vertex_layout(VertexLayoutHandle layout_handle) override;
 	private:
@@ -30,10 +30,8 @@ namespace Vadon::Private::Render::DirectX
 		bool initialize();
 		void shutdown();
 
-		ShaderHandle create_vertex_shader(const ShaderInfo& shader_info);
-		ShaderHandle create_pixel_shader(const ShaderInfo& shader_info);
-
-		D3DBlob compile_shader(const ShaderInfo& shader_info);
+		ShaderHandle create_vertex_shader(const ShaderInfo& shader_info, const void* shader_data, size_t shader_data_size);
+		ShaderHandle create_pixel_shader(const ShaderInfo& shader_info, const void* shader_data, size_t shader_data_size);
 
 		GraphicsAPI& m_graphics_api;
 		

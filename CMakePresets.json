@@ -1,8 +1,8 @@
 {
   "version": 3,
   "cmakeMinimumRequired": {
-    "major": 3,
-    "minor": 21,
+    "major": 4,
+    "minor": 1,
     "patch": 0
   },
   "configurePresets": [
@@ -12,8 +12,9 @@
       "hidden": true,
       "binaryDir": "${sourceDir}/out/build/${presetName}",
       "cacheVariables": {
+        "CMAKE_POLICY_VERSION_MINIMUM": 3.5,
         "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}",
-        "CMAKE_RUNTIME_OUTPUT_DIRECTORY": "${sourceDir}/out/build/${presetName}/bin",
+        "VADON_BUILD_DIR_ROOT": "${sourceDir}/out/build",
         "VADON_CONFIGURATION_NAME": "${presetName}",
         "VADON_PLATFORM_INTERFACE": "DEFAULT",
         "VADON_GRAPHICS": "DEFAULT",

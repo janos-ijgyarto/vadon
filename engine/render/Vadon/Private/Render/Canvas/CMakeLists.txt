@@ -13,4 +13,17 @@ target_sources(${VADON_CURRENT_TARGET}
 	Transform.hpp
 	)
 
-vadon_generate_embedded_shader_source(${VADON_CURRENT_TARGET} Shader.hlsl Vadon::Private::Render::Canvas::Shader)
+set(VADON_RENDER_CANVAS_SHADER_LIST "")
+
+vadon_compile_shader_to_embedded(VADON_RENDER_CANVAS_SHADER_LIST ${VADONRENDER_SHADERS_ROOT_DIR}
+ ${VADONRENDER_SHADER_OUTPUT_DIR} "Shader.hlsl" "VERTEX" "vs_main" "Vadon::Private::Render::Canvas::ShaderVS")
+
+vadon_compile_shader_to_embedded(VADON_RENDER_CANVAS_SHADER_LIST ${VADONRENDER_SHADERS_ROOT_DIR}
+ ${VADONRENDER_SHADER_OUTPUT_DIR} "Shader.hlsl" "PIXEL" "ps_main" "Vadon::Private::Render::Canvas::ShaderPS")
+
+add_custom_target("VadonRenderCanvasShaders"
+	DEPENDS ${VADON_RENDER_CANVAS_SHADER_LIST}
+)
+set_target_properties("VadonRenderCanvasShaders" PROPERTIES FOLDER "${VADON_PARENT_FOLDER}${PROJECT_NAME}/Codegen")
+
+add_dependencies(${VADONRENDER_SHADERS_TARGET} "VadonRenderCanvasShaders")

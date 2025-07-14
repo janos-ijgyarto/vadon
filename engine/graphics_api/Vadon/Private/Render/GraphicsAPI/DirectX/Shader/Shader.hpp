@@ -18,8 +18,6 @@ namespace Vadon::Private::Render::DirectX
 	{
 		ShaderInfo info;
 
-		D3DBlob d3d_shader_blob;
-
 		// FIXME: only one of these will ever be active. Use variant perhaps?
 		D3DVertexShader d3d_vertex_shader;
 		D3DPixelShader d3d_pixel_shader;
@@ -37,7 +35,6 @@ namespace Vadon::Private::Render::DirectX
 	using D3DInputLayout = ComPtr<ID3D11InputLayout>;
 	struct VertexLayout
 	{
-		ShaderHandle shader;
 		D3DInputLayout d3d_input_layout;
 	};
 
