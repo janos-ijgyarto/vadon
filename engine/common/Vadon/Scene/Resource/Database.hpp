@@ -1,5 +1,6 @@
 #ifndef VADON_SCENE_RESOURCE_DATABASE_HPP
 #define VADON_SCENE_RESOURCE_DATABASE_HPP
+#include <Vadon/Core/File/File.hpp>
 #include <Vadon/Scene/Resource/Resource.hpp>
 namespace Vadon::Scene
 {
@@ -16,6 +17,10 @@ namespace Vadon::Scene
 		// TODO3: function to get resource path (if available, could be scene local)
 		virtual bool save_resource(ResourceSystem& resource_system, ResourceHandle resource_handle) = 0;
 		virtual ResourceHandle load_resource(ResourceSystem& resource_system, ResourceID resource_id) = 0;
+
+		// NOTE: this expects a separate file that is referenced by a FileResource
+		virtual Vadon::Core::FileInfo get_file_resource_info(ResourceID resource_id) const = 0;
+		virtual bool load_file_resource_data(ResourceSystem& resource_system, ResourceID resource_id, Vadon::Core::RawFileDataBuffer& file_data) = 0;
 	};
 }
 #endif

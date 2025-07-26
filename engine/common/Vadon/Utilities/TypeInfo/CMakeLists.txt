@@ -7,6 +7,7 @@ target_sources(${VADON_CURRENT_TARGET}
 	Registry.hpp
 	Registry.cpp
 	TypeErasure.hpp
+	TypeErasure.cpp
 	TypeInfo.hpp
 	TypeName.hpp
 	)

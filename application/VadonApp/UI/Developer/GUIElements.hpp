@@ -135,6 +135,16 @@ namespace VadonApp::UI::Developer
 		std::vector<std::string> items;
 		int32_t selected_item = -1;
 
+		bool has_valid_selection() const
+		{
+			if ((selected_item >= 0) && (selected_item < items.size()))
+			{
+				return true;
+			}
+
+			return false;
+		}
+
 		void deselect()
 		{
 			selected_item = -1;

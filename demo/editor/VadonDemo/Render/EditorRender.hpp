@@ -27,8 +27,8 @@ namespace VadonDemo::Render
 		// TODO: unload unused resources!
 		void init_entity(Vadon::ECS::EntityHandle entity);
 
-		void load_texture_resource(TextureResourceHandle texture_handle);
-		void load_shader_resource(ShaderResourceHandle shader_handle);
+		void load_texture_resource_data(TextureResourceID texture_id);
+		void load_shader_resource_data(ShaderResourceID shader_id);
 	private:
 		EditorRender(Core::Editor& editor);
 

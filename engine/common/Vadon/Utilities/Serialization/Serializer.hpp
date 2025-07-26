@@ -149,8 +149,7 @@ namespace Vadon::Utilities
 		virtual Result serialize_bool(bool& value) = 0;
 		virtual Result serialize_string(std::string& value) = 0;
 		virtual Result serialize_color(ColorRGBA& color) = 0;
-
-		VADONCOMMON_API Result serialize_uuid(Vadon::Utilities::UUID& value);
+		virtual Result serialize_uuid(Vadon::Utilities::UUID& value) = 0;
 
 		std::vector<std::byte>& m_buffer;
 		Mode m_mode;

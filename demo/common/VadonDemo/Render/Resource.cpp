@@ -23,7 +23,7 @@ namespace VadonDemo::Render
 
 		ResourceRegistry::register_resource_type<TextureResource, Vadon::Scene::Resource>();
 
-		TypeRegistry::add_property<TextureResource>("file_path", Vadon::Utilities::MemberVariableBind<&TextureResource::file_path>().bind_member_getter().bind_member_setter());
+		TypeRegistry::add_property<TextureResource>("texture_file", Vadon::Utilities::MemberVariableBind<&TextureResource::texture_file>().bind_member_getter().bind_member_setter());
 	}
 
 	void ShaderResource::register_resource()
@@ -33,6 +33,6 @@ namespace VadonDemo::Render
 
 		ResourceRegistry::register_resource_type<ShaderResource, Vadon::Scene::Resource>();
 
-		TypeRegistry::add_property<ShaderResource>("shader_path", Vadon::Utilities::MemberVariableBind<&ShaderResource::shader_path>().bind_member_getter().bind_member_setter());
+		TypeRegistry::add_property<ShaderResource>("shader_file", Vadon::Utilities::MemberVariableBind<&ShaderResource::shader_file>().bind_member_getter().bind_member_setter());
 	}
 }

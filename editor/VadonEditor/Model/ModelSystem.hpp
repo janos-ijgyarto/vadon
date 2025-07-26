@@ -29,6 +29,7 @@ namespace VadonEditor::Model
 
 		bool initialize();
 		bool load_project();
+		bool export_project(std::string_view output_path);
 
 		struct Internal;
 		std::unique_ptr<Internal> m_internal;

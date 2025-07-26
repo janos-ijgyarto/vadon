@@ -16,6 +16,8 @@ namespace Vadon::Private::Render::Null
 	public:
 		GraphicsAPI(Vadon::Core::EngineCoreInterface& core);
 
+		const char* get_name() const override { return "Null"; }
+
 		void draw(const Vadon::Render::DrawCommand& command) override;
 
 		bool initialize() override;

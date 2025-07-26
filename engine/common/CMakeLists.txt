@@ -28,9 +28,6 @@ target_include_directories(${VADON_CURRENT_TARGET} PUBLIC ${CMAKE_CURRENT_SOURCE
 set(VADON_PUBLIC_THIRD_PARTY concurrentqueue glm::glm nlohmann_json)
 target_link_libraries(${VADON_CURRENT_TARGET} PUBLIC ${VADON_PUBLIC_THIRD_PARTY})
 
-#set(PRIVATE_THIRD_PARTY )
-#target_link_libraries(${VADON_CURRENT_TARGET} PUBLIC ${PRIVATE_THIRD_PARTY})
-
 # Link to custom target
 target_link_libraries(${VADON_CORE_TARGET} PUBLIC ${VADON_CURRENT_TARGET})
 

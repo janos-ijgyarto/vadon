@@ -1,6 +1,7 @@
 target_sources(${VADON_CURRENT_TARGET}
 	PRIVATE
 	Color.hpp
+	EmbeddedShader.hpp
 	Matrix.hpp
 	Projection.hpp
 	Rectangle.hpp

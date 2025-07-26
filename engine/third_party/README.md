@@ -24,3 +24,6 @@ Below is a list of all third-party code in the engine, and the relevant license 
 - Upstream: https://github.com/microsoft/DirectXTK
 - License: MIT
 - Files included: DDSTextureLoader11.h, DDSTextureLoader11.cpp
+## StaticMurmur
+- Upstream: https://github.com/AntonJohansson/StaticMurmur
+- License: Unlicense

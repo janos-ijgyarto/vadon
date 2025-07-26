@@ -27,8 +27,8 @@ namespace VadonEditor::Model
 	{
 		return m_resource->get_info();
 	}
-
-	Vadon::Core::FileSystemPath Scene::get_path() const
+	
+	std::string Scene::get_path() const
 	{
 		return m_resource->get_path();
 	}
@@ -63,7 +63,7 @@ namespace VadonEditor::Model
 		return true;
 	}
 
-	bool Scene::save_as(const Vadon::Core::FileSystemPath& path)
+	bool Scene::save_as(std::string_view path)
 	{
 		if (is_open() == false)
 		{
@@ -214,7 +214,7 @@ namespace VadonEditor::Model
 
 	bool Scene::initialize()
 	{
-		if (m_resource->get_path().is_valid() == false)
+		if (get_path().empty() == true)
 		{
 			init_empty_scene();
 		}

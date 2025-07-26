@@ -1,44 +1,12 @@
 #include <VadonEditor/Core/Project/Asset/AssetLibrary.hpp>
 
-#include <VadonEditor/Core/Project/ProjectManager.hpp>
-
 #include <Vadon/Core/File/FileSystem.hpp>
 
-namespace
-{
-	// FIXME: make this more modular!
-	constexpr const char* internal_get_asset_type_file_extension(VadonEditor::Core::AssetType type)
-	{
-		switch (type)
-		{
-		case VadonEditor::Core::AssetType::RESOURCE:
-			return ".vdrc";
-		case VadonEditor::Core::AssetType::SCENE:
-			return ".vdsc";
-		}
-
-		return "";
-	}
-
-	VadonEditor::Core::AssetType get_asset_node_type(const std::filesystem::path& path)
-	{
-		const std::string extension = path.extension().string();
-		if (extension == internal_get_asset_type_file_extension(VadonEditor::Core::AssetType::SCENE))
-		{
-			return VadonEditor::Core::AssetType::SCENE;
-		}
-		else if (extension == internal_get_asset_type_file_extension(VadonEditor::Core::AssetType::RESOURCE))
-		{
-			return VadonEditor::Core::AssetType::RESOURCE;
-		}
-
-		return VadonEditor::Core::AssetType::NONE;
-	}
-}
+#include <filesystem>
 
 namespace VadonEditor::Core
 {
-	AssetNode* AssetLibrary::create_asset(AssetType type, std::string_view path)
+	AssetNode* AssetLibrary::create_node(const AssetInfo& info, std::string_view path)
 	{
 		if (path.empty() == true)
 		{
@@ -46,15 +14,40 @@ namespace VadonEditor::Core
 			return nullptr;
 		}
 
-		AssetNode* parent_node = find_node(path);
+		const std::filesystem::path parent_path = std::filesystem::path(path).parent_path();
+
+		AssetNode* parent_node = find_node(parent_path.generic_string());
 		if (parent_node == nullptr)
 		{
-			// TODO: error!
-			return nullptr;
+			// Parent not found, so we have to create the path
+			parent_node = &m_root;
+
+			for (const std::filesystem::path& current_element : parent_path)
+			{
+				const std::string current_element_string = current_element.generic_string();
+				AssetNode* next_parent = nullptr;
+				for (AssetNode* candidate_child : parent_node->get_children())
+				{
+					if (candidate_child->get_info().name == current_element_string)
+					{
+						next_parent = candidate_child;
+						break;
+					}
+				}
+
+				if (next_parent == nullptr)
+				{
+					AssetInfo node_info;
+					node_info.type = AssetType::NONE;
+					node_info.name = current_element_string;
+					next_parent = internal_create_node(parent_node, node_info);
+				}
+
+				parent_node = next_parent;
+			}
 		}
 
-		const std::string new_asset_path = std::string(path) + get_asset_type_file_extension(type);
-		return create_asset_node(type, std::filesystem::path(new_asset_path).filename().string(), parent_node);
+		return internal_create_node(parent_node, info);
 	}
 
 	const AssetNode* AssetLibrary::find_node(std::string_view path) const
@@ -69,7 +62,7 @@ namespace VadonEditor::Core
 		std::filesystem::path fs_path = path;
 		for (const auto& current_element : fs_path)
 		{
-			const std::string current_element_string = current_element.string();
+			const std::string current_element_string = current_element.generic_string();
 			bool candidate_found = false;
 			for (const AssetNode* candidate_child : candidate_node->get_children())
 			{
@@ -83,65 +76,37 @@ namespace VadonEditor::Core
 
 			if (candidate_found == false)
 			{
-				return candidate_node;
+				return nullptr;
 			}
 		}
 
 		return candidate_node;
 	}
 
-	const char* AssetLibrary::get_asset_type_file_extension(AssetType type)
-	{
-		return internal_get_asset_type_file_extension(type);
-	}
-
 	AssetLibrary::AssetLibrary(Editor& editor)
 		: m_editor(editor)
 	{}
 
-	void AssetLibrary::rebuild_asset_tree()
+	bool AssetLibrary::initialize()
 	{
-		m_root.clear();
-
-		ProjectManager& project_manager = m_editor.get_system<ProjectManager>();
-		const Vadon::Core::RootDirectoryHandle project_root_dir = project_manager.get_active_project().root_dir_handle;
-
-		Vadon::Core::FileSystem& file_system = m_editor.get_engine_core().get_system<Vadon::Core::FileSystem>();
-		std::filesystem::path root_path = file_system.get_absolute_path(Vadon::Core::FileSystemPath{ .root_directory = project_root_dir });
-
-		build_asset_tree_recursive(m_root, root_path);
+		// TODO: anything?
+		return true;
 	}
 
-	void AssetLibrary::build_asset_tree_recursive(AssetNode& parent, const std::filesystem::path& path)
+	AssetNode* AssetLibrary::internal_create_node(AssetNode* parent, const AssetInfo& info)
 	{
-		for (const auto& directory_entry : std::filesystem::directory_iterator(path))
+		for (const AssetNode* current_child : parent->m_children)
 		{
-			if (directory_entry.is_regular_file() == true)
+			if (current_child->get_info() == info)
 			{
-				const AssetType asset_type = get_asset_node_type(directory_entry.path());
-				if (asset_type == AssetType::NONE)
-				{
-					continue;
-				}
-
-				create_asset_node(asset_type, directory_entry.path().filename().string(), &parent);
-			}
-			else if (directory_entry.is_directory() == true)
-			{
-				AssetNode* directory_node = create_asset_node(AssetType::NONE, directory_entry.path().stem().string(), &parent);
-				build_asset_tree_recursive(*directory_node, directory_entry.path());
+				// TODO: error!
+				return nullptr;
 			}
 		}
-	}
 
-	AssetNode* AssetLibrary::create_asset_node(AssetType type, std::string_view name, AssetNode* parent)
-	{
 		AssetNode* new_node = new AssetNode();
 		new_node->m_parent = parent;
-
-		AssetInfo& info = new_node->m_info;
-		info.name = name;
-		info.type = type;
+		new_node->m_info = info;
 
 		parent->m_children.push_back(new_node);
 

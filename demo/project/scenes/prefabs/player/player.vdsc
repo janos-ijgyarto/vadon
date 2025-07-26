@@ -19,6 +19,12 @@
                     },
                     {
                         "properties": {
+                            "definition": ""
+                        },
+                        "type": "VadonDemo::Model::Weapon"
+                    },
+                    {
+                        "properties": {
                             "position": [
                                 0.0,
                                 0.0
@@ -27,13 +33,6 @@
                             "scale": 25.0
                         },
                         "type": "VadonDemo::Model::Transform2D"
-                    },
-                    {
-                        "properties": {
-                            "projectile_prefab": "CjiAVUGbQQ6HGqbCh3/QkQ==",
-                            "rate_of_fire": 180.0
-                        },
-                        "type": "VadonDemo::Model::Weapon"
                     },
                     {
                         "properties": {
@@ -56,7 +55,12 @@
                     },
                     {
                         "properties": {
-                            "damage_delay": 3.0
+                            "damage_delay": 3.0,
+                            "starting_weapons": [
+                                "7DonxuyWRpmniQZnSGAvDQ==",
+                                "Iue31YfmT3eAHY7B/BhufA==",
+                                "XO6V0vTQSyqnXWG+K6vAZA=="
+                            ]
                         },
                         "type": "VadonDemo::Model::Player"
                     }

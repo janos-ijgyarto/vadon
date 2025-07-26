@@ -263,14 +263,20 @@ namespace VadonDemo::UI
 				if (dev_gui.push_tree_node("List Box"))
 				{
 					dev_gui.draw_list_box(m_dev_gui.list_box);
-					dev_gui.add_text(std::format("Selected list item: index = {}, text = \"{}\"", m_dev_gui.list_box.selected_item, m_dev_gui.list_box.items[m_dev_gui.list_box.selected_item]));
+					if (m_dev_gui.list_box.has_valid_selection() == true)
+					{
+						dev_gui.add_text(std::format("Selected list item: index = {}, text = \"{}\"", m_dev_gui.list_box.selected_item, m_dev_gui.list_box.items[m_dev_gui.list_box.selected_item]));
+					}
 					dev_gui.pop_tree_node();
 				}
 
 				if (dev_gui.push_tree_node("Combo Box"))
 				{
 					dev_gui.draw_combo_box(m_dev_gui.combo_box);
-					dev_gui.add_text(std::format("Selected combo item: index = {}, text = \"{}\"", m_dev_gui.combo_box.selected_item, m_dev_gui.combo_box.items[m_dev_gui.combo_box.selected_item]));
+					if (m_dev_gui.combo_box.has_valid_selection() == true)
+					{
+						dev_gui.add_text(std::format("Selected combo item: index = {}, text = \"{}\"", m_dev_gui.combo_box.selected_item, m_dev_gui.combo_box.items[m_dev_gui.combo_box.selected_item]));
+					}
 					dev_gui.pop_tree_node();
 				}
 

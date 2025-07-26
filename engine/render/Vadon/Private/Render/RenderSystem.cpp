@@ -51,6 +51,7 @@ namespace Vadon::Private::Render
 		Logger::log_message("Shutting down render system.\n");
 
 		m_frame_system.shutdown();
+		m_canvas_system.shutdown();
 
 		Logger::log_message("Render system shut down successfully.\n");
 	}

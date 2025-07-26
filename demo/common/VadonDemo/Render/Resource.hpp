@@ -3,7 +3,7 @@
 #include <Vadon/Render/GraphicsAPI/Resource/SRV.hpp>
 #include <Vadon/Render/GraphicsAPI/Shader/Shader.hpp>
 #include <Vadon/Render/GraphicsAPI/Texture/Texture.hpp>
-#include <Vadon/Scene/Resource/Resource.hpp>
+#include <Vadon/Scene/Resource/File.hpp>
 namespace VadonDemo::Render
 {
 	struct CanvasLayerDefinition : public Vadon::Scene::Resource
@@ -17,16 +17,12 @@ namespace VadonDemo::Render
 	VADON_SCENE_DECLARE_TYPED_RESOURCE_ID(CanvasLayerDefinition, CanvasLayerDefID);
 	VADON_SCENE_DECLARE_TYPED_RESOURCE_HANDLE(CanvasLayerDefinition, CanvasLayerDefHandle);
 
-	// TODO: implement generic File resource
-	// - Used as foundation for "this is a file we want to load"
-	// - Base resource loads file as-is, delegates processing to subclasses
-
 	// TODO: implement resources that actually store texture data
 	// Loading the resource means it's actually "ready" (i.e loaded as a GPU resource),
 	// we don't keep the file data around
 	struct TextureResource : public Vadon::Scene::Resource
 	{
-		std::string file_path;
+		Vadon::Scene::FileResourceID texture_file;
 
 		Vadon::Render::TextureHandle texture;
 		Vadon::Render::SRVHandle texture_srv;
@@ -40,7 +36,7 @@ namespace VadonDemo::Render
 	// TODO: implement proper shader resources!
 	struct ShaderResource : public Vadon::Scene::Resource
 	{
-		std::string shader_path;
+		Vadon::Scene::FileResourceID shader_file;
 
 		Vadon::Render::ShaderHandle pixel_shader;
 

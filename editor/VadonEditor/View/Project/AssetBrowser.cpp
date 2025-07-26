@@ -6,13 +6,13 @@
 
 #include <VadonEditor/Model/ModelSystem.hpp>
 #include <VadonEditor/Model/Resource/ResourceSystem.hpp>
+#include <VadonEditor/Model/Scene/SceneSystem.hpp>
 
 #include <VadonEditor/View/ViewSystem.hpp>
 
 #include <VadonApp/UI/Developer/IconsFontAwesome5.h>
 
-#include <Vadon/Core/File/FileSystem.hpp>
-
+#include <Vadon/Scene/Resource/File.hpp>
 #include <Vadon/Utilities/TypeInfo/Registry.hpp>
 
 #include <filesystem>
@@ -34,6 +34,8 @@ namespace
 		case VadonEditor::Core::AssetType::SCENE:
 			label = ICON_FA_FILM + (" " + info.name);
 			break;
+		case VadonEditor::Core::AssetType::IMPORTED_FILE:
+			label = ICON_FA_DATABASE + (" " + info.name);
 		}
 	}
 }
@@ -98,13 +100,18 @@ namespace VadonEditor::View
 		: m_editor(editor)
 		, m_create_resource_dialog(editor)
 		, m_save_file_dialog("Save File", UI::Developer::FileBrowserDialog::Flags::NAME_INPUT)
+		, m_import_file_dialog("Import File")
 	{
 		m_window.title = "Asset Browser";
 		m_window.open = false;
 
+		m_import_button.label = "Import File";
+
 		m_asset_tree.id = "AssetTree";
 
 		m_save_file_dialog.set_accept_label("Save");
+
+		m_import_file_dialog.set_accept_label("Import");
 
 		{
 			UI::Developer::MenuItem& create_resource_menu_item = m_create_asset_context_menus[Vadon::Utilities::to_integral(CreateMenuOption::RESOURCE)];
@@ -128,9 +135,23 @@ namespace VadonEditor::View
 			{
 				create_resource();
 			}
+			if (m_import_file_dialog.draw(dev_gui) == UI::Developer::Dialog::Result::ACCEPTED)
+			{
+				import_file();
+			}
+
+			if (dev_gui.draw_button(m_import_button) == true)
+			{
+				const Core::ProjectManager& project_manager = m_editor.get_system<Core::ProjectManager>();
+				m_import_file_dialog.open_at(project_manager.get_active_project().info.root_path);
+			}
 
 			// Make tree fill available content region
 			m_asset_tree.size = dev_gui.get_available_content_region();
+			
+			const VadonApp::UI::Developer::GUIStyle gui_style = dev_gui.get_style();
+			m_asset_tree.size.y -= dev_gui.calculate_text_size(m_import_button.label).y + gui_style.frame_padding.y * 2 + 5.0f;
+
 			m_asset_tree_state.reset();
 			if (dev_gui.begin_child_window(m_asset_tree) == true)
 			{
@@ -216,17 +237,22 @@ namespace VadonEditor::View
 	void AssetBrowser::create_resource()
 	{
 		m_pending_asset_type = Core::AssetType::RESOURCE;
+		m_save_file_dialog.clear_file_name_input();
+
+		const Core::ProjectManager& project_manager = m_editor.get_system<Core::ProjectManager>();
+		const std::filesystem::path project_root_path(project_manager.get_active_project().info.root_path);
+		
+		std::string path;
 		if (m_selected_asset != nullptr)
 		{
-			Core::ProjectManager& project_manager = m_editor.get_system<Core::ProjectManager>();
-			const Vadon::Core::RootDirectoryHandle project_root_dir = project_manager.get_active_project().root_dir_handle;
-
-			Vadon::Core::FileSystem& file_system = m_editor.get_engine_core().get_system<Vadon::Core::FileSystem>();
-			const std::string path = file_system.get_absolute_path(Vadon::Core::FileSystemPath{ .root_directory = project_root_dir, .path = m_selected_asset->get_path() });
-			m_save_file_dialog.open_at(path);
-			m_save_file_dialog.clear_file_name_input();
+			path = (project_root_path / m_selected_asset->get_path()).generic_string();
 		}
-		m_save_file_dialog.open();
+		else
+		{
+			path = project_root_path.generic_string();
+		}
+
+		m_save_file_dialog.open_at(path);
 	}
 
 	void AssetBrowser::save_asset()
@@ -234,16 +260,10 @@ namespace VadonEditor::View
 		const Core::AssetType pending_asset_type = m_pending_asset_type;
 		m_pending_asset_type = Core::AssetType::NONE;
 
-		Core::ProjectManager& project_manager = m_editor.get_system<Core::ProjectManager>();
-		const Vadon::Core::RootDirectoryHandle project_root_dir = project_manager.get_active_project().root_dir_handle;
-
-		Vadon::Core::FileSystem& file_system = m_editor.get_engine_core().get_system<Vadon::Core::FileSystem>();
-		const std::string relative_path = file_system.get_relative_path(m_save_file_dialog.get_entered_file_path(), project_root_dir);
-
 		switch (pending_asset_type)
 		{
 		case Core::AssetType::RESOURCE:
-			if (save_resource(relative_path + Core::AssetLibrary::get_asset_type_file_extension(Core::AssetType::RESOURCE)) == false)
+			if (save_resource(m_save_file_dialog.get_entered_file_path()) == false)
 			{
 				return;
 			}
@@ -252,8 +272,13 @@ namespace VadonEditor::View
 			return;
 		}
 
+		const Core::ProjectManager& project_manager = m_editor.get_system<Core::ProjectManager>();
+		const std::filesystem::path project_root_path(project_manager.get_active_project().info.root_path);
+
+		const std::string relative_path = std::filesystem::relative(m_save_file_dialog.get_entered_file_path(), project_root_path).generic_string();
+
 		Core::AssetLibrary& asset_library = m_editor.get_system<Core::ProjectManager>().get_asset_library();
-		Core::AssetNode* new_asset = asset_library.create_asset(pending_asset_type, relative_path);
+		const Core::AssetNode* new_asset = asset_library.find_node(relative_path);
 		if (new_asset == nullptr)
 		{
 			// TODO: error!
@@ -276,11 +301,7 @@ namespace VadonEditor::View
 			return false;
 		}
 
-		Core::ProjectManager& project_manager = m_editor.get_system<Core::ProjectManager>();
-		const Vadon::Core::RootDirectoryHandle project_root_dir = project_manager.get_active_project().root_dir_handle;
-
-		const Model::ResourcePath new_resource_path = { .root_directory = project_root_dir, .path = std::string(path) };
-		if (new_resource->save_as(new_resource_path) == false)
+		if (editor_resource_system.get_database().save_resource_as(new_resource->get_id(), path) == false)
 		{
 			// TODO: delete resource?
 			Vadon::Core::Logger::log_error("Asset browser: failed to save resource!\n");
@@ -291,27 +312,65 @@ namespace VadonEditor::View
 		return true;
 	}
 
+	void AssetBrowser::import_file()
+	{
+		const VadonApp::UI::Developer::FileBrowserWidget::File& selected_file = m_import_file_dialog.get_selected_file();
+		if (selected_file.type != VadonApp::UI::Developer::FileBrowserWidget::Type::FILE)
+		{
+			Vadon::Core::Logger::log_error("Asset browser: invalid selection!\n");
+			return;
+		}
+
+		const std::filesystem::path imported_file_path = selected_file.path;
+
+		// Check whether we already imported the file
+		{
+			Core::ProjectManager& project_manager = m_editor.get_system<Core::ProjectManager>();
+			const std::filesystem::path project_root_path(project_manager.get_active_project().info.root_path);
+
+			const std::string relative_path = std::filesystem::relative(imported_file_path, project_root_path).generic_string();
+
+			Core::AssetLibrary& asset_library = project_manager.get_asset_library();
+			if (asset_library.find_node(relative_path) != nullptr)
+			{
+				Vadon::Core::Logger::log_error("Asset browser: file already imported!\n");
+				return;
+			}
+		}
+
+		// TODO: check to make sure path is within project!
+		// First try to create the resource
+		Model::ResourceSystem& editor_resource_system = m_editor.get_system<Model::ModelSystem>().get_resource_system();
+
+		// TODO: get file resource type based on extension?
+		Model::Resource* new_resource = editor_resource_system.create_resource(Vadon::Utilities::TypeRegistry::get_type_id<Vadon::Scene::FileResource>());
+		if (new_resource == nullptr)
+		{
+			Vadon::Core::Logger::log_error("Asset browser: failed to create import resource!\n");
+			return;
+		}
+
+		std::filesystem::path import_resource_path = imported_file_path;
+		import_resource_path.replace_extension(import_resource_path.extension().generic_string() + Core::AssetInfo::get_file_extension(Core::AssetType::IMPORTED_FILE));
+		if (editor_resource_system.get_database().save_resource_as(new_resource->get_id(), import_resource_path.generic_string()) == false)
+		{
+			// TODO: delete resource?
+			Vadon::Core::Logger::log_error("Asset browser: failed to save import resource!\n");
+			return;
+		}
+
+		Vadon::Core::Logger::log_message(std::format("Imported file \"{}\"\n", imported_file_path.generic_string()));
+	}
+
 	void AssetBrowser::open_asset(const Core::AssetNode* asset)
 	{
 		switch (asset->get_info().type)
 		{
 		case Core::AssetType::RESOURCE:
+		case Core::AssetType::IMPORTED_FILE: // NOTE: for files we will open the import resource
 		{
-			Core::ProjectManager& project_manager = m_editor.get_system<Core::ProjectManager>();
-			const Vadon::Core::RootDirectoryHandle project_root_dir = project_manager.get_active_project().root_dir_handle;
-
 			Model::ResourceSystem& editor_resource_system = m_editor.get_system<Model::ModelSystem>().get_resource_system();
-
-			// Attempt to import as resource
-			// FIXME: what if it's not matching?
-			const Model::ResourceID resource_id = editor_resource_system.get_database().import_resource(Model::ResourcePath{ .root_directory = project_root_dir, .path = asset->get_path() });
-			if (resource_id.is_valid() == false)
-			{
-				// TODO: error!
-				return;
-			}
-
-			Model::Resource* resource = editor_resource_system.get_resource(resource_id);
+			Model::Resource* resource = editor_resource_system.get_resource(asset->get_info().file_id);
 			if (resource != nullptr)
 			{
 				if (resource->load() == true)
@@ -327,6 +386,22 @@ namespace VadonEditor::View
 			else
 			{
 				// TODO: error!
+			}
+		}
+		break;
+		case Core::AssetType::SCENE:
+		{
+			Model::ModelSystem& model_system = m_editor.get_system<Model::ModelSystem>();
+			Model::SceneSystem& editor_scene_system = model_system.get_scene_system();
+
+			Model::Scene* selected_scene = editor_scene_system.get_scene(asset->get_info().file_id);
+			if (selected_scene != nullptr)
+			{
+				editor_scene_system.open_scene(selected_scene);
+			}
+			else
+			{
+				Vadon::Core::Logger::log_error("AssetBrowser: failed to open Scene!\n");
 			}
 		}
 		break;

@@ -140,15 +140,17 @@ namespace VadonDemo::View
 		// TODO: anything?
 	}
 
-	void GameView::init_resource(ViewResourceHandle resource_handle)
+	void GameView::init_resource(ViewResourceID resource_id)
 	{
-		if (resource_handle.is_valid() == false)
+		if (resource_id.is_valid() == false)
 		{
 			return;
 		}
 
 		Vadon::Core::EngineCoreInterface& engine_core = m_game_core.get_engine_core();
 		Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
+
+		const ViewResourceHandle resource_handle = resource_system.load_resource(resource_id);
 
 		const Vadon::Scene::ResourceInfo resource_info = resource_system.get_resource_info(resource_handle);
 		if (resource_info.type_id == Vadon::Utilities::TypeRegistry::get_type_id<Sprite>())
@@ -159,6 +161,6 @@ namespace VadonDemo::View
 		}
 
 		VadonDemo::View::View& common_view = m_game_core.get_core().get_view();
-		common_view.load_resource(resource_handle);
+		common_view.load_resource_data(resource_id);
 	}
 }

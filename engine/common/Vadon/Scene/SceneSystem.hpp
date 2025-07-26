@@ -1,6 +1,5 @@
 #ifndef VADON_SCENE_SCENESYSTEM_HPP
 #define VADON_SCENE_SCENESYSTEM_HPP
-#include <Vadon/Core/File/RootDirectory.hpp>
 #include <Vadon/ECS/Entity/Entity.hpp>
 #include <Vadon/Scene/Module.hpp>
 #include <Vadon/Scene/Scene.hpp>

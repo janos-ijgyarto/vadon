@@ -5,6 +5,8 @@
 #include <VadonEditor/Model/ModelSystem.hpp>
 #include <VadonEditor/Model/Resource/ResourceSystem.hpp>
 
+#include <VadonEditor/View/ViewSystem.hpp>
+
 #include <Vadon/Core/File/FileSystem.hpp>
 #include <Vadon/ECS/World/World.hpp>
 #include <Vadon/Scene/SceneSystem.hpp>
@@ -77,6 +79,9 @@ namespace VadonEditor::Model
 		}
 
 		scene->instantiate_from_root();
+
+		// FIXME: use events instead of directly notifying view!
+		m_editor.get_system<View::ViewSystem>().get_view_model().scene_opened(scene);
 	}
 
 	void SceneSystem::close_scene(Scene* scene)
@@ -90,11 +95,14 @@ namespace VadonEditor::Model
 		scene->clear_contents();
 		scene->clear_modified();
 
-		if (scene->get_path().is_valid() == false)
+		if (scene->get_path().empty() == true)
 		{
 			// New scene closed without saving, so we delete it
 			internal_remove_scene(scene);
 		}
+
+		// FIXME: use events instead of directly notifying view!
+		m_editor.get_system<View::ViewSystem>().get_view_model().scene_closed(scene);
 	}
 
 	void SceneSystem::remove_scene(Scene* scene)
@@ -200,7 +208,7 @@ namespace VadonEditor::Model
 		// Scene not yet registered, so we create it
 		// Make sure the resource is actually a scene
 		ResourceSystem& editor_resource_system = m_editor.get_system<ModelSystem>().get_resource_system();
-		const Vadon::Scene::ResourceInfo scene_resource_info = (resource->is_loaded() == true) ? resource->get_info() : editor_resource_system.get_database().find_resource_info(resource->get_id()).info;
+		const Vadon::Scene::ResourceInfo scene_resource_info = (resource->is_loaded() == true) ? resource->get_info() : editor_resource_system.get_database().find_resource_info(resource->get_id())->info;
 		if (scene_resource_info.type_id != get_scene_type_id())
 		{
 			Vadon::Core::Logger::log_error("Editor scene system: selected resource is not a scene!\n");

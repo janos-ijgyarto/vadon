@@ -5,8 +5,6 @@
 
 #include <Vadon/Utilities/Enum/EnumClass.hpp>
 
-#include <d3dcompiler.h>
-
 namespace Vadon::Private::Render::DirectX
 {
 	namespace
@@ -21,57 +19,18 @@ namespace Vadon::Private::Render::DirectX
 
 			return D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA;
 		}
-
-		std::string get_d3d_error_blob_message(const D3DBlob& error_blob)
-		{
-			const char* error_message_ptr = static_cast<const char*>(error_blob->GetBufferPointer());
-			return std::string(error_message_ptr, error_message_ptr + error_blob->GetBufferSize());
-		}
-
-		const char* get_shader_target(const ShaderInfo& shader_info)
-		{
-			// FIXME: take into account the supported feature level, optionally allow client code to select target
-			switch (shader_info.type)
-			{
-			case ShaderType::VERTEX:
-				return "vs_4_0";
-			case ShaderType::PIXEL:
-				return "ps_4_0";
-			}
-
-			return nullptr;
-		}
-
-		using D3DShaderMacroList = std::vector<D3D_SHADER_MACRO>;
-		D3DShaderMacroList get_shader_macros(const ShaderInfo& shader_info)
-		{
-			D3DShaderMacroList shader_macros;
-			shader_macros.reserve(shader_info.defines.size() + 1);
-
-			for (const ShaderDefine& current_define : shader_info.defines)
-			{
-				D3D_SHADER_MACRO& current_macro = shader_macros.emplace_back();
-				ZeroMemory(&current_macro, sizeof(D3D_SHADER_MACRO));
-
-				current_macro.Name = current_define.name.c_str();
-				current_macro.Definition = current_define.value.c_str();
-			}
-
-			D3D_SHADER_MACRO& end_macro = shader_macros.emplace_back();
-			ZeroMemory(&end_macro, sizeof(D3D_SHADER_MACRO));
-
-			return shader_macros;
-		}
 	}
 
-	ShaderHandle ShaderSystem::create_shader(const ShaderInfo& shader_info)
+	ShaderHandle ShaderSystem::create_shader(const ShaderInfo& shader_info, const void* shader_data, size_t shader_data_size)
 	{
+		VADON_ASSERT((shader_data != nullptr) && (shader_data_size > 0), "Invalid shader data!");
+
 		switch (shader_info.type)
 		{
 		case ShaderType::VERTEX:
-			return create_vertex_shader(shader_info);
+			return create_vertex_shader(shader_info, shader_data, shader_data_size);
 		case ShaderType::PIXEL:
-			return create_pixel_shader(shader_info);
+			return create_pixel_shader(shader_info, shader_data, shader_data_size);
 		}
 
 		return ShaderHandle();
@@ -101,16 +60,9 @@ namespace Vadon::Private::Render::DirectX
 		// TODO!!!
 	}
 
-	VertexLayoutHandle ShaderSystem::create_vertex_layout(ShaderHandle shader_handle, const VertexLayoutInfo& layout_info)
+	VertexLayoutHandle ShaderSystem::create_vertex_layout(const VertexLayoutInfo& layout_info, const void* shader_data, size_t shader_data_size)
 	{
-		const Shader& shader = m_shader_pool.get(shader_handle);
-
-		// FIXME: can ILs be used on anything other than a vertex shader?
-		if (shader.info.type != ShaderType::VERTEX)
-		{
-			// TODO: warning/error?
-			return VertexLayoutHandle();
-		}
+		VADON_ASSERT((shader_data != nullptr) && (shader_data_size > 0), "Invalid shader data!");
 
 		// Process the element descriptions
 		std::vector<D3D11_INPUT_ELEMENT_DESC> input_element_descs(layout_info.size());
@@ -135,7 +87,7 @@ namespace Vadon::Private::Render::DirectX
 		D3DInputLayout d3d_input_layout;
 
 		if (device->CreateInputLayout(input_element_descs.data(), static_cast<UINT>(input_element_descs.size()),
-			shader.d3d_shader_blob->GetBufferPointer(), shader.d3d_shader_blob->GetBufferSize(), d3d_input_layout.ReleaseAndGetAddressOf()) != S_OK)
+			shader_data, shader_data_size, d3d_input_layout.ReleaseAndGetAddressOf()) != S_OK)
 		{
 			return VertexLayoutHandle();
 		}
@@ -144,7 +96,6 @@ namespace Vadon::Private::Render::DirectX
 		const VertexLayoutHandle new_layout_handle = m_layout_pool.add();
 
 		VertexLayout& new_layout = m_layout_pool.get(new_layout_handle);
-		new_layout.shader = shader_handle;
 		new_layout.d3d_input_layout = d3d_input_layout;
 
 		return new_layout_handle;
@@ -190,17 +141,11 @@ namespace Vadon::Private::Render::DirectX
 	}
 
 
-	ShaderHandle ShaderSystem::create_vertex_shader(const ShaderInfo& shader_info)
+	ShaderHandle ShaderSystem::create_vertex_shader(const ShaderInfo& shader_info, const void* shader_data, size_t shader_data_size)
 	{
-		D3DBlob new_shader_blob = compile_shader(shader_info);
-		if (new_shader_blob == nullptr)
-		{
-			return ShaderHandle();
-		}
-
 		D3DVertexShader d3d_vertex_shader;
 		GraphicsAPI::Device* device = m_graphics_api.get_device();
-		HRESULT hr = device->CreateVertexShader(new_shader_blob->GetBufferPointer(), new_shader_blob->GetBufferSize(), nullptr, d3d_vertex_shader.ReleaseAndGetAddressOf());
+		HRESULT hr = device->CreateVertexShader(shader_data, shader_data_size, nullptr, d3d_vertex_shader.ReleaseAndGetAddressOf());
 		if (FAILED(hr))
 		{
 			// TODO: error
@@ -212,23 +157,16 @@ namespace Vadon::Private::Render::DirectX
 	
 		Shader& new_shader = m_shader_pool.get(new_shader_handle);
 		new_shader.info = shader_info;
-		new_shader.d3d_shader_blob = new_shader_blob;
 		new_shader.d3d_vertex_shader = d3d_vertex_shader;
 
 		return new_shader_handle;
 	}
 
-	ShaderHandle ShaderSystem::create_pixel_shader(const ShaderInfo& shader_info)
+	ShaderHandle ShaderSystem::create_pixel_shader(const ShaderInfo& shader_info, const void* shader_data, size_t shader_data_size)
 	{
-		D3DBlob new_shader_blob = compile_shader(shader_info);
-		if (new_shader_blob == nullptr)
-		{
-			return ShaderHandle();
-		}
-
 		D3DPixelShader d3d_pixel_shader;
 		GraphicsAPI::Device* device = m_graphics_api.get_device();
-		HRESULT hr = device->CreatePixelShader(new_shader_blob->GetBufferPointer(), new_shader_blob->GetBufferSize(), nullptr, d3d_pixel_shader.ReleaseAndGetAddressOf());
+		HRESULT hr = device->CreatePixelShader(shader_data, shader_data_size, nullptr, d3d_pixel_shader.ReleaseAndGetAddressOf());
 		if (FAILED(hr))
 		{
 			// TODO: error
@@ -240,46 +178,8 @@ namespace Vadon::Private::Render::DirectX
 
 		Shader& new_shader = m_shader_pool.get(new_shader_handle);
 		new_shader.info = shader_info;
-		new_shader.d3d_shader_blob = new_shader_blob;
 		new_shader.d3d_pixel_shader = d3d_pixel_shader;
 
 		return new_shader_handle;
-	}
-
-	D3DBlob ShaderSystem::compile_shader(const ShaderInfo& shader_info)
-	{
-		D3DBlob shader_blob;
-		D3DBlob error_blob;
-
-		UINT compile_flags = 0;
-#ifndef NDEBUG
-		compile_flags |= D3DCOMPILE_DEBUG;
-#endif
-
-		const char* source_data = shader_info.source.data();
-		const char* source_name = (shader_info.name.empty() == false) ? shader_info.name.data() : nullptr;
-		
-		D3DShaderMacroList shader_macros;
-		if (shader_info.defines.empty() == false)
-		{
-			shader_macros = get_shader_macros(shader_info);
-		}
-		const D3D_SHADER_MACRO* shader_macro_ptr = (shader_macros.empty() == false) ? shader_macros.data() : nullptr;
-
-		ID3DInclude* d3d_include = D3D_COMPILE_STANDARD_FILE_INCLUDE; // FIXME: allow custom includes?
-
-		const char* shader_target = get_shader_target(shader_info);
-
-		HRESULT result = D3DCompile(source_data, shader_info.source.length(), source_name, shader_macro_ptr, d3d_include, shader_info.entrypoint.data(), shader_target, compile_flags, 0, shader_blob.ReleaseAndGetAddressOf(), error_blob.ReleaseAndGetAddressOf());
-		if (FAILED(result))
-		{
-			if (error_blob != nullptr)
-			{
-				log_error(get_d3d_error_blob_message(error_blob));
-			}
-			return nullptr;
-		}
-
-		return shader_blob;
 	}
 }

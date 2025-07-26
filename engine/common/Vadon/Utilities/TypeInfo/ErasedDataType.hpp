@@ -7,7 +7,7 @@ namespace Vadon::Utilities
 	{
 		TRIVIAL,
 		RESOURCE_ID,
-		RESOURCE_HANDLE
+		ARRAY
 	};
 
 	struct ErasedDataTypeID

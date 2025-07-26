@@ -26,6 +26,18 @@ namespace Vadon::ECS
 		return pool_info_it->second.factory_function();
 	}
 
+	Vadon::Utilities::Variant ComponentRegistry::get_component_property_default_value(Vadon::Utilities::TypeID type_id, std::string_view property_name)
+	{
+		const ComponentRegistry& registry_instance = get_registry_instance();
+		auto pool_info_it = registry_instance.m_pool_info_lookup.find(type_id);
+		if (pool_info_it == registry_instance.m_pool_info_lookup.end())
+		{
+			return Vadon::Utilities::Variant();
+		}
+
+		return Vadon::Utilities::TypeRegistry::get_property(pool_info_it->second.prototype->get_data(), type_id, property_name);
+	}
+
 	std::vector<Vadon::Utilities::TypeID> ComponentRegistry::get_component_types()
 	{
 		const ComponentRegistry& registry_instance = get_registry_instance();
@@ -33,7 +45,7 @@ namespace Vadon::ECS
 
 		type_id_list.reserve(registry_instance.m_pool_info_lookup.size());
 
-		for (auto pool_info_it : registry_instance.m_pool_info_lookup)
+		for (const auto& pool_info_it : registry_instance.m_pool_info_lookup)
 		{
 			type_id_list.push_back(pool_info_it.first);
 		}
@@ -41,7 +53,7 @@ namespace Vadon::ECS
 		return type_id_list;
 	}
 
-	void ComponentRegistry::register_component_type(Vadon::Utilities::TypeID type_id, PoolFactoryFunction factory)
+	void ComponentRegistry::register_component_type(Vadon::Utilities::TypeID type_id, PoolFactoryFunction factory, ComponentPrototypeBase* prototype)
 	{
 		ComponentRegistry& registry_instance = get_registry_instance();
 
@@ -50,6 +62,9 @@ namespace Vadon::ECS
 		PoolInfo pool_info;
 		pool_info.factory_function = factory;
 
-		registry_instance.m_pool_info_lookup.insert(std::make_pair(type_id, pool_info));
+		auto new_entry = registry_instance.m_pool_info_lookup.insert(std::make_pair(type_id, pool_info));
+
+		// Set the prototype in the info object
+		new_entry.first->second.prototype = prototype;
 	}
 }

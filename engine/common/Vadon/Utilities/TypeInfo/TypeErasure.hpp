@@ -8,25 +8,26 @@ namespace Vadon::Utilities
 	template<typename T>
 	static constexpr ErasedDataTypeID get_erased_data_type_id()
 	{
-		if constexpr (std::is_base_of_v<Vadon::Scene::ResourceID, T> && (std::is_same_v<Vadon::Scene::ResourceID, T> == false))
+		if constexpr (Vadon::Scene::is_resource_id<T>)
 		{
 			return ErasedDataTypeID{ .type = ErasedDataType::RESOURCE_ID,
 				.id = Vadon::Utilities::to_integral(Vadon::Utilities::TypeRegistry::get_type_id<typename T::_ResourceType>()) };
 		}
-		else if constexpr (std::is_base_of_v<Vadon::Scene::ResourceHandle, T> && (std::is_same_v<Vadon::Scene::ResourceHandle, T> == false))
+		else if constexpr (is_std_vector<T>)
 		{
-			return ErasedDataTypeID{ .type = ErasedDataType::RESOURCE_HANDLE,
-				.id = Vadon::Utilities::to_integral(Vadon::Utilities::TypeRegistry::get_type_id<typename T::_ResourceType>()) };
+			static_assert(is_std_vector<typename T::value_type> == false, "Nested arrays are not supported!");
+			return ErasedDataTypeID{ .type = ErasedDataType::ARRAY, .id = 0 };
 		}
-		else if constexpr (type_list_has_type_v<variant_type_mapping_t<T>, Variant>)
+		else if constexpr (is_trivial_variant_type<T>)
 		{
-			return ErasedDataTypeID{ .type = ErasedDataType::TRIVIAL,
-				.id = type_list_index_v<variant_type_mapping_t<T>, Variant> };
+			return ErasedDataTypeID{ .type = ErasedDataType::TRIVIAL, .id = type_list_index_v<T, Variant> };
 		}
 		else
 		{
 			static_assert(false, "Type not supported!");
 		}
 	}
+
+	VADONCOMMON_API Variant get_erased_type_default_value(const ErasedDataTypeID& type_id);
 }
 #endif

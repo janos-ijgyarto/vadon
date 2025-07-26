@@ -7,6 +7,7 @@
 #include <Vadon/Scene/Resource/ResourceSystem.hpp>
 
 #include <Vadon/Utilities/TypeInfo/Reflection/PropertySerialization.hpp>
+#include <Vadon/Utilities/TypeInfo/TypeErasure.hpp>
 
 #include <format>
 
@@ -40,6 +41,87 @@ namespace Vadon::Private::Scene
 			path.pop_back();
 
 			return path;
+		}
+
+		bool save_scene_array_data(Vadon::Utilities::Serializer& serializer, Vadon::Utilities::Variant& array_value)
+		{
+			using SerializerResult = Vadon::Utilities::Serializer::Result;
+			using ErasedDataType = Vadon::Utilities::ErasedDataType;
+
+			bool successful = true;
+			static constexpr auto c_process_trivial_property = +[](Vadon::Utilities::Serializer& serializer, size_t index, Vadon::Utilities::Variant& value, Vadon::Utilities::ErasedDataTypeID data_type)
+				{
+					const SerializerResult result = Vadon::Utilities::process_trivial_property(serializer, index, value, data_type);
+					if (result != SerializerResult::SUCCESSFUL)
+					{
+						return false;
+					}
+
+					return true;
+				};
+
+			Vadon::Utilities::VariantArray& array = *std::get<Vadon::Utilities::BoxedVariantArray>(array_value);
+			for (size_t index = 0; index < array.data.size(); ++index)
+			{
+				Vadon::Utilities::Variant& current_value = array.data[index];
+				switch (array.data_type.type)
+				{
+				case ErasedDataType::TRIVIAL:
+					successful &= c_process_trivial_property(serializer, index, current_value, array.data_type);
+					break;
+				case ErasedDataType::RESOURCE_ID:
+					successful &= c_process_trivial_property(serializer, index, current_value, Vadon::Utilities::get_erased_data_type_id<Vadon::Utilities::UUID>());
+					break;
+				default:
+					VADON_UNREACHABLE;
+					break;
+				}
+			}
+
+			return successful;
+		}
+
+		bool load_scene_array_data(Vadon::Utilities::Serializer& serializer, Vadon::Utilities::Variant& array_value)
+		{
+			using SerializerResult = Vadon::Utilities::Serializer::Result;
+			using ErasedDataType = Vadon::Utilities::ErasedDataType;
+
+			Vadon::Utilities::VariantArray& array = *std::get<Vadon::Utilities::BoxedVariantArray>(array_value);
+			array.data.clear();
+
+			bool successful = true;
+			static constexpr auto c_process_trivial_property = +[](Vadon::Utilities::Serializer& serializer, size_t index, Vadon::Utilities::Variant& value, Vadon::Utilities::ErasedDataTypeID data_type)
+				{
+					const SerializerResult result = Vadon::Utilities::process_trivial_property(serializer, index, value, data_type);
+					if (result != SerializerResult::SUCCESSFUL)
+					{
+						return false;
+					}
+
+					return true;
+				};
+
+			Vadon::Utilities::Variant current_value;
+			const size_t array_size = serializer.get_array_size();
+			for (size_t index = 0; index < array_size; ++index)
+			{
+				switch (array.data_type.type)
+				{
+				case ErasedDataType::TRIVIAL:
+					successful &= c_process_trivial_property(serializer, index, current_value, array.data_type);
+					break;
+				case ErasedDataType::RESOURCE_ID:
+					successful &= c_process_trivial_property(serializer, index, current_value, Vadon::Utilities::get_erased_data_type_id<Vadon::Utilities::UUID>());
+					break;
+				default:
+					VADON_UNREACHABLE;
+					break;
+				}
+
+				array.data.push_back(current_value);
+			}
+
+			return successful;
 		}
 
 		bool serialize_component(Vadon::Utilities::Serializer& serializer, size_t index, SceneData::ComponentData& component_data)
@@ -83,7 +165,22 @@ namespace Vadon::Private::Scene
 
 			using ErasedDataType = Vadon::Utilities::ErasedDataType;
 			if (serializer.is_reading() == true)
-			{				
+			{	
+				static constexpr auto c_process_trivial_property = +[](Vadon::Utilities::Serializer& serializer, SceneData::ComponentData& component_data, std::string_view key, Vadon::Utilities::Property& property_data, Vadon::Utilities::ErasedDataTypeID data_type)
+					{
+						const SerializerResult result = Vadon::Utilities::process_trivial_property(serializer, key, property_data.value, data_type);
+						if (result == SerializerResult::SUCCESSFUL)
+						{
+							property_data.name = key;
+							property_data.data_type = data_type;
+							component_data.properties.push_back(property_data);
+						}
+						else
+						{
+							// TODO: log error?
+						}
+					};
+
 				// FIXME: this forces us to iterate over all properties, instead of just reading the ones present in the object
 				// Need to iterate over the K/V pairs instead
 				// FIXME2: we also need to make sure we discard properties not present in the object (i.e if the properties changed)
@@ -101,62 +198,83 @@ namespace Vadon::Private::Scene
 					switch (current_property.data_type.type)
 					{
 					case ErasedDataType::TRIVIAL:
-					{
-						const SerializerResult result = Vadon::Utilities::process_trivial_property(serializer, current_property.name, property_data.value, current_property.data_type);
-						if (result == SerializerResult::SUCCESSFUL)
-						{
-							property_data.name = current_property.name;
-							property_data.data_type = current_property.data_type;
-							component_data.properties.push_back(property_data);
-						}
-						else
-						{
-							// TODO: log error?
-						}
-					}
+						c_process_trivial_property(serializer, component_data, current_property.name, property_data, current_property.data_type);
 						break;
 					case ErasedDataType::RESOURCE_ID:
-					case ErasedDataType::RESOURCE_HANDLE:
+						c_process_trivial_property(serializer, component_data, current_property.name, property_data, Vadon::Utilities::get_erased_data_type_id<Vadon::Utilities::UUID>());
+						break;
+					case ErasedDataType::ARRAY:
 					{
-						ResourceID temp_resource_id;
-						if (serializer.serialize(current_property.name, temp_resource_id) == SerializerResult::SUCCESSFUL)
+						if (serializer.open_array(current_property.name) != SerializerResult::SUCCESSFUL)
+						{
+							log_property_serialization_error(current_property.name);
+							return false;
+						}
+
+						// First get default value from Component registry
+						property_data.value = Vadon::ECS::ComponentRegistry::get_component_property_default_value(component_data.type_id, current_property.name);
+
+						// Use default value to determine how to deserialize the data
+						if (load_scene_array_data(serializer, property_data.value) == true)
 						{
 							property_data.name = current_property.name;
 							property_data.data_type = current_property.data_type;
-							property_data.value = temp_resource_id;
 							component_data.properties.push_back(property_data);
 						}
 						else
 						{
-							// TODO: log error?
+							// TODO: error?
+							log_property_serialization_error(current_property.name);
+						}
+
+						if (serializer.close_array() != SerializerResult::SUCCESSFUL)
+						{
+							log_property_serialization_error(current_property.name);
+							return false;
 						}
 					}
-						break;
+					break;
 					}
 				}
 			}
 			else
 			{
+				static constexpr auto c_process_trivial_property = +[](Vadon::Utilities::Serializer& serializer, std::string_view key, Vadon::Utilities::Property& property_data, Vadon::Utilities::ErasedDataTypeID data_type)
+					{
+						const SerializerResult result = Vadon::Utilities::process_trivial_property(serializer, key, property_data.value, data_type);
+						if (result != SerializerResult::SUCCESSFUL)
+						{
+							// TODO: log error?
+						}
+					};
+
 				for (Vadon::Utilities::Property& current_property : component_data.properties)
 				{
 					switch (current_property.data_type.type)
 					{
 					case ErasedDataType::TRIVIAL:
-					{
-						const SerializerResult result = Vadon::Utilities::process_trivial_property(serializer, current_property.name, current_property.value, current_property.data_type);
-						if (result != SerializerResult::SUCCESSFUL)
-						{
-							// TODO: log error?
-						}
-					}
+					c_process_trivial_property(serializer, current_property.name, current_property, current_property.data_type);
 					break;
 					case ErasedDataType::RESOURCE_ID:
-					case ErasedDataType::RESOURCE_HANDLE:
+					c_process_trivial_property(serializer, current_property.name, current_property, Vadon::Utilities::get_erased_data_type_id<Vadon::Utilities::UUID>());
+					break;
+					case ErasedDataType::ARRAY:
 					{
-						ResourceID temp_resource_id = std::get<ResourceID>(current_property.value);
-						if (serializer.serialize(current_property.name, temp_resource_id) != SerializerResult::SUCCESSFUL)
+						if (serializer.open_array(current_property.name) != SerializerResult::SUCCESSFUL)
 						{
-							// TODO: log error?
+							log_property_serialization_error(current_property.name);
+							return false;
+						}
+
+						if (save_scene_array_data(serializer, current_property.value) == false)
+						{
+							// TODO: error?
+						}
+
+						if (serializer.close_array() != SerializerResult::SUCCESSFUL)
+						{
+							log_property_serialization_error(current_property.name);
+							return false;
 						}
 					}
 					break;
@@ -424,29 +542,7 @@ namespace Vadon::Private::Scene
 				using ErasedDataType = Vadon::Utilities::ErasedDataType;
 				for (const Vadon::Utilities::Property& current_property_data : current_component_data.properties)
 				{
-					switch (current_property_data.data_type.type)
-					{
-					case ErasedDataType::TRIVIAL:
-					case ErasedDataType::RESOURCE_ID:
-					{
-						Vadon::Utilities::TypeRegistry::set_property(current_component, current_component_data.type_id, current_property_data.name, current_property_data.value);
-					}
-					break;
-					case ErasedDataType::RESOURCE_HANDLE:
-					{
-						Vadon::Scene::ResourceSystem& resource_system = m_engine_core.get_system<Vadon::Scene::ResourceSystem>();
-						Vadon::Scene::ResourceHandle resource_handle = resource_system.load_resource(std::get<Vadon::Scene::ResourceID>(current_property_data.value));
-						if (resource_handle.is_valid() == true)
-						{
-							Vadon::Utilities::TypeRegistry::set_property(current_component, current_component_data.type_id, current_property_data.name, resource_handle);
-						}
-						else
-						{
-							// TODO: error?
-						}
-					}
-					break;
-					}
+					Vadon::Utilities::TypeRegistry::set_property(current_component, current_component_data.type_id, current_property_data.name, current_property_data.value);
 				}
 			}
 
@@ -543,57 +639,11 @@ namespace Vadon::Private::Scene
 		const Vadon::ECS::ComponentIDList component_type_ids = component_manager.get_component_list(entity);
 		const Vadon::Utilities::TypeID scene_component_id = Vadon::Utilities::TypeRegistry::get_type_id<SceneComponent>();
 
-		static constexpr auto c_save_property_func = +[](Vadon::Utilities::Property& property_data, const Vadon::Utilities::Property& component_property, Vadon::Scene::ResourceSystem& resource_system)
+		static constexpr auto c_save_property_func = +[](Vadon::Utilities::Property& property_data, const Vadon::Utilities::Property& component_property)
 			{
 				property_data.name = component_property.name;
 				property_data.data_type = component_property.data_type;
-
-				switch (component_property.data_type.type)
-				{
-				case ErasedDataType::TRIVIAL:
-				case ErasedDataType::RESOURCE_ID:
-					property_data.value = component_property.value;
-					break;
-				case ErasedDataType::RESOURCE_HANDLE:
-				{
-					Vadon::Scene::ResourceHandle temp_resource_handle = std::get<Vadon::Scene::ResourceHandle>(component_property.value);
-					if (temp_resource_handle.is_valid() == true)
-					{
-						property_data.value = resource_system.get_resource_info(temp_resource_handle).id;
-					}
-					else
-					{
-						property_data.value = ResourceID();
-					}
-				}
-				break;
-				}
-			};
-
-		static constexpr auto c_compare_property_func = +[](const Vadon::Utilities::Property& property_data, const Vadon::Utilities::Property& component_property, Vadon::Scene::ResourceSystem& resource_system)
-			{
-				switch (component_property.data_type.type)
-				{
-				case ErasedDataType::TRIVIAL:
-				case ErasedDataType::RESOURCE_ID:
-					return property_data.value == component_property.value;
-				case ErasedDataType::RESOURCE_HANDLE:
-				{
-					const Vadon::Scene::ResourceID& resource_id = std::get<Vadon::Scene::ResourceID>(property_data.value);
-					const Vadon::Scene::ResourceHandle& resource_handle = std::get<Vadon::Scene::ResourceHandle>(component_property.value);
-					if (resource_handle.is_valid() == true)
-					{
-						return resource_id == resource_system.get_resource_info(resource_handle).id;
-					}
-					else
-					{
-						return (resource_id.is_valid() == false);
-					}
-				}
-				break;
-				}
-
-				return false;
+				property_data.value = component_property.value;
 			};
 
 		if (scene_comp != nullptr)
@@ -650,7 +700,7 @@ namespace Vadon::Private::Scene
 							{
 								if (current_property_data.name == sub_scene_property.name)
 								{
-									if (c_compare_property_func(sub_scene_property, current_property_data, resource_system) == false)
+									if (current_property_data.value != sub_scene_property.value)
 									{
 										unique_property_indices.push_back(property_index);
 									}
@@ -670,7 +720,7 @@ namespace Vadon::Private::Scene
 								Vadon::Utilities::Property& current_property_data = current_component_data.properties.emplace_back();
 								const Vadon::Utilities::Property& component_property = component_properties[current_property_index];
 								
-								c_save_property_func(current_property_data, component_property, resource_system);
+								c_save_property_func(current_property_data, component_property);
 							}
 						}
 						found = true;
@@ -688,7 +738,7 @@ namespace Vadon::Private::Scene
 					for (const Vadon::Utilities::Property& current_component_property : component_properties)
 					{
 						Vadon::Utilities::Property& current_property_data = current_component_data.properties.emplace_back();
-						c_save_property_func(current_property_data, current_component_property, resource_system);
+						c_save_property_func(current_property_data, current_component_property);
 					}
 				}
 			}
@@ -712,7 +762,7 @@ namespace Vadon::Private::Scene
 				for (const Vadon::Utilities::Property& current_component_property : component_properties)
 				{
 					Vadon::Utilities::Property& current_property_data = current_component_data.properties.emplace_back();
-					c_save_property_func(current_property_data, current_component_property, resource_system);
+					c_save_property_func(current_property_data, current_component_property);
 				}
 			}
 		}

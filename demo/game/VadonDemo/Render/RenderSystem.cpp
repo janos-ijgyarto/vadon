@@ -9,8 +9,6 @@
 #include <VadonApp/Platform/PlatformInterface.hpp>
 #include <VadonApp/UI/Developer/GUI.hpp>
 
-#include <Vadon/Core/File/Path.hpp>
-
 #include <Vadon/ECS/World/World.hpp>
 
 #include <Vadon/Render/Canvas/CanvasSystem.hpp>
@@ -22,40 +20,11 @@
 #include <Vadon/Render/GraphicsAPI/Shader/ShaderSystem.hpp>
 #include <Vadon/Render/GraphicsAPI/Texture/TextureSystem.hpp>
 
-namespace
-{
-	// TODO: implement base shaders for general-purpose fullscreen effects!
-	constexpr const char* c_copy_shader_hlsl =
-R"(struct VS_OUTPUT
-{
-    float4 screen_position : SV_POSITION;
-    float2 uv : UV;
-};
+#include <Vadon/Render/Utilities/EmbeddedShader.hpp>
 
-VS_OUTPUT copy_vs(uint vertex_id : SV_VertexID)
-{
-	VS_OUTPUT output;
-
-    // Generate triangle that fills screen using vertex ID
-    output.uv = float2((vertex_id << 1) & 2, vertex_id & 2);
-    
-    float2 screen_position = (output.uv * float2(2, -2)) + float2(-1, 1);
-    output.screen_position = float4(screen_position, 0, 1);
-
-	return output;
-}
-
-sampler main_sampler : register(s0);
-Texture2D main_texture : register(t0);
-
-#define PS_INPUT VS_OUTPUT
-
-float4 copy_ps(PS_INPUT input) : SV_Target
-{
-	return main_texture.Sample(main_sampler, input.uv);
-}
-)";
-}
+// TODO: implement base shaders for general-purpose fullscreen effects!
+#include <VadonDemo/Render/CopyShader_VS.hpp>
+#include <VadonDemo/Render/CopyShader_PS.hpp>
 
 namespace VadonDemo::Render
 {
@@ -73,28 +42,26 @@ namespace VadonDemo::Render
 		return ((Vadon::Utilities::Vector2(position) - m_game_viewport.dimensions.position) / m_game_viewport.dimensions.size) * global_config.viewport_size;
 	}
 
-	void RenderSystem::load_texture_resource(TextureResourceHandle texture_handle)
+	void RenderSystem::load_texture_resource(TextureResourceID texture_id)
 	{
-		if (texture_handle.is_valid() == false)
+		if (texture_id.is_valid() == false)
 		{
 			return;
 		}
-
-		// FIXME: implement file resource which already has the necessary file system metadata!		
+	
 		VadonDemo::Render::Render& common_render = m_game_core.get_core().get_render();
-		common_render.init_texture_resource(texture_handle, m_game_core.get_project_root_dir());
+		common_render.init_texture_resource(texture_id);
 	}
 
-	void RenderSystem::load_shader_resource(ShaderResourceHandle shader_handle)
+	void RenderSystem::load_shader_resource(ShaderResourceID shader_id)
 	{
-		if (shader_handle.is_valid() == false)
+		if (shader_id.is_valid() == false)
 		{
 			return;
 		}
 
-		// FIXME: implement file resource which already has the necessary file system metadata!
 		VadonDemo::Render::Render& common_render = m_game_core.get_core().get_render();
-		common_render.init_shader_resource(shader_handle, m_game_core.get_project_root_dir());
+		common_render.init_shader_resource(shader_id);
 	}
 
 	RenderSystem::RenderSystem(Core::GameCore& game_core)
@@ -125,15 +92,20 @@ namespace VadonDemo::Render
 			return false;
 		}
 
+		Vadon::Render::GraphicsAPI& graphics_api = engine_core.get_system<Vadon::Render::GraphicsAPI>();
 		Vadon::Render::ShaderSystem& shader_system = engine_core.get_system<Vadon::Render::ShaderSystem>();
 		{
 			Vadon::Render::ShaderInfo copy_shader_vs_info;
-			copy_shader_vs_info.source = c_copy_shader_hlsl;
-			copy_shader_vs_info.entrypoint = "copy_vs";
 			copy_shader_vs_info.name = "CopyVShader";
 			copy_shader_vs_info.type = Vadon::Render::ShaderType::VERTEX;
 
-			m_copy_vshader = shader_system.create_shader(copy_shader_vs_info);
+			const Vadon::Render::EmbeddedShaderData vs_data = VADON_GET_EMBEDDED_SHADER_DATA(ShaderVS);
+
+			const size_t shader_index = vs_data.get_shader_index(graphics_api.get_name());
+			VADON_ASSERT(shader_index != size_t(-1), "Shader not compiled!");
+			const size_t shader_data_offset = vs_data.get_shader_data_offset(shader_index);
+
+			m_copy_vshader = shader_system.create_shader(copy_shader_vs_info, vs_data.shader_data + shader_data_offset, vs_data.shader_data_sizes[shader_index]);
 			VADON_ASSERT(m_copy_vshader.is_valid(), "Failed to create vertex shader!");
 			if (m_copy_vshader.is_valid() == false)
 			{
@@ -143,12 +115,16 @@ namespace VadonDemo::Render
 
 		{
 			Vadon::Render::ShaderInfo copy_shader_ps_info;
-			copy_shader_ps_info.source = c_copy_shader_hlsl;
-			copy_shader_ps_info.entrypoint = "copy_ps";
 			copy_shader_ps_info.name = "CopyPShader";
 			copy_shader_ps_info.type = Vadon::Render::ShaderType::PIXEL;
 
-			m_copy_pshader = shader_system.create_shader(copy_shader_ps_info);
+			const Vadon::Render::EmbeddedShaderData ps_data = VADON_GET_EMBEDDED_SHADER_DATA(ShaderPS);
+
+			const size_t shader_index = ps_data.get_shader_index(graphics_api.get_name());
+			VADON_ASSERT(shader_index != size_t(-1), "Shader not compiled!");
+			const size_t shader_data_offset = ps_data.get_shader_data_offset(shader_index);
+
+			m_copy_pshader = shader_system.create_shader(copy_shader_ps_info, ps_data.shader_data + shader_data_offset, ps_data.shader_data_sizes[shader_index]);
 			VADON_ASSERT(m_copy_pshader.is_valid(), "Failed to create pixel shader!");
 			if (m_copy_pshader.is_valid() == false)
 			{

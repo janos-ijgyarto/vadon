@@ -72,11 +72,14 @@ namespace VadonEditor::View
 		void save_asset();
 		bool save_resource(std::string_view path);
 
+		void import_file();
+
 		void open_asset(const Core::AssetNode* node);
 
 		Core::Editor& m_editor;
 
 		UI::Developer::Window m_window;
+		UI::Developer::Button m_import_button;
 		UI::Developer::ChildWindow m_asset_tree;
 		TreeState m_asset_tree_state;
 
@@ -84,6 +87,7 @@ namespace VadonEditor::View
 
 		CreateResourceDialog m_create_resource_dialog;
 		UI::Developer::FileBrowserDialog m_save_file_dialog;
+		UI::Developer::FileBrowserDialog m_import_file_dialog;
 
 		Core::AssetType m_pending_asset_type;
 		std::array<UI::Developer::MenuItem, Vadon::Utilities::to_integral(CreateMenuOption::OPTION_COUNT)> m_create_asset_context_menus;

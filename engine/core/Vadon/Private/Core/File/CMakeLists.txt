@@ -1,7 +1,7 @@
 target_sources(${VADON_CURRENT_TARGET}
     PRIVATE
+        Database.hpp
+        File.hpp
         FileSystem.hpp
         FileSystem.cpp
-        Path.hpp
-        RootDirectory.hpp
    )

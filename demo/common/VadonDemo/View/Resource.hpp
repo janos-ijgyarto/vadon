@@ -8,10 +8,10 @@ namespace VadonDemo::View
 {
 	struct ViewResource : public Vadon::Scene::Resource
 	{
-		static void register_resource();
-
 		Vadon::Render::Canvas::BatchHandle batch;
 		Vadon::Utilities::DataRange batch_range;
+
+		static void register_resource();
 	};
 
 	VADON_SCENE_DECLARE_TYPED_RESOURCE_ID(ViewResource, ViewResourceID);
@@ -37,7 +37,8 @@ namespace VadonDemo::View
 
 	struct Sprite : public ViewResource
 	{
-		VadonDemo::Render::TextureResourceHandle texture;
+		// TODO: implement a utility type which takes care of both the persistent resource ID and the loaded resource handle?
+		VadonDemo::Render::TextureResourceID texture;
 		// TODO: additional properties?
 
 		static void register_resource();

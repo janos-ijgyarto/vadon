@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.21)
+cmake_minimum_required(VERSION 4.1)
 
 MESSAGE("Building Vadon Application")
 
@@ -38,10 +38,24 @@ elseif(UNIX AND NOT APPLE)
 	add_library(${VADONAPP_CURRENT_TARGET} STATIC)
 endif()
 
+include(${VADON_TOOLS_EXPORT_FILE_DIR}/VadonShaderCompiler.cmake)
+
 # Set SDL as default platform interface
 if(NOT DEFINED VADON_PLATFORM_INTERFACE)
 	set(VADON_PLATFORM_INTERFACE "DEFAULT")
 endif()
+
+set(VADONAPP_SHADERS_TARGET "VadonAppShaders")
+add_custom_target(${VADONAPP_SHADERS_TARGET})
+
+add_dependencies(${VADONAPP_SHADERS_TARGET} "VadonToolsBuild")
+set_target_properties(${VADONAPP_SHADERS_TARGET} PROPERTIES FOLDER "${VADON_PARENT_FOLDER}${PROJECT_NAME}/Codegen")
+
+add_dependencies(${VADONAPP_CURRENT_TARGET} ${VADONAPP_SHADERS_TARGET})
+
+set(VADONAPP_SHADERS_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+set(VADONAPP_CODEGEN_DIR "${CMAKE_CURRENT_BINARY_DIR}/codegen")
+set(VADONAPP_SHADER_OUTPUT_DIR "${VADONAPP_CODEGEN_DIR}/shaders")
 
 add_subdirectory(third_party)
 add_subdirectory(VadonApp)
@@ -51,6 +65,8 @@ source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${VADONAPP_SOURCES})
   
 target_compile_features(${VADONAPP_CURRENT_TARGET} PRIVATE cxx_std_20)
 target_include_directories(${VADONAPP_CURRENT_TARGET} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+target_include_directories(${VADONAPP_CURRENT_TARGET} PRIVATE ${VADONAPP_SHADER_OUTPUT_DIR})
 
 set(VADONAPP_LIBRARIES Vadon::Vadon)
 target_link_libraries(${VADONAPP_CURRENT_TARGET} PUBLIC ${VADONAPP_LIBRARIES})
@@ -73,6 +89,4 @@ endif()
 
 # TODO: Mac support?
 
-if(DEFINED ${VADON_PARENT_FOLDER})
-	set_target_properties(${VADONAPP_CURRENT_TARGET} PROPERTIES FOLDER ${VADON_PARENT_FOLDER})
-endif()
+set_target_properties(${VADONAPP_CURRENT_TARGET} PROPERTIES FOLDER "${VADON_PARENT_FOLDER}${PROJECT_NAME}")

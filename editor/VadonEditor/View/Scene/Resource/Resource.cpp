@@ -69,12 +69,12 @@ namespace VadonEditor::View
 
 		for (const Model::ResourceInfo& current_resource_info : resource_info_list)
 		{
-			if (current_resource_info.path.is_valid() == false)
+			if (current_resource_info.path.empty() == true)
 			{
 				continue;
 			}
 
-			m_resource_list_box.items.push_back(current_resource_info.path.path);
+			m_resource_list_box.items.push_back(current_resource_info.path);
 			m_resource_list.push_back(current_resource_info.info.id);
 		}
 	}
@@ -142,11 +142,11 @@ namespace VadonEditor::View
 	void ResourceEditor::update_labels(Model::Resource* resource)
 	{
 		Model::ResourceSystem& resource_system = m_editor.get_system<Model::ModelSystem>().get_resource_system();
-		Model::ResourceInfo resource_info = resource_system.get_database().find_resource_info(resource->get_id());
-
-		if (resource_info.path.is_valid() == true)
+		const Model::ResourceInfo* resource_info = resource_system.get_database().find_resource_info(resource->get_id());
+		VADON_ASSERT(resource_info != nullptr, "Resource not found!");
+		if (resource_info->path.empty() == false)
 		{
-			m_path = resource_info.path.path;
+			m_path = resource_info->path;
 		}
 		else
 		{

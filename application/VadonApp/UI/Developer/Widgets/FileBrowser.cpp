@@ -20,7 +20,7 @@ namespace VadonApp::UI::Developer
     {
         if (std::filesystem::is_directory(path) == false)
         {
-            internal_navigate_to_path(std::filesystem::path(path).parent_path().string());
+            internal_navigate_to_path(std::filesystem::path(path).parent_path().generic_string());
         }
         else
         {
@@ -113,12 +113,12 @@ namespace VadonApp::UI::Developer
         {
             if (std::filesystem::is_directory(current_path) == true)
             {
-                m_current_dir_files.push_back(current_path.filename().string());
+                m_current_dir_files.push_back(current_path.filename().generic_string());
                 m_file_list_box.items.push_back(ICON_FA_FOLDER + (" " + m_current_dir_files.back()));
             }
             else if (std::filesystem::is_regular_file(current_path) == true)
             {
-                m_current_dir_files.push_back(current_path.filename().string());
+                m_current_dir_files.push_back(current_path.filename().generic_string());
                 m_file_list_box.items.push_back(ICON_FA_FILE + (" " + m_current_dir_files.back()));
             }
         }
@@ -147,7 +147,7 @@ namespace VadonApp::UI::Developer
         std::filesystem::path current_path = m_current_path;
         if (current_path.has_parent_path())
         {
-            navigate_to_path(current_path.parent_path().string());
+            navigate_to_path(current_path.parent_path().generic_string());
         }
     }
 
@@ -158,7 +158,7 @@ namespace VadonApp::UI::Developer
             std::filesystem::path path = m_current_path;
             path /= m_current_dir_files[m_file_list_box.selected_item];
 
-            m_selected_file.path = path.string();
+            m_selected_file.path = path.generic_string();
             if (std::filesystem::is_directory(path) == true)
             {
                 m_selected_file.type = Type::DIRECTORY;
@@ -186,7 +186,7 @@ namespace VadonApp::UI::Developer
 
     std::string FileBrowserDialog::get_entered_file_path() const
     {
-        return (std::filesystem::path(m_file_browser.get_current_path()) / m_file_name_input.input).string();
+        return (std::filesystem::path(m_file_browser.get_current_path()) / m_file_name_input.input).generic_string();
     }
 
     void FileBrowserDialog::open_at(std::string_view path)

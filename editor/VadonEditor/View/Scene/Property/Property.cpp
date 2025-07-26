@@ -7,6 +7,8 @@
 
 #include <VadonEditor/View/Scene/Resource/Resource.hpp>
 
+#include <VadonApp/UI/Developer/IconsFontAwesome5.h>
+
 #include <Vadon/Utilities/TypeInfo/Reflection/FunctionBind.hpp>
 
 namespace VadonEditor::View
@@ -197,11 +199,10 @@ namespace VadonEditor::View
 	struct ResourcePropertyEditor : public PropertyEditor
 	{
 	public:
-		ResourcePropertyEditor(Core::Editor& editor, const Vadon::Utilities::Property& model_property, bool use_handle)
+		ResourcePropertyEditor(Core::Editor& editor, const Vadon::Utilities::Property& model_property)
 			: PropertyEditor(model_property)
 			, m_editor(editor)
 			, m_select_resource_dialog(editor)
-			, m_use_handle(use_handle)
 		{
 			update_resource_reference();
 
@@ -218,32 +219,7 @@ namespace VadonEditor::View
 			bool edited = false;
 			if (m_select_resource_dialog.draw(dev_gui) == VadonApp::UI::Developer::Dialog::Result::ACCEPTED)
 			{
-				const Model::ResourceID selected_resource_id = m_select_resource_dialog.get_selected_resource();
-				if (m_use_handle == true)
-				{
-					if (selected_resource_id.is_valid() == true)
-					{
-						VadonEditor::Model::ResourceSystem& resource_system = m_editor.get_system<VadonEditor::Model::ModelSystem>().get_resource_system();
-						Model::Resource* selected_resource = resource_system.get_resource(selected_resource_id);
-						if (selected_resource->load() == false)
-						{
-							Vadon::Core::Logger::log_error("Resource property editor: failed to load selected resource!\n");
-						}
-						else
-						{
-							m_property.value = selected_resource->get_handle();
-						}
-					}
-					else
-					{
-						m_property.value = Vadon::Scene::ResourceHandle();
-					}
-				}
-				else
-				{
-					m_property.value = selected_resource_id;
-				}
-
+				m_property.value = m_select_resource_dialog.get_selected_resource();
 				edited = true;
 			}
 
@@ -258,14 +234,7 @@ namespace VadonEditor::View
 			dev_gui.same_line();
 			if (dev_gui.draw_button(m_clear_button) == true)
 			{
-				if (m_use_handle == true)
-				{
-					m_property.value = Vadon::Scene::ResourceHandle();
-				}
-				else
-				{
-					m_property.value = Vadon::Scene::ResourceID();
-				}
+				m_property.value = Vadon::Scene::ResourceID();
 				edited = true;
 			}
 
@@ -279,38 +248,17 @@ namespace VadonEditor::View
 	private:
 		void update_resource_reference()
 		{
-			// FIXME: deduplicate the code?
-			if (m_use_handle == true)
+			Vadon::Scene::ResourceID resource_id = std::get<Vadon::Scene::ResourceID>(m_property.value);
+			if (resource_id.is_valid() == true)
 			{
-				Vadon::Scene::ResourceHandle resource_handle = std::get<Vadon::Scene::ResourceHandle>(m_property.value);
+				VadonEditor::Model::ResourceSystem& resource_system = m_editor.get_system<VadonEditor::Model::ModelSystem>().get_resource_system();
+				const VadonEditor::Model::ResourceInfo* resource_info = resource_system.get_database().find_resource_info(resource_id);
+				VADON_ASSERT(resource_info != nullptr, "Invalid resource ID!");
 
-				if (resource_handle.is_valid() == true)
+				if (resource_info->path.empty() == false)
 				{
-					VadonEditor::Model::ResourceSystem& resource_system = m_editor.get_system<VadonEditor::Model::ModelSystem>().get_resource_system();
-					VadonEditor::Model::Resource* resource = resource_system.get_resource(resource_handle);
-
-					const Model::ResourcePath path = resource->get_path();
-					if (path.is_valid() == true)
-					{
-						m_label = path.path;
-						return;
-					}
-				}
-			}
-			else
-			{
-				Vadon::Scene::ResourceID resource_id = std::get<Vadon::Scene::ResourceID>(m_property.value);
-				if (resource_id.is_valid() == true)
-				{
-					VadonEditor::Model::ResourceSystem& resource_system = m_editor.get_system<VadonEditor::Model::ModelSystem>().get_resource_system();
-					const VadonEditor::Model::ResourceInfo resource_info = resource_system.get_database().find_resource_info(resource_id);
-					VADON_ASSERT(resource_info.info.is_valid() == true, "Invalid resource ID!");
-
-					if (resource_info.path.is_valid() == true)
-					{
-						m_label = resource_info.path.path;
-						return;
-					}
+					m_label = resource_info->path;
+					return;
 				}
 			}
 
@@ -318,13 +266,138 @@ namespace VadonEditor::View
 		}
 
 		Core::Editor& m_editor;
-		bool m_use_handle;
 
 		std::string m_header;
 		std::string m_label;
 		UI::Developer::Button m_select_resource_button;
 		UI::Developer::Button m_clear_button;
 		SelectResourceDialog m_select_resource_dialog; // FIXME: use a global instance instead of one per-property?
+	};
+
+	class ArrayPropertyEditor final : public PropertyEditor
+	{
+	public:
+		ArrayPropertyEditor(Core::Editor& editor, const Vadon::Utilities::Property& model_property)
+			: PropertyEditor(model_property)
+			, m_editor(editor)
+		{
+			m_array_child_window.id = model_property.name;
+			m_array_child_window.border = true;
+
+			m_add_button.label = "Add Element";
+			m_remove_button.label = ICON_FA_TRASH;
+
+			rebuild_array_editors();
+		}
+
+		bool render(VadonApp::UI::Developer::GUISystem& dev_gui) override
+		{
+			bool array_edited = false;
+			if (dev_gui.begin_child_window(m_array_child_window) == true)
+			{
+				dev_gui.add_text(m_property.name);
+
+				int32_t element_removed = -1;
+				for (int array_index = 0; array_index < m_array_elements.size(); ++array_index)
+				{
+					const PropertyEditor::Instance& array_element_editor = m_array_elements[array_index];
+
+					// Push ID (to ensure we don't collide with other elements
+					dev_gui.push_id(array_index);
+					if (array_element_editor->render(dev_gui) == true)
+					{
+						// Update the modified element in the data array
+						Vadon::Utilities::VariantArray& array = *std::get<Vadon::Utilities::BoxedVariantArray>(m_property.value);
+						array.data[array_index] = array_element_editor->get_property().value;
+
+						// Notify the element editor
+						array_element_editor->value_updated();
+
+						array_edited = true;
+					}
+					dev_gui.same_line();
+					// TODO: id for each button
+					if (dev_gui.draw_button(m_remove_button) == true)
+					{
+						element_removed = array_index;
+					}
+					dev_gui.pop_id();
+				}
+
+				if (element_removed >= 0)
+				{
+					Vadon::Utilities::VariantArray& array = *std::get<Vadon::Utilities::BoxedVariantArray>(m_property.value);
+					array.data.erase(array.data.begin() + element_removed);
+
+					rebuild_array_editors();
+					array_edited = true;
+				}
+
+				if (dev_gui.draw_button(m_add_button) == true)
+				{
+					Vadon::Utilities::VariantArray& array = *std::get<Vadon::Utilities::BoxedVariantArray>(m_property.value);
+					array.data.push_back(Vadon::Utilities::get_erased_type_default_value(array.data_type));
+
+					const size_t element_index = m_array_elements.size();
+					m_array_elements.emplace_back(create_property_editor(m_editor, Vadon::Utilities::Property{ .name = std::format("{}", element_index), .data_type = array.data_type, .value = array.data.back() }));
+
+					array_edited = true;
+				}
+			}
+			dev_gui.end_child_window();
+
+			if (array_edited == true)
+			{
+				// Set the synced flag, as we will prompt the parent widget to send an update signal
+				m_array_editor_synced = true;
+			}
+
+			return array_edited;
+		}
+	protected:
+		void value_updated() override 
+		{
+			// Check whether the editor was already synced
+			if (m_array_editor_synced == false)
+			{
+				// Array was modified externally, so we rebuild the editors
+				rebuild_array_editors();
+			}
+
+			// Reset flag
+			m_array_editor_synced = false;
+		}
+	private:
+		void extract_array_data()
+		{
+			Vadon::Utilities::VariantArray& array = *std::get<Vadon::Utilities::BoxedVariantArray>(m_property.value);
+			array.data.clear();
+
+			for (const PropertyEditor::Instance& array_element_editor : m_array_elements)
+			{
+				array.data.push_back(array_element_editor->get_property().value);
+			}
+		}
+
+		void rebuild_array_editors()
+		{
+			m_array_elements.clear();
+
+			const Vadon::Utilities::VariantArray& array = *std::get<Vadon::Utilities::BoxedVariantArray>(m_property.value);
+			for (size_t index = 0; index < array.data.size(); ++index)
+			{
+				m_array_elements.emplace_back(create_property_editor(m_editor, Vadon::Utilities::Property{ .name = std::format("{}", index), .data_type = array.data_type, .value = array.data[index] }));
+			}
+		}
+
+		Core::Editor& m_editor;
+		
+		std::vector<PropertyEditor::Instance> m_array_elements;
+		bool m_array_editor_synced = false; // NOTE: this is used to avoid redundantly resetting the widgets
+
+		UI::Developer::ChildWindow m_array_child_window;
+		UI::Developer::Button m_add_button;
+		UI::Developer::Button m_remove_button;
 	};
 
 	PropertyEditor::Instance PropertyEditor::create_property_editor(Core::Editor& editor, const Vadon::Utilities::Property& model_property)
@@ -353,9 +426,9 @@ namespace VadonEditor::View
 		}
 		break;
 		case Vadon::Utilities::ErasedDataType::RESOURCE_ID:
-			return Instance(new ResourcePropertyEditor(editor, model_property, false));
-		case Vadon::Utilities::ErasedDataType::RESOURCE_HANDLE:
-			return Instance(new ResourcePropertyEditor(editor, model_property, true));
+			return Instance(new ResourcePropertyEditor(editor, model_property));
+		case Vadon::Utilities::ErasedDataType::ARRAY:
+			return Instance(new ArrayPropertyEditor(editor, model_property));
 		}
 
 		Vadon::Core::Logger::log_error("Property editor: no matching property editor available for data type!\n");

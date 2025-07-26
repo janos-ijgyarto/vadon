@@ -33,7 +33,7 @@ namespace VadonEditor::View
 		if (dev_gui.draw_button(m_browse_button) == true)
 		{
 			Vadon::Core::FileSystem& file_system = m_editor.get_engine_core().get_system<Vadon::Core::FileSystem>();
-			m_file_browser.open_at(file_system.get_absolute_path(Vadon::Core::FileSystemPath{ .root_directory = file_system.get_default_root(), .path = "" }));
+			m_file_browser.open_at(file_system.get_current_path());
 		}
 
 		const bool input_valid = has_valid_input();
@@ -168,7 +168,7 @@ namespace VadonEditor::View
 			if (dev_gui.draw_button(m_import_project_button) == true)
 			{
 				Vadon::Core::FileSystem& file_system = m_editor.get_engine_core().get_system<Vadon::Core::FileSystem>();
-				m_import_project_dialog.open_at(file_system.get_absolute_path(Vadon::Core::FileSystemPath{ .root_directory = file_system.get_default_root(), .path = "" }));
+				m_import_project_dialog.open_at(file_system.get_current_path());
 			}
 
 			m_project_list.size = dev_gui.get_available_content_region();

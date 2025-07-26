@@ -38,17 +38,15 @@ namespace Vadon::Utilities
     };
 
     template<typename T>
-    bool operator==(const Box<T>& /*lhs*/, const Box<T>& /*rhs*/)
+    bool operator==(const Box<T>& lhs, const Box<T>& rhs)
     {
-        // TODO!!!
-        return false;
+        return *lhs == *rhs;
     }
 
     template<typename T>
-    bool operator!=(const Box<T>& /*lhs*/, const Box<T>& /*rhs*/)
+    bool operator!=(const Box<T>& lhs, const Box<T>& rhs)
     {
-        // TODO!!!
-        return true;
+        return *lhs != *rhs;
     }
 }
 #endif

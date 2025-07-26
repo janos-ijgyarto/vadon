@@ -19,8 +19,7 @@ namespace Vadon::Core
 
 		VADONCOMMON_API static bool is_valid_project_path(std::string_view path);
 
-		VADONCOMMON_API static bool save_project_file(EngineCoreInterface& engine_core, Project& project_data);
-		VADONCOMMON_API static bool load_project_file(EngineCoreInterface& engine_core, std::string_view path, Project& project_data);
+		VADONCOMMON_API static bool serialize_project_data(Vadon::Utilities::Serializer& serializer, Project& project_data);
 	};
 
 	using ProjectList = std::vector<Project>;

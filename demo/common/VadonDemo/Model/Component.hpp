@@ -3,7 +3,6 @@
 #include <VadonDemo/Model/Resource.hpp>
 
 #include <Vadon/ECS/Entity/Entity.hpp>
-#include <Vadon/Scene/Scene.hpp>
 #include <Vadon/Utilities/Math/Vector.hpp>
 
 namespace VadonDemo::Model
@@ -52,6 +51,8 @@ namespace VadonDemo::Model
 	struct Player
 	{
 		float damage_delay = 0.0f;
+		// TODO: implement a utility type which takes care of both the persistent resource ID and the loaded resource handle?
+		std::vector<WeaponDefID> starting_weapons;
 
 		int score = 0;
 		PlayerInput input;
@@ -62,13 +63,11 @@ namespace VadonDemo::Model
 		static void register_component();
 	};
 
-	// TODO: make weapon its own entity once we have different weapons with their own components
 	struct Weapon
 	{
-		Vadon::Scene::SceneHandle projectile_prefab;
-		float rate_of_fire = 1.0f;
-		float firing_timer = 0.0f;
+		WeaponDefID definition;
 
+		float firing_timer = 0.0f;
 		Vadon::Utilities::Vector2 aim_direction = { 1, 0 };
 
 		static void register_component();
@@ -102,7 +101,8 @@ namespace VadonDemo::Model
 
 	struct Spawner
 	{
-		Vadon::Scene::SceneHandle enemy_prefab;
+		// TODO: implement a utility type which takes care of both the persistent resource ID and the loaded resource handle?
+		Vadon::Scene::SceneID enemy_prefab;
 
 		float activation_delay = 60.0f;
 		float min_spawn_delay = 0.0f;

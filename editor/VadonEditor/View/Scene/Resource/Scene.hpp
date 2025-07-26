@@ -45,6 +45,8 @@ namespace VadonEditor::View
 	private:
 		SceneListWindow(Core::Editor& editor);
 
+		void reset_scene_list();
+
 		void draw(UI::Developer::GUISystem& dev_gui);
 
 		void on_new_scene_action();
@@ -52,14 +54,13 @@ namespace VadonEditor::View
 		void on_load_scene_action();
 
 		void open_scene(Model::Scene* scene);
-		void update_active_scene(Model::Scene* scene);
+		void update_active_scene();
 		int32_t get_scene_index(Model::Scene* scene) const;
 
 		Core::Editor& m_editor;
 
 		UI::Developer::Window m_window;
 		UI::Developer::ListBox m_scene_list_box;
-		std::vector<Model::Scene*> m_scene_list;
 
 		UI::Developer::FileBrowserDialog m_save_scene_dialog;
 		Model::Scene* m_saved_scene = nullptr; // FIXME: some way to better encapsulate with save dialog!

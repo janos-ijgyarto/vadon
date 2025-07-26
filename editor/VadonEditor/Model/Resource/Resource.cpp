@@ -11,10 +11,16 @@
 
 namespace VadonEditor::Model
 {
-	ResourcePath Resource::get_path() const
+	std::string Resource::get_path() const
 	{
 		ResourceSystem& editor_resource_system = m_editor.get_system<ModelSystem>().get_resource_system();
-		return editor_resource_system.get_database().find_resource_info(m_resource_id).path;
+		const ResourceInfo* editor_resource_info = editor_resource_system.get_database().find_resource_info(m_resource_id);
+		if (editor_resource_info != nullptr)
+		{
+			return editor_resource_info->path;
+		}
+
+		return "";
 	}
 
 	bool Resource::save()
@@ -36,7 +42,7 @@ namespace VadonEditor::Model
 		return true;
 	}
 
-	bool Resource::save_as(const ResourcePath& path)
+	bool Resource::save_as(std::string_view path)
 	{
 		if (is_loaded() == false)
 		{
@@ -57,7 +63,7 @@ namespace VadonEditor::Model
 		}
 
 		Vadon::Scene::ResourceSystem& resource_system = m_editor.get_engine_core().get_system<Vadon::Scene::ResourceSystem>();
-		Vadon::Scene::ResourceHandle resource_handle = resource_system.load_resource(m_resource_id);
+		Vadon::Scene::ResourceHandle resource_handle = resource_system.load_resource_base(m_resource_id);
 
 		if (resource_handle.is_valid() == false)
 		{

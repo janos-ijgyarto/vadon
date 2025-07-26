@@ -9,13 +9,15 @@
 #include <Vadon/Render/GraphicsAPI/Shader/ShaderSystem.hpp>
 #include <Vadon/Render/GraphicsAPI/Texture/TextureSystem.hpp>
 
+#include <Vadon/Render/Utilities/EmbeddedShader.hpp>
 #include <Vadon/Render/Utilities/Projection.hpp>
 
 #include <Vadon/Private/Render/Utilities/Matrix.hpp>
 #include <Vadon/Private/Render/Utilities/Rectangle.hpp>
 #include <Vadon/Private/Render/Utilities/Vector.hpp>
 
-#include <Vadon/Private/Render/Canvas/Shader.hpp>
+#include <Vadon/Private/Render/Canvas/Shader_VS.hpp>
+#include <Vadon/Private/Render/Canvas/Shader_PS.hpp>
 
 namespace Vadon::Private::Render::Canvas
 {
@@ -532,17 +534,22 @@ namespace Vadon::Private::Render::Canvas
 		}
 
 		// Create shaders
+		Vadon::Render::GraphicsAPI& graphics_api = m_engine_core.get_system<Vadon::Render::GraphicsAPI>();
 		Vadon::Render::ShaderSystem& shader_system = m_engine_core.get_system<Vadon::Render::ShaderSystem>();
 
 		{
 			// NOTE: no need for vertex layout, we procedurally generate polygons in the shader
 			Vadon::Render::ShaderInfo vertex_shader_info;
-			vertex_shader_info.source = Shader::c_shader_source;
-			vertex_shader_info.entrypoint = "vs_main";
 			vertex_shader_info.name = "CanvasVShader";
 			vertex_shader_info.type = Vadon::Render::ShaderType::VERTEX;
 
-			m_shader.vertex_shader = shader_system.create_shader(vertex_shader_info);
+			const Vadon::Render::EmbeddedShaderData vs_data = VADON_GET_EMBEDDED_SHADER_DATA(ShaderVS);
+
+			const size_t shader_index = vs_data.get_shader_index(graphics_api.get_name());
+			VADON_ASSERT(shader_index != size_t(-1), "Shader not compiled!");
+			const size_t shader_data_offset = vs_data.get_shader_data_offset(shader_index);
+
+			m_shader.vertex_shader = shader_system.create_shader(vertex_shader_info, vs_data.shader_data + shader_data_offset, vs_data.shader_data_sizes[shader_index]);
 			if (m_shader.vertex_shader.is_valid() == false)
 			{
 				// TODO: error message?
@@ -552,12 +559,16 @@ namespace Vadon::Private::Render::Canvas
 
 		{
 			Vadon::Render::ShaderInfo pixel_shader_info;
-			pixel_shader_info.source = Shader::c_shader_source;
-			pixel_shader_info.entrypoint = "ps_main";
 			pixel_shader_info.name = "CanvasPShader";
 			pixel_shader_info.type = Vadon::Render::ShaderType::PIXEL;
 
-			m_shader.pixel_shader = shader_system.create_shader(pixel_shader_info);
+			const Vadon::Render::EmbeddedShaderData ps_data = VADON_GET_EMBEDDED_SHADER_DATA(ShaderPS);
+
+			const size_t shader_index = ps_data.get_shader_index(graphics_api.get_name());
+			VADON_ASSERT(shader_index != size_t(-1), "Shader not compiled!");
+			const size_t shader_data_offset = ps_data.get_shader_data_offset(shader_index);
+
+			m_shader.pixel_shader = shader_system.create_shader(pixel_shader_info, ps_data.shader_data + shader_data_offset, ps_data.shader_data_sizes[shader_index]);
 			if (m_shader.pixel_shader.is_valid() == false)
 			{
 				// TODO: error message?
@@ -824,6 +835,11 @@ namespace Vadon::Private::Render::Canvas
 		// Set sampler
 		Vadon::Render::TextureSystem& texture_system = m_engine_core.get_system<Vadon::Render::TextureSystem>();
 		texture_system.set_sampler(Vadon::Render::ShaderType::PIXEL, m_sampler, 2);
+	}
+
+	void CanvasSystem::shutdown()
+	{
+		// TODO!
 	}
 
 	void CanvasSystem::update_shared_data()

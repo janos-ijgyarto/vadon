@@ -1,13 +1,16 @@
 #ifndef VADONEDITOR_CORE_PROJECT_ASSET_ASSET_HPP
 #define VADONEDITOR_CORE_PROJECT_ASSET_ASSET_HPP
+#include <Vadon/Core/File/File.hpp>
 #include <vector>
 namespace VadonEditor::Core
 {
 	enum class AssetType
 	{
-		NONE,
 		RESOURCE,
-		SCENE
+		SCENE,
+		IMPORTED_FILE,
+		TYPE_COUNT,
+		NONE = TYPE_COUNT
 		// TODO: anything else?
 	};
 
@@ -15,6 +18,28 @@ namespace VadonEditor::Core
 	{
 		std::string name;
 		AssetType type = AssetType::NONE;
+		Vadon::Core::FileID file_id;
+
+		bool operator==(const AssetInfo& other) const
+		{
+			return (name == other.name) && (type == other.type) && (file_id == other.file_id);
+		}
+
+		// FIXME: make this more modular!
+		static constexpr const char* get_file_extension(AssetType type)
+		{
+			switch (type)
+			{
+			case AssetType::RESOURCE:
+				return ".vdrc";
+			case AssetType::SCENE:
+				return ".vdsc";
+			case AssetType::IMPORTED_FILE:
+				return ".vdimport";
+			}
+
+			return "";
+		}
 	};
 
 	// FIXME: need generalized "TreeNode" implementation to use in tree views!

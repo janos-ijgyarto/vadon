@@ -1,0 +1,62 @@
+{
+    "data": {
+        "entities": [
+            {
+                "components": [
+                    {
+                        "properties": {
+                            "resource": "oXIVWPdZQMi0TGxI2zV63A=="
+                        },
+                        "type": "VadonDemo::View::ViewComponent"
+                    },
+                    {
+                        "properties": {
+                            "layer_def": "2bdWkqSdTuSxnfVFk+5q+g==",
+                            "visible": true,
+                            "z_order": 2.0
+                        },
+                        "type": "VadonDemo::Render::CanvasComponent"
+                    },
+                    {
+                        "properties": {
+                            "position": [
+                                0.0,
+                                0.0
+                            ],
+                            "rotation": 0.0,
+                            "scale": 9.0
+                        },
+                        "type": "VadonDemo::Model::Transform2D"
+                    },
+                    {
+                        "properties": {
+                            "acceleration": 0.0,
+                            "top_speed": 300.0
+                        },
+                        "type": "VadonDemo::Model::Velocity2D"
+                    },
+                    {
+                        "properties": {
+                            "radius": 1.0
+                        },
+                        "type": "VadonDemo::Model::Collision"
+                    },
+                    {
+                        "properties": {
+                            "damage": 10.0,
+                            "range": 300.0
+                        },
+                        "type": "VadonDemo::Model::Projectile"
+                    }
+                ],
+                "name": "Projectile_A",
+                "parent": -1
+            }
+        ]
+    },
+    "id": "blj/Gv9aSDis//T2XV/W3A==",
+    "properties": {
+        "name": ""
+    },
+    "type": "Vadon::Scene::Scene"
+}
