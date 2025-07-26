@@ -9,8 +9,6 @@
 #include <VadonApp/Platform/PlatformInterface.hpp>
 #include <VadonApp/UI/Developer/GUI.hpp>
 
-#include <Vadon/Core/File/Path.hpp>
-
 #include <Vadon/ECS/World/World.hpp>
 
 #include <Vadon/Render/Canvas/CanvasSystem.hpp>
@@ -50,10 +48,9 @@ namespace VadonDemo::Render
 		{
 			return;
 		}
-
-		// FIXME: implement file resource which already has the necessary file system metadata!		
+	
 		VadonDemo::Render::Render& common_render = m_game_core.get_core().get_render();
-		common_render.init_texture_resource(texture_id, m_game_core.get_project_root_dir());
+		common_render.init_texture_resource(texture_id);
 	}
 
 	void RenderSystem::load_shader_resource(ShaderResourceID shader_id)
@@ -63,9 +60,8 @@ namespace VadonDemo::Render
 			return;
 		}
 
-		// FIXME: implement file resource which already has the necessary file system metadata!
 		VadonDemo::Render::Render& common_render = m_game_core.get_core().get_render();
-		common_render.init_shader_resource(shader_id, m_game_core.get_project_root_dir());
+		common_render.init_shader_resource(shader_id);
 	}
 
 	RenderSystem::RenderSystem(Core::GameCore& game_core)

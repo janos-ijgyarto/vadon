@@ -1,6 +1,5 @@
 #ifndef VADONEDITOR_MODEL_SCENE_SCENE_HPP
 #define VADONEDITOR_MODEL_SCENE_SCENE_HPP
-#include <Vadon/Core/File/Path.hpp>
 #include <Vadon/ECS/Entity/Entity.hpp>
 #include <Vadon/Scene/Scene.hpp>
 namespace VadonEditor::Core
@@ -19,13 +18,13 @@ namespace VadonEditor::Model
 		Vadon::Scene::SceneID get_id() const;
 		Vadon::Scene::ResourceInfo get_info() const;
 
-		Vadon::Core::FileSystemPath get_path() const;
+		std::string get_path() const;
 
 		Entity* get_root() const { return m_root_entity; }
 		bool is_open() const { return m_root_entity != nullptr; }
 
 		bool save();
-		bool save_as(const Vadon::Core::FileSystemPath& path);
+		bool save_as(std::string_view path);
 		bool load();
 
 		bool is_loaded() const;

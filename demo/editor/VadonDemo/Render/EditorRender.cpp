@@ -16,8 +16,6 @@
 #include <VadonApp/Platform/PlatformInterface.hpp>
 #include <VadonApp/UI/Developer/GUI.hpp>
 
-#include <Vadon/Core/File/Path.hpp>
-
 #include <Vadon/ECS/World/World.hpp>
 
 #include <Vadon/Render/Canvas/CanvasSystem.hpp>
@@ -109,12 +107,9 @@ namespace VadonDemo::Render
             return;
         }
 
-        // Reload texture, passing in the project root dir
-        // FIXME: implement file resource which already has the necessary file system metadata!
-        VadonEditor::Core::ProjectManager& project_manager = m_editor.get_common_editor().get_system<VadonEditor::Core::ProjectManager>();
-
+        // Reload texture
         VadonDemo::Render::Render& common_render = m_editor.get_core().get_render();
-        common_render.init_texture_resource(texture_id, project_manager.get_active_project().root_dir_handle);
+        common_render.init_texture_resource(texture_id);
     }
 
     void EditorRender::load_shader_resource_data(ShaderResourceID shader_id)
@@ -124,12 +119,9 @@ namespace VadonDemo::Render
             return;
         }
 
-        // Reload shader, passing in the project root dir
-        // FIXME: implement file resource which already has the necessary file system metadata!
-        VadonEditor::Core::ProjectManager& project_manager = m_editor.get_common_editor().get_system<VadonEditor::Core::ProjectManager>();
-
+        // Reload shader
         VadonDemo::Render::Render& common_render = m_editor.get_core().get_render();
-        common_render.init_shader_resource(shader_id, project_manager.get_active_project().root_dir_handle);
+        common_render.init_shader_resource(shader_id);
     }
 
     EditorRender::EditorRender(Core::Editor& editor)

@@ -35,6 +35,9 @@ namespace Vadon::Private::Scene
 		void remove_resource(ResourceHandle resource_handle) override;
 
 		const Resource* get_base_resource(ResourceHandle resource_handle) const override;
+
+		Vadon::Core::FileInfo get_file_resource_info(ResourceID resource_id) const override;
+		bool load_file_resource_data(ResourceID resource_id, Vadon::Core::RawFileDataBuffer& file_data) override;
 	private:
 		struct ResourceData
 		{

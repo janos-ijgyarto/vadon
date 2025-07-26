@@ -35,6 +35,27 @@
 
 namespace
 {
+	// FIXME: this is a very hacky solution, should instead use "manifests" to map between resource IDs and files
+	Vadon::Scene::ResourceID decode_resource_id_from_file(const std::filesystem::path& file_path)
+	{
+		// Decode resource ID from file name
+		const std::string file_stem = file_path.stem().generic_string();
+		Vadon::Scene::ResourceID resource_id;
+		VADON_ASSERT(file_stem.length() == resource_id.data.size() * 2, "Invalid file name!");
+
+		char temp_chars[] = "00";
+		for (size_t i = 0; i < resource_id.data.size(); ++i)
+		{
+			int value = 0;
+			temp_chars[0] = file_stem[i * 2];
+			temp_chars[1] = file_stem[(i * 2) + 1];
+			std::from_chars(temp_chars, temp_chars + 2, value, 16);
+			resource_id.data[i] = static_cast<char>(value);
+		}
+
+		return resource_id;
+	}
+
 	class GameResourceDatabase : public Vadon::Scene::ResourceDatabase
 	{
 	public:
@@ -43,24 +64,74 @@ namespace
 		{
 		}
 
-		bool initialize(Vadon::Core::RootDirectoryHandle project_root)
+		bool initialize(std::string_view root_dir)
 		{
-			// Import all resources in the project
-			bool all_valid = true;
-
-			// FIXME: make this modular!
-			// Scene system should load scene files!
-			std::string extensions_string = ".vdsc,.vdrc";
-
 			Vadon::Core::FileSystem& file_system = m_game_core.get_engine_app().get_engine_core().get_system<Vadon::Core::FileSystem>();
 
-			const std::vector<Vadon::Core::FileSystemPath> resource_files = file_system.get_files_of_type(Vadon::Core::FileSystemPath{ .root_directory = project_root }, extensions_string, true);
-			for (const Vadon::Core::FileSystemPath& current_file_path : resource_files)
 			{
-				all_valid &= import_resource(current_file_path).is_valid();
+				Vadon::Core::FileDatabaseInfo resource_db_info;
+				resource_db_info.root_path = (std::filesystem::path(root_dir) / "resources").generic_string();
+				resource_db_info.type = Vadon::Core::FileDatabaseType::FILESYSTEM;
+
+				m_resource_file_db = file_system.create_database(resource_db_info);
+
+				// Register all resource files
+				for (const auto& directory_entry : std::filesystem::recursive_directory_iterator(resource_db_info.root_path))
+				{
+					if (directory_entry.is_regular_file() == false)
+					{
+						continue;
+					}
+
+					const std::filesystem::path current_file_path = directory_entry.path();
+					if (current_file_path.extension().generic_string() == ".vdbin")
+					{
+						Vadon::Scene::ResourceID file_id = decode_resource_id_from_file(current_file_path);
+						
+						Vadon::Core::FileInfo file_info;
+						file_info.path = current_file_path.filename().generic_string();
+
+						if (file_system.add_existing_file(m_resource_file_db, file_id, file_info) == false)
+						{
+							// TODO: log error?
+							return false;
+						}
+					}
+				}
 			}
 
-			return all_valid;
+			{
+				Vadon::Core::FileDatabaseInfo asset_db_info;
+				asset_db_info.root_path = (std::filesystem::path(root_dir) / "assets").generic_string();
+				asset_db_info.type = Vadon::Core::FileDatabaseType::FILESYSTEM;
+
+				m_asset_file_db = file_system.create_database(asset_db_info);
+
+				for (const auto& directory_entry : std::filesystem::recursive_directory_iterator(asset_db_info.root_path))
+				{
+					if (directory_entry.is_regular_file() == false)
+					{
+						continue;
+					}
+
+					const std::filesystem::path current_file_path = directory_entry.path();
+					if (current_file_path.extension().generic_string() == ".vdbin")
+					{
+						Vadon::Scene::ResourceID file_id = decode_resource_id_from_file(current_file_path);
+
+						Vadon::Core::FileInfo file_info;
+						file_info.path = current_file_path.filename().generic_string();
+
+						if (file_system.add_existing_file(m_asset_file_db, file_id, file_info) == false)
+						{
+							// TODO: log error?
+							return false;
+						}
+					}
+				}
+			}
+
+			return true;
 		}
 
 		bool save_resource(Vadon::Scene::ResourceSystem& /*resource_system*/, Vadon::Scene::ResourceHandle /*resource_handle*/) override
@@ -71,24 +142,20 @@ namespace
 
 		Vadon::Scene::ResourceHandle load_resource(Vadon::Scene::ResourceSystem& resource_system, Vadon::Scene::ResourceID resource_id) override
 		{
-			auto resource_path_it = m_resource_file_lookup.find(resource_id);
-			if (resource_path_it == m_resource_file_lookup.end())
-			{
-				return Vadon::Scene::ResourceHandle();
-			}
-
 			Vadon::Core::EngineCoreInterface& engine_core = m_game_core.get_engine_app().get_engine_core();
 			Vadon::Core::FileSystem& file_system = engine_core.get_system<Vadon::Core::FileSystem>();
-			Vadon::Core::FileSystem::RawFileDataBuffer resource_file_buffer;
-			if (file_system.load_file(resource_path_it->second, resource_file_buffer) == false)
+
+			Vadon::Core::RawFileDataBuffer resource_file_buffer;
+			if (file_system.load_file(m_resource_file_db, resource_id, resource_file_buffer) == false)
 			{
 				resource_system.log_error("Game resource database: failed to load resource file!\n");
 				return Vadon::Scene::ResourceHandle();
 			}
 
-			// FIXME: support binary file serialization!
-			// Solution: have file system create the appropriate serializer!
-			Vadon::Utilities::Serializer::Instance serializer_instance = Vadon::Utilities::Serializer::create_serializer(resource_file_buffer, Vadon::Utilities::Serializer::Type::JSON, Vadon::Utilities::Serializer::Mode::READ);
+			// TODO: create separate DBs for binary and text-based resources
+			// When a resource is requested, we try both to see if either has the resource
+			// Depending on which DB it is, we create the appropriate serializer
+			Vadon::Utilities::Serializer::Instance serializer_instance = Vadon::Utilities::Serializer::create_serializer(resource_file_buffer, Vadon::Utilities::Serializer::Type::BINARY, Vadon::Utilities::Serializer::Mode::READ);
 
 			if (serializer_instance->initialize() == false)
 			{
@@ -111,57 +178,25 @@ namespace
 			return loaded_resource_handle;
 		}
 
-		Vadon::Core::FileSystemPath find_resource_file(Vadon::Scene::ResourceID resource_id) const
+		Vadon::Core::FileInfo get_file_resource_info(Vadon::Scene::ResourceID resource_id) const override
 		{
-			auto resource_file_it = m_resource_file_lookup.find(resource_id);
-			if (resource_file_it != m_resource_file_lookup.end())
-			{
-				return resource_file_it->second;
-			}
-
-			return Vadon::Core::FileSystemPath();
-		}
-	private:
-		// FIXME: this forces us to load all resources twice!
-		// Need to create a "cache" that has all this metadata
-		// Can be created by the editor when the project is exported
-		Vadon::Scene::ResourceID import_resource(const Vadon::Core::FileSystemPath& path)
-		{
-			// TODO: deduplicate parts shared with loading a resource!
 			Vadon::Core::EngineCoreInterface& engine_core = m_game_core.get_engine_app().get_engine_core();
 			Vadon::Core::FileSystem& file_system = engine_core.get_system<Vadon::Core::FileSystem>();
-			Vadon::Core::FileSystem::RawFileDataBuffer resource_file_buffer;
-			if (file_system.load_file(path, resource_file_buffer) == false)
-			{
-				Vadon::Core::Logger::log_error("Game resource database: failed to load resource file!\n");
-				return Vadon::Scene::ResourceID();
-			}
 
-			// FIXME: support binary file serialization!
-			// Solution: have file system create the appropriate serializer!
-			Vadon::Utilities::Serializer::Instance serializer_instance = Vadon::Utilities::Serializer::create_serializer(resource_file_buffer, Vadon::Utilities::Serializer::Type::JSON, Vadon::Utilities::Serializer::Mode::READ);
-
-			if (serializer_instance->initialize() == false)
-			{
-				Vadon::Core::Logger::log_error("Game resource database: failed to initialize serializer while loading resource!\n");
-				return Vadon::Scene::ResourceID();
-			}
-
-			Vadon::Scene::ResourceInfo imported_resource_info;
-			Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
-			if (resource_system.load_resource_info(*serializer_instance, imported_resource_info) == false)
-			{
-				Vadon::Core::Logger::log_error("Game resource database: failed to loading resource!\n");
-				return Vadon::Scene::ResourceID();
-			}
-
-			m_resource_file_lookup[imported_resource_info.id] = path;
-
-			return imported_resource_info.id;
+			return file_system.get_file_info(m_asset_file_db, resource_id);
 		}
+		
+		bool load_file_resource_data(Vadon::Scene::ResourceSystem& /*resource_system*/, Vadon::Scene::ResourceID resource_id, Vadon::Core::RawFileDataBuffer& file_data) override
+		{
+			Vadon::Core::EngineCoreInterface& engine_core = m_game_core.get_engine_app().get_engine_core();
+			Vadon::Core::FileSystem& file_system = engine_core.get_system<Vadon::Core::FileSystem>();
 
+			return file_system.load_file(m_asset_file_db, resource_id, file_data);
+		}
+	private:
 		VadonDemo::Core::GameCore& m_game_core;
-		std::unordered_map<Vadon::Scene::ResourceID, Vadon::Core::FileSystemPath> m_resource_file_lookup;
+		Vadon::Core::FileDatabaseHandle m_resource_file_db;
+		Vadon::Core::FileDatabaseHandle m_asset_file_db;
 	};
 }
 
@@ -194,7 +229,6 @@ namespace VadonDemo::Core
 
 		// TODO: move to subsystem?
 		Vadon::Core::Project m_project_info;
-		Vadon::Core::RootDirectoryHandle m_root_directory;
 		GlobalConfiguration m_global_config;
 
 		TimePoint m_last_time_point;
@@ -372,17 +406,18 @@ namespace VadonDemo::Core
 		{
 			// First validate the path
 			Vadon::Core::EngineCoreInterface& engine_core = *m_engine_core;
-
+			
+			// Default path assumes we are in "bin" and "data" is next to it
+			std::filesystem::path fs_root_path = (std::filesystem::current_path().parent_path() / "data").generic_string();
+			
 			// Check command line arg, load startup project if requested
-			constexpr const char c_startup_project_arg[] = "project";
-			if (m_engine_app->has_command_line_arg(c_startup_project_arg) == false)
+			constexpr const char c_data_dir_arg[] = "data_dir";
+			if (m_engine_app->has_command_line_arg(c_data_dir_arg) == true)
 			{
-				// TODO: error message!
-				return false;
+				fs_root_path = std::filesystem::path(m_engine_app->get_command_line_arg(c_data_dir_arg)).generic_string();
 			}
 
-			std::filesystem::path fs_root_path(m_engine_app->get_command_line_arg(c_startup_project_arg));
-			if (Vadon::Core::Project::is_valid_project_path(fs_root_path.string()) == false)
+			if (Vadon::Core::Project::is_valid_project_path(fs_root_path.generic_string()) == false)
 			{
 				constexpr const char c_invalid_path_error[] = "Game demo: invalid project path!\n";
 
@@ -390,7 +425,7 @@ namespace VadonDemo::Core
 				if (std::filesystem::is_directory(fs_root_path) == true)
 				{
 					fs_root_path /= Vadon::Core::Project::c_project_file_name;
-					if (Vadon::Core::Project::is_valid_project_path(fs_root_path.string()) == false)
+					if (Vadon::Core::Project::is_valid_project_path(fs_root_path.generic_string()) == false)
 					{
 						Vadon::Core::Logger::log_error(c_invalid_path_error);
 						return false;
@@ -406,28 +441,25 @@ namespace VadonDemo::Core
 			// Initialize with default properties
 			m_project_info.custom_properties = GlobalConfiguration::get_default_properties();
 
-			const std::string project_file_path = fs_root_path.string();
-			if (Vadon::Core::Project::load_project_file(engine_core, project_file_path, m_project_info) == false)
+			const std::string project_file_path = fs_root_path.generic_string();
+			Vadon::Core::RawFileDataBuffer project_file_data;
+
+			Vadon::Core::FileSystem& file_system = m_engine_core->get_system<Vadon::Core::FileSystem>();
+			if (file_system.load_file(project_file_path, project_file_data) == false)
+			{
+				Vadon::Core::Logger::log_error(std::format("Cannot load project file at \"{}\"!\n", project_file_path));
+				return false;
+			}
+
+			Vadon::Utilities::Serializer::Instance serializer = Vadon::Utilities::Serializer::create_serializer(project_file_data, Vadon::Utilities::Serializer::Type::BINARY, Vadon::Utilities::Serializer::Mode::READ);
+			if (Vadon::Core::Project::serialize_project_data(*serializer, m_project_info) == false)
 			{
 				Vadon::Core::Logger::log_error(std::format("Invalid project file at \"{}\"!\n", project_file_path));
 				return false;
 			}
+			m_project_info.root_path = fs_root_path.parent_path().generic_string();
 
-			// Add project root directory
-			{
-				Vadon::Core::RootDirectoryInfo project_dir_info;
-				project_dir_info.path = m_project_info.root_path;
-
-				Vadon::Core::FileSystem& file_system = engine_core.get_system<Vadon::Core::FileSystem>();
-				m_root_directory = file_system.add_root_directory(project_dir_info);
-				if (m_root_directory.is_valid() == false)
-				{
-					Vadon::Core::Logger::log_error("Failed to register project root directory!\n");
-					return false;
-				}
-			}
-
-			if (m_resource_db.initialize(m_root_directory) == false)
+			if (m_resource_db.initialize(m_project_info.root_path) == false)
 			{
 				return false;
 			}
@@ -506,11 +538,6 @@ namespace VadonDemo::Core
 	const Vadon::Core::Project& GameCore::get_project_info() const
 	{
 		return m_internal->m_project_info;
-	}
-
-	Vadon::Core::RootDirectoryHandle GameCore::get_project_root_dir() const
-	{
-		return m_internal->m_root_directory;
 	}
 
 	void GameCore::request_shutdown()

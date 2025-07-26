@@ -252,12 +252,12 @@ namespace VadonEditor::View
 			if (resource_id.is_valid() == true)
 			{
 				VadonEditor::Model::ResourceSystem& resource_system = m_editor.get_system<VadonEditor::Model::ModelSystem>().get_resource_system();
-				const VadonEditor::Model::ResourceInfo resource_info = resource_system.get_database().find_resource_info(resource_id);
-				VADON_ASSERT(resource_info.info.is_valid() == true, "Invalid resource ID!");
+				const VadonEditor::Model::ResourceInfo* resource_info = resource_system.get_database().find_resource_info(resource_id);
+				VADON_ASSERT(resource_info != nullptr, "Invalid resource ID!");
 
-				if (resource_info.path.is_valid() == true)
+				if (resource_info->path.empty() == false)
 				{
-					m_label = resource_info.path.path;
+					m_label = resource_info->path;
 					return;
 				}
 			}

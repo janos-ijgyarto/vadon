@@ -1,6 +1,5 @@
 #ifndef VADONDEMO_CORE_GAMECORE_HPP
 #define VADONDEMO_CORE_GAMECORE_HPP
-#include <Vadon/Core/File/RootDirectory.hpp>
 #include <memory>
 
 namespace VadonApp::Core
@@ -74,7 +73,6 @@ namespace VadonDemo::Core
 		Vadon::ECS::World& get_ecs_world();
 
 		const Vadon::Core::Project& get_project_info() const;
-		Vadon::Core::RootDirectoryHandle get_project_root_dir() const;
 
 		void request_shutdown();
 	private:

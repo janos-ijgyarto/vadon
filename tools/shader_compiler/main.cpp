@@ -243,7 +243,7 @@ namespace
 #endif
 
 		const char* source_data = input_data.data();
-		const std::string file_name = config.input_path.filename().string();
+		const std::string file_name = config.input_path.filename().generic_string();
 		const char* source_name = file_name.c_str();
 
 		D3DShaderMacroList shader_macros;
@@ -403,7 +403,7 @@ R"(namespace {} {{
 		std::filesystem::path output_path = (config.output_path).generic_string();
 		output_path.replace_extension("hpp");
 
-		const std::string namespace_title = config.namespace_title.empty() == false ? config.namespace_title : output_path.stem().string();
+		const std::string namespace_title = config.namespace_title.empty() == false ? config.namespace_title : output_path.stem().generic_string();
 
 		std::string output_string = std::format(file_template_string, namespace_title, shader_bundle.shaders.size(), shader_apis, shader_data_sizes, shader_data);
 
@@ -429,10 +429,10 @@ R"(namespace {} {{
 			{
 				dependency_list_string += " ";
 			}
-			dependency_list_string += current_path.string();
+			dependency_list_string += current_path.generic_string();
 		}
 
-		dependency_list_string = std::format("{} : {}", config.input_path.string(), dependency_list_string);
+		dependency_list_string = std::format("{} : {}", config.input_path.generic_string(), dependency_list_string);
 
 		const std::filesystem::path output_path = std::filesystem::path(config.output_path).replace_extension(".d").generic_string();
 

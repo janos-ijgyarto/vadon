@@ -34,11 +34,9 @@ namespace VadonEditor::Core
 			}
 		}
 
-		Vadon::Core::EngineCoreInterface& engine_core = m_editor.get_engine_core();
-		if (Vadon::Core::Project::save_project_file(engine_core, m_active_project.info) == false)
+		if (internal_save_project_file(m_active_project.info) == false)
 		{
-			log_error("Project manager: error saving project file!\n");
-			VADON_ERROR("Failed to save project!");
+			// TODO: log error?
 			return;
 		}
 
@@ -91,11 +89,10 @@ namespace VadonEditor::Core
 		}
 
 		// Create project file
-		Vadon::Core::EngineCoreInterface& engine_core = m_editor.get_engine_core();
 		Vadon::Core::Project new_project_info{ .name = std::string(project_name), .root_path = std::string(root_path), .custom_properties = m_custom_properties };
 
-		if (Vadon::Core::Project::save_project_file(engine_core, new_project_info) == false)
-		{
+		if (internal_save_project_file(new_project_info) == false)
+		{			
 			log_error("Project manager: error saving project file!\n");
 			return false;
 		}
@@ -134,12 +131,53 @@ namespace VadonEditor::Core
 			return false;
 		}
 
+		if (m_asset_library.initialize() == false)
+		{
+			return false;
+		}
+
 		if (m_editor.get_system<Model::ModelSystem>().load_project() == false)
 		{
 			return false;
 		}
 
 		m_state = State::PROJECT_LOADED;
+		return true;
+	}
+
+	bool ProjectManager::export_project(std::string_view output_path)
+	{
+		if (m_state != State::PROJECT_LOADED)
+		{
+			log_error("Project manager: must have project loaded before attempting to export contents!\n");
+			return false;
+		}
+
+		if (m_editor.get_system<Model::ModelSystem>().export_project(output_path) == false)
+		{
+			return false;
+		}
+
+		// Export project file
+		{
+			Vadon::Core::RawFileDataBuffer project_file_data;
+			Vadon::Utilities::Serializer::Instance serializer = Vadon::Utilities::Serializer::create_serializer(project_file_data, Vadon::Utilities::Serializer::Type::BINARY, Vadon::Utilities::Serializer::Mode::WRITE);
+			if (Vadon::Core::Project::serialize_project_data(*serializer, m_active_project.info) == false)
+			{
+				log_error("Project manager: error serializing project data!\n");
+				return false;
+			}
+
+			Vadon::Core::EngineCoreInterface& engine_core = m_editor.get_engine_core();
+			const std::string file_path = (std::filesystem::path(output_path) / Vadon::Core::Project::c_project_file_name).generic_string();
+			if (engine_core.get_system<Vadon::Core::FileSystem>().save_file(file_path, project_file_data) == false)
+			{
+				log_error("Project manager: error exporting project file!\n");
+				return false;
+			}
+		}
+
+		log_message(std::format("Project manager: successfully exported project to \"{}\"!", output_path));
 		return true;
 	}
 
@@ -182,18 +220,17 @@ namespace VadonEditor::Core
 		Vadon::Core::EngineCoreInterface& engine_core = m_editor.get_engine_core();
 		Vadon::Core::FileSystem& file_system = engine_core.get_system<Vadon::Core::FileSystem>();
 
-		const Vadon::Core::FileSystemPath project_path{ .path = c_project_cache_file_name };
-
-		if (file_system.does_file_exist(project_path) == false)
+		std::filesystem::path project_cache_path = (std::filesystem::path(file_system.get_current_path()) / c_project_cache_file_name).generic_string();
+		if (std::filesystem::exists(project_cache_path) == false)
 		{
 			// No project cache
 			return;
 		}
 
-		Vadon::Core::FileSystem::RawFileDataBuffer project_cache_buffer;
-		if (file_system.load_file(project_path, project_cache_buffer) == false)
+		Vadon::Core::RawFileDataBuffer project_cache_buffer;
+		if (file_system.load_file(project_cache_path.generic_string(), project_cache_buffer) == false)
 		{
-			log_error("Project manager: unable to load file!\n");
+			log_error("Project manager: unable to load project cache file!\n");
 			return;
 		}
 
@@ -302,36 +339,32 @@ namespace VadonEditor::Core
 			}
 		}
 
-		const std::string project_file_path = fs_root_path.string();
+		const std::string project_file_path = fs_root_path.generic_string();
 		Vadon::Core::Project& project_info = m_active_project.info;
 		project_info.custom_properties = m_custom_properties; // Reset custom properties
 
-		if (Vadon::Core::Project::load_project_file(engine_core, project_file_path, project_info) == false)
+		Vadon::Core::RawFileDataBuffer project_file_data;
+
+		Vadon::Core::FileSystem& file_system = engine_core.get_system<Vadon::Core::FileSystem>();
+		if (file_system.load_file(project_file_path, project_file_data) == false)
+		{
+			log_error("Project manager: unable to load file!\n");
+			return false;
+		}
+
+		Vadon::Utilities::Serializer::Instance serializer = Vadon::Utilities::Serializer::create_serializer(project_file_data, Vadon::Utilities::Serializer::Type::JSON, Vadon::Utilities::Serializer::Mode::READ);
+		if (Vadon::Core::Project::serialize_project_data(*serializer, project_info) == false)
 		{
 			log_error(std::format("Project manager: \"{}\" is not a valid project file!\n", project_file_path));
 			return false;
 		}
 
-		{
-			Vadon::Core::RootDirectoryInfo project_dir_info;
-			project_dir_info.path = project_info.root_path;
-
-			// Add project root directory
-			Vadon::Core::FileSystem& file_system = engine_core.get_system<Vadon::Core::FileSystem>();
-			m_active_project.root_dir_handle = file_system.add_root_directory(project_dir_info);
-			if (m_active_project.root_dir_handle.is_valid() == false)
-			{
-				log_error("Project manager: failed to register project root directory!\n");
-				return false;
-			}
-		}
+		project_info.root_path = std::filesystem::path(project_file_path).parent_path().generic_string();
 
 		log_message(std::format("Project manager: project \"{}\" loaded successfully!\n", project_info.name));
 
 		// Everything loaded successfuly, add to project cache
 		add_project_to_cache(Core::ProjectInfo{ .name = project_info.name, .root_path = project_info.root_path });
-
-		m_asset_library.rebuild_asset_tree();
 
 		// Set the editor state
 		m_state = State::PROJECT_OPEN;
@@ -358,7 +391,7 @@ namespace VadonEditor::Core
 
 		// Save project cache file
 		constexpr static const char c_cache_file_data_error[] = "Project manager: error saving project cache!\n";
-		Vadon::Core::FileSystem::RawFileDataBuffer project_cache_buffer;
+		Vadon::Core::RawFileDataBuffer project_cache_buffer;
 		{
 			Vadon::Utilities::Serializer::Instance serializer = Vadon::Utilities::Serializer::create_serializer(project_cache_buffer, Vadon::Utilities::Serializer::Type::JSON, Vadon::Utilities::Serializer::Mode::WRITE);
 
@@ -420,11 +453,34 @@ namespace VadonEditor::Core
 		Vadon::Core::EngineCoreInterface& engine_core = m_editor.get_engine_core();
 		Vadon::Core::FileSystem& file_system = engine_core.get_system<Vadon::Core::FileSystem>();
 
-		const Vadon::Core::FileSystemPath project_path{ .path = c_project_cache_file_name };
-		if (file_system.save_file(project_path, project_cache_buffer) == false)
+		std::filesystem::path project_cache_path = std::filesystem::path(file_system.get_current_path()) / c_project_cache_file_name;
+		if (file_system.save_file(project_cache_path.generic_string(), project_cache_buffer) == false)
 		{
-			log_error("Project manager: unable to save file!\n");
+			log_error("Project manager: unable to save project cache file!\n");
 			return;
 		}
+	}
+
+	bool ProjectManager::internal_save_project_file(Vadon::Core::Project& project_info)
+	{
+		Vadon::Core::RawFileDataBuffer project_file_data;
+		Vadon::Utilities::Serializer::Instance serializer = Vadon::Utilities::Serializer::create_serializer(project_file_data, Vadon::Utilities::Serializer::Type::JSON, Vadon::Utilities::Serializer::Mode::WRITE);
+		if (Vadon::Core::Project::serialize_project_data(*serializer, project_info) == false)
+		{
+			log_error("Project manager: error serializing project data!\n");
+			VADON_ERROR("Failed to save project!");
+			return false;
+		}
+
+		Vadon::Core::EngineCoreInterface& engine_core = m_editor.get_engine_core();
+		const std::string file_path = (std::filesystem::path(project_info.root_path) / Vadon::Core::Project::c_project_file_name).generic_string();
+		if (engine_core.get_system<Vadon::Core::FileSystem>().save_file(file_path, project_file_data) == false)
+		{
+			log_error("Project manager: error saving project file!\n");
+			VADON_ERROR("Failed to save project!");
+			return false;
+		}
+
+		return true;
 	}
 }

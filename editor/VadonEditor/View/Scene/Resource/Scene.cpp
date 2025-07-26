@@ -8,10 +8,6 @@
 
 #include <VadonEditor/View/ViewSystem.hpp>
 
-#include <Vadon/Core/File/FileSystem.hpp>
-
-#include <filesystem>
-
 namespace VadonEditor::View
 {
 	SelectSceneDialog::SelectSceneDialog(Core::Editor& editor, std::string_view title)
@@ -72,7 +68,7 @@ namespace VadonEditor::View
 		for (const Model::ResourceInfo& current_scene_info : model_scene_list)
 		{
 			m_scene_list.push_back(current_scene_info.info.id);
-			m_scene_list_box.items.push_back(current_scene_info.path.path);
+			m_scene_list_box.items.push_back(current_scene_info.path);
 		}
 	}
 
@@ -90,6 +86,26 @@ namespace VadonEditor::View
 		m_save_scene_dialog.set_accept_label("Save");
 	}
 
+	void SceneListWindow::reset_scene_list()
+	{
+		m_scene_list_box.deselect();
+		m_scene_list_box.items.clear();
+
+		const ViewModel& view_model = m_editor.get_system<ViewSystem>().get_view_model();
+		for (const Model::Scene* current_scene : view_model.get_scene_list())
+		{
+			const std::string scene_path = current_scene->get_path();
+			if (scene_path.empty() == false)
+			{
+				m_scene_list_box.items.push_back(scene_path);
+			}
+			else
+			{
+				m_scene_list_box.items.push_back("<New Scene>");
+			}
+		}
+	}
+
 	void SceneListWindow::draw(UI::Developer::GUISystem& dev_gui)
 	{
 		if (dev_gui.begin_window(m_window) == true)
@@ -104,18 +120,11 @@ namespace VadonEditor::View
 
 				// TODO: prompt if file already exists at path!
 				const std::string new_scene_path = m_save_scene_dialog.get_entered_file_path() + ".vdsc";
-
-				Core::ProjectManager& project_manager = m_editor.get_system<Core::ProjectManager>();
-				Vadon::Core::FileSystem& file_system = m_editor.get_engine_core().get_system<Vadon::Core::FileSystem>();
-				const Vadon::Core::RootDirectoryHandle project_root_dir = project_manager.get_active_project().root_dir_handle;
-
-				const Model::ResourcePath new_path = { .root_directory = project_root_dir, .path = file_system.get_relative_path(new_scene_path, project_root_dir) };
-
-				if (m_saved_scene->save_as(new_path) == true)
+				if (m_saved_scene->save_as(new_scene_path) == true)
 				{
 					const int32_t scene_index = get_scene_index(m_saved_scene);
 					// TODO: assert?
-					m_scene_list_box.items[scene_index] = m_saved_scene->get_path().path;
+					m_scene_list_box.items[scene_index] = m_saved_scene->get_path();
 				}
 				else
 				{
@@ -141,11 +150,16 @@ namespace VadonEditor::View
 				}
 			}
 
-			dev_gui.draw_list_box(m_scene_list_box);
-			if (m_scene_list_box.has_valid_selection() == true)
+			// FIXME: this doesn't guarantee we will catch a change
+			// Need to develop an event system!
+			ViewModel& view_model = m_editor.get_system<ViewSystem>().get_view_model();
+			if (view_model.get_scene_list().size() != m_scene_list_box.items.size())
 			{
-				update_active_scene(m_scene_list[m_scene_list_box.selected_item]);
+				reset_scene_list();
 			}
+
+			dev_gui.draw_list_box(m_scene_list_box);
+			update_active_scene();
 		}
 		dev_gui.end_window();
 	}
@@ -180,7 +194,7 @@ namespace VadonEditor::View
 			return;
 		}
 
-		if (active_scene->get_path().is_valid() == false)
+		if (active_scene->get_path().empty() == true)
 		{
 			// New scene, have to set path
 			m_saved_scene = active_scene;
@@ -193,9 +207,7 @@ namespace VadonEditor::View
 			{
 				// Open project root folder
 				Core::ProjectManager& project_manager = m_editor.get_system<Core::ProjectManager>();
-				Vadon::Core::FileSystem& file_system = m_editor.get_engine_core().get_system<Vadon::Core::FileSystem>();
-				const Vadon::Core::RootDirectoryHandle project_root_dir = project_manager.get_active_project().root_dir_handle;
-				m_save_scene_dialog.open_at(file_system.get_absolute_path(Vadon::Core::FileSystemPath{ .root_directory = project_root_dir, .path = "" }));
+				m_save_scene_dialog.open_at(project_manager.get_active_project().info.root_path);
 			}
 		}
 		else
@@ -217,49 +229,36 @@ namespace VadonEditor::View
 
 	void SceneListWindow::open_scene(Model::Scene* scene)
 	{
-		int32_t scene_index = get_scene_index(scene);
-		if (scene_index < 0)
-		{
-			// Add scene to list
-			scene_index = static_cast<int32_t>(m_scene_list.size());
-			m_scene_list_box.selected_item = scene_index;
-			m_scene_list.push_back(scene);
-
-			const Vadon::Core::FileSystemPath scene_path = scene->get_path();
-			if (scene_path.is_valid() == true)
-			{
-				m_scene_list_box.items.push_back(scene_path.path);
-			}
-			else
-			{
-				m_scene_list_box.items.push_back("<New Scene>");
-			}
-		}
-
+		// Pass to model
 		Model::SceneSystem& editor_scene_system = m_editor.get_system<Model::ModelSystem>().get_scene_system();
 		editor_scene_system.open_scene(scene);
 
-		m_scene_list_box.selected_item = scene_index;
-		update_active_scene(scene);
+		// Set opened scene as selected
+		m_scene_list_box.selected_item = get_scene_index(scene);
+		update_active_scene();
 	}
 
-	void SceneListWindow::update_active_scene(Model::Scene* scene)
+	void SceneListWindow::update_active_scene()
 	{
+		if (m_scene_list_box.has_valid_selection() == false)
+		{
+			return;
+		}
+
 		ViewModel& view_model = m_editor.get_system<ViewSystem>().get_view_model();
-		view_model.set_active_scene(scene);
+		view_model.set_active_scene(view_model.get_scene_list()[m_scene_list_box.selected_item]);
 	}
 
 	int32_t SceneListWindow::get_scene_index(Model::Scene* scene) const
 	{
-		int32_t scene_index = 0;
-		for (Model::Scene* current_scene : m_scene_list)
+		const ViewModel& view_model = m_editor.get_system<ViewSystem>().get_view_model();
+		const std::vector<Model::Scene*>& scene_list = view_model.get_scene_list();
+		for (int32_t scene_index = 0; scene_index < static_cast<int32_t>(scene_list.size()); ++scene_index)
 		{
-			if (current_scene == scene)
+			if (scene_list[scene_index] == scene)
 			{
 				return scene_index;
 			}
-
-			++scene_index;
 		}
 
 		return -1;

@@ -1,5 +1,6 @@
 #ifndef VADON_SCENE_RESOURCE_RESOURCESYSTEM_HPP
 #define VADON_SCENE_RESOURCE_RESOURCESYSTEM_HPP
+#include <Vadon/Core/File/File.hpp>
 #include <Vadon/Scene/Module.hpp>
 #include <Vadon/Scene/Resource/Resource.hpp>
 #include <Vadon/Utilities/TypeInfo/Registry.hpp>
@@ -68,6 +69,10 @@ namespace Vadon::Scene
 
 		virtual const Resource* get_base_resource(ResourceHandle resource_handle) const = 0;
 		Resource* get_base_resource(ResourceHandle resource_handle) { return const_cast<Resource*>(std::as_const(*this).get_base_resource(resource_handle)); }
+
+		// NOTE: this expects a separate file that is referenced by a FileResource
+		virtual Vadon::Core::FileInfo get_file_resource_info(ResourceID resource_id) const = 0;
+		virtual bool load_file_resource_data(ResourceID resource_id, Vadon::Core::RawFileDataBuffer& file_data) = 0;
 	protected:
 		ResourceSystem(Core::EngineCoreInterface& core)
 			: System(core)

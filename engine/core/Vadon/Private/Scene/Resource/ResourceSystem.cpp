@@ -1,6 +1,7 @@
 #include <Vadon/Private/PCH/Core.hpp>
 #include <Vadon/Private/Scene/Resource/ResourceSystem.hpp>
 
+#include <Vadon/Scene/Resource/File.hpp>
 #include <Vadon/Scene/Resource/Registry.hpp>
 #include <Vadon/Scene/Resource/Database.hpp>
 #include <Vadon/Utilities/Serialization/Serializer.hpp>
@@ -404,6 +405,33 @@ namespace Vadon::Private::Scene
 		return m_resource_pool.get(resource_handle).resource;
 	}
 
+	Vadon::Core::FileInfo ResourceSystem::get_file_resource_info(ResourceID resource_id) const
+	{
+		for (ResourceDatabase* current_database : m_database_list)
+		{
+			Vadon::Core::FileInfo file_info = current_database->get_file_resource_info(resource_id);
+			if (file_info.is_valid() == true)
+			{
+				return file_info;
+			}
+		}
+
+		return Vadon::Core::FileInfo();
+	}
+
+	bool ResourceSystem::load_file_resource_data(ResourceID resource_id, Vadon::Core::RawFileDataBuffer& file_data)
+	{
+		for (ResourceDatabase* current_database : m_database_list)
+		{
+			if(current_database->load_file_resource_data(*this, resource_id, file_data) == true)
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	ResourceSystem::ResourceSystem(Vadon::Core::EngineCoreInterface& core)
 		: Vadon::Scene::ResourceSystem(core)
 	{}
@@ -414,6 +442,8 @@ namespace Vadon::Private::Scene
 
 		Vadon::Scene::ResourceRegistry::register_resource_type<Resource>();
 		Vadon::Utilities::TypeRegistry::add_property<Resource>("name", Vadon::Utilities::MemberVariableBind<&Resource::name>().bind_member_getter().bind_member_setter());
+
+		Vadon::Scene::ResourceRegistry::register_resource_type<Vadon::Scene::FileResource, Vadon::Scene::Resource>();
 
 		log_message("Resource System initialized successfully!\n");
 		return true;

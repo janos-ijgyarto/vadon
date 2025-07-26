@@ -25,9 +25,11 @@ namespace VadonEditor::View
 
 		// Project menu
 		UI::Developer::MenuItem m_project_settings_menu;
+		UI::Developer::MenuItem m_export_project_menu;
 		UI::Developer::MenuItem m_close_project_menu;
 
 		ProjectLauncher m_launcher;
+		UI::Developer::FileBrowserDialog m_export_project_browser;
 		ProjectPropertiesDialog m_project_properties;
 
 		AssetBrowser m_asset_browser;
@@ -53,6 +55,7 @@ namespace VadonEditor::View
 			m_save_scene_menu.label = "Save Scene";
 
 			m_project_settings_menu.label = "Project Settings";
+			m_export_project_menu.label = "Export Project";
 			m_close_project_menu.label = "Close Project";
 		}
 
@@ -123,6 +126,11 @@ namespace VadonEditor::View
 					{
 						m_project_properties.open();
 					}
+					if (dev_gui.add_menu_item(m_export_project_menu) == true)
+					{
+						Core::ProjectManager& project_manager = m_editor.get_system<Core::ProjectManager>();
+						m_export_project_browser.open_at(project_manager.get_active_project().info.root_path);
+					}
 					if (dev_gui.add_menu_item(m_close_project_menu) == true)
 					{
 						// FIXME: check for unsaved changes, etc!
@@ -139,6 +147,12 @@ namespace VadonEditor::View
 			{
 				Core::ProjectManager& project_manager = m_editor.get_system<Core::ProjectManager>();
 				project_manager.update_project_custom_properties(m_project_properties.get_edited_properties());
+			}
+
+			if (m_export_project_browser.draw(dev_gui) == UI::Developer::Dialog::Result::ACCEPTED)
+			{
+				Core::ProjectManager& project_manager = m_editor.get_system<Core::ProjectManager>();
+				project_manager.export_project(m_export_project_browser.get_current_path());
 			}
 		}
 	};

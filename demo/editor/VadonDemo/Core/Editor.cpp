@@ -5,6 +5,7 @@
 
 #include <VadonEditor/Core/Project/ProjectManager.hpp>
 #include <VadonEditor/Model/ModelSystem.hpp>
+#include <VadonEditor/Model/Resource/ResourceSystem.hpp>
 #include <VadonEditor/Model/Scene/SceneSystem.hpp>
 
 #include <VadonApp/Core/Application.hpp>

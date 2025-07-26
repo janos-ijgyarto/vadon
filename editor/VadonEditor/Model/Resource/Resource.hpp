@@ -1,6 +1,5 @@
 #ifndef VADONEDITOR_MODEL_RESOURCE_RESOURCE_HPP
 #define VADONEDITOR_MODEL_RESOURCE_RESOURCE_HPP
-#include <Vadon/Core/File/Path.hpp>
 #include <Vadon/Scene/Resource/Resource.hpp>
 #include <Vadon/Utilities/TypeInfo/Reflection/Property.hpp>
 namespace VadonEditor::Core
@@ -10,7 +9,6 @@ namespace VadonEditor::Core
 namespace VadonEditor::Model
 {
 	using ResourceID = Vadon::Scene::ResourceID;
-	using ResourcePath = Vadon::Core::FileSystemPath;
 
 	using EditorResourceID = uint32_t;
 
@@ -28,10 +26,10 @@ namespace VadonEditor::Model
 
 		Vadon::Scene::ResourceInfo get_info() const { return m_info; }
 
-		ResourcePath get_path() const;
+		std::string get_path() const;
 
 		bool save();
-		bool save_as(const ResourcePath& path);
+		bool save_as(std::string_view path);
 		bool load();
 
 		void unload();

@@ -1,8 +1,8 @@
 {
     "id": "SG21el1JQwC4xfVZeEqj2A==",
     "properties": {
-        "file_path": "assets/grass_texture_repeating",
-        "name": ""
+        "name": "",
+        "texture_file": "0pUfFiHGQm2UBFprM3qYMw=="
     },
     "type": "VadonDemo::Render::TextureResource"
 }

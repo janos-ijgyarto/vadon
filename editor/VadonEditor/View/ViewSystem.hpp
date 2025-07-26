@@ -26,6 +26,10 @@ namespace VadonEditor::View
 
 		Model::Entity* get_active_entity() const { return m_active_entity; }
 		void set_active_entity(Model::Entity*);
+
+		const std::vector<Model::Scene*>& get_scene_list() const { return m_open_scene_list; }
+		void scene_opened(Model::Scene* scene);
+		void scene_closed(Model::Scene* scene);
 	private:
 		VADONEDITOR_API ViewModel(Core::Editor& editor);
 
@@ -34,6 +38,8 @@ namespace VadonEditor::View
 		Model::Resource* m_active_resource;
 		Model::Scene* m_active_scene;
 		Model::Entity* m_active_entity;
+
+		std::vector<Model::Scene*> m_open_scene_list;
 
 		friend class ViewSystem;
 	};

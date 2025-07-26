@@ -34,6 +34,7 @@ namespace VadonEditor::Core
 		bool create_project(std::string_view project_name, std::string_view root_path);
 		bool open_project(std::string_view path);
 		VADONEDITOR_API bool load_project_data();
+		bool export_project(std::string_view output_path);
 		void close_project();
 
 		AssetLibrary& get_asset_library() { return m_asset_library; }
@@ -46,6 +47,8 @@ namespace VadonEditor::Core
 
 		bool load_project_metadata(std::string_view root_path);
 		void add_project_to_cache(const ProjectInfo& project);
+
+		bool internal_save_project_file(Vadon::Core::Project& project_info);
 
 		State m_state;
 		ProjectInfoList m_project_cache;

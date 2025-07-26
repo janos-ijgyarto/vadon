@@ -1000,7 +1000,7 @@ namespace VadonApp::Private::UI::Developer::ImGUI
 
     bool GUISystem::draw_combo_box(ComboBox& combo_box)
     {
-        const char* preview_item = combo_box.items.empty() ? nullptr : combo_box.items[combo_box.selected_item].c_str();
+        const char* preview_item = (combo_box.has_valid_selection() == false) ? nullptr : combo_box.items[combo_box.selected_item].c_str();
         if (ImGui::BeginCombo(combo_box.label.c_str(), preview_item) == true)
         {
             int32_t current_item_index = 0;

@@ -57,6 +57,20 @@ namespace VadonEditor::Model
 
 			return true;
 		}
+
+		bool export_project(Core::Editor& editor, std::string_view output_path)
+		{
+			Core::ProjectManager& project_manager = editor.get_system<Core::ProjectManager>();
+
+			VADON_ASSERT(project_manager.get_state() == Core::ProjectManager::State::PROJECT_LOADED, "Project is in incorrect state!");
+			if (m_resource_system.export_project_resources(output_path) == false)
+			{
+				Vadon::Core::Logger::log_error("Model system: unable to load project!\n");
+				return false;
+			}
+
+			return true;
+		}
 	};
 
 	ModelSystem::~ModelSystem() = default;
@@ -91,5 +105,10 @@ namespace VadonEditor::Model
 	bool ModelSystem::load_project()
 	{
 		return m_internal->load_project(m_editor);
+	}
+
+	bool ModelSystem::export_project(std::string_view output_path)
+	{
+		return m_internal->export_project(m_editor, output_path);
 	}
 }

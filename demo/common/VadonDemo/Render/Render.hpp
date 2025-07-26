@@ -4,7 +4,6 @@
 
 #include <VadonDemo/Render/Component.hpp>
 
-#include <Vadon/Core/File/RootDirectory.hpp>
 #include <Vadon/ECS/Entity/Entity.hpp>
 #include <Vadon/Render/Canvas/Context.hpp>
 #include <Vadon/Utilities/Container/ObjectPool/Pool.hpp>
@@ -53,12 +52,10 @@ namespace VadonDemo::Render
 		VADONDEMO_API void update_fullscreen_effect_entity(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle entity);
 		VADONDEMO_API void remove_fullscreen_effect_entity(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle entity);
 
-		// FIXME: instead of having to get the root dir, we should have a "file resource" which takes care of this
-		// and stores the runtime file path, which can then be loaded by other systems
-		VADONDEMO_API bool init_texture_resource(TextureResourceID texture_id, Vadon::Core::RootDirectoryHandle root_dir) const;
+		VADONDEMO_API bool init_texture_resource(TextureResourceID texture_id) const;
 		VADONDEMO_API void unload_texture_resource(TextureResourceID texture_id) const;
 
-		VADONDEMO_API bool init_shader_resource(ShaderResourceID shader_id, Vadon::Core::RootDirectoryHandle root_dir) const;
+		VADONDEMO_API bool init_shader_resource(ShaderResourceID shader_id) const;
 		VADONDEMO_API void unload_shader_resource(ShaderResourceID shader_id) const;
 	private:
 		struct CanvasContextData

@@ -106,6 +106,36 @@ namespace VadonEditor::View
 		m_active_entity = entity;
 	}
 
+	void ViewModel::scene_opened(Model::Scene* scene)
+	{
+		for (Model::Scene* open_scene : m_open_scene_list)
+		{
+			if (open_scene == scene)
+			{
+				// TODO: log error?
+				return;
+			}
+		}
+
+		m_open_scene_list.push_back(scene);
+	}
+
+	void ViewModel::scene_closed(Model::Scene* scene)
+	{
+		for (size_t scene_index = 0; scene_index < m_open_scene_list.size(); ++scene_index)
+		{
+			if (m_open_scene_list[scene_index] == scene)
+			{
+				// TODO: can also use swap-and-pop
+				m_open_scene_list.erase(m_open_scene_list.begin() + scene_index);
+				return;
+			}
+		}
+
+		// TODO: log error that we didn't find scene?
+		m_open_scene_list.push_back(scene);
+	}
+
 	ViewModel::ViewModel(Core::Editor& editor)
 		: m_editor(editor)
 		, m_active_scene(nullptr)
