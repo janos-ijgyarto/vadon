@@ -294,7 +294,7 @@ namespace Vadon::Private::Render
 	{
 		// FreeType code based in part on: https://kevinboone.me/fbtextdemo.html
 		FTFontFaceWrapper font_face;
-		if (FT_New_Memory_Face(m_ft_library, font_data_buffer.data(), font_data_buffer.size_bytes(), font_info.face_index, &font_face.ft_face) != 0)
+		if (FT_New_Memory_Face(m_ft_library, font_data_buffer.data(), static_cast<FT_Long>(font_data_buffer.size_bytes()), font_info.face_index, &font_face.ft_face) != 0)
 		{
 			return FontHandle();
 		}

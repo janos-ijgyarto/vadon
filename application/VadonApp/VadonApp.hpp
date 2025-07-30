@@ -1,6 +1,6 @@
 #ifndef VADONAPP_VADONAPP_HPP
 #define VADONAPP_VADONAPP_HPP
-	#if defined(VADONAPP_PLATFORM_WIN32) && defined(VADON_LINK_DYNAMIC)
+	#if defined(VADON_PLATFORM_WIN32) && defined(VADON_LINK_DYNAMIC)
 		#ifdef VADONAPP_EXPORTS
 			#define VADONAPP_API __declspec(dllexport)
 		#else

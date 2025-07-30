@@ -1,5 +1,9 @@
 cmake_minimum_required(VERSION 4.1)
 
+if(${CMAKE_CURRENT_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_BINARY_DIR})
+  message(FATAL_ERROR "In-tree build attempted, aborting build.")
+endif()
+
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 if(NOT DEFINED VADON_CPM_EXTERNAL)
@@ -32,10 +36,47 @@ endif()
 
 option(VADON_LINK_STATIC "Build Vadon with static linkage only" OFF)
 
-if(${VADON_LINK_STATIC} STREQUAL "ON")
-	MESSAGE("Building Vadon with static linkage")
+# Interface library for common build options (inspired by SDL)
+add_library(VadonBuildOptions INTERFACE)
+
+if(NOT DEFINED VADON_COMPILE_DEFINITIONS)
+	if(WIN32)
+		target_compile_definitions(VadonBuildOptions INTERFACE VADON_PLATFORM_WIN32)
+		
+		if(${VADON_LINK_STATIC} STREQUAL "ON")
+			# TODO!!!
+		else()
+			# Provide compile def for DLL export/import
+			target_compile_definitions(VadonBuildOptions INTERFACE VADON_LINK_DYNAMIC)
+		endif()
+	elseif(UNIX AND NOT APPLE)
+		target_compile_definitions(VadonBuildOptions INTERFACE VADON_PLATFORM_LINUX)
+	endif()
 else()
-	MESSAGE("Building Vadon with dynamic linkage")
+	target_compile_definitions(VadonBuildOptions INTERFACE ${VADON_COMPILE_DEFINITIONS})
+endif()
+
+if(NOT DEFINED VADON_COMPILE_FEATURES)
+	target_compile_features(VadonBuildOptions INTERFACE cxx_std_20)
+else()
+	target_compile_features(VadonBuildOptions INTERFACE ${VADON_COMPILE_FEATURES})
+endif()
+
+if(NOT DEFINED VADON_COMPILE_OPTIONS)
+	if(MSVC)
+		# NOTE: need to disable warning related to dll-interface
+		target_compile_options(VadonBuildOptions INTERFACE /W4 /WX /wd4251)
+	else()
+		target_compile_options(VadonBuildOptions INTERFACE -Wall -Wextra -Wpedantic -Werror)
+	endif()
+else()
+	target_compile_options(VadonBuildOptions INTERFACE ${VADON_COMPILE_OPTIONS})
+endif()
+
+if(${VADON_LINK_STATIC} STREQUAL "ON")
+	MESSAGE("Configuring Vadon with static linkage")
+else()
+	MESSAGE("Configuring Vadon with dynamic linkage")
 endif()
 
 # Set the runtime output dir for all sub-projects
@@ -48,6 +89,21 @@ set(VADON_TOOLS_EXPORT_FILE_DIR "${VADON_TOOLS_BINARY_DIR}/cmake")
 set(VADON_INSTALL_RUNTIME_DESTINATION "bin")
 set(VADON_INSTALL_THIRD_PARTY_COMPONENT "VadonThirdParty")
 
+set(VADON_TOOLS_BUILD_OPTIONS "")
+
+# Compiler settings for tools
+if(DEFINED VADON_TOOLS_COMPILE_DEFINITIONS)
+	list(APPEND VADON_TOOLS_BUILD_OPTIONS "-DVADON_TOOLS_COMPILE_DEFINITIONS=${VADON_TOOLS_COMPILE_DEFINITIONS}")
+endif()
+
+if(DEFINED VADON_TOOLS_COMPILE_FEATURES)
+	list(APPEND VADON_TOOLS_BUILD_OPTIONS "-DVADON_TOOLS_COMPILE_FEATURES=${VADON_TOOLS_COMPILE_FEATURES}")
+endif()
+
+if(DEFINED VADON_TOOLS_COMPILE_OPTIONS)
+	list(APPEND VADON_TOOLS_BUILD_OPTIONS "-DVADON_TOOLS_COMPILE_OPTIONS=${VADON_TOOLS_COMPILE_OPTIONS}")
+endif()
+
 # Run CMake to configure all of our tools
 execute_process(COMMAND ${CMAKE_COMMAND}
 	-S "${CMAKE_SOURCE_DIR}/tools"
@@ -55,6 +111,7 @@ execute_process(COMMAND ${CMAKE_COMMAND}
 	-G ${CMAKE_GENERATOR}
 	-DCMAKE_BUILD_TYPE=Release
 	-DVADON_TOOLS_EXPORT=ON
+	${VADON_TOOLS_BUILD_OPTIONS}
 	)
 
 add_custom_target(VadonToolsBuild

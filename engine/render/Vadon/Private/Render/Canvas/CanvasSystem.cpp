@@ -873,7 +873,7 @@ namespace Vadon::Private::Render::Canvas
 				for (size_t vertex = 0; vertex < 3; ++vertex)
 				{
 					triangle_primitive.points[vertex] = PrimitiveVertex{ .position = (triangle.points[vertex].position * transform.scale) + transform.position, .uv = triangle.points[vertex].uv};
-					triangle_primitive.color[vertex] = triangle.points[vertex].color.value;
+					triangle_primitive.color[static_cast<Vector3u::length_type>(vertex)] = triangle.points[vertex].color.value;
 				}
 
 				canvas_system.m_frame_data.add_primitive_data(triangle_primitive);
@@ -937,7 +937,7 @@ namespace Vadon::Private::Render::Canvas
 				int32_t command_count = 0;
 				while ((command_it.is_valid() == true) && (command_count < batch_draw.range.count))
 				{
-					parse_batch_command(canvas_system, item_data, batch_transform, Vadon::Utilities::to_enum<BatchCommandType>(command_it.get_header().packet_id), command_it.get_packet_data());
+					parse_batch_command(canvas_system, item_data, batch_transform, Vadon::Utilities::convert_to_enum<BatchCommandType>(command_it.get_header().packet_id), command_it.get_packet_data());
 					command_it.advance();
 					++command_count;
 				}
@@ -981,7 +981,7 @@ namespace Vadon::Private::Render::Canvas
 						const std::byte* batch_command_ptr = item_command_it.get_packet_data();
 						// First value is the command type
 						const uint32_t command_type_int = *reinterpret_cast<const uint32_t*>(batch_command_ptr);
-						parse_batch_command(*this, current_item_data, current_item_data.info.transform, Vadon::Utilities::to_enum<BatchCommandType>(command_type_int), batch_command_ptr + sizeof(uint32_t));
+						parse_batch_command(*this, current_item_data, current_item_data.info.transform, Vadon::Utilities::convert_to_enum<BatchCommandType>(command_type_int), batch_command_ptr + sizeof(uint32_t));
 					}
 					break;
 					case ItemCommandType::SET_TEXTURE:
