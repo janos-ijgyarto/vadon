@@ -18,7 +18,7 @@ namespace VadonDemo::UI
 	// TODO: more advanced input handling!
 	struct CursorState
 	{
-		Vadon::Utilities::Vector2 position = Vadon::Utilities::Vector2_Zero;
+		Vadon::Math::Vector2 position = Vadon::Math::Vector2_Zero;
 		bool clicked = false;
 	};
 

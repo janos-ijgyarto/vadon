@@ -3,7 +3,7 @@
 #include <Vadon/Render/GraphicsAPI/GraphicsAPI.hpp>
 #include <Vadon/Render/GraphicsAPI/Pipeline/Pipeline.hpp>
 
-#include <Vadon/Utilities/Math/Rectangle.hpp>
+#include <Vadon/Math/Rectangle.hpp>
 namespace Vadon::Render
 {
 	class PipelineSystem : public GraphicsSystem<PipelineSystem>
@@ -25,7 +25,7 @@ namespace Vadon::Render
 		virtual void remove_depth_stencil_state(DepthStencilStateHandle depth_stencil_handle) = 0;
 
 		virtual void set_primitive_topology(PrimitiveTopology topology) = 0;
-		virtual void set_scissor(const Utilities::RectangleInt& scissor_rectangle) = 0;
+		virtual void set_scissor(const Math::RectangleInt& scissor_rectangle) = 0;
 	protected:
 		PipelineSystem(Core::EngineCoreInterface& core) : 
 			System(core) 

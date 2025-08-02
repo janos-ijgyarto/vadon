@@ -12,6 +12,8 @@
 
 #include <Vadon/Core/Task/TaskSystem.hpp>
 
+#include <Vadon/Math/Matrix.hpp>
+
 // FIXME: could separate the renderer backend to make this file less cluttered?
 #include <Vadon/Render/GraphicsAPI/GraphicsAPI.hpp>
 #include <Vadon/Render/GraphicsAPI/Buffer/BufferSystem.hpp>
@@ -25,7 +27,6 @@
 
 #include <Vadon/Utilities/Data/DataUtilities.hpp>
 #include <Vadon/Utilities/Data/Visitor.hpp>
-#include <Vadon/Utilities/Math/Matrix.hpp>
 
 #include <Vadon/Utilities/Debugging/Assert.hpp>
 
@@ -241,7 +242,7 @@ namespace VadonApp::Private::UI::Developer::ImGUI
 
         struct VertexConstantBuffer
         {
-            Vadon::Utilities::Matrix4 model_view_projection;
+            Vadon::Math::Matrix4 model_view_projection;
         };
 
         struct DrawCommand
@@ -501,10 +502,10 @@ namespace VadonApp::Private::UI::Developer::ImGUI
                     }
 
                     // Apply scissor/clipping rectangle
-                    pipeline_system.set_scissor(Vadon::Utilities::RectangleInt
+                    pipeline_system.set_scissor(Vadon::Math::RectangleInt
                         {
-                            Vadon::Utilities::Vector2i(current_command.clip_min.x, current_command.clip_min.y),
-                                Vadon::Utilities::Vector2i(current_command.clip_max.x - current_command.clip_min.x, current_command.clip_max.y - current_command.clip_min.y)
+                            Vadon::Math::Vector2i(current_command.clip_min.x, current_command.clip_min.y),
+                                Vadon::Math::Vector2i(current_command.clip_max.x - current_command.clip_min.x, current_command.clip_max.y - current_command.clip_min.y)
                         }
                     );
 
@@ -719,16 +720,16 @@ namespace VadonApp::Private::UI::Developer::ImGUI
         ImGui::EndDisabled();
     }
 
-    Vadon::Utilities::Vector2 GUISystem::get_available_content_region() const
+    Vadon::Math::Vector2 GUISystem::get_available_content_region() const
     {
         const ImVec2 content_region = ImGui::GetContentRegionAvail();
-        return Vadon::Utilities::Vector2{ content_region.x, content_region.y };
+        return Vadon::Math::Vector2{ content_region.x, content_region.y };
     }
 
-    Vadon::Utilities::Vector2 GUISystem::calculate_text_size(std::string_view text, std::string_view text_end, bool hide_after_double_hash, float wrap_width) const
+    Vadon::Math::Vector2 GUISystem::calculate_text_size(std::string_view text, std::string_view text_end, bool hide_after_double_hash, float wrap_width) const
     {
         const ImVec2 text_size = ImGui::CalcTextSize(text.data(), text_end.empty() ? nullptr : text_end.data(), hide_after_double_hash, wrap_width);
-        return Vadon::Utilities::Vector2{ text_size.x, text_size.y };
+        return Vadon::Math::Vector2{ text_size.x, text_size.y };
     }
 
     void GUISystem::push_item_width(float item_width)
@@ -1447,7 +1448,7 @@ namespace VadonApp::Private::UI::Developer::ImGUI
         }
         else
         {
-            const Vadon::Utilities::Vector2i window_size = platform_interface.get_window_size(m_platform_data.window_handle);
+            const Vadon::Math::Vector2i window_size = platform_interface.get_window_size(m_platform_data.window_handle);
             width = window_size.x;
             height = window_size.y;
         }
@@ -1455,7 +1456,7 @@ namespace VadonApp::Private::UI::Developer::ImGUI
         io.DisplaySize = ImVec2(static_cast<float>(width), static_cast<float>(height));
         if ((width > 0) && (height > 0))
         {
-            const Vadon::Utilities::Vector2i drawable_size = platform_interface.get_window_drawable_size(m_platform_data.window_handle);
+            const Vadon::Math::Vector2i drawable_size = platform_interface.get_window_drawable_size(m_platform_data.window_handle);
             io.DisplayFramebufferScale = ImVec2(static_cast<float>(drawable_size.x) / width, static_cast<float>(drawable_size.y) / height);
         }
 
@@ -1561,16 +1562,16 @@ namespace VadonApp::Private::UI::Developer::ImGUI
             // (Optional) Set OS mouse position from Dear ImGui if requested (rarely used, only when ImGuiConfigFlags_NavEnableSetMousePos is enabled by user)
             if (io.WantSetMousePos)
             {
-                platform_interface.warp_mouse(m_platform_data.window_handle, Vadon::Utilities::Vector2i(static_cast<int>(io.MousePos.x), static_cast<int>(io.MousePos.y)));
+                platform_interface.warp_mouse(m_platform_data.window_handle, Vadon::Math::Vector2i(static_cast<int>(io.MousePos.x), static_cast<int>(io.MousePos.y)));
             }
 
             // (Optional) Fallback to provide mouse position when focused
             if (m_platform_data.mouse_global_state && (m_platform_data.mouse_buttons_down == 0))
             {
-                const Vadon::Utilities::Vector2i mouse_position = platform_interface.get_global_mouse_state().position;
-                const Vadon::Utilities::Vector2i window_position = platform_interface.get_window_position(m_platform_data.window_handle);
+                const Vadon::Math::Vector2i mouse_position = platform_interface.get_global_mouse_state().position;
+                const Vadon::Math::Vector2i window_position = platform_interface.get_window_position(m_platform_data.window_handle);
 
-                const Vadon::Utilities::Vector2i mouse_window_position = mouse_position - window_position;
+                const Vadon::Math::Vector2i mouse_window_position = mouse_position - window_position;
 
                 io.AddMousePosEvent(static_cast<float>(mouse_window_position.x), static_cast<float>(mouse_window_position.y));
             }

@@ -25,7 +25,7 @@ namespace Vadon::Private::Render::DirectX
 		void remove_depth_stencil_state(DepthStencilStateHandle depth_stencil_handle) override;
 
 		void set_primitive_topology(PrimitiveTopology topology) override;
-		void set_scissor(const Vadon::Utilities::RectangleInt& scissor_rectangle) override;
+		void set_scissor(const Vadon::Math::RectangleInt& scissor_rectangle) override;
 	private:
 		using BlendStatePool = Vadon::Utilities::ObjectPool<Vadon::Render::BlendState, BlendState>;
 		using RasterizerStatePool = Vadon::Utilities::ObjectPool<Vadon::Render::RasterizerState, RasterizerState>;

@@ -1,7 +1,7 @@
-#ifndef VADON_UTILITIES_MATH_RECTANGLE_HPP
-#define VADON_UTILITIES_MATH_RECTANGLE_HPP
-#include <Vadon/Utilities/Math/Vector.hpp>
-namespace Vadon::Utilities
+#ifndef VADON_MATH_RECTANGLE_HPP
+#define VADON_MATH_RECTANGLE_HPP
+#include <Vadon/Math/Vector.hpp>
+namespace Vadon::Math
 {
 	template<typename VEC2_TYPE>
 	struct RectangleBase

@@ -1,15 +1,18 @@
 #ifndef VADONDEMO_MODEL_COMPONENT_HPP
 #define VADONDEMO_MODEL_COMPONENT_HPP
-#include <VadonDemo/Model/Resource.hpp>
+#include <VadonDemo/Model/Weapon/Resource.hpp>
 
 #include <Vadon/ECS/Entity/Entity.hpp>
-#include <Vadon/Utilities/Math/Vector.hpp>
+#include <Vadon/Math/Vector.hpp>
 
 namespace VadonDemo::Model
 {
+	struct LevelRootTag {};
+	struct DestroyEntityTag {};
+
 	struct Transform2D
 	{
-		Vadon::Utilities::Vector2 position = Vadon::Utilities::Vector2_Zero;
+		Vadon::Math::Vector2 position = Vadon::Math::Vector2_Zero;
 		float rotation = 0;
 		float scale = 1.0f;
 
@@ -22,7 +25,7 @@ namespace VadonDemo::Model
 	{
 		float top_speed = 0.0f;
 		float acceleration = 0.0f;
-		Vadon::Utilities::Vector2 velocity = Vadon::Utilities::Vector2_Zero;
+		Vadon::Math::Vector2 velocity = Vadon::Math::Vector2_Zero;
 
 		static void register_component();
 	};
@@ -45,7 +48,7 @@ namespace VadonDemo::Model
 
 	struct PlayerInput
 	{
-		Vadon::Utilities::Vector2 move_dir = Vadon::Utilities::Vector2_Zero;
+		Vadon::Math::Vector2 move_dir = Vadon::Math::Vector2_Zero;
 	};
 
 	struct Player
@@ -56,28 +59,9 @@ namespace VadonDemo::Model
 
 		int score = 0;
 		PlayerInput input;
-		Vadon::Utilities::Vector2 last_move_dir = { 1, 0 };
+		Vadon::Math::Vector2 last_move_dir = { 1, 0 };
 
 		float damage_timer = 0.0f;
-
-		static void register_component();
-	};
-
-	struct Weapon
-	{
-		WeaponDefID definition;
-
-		float firing_timer = 0.0f;
-		Vadon::Utilities::Vector2 aim_direction = { 1, 0 };
-
-		static void register_component();
-	};
-
-	struct Projectile
-	{
-		float range = 0.0f;
-		float damage = 0.0f;
-		float remaining_lifetime = 0.0f;
 
 		static void register_component();
 	};
@@ -93,7 +77,7 @@ namespace VadonDemo::Model
 	struct Map
 	{
 		std::string display_name;
-		Vadon::Utilities::Vector2 dimensions = Vadon::Utilities::Vector2_Zero;
+		Vadon::Math::Vector2 dimensions = Vadon::Math::Vector2_Zero;
 		// TODO: limit on spawned enemies (could do with some kind of "value" system where it limits number based on how much they add up to?)
 
 		static void register_component();

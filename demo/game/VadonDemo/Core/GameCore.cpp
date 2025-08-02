@@ -64,7 +64,168 @@ namespace
 		{
 		}
 
-		bool initialize(std::string_view root_dir)
+		bool initialize(std::string_view root_dir, bool is_raw_data)
+		{
+			m_is_raw = is_raw_data;
+			if (is_raw_data)
+			{
+				return initialize_raw(root_dir);
+			}
+			else
+			{
+				return initialize_exported(root_dir);
+			}
+		}
+
+		bool initialize_raw(std::string_view root_dir)
+		{
+			Vadon::Core::FileSystem& file_system = m_game_core.get_engine_app().get_engine_core().get_system<Vadon::Core::FileSystem>();
+			
+			// Create both resource and asset file databases
+			{
+				Vadon::Core::FileDatabaseInfo resource_db_info;
+				resource_db_info.root_path = std::filesystem::path(root_dir).generic_string();
+				resource_db_info.type = Vadon::Core::FileDatabaseType::FILESYSTEM;
+
+				m_resource_file_db = file_system.create_database(resource_db_info);
+			}
+
+			{
+				Vadon::Core::FileDatabaseInfo asset_db_info;
+				asset_db_info.root_path = std::filesystem::path(root_dir).generic_string();
+				asset_db_info.type = Vadon::Core::FileDatabaseType::FILESYSTEM;
+
+				m_asset_file_db = file_system.create_database(asset_db_info);
+			}
+
+			// Register all resource files under root
+			bool all_valid = true;
+			for (const auto& directory_entry : std::filesystem::recursive_directory_iterator(root_dir))
+			{
+				if (directory_entry.is_regular_file() == false)
+				{
+					continue;
+				}
+
+				const std::filesystem::path current_file_path = directory_entry.path();
+				all_valid &= import_raw_resource(current_file_path);
+			}
+
+			return true;
+		}
+
+		bool import_raw_resource(const std::filesystem::path& file_path)
+		{
+			const std::string file_extension = file_path.extension().generic_string();
+			bool is_asset_file = false;
+			if ((file_extension == ".vdrc") || (file_extension == ".vdsc"))
+			{
+				// TODO: anything?
+			}
+			else if(file_extension == ".vdimport")
+			{
+				is_asset_file = true;
+			}
+			else
+			{
+				// Not a relevant file, skip
+				return true;
+			}
+
+			Vadon::Core::RawFileDataBuffer resource_file_buffer;
+
+			Vadon::Core::EngineCoreInterface& engine_core = m_game_core.get_engine_core();
+			Vadon::Core::FileSystem& file_system = engine_core.get_system<Vadon::Core::FileSystem>();
+
+			const std::string file_path_str = file_path.generic_string();
+			if (file_system.load_file(file_path_str, resource_file_buffer) == false)
+			{
+				Vadon::Core::Logger::log_error(std::format("Game resource database: failed to load resource file \"{}\"!\n", file_path_str));
+				return false;
+			}
+
+			Vadon::Utilities::Serializer::Instance serializer_instance = Vadon::Utilities::Serializer::create_serializer(resource_file_buffer, Vadon::Utilities::Serializer::Type::JSON, Vadon::Utilities::Serializer::Mode::READ);
+
+			if (serializer_instance->initialize() == false)
+			{
+				Vadon::Core::Logger::log_error("Game resource database: failed to initialize serializer while loading resource!\n");
+				return false;
+			}
+
+			Vadon::Scene::ResourceInfo imported_resource_info;
+
+			Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
+			if (resource_system.load_resource_info(*serializer_instance, imported_resource_info) == false)
+			{
+				Vadon::Core::Logger::log_error("Game resource database: failed to loading resource!\n");
+				return false;
+			}
+
+			if (serializer_instance->finalize() == false)
+			{
+				Vadon::Core::Logger::log_error("Game resource database: failed to finalize serializer while loading resource!\n");
+				return false;
+			}
+
+			// TODO: check resource info to make sure we're only importing a resource once?
+
+			Vadon::Core::FileInfo file_info;
+			file_info.path = file_system.get_relative_path(m_resource_file_db, file_path_str);
+
+			if (file_system.add_existing_file(m_resource_file_db, imported_resource_info.id, file_info) == false)
+			{
+				// TODO: log error?
+				VADON_ERROR("Cannot add resource file!");
+				return false;
+			}
+
+			if (Vadon::Utilities::TypeRegistry::is_base_of(Vadon::Utilities::TypeRegistry::get_type_id<Vadon::Scene::FileResource>(), imported_resource_info.type_id) == true)
+			{
+				// Resource points to file, make sure we import that file as well
+				if (import_raw_asset_file(imported_resource_info.id) == false)
+				{
+					// TODO: log error?
+					VADON_ERROR("Cannot add file referenced by resource!");
+					return false;
+				}
+			}
+
+			return true;
+		}
+
+		bool import_raw_asset_file(const Vadon::Scene::ResourceID& file_id)
+		{
+			// NOTE: this assumes the resource file has already been registered!
+			Vadon::Core::EngineCoreInterface& engine_core = m_game_core.get_engine_core();
+			Vadon::Core::FileSystem& file_system = engine_core.get_system<Vadon::Core::FileSystem>();
+
+			const Vadon::Core::FileInfo resource_file_info = file_system.get_file_info(m_resource_file_db, file_id);
+			const std::filesystem::path resource_file_path = std::filesystem::path(resource_file_info.path).generic_string();
+
+			VADON_ASSERT(resource_file_path.extension() == ".vdimport", "Invalid file type!");
+
+			const std::filesystem::path imported_file_path = (resource_file_path.parent_path() / resource_file_path.stem()).generic_string();
+
+			// Make sure the file actually exists at the designated path
+			if (std::filesystem::exists(file_system.get_absolute_path(m_asset_file_db, imported_file_path.generic_string())) == false)
+			{
+				// TODO: log error!
+				return false;
+			}
+
+			Vadon::Core::FileInfo imported_file_info;
+			imported_file_info.path = imported_file_path.generic_string();
+
+			if (file_system.add_existing_file(m_asset_file_db, file_id, imported_file_info) == false)
+			{
+				// TODO: log error!
+				return false;
+			}
+
+			return true;
+		}
+
+		bool initialize_exported(std::string_view root_dir)
 		{
 			Vadon::Core::FileSystem& file_system = m_game_core.get_engine_app().get_engine_core().get_system<Vadon::Core::FileSystem>();
 
@@ -87,7 +248,7 @@ namespace
 					if (current_file_path.extension().generic_string() == ".vdbin")
 					{
 						Vadon::Scene::ResourceID file_id = decode_resource_id_from_file(current_file_path);
-						
+
 						Vadon::Core::FileInfo file_info;
 						file_info.path = current_file_path.filename().generic_string();
 
@@ -155,7 +316,7 @@ namespace
 			// TODO: create separate DBs for binary and text-based resources
 			// When a resource is requested, we try both to see if either has the resource
 			// Depending on which DB it is, we create the appropriate serializer
-			Vadon::Utilities::Serializer::Instance serializer_instance = Vadon::Utilities::Serializer::create_serializer(resource_file_buffer, Vadon::Utilities::Serializer::Type::BINARY, Vadon::Utilities::Serializer::Mode::READ);
+			Vadon::Utilities::Serializer::Instance serializer_instance = Vadon::Utilities::Serializer::create_serializer(resource_file_buffer, m_is_raw ? Vadon::Utilities::Serializer::Type::JSON : Vadon::Utilities::Serializer::Type::BINARY, Vadon::Utilities::Serializer::Mode::READ);
 
 			if (serializer_instance->initialize() == false)
 			{
@@ -197,6 +358,7 @@ namespace
 		VadonDemo::Core::GameCore& m_game_core;
 		Vadon::Core::FileDatabaseHandle m_resource_file_db;
 		Vadon::Core::FileDatabaseHandle m_asset_file_db;
+		bool m_is_raw = false;
 	};
 }
 
@@ -451,7 +613,9 @@ namespace VadonDemo::Core
 				return false;
 			}
 
-			Vadon::Utilities::Serializer::Instance serializer = Vadon::Utilities::Serializer::create_serializer(project_file_data, Vadon::Utilities::Serializer::Type::BINARY, Vadon::Utilities::Serializer::Mode::READ);
+			const bool is_raw_data = m_engine_app->has_command_line_arg("raw");
+
+			Vadon::Utilities::Serializer::Instance serializer = Vadon::Utilities::Serializer::create_serializer(project_file_data, is_raw_data ? Vadon::Utilities::Serializer::Type::JSON : Vadon::Utilities::Serializer::Type::BINARY, Vadon::Utilities::Serializer::Mode::READ);
 			if (Vadon::Core::Project::serialize_project_data(*serializer, m_project_info) == false)
 			{
 				Vadon::Core::Logger::log_error(std::format("Invalid project file at \"{}\"!\n", project_file_path));
@@ -459,7 +623,7 @@ namespace VadonDemo::Core
 			}
 			m_project_info.root_path = fs_root_path.parent_path().generic_string();
 
-			if (m_resource_db.initialize(m_project_info.root_path) == false)
+			if (m_resource_db.initialize(m_project_info.root_path, is_raw_data) == false)
 			{
 				return false;
 			}

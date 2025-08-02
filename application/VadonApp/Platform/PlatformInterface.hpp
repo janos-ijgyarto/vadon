@@ -18,7 +18,7 @@ namespace VadonApp::Platform
 
 	struct MouseState
 	{
-		Vadon::Utilities::Vector2i position = { 0, 0 };
+		Vadon::Math::Vector2i position = { 0, 0 };
 		// TODO: use enum for button state!
 		uint32_t buttons = 0;
 	};
@@ -38,11 +38,11 @@ namespace VadonApp::Platform
 		virtual std::string get_window_title(WindowHandle window_handle) const = 0;
 		virtual void set_window_title(WindowHandle window_handle, std::string_view title) = 0;
 
-		virtual Vadon::Utilities::Vector2i get_window_position(WindowHandle window_handle) const = 0;
-		virtual void set_window_position(WindowHandle window_handle, const Vadon::Utilities::Vector2i position) = 0;
+		virtual Vadon::Math::Vector2i get_window_position(WindowHandle window_handle) const = 0;
+		virtual void set_window_position(WindowHandle window_handle, const Vadon::Math::Vector2i position) = 0;
 
-		virtual Vadon::Utilities::Vector2i get_window_size(WindowHandle window_handle) const = 0;
-		virtual void set_window_size(WindowHandle window_handle, const Vadon::Utilities::Vector2i size) = 0;
+		virtual Vadon::Math::Vector2i get_window_size(WindowHandle window_handle) const = 0;
+		virtual void set_window_size(WindowHandle window_handle, const Vadon::Math::Vector2i size) = 0;
 
 		virtual WindowFlags get_window_flags(WindowHandle window_handle) const = 0;
 
@@ -51,7 +51,7 @@ namespace VadonApp::Platform
 
 		virtual PlatformWindowHandle get_platform_window_handle(WindowHandle window_handle) const = 0;
 
-		virtual Vadon::Utilities::Vector2i get_window_drawable_size(WindowHandle window_handle) const = 0;
+		virtual Vadon::Math::Vector2i get_window_drawable_size(WindowHandle window_handle) const = 0;
 
 		virtual bool is_window_focused(WindowHandle window_handle) const = 0;
 
@@ -67,7 +67,7 @@ namespace VadonApp::Platform
 		virtual void set_cursor(Cursor cursor) = 0;
 
 		virtual void capture_mouse(bool capture) = 0;
-		virtual void warp_mouse(WindowHandle window_handle, const Vadon::Utilities::Vector2i& mouse_position) = 0;
+		virtual void warp_mouse(WindowHandle window_handle, const Vadon::Math::Vector2i& mouse_position) = 0;
 		virtual MouseState get_mouse_state() const = 0;
 		virtual MouseState get_global_mouse_state() const = 0;
 

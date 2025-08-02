@@ -17,12 +17,12 @@
                         },
                         "type": "VadonDemo::Render::CanvasComponent"
                     },
-                    {
-                        "properties": {
-                            "definition": ""
-                        },
-                        "type": "VadonDemo::Model::Weapon"
+                  {
+                    "properties": {
+                      "definition": ""
                     },
+                    "type": "VadonDemo::Model::WeaponComponent"
+                  },
                     {
                         "properties": {
                             "position": [

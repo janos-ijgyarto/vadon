@@ -1,9 +1,9 @@
-#ifndef VADON_UTILITIES_MATH_COLOR_HPP
-#define VADON_UTILITIES_MATH_COLOR_HPP
+#ifndef VADON_MATH_COLOR_HPP
+#define VADON_MATH_COLOR_HPP
 #include <glm/vec4.hpp>
 #include <glm/packing.hpp>
 
-namespace Vadon::Utilities
+namespace Vadon::Math
 {
 	using ColorVector = glm::vec4;
 

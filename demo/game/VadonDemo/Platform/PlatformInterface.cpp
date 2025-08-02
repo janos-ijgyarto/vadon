@@ -40,8 +40,8 @@ namespace VadonDemo::Platform
 		// FIXME: have client provide platform config
 		VadonApp::Platform::WindowInfo main_window_info;
 		main_window_info.title = "Vadon Demo"; // TODO: version numbering?
-		main_window_info.position = Vadon::Utilities::Vector2i(-1, -1);
-		main_window_info.size = Vadon::Utilities::Vector2i(c_screen_width, c_screen_height);
+		main_window_info.position = Vadon::Math::Vector2i(-1, -1);
+		main_window_info.size = Vadon::Math::Vector2i(c_screen_width, c_screen_height);
 
 		main_window_info.flags = VadonApp::Platform::WindowFlags::SHOWN | VadonApp::Platform::WindowFlags::RESIZABLE;
 

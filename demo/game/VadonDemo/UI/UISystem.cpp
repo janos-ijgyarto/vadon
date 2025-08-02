@@ -335,7 +335,7 @@ namespace VadonDemo::UI
 
 		const VadonApp::Platform::MouseState mouse_state = platform_interface.get_mouse_state();
 
-		const Vadon::Utilities::Vector2i mouse_position = m_game_core.get_render_system().map_to_game_viewport(mouse_state.position);
+		const Vadon::Math::Vector2i mouse_position = m_game_core.get_render_system().map_to_game_viewport(mouse_state.position);
 		const Core::GlobalConfiguration& global_config = m_game_core.get_core().get_global_config();
 
 		CursorState cursor_state;

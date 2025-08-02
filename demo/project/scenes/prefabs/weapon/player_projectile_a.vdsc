@@ -46,7 +46,7 @@
                             "damage": 10.0,
                             "range": 300.0
                         },
-                        "type": "VadonDemo::Model::Projectile"
+                        "type": "VadonDemo::Model::ProjectileComponent"
                     }
                 ],
                 "name": "Projectile_A",

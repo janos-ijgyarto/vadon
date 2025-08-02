@@ -69,7 +69,7 @@ namespace Vadon::ECS
 		template<typename T>
 		void remove_component(EntityHandle entity)
 		{
-			const TypedComponentPool<T>* typed_pool = find_component_pool<T>();
+			TypedComponentPool<T>* typed_pool = find_component_pool<T>();
 			if (typed_pool != nullptr)
 			{
 				typed_pool->remove_component(entity);
@@ -80,6 +80,27 @@ namespace Vadon::ECS
 		static ComponentID get_component_type_id()
 		{
 			return ComponentPoolInterface::get_component_type_id<T>();
+		}
+
+		template<typename T>
+		void set_entity_tag(EntityHandle entity, bool enabled)
+		{
+			static_assert(std::is_empty_v<T>, "Tag must be empty type!");
+			if (enabled == true)
+			{
+				add_component<T>(entity);
+			}
+			else
+			{
+				remove_component<T>(entity);
+			}
+		}
+
+		template<typename T>
+		bool entity_has_tag(EntityHandle entity)
+		{
+			static_assert(std::is_empty_v<T>, "Tag must be empty type!");
+			return has_component<T>(entity);
 		}
 	private:
 		ComponentManager();
@@ -111,7 +132,7 @@ namespace Vadon::ECS
 		VADONCOMMON_API void internal_get_component_tuple(EntityHandle entity, ComponentIDSpan component_ids, ComponentSpan components);
 
 		void clear();
-
+		
 		std::unordered_map<ComponentID, ComponentPoolInterface*> m_component_pools;
 
 		friend class World;

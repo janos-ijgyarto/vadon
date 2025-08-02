@@ -35,7 +35,7 @@ namespace VadonApp::UI::Developer
         m_selected_file.double_clicked = false;
     }
 
-    void FileBrowserWidget::draw(GUISystem& dev_gui, const Vadon::Utilities::Vector2& size)
+    void FileBrowserWidget::draw(GUISystem& dev_gui, const Vadon::Math::Vector2& size)
 	{
         if (dev_gui.draw_button(m_up_button) == true)
         {
@@ -205,7 +205,7 @@ namespace VadonApp::UI::Developer
     {
         Result result = Result::NONE;
 
-        Vadon::Utilities::Vector2 file_browser_area = dev_gui.get_available_content_region();
+        Vadon::Math::Vector2 file_browser_area = dev_gui.get_available_content_region();
         const GUIStyle gui_style = dev_gui.get_style();
         file_browser_area.y -= dev_gui.calculate_text_size(m_accept_button.label).y + gui_style.frame_padding.y * 2 + 5.0f;
         if (Vadon::Utilities::to_bool(m_flags & Flags::NAME_INPUT) == true)

@@ -68,4 +68,37 @@ namespace Vadon::ECS
 		m_entity_lookup.clear();
 		m_component_offsets.clear();
 	}
+
+	bool TagPoolBase::add_entity(EntityHandle entity)
+	{
+		return m_entity_lookup.insert(entity.handle.to_uint()).second;
+	}
+
+	bool TagPoolBase::has_entity(EntityHandle entity) const
+	{
+		return m_entity_lookup.find(entity.handle.to_uint()) != m_entity_lookup.end();
+	}
+
+	void TagPoolBase::remove_entity(EntityHandle entity)
+	{
+		m_entity_lookup.erase(entity.handle.to_uint());
+	}
+
+	void TagPoolBase::tag_pool_clear()
+	{
+		m_entity_lookup.clear();
+	}
+
+	EntityList TagPoolBase::get_tagged_entity_list() const
+	{
+		EntityList entity_list;
+		entity_list.reserve(m_entity_lookup.size());
+
+		for (uint64_t current_entity : m_entity_lookup)
+		{
+			entity_list.push_back(EntityHandle{ .handle = Vadon::Utilities::ObjectPoolHandle().from_uint(current_entity) });
+		}
+
+		return entity_list;
+	}
 }

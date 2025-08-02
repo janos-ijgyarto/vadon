@@ -1,12 +1,12 @@
-#ifndef VADON_UTILITIES_MATH_VECTOR_HPP
-#define VADON_UTILITIES_MATH_VECTOR_HPP
+#ifndef VADON_MATH_VECTOR_HPP
+#define VADON_MATH_VECTOR_HPP
 // TODO: separate types and functions, create forward declaration header
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 #include <glm/vector_relational.hpp>
 #include <glm/geometric.hpp>
-namespace Vadon::Utilities
+namespace Vadon::Math
 {
 	using Vector2 = glm::vec2;
 	using Vector3 = glm::vec3;
@@ -29,7 +29,10 @@ namespace Vadon::Utilities
 
 	constexpr Vector4 Vector4_Zero = Vector4{ 0, 0, 0, 0 };
 	constexpr Vector4 Vector4_One = Vector4{ 1, 1, 1, 1 };
+}
 
+namespace Vadon::Math::Vector
+{
 	// TODO: organize these?
 	using glm::any;
 	using glm::all;

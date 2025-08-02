@@ -44,8 +44,8 @@ namespace VadonApp::Private::UI::Developer::ImGUI
 		void begin_disabled(bool disabled) override;
 		void end_disabled() override;
 
-		Vadon::Utilities::Vector2 get_available_content_region() const override;
-		Vadon::Utilities::Vector2 calculate_text_size(std::string_view text, std::string_view text_end = "", bool hide_after_double_hash = false, float wrap_width = -1.0f) const override;
+		Vadon::Math::Vector2 get_available_content_region() const override;
+		Vadon::Math::Vector2 calculate_text_size(std::string_view text, std::string_view text_end = "", bool hide_after_double_hash = false, float wrap_width = -1.0f) const override;
 
 		void push_item_width(float item_width) override;
 		void pop_item_width() override;

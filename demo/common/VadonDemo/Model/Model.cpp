@@ -2,10 +2,10 @@
 
 #include <VadonDemo/Core/Core.hpp>
 #include <VadonDemo/Model/Component.hpp>
-
-#include <Vadon/Core/CoreInterface.hpp>
+#include <VadonDemo/Model/Weapon/Component.hpp>
 
 #include <Vadon/ECS/World/World.hpp>
+#include <Vadon/ECS/Component/Registry.hpp>
 
 #include <Vadon/Scene/Resource/ResourceSystem.hpp>
 #include <Vadon/Scene/SceneSystem.hpp>
@@ -14,21 +14,21 @@
 
 namespace
 {
-	Vadon::Utilities::Vector2 rotate_2d_vector(const Vadon::Utilities::Vector2& vector, float angle)
+	Vadon::Math::Vector2 rotate_2d_vector(const Vadon::Math::Vector2& vector, float angle)
 	{
 		const float sin_angle = std::sinf(angle);
 		const float cos_angle = std::cosf(angle);
 
-		return Vadon::Utilities::Vector2(cos_angle * vector.x - sin_angle * vector.y, sin_angle * vector.x + cos_angle * vector.y);
+		return Vadon::Math::Vector2(cos_angle * vector.x - sin_angle * vector.y, sin_angle * vector.x + cos_angle * vector.y);
 	}
 
-	bool collision_test(const Vadon::Utilities::Vector2& pos_a, float radius_a, const Vadon::Utilities::Vector2& pos_b, float radius_b)
+	bool collision_test(const Vadon::Math::Vector2& pos_a, float radius_a, const Vadon::Math::Vector2& pos_b, float radius_b)
 	{
 		const float hit_radius = radius_a + radius_b;
 		const float hit_radius_sq = hit_radius * hit_radius;
 
-		const Vadon::Utilities::Vector2 a_to_b = pos_b - pos_a;
-		const float dist_sq = Vadon::Utilities::dot(a_to_b, a_to_b);
+		const Vadon::Math::Vector2 a_to_b = pos_b - pos_a;
+		const float dist_sq = Vadon::Math::Vector::dot(a_to_b, a_to_b);
 
 		return dist_sq < hit_radius_sq;
 	}
@@ -38,15 +38,18 @@ namespace VadonDemo::Model
 {
 	void Model::register_types()
 	{
-		WeaponDefinition::register_resource();
+		Vadon::ECS::ComponentRegistry::register_tag_type<LevelRootTag>();
+		Vadon::ECS::ComponentRegistry::register_tag_type<DestroyEntityTag>();
+
+		// FIXME: have to do this first because it gets referenced by player component
+		// Need to create a system where we can set initialization order based on dependencies!
+		WeaponSystem::register_types();
 
 		Transform2D::register_component();
 		Velocity2D::register_component();
 		Collision::register_component();
 		Health::register_component();
 		Player::register_component();
-		Weapon::register_component();
-		Projectile::register_component();
 		Enemy::register_component();
 		Map::register_component();
 		Spawner::register_component();
@@ -73,8 +76,8 @@ namespace VadonDemo::Model
 		update_collisions(ecs_world, delta_time);
 		update_health(ecs_world, delta_time);
 		update_spawners(ecs_world, delta_time);
-		update_weapons(ecs_world, delta_time);
-		update_projectiles(ecs_world, delta_time);
+
+		m_weapon_system.update(ecs_world, delta_time);
 
 		clear_removed_entities(ecs_world);
 	}
@@ -105,22 +108,37 @@ namespace VadonDemo::Model
 
 	void Model::end_simulation(Vadon::ECS::World& ecs_world)
 	{
-		if (m_level_root.is_valid() == false)
+		Vadon::ECS::EntityHandle root_entity = get_root_entity(ecs_world);
+		if (root_entity.is_valid() == false)
 		{
 			return;
 		}
 
-		m_core.entity_removed(ecs_world, m_level_root);
+		m_core.entity_removed(ecs_world, root_entity);
 
 		// TODO: error checking?
-		ecs_world.remove_entity(m_level_root);
-		m_level_root.invalidate();
+		ecs_world.remove_entity(root_entity);
+	}
+
+	Vadon::ECS::EntityHandle Model::get_root_entity(Vadon::ECS::World& ecs_world)
+	{
+		Vadon::ECS::EntityHandle root_entity;
+
+		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
+		auto level_root_query = component_manager.run_component_query<LevelRootTag&>();
+		for (auto root_it = level_root_query.get_iterator(); (root_it.is_valid() == true) && (root_entity.is_valid() == false); root_it.next())
+		{
+			root_entity = root_it.get_entity();
+		}
+
+		return root_entity;
 	}
 
 	Model::Model(Core::Core& core)
 		: m_core(core)
 		, m_random_engine(std::random_device{}())
 		, m_enemy_dist(0.0f, 2 * std::numbers::pi_v<float>)
+		, m_weapon_system(core)
 	{
 	}
 
@@ -152,14 +170,14 @@ namespace VadonDemo::Model
 		{
 			Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
 			Vadon::ECS::EntityHandle player_entity;
-			auto player_query = component_manager.run_component_query<Player&, Weapon&>();
+			auto player_query = component_manager.run_component_query<Player&, WeaponComponent&>();
 			for (auto player_it = player_query.get_iterator(); player_it.is_valid() == true; player_it.next())
 			{
 				player_entity = player_it.get_entity();
 				auto player_tuple = player_it.get_tuple();
 
 				const Player& player_component = std::get<Player&>(player_tuple);
-				Weapon& player_weapon = std::get<Weapon&>(player_tuple);
+				WeaponComponent& player_weapon = std::get<WeaponComponent&>(player_tuple);
 
 				std::uniform_int_distribution<int> m_int_distribution(0, static_cast<int>(player_component.starting_weapons.size()) - 1);
 
@@ -172,7 +190,8 @@ namespace VadonDemo::Model
 
 	bool Model::load_level(Vadon::ECS::World& ecs_world, Vadon::Scene::SceneID level_scene_id)
 	{
-		VADON_ASSERT(m_level_root.is_valid() == false, "Cannot load a level while a game is already in progress!");
+		Vadon::ECS::EntityHandle root_entity = get_root_entity(ecs_world);
+		VADON_ASSERT(root_entity.is_valid() == false, "Cannot load a level while a game is already in progress!");
 
 		Vadon::Scene::SceneSystem& scene_system = m_core.get_engine_core().get_system<Vadon::Scene::SceneSystem>();
 		const Vadon::Scene::SceneHandle level_scene_handle = scene_system.load_scene(level_scene_id);
@@ -182,14 +201,18 @@ namespace VadonDemo::Model
 			return false;
 		}
 
-		m_level_root = scene_system.instantiate_scene(level_scene_handle, ecs_world);
-		if (m_level_root.is_valid() == false)
+		root_entity = scene_system.instantiate_scene(level_scene_handle, ecs_world);
+		if (root_entity.is_valid() == false)
 		{
 			// Something went wrong
 			return false;
 		}
 
-		m_core.entity_added(ecs_world, m_level_root);
+		// Tag the root
+		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
+		component_manager.set_entity_tag<LevelRootTag>(root_entity, true);
+
+		m_core.entity_added(ecs_world, root_entity);
 		return true;
 	}
 
@@ -212,7 +235,7 @@ namespace VadonDemo::Model
 				}
 
 				player_entity = player_it.get_entity();
-				auto player_components = component_manager.get_component_tuple<Transform2D, Velocity2D, Health, Weapon>(player_entity);
+				auto player_components = component_manager.get_component_tuple<Transform2D, Velocity2D, Health, WeaponComponent>(player_entity);
 				if (std::get<Transform2D*>(player_components) == nullptr)
 				{
 					// TODO: error!
@@ -233,7 +256,7 @@ namespace VadonDemo::Model
 
 				player_health->current_health = player_health->max_health;
 
-				Weapon* player_weapon = std::get<Weapon*>(player_components);
+				WeaponComponent* player_weapon = std::get<WeaponComponent*>(player_components);
 				if (player_weapon == nullptr)
 				{
 					// TODO: error!
@@ -241,7 +264,7 @@ namespace VadonDemo::Model
 				}
 
 				auto player_tuple = player_it.get_tuple();
-				if (validate_weapon(std::get<Player&>(player_tuple), *player_weapon) == false)
+				if (m_weapon_system.validate_weapon(std::get<Player&>(player_tuple), *player_weapon) == false)
 				{
 					// TODO: error!
 					return false;
@@ -311,24 +334,6 @@ namespace VadonDemo::Model
 		return true;
 	}
 
-	bool Model::validate_weapon(const Player& player, const Weapon& weapon_component)
-	{
-		if (player.starting_weapons.empty() == true)
-		{
-			// TODO: error!
-			return false;
-		}
-
-		// TODO: validate starting weapon defs in player!
-		if (weapon_component.definition.is_valid() == true)
-		{
-			// TODO: error!
-			return false;
-		}
-
-		return true;
-	}
-
 	bool Model::validate_spawner(const Spawner& spawner)
 	{
 		if (spawner.enemy_prefab.is_valid() == false)
@@ -340,73 +345,65 @@ namespace VadonDemo::Model
 		return true;
 	}
 
-	void Model::deferred_remove_entity(Vadon::ECS::EntityHandle entity_handle)
-	{
-		// FIXME: should we also mark the entity as "removed" so it doesn't get used?
-		// TODO: sort and use lower_bound?
-		if (std::find(m_entity_remove_list.begin(), m_entity_remove_list.end(), entity_handle) != m_entity_remove_list.end())
-		{
-			// Already added
-			return;
-		}
-
-		m_entity_remove_list.push_back(entity_handle);
-	}
-
 	void Model::clear_removed_entities(Vadon::ECS::World& ecs_world)
 	{
-		if (m_entity_remove_list.empty() == true)
+		// FIXME: could move this to Core so other systems can also do deferred removals?
+		std::vector<Vadon::ECS::EntityHandle> entity_remove_list;
+
+		// First gather all tagged entities
+		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
+
+		auto destroy_entity_query = component_manager.run_component_query<DestroyEntityTag&>();
+		for (auto entity_it = destroy_entity_query.get_iterator(); entity_it.is_valid() == true; entity_it.next())
 		{
-			// Nothing to do
-			return;
+			entity_remove_list.push_back(entity_it.get_entity());
 		}
 
-		// First remove entities that already have an ancestor in the list
 		Vadon::ECS::EntityManager& entity_manager = ecs_world.get_entity_manager();
+		for (size_t index = 0; index < entity_remove_list.size();)
 		{
-			size_t current_index = 0;
-			while (current_index < m_entity_remove_list.size())
+			// Check all ancestors to see if any are also in the remove list
+			bool has_ancestor = false;
+			Vadon::ECS::EntityHandle parent_entity = entity_manager.get_entity_parent(entity_remove_list[index]);
+			while (parent_entity.is_valid() == true)
 			{
-				bool removed = false;
-				const Vadon::ECS::EntityHandle current_entity = m_entity_remove_list[current_index];
-				Vadon::ECS::EntityHandle parent_entity = entity_manager.get_entity_parent(current_entity);
-				while (parent_entity.is_valid() == true)
+				if (std::find(entity_remove_list.begin(), entity_remove_list.end(), parent_entity) != entity_remove_list.end())
 				{
-					if (std::find(m_entity_remove_list.begin(), m_entity_remove_list.end(), parent_entity) != m_entity_remove_list.end())
-					{
-						// Swap and pop with end
-						removed = true;
-						m_entity_remove_list[current_index] = m_entity_remove_list.back();
-						m_entity_remove_list.pop_back();
-						break;
-					}
-
-					parent_entity = entity_manager.get_entity_parent(parent_entity);
+					has_ancestor = true;
+					break;
 				}
 
-				if (removed == false)
+				parent_entity = entity_manager.get_entity_parent(parent_entity);
+			}
+
+			if (has_ancestor == true)
+			{
+				// Will be removed when ancestor is removed, so we swap-and-pop
+				if (index < (entity_remove_list.size() - 1))
 				{
-					++current_index;
+					entity_remove_list[index] = entity_remove_list.back();
 				}
+				entity_remove_list.pop_back();
+			}
+			else
+			{
+				++index;
 			}
 		}
 
-		// Now remove each entity
-		for (Vadon::ECS::EntityHandle current_entity : m_entity_remove_list)
+		// All remaining entities are unrelated, so we can remove them
+		for (Vadon::ECS::EntityHandle current_entity : entity_remove_list)
 		{
 			m_core.entity_removed(ecs_world, current_entity);
 			ecs_world.remove_entity(current_entity);
 		}
-
-		// Clear the list
-		m_entity_remove_list.clear();
 	}
 
 	void Model::update_player(Vadon::ECS::World& ecs_world, float delta_time)
 	{
 		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
 
-		auto player_query = component_manager.run_component_query<Player&, Transform2D*, Velocity2D*, Health*, Weapon*>();
+		auto player_query = component_manager.run_component_query<Player&, Velocity2D*>();
 		for (auto player_it = player_query.get_iterator(); player_it.is_valid() == true; player_it.next())
 		{
 			auto player_tuple = player_it.get_tuple();
@@ -418,49 +415,17 @@ namespace VadonDemo::Model
 			}
 
 			Velocity2D* player_velocity = std::get<Velocity2D*>(player_tuple);
-			Vadon::Utilities::Vector2 facing = player_component.last_move_dir;
+			Vadon::Math::Vector2 facing = player_component.last_move_dir;
 			if (player_velocity != nullptr)
 			{
 				// TODO: use acceleration!
 				player_velocity->velocity = player_component.input.move_dir * player_velocity->top_speed;
-				if (player_component.input.move_dir != Vadon::Utilities::Vector2_Zero)
+				if (player_component.input.move_dir != Vadon::Math::Vector2_Zero)
 				{
-					facing = Vadon::Utilities::normalize(player_component.input.move_dir);
+					facing = Vadon::Math::Vector::normalize(player_component.input.move_dir);
 				}
 			}
 			player_component.last_move_dir = facing;
-
-			Transform2D* player_transform = std::get<Transform2D*>(player_tuple);
-			Weapon* player_weapon = std::get<Weapon*>(player_tuple);
-			if ((player_transform != nullptr) && (player_weapon != nullptr))
-			{
-				// Face weapon toward nearest enemy (or in last move direction if no other option is available)
-				player_weapon->aim_direction = facing;
-
-				float min_distance = std::numeric_limits<float>::max();
-				auto enemy_query = component_manager.run_component_query<Enemy&, Transform2D&>();
-				for (auto enemy_it = enemy_query.get_iterator(); enemy_it.is_valid() == true; enemy_it.next())
-				{
-					auto enemy_tuple = enemy_it.get_tuple();
-					const Transform2D& enemy_transform = std::get<Transform2D&>(enemy_tuple);
-
-					const float distance_sq = Vadon::Utilities::distance_squared(player_transform->position, enemy_transform.position);
-					if (distance_sq < min_distance)
-					{
-						player_weapon->aim_direction = enemy_transform.position - player_transform->position;
-						min_distance = distance_sq;
-					}
-				}
-
-				if (Vadon::Utilities::length_squared(player_weapon->aim_direction) < 0.001f)
-				{
-					player_weapon->aim_direction = { 1, 0 };
-				}
-				else
-				{
-					player_weapon->aim_direction = Vadon::Utilities::normalize(player_weapon->aim_direction);
-				}
-			}
 		}
 	}
 
@@ -468,7 +433,7 @@ namespace VadonDemo::Model
 	{
 		// FIXME: instead of having to do a query, we should just cache the player entity handle!
 		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
-		Vadon::Utilities::Vector2 player_position = Vadon::Utilities::Vector2_Zero;
+		Vadon::Math::Vector2 player_position = Vadon::Math::Vector2_Zero;
 
 		{
 			auto player_query = component_manager.run_component_query<Player&, Transform2D&>();
@@ -483,7 +448,7 @@ namespace VadonDemo::Model
 		}
 
 		const Core::GlobalConfiguration& global_config = m_core.get_global_config();
-		const float teleport_radius_sq = Vadon::Utilities::length_squared(global_config.viewport_size * 0.55f);
+		const float teleport_radius_sq = Vadon::Math::Vector::length_squared(global_config.viewport_size * 0.55f);
 
 		auto enemy_query = component_manager.run_component_query<Enemy&, Transform2D&, Velocity2D&>();
 		for (auto enemy_it = enemy_query.get_iterator(); enemy_it.is_valid() == true; enemy_it.next())
@@ -492,20 +457,20 @@ namespace VadonDemo::Model
 			Transform2D& enemy_transform = std::get<Transform2D&>(enemy_tuple);
 			Velocity2D& enemy_velocity = std::get<Velocity2D&>(enemy_tuple);
 
-			const Vadon::Utilities::Vector2 enemy_to_player = player_position - enemy_transform.position;
-			if (Vadon::Utilities::dot(enemy_to_player, enemy_to_player) > 0.01f)
+			const Vadon::Math::Vector2 enemy_to_player = player_position - enemy_transform.position;
+			if (Vadon::Math::Vector::dot(enemy_to_player, enemy_to_player) > 0.01f)
 			{
-				enemy_velocity.velocity = Vadon::Utilities::normalize(enemy_to_player) * enemy_velocity.top_speed;
+				enemy_velocity.velocity = Vadon::Math::Vector::normalize(enemy_to_player) * enemy_velocity.top_speed;
 			}
 			else
 			{
-				enemy_velocity.velocity = Vadon::Utilities::Vector2_Zero;
+				enemy_velocity.velocity = Vadon::Math::Vector2_Zero;
 			}
 
-			const float enemy_dist_sq = Vadon::Utilities::length_squared(enemy_to_player);
+			const float enemy_dist_sq = Vadon::Math::Vector::length_squared(enemy_to_player);
 			if (enemy_dist_sq > teleport_radius_sq)
 			{
-				const Vadon::Utilities::Vector2 new_position = player_position + (enemy_to_player * 0.9f);
+				const Vadon::Math::Vector2 new_position = player_position + (enemy_to_player * 0.9f);
 				enemy_transform.position = new_position;
 				enemy_transform.teleported = true;
 			}
@@ -543,7 +508,7 @@ namespace VadonDemo::Model
 		struct CollisionData
 		{
 			Vadon::ECS::EntityHandle entity;
-			Vadon::Utilities::Vector2 position;
+			Vadon::Math::Vector2 position;
 			float radius = 0.0f;
 			CollisionType type = CollisionType::OTHER;
 			// TODO: some other metadata?
@@ -574,7 +539,7 @@ namespace VadonDemo::Model
 			{
 				collision_data.type = CollisionType::ENEMY;
 			}
-			else if (component_manager.has_component<Projectile>(collision_it.get_entity()) == true)
+			else if (component_manager.has_component<ProjectileComponent>(collision_it.get_entity()) == true)
 			{
 				collision_data.type = CollisionType::PROJECTILE;
 			}
@@ -651,7 +616,7 @@ namespace VadonDemo::Model
 						continue;
 					}
 
-					Projectile* projectile = component_manager.get_component<Projectile>(other_collision.entity);
+					ProjectileComponent* projectile = component_manager.get_component<ProjectileComponent>(other_collision.entity);
 					if (projectile->remaining_lifetime <= 0.0f)
 					{
 						// Projectile has already expired
@@ -693,7 +658,7 @@ namespace VadonDemo::Model
 			{
 				// TODO: instead of removing, we should just set a flag and use the ECS as a "pool"
 				// Whenever we spawn an entity again, we can just "resurrect" one that was already spawned
-				deferred_remove_entity(health_it.get_entity());
+				component_manager.add_component<DestroyEntityTag>(health_it.get_entity());
 			}
 		}
 	}
@@ -704,7 +669,7 @@ namespace VadonDemo::Model
 		Vadon::Scene::SceneSystem& scene_system = m_core.get_engine_core().get_system<Vadon::Scene::SceneSystem>();
 
 		// FIXME: instead of having to do a query, we should just cache the player entity handle!
-		Vadon::Utilities::Vector2 player_position = Vadon::Utilities::Vector2_Zero;
+		Vadon::Math::Vector2 player_position = Vadon::Math::Vector2_Zero;
 
 		{
 			auto player_query = component_manager.run_component_query<Player&, Transform2D&>();
@@ -720,13 +685,13 @@ namespace VadonDemo::Model
 
 		struct CreateEnemyData
 		{
-			Vadon::Utilities::Vector2 position;
+			Vadon::Math::Vector2 position;
 			Vadon::Scene::SceneID prefab;
 		};
 		std::vector<CreateEnemyData> deferred_spawned_enemies;
 
 		const Core::GlobalConfiguration& global_config = m_core.get_global_config();
-		const float spawn_radius = Vadon::Utilities::length(global_config.viewport_size * 0.5f);
+		const float spawn_radius = Vadon::Math::Vector::length(global_config.viewport_size * 0.5f);
 
 		// NOTE: currently all spawners just keep spawning once the delay counts down
 		// Need to implement limits on enemy numbers and a priority system
@@ -755,7 +720,7 @@ namespace VadonDemo::Model
 						const float rand_angle = m_enemy_dist(m_random_engine);
 
 						// Spawn relative to player
-						new_enemy_data.position = player_position + Vadon::Utilities::Vector2(std::cosf(rand_angle), std::sinf(rand_angle)) * spawn_radius;
+						new_enemy_data.position = player_position + Vadon::Math::Vector2(std::cosf(rand_angle), std::sinf(rand_angle)) * spawn_radius;
 
 						new_enemy_data.prefab = current_spawner.enemy_prefab;
 					}
@@ -780,7 +745,8 @@ namespace VadonDemo::Model
 
 			// FIXME: make a parent entity for enemies?
 			// Could be the enemy subsystem
-			ecs_world.get_entity_manager().add_child_entity(m_level_root, spawned_enemy);
+			Vadon::ECS::EntityHandle root_entity = get_root_entity(ecs_world);
+			ecs_world.get_entity_manager().add_child_entity(root_entity, spawned_enemy);
 
 			Transform2D* transform_component = component_manager.get_component<Transform2D>(spawned_enemy);
 
@@ -802,109 +768,4 @@ namespace VadonDemo::Model
 		}
 	}
 
-	void Model::update_weapons(Vadon::ECS::World& ecs_world, float delta_time)
-	{
-		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
-		Vadon::Core::EngineCoreInterface& engine_core = m_core.get_engine_core();
-		Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
-		Vadon::Scene::SceneSystem& scene_system = engine_core.get_system<Vadon::Scene::SceneSystem>();
-
-		// Have to defer creating the projectiles, because we can't add to the ECS while iterating in it
-		// FIXME: implement deferred operations in ECS?
-		struct CreateProjectileData
-		{
-			Vadon::Utilities::Vector2 position;
-			Vadon::Utilities::Vector2 aim_direction;
-			Vadon::Scene::SceneID prefab;
-		};
-		std::vector<CreateProjectileData> deferred_projectiles;
-
-		auto weapon_query = component_manager.run_component_query<Weapon&, Transform2D*>();
-		for (auto weapon_it = weapon_query.get_iterator(); weapon_it.is_valid() == true; weapon_it.next())
-		{
-			auto weapon_tuple = weapon_it.get_tuple();
-			Weapon& current_weapon = std::get<Weapon&>(weapon_tuple);
-			if (current_weapon.firing_timer > 0.0f)
-			{
-				current_weapon.firing_timer -= delta_time;
-			}
-
-			if (current_weapon.firing_timer <= 0.0f)
-			{
-				CreateProjectileData& new_projectile_data = deferred_projectiles.emplace_back();
-
-				const Transform2D* weapon_transform = std::get<Transform2D*>(weapon_tuple);
-				if (weapon_transform != nullptr)
-				{
-					new_projectile_data.position = weapon_transform->position;
-				}
-				else
-				{
-					new_projectile_data.position = Vadon::Utilities::Vector2_Zero;
-				}
-
-				new_projectile_data.aim_direction = current_weapon.aim_direction;
-
-				const WeaponDefHandle weapon_def_handle = resource_system.load_resource(current_weapon.definition);
-				const WeaponDefinition* weapon_def = resource_system.get_resource(weapon_def_handle);
-
-				new_projectile_data.prefab = weapon_def->projectile_prefab;
-
-				// Reset firing timer
-				current_weapon.firing_timer += 60.0f / std::max(weapon_def->rate_of_fire, 0.001f);
-			}
-		}
-
-		for (const CreateProjectileData& current_projectile_data : deferred_projectiles)
-		{
-			// Spawn projectile
-			// FIXME: at the moment we make an entity for every projectile
-			// Could use a special "pool" Entity that contains projectile instances
-			const Vadon::Scene::SceneHandle spawned_projectile_scene = scene_system.load_scene(current_projectile_data.prefab);
-			const Vadon::ECS::EntityHandle spawned_projectile = scene_system.instantiate_scene(spawned_projectile_scene, ecs_world);
-
-			// FIXME: make a parent entity for projectiles?
-			// Could be the projectile subsystem
-			ecs_world.get_entity_manager().add_child_entity(m_level_root, spawned_projectile);
-
-			auto projectile_tuple = component_manager.get_component_tuple<Transform2D, Velocity2D, Projectile>(spawned_projectile);
-
-			// Set the initial position
-			Transform2D* projectile_transform = std::get<Transform2D*>(projectile_tuple);
-			if (projectile_transform != nullptr)
-			{
-				projectile_transform->position = current_projectile_data.position;
-			}
-
-			// Set velocity and lifetime
-			Velocity2D* projectile_velocity = std::get<Velocity2D*>(projectile_tuple);
-			Projectile* projectile_component = std::get<Projectile*>(projectile_tuple);
-
-			projectile_component->remaining_lifetime = projectile_component->range / projectile_velocity->top_speed;
-			projectile_velocity->velocity = current_projectile_data.aim_direction * projectile_velocity->top_speed;
-
-			m_core.entity_added(ecs_world, spawned_projectile);
-		}
-	}
-
-	void Model::update_projectiles(Vadon::ECS::World& ecs_world, float delta_time)
-	{
-		// Check if any projectiles timed out
-		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
-
-		auto projectile_query = component_manager.run_component_query<Projectile&>();
-		for (auto projectile_it = projectile_query.get_iterator(); projectile_it.is_valid() == true; projectile_it.next())
-		{
-			auto projectile_tuple = projectile_it.get_tuple();
-			Projectile& current_projectile = std::get<Projectile&>(projectile_tuple);
-			current_projectile.remaining_lifetime -= delta_time;
-
-			if (current_projectile.remaining_lifetime <= 0.0f)
-			{
-				// TODO: instead of removing, we should just set a flag and use the ECS as a "pool"
-				// Whenever we spawn a projectile again, we can just "resurrect" a projectile that was already used
-				deferred_remove_entity(projectile_it.get_entity());
-			}
-		}
-	}
 }

@@ -1,8 +1,8 @@
 #ifndef VADONDEMO_VIEW_RESOURCE_HPP
 #define VADONDEMO_VIEW_RESOURCE_HPP
 #include <VadonDemo/Render/Resource.hpp>
+#include <Vadon/Math/Color.hpp>
 #include <Vadon/Utilities/Enum/EnumClass.hpp>
-#include <Vadon/Utilities/Math/Color.hpp>
 #include <Vadon/Render/Canvas/Batch.hpp>
 namespace VadonDemo::View
 {
@@ -27,7 +27,7 @@ namespace VadonDemo::View
 	struct Shape : public ViewResource
 	{
 		int type = Vadon::Utilities::to_integral(ShapeType::TRIANGLE); // FIXME: placeholder solution, need better way to data-drive drawable objects!
-		Vadon::Utilities::ColorRGBA color = Vadon::Utilities::Color_White;
+		Vadon::Math::ColorRGBA color = Vadon::Math::Color_White;
 
 		static void register_resource();
 	};

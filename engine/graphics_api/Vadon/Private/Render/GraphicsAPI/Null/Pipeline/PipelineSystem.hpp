@@ -24,7 +24,7 @@ namespace Vadon::Private::Render::Null
 		void remove_depth_stencil_state(Vadon::Render::DepthStencilStateHandle depth_stencil_handle) override;
 
 		void set_primitive_topology(Vadon::Render::PrimitiveTopology topology) override;
-		void set_scissor(const Vadon::Utilities::RectangleInt& scissor_rectangle) override;
+		void set_scissor(const Vadon::Math::RectangleInt& scissor_rectangle) override;
 	private:
 		PipelineSystem(Core::EngineCoreInterface& core, GraphicsAPI& graphics_api);
 

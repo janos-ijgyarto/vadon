@@ -309,9 +309,9 @@ namespace VadonDemo::View
 		sprite->batch_range.count = 2;
 
 		Vadon::Render::Canvas::Sprite canvas_sprite;
-		canvas_sprite.dimensions.size = Vadon::Utilities::Vector2_One;
-		canvas_sprite.uv_dimensions.size = Vadon::Utilities::Vector2_One;
-		canvas_sprite.color = Vadon::Utilities::Color_White;
+		canvas_sprite.dimensions.size = Vadon::Math::Vector2_One;
+		canvas_sprite.uv_dimensions.size = Vadon::Math::Vector2_One;
+		canvas_sprite.color = Vadon::Math::Color_White;
 
 		canvas_system.set_batch_texture(sprite->batch, Vadon::Render::Canvas::Texture{ .srv = sprite_texture->texture_srv });
 		canvas_system.draw_batch_sprite(sprite->batch, canvas_sprite);

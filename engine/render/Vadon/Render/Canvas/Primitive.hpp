@@ -17,7 +17,7 @@ namespace Vadon::Render::Canvas
 	{
 		Vector2 position = { 0,0 };
 		Vector2 uv = { 0, 0 };
-		ColorRGBA color = Vadon::Utilities::Color_White;
+		ColorRGBA color = Vadon::Math::Color_White;
 	};
 
 	struct Triangle
@@ -30,7 +30,7 @@ namespace Vadon::Render::Canvas
 	struct Rectangle
 	{
 		Render::Rectangle dimensions = { .position = Vector2_Zero, .size = Vector2_One };
-		ColorRGBA color = Vadon::Utilities::Color_White;
+		ColorRGBA color = Vadon::Math::Color_White;
 		bool filled = true; // TODO: replace with flags?
 		float thickness = 1.0f;
 	};
@@ -49,7 +49,7 @@ namespace Vadon::Render::Canvas
 	{
 		Render::Rectangle dimensions = { .position = Vector2_Zero, .size = Vector2_One };
 		Render::Rectangle uv_dimensions = { .position = Vector2_Zero, .size = Vector2_One };
-		Vadon::Render::ColorRGBA color = Vadon::Utilities::Color_White;
+		Vadon::Render::ColorRGBA color = Vadon::Math::Color_White;
 	};
 
 	using SpriteList = std::vector<Sprite>;

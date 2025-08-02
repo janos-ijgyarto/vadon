@@ -24,11 +24,11 @@ namespace VadonApp::Private::Platform::SDL
 		std::string get_window_title(WindowHandle window_handle) const override;
 		void set_window_title(WindowHandle window_handle, std::string_view title) override;
 
-		Vadon::Utilities::Vector2i get_window_position(WindowHandle window_handle) const override;
-		void set_window_position(WindowHandle window_handle, const Vadon::Utilities::Vector2i position) override;
+		Vadon::Math::Vector2i get_window_position(WindowHandle window_handle) const override;
+		void set_window_position(WindowHandle window_handle, const Vadon::Math::Vector2i position) override;
 
-		Vadon::Utilities::Vector2i get_window_size(WindowHandle window_handle) const override;
-		void set_window_size(WindowHandle window_handle, const Vadon::Utilities::Vector2i size) override;
+		Vadon::Math::Vector2i get_window_size(WindowHandle window_handle) const override;
+		void set_window_size(WindowHandle window_handle, const Vadon::Math::Vector2i size) override;
 
 		WindowFlags get_window_flags(WindowHandle window_handle) const override;
 
@@ -36,7 +36,7 @@ namespace VadonApp::Private::Platform::SDL
 
 		PlatformWindowHandle get_platform_window_handle(WindowHandle window_handle) const override;
 
-		Vadon::Utilities::Vector2i get_window_drawable_size(WindowHandle window_handle) const;
+		Vadon::Math::Vector2i get_window_drawable_size(WindowHandle window_handle) const;
 
 		bool is_window_focused(WindowHandle window_handle) const override;
 
@@ -51,7 +51,7 @@ namespace VadonApp::Private::Platform::SDL
 		void set_cursor(VadonApp::Platform::Cursor cursor) override;
 
 		void capture_mouse(bool capture) override;
-		void warp_mouse(WindowHandle window_handle, const Vadon::Utilities::Vector2i& mouse_position) override;
+		void warp_mouse(WindowHandle window_handle, const Vadon::Math::Vector2i& mouse_position) override;
 		MouseState get_mouse_state() const override;
 		MouseState get_global_mouse_state() const override;
 

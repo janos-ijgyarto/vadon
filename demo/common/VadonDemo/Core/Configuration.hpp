@@ -12,7 +12,7 @@ namespace VadonDemo::Core
 	{
 		Vadon::Scene::SceneID main_menu_scene;
 		Vadon::Scene::SceneID default_start_level;
-		Vadon::Utilities::Vector2 viewport_size = { 1024, 768 };
+		Vadon::Math::Vector2 viewport_size = { 1024, 768 };
 
 		VADONDEMO_API static void register_type();
 		VADONDEMO_API static Vadon::Utilities::PropertyList get_default_properties();

@@ -498,6 +498,13 @@ namespace Vadon::Private::Scene
 		Vadon::Utilities::Variant current_property_value;
 		for (const Vadon::Utilities::PropertyInfo& current_property_info : resource_properties)
 		{
+			// If key is not present, just use default value
+			if (serializer.has_key(current_property_info.name) == false)
+			{
+				log_warning(std::format("Resource system: cannot find property \"{}\" in resource \"{}\"!", current_property_info.name, info.id.to_base64_string()));
+				continue;
+			}
+
 			switch (current_property_info.data_type.type)
 			{
 			case ErasedDataType::TRIVIAL:

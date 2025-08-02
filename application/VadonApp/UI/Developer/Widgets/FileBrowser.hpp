@@ -37,7 +37,7 @@ namespace VadonApp::UI::Developer
 		void reset_selection();
 
 		// TODO: some way to extract a "clicked" event besides double click
-		VADONAPP_API void draw(GUISystem& dev_gui, const Vadon::Utilities::Vector2& size = { -1, -1 });
+		VADONAPP_API void draw(GUISystem& dev_gui, const Vadon::Math::Vector2& size = { -1, -1 });
 		void refresh_current_directory_view();
 	private:
 		void navigate_up();

@@ -29,7 +29,7 @@ namespace VadonDemo::Render
 
 		Vadon::Render::Canvas::RenderContext& get_canvas_context();
 
-		Vadon::Utilities::Vector2i map_to_game_viewport(const Vadon::Utilities::Vector2i& position) const;
+		Vadon::Math::Vector2i map_to_game_viewport(const Vadon::Math::Vector2i& position) const;
 
 		void load_texture_resource(TextureResourceID texture_id);
 		void load_shader_resource(ShaderResourceID shader_id);
@@ -40,7 +40,7 @@ namespace VadonDemo::Render
 		bool init_frame_graph();
 
 		bool init_viewport();
-		void update_viewport(const Vadon::Utilities::Vector2i& window_size);
+		void update_viewport(const Vadon::Math::Vector2i& window_size);
 
 		void init_entity(Vadon::ECS::EntityHandle entity);
 

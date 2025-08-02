@@ -79,6 +79,12 @@ namespace Vadon::Utilities
 					write_object_metadata(m_object_stack.front());
 					write_string_table();
 				}
+				else
+				{
+					// TODO: anything?
+				}
+
+				m_finalized = true;
 				return true;
 			}
 
@@ -348,7 +354,7 @@ namespace Vadon::Utilities
 				return result;
 			}
 			
-			Result serialize_color(ColorRGBA& color_value) override { return serialize_direct(color_value.value); }
+			Result serialize_color(Vadon::Math::ColorRGBA& color_value) override { return serialize_direct(color_value.value); }
 
 			// TODO: find a way to generalize where we just provide a data pointer and a size?
 			Result serialize_uuid(Vadon::Utilities::UUID& value) override
@@ -775,6 +781,7 @@ namespace Vadon::Utilities
 					memcpy(m_buffer.data(), json_dump.data(), json_dump.size());
 				}
 
+				m_finalized = true;
 				return true;
 			}
 			
@@ -917,7 +924,7 @@ namespace Vadon::Utilities
 			Result serialize_bool(bool& value) override { return serialize_trivial(value); }
 			Result serialize_string(std::string& value) override { return serialize_trivial(value); }
 
-			Result serialize_color(ColorRGBA& color) override
+			Result serialize_color(Vadon::Math::ColorRGBA& color) override
 			{
 				if (is_reading() == true)
 				{

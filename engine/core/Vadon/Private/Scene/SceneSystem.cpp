@@ -325,10 +325,25 @@ namespace Vadon::Private::Scene
 			const size_t component_count = serializer.is_reading() ? serializer.get_array_size() : entity_data.components.size();
 			for (size_t current_component_index = 0; current_component_index < component_count; ++current_component_index)
 			{
-				SceneData::ComponentData& current_component_data = serializer.is_reading() ? entity_data.components.emplace_back() : entity_data.components[current_component_index];
-				if (serialize_component(serializer, current_component_index, current_component_data) == false)
+				if (serializer.is_reading() == true)
 				{
-					return false;
+					SceneData::ComponentData current_component_data;
+					if (serialize_component(serializer, current_component_index, current_component_data) == true)
+					{
+						entity_data.components.push_back(current_component_data);
+					}
+					else
+					{
+						// TODO: have a "pedantic" mode where we early out if there are any errors?
+					}
+				}
+				else
+				{
+					SceneData::ComponentData& current_component_data = entity_data.components[current_component_index];
+					if (serialize_component(serializer, current_component_index, current_component_data) == false)
+					{
+						// TODO: have a "pedantic" mode where we early out if there are any errors?
+					}
 				}
 			}
 

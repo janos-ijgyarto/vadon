@@ -41,13 +41,13 @@
                         },
                         "type": "VadonDemo::Model::Collision"
                     },
-                    {
-                        "properties": {
-                            "damage": 5.0,
-                            "range": 150.0
-                        },
-                        "type": "VadonDemo::Model::Projectile"
-                    }
+                  {
+                    "properties": {
+                      "damage": 5.0,
+                      "range": 150.0
+                    },
+                    "type": "VadonDemo::Model::ProjectileComponent"
+                  }
                 ],
                 "name": "Projectile_B",
                 "parent": -1

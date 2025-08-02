@@ -321,7 +321,7 @@ namespace VadonDemo::View
             return;
         }
 
-        Vadon::Utilities::Vector2 camera_velocity = Vadon::Utilities::Vector2_Zero;
+        Vadon::Math::Vector2 camera_velocity = Vadon::Math::Vector2_Zero;
         float camera_zoom = 0.0f;
 
         VadonApp::Platform::InputSystem& input_system = engine_app.get_system<VadonApp::Platform::InputSystem>();

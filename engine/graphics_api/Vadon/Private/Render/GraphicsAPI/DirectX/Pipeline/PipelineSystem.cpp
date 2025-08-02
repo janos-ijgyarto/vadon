@@ -364,7 +364,7 @@ namespace Vadon::Private::Render::DirectX
 		m_graphics_api.get_device_context()->IASetPrimitiveTopology(d3d_topology);
 	}
 
-	void PipelineSystem::set_scissor(const Utilities::RectangleInt& scissor_rectangle)
+	void PipelineSystem::set_scissor(const Math::RectangleInt& scissor_rectangle)
 	{
 		const D3D11_RECT d3d_rect = {
 			(LONG)scissor_rectangle.position.x,

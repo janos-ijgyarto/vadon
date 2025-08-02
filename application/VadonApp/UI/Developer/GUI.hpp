@@ -13,7 +13,7 @@ namespace VadonApp::UI::Developer
 	struct GUIStyle
 	{
 		// TODO: any other relevant style params?
-		Vadon::Utilities::Vector2 frame_padding = Vadon::Utilities::Vector2_Zero;
+		Vadon::Math::Vector2 frame_padding = Vadon::Math::Vector2_Zero;
 	};
 
 	// Developer GUI, primarily based on ImGui
@@ -73,8 +73,8 @@ namespace VadonApp::UI::Developer
 		virtual void begin_disabled(bool disabled = true) = 0;
 		virtual void end_disabled() = 0;
 
-		virtual Vadon::Utilities::Vector2 get_available_content_region() const = 0;
-		virtual Vadon::Utilities::Vector2 calculate_text_size(std::string_view text, std::string_view text_end = "", bool hide_after_double_hash = false, float wrap_width = -1.0f) const = 0;
+		virtual Vadon::Math::Vector2 get_available_content_region() const = 0;
+		virtual Vadon::Math::Vector2 calculate_text_size(std::string_view text, std::string_view text_end = "", bool hide_after_double_hash = false, float wrap_width = -1.0f) const = 0;
 
 		virtual void push_item_width(float item_width) = 0;
 		virtual void pop_item_width() = 0;

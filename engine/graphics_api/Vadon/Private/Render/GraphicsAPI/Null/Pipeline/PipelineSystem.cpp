@@ -58,7 +58,7 @@ namespace Vadon::Private::Render::Null
 		// TODO!!!
 	}
 
-	void PipelineSystem::set_scissor(const Vadon::Utilities::RectangleInt& /*scissor_rectangle*/)
+	void PipelineSystem::set_scissor(const Vadon::Math::RectangleInt& /*scissor_rectangle*/)
 	{
 		// TODO!!!
 	}
