@@ -21,7 +21,8 @@ namespace VadonDemo::View
 	{
 		TRIANGLE,
 		RECTANGLE,
-		DIAMOND
+		DIAMOND,
+		CIRCLE
 	};
 
 	struct Shape : public ViewResource

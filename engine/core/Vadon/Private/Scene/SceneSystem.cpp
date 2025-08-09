@@ -515,7 +515,8 @@ namespace Vadon::Private::Scene
 					{
 						// Clean up from root
 						const Vadon::ECS::EntityHandle root_entity = entity_lookup.front();
-						ecs_world.remove_entity(root_entity);
+						ecs_world.get_entity_manager().remove_entity(root_entity);
+						ecs_world.remove_pending_entities();
 					}
 
 					return Vadon::ECS::EntityHandle();
@@ -527,7 +528,8 @@ namespace Vadon::Private::Scene
 					{
 						// Clean up from root
 						const Vadon::ECS::EntityHandle root_entity = entity_lookup.front();
-						ecs_world.remove_entity(root_entity);
+						ecs_world.get_entity_manager().remove_entity(root_entity);
+						ecs_world.remove_pending_entities();
 					}
 
 					return Vadon::ECS::EntityHandle();

@@ -6,6 +6,7 @@ namespace Vadon::Private::Render::Canvas
 {
 	using Triangle = Vadon::Render::Canvas::Triangle;
 	using Rectangle = Vadon::Render::Canvas::Rectangle;
+	using Circle = Vadon::Render::Canvas::Circle;
 	using Texture = Vadon::Render::Canvas::Texture;
 	using Sprite = Vadon::Render::Canvas::Sprite;
 	using SpriteList = Vadon::Render::Canvas::SpriteList;
@@ -15,6 +16,7 @@ namespace Vadon::Private::Render::Canvas
 		TRIANGLE,
 		RECTANGLE_FILL,
 		RECTANGLE_OUTLINE,
+		CIRCLE,
 		SPRITE,
 		INVALID
 	};
@@ -60,6 +62,16 @@ namespace Vadon::Private::Render::Canvas
 	{
 		Vector2 position = { 0, 0 };
 		Vector2 size = { 0, 0 };
+	};
+
+	struct alignas(16) CirclePrimitiveData
+	{
+		uint32_t info = 0;
+		Vector2 position = { 0, 0 };
+		uint32_t color;
+		float radius;
+		Vector3 _padding = Vadon::Render::Vector3_Zero; // TODO: use for extra info?
+		PrimitiveRectangle uv_dimensions;
 	};
 
 	struct alignas(16) RectanglePrimitiveData

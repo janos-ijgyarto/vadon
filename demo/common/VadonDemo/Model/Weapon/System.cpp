@@ -47,14 +47,6 @@ namespace VadonDemo::Model
 	{
 		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
 		Vadon::Core::EngineCoreInterface& engine_core = m_core.get_engine_core();
-		Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
-		Vadon::Scene::SceneSystem& scene_system = engine_core.get_system<Vadon::Scene::SceneSystem>();
-
-		// Have to defer creating the projectiles, because we can't add to the ECS while iterating in it
-		// FIXME: implement deferred operations in ECS?
-		std::vector<CreateProjectileData> deferred_projectiles;
-
-		// TODO: revise below
 
 		auto weapon_query = component_manager.run_component_query<WeaponComponent&>();
 		for (auto weapon_it = weapon_query.get_iterator(); weapon_it.is_valid() == true; weapon_it.next())
@@ -69,112 +61,17 @@ namespace VadonDemo::Model
 
 			if (current_weapon.firing_timer <= 0.0f)
 			{
-				CreateProjectileData& new_projectile_data = deferred_projectiles.emplace_back();
+				// Reset firing timer
+				Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
 
 				const WeaponDefHandle weapon_def_handle = resource_system.load_resource(current_weapon.definition);
 				const WeaponDefinition* weapon_def = resource_system.get_resource(weapon_def_handle);
-
-				new_projectile_data.weapon_entity = weapon_it.get_entity();
-				new_projectile_data.prefab = weapon_def->projectile_prefab;
-
-				// Reset firing timer
 				current_weapon.firing_timer += 60.0f / std::max(weapon_def->rate_of_fire, 0.001f);
+
+				// IMPORTANT: this step will modify component containers
+				// Must refresh the iterator to avoid problems after this point
+				create_projectile(ecs_world, weapon_it.get_entity(), weapon_def);
 			}
-		}
-
-		if (deferred_projectiles.empty() == true)
-		{
-			return;
-		}
-
-		Vadon::ECS::EntityHandle root_entity;
-		{
-			auto level_root_query = component_manager.run_component_query<LevelRootTag&>();
-			for (auto root_it = level_root_query.get_iterator(); (root_it.is_valid() == true) && (root_entity.is_valid() == false); root_it.next())
-			{
-				root_entity = root_it.get_entity();
-			}
-		}
-
-		for (const CreateProjectileData& current_projectile_data : deferred_projectiles)
-		{
-			// Spawn projectile
-			// FIXME: at the moment we make an entity for every projectile
-			// Could use a special "pool" Entity that contains projectile instances
-			const Vadon::Scene::SceneHandle spawned_projectile_scene = scene_system.load_scene(current_projectile_data.prefab);
-			const Vadon::ECS::EntityHandle spawned_projectile = scene_system.instantiate_scene(spawned_projectile_scene, ecs_world);
-
-			// FIXME: make a parent entity for projectiles?
-			// Could be the projectile subsystem
-			ecs_world.get_entity_manager().add_child_entity(root_entity, spawned_projectile);
-
-			// Get the weapon that fired the projectile
-			auto weapon_tuple = component_manager.get_component_tuple<Transform2D, WeaponComponent>(current_projectile_data.weapon_entity);
-
-			auto projectile_tuple = component_manager.get_component_tuple<Transform2D, Velocity2D, ProjectileComponent>(spawned_projectile);
-
-			// Set the initial position
-			Transform2D* weapon_transform = std::get<Transform2D*>(weapon_tuple);
-			Transform2D* projectile_transform = std::get<Transform2D*>(projectile_tuple);
-			
-			VADON_ASSERT((weapon_transform != nullptr) && (projectile_transform != nullptr), "Invalid component setup!");			
-			projectile_transform->position = weapon_transform->position;
-
-			// Set velocity and lifetime
-			Velocity2D* projectile_velocity = std::get<Velocity2D*>(projectile_tuple);
-			ProjectileComponent* projectile_component = std::get<ProjectileComponent*>(projectile_tuple);
-
-			projectile_component->remaining_lifetime = projectile_component->range / projectile_velocity->top_speed;
-
-			Vadon::Math::Vector2 initial_direction = Vadon::Math::Vector2_One;
-			
-			ProjectileHomingComponent* homing_component = component_manager.get_component<ProjectileHomingComponent>(spawned_projectile);
-			if (homing_component != nullptr)
-			{
-				// Find nearest target
-				// TODO: change which targets we look for depending on who is firing the weapon
-				Vadon::ECS::EntityHandle selected_target;
-				float min_distance = std::numeric_limits<float>::max();
-				auto enemy_query = component_manager.run_component_query<Enemy&, Transform2D&>();
-				for (auto enemy_it = enemy_query.get_iterator(); enemy_it.is_valid() == true; enemy_it.next())
-				{
-					auto enemy_tuple = enemy_it.get_tuple();
-					const Transform2D& enemy_transform = std::get<Transform2D&>(enemy_tuple);
-
-					const float distance_sq = Vadon::Math::Vector::distance_squared(weapon_transform->position, enemy_transform.position);
-					if (distance_sq < min_distance)
-					{
-						selected_target = enemy_it.get_entity();
-						min_distance = distance_sq;
-					}
-				}
-
-				homing_component->target_entity = selected_target;
-				if ((homing_component->aimed_on_launch == true) && (selected_target.is_valid() == true))
-				{
-					const Transform2D* target_transform = component_manager.get_component<Transform2D>(homing_component->target_entity);
-					initial_direction = Vadon::Math::Vector::normalize(target_transform->position - projectile_transform->position);
-				}
-				else if(const Player* player_component = component_manager.get_component<Player>(current_projectile_data.weapon_entity))
-				{
-					// Choose the last direction the player moved in
-					initial_direction = player_component->last_move_dir;
-				}
-			}
-			else
-			{
-				if (const Player* player_component = component_manager.get_component<Player>(current_projectile_data.weapon_entity))
-				{
-					// Choose the last direction the player moved in
-					initial_direction = player_component->last_move_dir;
-				}
-			}
-
-			// Set the velocity
-			projectile_velocity->velocity = initial_direction * projectile_velocity->top_speed;
-
-			// Dispatch event
-			m_core.entity_added(ecs_world, spawned_projectile);
 		}
 	}
 
@@ -197,6 +94,91 @@ namespace VadonDemo::Model
 				component_manager.set_entity_tag<DestroyEntityTag>(projectile_it.get_entity(), true);
 			}
 		}
+	}
+
+	void WeaponSystem::create_projectile(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle weapon_entity, const WeaponDefinition* weapon_def)
+	{
+		Vadon::Core::EngineCoreInterface& engine_core = m_core.get_engine_core();
+		Vadon::Scene::SceneSystem& scene_system = engine_core.get_system<Vadon::Scene::SceneSystem>();
+
+		// Spawn projectile
+		// FIXME: at the moment we make an entity for every projectile
+		// Could use a special "pool" Entity that contains projectile instances
+		const Vadon::Scene::SceneHandle spawned_projectile_scene = scene_system.load_scene(weapon_def->projectile_prefab);
+		const Vadon::ECS::EntityHandle spawned_projectile = scene_system.instantiate_scene(spawned_projectile_scene, ecs_world);
+
+		// FIXME: make a parent entity for projectiles?
+		// Could be the projectile subsystem
+		ecs_world.get_entity_manager().add_child_entity(Model::get_root_entity(ecs_world), spawned_projectile);
+
+		// Get the weapon that fired the projectile
+		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
+		auto weapon_tuple = component_manager.get_component_tuple<Transform2D, WeaponComponent>(weapon_entity);
+
+		auto projectile_tuple = component_manager.get_component_tuple<Transform2D, Velocity2D, ProjectileComponent>(spawned_projectile);
+
+		// Set the initial position
+		Transform2D* weapon_transform = std::get<Transform2D*>(weapon_tuple);
+		Transform2D* projectile_transform = std::get<Transform2D*>(projectile_tuple);
+
+		VADON_ASSERT((weapon_transform != nullptr) && (projectile_transform != nullptr), "Invalid component setup!");
+		projectile_transform->position = weapon_transform->position;
+
+		// Set velocity and lifetime
+		Velocity2D* projectile_velocity = std::get<Velocity2D*>(projectile_tuple);
+		ProjectileComponent* projectile_component = std::get<ProjectileComponent*>(projectile_tuple);
+
+		projectile_component->remaining_lifetime = projectile_component->range / projectile_velocity->top_speed;
+
+		Vadon::Math::Vector2 initial_direction = Vadon::Math::Vector2_One;
+
+		ProjectileHomingComponent* homing_component = component_manager.get_component<ProjectileHomingComponent>(spawned_projectile);
+		if (homing_component != nullptr)
+		{
+			// Find nearest target
+			// TODO: change which targets we look for depending on who is firing the weapon
+			Vadon::ECS::EntityHandle selected_target;
+			float min_distance = std::numeric_limits<float>::max();
+			auto enemy_query = component_manager.run_component_query<Enemy&, Transform2D&>();
+			for (auto enemy_it = enemy_query.get_iterator(); enemy_it.is_valid() == true; enemy_it.next())
+			{
+				auto enemy_tuple = enemy_it.get_tuple();
+				const Transform2D& enemy_transform = std::get<Transform2D&>(enemy_tuple);
+
+				const float distance_sq = Vadon::Math::Vector::distance_squared(weapon_transform->position, enemy_transform.position);
+				if (distance_sq < min_distance)
+				{
+					selected_target = enemy_it.get_entity();
+					min_distance = distance_sq;
+				}
+			}
+
+			homing_component->target_entity = selected_target;
+			if ((homing_component->aimed_on_launch == true) && (selected_target.is_valid() == true))
+			{
+				const Transform2D* target_transform = component_manager.get_component<Transform2D>(homing_component->target_entity);
+				initial_direction = Vadon::Math::Vector::normalize(target_transform->position - projectile_transform->position);
+			}
+			else if (const Player* player_component = component_manager.get_component<Player>(weapon_entity))
+			{
+				// Choose the last direction the player moved in
+				initial_direction = player_component->last_move_dir;
+			}
+		}
+		else
+		{
+			if (const Player* player_component = component_manager.get_component<Player>(weapon_entity))
+			{
+				// Choose the last direction the player moved in
+				initial_direction = player_component->last_move_dir;
+			}
+		}
+
+		// Set the velocity
+		projectile_velocity->velocity = initial_direction * projectile_velocity->top_speed;
+
+		// Dispatch event
+		m_core.entity_added(ecs_world, spawned_projectile);
 	}
 
 	bool WeaponSystem::validate_weapon(const Player& player, const WeaponComponent& weapon_component)

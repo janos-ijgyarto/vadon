@@ -28,7 +28,6 @@ namespace VadonDemo::View
 {
     EditorView::EditorView(Core::Editor& editor)
         : m_editor(editor)
-        , m_entities_dirty(false)
     {
 
     }
@@ -128,39 +127,39 @@ namespace VadonDemo::View
 
     void EditorView::update_dirty_entities()
     {
-        if (m_entities_dirty == false)
-        {
-            return;
-        }
-
-        m_entities_dirty = false;
-
         VadonEditor::Core::Editor& common_editor = m_editor.get_common_editor();
         VadonEditor::Model::ModelSystem& editor_model = common_editor.get_system<VadonEditor::Model::ModelSystem>();
 
         Vadon::ECS::World& ecs_world = editor_model.get_ecs_world();
-        auto view_query = ecs_world.get_component_manager().run_component_query<ViewComponent&>();
+        Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
+        auto dirty_entity_query = component_manager.run_component_query<ViewEntityDirtyTag&, ViewComponent&>();
 
         VadonDemo::View::View& common_view = m_editor.get_core().get_view();
 
-        for (auto view_it = view_query.get_iterator(); view_it.is_valid() == true; view_it.next())
-        {
-            auto view_tuple = view_it.get_tuple();
-            ViewComponent& current_view_component = std::get<ViewComponent&>(view_tuple);
+        std::vector<Vadon::ECS::EntityHandle> dirty_entities;
 
-            if (current_view_component.dirty == false)
-            {
-                continue;
-            }
+        for (auto dirty_entity_it = dirty_entity_query.get_iterator(); dirty_entity_it.is_valid() == true; dirty_entity_it.next())
+        {
+            dirty_entities.push_back(dirty_entity_it.get_entity());
+
+            auto dirty_entity_tuple = dirty_entity_it.get_tuple();
+            ViewComponent& current_view_component = std::get<ViewComponent&>(dirty_entity_tuple);
 
             // Make sure the resource is up-to-date
             load_view_resource(current_view_component.resource);
 
             // Attempt to redraw based on resource type
-            common_view.update_entity_draw_data(ecs_world, view_it.get_entity());
+            common_view.update_entity_draw_data(ecs_world, dirty_entity_it.get_entity());
 
-            // Unset the flag
-            current_view_component.dirty = false;
+            // Remove the dirty tag
+            component_manager.set_entity_tag<ViewEntityDirtyTag>(dirty_entity_it.get_entity(), false);
+        }
+
+        // Remove tags
+        // FIXME: have a way to do this during iteration?
+        for (Vadon::ECS::EntityHandle current_dirty_entity : dirty_entities)
+        {
+            component_manager.set_entity_tag<ViewEntityDirtyTag>(current_dirty_entity, false);
         }
     }
 
@@ -177,14 +176,14 @@ namespace VadonDemo::View
         VadonEditor::Model::ModelSystem& editor_model = m_editor.get_common_editor().get_system<VadonEditor::Model::ModelSystem>();
         Vadon::ECS::World& ecs_world = editor_model.get_ecs_world();
 
-        ViewComponent* view_component = ecs_world.get_component_manager().get_component<ViewComponent>(entity);
+        Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
+        ViewComponent* view_component = component_manager.get_component<ViewComponent>(entity);
         if (view_component == nullptr)
         {
             return;
         }
 
-        view_component->dirty = true;
-        m_entities_dirty = true;
+        component_manager.set_entity_tag<ViewEntityDirtyTag>(entity, true);
     }
 
     void EditorView::remove_entity(Vadon::ECS::EntityHandle entity)
@@ -224,7 +223,8 @@ namespace VadonDemo::View
         VadonEditor::Model::ModelSystem& editor_model = common_editor.get_system<VadonEditor::Model::ModelSystem>();
         Vadon::ECS::World& ecs_world = editor_model.get_ecs_world();
 
-        auto view_query = ecs_world.get_component_manager().run_component_query<ViewComponent&, VadonDemo::Render::CanvasComponent&>();
+        Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
+        auto view_query = component_manager.run_component_query<ViewComponent&, VadonDemo::Render::CanvasComponent&>();
 
         for (auto view_it = view_query.get_iterator(); view_it.is_valid() == true; view_it.next())
         {
@@ -236,8 +236,7 @@ namespace VadonDemo::View
                 continue;
             }
 
-            current_view_component.dirty = true;
-            m_entities_dirty = true;
+            component_manager.set_entity_tag<ViewEntityDirtyTag>(view_it.get_entity(), true);
         }
     }
 
@@ -254,7 +253,8 @@ namespace VadonDemo::View
         VadonEditor::Model::ModelSystem& editor_model = common_editor.get_system<VadonEditor::Model::ModelSystem>();
         Vadon::ECS::World& ecs_world = editor_model.get_ecs_world();
 
-        auto view_query = ecs_world.get_component_manager().run_component_query<ViewComponent&, VadonDemo::Render::CanvasComponent&>();
+        Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
+        auto view_query = component_manager.run_component_query<ViewComponent&, VadonDemo::Render::CanvasComponent&>();
 
         for (auto view_it = view_query.get_iterator(); view_it.is_valid() == true; view_it.next())
         {
@@ -282,8 +282,7 @@ namespace VadonDemo::View
             common_view.reset_resource_data(current_view_component.resource);
 
             // Mark the entity as "dirty"
-            current_view_component.dirty = true;
-            m_entities_dirty = true;
+            component_manager.set_entity_tag<ViewEntityDirtyTag>(view_it.get_entity(), true);
         }
     }
 

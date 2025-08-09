@@ -84,10 +84,14 @@ namespace Vadon::Private::Render::Canvas
 			case PrimitiveType::TRIANGLE:
 				return 3;
 			case PrimitiveType::RECTANGLE_FILL:
+			case PrimitiveType::CIRCLE:
 			case PrimitiveType::SPRITE:
 				return 6;
 			case PrimitiveType::RECTANGLE_OUTLINE:
 				return 24;
+			default:
+				VADON_ERROR("Unrecognized primitive type!");
+				break;
 			}
 
 			return 0;
@@ -103,6 +107,7 @@ namespace Vadon::Private::Render::Canvas
 				return c_triangle_indices[index];
 			}
 			case PrimitiveType::RECTANGLE_FILL:
+			case PrimitiveType::CIRCLE:
 			case PrimitiveType::SPRITE:
 			{
 				constexpr std::array<uint32_t, get_primitive_index_count(PrimitiveType::RECTANGLE_FILL)> c_rect_indices{ 0, 1, 2, 1, 3, 2 };
@@ -119,6 +124,9 @@ namespace Vadon::Private::Render::Canvas
 				};
 				return c_rect_indices[index];
 			}
+			default:
+				VADON_ERROR("Unrecognized primitive type!");
+				break;
 			}
 
 			return 0;
@@ -131,6 +139,7 @@ namespace Vadon::Private::Render::Canvas
 
 		using ItemTriangleCommand = ItemDirectDrawCommand<Triangle, BatchCommandType::TRIANGLE>;
 		using ItemRectangleCommand = ItemDirectDrawCommand<Rectangle, BatchCommandType::RECTANGLE>;
+		using ItemCircleCommand = ItemDirectDrawCommand<Circle, BatchCommandType::CIRCLE>;
 		using ItemSpriteCommand = ItemDirectDrawCommand<Sprite, BatchCommandType::SPRITE>;
 	}
 
@@ -327,6 +336,12 @@ namespace Vadon::Private::Render::Canvas
 		item.command_buffer.write_object(Vadon::Utilities::to_integral(ItemCommandType::DRAW_DIRECT), ItemRectangleCommand(rectangle));
 	}
 
+	void CanvasSystem::draw_item_circle(ItemHandle item_handle, const Circle& circle)
+	{
+		ItemData& item = m_item_pool.get(item_handle);
+		item.command_buffer.write_object(Vadon::Utilities::to_integral(ItemCommandType::DRAW_DIRECT), ItemCircleCommand(circle));
+	}
+
 	void CanvasSystem::draw_item_sprite(ItemHandle item_handle, const Sprite& sprite)
 	{
 		ItemData& item = m_item_pool.get(item_handle);
@@ -410,6 +425,12 @@ namespace Vadon::Private::Render::Canvas
 	{
 		BatchData& batch = m_batch_pool.get(batch_handle);
 		batch.command_buffer.write_object(Vadon::Utilities::to_integral(BatchCommandType::RECTANGLE), rectangle);
+	}
+
+	void CanvasSystem::draw_batch_circle(BatchHandle batch_handle, const Circle& circle)
+	{
+		BatchData& batch = m_batch_pool.get(batch_handle);
+		batch.command_buffer.write_object(Vadon::Utilities::to_integral(BatchCommandType::CIRCLE), circle);
 	}
 
 	void CanvasSystem::draw_batch_sprite(BatchHandle batch_handle, const Sprite& sprite)
@@ -895,6 +916,24 @@ namespace Vadon::Private::Render::Canvas
 				rectangle_primitive.color = rectangle.color.value;
 
 				canvas_system.m_frame_data.add_primitive_data(rectangle_primitive);
+			}
+			break;
+			case BatchCommandType::CIRCLE:
+			{
+				const Circle& circle = *reinterpret_cast<const Circle*>(command_data);
+				canvas_system.m_frame_data.add_command(PrimitiveType::CIRCLE, canvas_system.m_frame_data.current_texture.srv);
+
+				// Add command
+				CirclePrimitiveData circle_primitive;
+				circle_primitive.info = get_primitive_info(item_data, PrimitiveType::CIRCLE, canvas_system.m_frame_data.current_material);
+				circle_primitive.position = (circle.position * transform.scale) + transform.position;
+				circle_primitive.radius = circle.radius * transform.scale;
+				circle_primitive.color = circle.color.value;
+
+				circle_primitive.uv_dimensions.position = circle.uv_dimensions.position;
+				circle_primitive.uv_dimensions.size = circle.uv_dimensions.size;
+
+				canvas_system.m_frame_data.add_primitive_data(circle_primitive);
 			}
 			break;
 			case BatchCommandType::SPRITE:

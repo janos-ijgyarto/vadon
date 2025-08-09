@@ -5,6 +5,7 @@
 #include <VadonDemo/View/Component.hpp>
 #include <VadonDemo/Render/Component.hpp>
 
+#include <Vadon/ECS/Component/Registry.hpp>
 #include <Vadon/ECS/World/World.hpp>
 
 #include <Vadon/Render/Canvas/CanvasSystem.hpp>
@@ -19,6 +20,7 @@ namespace VadonDemo::View
 		Shape::register_resource();
 		Sprite::register_resource();
 
+		Vadon::ECS::ComponentRegistry::register_component_type<ViewEntityDirtyTag>();
 		ViewComponent::register_component();
 	}
 
@@ -278,6 +280,17 @@ namespace VadonDemo::View
 
 			canvas_system.draw_batch_triangle(shape->batch, diamond_half_triangle);
 			shape->batch_range.count = 2;
+		}
+		break;
+		case ShapeType::CIRCLE:
+		{
+			Vadon::Render::Canvas::Circle circle;
+			circle.position = { 0, 0 };
+			circle.radius = 0.5f;
+			circle.color = shape->color;
+
+			canvas_system.draw_batch_circle(shape->batch, circle);
+			shape->batch_range.count = 1;
 		}
 		break;
 		}

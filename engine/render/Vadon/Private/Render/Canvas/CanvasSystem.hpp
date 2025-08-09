@@ -51,6 +51,7 @@ namespace Vadon::Private::Render::Canvas
 		void add_item_batch_draw(ItemHandle item_handle, const BatchDrawCommand& batch_command) override;
 		void draw_item_triangle(ItemHandle item_handle, const Triangle& triangle) override;
 		void draw_item_rectangle(ItemHandle item_handle, const Rectangle& rectangle) override;
+		void draw_item_circle(ItemHandle item_handle, const Circle& circle) override;
 		void draw_item_sprite(ItemHandle item_handle, const Sprite& sprite) override;
 
 		void set_item_texture(ItemHandle item_handle, const Texture& texture) override;
@@ -71,6 +72,7 @@ namespace Vadon::Private::Render::Canvas
 		void clear_batch(BatchHandle batch_handle) override;
 		void draw_batch_triangle(BatchHandle batch_handle, const Triangle& triangle) override;
 		void draw_batch_rectangle(BatchHandle batch_handle, const Rectangle& rectangle) override;
+		void draw_batch_circle(BatchHandle batch_handle, const Circle& circle) override;
 		void draw_batch_sprite(BatchHandle batch_handle, const Sprite& sprite) override;
 
 		void set_batch_texture(BatchHandle batch_handle, const Texture& texture) override;

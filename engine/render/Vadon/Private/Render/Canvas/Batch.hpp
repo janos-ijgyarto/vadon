@@ -13,6 +13,7 @@ namespace Vadon::Private::Render::Canvas
 	{
 		TRIANGLE,
 		RECTANGLE,
+		CIRCLE,
 		SPRITE,
 		SET_TEXTURE,
 		SET_MATERIAL

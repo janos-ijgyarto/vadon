@@ -3,7 +3,7 @@
 #include <VadonDemo/VadonDemoCommon.hpp>
 #include <VadonDemo/Model/Weapon/System.hpp>
 
-#include <Vadon/ECS/Entity/Entity.hpp>
+#include <Vadon/Math/Vector.hpp>
 #include <Vadon/Scene/Scene.hpp>
 #include <random>
 namespace Vadon::ECS
@@ -49,6 +49,8 @@ namespace VadonDemo::Model
 		void update_collisions(Vadon::ECS::World& ecs_world, float delta_time);
 		void update_health(Vadon::ECS::World& ecs_world, float delta_time);
 		void update_spawners(Vadon::ECS::World& ecs_world, float delta_time);
+
+		void spawn_enemy(Vadon::ECS::World& ecs_world, const Spawner& spawner, const Vadon::Math::Vector2& position);
 
 		void clear_removed_entities(Vadon::ECS::World& ecs_world);
 

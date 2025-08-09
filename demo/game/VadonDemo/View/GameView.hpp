@@ -33,7 +33,6 @@ namespace VadonDemo::View
 		void init_resource(ViewResourceID resource_id);
 
 		Core::GameCore& m_game_core;
-		bool m_entities_dirty;
 
 		int m_view_frame_count = 0;
 

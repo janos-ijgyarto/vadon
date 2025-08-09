@@ -7,13 +7,18 @@ namespace Vadon::ECS
 
 	World::~World() = default;
 
-	void World::remove_entity(EntityHandle entity_handle)
+	void World::remove_pending_entities()
 	{
-		// Children will also be removed, so we remove their components
-		const EntityList children = m_entity_manager.remove_entity(entity_handle);
+		if (m_entity_manager.m_pending_remove_list.empty() == true)
+		{
+			return;
+		}
 
-		m_component_manager.remove_entity(entity_handle);
-		m_component_manager.remove_entity_batch(children);
+		// Remove all the components
+		m_component_manager.remove_entity_batch(m_entity_manager.m_pending_remove_list);
+
+		// Remove from entity manager
+		m_entity_manager.remove_pending_entities();
 	}
 
 	void World::clear()

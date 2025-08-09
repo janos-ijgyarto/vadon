@@ -21,7 +21,6 @@ namespace VadonDemo::View
 
 	GameView::GameView(Core::GameCore& core)
 		: m_game_core(core)
-		, m_entities_dirty(false)
 	{ }
 
 	bool GameView::initialize()
@@ -67,15 +66,9 @@ namespace VadonDemo::View
 
 	void GameView::update_dirty_entities()
 	{
-		if (m_entities_dirty == false)
-		{
-			return;
-		}
-
-		m_entities_dirty = false;
-
 		Vadon::ECS::World& ecs_world = m_game_core.get_ecs_world();
-		auto view_query = ecs_world.get_component_manager().run_component_query<ViewComponent&>();
+		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
+		auto view_query = component_manager.run_component_query<ViewEntityDirtyTag&, ViewComponent&>();
 
 		VadonDemo::View::View& common_view = m_game_core.get_core().get_view();
 
@@ -84,19 +77,14 @@ namespace VadonDemo::View
 			auto view_tuple = view_it.get_tuple();
 			ViewComponent& current_view_component = std::get<ViewComponent&>(view_tuple);
 
-			if (current_view_component.dirty == false)
-			{
-				continue;
-			}
-
 			// Make sure the resource is up-to-date
 			init_resource(current_view_component.resource);
 
 			// Attempt to redraw based on resource type
 			common_view.update_entity_draw_data(ecs_world, view_it.get_entity());
 
-			// Unset the flag
-			current_view_component.dirty = false;
+			// Remove the tag
+			component_manager.set_entity_tag<ViewEntityDirtyTag>(view_it.get_entity(), false);
 		}
 	}
 
@@ -131,8 +119,7 @@ namespace VadonDemo::View
 			return;
 		}
 
-		view_component->dirty = true;
-		m_entities_dirty = true;
+		component_manager.set_entity_tag<ViewEntityDirtyTag>(entity, true);
 	}
 
 	void GameView::remove_entity(Vadon::ECS::EntityHandle /*entity*/)

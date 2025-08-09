@@ -447,7 +447,8 @@ namespace VadonDemo::UI
 		// Dispatch events (to ensure we clean up used resources)
 		m_game_core.get_core().entity_removed(ecs_world, m_main_menu_entity);
 
-		ecs_world.remove_entity(m_main_menu_entity);
+		ecs_world.get_entity_manager().remove_entity(m_main_menu_entity);
+		ecs_world.remove_pending_entities();
 		m_main_menu_entity.invalidate();
 
 		// Load default level

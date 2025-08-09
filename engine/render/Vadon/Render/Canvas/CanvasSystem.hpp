@@ -41,6 +41,7 @@ namespace Vadon::Render::Canvas
 		// FIXME: allow list versions to make this more efficient?
 		virtual void draw_item_triangle(ItemHandle item_handle, const Triangle& triangle) = 0;
 		virtual void draw_item_rectangle(ItemHandle item_handle, const Rectangle& rectangle) = 0;
+		virtual void draw_item_circle(ItemHandle item_handle, const Circle& circle) = 0;
 		virtual void draw_item_sprite(ItemHandle item_handle, const Sprite& sprite) = 0;
 
 		// NOTE: this follows a D3D-style pattern of setting "render state" which applies to all subsequent operations
@@ -65,6 +66,7 @@ namespace Vadon::Render::Canvas
 		// FIXME: allow list versions to make this more efficient?
 		virtual void draw_batch_triangle(BatchHandle batch_handle, const Triangle& triangle) = 0;
 		virtual void draw_batch_rectangle(BatchHandle batch_handle, const Rectangle& rectangle) = 0;
+		virtual void draw_batch_circle(BatchHandle batch_handle, const Circle& circle) = 0;
 		virtual void draw_batch_sprite(BatchHandle batch_handle, const Sprite& sprite) = 0;
 
 		virtual void set_batch_texture(BatchHandle batch_handle, const Texture& texture) = 0;

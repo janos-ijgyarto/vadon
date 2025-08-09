@@ -117,7 +117,8 @@ namespace VadonDemo::Model
 		m_core.entity_removed(ecs_world, root_entity);
 
 		// TODO: error checking?
-		ecs_world.remove_entity(root_entity);
+		ecs_world.get_entity_manager().remove_entity(root_entity);
+		ecs_world.remove_pending_entities();
 	}
 
 	Vadon::ECS::EntityHandle Model::get_root_entity(Vadon::ECS::World& ecs_world)
@@ -343,60 +344,6 @@ namespace VadonDemo::Model
 		}
 
 		return true;
-	}
-
-	void Model::clear_removed_entities(Vadon::ECS::World& ecs_world)
-	{
-		// FIXME: could move this to Core so other systems can also do deferred removals?
-		std::vector<Vadon::ECS::EntityHandle> entity_remove_list;
-
-		// First gather all tagged entities
-		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
-
-		auto destroy_entity_query = component_manager.run_component_query<DestroyEntityTag&>();
-		for (auto entity_it = destroy_entity_query.get_iterator(); entity_it.is_valid() == true; entity_it.next())
-		{
-			entity_remove_list.push_back(entity_it.get_entity());
-		}
-
-		Vadon::ECS::EntityManager& entity_manager = ecs_world.get_entity_manager();
-		for (size_t index = 0; index < entity_remove_list.size();)
-		{
-			// Check all ancestors to see if any are also in the remove list
-			bool has_ancestor = false;
-			Vadon::ECS::EntityHandle parent_entity = entity_manager.get_entity_parent(entity_remove_list[index]);
-			while (parent_entity.is_valid() == true)
-			{
-				if (std::find(entity_remove_list.begin(), entity_remove_list.end(), parent_entity) != entity_remove_list.end())
-				{
-					has_ancestor = true;
-					break;
-				}
-
-				parent_entity = entity_manager.get_entity_parent(parent_entity);
-			}
-
-			if (has_ancestor == true)
-			{
-				// Will be removed when ancestor is removed, so we swap-and-pop
-				if (index < (entity_remove_list.size() - 1))
-				{
-					entity_remove_list[index] = entity_remove_list.back();
-				}
-				entity_remove_list.pop_back();
-			}
-			else
-			{
-				++index;
-			}
-		}
-
-		// All remaining entities are unrelated, so we can remove them
-		for (Vadon::ECS::EntityHandle current_entity : entity_remove_list)
-		{
-			m_core.entity_removed(ecs_world, current_entity);
-			ecs_world.remove_entity(current_entity);
-		}
 	}
 
 	void Model::update_player(Vadon::ECS::World& ecs_world, float delta_time)
@@ -658,7 +605,7 @@ namespace VadonDemo::Model
 			{
 				// TODO: instead of removing, we should just set a flag and use the ECS as a "pool"
 				// Whenever we spawn an entity again, we can just "resurrect" one that was already spawned
-				component_manager.add_component<DestroyEntityTag>(health_it.get_entity());
+				component_manager.set_entity_tag<DestroyEntityTag>(health_it.get_entity(), true);
 			}
 		}
 	}
@@ -666,7 +613,6 @@ namespace VadonDemo::Model
 	void Model::update_spawners(Vadon::ECS::World& ecs_world, float delta_time)
 	{
 		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
-		Vadon::Scene::SceneSystem& scene_system = m_core.get_engine_core().get_system<Vadon::Scene::SceneSystem>();
 
 		// FIXME: instead of having to do a query, we should just cache the player entity handle!
 		Vadon::Math::Vector2 player_position = Vadon::Math::Vector2_Zero;
@@ -683,13 +629,6 @@ namespace VadonDemo::Model
 			}
 		}
 
-		struct CreateEnemyData
-		{
-			Vadon::Math::Vector2 position;
-			Vadon::Scene::SceneID prefab;
-		};
-		std::vector<CreateEnemyData> deferred_spawned_enemies;
-
 		const Core::GlobalConfiguration& global_config = m_core.get_global_config();
 		const float spawn_radius = Vadon::Math::Vector::length(global_config.viewport_size * 0.5f);
 
@@ -702,30 +641,15 @@ namespace VadonDemo::Model
 			auto spawner_tuple = spawner_it.get_tuple();
 			Spawner& current_spawner = std::get<Spawner&>(spawner_tuple);
 
+			// Check if spawner is ready to activate
+			// TODO: move delay to def, use component with timer, remove component once activated
 			if (current_spawner.activation_delay > 0.0f)
 			{
 				current_spawner.activation_delay -= delta_time;
 			}
 			else
 			{
-				current_spawner.spawn_timer -= delta_time;
-				if (current_spawner.spawn_timer <= 0.0f)
-				{
-					current_spawner.spawn_timer = std::max(current_spawner.spawn_timer + current_spawner.min_spawn_delay, 0.0f);
-
-					for (int32_t spawned_enemy_index = 0; spawned_enemy_index < current_spawner.current_spawn_count; ++spawned_enemy_index)
-					{
-						CreateEnemyData& new_enemy_data = deferred_spawned_enemies.emplace_back();
-
-						const float rand_angle = m_enemy_dist(m_random_engine);
-
-						// Spawn relative to player
-						new_enemy_data.position = player_position + Vadon::Math::Vector2(std::cosf(rand_angle), std::sinf(rand_angle)) * spawn_radius;
-
-						new_enemy_data.prefab = current_spawner.enemy_prefab;
-					}
-				}
-
+				// Update level up timer
 				if (current_spawner.current_level < current_spawner.max_level)
 				{
 					current_spawner.level_up_timer -= delta_time;
@@ -735,37 +659,71 @@ namespace VadonDemo::Model
 						current_spawner.level_up_timer = std::max(current_spawner.level_up_timer + current_spawner.level_up_delay, 0.0f);
 					}
 				}
+
+				current_spawner.spawn_timer -= delta_time;
+				if (current_spawner.spawn_timer <= 0.0f)
+				{
+					current_spawner.spawn_timer = std::max(current_spawner.spawn_timer + current_spawner.min_spawn_delay, 0.0f);
+
+					for (int32_t spawned_enemy_index = 0; spawned_enemy_index < current_spawner.current_spawn_count; ++spawned_enemy_index)
+					{
+						const float rand_angle = m_enemy_dist(m_random_engine);
+
+						// Spawn relative to player
+						const Vadon::Math::Vector2 new_enemy_pos = player_position + Vadon::Math::Vector2(std::cosf(rand_angle), std::sinf(rand_angle)) * spawn_radius;
+						spawn_enemy(ecs_world, current_spawner, new_enemy_pos);
+					}
+				}
 			}
-		}
-
-		for (const CreateEnemyData& current_enemy_data : deferred_spawned_enemies)
-		{
-			const Vadon::Scene::SceneHandle enemy_prefab_scene = scene_system.load_scene(current_enemy_data.prefab);
-			const Vadon::ECS::EntityHandle spawned_enemy = scene_system.instantiate_scene(enemy_prefab_scene, ecs_world);
-
-			// FIXME: make a parent entity for enemies?
-			// Could be the enemy subsystem
-			Vadon::ECS::EntityHandle root_entity = get_root_entity(ecs_world);
-			ecs_world.get_entity_manager().add_child_entity(root_entity, spawned_enemy);
-
-			Transform2D* transform_component = component_manager.get_component<Transform2D>(spawned_enemy);
-
-			if (transform_component != nullptr)
-			{
-				// Spawn relative to player
-				transform_component->position = current_enemy_data.position;
-			}
-
-			// Init health
-			// FIXME: could use event for this!
-			Health* health_component = component_manager.get_component<Health>(spawned_enemy);
-			if (health_component != nullptr)
-			{
-				health_component->current_health = health_component->max_health;
-			}
-
-			m_core.entity_added(ecs_world, spawned_enemy);
 		}
 	}
 
+	void Model::spawn_enemy(Vadon::ECS::World& ecs_world, const Spawner& spawner, const Vadon::Math::Vector2& position)
+	{
+		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
+		Vadon::Scene::SceneSystem& scene_system = m_core.get_engine_core().get_system<Vadon::Scene::SceneSystem>();
+
+		const Vadon::Scene::SceneHandle enemy_prefab_scene = scene_system.load_scene(spawner.enemy_prefab);
+		const Vadon::ECS::EntityHandle spawned_enemy = scene_system.instantiate_scene(enemy_prefab_scene, ecs_world);
+
+		// FIXME: make a parent entity for enemies?
+		// Could be the enemy subsystem
+		Vadon::ECS::EntityHandle root_entity = get_root_entity(ecs_world);
+		ecs_world.get_entity_manager().add_child_entity(root_entity, spawned_enemy);
+
+		Transform2D* transform_component = component_manager.get_component<Transform2D>(spawned_enemy);
+
+		if (transform_component != nullptr)
+		{
+			// Spawn relative to player
+			transform_component->position = position;
+		}
+
+		// Init health
+		// FIXME: could use event for this!
+		Health* health_component = component_manager.get_component<Health>(spawned_enemy);
+		if (health_component != nullptr)
+		{
+			health_component->current_health = health_component->max_health;
+		}
+
+		m_core.entity_added(ecs_world, spawned_enemy);
+	}
+
+	void Model::clear_removed_entities(Vadon::ECS::World& ecs_world)
+	{
+		// Find all tagged entities, mark them for removal
+		Vadon::ECS::EntityManager& entity_manager = ecs_world.get_entity_manager();
+		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
+
+		auto destroy_entity_query = component_manager.run_component_query<DestroyEntityTag&>();
+		for (auto entity_it = destroy_entity_query.get_iterator(); entity_it.is_valid() == true; entity_it.next())
+		{
+			m_core.entity_removed(ecs_world, entity_it.get_entity());
+			entity_manager.remove_entity(entity_it.get_entity());
+		}
+
+		// Purge from the ECS world completely
+		ecs_world.remove_pending_entities();
+	}
 }

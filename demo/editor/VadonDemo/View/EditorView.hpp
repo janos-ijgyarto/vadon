@@ -35,7 +35,6 @@ namespace VadonDemo::View
 		void update_camera(VadonEditor::Model::Scene* active_scene);
 
 		Core::Editor& m_editor;
-		bool m_entities_dirty;
 
 		friend Core::Editor;
 	};
