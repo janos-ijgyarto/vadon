@@ -132,6 +132,7 @@ namespace Vadon::Utilities
 		}
 
 		template<> Result internal_serialize_value(int& value) { return serialize_int(value); }
+		template<> Result internal_serialize_value(uint32_t& value) { return serialize_uint(value); }
 		template<> Result internal_serialize_value(float& value) { return serialize_float(value); }
 		template<> Result internal_serialize_value(bool& value) { return serialize_bool(value); }
 		template<> Result internal_serialize_value(std::string& value) { return serialize_string(value); }
@@ -146,6 +147,7 @@ namespace Vadon::Utilities
 		template<> Result internal_serialize_value(Vadon::Math::ColorRGBA& value) { return serialize_color(value); }
 
 		virtual Result serialize_int(int& value) = 0;
+		virtual Result serialize_uint(uint32_t& value) = 0;
 		virtual Result serialize_float(float& value) = 0;
 		virtual Result serialize_bool(bool& value) = 0;
 		virtual Result serialize_string(std::string& value) = 0;

@@ -46,7 +46,7 @@ namespace VadonEditor::View
 
 		Core::Editor& m_editor;
 
-		Model::Resource* m_last_resource = nullptr;
+		Model::Resource* m_last_resource;
 
 		UI::Developer::Window m_window;
 		std::vector<PropertyEditor::Instance> m_property_editors;

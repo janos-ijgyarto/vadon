@@ -313,6 +313,7 @@ namespace Vadon::Utilities
 			};
 
 			Result serialize_int(int& value) override { return serialize_direct(value); }
+			Result serialize_uint(uint32_t& value) override { return serialize_direct(value); }
 			Result serialize_float(float& value) override { return serialize_direct(value); }
 			Result serialize_bool(bool& value) override 
 			{ 
@@ -920,6 +921,7 @@ namespace Vadon::Utilities
 			}
 
 			Result serialize_int(int& value) override { return serialize_trivial(value); }
+			Result serialize_uint(uint32_t& value) override { return serialize_trivial(value); }
 			Result serialize_float(float& value) override { return serialize_trivial(value); }
 			Result serialize_bool(bool& value) override { return serialize_trivial(value); }
 			Result serialize_string(std::string& value) override { return serialize_trivial(value); }

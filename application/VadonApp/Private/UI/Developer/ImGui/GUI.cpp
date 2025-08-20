@@ -56,6 +56,18 @@ namespace VadonApp::Private::UI::Developer::ImGUI
             return imgui_flags;
         }
 
+        ImGuiInputTextFlags get_imgui_input_text_flags(VadonApp::UI::Developer::InputFlags flags)
+        {
+            // TODO: implement other flags and proper conversion!
+            ImGuiInputTextFlags imgui_flags = ImGuiInputTextFlags_None;
+            if (Vadon::Utilities::to_bool(flags & VadonApp::UI::Developer::InputFlags::ENTER_RETURNS_TRUE))
+            {
+                imgui_flags |= ImGuiInputTextFlags_EnterReturnsTrue;
+            }
+
+            return imgui_flags;
+        }
+
         ImGuiMouseButton_ get_imgui_mouse_button(VadonApp::Platform::MouseButton mouse_button)
         {
             switch (mouse_button)
@@ -875,30 +887,30 @@ namespace VadonApp::Private::UI::Developer::ImGUI
 
     bool GUISystem::draw_input_int(InputInt& input_int)
     {
-        return ImGui::InputInt(input_int.label.c_str(), &input_int.input);
+        return ImGui::InputInt(input_int.label.c_str(), &input_int.input, 1, 100, get_imgui_input_text_flags(input_int.flags));
     }
 
     bool GUISystem::draw_input_int2(InputInt2& input_int)
     {
         // FIXME: is this safe to use this way?
-        return ImGui::InputInt2(input_int.label.c_str(), &input_int.input.x);
+        return ImGui::InputInt2(input_int.label.c_str(), &input_int.input.x, get_imgui_input_text_flags(input_int.flags));
     }
 
     bool GUISystem::draw_input_float(InputFloat& input_float)
     {
-        return ImGui::InputFloat(input_float.label.c_str(), &input_float.input);
+        return ImGui::InputFloat(input_float.label.c_str(), &input_float.input, 0.0f, 0.0f, "%.3f", get_imgui_input_text_flags(input_float.flags));
     }
 
     bool GUISystem::draw_input_float2(InputFloat2& input_float)
     {
         // FIXME: is this safe to use this way?
-        return ImGui::InputFloat2(input_float.label.c_str(), &input_float.input.x);
+        return ImGui::InputFloat2(input_float.label.c_str(), &input_float.input.x, "%.3f", get_imgui_input_text_flags(input_float.flags));
     }
 
     bool GUISystem::draw_input_float3(InputFloat3& input_float)
     {
         // FIXME: is this safe to use this way?
-        return ImGui::InputFloat3(input_float.label.c_str(), &input_float.input.x);
+        return ImGui::InputFloat3(input_float.label.c_str(), &input_float.input.x, "%.3f", get_imgui_input_text_flags(input_float.flags));
     }
 
     bool GUISystem::draw_input_text(InputText& input_text) 
@@ -909,7 +921,7 @@ namespace VadonApp::Private::UI::Developer::ImGUI
         }
         else
         {
-            return ImGui::InputText(input_text.label.c_str(), &input_text.input, ImGuiInputTextFlags_EnterReturnsTrue);
+            return ImGui::InputText(input_text.label.c_str(), &input_text.input, get_imgui_input_text_flags(input_text.flags));
         }
     }
 
@@ -947,6 +959,11 @@ namespace VadonApp::Private::UI::Developer::ImGUI
         }
 
         return false;
+    }
+
+    bool GUISystem::draw_selectable(std::string_view label, bool is_selected)
+    {
+        return ImGui::Selectable(label.data(), is_selected);
     }
 
     bool GUISystem::draw_button(const Button& button)
@@ -1025,10 +1042,20 @@ namespace VadonApp::Private::UI::Developer::ImGUI
         return false;
     }
 
+    bool GUISystem::begin_list_box(std::string_view label, const Vadon::Math::Vector2& size)
+    {
+        return ImGui::BeginListBox(label.data(), ImVec2{ size.x, size.y });
+    }
+
+    void GUISystem::end_list_box()
+    {
+        ImGui::EndListBox();
+    }
+
     bool GUISystem::begin_table(const Table& table)
     {
         // FIXME: make flags modifiable!
-        return ImGui::BeginTable(table.label.c_str(), table.column_count, ImGuiTableFlags_ScrollX | ImGuiTableFlags_ScrollY);
+        return ImGui::BeginTable(table.label.c_str(), table.column_count, ImGuiTableFlags_ScrollX | ImGuiTableFlags_ScrollY, ImVec2(table.outer_size.x, table.outer_size.y));
     }
 
     void GUISystem::next_table_column()

@@ -301,7 +301,9 @@ namespace VadonEditor::View
 			return false;
 		}
 
-		if (editor_resource_system.get_database().save_resource_as(new_resource->get_id(), path) == false)
+		std::filesystem::path resource_file_path = path;
+		resource_file_path.replace_extension(resource_file_path.extension().generic_string() + Core::AssetInfo::get_file_extension(Core::AssetType::RESOURCE));
+		if (editor_resource_system.get_database().save_resource_as(new_resource->get_id(), resource_file_path.generic_string()) == false)
 		{
 			// TODO: delete resource?
 			Vadon::Core::Logger::log_error("Asset browser: failed to save resource!\n");

@@ -91,12 +91,18 @@ namespace VadonApp::Private::UI::Developer::Null
 
 		bool draw_color_edit(ColorEdit& color) override;
 
+		// TODO: implement flags, size, etc.
+		bool draw_selectable(std::string_view label, bool is_selected) override;
+
 		bool draw_button(const Button& button) override;
 
 		bool draw_checkbox(Checkbox& checkbox) override;
 
 		bool draw_list_box(ListBox& list_box, bool* double_clicked = nullptr) override;
 		bool draw_combo_box(ComboBox& combo_box) override;
+
+		bool begin_list_box(std::string_view label, const Vadon::Math::Vector2& size) override;
+		void end_list_box() override;
 
 		bool begin_table(const Table& table) override;
 		void next_table_column() override;

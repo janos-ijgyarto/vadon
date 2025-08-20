@@ -83,10 +83,13 @@ namespace VadonEditor::View
 			{
 				if (current_property->render(dev_gui) == true)
 				{
-					// Property edited, send update to scene tree and update the editor
-					// FIXME: optimize this somehow?
+					// Property edited, send update to scene tree
 					const Vadon::Utilities::Property& property_data = current_property->get_property();
 					entity.edit_component_property(m_type_id, property_data.name, property_data.value);
+
+					// Re-enter the value from the property into the editor (in case something changed it, e.g constraints)
+					// FIXME: this will cause redundant refreshes of the UI!
+					// TODO: make proper use of the "modified" flag and only update once explicitly requested (and only the modified elements)?
 					current_property->set_value(entity.get_component_property(m_type_id, property_data.name));
 				}
 			}

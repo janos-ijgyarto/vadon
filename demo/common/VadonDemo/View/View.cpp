@@ -22,6 +22,9 @@ namespace VadonDemo::View
 
 		Vadon::ECS::ComponentRegistry::register_component_type<ViewEntityDirtyTag>();
 		ViewComponent::register_component();
+		ViewAnimationComponent::register_component();
+		ViewDamageComponent::register_component();
+		ViewVFXComponent::register_component();
 	}
 
 	void View::extract_model_state(Vadon::ECS::World& ecs_world)

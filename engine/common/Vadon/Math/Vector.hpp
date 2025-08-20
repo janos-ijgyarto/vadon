@@ -46,6 +46,7 @@ namespace Vadon::Math::Vector
 	using glm::clamp;
 	using glm::lessThan;
 	using glm::greaterThan;
+	using glm::mix;
 
 	template<typename T>
 	inline constexpr float length_squared(T const& x)

@@ -220,6 +220,8 @@ namespace VadonEditor::View
 		{
 			if (current_property->render(dev_gui) == true)
 			{
+				current_property->clear_modified();
+
 				bool added = false;
 				const Vadon::Utilities::Property& property_data = current_property->get_property();
 				for (Vadon::Utilities::Property& edited_property : m_edited_properties)
@@ -235,7 +237,6 @@ namespace VadonEditor::View
 				{
 					m_edited_properties.push_back(current_property->get_property());
 				}
-				current_property->value_updated();
 			}
 		}
 

@@ -16,12 +16,25 @@ namespace VadonApp::UI::Developer
 		HORIZONTAL_SCROLLBAR = 1 << 1,
 		DEFAULT = NONE
 	};
+
+	enum class InputFlags
+	{
+		NONE = 0,
+		ENTER_RETURNS_TRUE = 1 << 0,
+		DEFAULT = NONE
+	};
 }
 
 namespace Vadon::Utilities
 {
 	template<>
 	struct EnableEnumBitwiseOperators<VadonApp::UI::Developer::WindowFlags> : public std::true_type
+	{
+
+	};
+
+	template<>
+	struct EnableEnumBitwiseOperators<VadonApp::UI::Developer::InputFlags> : public std::true_type
 	{
 
 	};
@@ -47,6 +60,7 @@ namespace VadonApp::UI::Developer
 	struct InputBase
 	{
 		std::string label;
+		InputFlags flags = InputFlags::DEFAULT;
 	};
 
 	template<typename Type>
@@ -91,6 +105,7 @@ namespace VadonApp::UI::Developer
 		std::string label;
 		std::string input;
 		bool multiline = false;
+		InputFlags flags = InputFlags::DEFAULT;
 	};
 
 	struct Button
@@ -104,7 +119,8 @@ namespace VadonApp::UI::Developer
 		bool checked = false;
 	};
 
-	// FIXME: merge these two?
+	// NOTE: this is for simplified ListBox behavior
+	// If client code needs more complex handling for list items, use begin/end_list_box
 	struct ListBox
 	{
 		std::string label;
@@ -156,6 +172,7 @@ namespace VadonApp::UI::Developer
 		// TODO: flags!
 		std::string label;
 		int32_t column_count = 0;
+		Vadon::Math::Vector2 outer_size = Vadon::Math::Vector2_Zero;
 	};
 
 	struct MenuItem

@@ -16,7 +16,7 @@ namespace Vadon::Utilities
 	using BoxedVariantArray = Utilities::Box<VariantArray>;
 	using BoxedVariantDictionary = Utilities::Box<VariantDictionary>;
 
-	using Variant = std::variant<std::monostate, int, float, bool, std::string,
+	using Variant = std::variant<std::monostate, int, uint32_t, float, bool, std::string,
 		Math::Vector2, Math::Vector2i, Math::Vector3, Math::Vector3i, Math::Vector4,
 		Math::ColorRGBA,
 		Vadon::Scene::ResourceHandle, Utilities::UUID,

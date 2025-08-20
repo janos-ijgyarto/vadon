@@ -6,6 +6,7 @@
 #include <VadonEditor/View/Project/AssetBrowser.hpp>
 #include <VadonEditor/View/Project/Project.hpp>
 
+#include <VadonEditor/View/Scene/Animation/AnimationEditor.hpp>
 #include <VadonEditor/View/Scene/ECS/Entity.hpp>
 #include <VadonEditor/View/Scene/Resource/Resource.hpp>
 #include <VadonEditor/View/Scene/Resource/Scene.hpp>
@@ -38,6 +39,7 @@ namespace VadonEditor::View
 		SceneTreeWindow m_scene_tree;
 		EntityEditor m_entity_editor;
 		ResourceEditor m_resource_editor;
+		AnimationEditor m_animation_editor;
 
 		Internal(Core::Editor& editor)
 			: m_editor(editor)
@@ -48,6 +50,7 @@ namespace VadonEditor::View
 			, m_scene_tree(editor)
 			, m_entity_editor(editor)
 			, m_resource_editor(editor)
+			, m_animation_editor(editor)
 		{
 			// FIXME: use pooled strings so we don't need to cache!
 			m_new_scene_menu.label = "New Scene";
@@ -95,6 +98,7 @@ namespace VadonEditor::View
 			m_scene_tree.draw(dev_gui);
 			m_entity_editor.draw(dev_gui);
 			m_resource_editor.draw(dev_gui);
+			m_animation_editor.draw(dev_gui);
 		}
 
 		void draw_main_menu(VadonApp::UI::Developer::GUISystem& dev_gui)

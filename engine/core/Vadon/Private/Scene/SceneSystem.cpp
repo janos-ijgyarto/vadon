@@ -612,12 +612,19 @@ namespace Vadon::Private::Scene
 
 	SceneSystem::SceneSystem(Vadon::Core::EngineCoreInterface& core)
 		: Vadon::Scene::SceneSystem(core)
+		, m_animation_system(core)
 	{}
 
 	bool SceneSystem::initialize()
 	{
 		log_message("Initializing Scene System\n");
 		SceneData::register_scene_type_info();
+
+		if (m_animation_system.initialize() == false)
+		{
+			return false;
+		}
+
 		log_message("Scene System initialized!\n");
 		return true;
 	}
@@ -625,7 +632,7 @@ namespace Vadon::Private::Scene
 	void SceneSystem::shutdown()
 	{
 		log_message("Shutting down Scene System\n");
-		// TODO: anything?
+		m_animation_system.shutdown();
 		log_message("Scene System shut down!\n");
 	}
 

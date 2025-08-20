@@ -28,6 +28,8 @@ namespace VadonDemo::View
 	struct Shape : public ViewResource
 	{
 		int type = Vadon::Utilities::to_integral(ShapeType::TRIANGLE); // FIXME: placeholder solution, need better way to data-drive drawable objects!
+		
+		// TODO: create material resource to unify this (color + texture + anything else)?
 		Vadon::Math::ColorRGBA color = Vadon::Math::Color_White;
 
 		static void register_resource();
@@ -38,7 +40,8 @@ namespace VadonDemo::View
 
 	struct Sprite : public ViewResource
 	{
-		// TODO: implement a utility type which takes care of both the persistent resource ID and the loaded resource handle?
+		// TODO: create material resource to unify this (color + texture + anything else)?
+		// TODO2: implement a utility type which takes care of both the persistent resource ID and the loaded resource handle?
 		VadonDemo::Render::TextureResourceID texture;
 		// TODO: additional properties?
 

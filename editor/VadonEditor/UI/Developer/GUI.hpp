@@ -7,6 +7,7 @@ namespace VadonEditor::UI::Developer
 	using GUIStyle = VadonApp::UI::Developer::GUIStyle;
 
 	using WindowFlags = VadonApp::UI::Developer::WindowFlags;
+	using InputFlags = VadonApp::UI::Developer::InputFlags;
 
 	using Window = VadonApp::UI::Developer::Window;
 	using ChildWindow = VadonApp::UI::Developer::ChildWindow;

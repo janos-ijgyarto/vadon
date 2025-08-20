@@ -9,6 +9,8 @@ namespace
 		{
 		case Vadon::Utilities::type_list_index_v<int, Vadon::Utilities::Variant>:
 			return Vadon::Utilities::Variant(0);
+		case Vadon::Utilities::type_list_index_v<uint32_t, Vadon::Utilities::Variant>:
+			return Vadon::Utilities::Variant(0u);
 		case Vadon::Utilities::type_list_index_v<float, Vadon::Utilities::Variant>:
 			return Vadon::Utilities::Variant(0.0f);
 		case Vadon::Utilities::type_list_index_v<bool, Vadon::Utilities::Variant>:

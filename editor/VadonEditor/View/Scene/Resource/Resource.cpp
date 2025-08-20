@@ -81,6 +81,7 @@ namespace VadonEditor::View
 
 	ResourceEditor::ResourceEditor(Core::Editor& editor)
 		: m_editor(editor)
+		, m_last_resource(nullptr)
 	{
 		m_window.title = "Resource Editor";
 		m_window.open = false;
@@ -106,9 +107,12 @@ namespace VadonEditor::View
 					if (current_property->render(dev_gui) == true)
 					{
 						// Property edited, update the resource
-						// FIXME: optimize this somehow?
 						const Vadon::Utilities::Property& property_data = current_property->get_property();
 						active_resource->edit_property(property_data.name, property_data.value);
+
+						// Re-enter the value from the property into the editor (in case something changed it, e.g constraints)
+						// FIXME: this will cause redundant refreshes of the UI!
+						// TODO: make proper use of the "modified" flag and only update once explicitly requested (and only the modified elements)?
 						current_property->set_value(active_resource->get_property(property_data.name));
 					}
 				}

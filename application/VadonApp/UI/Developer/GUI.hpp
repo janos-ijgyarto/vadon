@@ -132,13 +132,18 @@ namespace VadonApp::UI::Developer
 
 		virtual bool draw_color_edit(ColorEdit& color) = 0;
 		
+		// TODO: implement flags, size, etc.
+		virtual bool draw_selectable(std::string_view label, bool is_selected) = 0;
+
 		virtual bool draw_button(const Button& button) = 0;
 
 		virtual bool draw_checkbox(Checkbox& checkbox) = 0;
 
-		// FIXME: implement flags and more flexible API
 		virtual bool draw_list_box(ListBox& list_box, bool* double_clicked = nullptr) = 0;
 		virtual bool draw_combo_box(ComboBox& combo_box) = 0;
+
+		virtual bool begin_list_box(std::string_view label, const Vadon::Math::Vector2& size = Vadon::Math::Vector2_Zero) = 0;
+		virtual void end_list_box() = 0;
 
 		// NOTE: use in combination with add_text to enter the cell contents
 		virtual bool begin_table(const Table& table) = 0;

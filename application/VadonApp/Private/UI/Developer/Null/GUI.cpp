@@ -287,6 +287,11 @@ namespace VadonApp::Private::UI::Developer::Null
         return false;
     }
 
+    bool GUISystem::draw_selectable(std::string_view /*label*/, bool /*is_selected*/)
+    {
+        return false;
+    }
+
     bool GUISystem::draw_button(const Button& /*button*/)
     {
         // TODO!!!
@@ -307,6 +312,16 @@ namespace VadonApp::Private::UI::Developer::Null
     bool GUISystem::draw_combo_box(ComboBox& /*combo_box*/)
     {
         return false;
+    }
+
+    bool GUISystem::begin_list_box(std::string_view /*label*/, const Vadon::Math::Vector2& /*size*/)
+    {
+        return false;
+    }
+
+    void GUISystem::end_list_box()
+    {
+
     }
 
     bool GUISystem::begin_table(const Table& /*table*/)

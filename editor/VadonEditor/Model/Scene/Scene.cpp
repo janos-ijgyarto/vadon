@@ -23,7 +23,7 @@ namespace VadonEditor::Model
 		return Vadon::Scene::SceneID::from_resource_id(m_resource->get_id());
 	}
 
-	Vadon::Scene::ResourceInfo Scene::get_info() const
+	const Vadon::Scene::ResourceInfo& Scene::get_info() const
 	{
 		return m_resource->get_info();
 	}
