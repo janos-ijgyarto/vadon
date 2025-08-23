@@ -1,0 +1,36 @@
+{
+    "data": {
+        "channels": [
+            {
+                "data_type": 2,
+                "keyframe_indices": [
+                    0,
+                    15
+                ],
+                "keyframe_values": [
+                    0.0,
+                    1.0
+                ],
+                "tag": "radius"
+            },
+            {
+                "data_type": 2,
+                "keyframe_indices": [
+                    0,
+                    15
+                ],
+                "keyframe_values": [
+                    1.0,
+                    0.0
+                ],
+                "tag": "opacity"
+            }
+        ],
+        "frame_count": 16
+    },
+    "id": "bCF2Pyy5R56ZZE23T+QGUg==",
+    "properties": {
+        "name": ""
+    },
+    "type": "Vadon::Scene::Animation"
+}

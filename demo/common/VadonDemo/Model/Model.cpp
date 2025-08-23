@@ -80,6 +80,8 @@ namespace VadonDemo::Model
 		m_weapon_system.update(ecs_world, delta_time);
 
 		clear_removed_entities(ecs_world);
+
+		m_elapsed_time += delta_time;
 	}
 
 	bool Model::is_in_end_state(Vadon::ECS::World& ecs_world) const
@@ -140,6 +142,7 @@ namespace VadonDemo::Model
 		, m_random_engine(std::random_device{}())
 		, m_enemy_dist(0.0f, 2 * std::numbers::pi_v<float>)
 		, m_weapon_system(core)
+		, m_elapsed_time(0.0f)
 	{
 	}
 

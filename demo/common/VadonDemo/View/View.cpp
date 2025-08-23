@@ -2,6 +2,7 @@
 
 #include <VadonDemo/Core/Core.hpp>
 #include <VadonDemo/Model/Component.hpp>
+#include <VadonDemo/Model/Weapon/Component.hpp>
 #include <VadonDemo/View/Component.hpp>
 #include <VadonDemo/Render/Component.hpp>
 
@@ -10,7 +11,9 @@
 
 #include <Vadon/Render/Canvas/CanvasSystem.hpp>
 
+#include <Vadon/Scene/Animation/AnimationSystem.hpp>
 #include <Vadon/Scene/Resource/ResourceSystem.hpp>
+#include <Vadon/Scene/SceneSystem.hpp>
 
 namespace VadonDemo::View
 {
@@ -20,16 +23,21 @@ namespace VadonDemo::View
 		Shape::register_resource();
 		Sprite::register_resource();
 
-		Vadon::ECS::ComponentRegistry::register_component_type<ViewEntityDirtyTag>();
+		Vadon::ECS::ComponentRegistry::register_tag_type<ViewEntityDirtyTag>();
+		Vadon::ECS::ComponentRegistry::register_tag_type<ViewProjectileVFXTag>();
 		ViewComponent::register_component();
-		ViewAnimationComponent::register_component();
-		ViewDamageComponent::register_component();
-		ViewVFXComponent::register_component();
+		AnimationComponent::register_component();
+		DamageComponent::register_component();
+		VFXComponent::register_component();
+		VFXTimerComponent::register_component();
 	}
 
 	void View::extract_model_state(Vadon::ECS::World& ecs_world)
 	{
-		// TODO: any other state to extract?
+		m_prev_model_time = m_current_model_time;
+		m_current_model_time = m_core.get_model().get_elapsed_time();
+		m_last_interpolated_time = m_current_model_time;
+
 		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
 		auto view_query = component_manager.run_component_query<Model::Transform2D&, ViewComponent&>();
 		for (auto view_it = view_query.get_iterator(); view_it.is_valid() == true; view_it.next())
@@ -56,6 +64,82 @@ namespace VadonDemo::View
 				current_view_component.prev_transform = current_view_component.current_transform;
 			}
 		}
+
+		// Check if any projectiles with VFX have expired
+		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
+
+		auto projectile_query = component_manager.run_component_query<Model::ProjectileComponent&, VFXComponent&, ViewProjectileVFXTag*>();
+		for (auto projectile_it = projectile_query.get_iterator(); projectile_it.is_valid() == true; projectile_it.next())
+		{
+			// NOTE: have to isolate these sections, since we are modifying the ECS while iterating, so the tuple can become invalid
+			auto projectile_tuple = projectile_it.get_tuple();
+			{
+				Model::ProjectileComponent& current_projectile = std::get<Model::ProjectileComponent&>(projectile_tuple);
+				ViewProjectileVFXTag* current_vfx_tag = std::get<ViewProjectileVFXTag*>(projectile_tuple);
+
+				if ((current_projectile.remaining_lifetime > 0.0f) || (current_vfx_tag != nullptr))
+				{
+					continue;
+				}
+			}
+
+			Vadon::ECS::EntityHandle vfx_entity;
+
+			{
+				VFXComponent& projectile_vfx = std::get<VFXComponent&>(projectile_tuple);
+				if (projectile_vfx.vfx_prefab.is_valid() != true)
+				{
+					continue;
+				}
+
+				Vadon::Scene::SceneSystem& scene_system = m_core.get_engine_core().get_system<Vadon::Scene::SceneSystem>();
+				const Vadon::Scene::SceneHandle vfx_scene = scene_system.load_scene(projectile_vfx.vfx_prefab);
+
+				vfx_entity = scene_system.instantiate_scene(vfx_scene, ecs_world);
+
+				// TODO: if timed, add timer
+				abcdefg;
+			}
+
+			component_manager.set_entity_tag<ViewProjectileVFXTag>(projectile_it.get_entity(), true);
+
+			auto vfx_component_tuple = component_manager.get_component_tuple<ViewComponent, AnimationComponent>(vfx_entity);
+			ViewComponent* vfx_view_component = std::get<ViewComponent*>(vfx_component_tuple);
+			if (vfx_view_component != nullptr)
+			{
+				const Model::Transform2D* projectile_transform = component_manager.get_component<Model::Transform2D>(projectile_it.get_entity());
+				if (projectile_transform != nullptr)
+				{
+					vfx_view_component->prev_transform.position = projectile_transform->position;
+					vfx_view_component->prev_transform.scale = projectile_transform->scale;
+
+					vfx_view_component->current_transform = vfx_view_component->prev_transform;
+				}
+			}
+
+			AnimationComponent* vfx_anim_component = std::get<AnimationComponent*>(vfx_component_tuple);
+			if (vfx_anim_component != nullptr)
+			{
+				const VFXComponent* projectile_vfx = component_manager.get_component<VFXComponent>(projectile_it.get_entity());
+				VADON_ASSERT(projectile_vfx != nullptr, "Cannot find component!");
+
+				if (projectile_vfx->animation.is_valid() == true)
+				{
+					Vadon::Scene::AnimationSystem& anim_system = m_core.get_engine_core().get_system<Vadon::Scene::AnimationSystem>();
+					const Vadon::Scene::AnimationHandle anim_handle = anim_system.load_animation(projectile_vfx->animation);
+
+					vfx_anim_component->animation_player.set_animation(m_core.get_engine_core(), anim_handle);
+				}
+
+				// TODO: asserts to make sure values are valid!
+				vfx_anim_component->animation_player.set_looping(vfx_anim_component->looping);
+				vfx_anim_component->animation_player.set_time_scale(vfx_anim_component->time_scale);
+			}
+
+			m_core.entity_added(ecs_world, vfx_entity);
+		}
+
+		// TODO: any other state to extract?
 	}
 
 	void View::lerp_view_state(Vadon::ECS::World& ecs_world, float lerp_factor)
@@ -64,27 +148,64 @@ namespace VadonDemo::View
 		Vadon::Render::Canvas::CanvasSystem& canvas_system = engine_core.get_system<Vadon::Render::Canvas::CanvasSystem>();
 		const float neg_lerp_factor = 1.0f - lerp_factor;
 
+		// FIXME: is this correct for the view?
+		// Floating point precision will probably be horrible...
+		const float interpolated_time = (m_current_model_time * lerp_factor) + (m_prev_model_time * neg_lerp_factor);
+		const float view_delta_time = interpolated_time - m_last_interpolated_time;
+
 		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
-		auto view_query = component_manager.run_component_query<ViewComponent&, Render::CanvasComponent&>();
-		for (auto view_it = view_query.get_iterator(); view_it.is_valid() == true; view_it.next())
 		{
-			auto view_tuple = view_it.get_tuple();
-			ViewComponent& current_view_component = std::get<ViewComponent&>(view_tuple);
-			Render::CanvasComponent& canvas_component = std::get<Render::CanvasComponent&>(view_tuple);
-
-			if (canvas_component.canvas_item.is_valid() == false)
+			auto view_query = component_manager.run_component_query<ViewComponent&, Render::CanvasComponent&>();
+			for (auto view_it = view_query.get_iterator(); view_it.is_valid() == true; view_it.next())
 			{
-				// Canvas item not yet initialized!
-				continue;
+				auto view_tuple = view_it.get_tuple();
+				ViewComponent& current_view_component = std::get<ViewComponent&>(view_tuple);
+				Render::CanvasComponent& canvas_component = std::get<Render::CanvasComponent&>(view_tuple);
+
+				if (canvas_component.canvas_item.is_valid() == false)
+				{
+					// Canvas item not yet initialized!
+					continue;
+				}
+
+				// Update Item with interpolated transform
+				Vadon::Render::Canvas::Transform interpolated_transform;
+				interpolated_transform.position = current_view_component.current_transform.position * lerp_factor + current_view_component.prev_transform.position * neg_lerp_factor;
+				interpolated_transform.scale = current_view_component.current_transform.scale;
+
+				canvas_system.set_item_transform(canvas_component.canvas_item, interpolated_transform);
 			}
-
-			// Update Item with interpolated transform
-			Vadon::Render::Canvas::Transform interpolated_transform;
-			interpolated_transform.position = current_view_component.current_transform.position * lerp_factor + current_view_component.prev_transform.position * neg_lerp_factor;
-			interpolated_transform.scale = current_view_component.current_transform.scale;
-
-			canvas_system.set_item_transform(canvas_component.canvas_item, interpolated_transform);
 		}
+
+		{
+			auto anim_query = component_manager.run_component_query<AnimationComponent&>();
+			for (auto anim_it = anim_query.get_iterator(); anim_it.is_valid() == true; anim_it.next())
+			{
+				// TODO: update animations
+				abcdef;
+
+				// Sample the anim, then check if it has compatible component
+				// If view transform changed, apply to canvas item
+				// FIXME: very hacky but it will work for now
+				abcdefg;
+
+				// TODO: implement a way to do opacity!
+				// Use material override (extra command which modifies per-vertex colors as we dispatch draw data)
+				abcdefg;
+
+				anim_it;
+			}
+		}
+
+		{
+			auto vfx_timer_query = component_manager.run_component_query<VFXTimerComponent&>();
+			for (auto vfx_timer_it = vfx_timer_query.get_iterator(); vfx_timer_it.is_valid() == true; vfx_timer_it.next())
+			{
+				vfx_timer_it;
+			}
+		}
+
+		m_last_interpolated_time = interpolated_time;
 	}
 
 	void View::update_entity_transform(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle view_entity)
@@ -211,6 +332,8 @@ namespace VadonDemo::View
 		: m_core(core)
 		, m_random_engine(std::random_device{}())
 		, m_texture_dist(0, 3)
+		, m_prev_model_time(0.0f)
+		, m_current_model_time(0.0f)
 	{
 	}
 

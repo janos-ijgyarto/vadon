@@ -58,6 +58,10 @@ namespace VadonDemo::View
 		std::mt19937 m_random_engine;
 		std::uniform_int_distribution<int> m_texture_dist;
 
+		float m_prev_model_time;
+		float m_current_model_time;
+		float m_last_interpolated_time;
+
 		friend Core::Core;
 	};
 }

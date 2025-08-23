@@ -1,6 +1,7 @@
 #ifndef VADONDEMO_VIEW_COMPONENT_HPP
 #define VADONDEMO_VIEW_COMPONENT_HPP
 #include <VadonDemo/View/Resource.hpp>
+#include <Vadon/Scene/Scene.hpp>
 #include <Vadon/Scene/Animation/AnimationPlayer.hpp>
 namespace VadonDemo::View
 {
@@ -18,15 +19,18 @@ namespace VadonDemo::View
 		static void register_component();
 	};
 
-	struct ViewAnimationComponent
+	struct AnimationComponent
 	{
+		float time_scale = 1.0f;
+		bool looping = false;
+
 		Vadon::Scene::AnimationPlayer animation_player;
 
 		static void register_component();
 	};
 
 	// Visualizes when the entity takes damage
-	struct ViewDamageComponent
+	struct DamageComponent
 	{
 		Vadon::Scene::AnimationID animation;
 		float lifetime = 1.0f;
@@ -34,13 +38,25 @@ namespace VadonDemo::View
 		static void register_component();
 	};
 
-	// TODO: implement animation system?
-	struct ViewVFXComponent
+	// TODO: create specific VFX components for specific contexts
+	// For now, we'll just check what components the model has and implement behavior based on that
+	struct VFXComponent
 	{
+		Vadon::Scene::SceneID vfx_prefab;
 		Vadon::Scene::AnimationID animation;
 		float lifetime = 1.0f;
 
 		static void register_component();
 	};
+
+	struct VFXTimerComponent
+	{
+		float remaining_lifetime = 1.0f;
+
+		static void register_component();
+	};
+
+	// FIXME: this is just a quick-and-dirty solution
+	struct ViewProjectileVFXTag {};
 }
 #endif

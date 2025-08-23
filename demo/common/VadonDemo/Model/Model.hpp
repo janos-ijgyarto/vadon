@@ -32,6 +32,8 @@ namespace VadonDemo::Model
 
 		// FIXME: implement utility function to handle this (i.e "find first entity with tag T")
 		static Vadon::ECS::EntityHandle get_root_entity(Vadon::ECS::World& ecs_world);
+
+		float get_elapsed_time() const { return m_elapsed_time; }
 	private:
 		Model(Core::Core& core);
 		bool initialize();
@@ -60,6 +62,8 @@ namespace VadonDemo::Model
 
 		std::mt19937 m_random_engine;
 		std::uniform_real_distribution<float> m_enemy_dist;
+
+		float m_elapsed_time;
 
 		friend Core::Core;
 	};
