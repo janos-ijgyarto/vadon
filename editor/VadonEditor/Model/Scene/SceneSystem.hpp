@@ -58,6 +58,8 @@ namespace VadonEditor::Model
 		Scene* internal_get_scene(Resource* resource);
 		void internal_remove_scene(Scene* scene);
 
+		void scene_opened(Scene* scene);
+
 		void dispatch_entity_event(const EntityEvent& event);
 		void dispatch_component_event(const ComponentEvent& event);
 

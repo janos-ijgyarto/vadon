@@ -31,7 +31,7 @@ namespace VadonDemo::Model
 		VADONDEMO_API void end_simulation(Vadon::ECS::World& ecs_world);
 
 		// FIXME: implement utility function to handle this (i.e "find first entity with tag T")
-		static Vadon::ECS::EntityHandle get_root_entity(Vadon::ECS::World& ecs_world);
+		VADONDEMO_API static Vadon::ECS::EntityHandle get_root_entity(Vadon::ECS::World& ecs_world);
 
 		float get_elapsed_time() const { return m_elapsed_time; }
 	private:

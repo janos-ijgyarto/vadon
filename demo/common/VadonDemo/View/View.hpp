@@ -22,7 +22,7 @@ namespace VadonDemo::Render
 }
 namespace VadonDemo::View
 {
-	struct ViewComponent;
+	struct RenderComponent;
 
 	class View
 	{
@@ -37,10 +37,10 @@ namespace VadonDemo::View
 		VADONDEMO_API void update_entity_draw_data(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle view_entity);
 		VADONDEMO_API void remove_entity(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle view_entity);
 
-		VADONDEMO_API ViewResourceHandle load_view_resource(ViewResourceID resource_id) const;
+		VADONDEMO_API RenderResourceHandle load_render_resource(RenderResourceID resource_id) const;
 
-		VADONDEMO_API void load_resource_data(ViewResourceID resource_id);
-		VADONDEMO_API void reset_resource_data(ViewResourceID resource_id);
+		VADONDEMO_API void load_resource_data(RenderResourceID resource_id);
+		VADONDEMO_API void reset_resource_data(RenderResourceID resource_id);
 	private:
 		View(VadonDemo::Core::Core& core);
 
@@ -50,8 +50,7 @@ namespace VadonDemo::View
 		void load_shape_resource(Shape* shape);
 		void load_sprite_resource(Sprite* sprite_resource);
 
-		void update_entity_transform(const Model::Transform2D* transform, ViewComponent* view_component, Render::CanvasComponent* canvas_component);
-		void update_entity_draw_data(const Model::Transform2D* transform, ViewComponent* view_component, Render::CanvasComponent* canvas_component);
+		void update_entity_draw_data(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle view_entity, RenderComponent* view_render_component);
 
 		VadonDemo::Core::Core& m_core;
 

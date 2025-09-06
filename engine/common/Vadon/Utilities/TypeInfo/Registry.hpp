@@ -13,15 +13,15 @@ namespace Vadon::Utilities
 	{
 	public:
 		template<typename T, typename Base = T>
-		static void register_type()
+		static void register_type(std::string_view hint_string = std::string_view())
 		{
 			if constexpr (std::is_same_v<T, Base>)
 			{
-				internal_register_type(Vadon::Utilities::TypeName<T>::trimmed(), sizeof(T), alignof(T));
+				internal_register_type(Vadon::Utilities::TypeName<T>::trimmed(), hint_string, sizeof(T), alignof(T));
 			}
 			else
 			{
-				internal_register_type(Vadon::Utilities::TypeName<T>::trimmed(), sizeof(T), alignof(T), get_type_id<Base>());
+				internal_register_type(Vadon::Utilities::TypeName<T>::trimmed(), hint_string, sizeof(T), alignof(T), get_type_id<Base>());
 			}
 		}
 
@@ -36,6 +36,7 @@ namespace Vadon::Utilities
 
 		VADONCOMMON_API static bool is_base_of(TypeID base_id, TypeID type_id);
 
+		// TODO: property hints?
 		template<typename T>
 		static bool add_property(std::string_view name, MemberVariableBindBase property_bind)
 		{
@@ -108,7 +109,7 @@ namespace Vadon::Utilities
 			bool has_property(std::string_view name) const;
 		};
 
-		static VADONCOMMON_API void internal_register_type(std::string_view type_name, size_t size, size_t alignment, TypeID base_type_id = TypeID::INVALID);
+		static VADONCOMMON_API void internal_register_type(std::string_view type_name, std::string_view hint_string, size_t size, size_t alignment, TypeID base_type_id = TypeID::INVALID);
 		static VADONCOMMON_API bool internal_add_property(TypeID type_id, std::string_view name, MemberVariableBindBase property_bind);
 		static VADONCOMMON_API bool internal_bind_method(TypeID type_id, std::string_view name, MemberFunctionBind method_bind);
 		

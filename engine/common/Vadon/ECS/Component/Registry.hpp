@@ -9,6 +9,12 @@ namespace Vadon::ECS
 	public:
 		using PoolFactoryFunction = ComponentPoolInterface* (*)();
 
+		struct ComponentTypeInfo
+		{
+			std::string_view hint_string;
+			PoolFactoryFunction factory = nullptr;
+		};
+
 		// FIXME: a more elegant way to implement this?
 		struct ComponentPrototypeBase
 		{
@@ -18,12 +24,12 @@ namespace Vadon::ECS
 		};
 
 		template<typename T, typename Base = T>
-		static void register_component_type(PoolFactoryFunction factory = nullptr)
+		static void register_component_type(const ComponentTypeInfo& type_info = ComponentTypeInfo())
 		{
 			static_assert(std::is_base_of_v<TypedComponentPool<T>, ComponentPool<T>>, "Error in Vadon::ECS: component type must be derived from Vadon::ECS::TypedComponentPool<T>!");
-			Vadon::Utilities::TypeRegistry::register_type<T, Base>();
+			Vadon::Utilities::TypeRegistry::register_type<T, Base>(type_info.hint_string);
 			
-			PoolFactoryFunction factory_impl = factory;
+			PoolFactoryFunction factory_impl = type_info.factory;
 			if (factory_impl == nullptr)
 			{
 				// Use default factory
@@ -54,12 +60,17 @@ namespace Vadon::ECS
 
 		VADONCOMMON_API static std::vector<Vadon::Utilities::TypeID> get_component_types();
 
+		struct TagTypeInfo
+		{
+			std::string_view hint_string;
+		};
+
 		template<typename T>
-		static void register_tag_type()
+		static void register_tag_type(const TagTypeInfo& type_info = TagTypeInfo())
 		{
 			static_assert(std::is_empty_v<T>, "Tag must be empty type!");
 			static_assert(std::is_base_of_v<TypedComponentPool<T>, TagPool<T>>, "Error in Vadon::ECS: tag pool type must be derived from Vadon::ECS::TypedComponentPool<T>!");
-			Vadon::Utilities::TypeRegistry::register_type<T>();
+			Vadon::Utilities::TypeRegistry::register_type<T>(type_info.hint_string);
 
 			PoolFactoryFunction factory_impl = +[]() { return static_cast<ComponentPoolInterface*>(new TagPool<T>()); };
 

@@ -5,13 +5,29 @@
 
 namespace VadonDemo::View
 {
-	void ViewComponent::register_component()
+	void TransformComponent::register_component()
 	{
 		using TypeRegistry = Vadon::Utilities::TypeRegistry;
 
-		Vadon::ECS::ComponentRegistry::register_component_type<ViewComponent>();
+		Vadon::ECS::ComponentRegistry::register_component_type<TransformComponent>();
 
-		TypeRegistry::add_property<ViewComponent>("resource", Vadon::Utilities::MemberVariableBind<&ViewComponent::resource>().bind_member_getter().bind_member_setter());
+		TypeRegistry::add_property<TransformComponent>("position", Vadon::Utilities::MemberVariableBind<&TransformComponent::position>().bind_member_getter().bind_member_setter());
+		TypeRegistry::add_property<TransformComponent>("rotation", Vadon::Utilities::MemberVariableBind<&TransformComponent::rotation>().bind_member_getter().bind_member_setter());
+		TypeRegistry::add_property<TransformComponent>("scale", Vadon::Utilities::MemberVariableBind<&TransformComponent::scale>().bind_member_getter().bind_member_setter());
+	}
+
+	void ModelTransformComponent::register_component()
+	{
+		Vadon::ECS::ComponentRegistry::register_component_type<ModelTransformComponent>();
+	}
+
+	void RenderComponent::register_component()
+	{
+		using TypeRegistry = Vadon::Utilities::TypeRegistry;
+
+		Vadon::ECS::ComponentRegistry::register_component_type<RenderComponent>();
+
+		TypeRegistry::add_property<RenderComponent>("resource", Vadon::Utilities::MemberVariableBind<&RenderComponent::resource>().bind_member_getter().bind_member_setter());
 	}
 
 	void AnimationComponent::register_component()
@@ -48,8 +64,9 @@ namespace VadonDemo::View
 	{
 		using TypeRegistry = Vadon::Utilities::TypeRegistry;
 
-		Vadon::ECS::ComponentRegistry::register_component_type<DamageComponent>();
+		Vadon::ECS::ComponentRegistry::ComponentTypeInfo component_info;
+		component_info.hint_string = "VadonEditor:exclude";
 
-		TypeRegistry::add_property<DamageComponent>("animation", Vadon::Utilities::MemberVariableBind<&DamageComponent::animation>().bind_member_getter().bind_member_setter());
+		Vadon::ECS::ComponentRegistry::register_component_type<VFXTimerComponent>(component_info);
 	}
 }

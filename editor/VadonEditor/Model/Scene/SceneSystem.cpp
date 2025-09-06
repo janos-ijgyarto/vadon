@@ -69,6 +69,7 @@ namespace VadonEditor::Model
 		if (scene->is_open() == true)
 		{
 			// Nothing to do
+			scene_opened(scene);
 			return;
 		}
 
@@ -79,9 +80,7 @@ namespace VadonEditor::Model
 		}
 
 		scene->instantiate_from_root();
-
-		// FIXME: use events instead of directly notifying view!
-		m_editor.get_system<View::ViewSystem>().get_view_model().scene_opened(scene);
+		scene_opened(scene);
 	}
 
 	void SceneSystem::close_scene(Scene* scene)
@@ -235,6 +234,12 @@ namespace VadonEditor::Model
 		// TODO: use refcounting so we only remove the scene if nothing else is using it?
 		ResourceSystem& editor_resource_system = m_editor.get_system<ModelSystem>().get_resource_system();
 		editor_resource_system.remove_resource(scene_resource);
+	}
+
+	void SceneSystem::scene_opened(Scene* scene)
+	{
+		// FIXME: use events instead of directly notifying view!
+		m_editor.get_system<View::ViewSystem>().get_view_model().scene_opened(scene);
 	}
 
 	void SceneSystem::dispatch_entity_event(const EntityEvent& event)

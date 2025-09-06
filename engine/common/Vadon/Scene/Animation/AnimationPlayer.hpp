@@ -41,7 +41,7 @@ namespace Vadon::Scene
 		}
 
 		AnimationHandle get_animation() const { return m_animation; }
-		void set_animation(Vadon::Core::EngineCoreInterface& engine_core, AnimationHandle animation_handle);
+		VADONCOMMON_API void set_animation(Vadon::Core::EngineCoreInterface& engine_core, AnimationHandle animation_handle);
 
 		int32_t get_current_frame() const { return m_current_frame; }
 		void set_current_frame(int32_t frame);
@@ -55,7 +55,7 @@ namespace Vadon::Scene
 		AnimationSampleMethod get_sample_method() const { return m_sample_method; }
 		void set_sample_method(AnimationSampleMethod sample_method) { m_sample_method = sample_method; }
 
-		void update(float delta_time);
+		VADONCOMMON_API void update(float delta_time);
 		void reset();
 
 		AnimationSample get_sample() const { return AnimationSample{ .channels = m_sample_data.channels }; }

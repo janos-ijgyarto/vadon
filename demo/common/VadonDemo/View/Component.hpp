@@ -6,15 +6,32 @@
 namespace VadonDemo::View
 {
 	// Tag to ensure View data is updated once properties change
-	struct ViewEntityDirtyTag {};
+	struct EntityDirtyTag {};
 
-	struct ViewComponent
+	// NOTE: this is the actual "ground truth" transform for a View entity
+	// The other component expects to interpolate a model transform, and will set the result here
+	struct TransformComponent
 	{
-		// TODO: implement a utility type which takes care of both the persistent resource ID and the loaded resource handle?
-		ViewResourceID resource;
+		Vadon::Math::Vector2 position = Vadon::Math::Vector2_Zero;
+		float rotation = 0;
+		float scale = 1.0f;
 
+		static void register_component();
+	};
+
+	// Interpolates model transform (if present)
+	struct ModelTransformComponent
+	{
 		Vadon::Render::Canvas::Transform prev_transform;
 		Vadon::Render::Canvas::Transform current_transform;
+
+		static void register_component();
+	};
+
+	struct RenderComponent
+	{
+		// TODO: implement a utility type which takes care of both the persistent resource ID and the loaded resource handle?
+		RenderResourceID resource;
 
 		static void register_component();
 	};
@@ -55,8 +72,5 @@ namespace VadonDemo::View
 
 		static void register_component();
 	};
-
-	// FIXME: this is just a quick-and-dirty solution
-	struct ViewProjectileVFXTag {};
 }
 #endif

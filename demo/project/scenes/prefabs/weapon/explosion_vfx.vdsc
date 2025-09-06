@@ -1,0 +1,49 @@
+{
+    "data": {
+        "entities": [
+            {
+                "components": [
+                    {
+                        "properties": {
+                            "layer_def": "2bdWkqSdTuSxnfVFk+5q+g==",
+                            "visible": true,
+                            "z_order": 3.0
+                        },
+                        "type": "VadonDemo::Render::CanvasComponent"
+                    },
+                    {
+                        "properties": {
+                            "resource": "FAGMoVRmTF62NDDymQs/mw=="
+                        },
+                        "type": "VadonDemo::View::RenderComponent"
+                    },
+                    {
+                        "properties": {
+                            "position": [
+                                0.0,
+                                0.0
+                            ],
+                            "rotation": 0.0,
+                            "scale": 1.0
+                        },
+                        "type": "VadonDemo::View::TransformComponent"
+                    },
+                    {
+                        "properties": {
+                            "looping": false,
+                            "time_scale": 16.0
+                        },
+                        "type": "VadonDemo::View::AnimationComponent"
+                    }
+                ],
+                "name": "Explosion",
+                "parent": -1
+            }
+        ]
+    },
+    "id": "zc+Dq+F5R8O5BUf1qem3bQ==",
+    "properties": {
+        "name": ""
+    },
+    "type": "Vadon::Scene::Scene"
+}

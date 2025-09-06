@@ -196,14 +196,18 @@ namespace Vadon::Scene
 				{
 					const AnimationKeyframe& keyframe_data = m_animation_data->keyframe_data[current_channel.keyframe_range.offset + closest_keyframe_index];
 
-					const int32_t other_keyframe_index = (m_current_frame < keyframe_data.frame_index) ? (closest_keyframe_index - 1) : (closest_keyframe_index + 1);
+					const bool is_before_closest = m_current_frame < keyframe_data.frame_index;
+
+					const int32_t other_keyframe_index = is_before_closest ? (closest_keyframe_index - 1) : (closest_keyframe_index + 1);
 
 					const AnimationKeyframe& other_keyframe_data = m_animation_data->keyframe_data[current_channel.keyframe_range.offset + other_keyframe_index];
 
 					const int32_t frame_difference = std::abs(other_keyframe_data.frame_index - keyframe_data.frame_index);
 					const float keyframe_factor = float(min_keyframe_distance) / float(frame_difference);
 					
-					current_channel_sample.value = lerp_variant_values(keyframe_data.value, other_keyframe_data.value, (m_current_frame < keyframe_data.frame_index) ? (1.0f - keyframe_factor) : keyframe_factor);
+					current_channel_sample.value = is_before_closest ? 
+						lerp_variant_values(keyframe_data.value, other_keyframe_data.value, keyframe_factor)
+						: lerp_variant_values(other_keyframe_data.value, keyframe_data.value, 1.0f - keyframe_factor);
 				}
 				else
 				{

@@ -501,7 +501,7 @@ namespace Vadon::Private::Scene
 			// If key is not present, just use default value
 			if (serializer.has_key(current_property_info.name) == false)
 			{
-				log_warning(std::format("Resource system: cannot find property \"{}\" in resource \"{}\"!", current_property_info.name, info.id.to_base64_string()));
+				log_warning(std::format("Resource system: cannot find property \"{}\" in resource \"{}\"!\n", current_property_info.name, info.id.to_base64_string()));
 				continue;
 			}
 

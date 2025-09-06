@@ -5,9 +5,9 @@
                 "components": [
                     {
                         "properties": {
-                            "resource": "JEb0jPI3QZa/2FHo2MAemw=="
+                            "max_health": 100.0
                         },
-                        "type": "VadonDemo::View::ViewComponent"
+                        "type": "VadonDemo::Model::Health"
                     },
                     {
                         "properties": {
@@ -17,12 +17,12 @@
                         },
                         "type": "VadonDemo::Render::CanvasComponent"
                     },
-                  {
-                    "properties": {
-                      "definition": ""
+                    {
+                        "properties": {
+                            "resource": "JEb0jPI3QZa/2FHo2MAemw=="
+                        },
+                        "type": "VadonDemo::View::RenderComponent"
                     },
-                    "type": "VadonDemo::Model::WeaponComponent"
-                  },
                     {
                         "properties": {
                             "position": [
@@ -43,15 +43,30 @@
                     },
                     {
                         "properties": {
-                            "max_health": 100.0
-                        },
-                        "type": "VadonDemo::Model::Health"
-                    },
-                    {
-                        "properties": {
                             "radius": 0.5
                         },
                         "type": "VadonDemo::Model::Collision"
+                    },
+                    {
+                        "properties": {},
+                        "type": "VadonDemo::View::ModelTransformComponent"
+                    },
+                    {
+                        "properties": {
+                            "position": [
+                                0.0,
+                                0.0
+                            ],
+                            "rotation": 0.0,
+                            "scale": 25.0
+                        },
+                        "type": "VadonDemo::View::TransformComponent"
+                    },
+                    {
+                        "properties": {
+                            "definition": ""
+                        },
+                        "type": "VadonDemo::Model::WeaponComponent"
                     },
                     {
                         "properties": {
