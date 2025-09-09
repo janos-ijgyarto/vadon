@@ -28,6 +28,7 @@ namespace VadonDemo::View
 		Vadon::ECS::ComponentRegistry::register_component_type<RenderComponent>();
 
 		TypeRegistry::add_property<RenderComponent>("resource", Vadon::Utilities::MemberVariableBind<&RenderComponent::resource>().bind_member_getter().bind_member_setter());
+		TypeRegistry::add_property<RenderComponent>("color", Vadon::Utilities::MemberVariableBind<&RenderComponent::color>().bind_member_getter().bind_member_setter());
 	}
 
 	void AnimationComponent::register_component()

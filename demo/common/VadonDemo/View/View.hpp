@@ -50,7 +50,11 @@ namespace VadonDemo::View
 		void load_shape_resource(Shape* shape);
 		void load_sprite_resource(Sprite* sprite_resource);
 
-		void update_entity_draw_data(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle view_entity, RenderComponent* view_render_component);
+		void update_entity_draw_data(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle view_entity, RenderComponent* view_render_component);		
+		void set_entity_custom_draw_data(RenderComponent* view_render_component, Render::CanvasComponent* canvas_component, RenderResourceHandle view_render_resource_handle);
+
+		void set_entity_shape_data(const RenderComponent* view_render_component, Render::CanvasComponent* canvas_component, const Shape* shape);
+		void set_entity_sprite_data(const RenderComponent* view_render_component, Render::CanvasComponent* canvas_component, const Sprite* sprite_resource);
 
 		VadonDemo::Core::Core& m_core;
 

@@ -12,7 +12,8 @@ namespace Vadon::Private::Render::Canvas
 		DRAW_BATCH,
 		DRAW_DIRECT,
 		SET_TEXTURE,
-		SET_MATERIAL
+		SET_MATERIAL,
+		SET_RENDER_STATE
 	};
 
 	using ItemCommandBuffer = Vadon::Utilities::PacketQueue;

@@ -143,14 +143,14 @@ namespace Vadon::Private::Render::Canvas
 		using ItemSpriteCommand = ItemDirectDrawCommand<Sprite, BatchCommandType::SPRITE>;
 	}
 
-	void CanvasSystem::FrameData::add_command(PrimitiveType primitive_type, Vadon::Render::SRVHandle texture_srv)
+	void CanvasSystem::FrameData::add_command(PrimitiveType primitive_type, Vadon::Render::SRVHandle texture_srv, const RenderState& render_state)
 	{
 		const int32_t index_count = get_primitive_index_count(primitive_type);
 
 		if (primitive_batches.empty() == false)
 		{
 			FrameData::PrimitiveBatch& prev_batch = primitive_batches.back();
-			if (prev_batch.texture_srv == texture_srv)
+			if ((prev_batch.texture_srv == texture_srv) && (prev_batch.render_state == render_state))
 			{
 				// Can just append to previous batch
 				prev_batch.index_count += index_count;
@@ -163,6 +163,7 @@ namespace Vadon::Private::Render::Canvas
 		FrameData::PrimitiveBatch& new_batch = primitive_batches.emplace_back();
 		new_batch.index_count = index_count;
 		new_batch.texture_srv = texture_srv;
+		new_batch.render_state = render_state;
 
 		add_primitive_indices(primitive_type);
 	}
@@ -360,6 +361,12 @@ namespace Vadon::Private::Render::Canvas
 		item.command_buffer.write_object(Vadon::Utilities::to_integral(ItemCommandType::SET_MATERIAL), ItemSetMaterialCommand(material_handle));
 	}
 
+	void CanvasSystem::set_item_render_state(ItemHandle item_handle, const RenderState& render_state)
+	{
+		ItemData& item = m_item_pool.get(item_handle);
+		item.command_buffer.write_object(Vadon::Utilities::to_integral(ItemCommandType::SET_RENDER_STATE), render_state);
+	}
+
 	MaterialHandle CanvasSystem::create_material(MaterialInfo info)
 	{
 		MaterialHandle new_material_handle = m_material_pool.add();
@@ -451,6 +458,12 @@ namespace Vadon::Private::Render::Canvas
 		batch.command_buffer.write_object(Vadon::Utilities::to_integral(BatchCommandType::SET_TEXTURE), BatchSetMaterialCommand{ .material = material_handle });
 	}
 
+	void CanvasSystem::set_batch_render_state(BatchHandle batch_handle, const RenderState& render_state)
+	{
+		BatchData& batch = m_batch_pool.get(batch_handle);
+		batch.command_buffer.write_object(Vadon::Utilities::to_integral(BatchCommandType::SET_RENDER_STATE), render_state);
+	}
+
 	void CanvasSystem::render(const RenderContext& context)
 	{
 		update_shared_data();
@@ -461,12 +474,26 @@ namespace Vadon::Private::Render::Canvas
 		Vadon::Render::GraphicsAPI& graphics_api = m_engine_core.get_system<Vadon::Render::GraphicsAPI>();
 		Vadon::Render::ResourceSystem& resource_system = m_engine_core.get_system<Vadon::Render::ResourceSystem>();
 
+		RenderState last_render_state;
+
 		int32_t index_offset = 0;
 		for (const FrameData::PrimitiveBatch& current_batch : m_frame_data.primitive_batches)
 		{
 			// Apply the texture
 			Vadon::Render::SRVHandle current_texture_srv = (current_batch.texture_srv.is_valid() == true) ? current_batch.texture_srv : m_default_texture_srv;
 			resource_system.apply_shader_resource(Vadon::Render::ShaderType::PIXEL, current_texture_srv, 2);
+
+			if (current_batch.render_state != last_render_state)
+			{
+				// Apply the render state
+				// FIXME: need more robust pipeline state management!
+				m_pipeline_state.blend_update.blend_state = current_batch.render_state.alpha_blend ? m_alpha_blend_state : m_blend_disabled_state;
+
+				Vadon::Render::PipelineSystem& pipeline_system = m_engine_core.get_system<Vadon::Render::PipelineSystem>();
+				pipeline_system.apply_blend_state(m_pipeline_state.blend_update);
+
+				last_render_state = current_batch.render_state;
+			}
 
 			// Draw the batch
 			const Vadon::Render::DrawCommand current_draw_command {
@@ -781,6 +808,8 @@ namespace Vadon::Private::Render::Canvas
 		Vadon::Render::BufferSystem& buffer_system = m_engine_core.get_system<Vadon::Render::BufferSystem>();
 		Vadon::Render::PipelineSystem& pipeline_system = m_engine_core.get_system<Vadon::Render::PipelineSystem>();
 
+		m_pipeline_state.blend_update.blend_state = m_blend_disabled_state;
+
 		pipeline_system.apply_blend_state(m_pipeline_state.blend_update);
 		pipeline_system.apply_depth_stencil_state(m_pipeline_state.depth_stencil_update);
 		pipeline_system.apply_rasterizer_state(m_pipeline_state.rasterizer_state);
@@ -886,7 +915,7 @@ namespace Vadon::Private::Render::Canvas
 				const Triangle& triangle = *reinterpret_cast<const Triangle*>(command_data);
 
 				// Add command
-				canvas_system.m_frame_data.add_command(PrimitiveType::TRIANGLE, canvas_system.m_frame_data.current_texture.srv);
+				canvas_system.m_frame_data.add_command(PrimitiveType::TRIANGLE, canvas_system.m_frame_data.current_texture.srv, canvas_system.m_frame_data.current_render_state);
 
 				// Generate primitive data, offset with position
 				TrianglePrimitiveData triangle_primitive;
@@ -906,7 +935,7 @@ namespace Vadon::Private::Render::Canvas
 
 				// Add command
 				const PrimitiveType rectangle_type = rectangle.filled ? PrimitiveType::RECTANGLE_FILL : PrimitiveType::RECTANGLE_OUTLINE;
-				canvas_system.m_frame_data.add_command(rectangle_type, canvas_system.m_frame_data.current_texture.srv);
+				canvas_system.m_frame_data.add_command(rectangle_type, canvas_system.m_frame_data.current_texture.srv, canvas_system.m_frame_data.current_render_state);
 
 				RectanglePrimitiveData rectangle_primitive;
 				rectangle_primitive.info = get_primitive_info(item_data, rectangle_type, canvas_system.m_frame_data.current_material);
@@ -921,7 +950,7 @@ namespace Vadon::Private::Render::Canvas
 			case BatchCommandType::CIRCLE:
 			{
 				const Circle& circle = *reinterpret_cast<const Circle*>(command_data);
-				canvas_system.m_frame_data.add_command(PrimitiveType::CIRCLE, canvas_system.m_frame_data.current_texture.srv);
+				canvas_system.m_frame_data.add_command(PrimitiveType::CIRCLE, canvas_system.m_frame_data.current_texture.srv, canvas_system.m_frame_data.current_render_state);
 
 				// Add command
 				CirclePrimitiveData circle_primitive;
@@ -940,7 +969,7 @@ namespace Vadon::Private::Render::Canvas
 			{
 				const Sprite& sprite = *reinterpret_cast<const Sprite*>(command_data);
 
-				canvas_system.m_frame_data.add_command(PrimitiveType::SPRITE, canvas_system.m_frame_data.current_texture.srv);
+				canvas_system.m_frame_data.add_command(PrimitiveType::SPRITE, canvas_system.m_frame_data.current_texture.srv, canvas_system.m_frame_data.current_render_state);
 
 				SpritePrimitiveData sprite_primitive;
 				sprite_primitive.info = get_primitive_info(item_data, PrimitiveType::SPRITE, canvas_system.m_frame_data.current_material);
@@ -963,6 +992,12 @@ namespace Vadon::Private::Render::Canvas
 			{
 				const BatchSetMaterialCommand* set_material = reinterpret_cast<const BatchSetMaterialCommand*>(command_data);
 				canvas_system.m_frame_data.current_material = set_material->material;
+			}
+			break;
+			case BatchCommandType::SET_RENDER_STATE:
+			{
+				const RenderState* render_state = reinterpret_cast<const RenderState*>(command_data);
+				canvas_system.m_frame_data.current_render_state = *render_state;
 			}
 			break;
 			}
@@ -1033,6 +1068,12 @@ namespace Vadon::Private::Render::Canvas
 					{
 						const ItemSetMaterialCommand* set_material = reinterpret_cast<const ItemSetMaterialCommand*>(item_command_it.get_packet_data());
 						m_frame_data.current_material = set_material->material;
+					}
+					break;
+					case ItemCommandType::SET_RENDER_STATE:
+					{
+						const RenderState* render_state = reinterpret_cast<const RenderState*>(item_command_it.get_packet_data());
+						m_frame_data.current_render_state = *render_state;
 					}
 					break;
 					}
@@ -1213,5 +1254,6 @@ namespace Vadon::Private::Render::Canvas
 		// Reset the material and texture
 		m_frame_data.current_material = m_default_material;
 		m_frame_data.current_texture = Texture();
+		m_frame_data.current_render_state = RenderState();
 	}
 }

@@ -16,7 +16,8 @@ namespace Vadon::Private::Render::Canvas
 		CIRCLE,
 		SPRITE,
 		SET_TEXTURE,
-		SET_MATERIAL
+		SET_MATERIAL,
+		SET_RENDER_STATE
 	};
 
 	struct BatchSetTextureCommand

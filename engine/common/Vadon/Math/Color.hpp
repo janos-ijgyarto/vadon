@@ -21,6 +21,11 @@ namespace Vadon::Math
 			return ColorRGBA(glm::packUnorm4x8(vector));
 		}
 
+		static ColorRGBA multiply_colors(const ColorRGBA& lhs, const ColorRGBA& rhs)
+		{
+			return from_rgba_vector(to_rgba_vector(lhs) * to_rgba_vector(rhs));
+		}
+
 		bool operator==(const ColorRGBA& other) const { return value == other.value; }
 		bool operator!=(const ColorRGBA& other) const { return value != other.value; }
 	};

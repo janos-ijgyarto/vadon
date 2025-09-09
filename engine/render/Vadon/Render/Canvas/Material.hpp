@@ -24,5 +24,17 @@ namespace Vadon::Render::Canvas
 	// FIXME: should this use a dense pool for faster iteration?
 	// The commands will probably be more important
 	VADON_DECLARE_TYPED_POOL_HANDLE(Material, MaterialHandle);
+
+	// FIXME: this is a barebones implementation, need to extend!
+	struct RenderState
+	{
+		bool alpha_blend = false;
+		// TODO: other params?
+
+		bool operator==(const RenderState& other) const
+		{
+			return alpha_blend == other.alpha_blend;
+		}
+	};
 }
 #endif

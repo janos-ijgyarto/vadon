@@ -14,6 +14,16 @@
 #include <Vadon/Scene/Resource/ResourceSystem.hpp>
 #include <Vadon/Scene/SceneSystem.hpp>
 
+namespace
+{
+	// FIXME: this is used to determine whether we need alpha blending
+	// Should we somehow move this to the Render system?
+	bool color_has_transparency(const Vadon::Math::ColorRGBA& color)
+	{
+		return (color.value >> 24) < 0xFF;
+	}
+}
+
 namespace VadonDemo::View
 {
 	void View::register_types()
@@ -101,7 +111,7 @@ namespace VadonDemo::View
 
 		// Update animations
 		{
-			auto anim_query = component_manager.run_component_query<AnimationComponent&, TransformComponent*>();
+			auto anim_query = component_manager.run_component_query<AnimationComponent&, TransformComponent*, RenderComponent*>();
 			for (auto anim_it = anim_query.get_iterator(); anim_it.is_valid() == true; anim_it.next())
 			{
 				auto anim_tuple = anim_it.get_tuple();
@@ -125,13 +135,19 @@ namespace VadonDemo::View
 							transform_component->scale = std::get<float>(current_channel.value);
 						}
 					}
-#if 0
 					else if (current_channel.tag == "opacity")
 					{
-						// TODO: use material override OR have it be individual draw calls
-						abcdefg;
+						RenderComponent* render_component = std::get<RenderComponent*>(anim_tuple);
+						if (render_component != nullptr)
+						{
+							Vadon::Math::ColorVector color_vec = Vadon::Math::ColorRGBA::to_rgba_vector(render_component->color);
+							color_vec.a = std::get<float>(current_channel.value);
+
+							render_component->color = Vadon::Math::ColorRGBA::from_rgba_vector(color_vec);
+
+							update_entity_draw_data(ecs_world, anim_it.get_entity());
+						}
 					}
-#endif
 				}
 			}
 		}
@@ -355,6 +371,13 @@ namespace VadonDemo::View
 		Vadon::Core::EngineCoreInterface& engine_core = m_core.get_engine_core();
 		Vadon::Render::Canvas::CanvasSystem& canvas_system = engine_core.get_system<Vadon::Render::Canvas::CanvasSystem>();
 
+		if (color_has_transparency(shape->color) == true)
+		{
+			// Make sure batch sets render state for alpha blend
+			Vadon::Render::Canvas::RenderState alpha_blend_state = { .alpha_blend = true };
+			canvas_system.set_batch_render_state(shape->batch, alpha_blend_state);
+		}
+
 		shape->batch_range.offset = static_cast<int32_t>(canvas_system.get_batch_buffer_size(shape->batch));
 
 		switch (Vadon::Utilities::to_enum<ShapeType>(shape->type))
@@ -444,6 +467,8 @@ namespace VadonDemo::View
 			return;
 		}
 
+		// TODO: sprite color to allow transparency, etc?
+
 		sprite->batch_range.offset = static_cast<int32_t>(canvas_system.get_batch_buffer_size(sprite->batch));
 		sprite->batch_range.count = 2;
 
@@ -487,8 +512,16 @@ namespace VadonDemo::View
 
 		Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
 		RenderResourceHandle view_render_resource_handle = RenderResourceHandle::from_resource_handle(resource_system.load_resource(view_render_component->resource));
-		const RenderResource* view_resource = resource_system.get_resource(view_render_resource_handle);
-		
+
+		if (view_render_component->color != Vadon::Math::Color_White)
+		{
+			// Entity has material override, so we add custom draw data
+			// FIXME: make this system more flexible?
+			set_entity_custom_draw_data(view_render_component, canvas_component, view_render_resource_handle);
+			return;
+		}
+
+		const RenderResource* view_resource = resource_system.get_resource(view_render_resource_handle);	
 		if (view_resource->batch_range.is_valid() == false)
 		{
 			return;
@@ -502,5 +535,140 @@ namespace VadonDemo::View
 				.range = view_resource->batch_range
 			}
 		);
+	}
+
+	void View::set_entity_custom_draw_data(RenderComponent* view_render_component, Render::CanvasComponent* canvas_component, RenderResourceHandle view_render_resource_handle)
+	{
+		Vadon::Core::EngineCoreInterface& engine_core = m_core.get_engine_core();
+		Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
+
+		const RenderResource* view_resource = resource_system.get_resource(view_render_resource_handle);
+
+		const Vadon::Scene::ResourceInfo resource_info = resource_system.get_resource_info(view_render_resource_handle);
+		if (resource_info.type_id == Vadon::Utilities::TypeRegistry::get_type_id<Shape>())
+		{
+			set_entity_shape_data(view_render_component, canvas_component, static_cast<const Shape*>(view_resource));
+		}
+		else if (resource_info.type_id == Vadon::Utilities::TypeRegistry::get_type_id<Sprite>())
+		{
+			set_entity_sprite_data(view_render_component, canvas_component, static_cast<const Sprite*>(view_resource));
+		}
+		else
+		{
+			VADON_UNREACHABLE;
+		}
+	}
+
+	void View::set_entity_shape_data(const RenderComponent* view_render_component, Render::CanvasComponent* canvas_component, const Shape* shape)
+	{
+		Vadon::Core::EngineCoreInterface& engine_core = m_core.get_engine_core();
+		Vadon::Render::Canvas::CanvasSystem& canvas_system = engine_core.get_system<Vadon::Render::Canvas::CanvasSystem>();
+
+		const Vadon::Math::ColorRGBA custom_color = Vadon::Math::ColorRGBA::multiply_colors(shape->color, view_render_component->color);
+
+		if (color_has_transparency(custom_color) == true)
+		{
+			// Make sure item sets render state for alpha blend
+			Vadon::Render::Canvas::RenderState alpha_blend_state = { .alpha_blend = true };
+			canvas_system.set_item_render_state(canvas_component->canvas_item, alpha_blend_state);
+		}
+
+		switch (Vadon::Utilities::to_enum<ShapeType>(shape->type))
+		{
+		case ShapeType::TRIANGLE:
+		{
+			Vadon::Render::Canvas::Triangle triangle;
+			triangle.points[0].position = Vadon::Math::Vector2{ 0, 0.5f } * shape->radius;
+			triangle.points[0].color = custom_color;
+
+			triangle.points[1].position = Vadon::Math::Vector2{ 0.5f , -0.5f } * shape->radius;
+			triangle.points[1].color = custom_color;
+
+			triangle.points[2].position = Vadon::Math::Vector2{ -0.5f, -0.5f } * shape->radius;
+			triangle.points[2].color = custom_color;
+
+			canvas_system.draw_item_triangle(canvas_component->canvas_item, triangle);
+		}
+		break;
+		case ShapeType::RECTANGLE:
+		{
+			Vadon::Render::Canvas::Rectangle box_rectangle;
+			box_rectangle.color = custom_color;
+			box_rectangle.dimensions.size = Vadon::Math::Vector2{ 1.0f, 1.0f } *shape->radius;
+			box_rectangle.filled = true;
+
+			canvas_system.draw_item_rectangle(canvas_component->canvas_item, box_rectangle);
+		}
+		break;
+		case ShapeType::DIAMOND:
+		{
+			Vadon::Render::Canvas::Triangle diamond_half_triangle;
+			diamond_half_triangle.points[0].position = Vadon::Math::Vector2{ 0, 1.0f } *shape->radius;
+			diamond_half_triangle.points[1].position = Vadon::Math::Vector2{ 1.0f, 0 } *shape->radius;
+			diamond_half_triangle.points[2].position = Vadon::Math::Vector2{ -1.0f, 0 } *shape->radius;
+
+			for (size_t triangle_index = 0; triangle_index < 3; ++triangle_index)
+			{
+				diamond_half_triangle.points[triangle_index].color = custom_color;
+			}
+
+			canvas_system.draw_item_triangle(canvas_component->canvas_item, diamond_half_triangle);
+
+			diamond_half_triangle.points[0].position = Vadon::Math::Vector2{ -1.0f, 0 } *shape->radius;
+			diamond_half_triangle.points[1].position = Vadon::Math::Vector2{ 1.0f, 0 } *shape->radius;
+			diamond_half_triangle.points[2].position = Vadon::Math::Vector2{ 0, -1.0f } *shape->radius;
+
+			canvas_system.draw_item_triangle(canvas_component->canvas_item, diamond_half_triangle);
+		}
+		break;
+		case ShapeType::CIRCLE:
+		{
+			Vadon::Render::Canvas::Circle circle;
+			circle.position = { 0, 0 };
+			circle.radius = 0.5f * shape->radius;
+			circle.color = custom_color;
+
+			canvas_system.draw_item_circle(canvas_component->canvas_item, circle);
+		}
+		break;
+		}
+	}
+
+	void View::set_entity_sprite_data(const RenderComponent* view_render_component, Render::CanvasComponent* canvas_component, const Sprite* sprite_resource)
+	{
+		Vadon::Core::EngineCoreInterface& engine_core = m_core.get_engine_core();
+		Vadon::Render::Canvas::CanvasSystem& canvas_system = engine_core.get_system<Vadon::Render::Canvas::CanvasSystem>();
+
+		if (sprite_resource->texture.is_valid() == false)
+		{
+			// Nothing to draw
+			return;
+		}
+
+		Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
+		VadonDemo::Render::TextureResourceHandle sprite_texture_handle = VadonDemo::Render::TextureResourceHandle::from_resource_handle(resource_system.load_resource(sprite_resource->texture));
+		const VadonDemo::Render::TextureResource* sprite_texture = resource_system.get_resource(sprite_texture_handle);
+		if (sprite_texture->texture.is_valid() == false)
+		{
+			// No valid texture loaded
+			return;
+		}
+
+		const Vadon::Math::ColorRGBA custom_color = Vadon::Math::ColorRGBA::multiply_colors(Vadon::Math::Color_White, view_render_component->color);
+
+		if (color_has_transparency(custom_color) == true)
+		{
+			// Make sure item sets render state for alpha blend
+			Vadon::Render::Canvas::RenderState alpha_blend_state = { .alpha_blend = true };
+			canvas_system.set_item_render_state(canvas_component->canvas_item, alpha_blend_state);
+		}
+
+		Vadon::Render::Canvas::Sprite canvas_sprite;
+		canvas_sprite.dimensions.size = Vadon::Math::Vector2_One;
+		canvas_sprite.uv_dimensions.size = Vadon::Math::Vector2_One;
+		canvas_sprite.color = custom_color;
+
+		canvas_system.set_item_texture(canvas_component->canvas_item, Vadon::Render::Canvas::Texture{ .srv = sprite_texture->texture_srv });
+		canvas_system.draw_item_sprite(canvas_component->canvas_item, canvas_sprite);
 	}
 }

@@ -48,6 +48,7 @@ namespace Vadon::Render::Canvas
 		// Might need further revision
 		virtual void set_item_texture(ItemHandle item_handle, const Texture& texture) = 0;
 		virtual void set_item_material(ItemHandle item_handle, MaterialHandle material_handle) = 0;
+		virtual void set_item_render_state(ItemHandle item_handle, const RenderState& render_state) = 0;
 
 		virtual MaterialHandle create_material(MaterialInfo info) = 0;
 		virtual bool is_material_valid(MaterialHandle material_handle) const = 0;
@@ -71,6 +72,7 @@ namespace Vadon::Render::Canvas
 
 		virtual void set_batch_texture(BatchHandle batch_handle, const Texture& texture) = 0;
 		virtual void set_batch_material(BatchHandle batch_handle, MaterialHandle material_handle) = 0;
+		virtual void set_batch_render_state(BatchHandle batch_handle, const RenderState& render_state) = 0;
 
 		// TODO: add separate function to just process a set of layers into a list of graphics commands
 		// Can then draw them to a provided context (camera + viewports)

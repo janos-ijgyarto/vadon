@@ -32,6 +32,7 @@ namespace VadonDemo::View
 	{
 		// TODO: implement a utility type which takes care of both the persistent resource ID and the loaded resource handle?
 		RenderResourceID resource;
+		Vadon::Math::ColorRGBA color = Vadon::Math::Color_White;
 
 		static void register_component();
 	};

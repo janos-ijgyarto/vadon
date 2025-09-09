@@ -17,9 +17,11 @@
                 "data_type": 2,
                 "keyframe_indices": [
                     0,
+                    9,
                     15
                 ],
                 "keyframe_values": [
+                    1.0,
                     1.0,
                     0.0
                 ],
