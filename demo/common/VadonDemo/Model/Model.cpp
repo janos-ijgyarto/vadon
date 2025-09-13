@@ -21,17 +21,6 @@ namespace
 
 		return Vadon::Math::Vector2(cos_angle * vector.x - sin_angle * vector.y, sin_angle * vector.x + cos_angle * vector.y);
 	}
-
-	bool collision_test(const Vadon::Math::Vector2& pos_a, float radius_a, const Vadon::Math::Vector2& pos_b, float radius_b)
-	{
-		const float hit_radius = radius_a + radius_b;
-		const float hit_radius_sq = hit_radius * hit_radius;
-
-		const Vadon::Math::Vector2 a_to_b = pos_b - pos_a;
-		const float dist_sq = Vadon::Math::Vector::dot(a_to_b, a_to_b);
-
-		return dist_sq < hit_radius_sq;
-	}
 }
 
 namespace VadonDemo::Model
@@ -44,10 +33,10 @@ namespace VadonDemo::Model
 		// FIXME: have to do this first because it gets referenced by player component
 		// Need to create a system where we can set initialization order based on dependencies!
 		WeaponSystem::register_types();
+		CollisionSystem::register_types();
 
 		Transform2D::register_component();
 		Velocity2D::register_component();
-		Collision::register_component();
 		Health::register_component();
 		Player::register_component();
 		Enemy::register_component();
@@ -73,7 +62,7 @@ namespace VadonDemo::Model
 		update_dynamic(ecs_world, delta_time);
 		update_player(ecs_world, delta_time);
 		update_enemies(ecs_world, delta_time);
-		update_collisions(ecs_world, delta_time);
+		m_collision_system.update(ecs_world, delta_time);
 		update_health(ecs_world, delta_time);
 		update_spawners(ecs_world, delta_time);
 
@@ -137,10 +126,42 @@ namespace VadonDemo::Model
 		return root_entity;
 	}
 
+	void Model::init_entity_collision(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle entity)
+	{
+		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
+		Collision* collision_component = component_manager.get_component<Collision>(entity);
+		if (collision_component == nullptr)
+		{
+			return;
+		}
+
+		if(component_manager.has_component<Player>(entity))
+		{
+			collision_component->callback = &Model::player_collision_callback;
+			collision_component->layers = 1 << static_cast<uint8_t>(CollisionLayer::ENEMIES);
+			return;
+		}
+
+		if(component_manager.has_component<Enemy>(entity))
+		{
+			collision_component->callback = &Model::enemy_collision_callback;
+			collision_component->layers = 1 << static_cast<uint8_t>(CollisionLayer::ENEMIES) | 1 << static_cast<uint8_t>(CollisionLayer::PROJECTILES);
+			return;
+		}
+
+		if(component_manager.has_component<ProjectileComponent>(entity))
+		{
+			collision_component->callback = &WeaponSystem::projectile_collision_callback;
+			collision_component->layers = 1 << static_cast<uint8_t>(CollisionLayer::PROJECTILES);
+			return;
+		}
+	}
+
 	Model::Model(Core::Core& core)
 		: m_core(core)
 		, m_random_engine(std::random_device{}())
 		, m_enemy_dist(0.0f, 2 * std::numbers::pi_v<float>)
+		, m_collision_system(core)
 		, m_weapon_system(core)
 		, m_elapsed_time(0.0f)
 	{
@@ -443,157 +464,6 @@ namespace VadonDemo::Model
 		}
 	}
 
-	void Model::update_collisions(Vadon::ECS::World& ecs_world, float /*delta_time*/)
-	{
-		// FIXME: this is just a placeholder for an actual collision system
-		// Could just use ECS, but the long-term plan is to use accelerator structures for processes like this
-		enum class CollisionType
-		{
-			PLAYER,
-			ENEMY,
-			PROJECTILE,
-			OTHER
-		};
-
-		struct CollisionData
-		{
-			Vadon::ECS::EntityHandle entity;
-			Vadon::Math::Vector2 position;
-			float radius = 0.0f;
-			CollisionType type = CollisionType::OTHER;
-			// TODO: some other metadata?
-		};
-		std::vector<CollisionData> collision_data_vec;
-
-		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
-
-		auto collision_query = component_manager.run_component_query<Transform2D&, Collision&>();
-		for (auto collision_it = collision_query.get_iterator(); collision_it.is_valid() == true; collision_it.next())
-		{
-			auto collision_tuple = collision_it.get_tuple();
-			const Transform2D& current_transform = std::get<Transform2D&>(collision_tuple);
-			Collision& current_collision = std::get<Collision&>(collision_tuple);
-
-			current_collision.collision_data_offset = collision_data_vec.size();
-
-			CollisionData& collision_data = collision_data_vec.emplace_back();
-			collision_data.entity = collision_it.get_entity();
-			collision_data.position = current_transform.position;
-			collision_data.radius = current_transform.scale * current_collision.radius;
-
-			if (component_manager.has_component<Player>(collision_it.get_entity()) == true)
-			{
-				collision_data.type = CollisionType::PLAYER;
-			}
-			else if (component_manager.has_component<Enemy>(collision_it.get_entity()) == true)
-			{
-				collision_data.type = CollisionType::ENEMY;
-			}
-			else if (component_manager.has_component<ProjectileComponent>(collision_it.get_entity()) == true)
-			{
-				collision_data.type = CollisionType::PROJECTILE;
-			}
-		}
-
-		for (const CollisionData& current_collision : collision_data_vec)
-		{
-			switch (current_collision.type)
-			{
-			case CollisionType::PLAYER:
-			{
-				Player* player_component = component_manager.get_component<Player>(current_collision.entity);
-				if (player_component->damage_timer > 0.0f)
-				{
-					// Player took damage previously, still timing out
-					continue;
-				}
-
-				Health* player_health = component_manager.get_component<Health>(current_collision.entity);
-				if (player_health == nullptr)
-				{
-					continue;
-				}
-
-				if (player_health->current_health <= 0.0f)
-				{
-					// Player is no longer alive
-					continue;
-				}
-
-				// Check against all enemies
-				for (const CollisionData& other_collision : collision_data_vec)
-				{
-					if (other_collision.type != CollisionType::ENEMY)
-					{
-						continue;
-					}
-
-					// End on the first collision
-					// FIXME: should we check all and take the closest hit instead?
-					if (collision_test(current_collision.position, current_collision.radius, other_collision.position, other_collision.radius))
-					{
-						const Enemy* enemy_component = component_manager.get_component<Enemy>(other_collision.entity);
-
-						// Apply damage
-						player_health->current_health -= enemy_component->damage;
-
-						// Restart damage timer
-						player_component->damage_timer = player_component->damage_delay;
-						break;
-					}
-				}
-			}
-			break;
-			case CollisionType::ENEMY:
-			{
-				Health* enemy_health = component_manager.get_component<Health>(current_collision.entity);
-				if (enemy_health == nullptr)
-				{
-					continue;
-				}
-
-				if (enemy_health->current_health <= 0.0f)
-				{
-					// Enemy is no longer alive
-					continue;
-				}
-
-				// Check against all projectiles
-				for (const CollisionData& other_collision : collision_data_vec)
-				{
-					if (other_collision.type != CollisionType::PROJECTILE)
-					{
-						continue;
-					}
-
-					ProjectileComponent* projectile = component_manager.get_component<ProjectileComponent>(other_collision.entity);
-					if (projectile->remaining_lifetime <= 0.0f)
-					{
-						// Projectile has already expired
-						continue;
-					}
-
-					if (collision_test(current_collision.position, current_collision.radius, other_collision.position, other_collision.radius))
-					{
-						// Make sure projectile "dies" from this impact
-						projectile->remaining_lifetime = 0.0f;
-
-						// Apply damage
-						enemy_health->current_health -= projectile->damage;
-					}
-
-					if (enemy_health->current_health <= 0.0f)
-					{
-						// Enemy is no longer alive
-						break;
-					}
-				}
-			}
-			break;
-			}
-		}
-	}
-
 	void Model::update_health(Vadon::ECS::World& ecs_world, float /*delta_time*/)
 	{
 		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
@@ -711,6 +581,67 @@ namespace VadonDemo::Model
 		}
 
 		m_core.entity_added(ecs_world, spawned_enemy);
+	}
+
+	void Model::player_collision_callback(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle player, Vadon::ECS::EntityHandle collider)
+	{
+		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
+		Player* player_component = component_manager.get_component<Player>(player);
+		VADON_ASSERT(player_component != nullptr, "Cannot find player component!");
+
+		if (player_component->damage_timer > 0.0f)
+		{
+			// Player took damage previously, still timing out
+			return;
+		}
+
+		Health* player_health = component_manager.get_component<Health>(player);
+		if (player_health == nullptr)
+		{
+			return;
+		}
+
+		if (player_health->current_health <= 0.0f)
+		{
+			// Player is no longer alive
+			return;
+		}
+
+		// Check if we collided with enemy
+		const Enemy* enemy_component = component_manager.get_component<Enemy>(collider);
+		if (enemy_component != nullptr)
+		{
+			// Apply damage
+			player_health->current_health -= enemy_component->damage;
+
+			// Restart damage timer
+			// TODO: this will only allow the player to take damage from the first thing they collided with!
+			// May need to revise to give certain damage sources priority!
+			player_component->damage_timer = player_component->damage_delay;
+		}
+	}
+
+	void Model::enemy_collision_callback(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle enemy, Vadon::ECS::EntityHandle collider)
+	{
+		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
+		Health* enemy_health = component_manager.get_component<Health>(enemy);
+		if (enemy_health == nullptr)
+		{
+			return;
+		}
+
+		if (enemy_health->current_health <= 0.0f)
+		{
+			// Enemy is no longer alive
+			return;
+		}
+
+		ProjectileComponent* projectile = component_manager.get_component<ProjectileComponent>(collider);
+		if (projectile != nullptr)
+		{
+			// Apply damage
+			enemy_health->current_health -= projectile->damage;
+		}
 	}
 
 	void Model::clear_removed_entities(Vadon::ECS::World& ecs_world)

@@ -51,7 +51,7 @@ namespace VadonDemo::View
 	struct DamageComponent
 	{
 		Vadon::Scene::AnimationID animation;
-		float lifetime = 1.0f;
+		float duration = 1.0f;
 
 		static void register_component();
 	};

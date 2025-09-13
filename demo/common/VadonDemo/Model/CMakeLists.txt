@@ -8,4 +8,5 @@ target_sources(${VADONDEMO_CURRENT_TARGET}
     Resource.cpp
     )
 
+add_subdirectory(Collision)
 add_subdirectory(Weapon)

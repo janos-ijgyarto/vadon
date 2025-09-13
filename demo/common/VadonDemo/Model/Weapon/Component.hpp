@@ -44,10 +44,6 @@ namespace VadonDemo::Model
 	struct ProjectileAOEComponent
 	{
 		float radius = 0.0f;
-		float duration = 0.0f;
-
-		bool aoe_active = false;
-		float aoe_timer = 0.0f;
 
 		static void register_component();
 	};

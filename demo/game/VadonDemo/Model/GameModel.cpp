@@ -100,7 +100,18 @@ namespace VadonDemo::Model
 
 	bool GameModel::initialize()
 	{
-		// TODO: anything?
+		m_game_core.get_core().add_entity_event_callback(
+			[this](Vadon::ECS::World& ecs_world, const VadonDemo::Core::EntityEvent& event)
+			{
+				switch (event.type)
+				{
+				case VadonDemo::Core::EntityEventType::ADDED:
+					m_game_core.get_core().get_model().init_entity_collision(ecs_world, event.entity);
+					break;
+				}
+			}
+		);
+
 		return true;
 	}
 

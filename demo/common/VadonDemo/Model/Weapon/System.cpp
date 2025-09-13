@@ -9,15 +9,6 @@
 #include <Vadon/Scene/Resource/ResourceSystem.hpp>
 #include <Vadon/Scene/SceneSystem.hpp>
 
-namespace
-{
-	struct CreateProjectileData
-	{
-		Vadon::ECS::EntityHandle weapon_entity;
-		Vadon::Scene::SceneID prefab;
-	};
-}
-
 namespace VadonDemo::Model
 {
 	WeaponSystem::WeaponSystem(Core::Core& core)
@@ -197,5 +188,15 @@ namespace VadonDemo::Model
 		}
 
 		return true;
+	}
+
+	void WeaponSystem::projectile_collision_callback(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle projectile, Vadon::ECS::EntityHandle /*collider*/)
+	{
+		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
+		ProjectileComponent* projectile_component = component_manager.get_component<ProjectileComponent>(projectile);
+		VADON_ASSERT(projectile_component != nullptr, "Cannot find projectile component!");
+
+		// Collision will make the projectile expire
+		projectile_component->remaining_lifetime = 0.0f;
 	}
 }

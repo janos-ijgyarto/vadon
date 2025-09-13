@@ -22,13 +22,6 @@ namespace VadonDemo::Model
 		Vadon::Utilities::TypeRegistry::add_property<Velocity2D>("acceleration", Vadon::Utilities::MemberVariableBind<&Velocity2D::acceleration>().bind_member_getter().bind_member_setter());
 	}
 
-	void Collision::register_component()
-	{
-		Vadon::ECS::ComponentRegistry::register_component_type<Collision>();
-
-		Vadon::Utilities::TypeRegistry::add_property<Collision>("radius", Vadon::Utilities::MemberVariableBind<&Collision::radius>().bind_member_getter().bind_member_setter());
-	}
-
 	void Health::register_component()
 	{
 		Vadon::ECS::ComponentRegistry::register_component_type<Health>();

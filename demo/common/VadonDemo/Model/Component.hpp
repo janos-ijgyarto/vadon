@@ -30,14 +30,6 @@ namespace VadonDemo::Model
 		static void register_component();
 	};
 
-	struct Collision
-	{
-		float radius = 1.0f;
-		size_t collision_data_offset = 0;
-
-		static void register_component();
-	};
-
 	struct Health
 	{
 		float max_health = 0.0f;

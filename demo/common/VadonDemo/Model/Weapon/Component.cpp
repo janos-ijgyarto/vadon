@@ -34,6 +34,5 @@ namespace VadonDemo::Model
 		Vadon::ECS::ComponentRegistry::register_component_type<ProjectileAOEComponent>();
 
 		Vadon::Utilities::TypeRegistry::add_property<ProjectileAOEComponent>("radius", Vadon::Utilities::MemberVariableBind<&ProjectileAOEComponent::radius>().bind_member_getter().bind_member_setter());
-		Vadon::Utilities::TypeRegistry::add_property<ProjectileAOEComponent>("duration", Vadon::Utilities::MemberVariableBind<&ProjectileAOEComponent::duration>().bind_member_getter().bind_member_setter());
 	}
 }

@@ -31,6 +31,8 @@ namespace VadonDemo::Model
 
 		bool validate_weapon(const Player& player, const WeaponComponent& weapon_component);
 
+		static void projectile_collision_callback(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle player, Vadon::ECS::EntityHandle collider);
+
 		Core::Core& m_core;
 
 		friend class Model;

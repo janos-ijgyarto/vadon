@@ -1,6 +1,7 @@
 #ifndef VADONDEMO_MODEL_MODEL_HPP
 #define VADONDEMO_MODEL_MODEL_HPP
 #include <VadonDemo/VadonDemoCommon.hpp>
+#include <VadonDemo/Model/Collision/System.hpp>
 #include <VadonDemo/Model/Weapon/System.hpp>
 
 #include <Vadon/Math/Vector.hpp>
@@ -34,6 +35,8 @@ namespace VadonDemo::Model
 		VADONDEMO_API static Vadon::ECS::EntityHandle get_root_entity(Vadon::ECS::World& ecs_world);
 
 		float get_elapsed_time() const { return m_elapsed_time; }
+
+		VADONDEMO_API void init_entity_collision(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle entity);
 	private:
 		Model(Core::Core& core);
 		bool initialize();
@@ -48,16 +51,19 @@ namespace VadonDemo::Model
 		void update_player(Vadon::ECS::World& ecs_world, float delta_time);
 		void update_enemies(Vadon::ECS::World& ecs_world, float delta_time);
 		void update_dynamic(Vadon::ECS::World& ecs_world, float delta_time);
-		void update_collisions(Vadon::ECS::World& ecs_world, float delta_time);
 		void update_health(Vadon::ECS::World& ecs_world, float delta_time);
 		void update_spawners(Vadon::ECS::World& ecs_world, float delta_time);
 
 		void spawn_enemy(Vadon::ECS::World& ecs_world, const Spawner& spawner, const Vadon::Math::Vector2& position);
 
+		static void player_collision_callback(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle player, Vadon::ECS::EntityHandle collider);
+		static void enemy_collision_callback(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle enemy, Vadon::ECS::EntityHandle collider);
+
 		void clear_removed_entities(Vadon::ECS::World& ecs_world);
 
 		Core::Core& m_core;
 
+		CollisionSystem m_collision_system;
 		WeaponSystem m_weapon_system;
 
 		std::mt19937 m_random_engine;
