@@ -47,5 +47,7 @@ namespace VadonDemo::Model
 
 		static void register_component();
 	};
+
+	struct ProjectileExplosionTag {};
 }
 #endif

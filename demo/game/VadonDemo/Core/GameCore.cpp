@@ -586,7 +586,7 @@ namespace VadonDemo::Core
 				// Assume we gave a path to the folder with the project file
 				if (std::filesystem::is_directory(fs_root_path) == true)
 				{
-					fs_root_path /= Vadon::Core::Project::c_project_file_name;
+					fs_root_path = (fs_root_path / Vadon::Core::Project::c_project_file_name).generic_string();
 					if (Vadon::Core::Project::is_valid_project_path(fs_root_path.generic_string()) == false)
 					{
 						Vadon::Core::Logger::log_error(c_invalid_path_error);

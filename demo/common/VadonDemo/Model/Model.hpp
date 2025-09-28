@@ -56,8 +56,8 @@ namespace VadonDemo::Model
 
 		void spawn_enemy(Vadon::ECS::World& ecs_world, const Spawner& spawner, const Vadon::Math::Vector2& position);
 
-		static void player_collision_callback(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle player, Vadon::ECS::EntityHandle collider);
-		static void enemy_collision_callback(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle enemy, Vadon::ECS::EntityHandle collider);
+		static void player_collision_callback(VadonDemo::Core::Core& core, Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle player, Vadon::ECS::EntityHandle collider);
+		static void enemy_collision_callback(VadonDemo::Core::Core& core, Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle enemy, Vadon::ECS::EntityHandle collider);
 
 		void clear_removed_entities(Vadon::ECS::World& ecs_world);
 

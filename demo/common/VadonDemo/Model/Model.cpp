@@ -138,14 +138,15 @@ namespace VadonDemo::Model
 		if(component_manager.has_component<Player>(entity))
 		{
 			collision_component->callback = &Model::player_collision_callback;
-			collision_component->layers = 1 << static_cast<uint8_t>(CollisionLayer::ENEMIES);
+			collision_component->layers = 1 << static_cast<uint8_t>(CollisionLayer::PLAYER);
 			return;
 		}
 
 		if(component_manager.has_component<Enemy>(entity))
 		{
 			collision_component->callback = &Model::enemy_collision_callback;
-			collision_component->layers = 1 << static_cast<uint8_t>(CollisionLayer::ENEMIES) | 1 << static_cast<uint8_t>(CollisionLayer::PROJECTILES);
+			collision_component->layers = 1 << static_cast<uint8_t>(CollisionLayer::ENEMIES);
+			collision_component->mask = 1 << static_cast<uint8_t>(CollisionLayer::PLAYER);
 			return;
 		}
 
@@ -153,6 +154,7 @@ namespace VadonDemo::Model
 		{
 			collision_component->callback = &WeaponSystem::projectile_collision_callback;
 			collision_component->layers = 1 << static_cast<uint8_t>(CollisionLayer::PROJECTILES);
+			collision_component->mask = 1 << static_cast<uint8_t>(CollisionLayer::ENEMIES);
 			return;
 		}
 	}
@@ -583,7 +585,7 @@ namespace VadonDemo::Model
 		m_core.entity_added(ecs_world, spawned_enemy);
 	}
 
-	void Model::player_collision_callback(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle player, Vadon::ECS::EntityHandle collider)
+	void Model::player_collision_callback(VadonDemo::Core::Core& /*core*/, Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle player, Vadon::ECS::EntityHandle collider)
 	{
 		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
 		Player* player_component = component_manager.get_component<Player>(player);
@@ -621,7 +623,7 @@ namespace VadonDemo::Model
 		}
 	}
 
-	void Model::enemy_collision_callback(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle enemy, Vadon::ECS::EntityHandle collider)
+	void Model::enemy_collision_callback(VadonDemo::Core::Core& /*core*/, Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle enemy, Vadon::ECS::EntityHandle collider)
 	{
 		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
 		Health* enemy_health = component_manager.get_component<Health>(enemy);
@@ -641,6 +643,15 @@ namespace VadonDemo::Model
 		{
 			// Apply damage
 			enemy_health->current_health -= projectile->damage;
+			
+			if (projectile->knockback > 0.001f)
+			{
+				const Transform2D* projectile_transform = component_manager.get_component<Transform2D>(collider);
+				Transform2D* enemy_transform = component_manager.get_component<Transform2D>(enemy);
+
+				const Vadon::Math::Vector2 projectile_to_enemy = Vadon::Math::Vector::normalize(enemy_transform->position - projectile_transform->position);
+				enemy_transform->position += (projectile_to_enemy * projectile->knockback);
+			}
 		}
 	}
 

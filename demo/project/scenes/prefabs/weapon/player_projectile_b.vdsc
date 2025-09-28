@@ -13,9 +13,16 @@
                     },
                     {
                         "properties": {
+                            "color": "#ffffffff",
                             "resource": "M2gzDQ6+RImDK0PPGqMVMQ=="
                         },
                         "type": "VadonDemo::View::RenderComponent"
+                    },
+                    {
+                        "properties": {
+                            "radius": 9.0
+                        },
+                        "type": "VadonDemo::Model::Collision"
                     },
                     {
                         "properties": {
@@ -24,7 +31,7 @@
                                 0.0
                             ],
                             "rotation": 0.0,
-                            "scale": 9.0
+                            "scale": 1.0
                         },
                         "type": "VadonDemo::Model::Transform2D"
                     },
@@ -34,12 +41,6 @@
                             "top_speed": 400.0
                         },
                         "type": "VadonDemo::Model::Velocity2D"
-                    },
-                    {
-                        "properties": {
-                            "radius": 1.0
-                        },
-                        "type": "VadonDemo::Model::Collision"
                     },
                     {
                         "properties": {},
@@ -52,14 +53,14 @@
                                 0.0
                             ],
                             "rotation": 0.0,
-                            "scale": 9.0
+                            "scale": 1.0
                         },
                         "type": "VadonDemo::View::TransformComponent"
                     },
                     {
                         "properties": {
                             "damage": 5.0,
-                            "knockback": 0.0,
+                            "knockback": 3.0,
                             "range": 150.0
                         },
                         "type": "VadonDemo::Model::ProjectileComponent"

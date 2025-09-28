@@ -37,6 +37,7 @@ namespace VadonDemo::Model
 		{
 			Vadon::ECS::EntityHandle entity;
 			uint8_t layers = 0;
+			uint8_t mask = 0;
 			VadonDemo::Model::CollisionCallback callback = nullptr;
 
 			Vadon::Math::Vector2 position;
@@ -58,9 +59,12 @@ namespace VadonDemo::Model
 			collision_data.entity = collision_it.get_entity();
 			collision_data.callback = current_collision.callback;
 			collision_data.layers = current_collision.layers;
+			collision_data.mask = current_collision.mask;
 
 			collision_data.position = current_transform.position;
 			collision_data.radius = current_transform.scale * current_collision.radius;
+
+			VADON_ASSERT(collision_data.radius > 0.0f, "Something is wrong!");
 		}
 
 		for (size_t outer_index = 0; outer_index < collision_data_vec.size(); ++outer_index)
@@ -69,7 +73,7 @@ namespace VadonDemo::Model
 			for (size_t inner_index = outer_index + 1; inner_index < collision_data_vec.size(); ++inner_index)
 			{
 				const CollisionData& second_collider = collision_data_vec[inner_index];
-				if ((first_collider.layers & second_collider.layers) == 0)
+				if (((first_collider.mask & second_collider.layers) == 0) && ((first_collider.layers & second_collider.mask) == 0))
 				{
 					continue;
 				}
@@ -82,12 +86,12 @@ namespace VadonDemo::Model
 				// Collision detected, run callbacks
 				if (first_collider.callback != nullptr)
 				{
-					first_collider.callback(ecs_world, first_collider.entity, second_collider.entity);
+					first_collider.callback(m_core, ecs_world, first_collider.entity, second_collider.entity);
 				}
 
 				if (second_collider.callback != nullptr)
 				{
-					second_collider.callback(ecs_world, second_collider.entity, first_collider.entity);
+					second_collider.callback(m_core, ecs_world, second_collider.entity, first_collider.entity);
 				}
 			}
 		}

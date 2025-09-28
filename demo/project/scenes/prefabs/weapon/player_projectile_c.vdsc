@@ -13,6 +13,13 @@
                     },
                     {
                         "properties": {
+                            "radius": 9.0
+                        },
+                        "type": "VadonDemo::Model::Collision"
+                    },
+                    {
+                        "properties": {
+                            "color": "#ffffffff",
                             "resource": "AYjWfG6cSAG9KXBMlJElMQ=="
                         },
                         "type": "VadonDemo::View::RenderComponent"
@@ -24,7 +31,7 @@
                                 0.0
                             ],
                             "rotation": 0.0,
-                            "scale": 9.0
+                            "scale": 1.0
                         },
                         "type": "VadonDemo::Model::Transform2D"
                     },
@@ -34,12 +41,6 @@
                             "top_speed": 200.0
                         },
                         "type": "VadonDemo::Model::Velocity2D"
-                    },
-                    {
-                        "properties": {
-                            "radius": 1.0
-                        },
-                        "type": "VadonDemo::Model::Collision"
                     },
                     {
                         "properties": {},
@@ -52,14 +53,14 @@
                                 0.0
                             ],
                             "rotation": 0.0,
-                            "scale": 9.0
+                            "scale": 1.0
                         },
                         "type": "VadonDemo::View::TransformComponent"
                     },
                     {
                         "properties": {
                             "damage": 20.0,
-                            "knockback": 0.0,
+                            "knockback": 25.0,
                             "range": 400.0
                         },
                         "type": "VadonDemo::Model::ProjectileComponent"
@@ -71,6 +72,12 @@
                             "vfx_prefab": "zc+Dq+F5R8O5BUf1qem3bQ=="
                         },
                         "type": "VadonDemo::View::VFXComponent"
+                    },
+                    {
+                        "properties": {
+                            "radius": 25.0
+                        },
+                        "type": "VadonDemo::Model::ProjectileAOEComponent"
                     }
                 ],
                 "name": "Projectile_C",
