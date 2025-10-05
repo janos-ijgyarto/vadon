@@ -8,7 +8,7 @@ namespace Vadon::ECS
 	{
 	public:
 		VADONCOMMON_API EntityHandle create_entity();
-		bool is_entity_valid(EntityHandle entity_handle) const { m_entity_pool.is_handle_valid(entity_handle); }
+		bool is_entity_valid(EntityHandle entity_handle) const { return m_entity_pool.is_handle_valid(entity_handle); }
 		bool is_entity_pending_remove(EntityHandle entity_handle) const;
 		VADONCOMMON_API void remove_entity(EntityHandle entity_handle);
 

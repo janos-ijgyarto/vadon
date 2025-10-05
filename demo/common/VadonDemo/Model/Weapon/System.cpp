@@ -10,6 +10,25 @@
 #include <Vadon/Scene/Resource/ResourceSystem.hpp>
 #include <Vadon/Scene/SceneSystem.hpp>
 
+namespace
+{
+	float angle_between_vectors(const Vadon::Math::Vector2& vec_a, const Vadon::Math::Vector2& vec_b)
+	{
+		const float dot = Vadon::Math::Vector::dot(vec_a, vec_b);
+		const float det = vec_a.x * vec_b.y - vec_a.y * vec_b.x;
+		return std::atan2f(det, dot);
+	}
+
+	Vadon::Math::Vector2 rotate_2d_vector(const Vadon::Math::Vector2& vector, float angle)
+	{
+
+		const float sin_angle = std::sinf(angle);
+		const float cos_angle = std::cosf(angle);
+
+		return Vadon::Math::Vector2(cos_angle * vector.x - sin_angle * vector.y, sin_angle * vector.x + cos_angle * vector.y);
+	}
+}
+
 namespace VadonDemo::Model
 {
 	WeaponSystem::WeaponSystem(Core::Core& core)
@@ -88,7 +107,8 @@ namespace VadonDemo::Model
 
 		// Check if any projectiles timed out
 		{
-			auto projectile_query = component_manager.run_component_query<ProjectileComponent&, ProjectileAOEComponent*, ProjectileExplosionTag*>();
+			Vadon::ECS::EntityManager& entity_manager = ecs_world.get_entity_manager();
+			auto projectile_query = component_manager.run_component_query<ProjectileComponent&, ProjectileHomingComponent*, ProjectileAOEComponent*, ProjectileExplosionTag*>();
 			for (auto projectile_it = projectile_query.get_iterator(); projectile_it.is_valid() == true; projectile_it.next())
 			{
 				auto projectile_tuple = projectile_it.get_tuple();
@@ -115,7 +135,6 @@ namespace VadonDemo::Model
 						// FIXME: this is all really janky
 						// Need a better system to ensure that adding/removing Entities or Components
 						// does not invalidate iterators/references/etc. until we reach a sync point!
-						Vadon::ECS::EntityManager& entity_manager = ecs_world.get_entity_manager();
 						Vadon::ECS::EntityHandle explosion_entity = entity_manager.create_entity();
 
 						{
@@ -154,6 +173,46 @@ namespace VadonDemo::Model
 
 						// Dispatch event
 						m_core.entity_added(ecs_world, explosion_entity);
+					}
+
+					// Projectile has expired
+					continue;
+				}
+
+				ProjectileHomingComponent* homing_component = std::get<ProjectileHomingComponent*>(projectile_tuple);
+				if (homing_component != nullptr)
+				{
+					// Make sure target is still valid
+					if (homing_component->target_entity.is_valid() == true)
+					{
+						if (entity_manager.is_entity_valid(homing_component->target_entity) == false)
+						{
+							homing_component->target_entity.invalidate();
+						}
+					}
+
+					if (homing_component->target_entity.is_valid() == true)
+					{
+						const Transform2D* target_transform = component_manager.get_component<Transform2D>(homing_component->target_entity);
+						if (target_transform != nullptr)
+						{
+							const Transform2D* projectile_transform = component_manager.get_component<Transform2D>(projectile_it.get_entity());
+							Velocity2D* projectile_velocity = component_manager.get_component<Velocity2D>(projectile_it.get_entity());
+
+							const Vadon::Math::Vector2 direction = Vadon::Math::Vector::normalize(target_transform->position - projectile_transform->position);
+							const Vadon::Math::Vector2 current_dir = Vadon::Math::Vector::normalize(projectile_velocity->velocity);
+
+							const float turn_speed = std::max(homing_component->turn_speed, ProjectileHomingComponent::c_min_turn_speed);
+
+							const float angle_diff = angle_between_vectors(current_dir, direction);
+							float angle_change = delta_time * turn_speed * (std::signbit(angle_diff) ? -1.0f : 1.0f);
+							if (std::abs(angle_change) > std::abs(angle_diff))
+							{
+								angle_change = angle_diff;
+							}
+
+							projectile_velocity->velocity = rotate_2d_vector(current_dir, angle_change) * projectile_velocity->top_speed;
+						}
 					}
 				}
 			}

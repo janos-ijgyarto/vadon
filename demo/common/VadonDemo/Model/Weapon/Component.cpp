@@ -27,6 +27,7 @@ namespace VadonDemo::Model
 		Vadon::ECS::ComponentRegistry::register_component_type<ProjectileHomingComponent>();
 
 		Vadon::Utilities::TypeRegistry::add_property<ProjectileHomingComponent>("turn_speed", Vadon::Utilities::MemberVariableBind<&ProjectileHomingComponent::turn_speed>().bind_member_getter().bind_member_setter());
+		Vadon::Utilities::TypeRegistry::add_property<ProjectileHomingComponent>("aimed_on_launch", Vadon::Utilities::MemberVariableBind<&ProjectileHomingComponent::aimed_on_launch>().bind_member_getter().bind_member_setter());
 	}
 
 	void ProjectileAOEComponent::register_component()

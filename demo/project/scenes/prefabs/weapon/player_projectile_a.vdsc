@@ -13,9 +13,16 @@
                     },
                     {
                         "properties": {
+                            "color": "#ffffffff",
                             "resource": "oXIVWPdZQMi0TGxI2zV63A=="
                         },
                         "type": "VadonDemo::View::RenderComponent"
+                    },
+                    {
+                        "properties": {
+                            "radius": 1.0
+                        },
+                        "type": "VadonDemo::Model::Collision"
                     },
                     {
                         "properties": {
@@ -24,7 +31,7 @@
                                 0.0
                             ],
                             "rotation": 0.0,
-                            "scale": 9.0
+                            "scale": 1.0
                         },
                         "type": "VadonDemo::Model::Transform2D"
                     },
@@ -34,12 +41,6 @@
                             "top_speed": 300.0
                         },
                         "type": "VadonDemo::Model::Velocity2D"
-                    },
-                    {
-                        "properties": {
-                            "radius": 1.0
-                        },
-                        "type": "VadonDemo::Model::Collision"
                     },
                     {
                         "properties": {},
@@ -52,7 +53,7 @@
                                 0.0
                             ],
                             "rotation": 0.0,
-                            "scale": 9.0
+                            "scale": 1.0
                         },
                         "type": "VadonDemo::View::TransformComponent"
                     },
@@ -63,6 +64,13 @@
                             "range": 300.0
                         },
                         "type": "VadonDemo::Model::ProjectileComponent"
+                    },
+                    {
+                        "properties": {
+                            "aimed_on_launch": false,
+                            "turn_speed": 1.5
+                        },
+                        "type": "VadonDemo::Model::ProjectileHomingComponent"
                     }
                 ],
                 "name": "Projectile_A",
