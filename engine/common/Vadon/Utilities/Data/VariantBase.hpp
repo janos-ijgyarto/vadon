@@ -1,9 +1,9 @@
 #ifndef VADON_UTILITIES_DATA_VARIANTBASE_HPP
 #define VADON_UTILITIES_DATA_VARIANTBASE_HPP
 #include <Vadon/Scene/Resource/Resource.hpp>
+#include <Vadon/Math/Color.hpp>
+#include <Vadon/Math/Vector.hpp>
 #include <Vadon/Utilities/Container/Box.hpp>
-#include <Vadon/Utilities/Math/Color.hpp>
-#include <Vadon/Utilities/Math/Vector.hpp>
 #include <Vadon/Utilities/TypeInfo/TypeList/VariantTypeList.hpp>
 namespace Vadon::Utilities
 {
@@ -16,9 +16,9 @@ namespace Vadon::Utilities
 	using BoxedVariantArray = Utilities::Box<VariantArray>;
 	using BoxedVariantDictionary = Utilities::Box<VariantDictionary>;
 
-	using Variant = std::variant<std::monostate, int, float, bool, std::string,
-		Utilities::Vector2, Utilities::Vector2i, Utilities::Vector3, Utilities::Vector3i, Utilities::Vector4,
-		Utilities::ColorRGBA,
+	using Variant = std::variant<std::monostate, int, uint32_t, float, bool, std::string,
+		Math::Vector2, Math::Vector2i, Math::Vector3, Math::Vector3i, Math::Vector4,
+		Math::ColorRGBA,
 		Vadon::Scene::ResourceHandle, Utilities::UUID,
 		BoxedVariantArray, BoxedVariantDictionary, NoReturnValue>;
 

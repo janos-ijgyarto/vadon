@@ -15,20 +15,20 @@ namespace VadonApp::Private::Platform::SDL
 	namespace
 	{
 		// TODO: move to utility header?
-		Vadon::Utilities::Vector2i get_sdl_window_position(SDL_Window* window)
+		Vadon::Math::Vector2i get_sdl_window_position(SDL_Window* window)
 		{
 			int pos_x = 0, pos_y = 0;
 			SDL_GetWindowPosition(window, &pos_x, &pos_y);
 
-			return Vadon::Utilities::Vector2i(pos_x, pos_y);
+			return Vadon::Math::Vector2i(pos_x, pos_y);
 		}
 
-		Vadon::Utilities::Vector2i get_sdl_window_size(SDL_Window* window)
+		Vadon::Math::Vector2i get_sdl_window_size(SDL_Window* window)
 		{
 			int width = 0, height = 0;
 			SDL_GetWindowSize(window, &width, &height);
 
-			return Vadon::Utilities::Vector2i(width, height);
+			return Vadon::Math::Vector2i(width, height);
 		}
 
 		constexpr VadonApp::Platform::WindowEventType convert_sdl_to_platform_window_event_type(SDL_WindowEventID event_id)
@@ -431,25 +431,25 @@ namespace VadonApp::Private::Platform::SDL
 		SDL_SetWindowTitle(window.sdl_window, title.data());
 	}
 
-	Vadon::Utilities::Vector2i PlatformInterface::get_window_position(WindowHandle window_handle) const
+	Vadon::Math::Vector2i PlatformInterface::get_window_position(WindowHandle window_handle) const
 	{
 		const SDLWindow& window = m_window_pool.get(window_handle);
 		return get_sdl_window_position(window.sdl_window);
 	}
 
-	void PlatformInterface::set_window_position(WindowHandle window_handle, const Vadon::Utilities::Vector2i position)
+	void PlatformInterface::set_window_position(WindowHandle window_handle, const Vadon::Math::Vector2i position)
 	{
 		SDLWindow& window = m_window_pool.get(window_handle);
 		SDL_SetWindowPosition(window.sdl_window, position.x, position.y);
 	}
 
-	Vadon::Utilities::Vector2i PlatformInterface::get_window_size(WindowHandle window_handle) const
+	Vadon::Math::Vector2i PlatformInterface::get_window_size(WindowHandle window_handle) const
 	{
 		const SDLWindow& window = m_window_pool.get(window_handle);
 		return get_sdl_window_size(window.sdl_window);
 	}
 
-	void PlatformInterface::set_window_size(WindowHandle window_handle, const Vadon::Utilities::Vector2i size)
+	void PlatformInterface::set_window_size(WindowHandle window_handle, const Vadon::Math::Vector2i size)
 	{
 		SDLWindow& window = m_window_pool.get(window_handle);
 		SDL_SetWindowSize(window.sdl_window, size.x, size.y);
@@ -497,7 +497,7 @@ namespace VadonApp::Private::Platform::SDL
 		return sdl_wm_info.info.win.window;
 	}
 
-	Vadon::Utilities::Vector2i PlatformInterface::get_window_drawable_size(WindowHandle window_handle) const
+	Vadon::Math::Vector2i PlatformInterface::get_window_drawable_size(WindowHandle window_handle) const
 	{
 		const SDLWindow& window = m_window_pool.get(window_handle);
 
@@ -505,7 +505,7 @@ namespace VadonApp::Private::Platform::SDL
 		int drawable_height = 0;
 		SDL_GL_GetDrawableSize(window.sdl_window, &drawable_width, &drawable_height);
 
-		return Vadon::Utilities::Vector2i(drawable_width, drawable_height);
+		return Vadon::Math::Vector2i(drawable_width, drawable_height);
 	}
 
 	bool PlatformInterface::is_window_focused(WindowHandle window_handle) const
@@ -680,7 +680,7 @@ namespace VadonApp::Private::Platform::SDL
 #endif
 	}
 
-	void PlatformInterface::warp_mouse(WindowHandle window_handle, const Vadon::Utilities::Vector2i& mouse_position)
+	void PlatformInterface::warp_mouse(WindowHandle window_handle, const Vadon::Math::Vector2i& mouse_position)
 	{
 		const SDLWindow& window = m_window_pool.get(window_handle);
 		SDL_WarpMouseInWindow(window.sdl_window, mouse_position.x, mouse_position.y);

@@ -214,7 +214,7 @@ namespace Vadon::Private::Render::DirectX
 		m_window_pool.remove(window_handle);
 	}
 
-	void RenderTargetSystem::resize_window(WindowHandle window_handle, const Vadon::Utilities::Vector2i& window_size)
+	void RenderTargetSystem::resize_window(WindowHandle window_handle, const Vadon::Math::Vector2i& window_size)
 	{
 		Window& window = m_window_pool.get(window_handle);
 
@@ -384,7 +384,7 @@ namespace Vadon::Private::Render::DirectX
 		device_context->OMSetRenderTargets(1, d3d_render_target_views, d3d_depth_stencil_view);
 	}
 
-	void RenderTargetSystem::clear_target(RTVHandle rtv_handle, const Vadon::Render::RGBAColor& clear_color)
+	void RenderTargetSystem::clear_target(RTVHandle rtv_handle, const Vadon::Math::Vector4& clear_color)
 	{
 		const RenderTargetView& render_target_view = m_rtv_pool.get(rtv_handle);
 

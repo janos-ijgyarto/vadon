@@ -22,13 +22,6 @@ namespace VadonDemo::Model
 		Vadon::Utilities::TypeRegistry::add_property<Velocity2D>("acceleration", Vadon::Utilities::MemberVariableBind<&Velocity2D::acceleration>().bind_member_getter().bind_member_setter());
 	}
 
-	void Collision::register_component()
-	{
-		Vadon::ECS::ComponentRegistry::register_component_type<Collision>();
-
-		Vadon::Utilities::TypeRegistry::add_property<Collision>("radius", Vadon::Utilities::MemberVariableBind<&Collision::radius>().bind_member_getter().bind_member_setter());
-	}
-
 	void Health::register_component()
 	{
 		Vadon::ECS::ComponentRegistry::register_component_type<Health>();
@@ -42,21 +35,6 @@ namespace VadonDemo::Model
 
 		Vadon::Utilities::TypeRegistry::add_property<Player>("damage_delay", Vadon::Utilities::MemberVariableBind<&Player::damage_delay>().bind_member_getter().bind_member_setter());
 		Vadon::Utilities::TypeRegistry::add_property<Player>("starting_weapons", Vadon::Utilities::MemberVariableBind<&Player::starting_weapons>().bind_member_getter().bind_member_setter());
-	}
-
-	void Weapon::register_component()
-	{
-		Vadon::ECS::ComponentRegistry::register_component_type<Weapon>();
-
-		Vadon::Utilities::TypeRegistry::add_property<Weapon>("definition", Vadon::Utilities::MemberVariableBind<&Weapon::definition>().bind_member_getter().bind_member_setter());
-	}
-
-	void Projectile::register_component()
-	{
-		Vadon::ECS::ComponentRegistry::register_component_type<Projectile>();
-
-		Vadon::Utilities::TypeRegistry::add_property<Projectile>("range", Vadon::Utilities::MemberVariableBind<&Projectile::range>().bind_member_getter().bind_member_setter());
-		Vadon::Utilities::TypeRegistry::add_property<Projectile>("damage", Vadon::Utilities::MemberVariableBind<&Projectile::damage>().bind_member_getter().bind_member_setter());
 	}
 
 	void Enemy::register_component()

@@ -1,8 +1,9 @@
 #ifndef VADON_UTILITIES_SERIALIZATION_SERIALIZER_HPP
 #define VADON_UTILITIES_SERIALIZATION_SERIALIZER_HPP
 #include <Vadon/Common.hpp>
-#include <Vadon/Utilities/Math/Color.hpp>
-#include <Vadon/Utilities/Math/Vector.hpp>
+#include <Vadon/Math/Color.hpp>
+#include <Vadon/Math/Vector.hpp>
+#include <Vadon/Utilities/Debugging/Assert.hpp>
 #include <vector>
 #include <memory>
 #include <string>
@@ -39,7 +40,7 @@ namespace Vadon::Utilities
 
 		VADONCOMMON_API static Instance create_serializer(std::vector<std::byte>& buffer, Type type, Mode mode);
 
-		virtual ~Serializer() {}
+		virtual ~Serializer() { VADON_ASSERT(m_finalized == true, "Serializer was not finalized!"); }
 
 		bool is_reading() const { return m_mode == Mode::READ; }
 
@@ -131,28 +132,31 @@ namespace Vadon::Utilities
 		}
 
 		template<> Result internal_serialize_value(int& value) { return serialize_int(value); }
+		template<> Result internal_serialize_value(uint32_t& value) { return serialize_uint(value); }
 		template<> Result internal_serialize_value(float& value) { return serialize_float(value); }
 		template<> Result internal_serialize_value(bool& value) { return serialize_bool(value); }
 		template<> Result internal_serialize_value(std::string& value) { return serialize_string(value); }
 		template<> Result internal_serialize_value(Vadon::Utilities::UUID& value) { return serialize_uuid(value); }
 
 		// TODO: can make a template wrapper for all vectors with size param (just point to first value)
-		template<> Result internal_serialize_value(Vadon::Utilities::Vector2& value) { return serialize_array_values(std::span(&value.x, 2)); }
-		template<> Result internal_serialize_value(Vadon::Utilities::Vector2i& value) { return serialize_array_values(std::span(&value.x, 2)); }
+		template<> Result internal_serialize_value(Vadon::Math::Vector2& value) { return serialize_array_values(std::span(&value.x, 2)); }
+		template<> Result internal_serialize_value(Vadon::Math::Vector2i& value) { return serialize_array_values(std::span(&value.x, 2)); }
 
-		template<> Result internal_serialize_value(Vadon::Utilities::Vector3& value) { return serialize_array_values(std::span(&value.x, 3)); }
+		template<> Result internal_serialize_value(Vadon::Math::Vector3& value) { return serialize_array_values(std::span(&value.x, 3)); }
 
-		template<> Result internal_serialize_value(Vadon::Utilities::ColorRGBA& value) { return serialize_color(value); }
+		template<> Result internal_serialize_value(Vadon::Math::ColorRGBA& value) { return serialize_color(value); }
 
 		virtual Result serialize_int(int& value) = 0;
+		virtual Result serialize_uint(uint32_t& value) = 0;
 		virtual Result serialize_float(float& value) = 0;
 		virtual Result serialize_bool(bool& value) = 0;
 		virtual Result serialize_string(std::string& value) = 0;
-		virtual Result serialize_color(ColorRGBA& color) = 0;
+		virtual Result serialize_color(Vadon::Math::ColorRGBA& color) = 0;
 		virtual Result serialize_uuid(Vadon::Utilities::UUID& value) = 0;
 
 		std::vector<std::byte>& m_buffer;
 		Mode m_mode;
+		bool m_finalized = false;
 	};
 }
 #endif

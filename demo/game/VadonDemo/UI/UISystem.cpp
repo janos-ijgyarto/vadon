@@ -335,7 +335,7 @@ namespace VadonDemo::UI
 
 		const VadonApp::Platform::MouseState mouse_state = platform_interface.get_mouse_state();
 
-		const Vadon::Utilities::Vector2i mouse_position = m_game_core.get_render_system().map_to_game_viewport(mouse_state.position);
+		const Vadon::Math::Vector2i mouse_position = m_game_core.get_render_system().map_to_game_viewport(mouse_state.position);
 		const Core::GlobalConfiguration& global_config = m_game_core.get_core().get_global_config();
 
 		CursorState cursor_state;
@@ -447,7 +447,8 @@ namespace VadonDemo::UI
 		// Dispatch events (to ensure we clean up used resources)
 		m_game_core.get_core().entity_removed(ecs_world, m_main_menu_entity);
 
-		ecs_world.remove_entity(m_main_menu_entity);
+		ecs_world.get_entity_manager().remove_entity(m_main_menu_entity);
+		ecs_world.remove_pending_entities();
 		m_main_menu_entity.invalidate();
 
 		// Load default level

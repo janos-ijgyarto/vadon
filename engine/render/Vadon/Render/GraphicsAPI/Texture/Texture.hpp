@@ -1,7 +1,7 @@
 #ifndef VADON_RENDER_GRAPHICSAPI_TEXTURE_TEXTURE_HPP
 #define VADON_RENDER_GRAPHICSAPI_TEXTURE_TEXTURE_HPP
 #include <Vadon/Render/GraphicsAPI/Resource/Resource.hpp>
-#include <Vadon/Utilities/Math/Vector.hpp>
+#include <Vadon/Math/Vector.hpp>
 namespace Vadon::Render
 {
 	enum class TextureFlags
@@ -22,7 +22,7 @@ namespace Vadon::Render
 
 	struct TextureInfo
 	{
-		Utilities::Vector3i dimensions = Utilities::Vector3i(0, 0, 0);
+		Vadon::Math::Vector3i dimensions = Vadon::Math::Vector3i(0, 0, 0);
 		int32_t mip_levels = 0;
 		int32_t array_size = 0;
 		GraphicsAPIDataFormat format = GraphicsAPIDataFormat::UNKNOWN;

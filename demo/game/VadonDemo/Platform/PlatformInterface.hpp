@@ -1,6 +1,5 @@
 #ifndef VADONDEMO_PLATFORM_PLATFORMINTERFACE_HPP
 #define VADONDEMO_PLATFORM_PLATFORMINTERFACE_HPP
-#include <Vadon/Utilities/Math/Vector.hpp>
 #include <VadonApp/Platform/Event/Event.hpp>
 #include <VadonApp/Platform/Input/Input.hpp>
 #include <VadonApp/Platform/Window/Window.hpp>

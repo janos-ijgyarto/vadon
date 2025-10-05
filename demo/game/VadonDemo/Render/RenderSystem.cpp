@@ -36,10 +36,10 @@ namespace VadonDemo::Render
 		return common_render.get_context(m_canvas_context);
 	}
 
-	Vadon::Utilities::Vector2i RenderSystem::map_to_game_viewport(const Vadon::Utilities::Vector2i& position) const
+	Vadon::Math::Vector2i RenderSystem::map_to_game_viewport(const Vadon::Math::Vector2i& position) const
 	{
 		const Core::GlobalConfiguration& global_config = m_game_core.get_core().get_global_config();
-		return ((Vadon::Utilities::Vector2(position) - m_game_viewport.dimensions.position) / m_game_viewport.dimensions.size) * global_config.viewport_size;
+		return ((Vadon::Math::Vector2(position) - m_game_viewport.dimensions.position) / m_game_viewport.dimensions.size) * global_config.viewport_size;
 	}
 
 	void RenderSystem::load_texture_resource(TextureResourceID texture_id)
@@ -204,8 +204,8 @@ namespace VadonDemo::Render
 			clear_pass.execution = [main_window_target, &game_target, &rt_system]()
 				{
 					// Clear game and main window targets
-					rt_system.clear_target(main_window_target, Vadon::Render::RGBAColor(0.0f, 0.0f, 0.0f, 0.0f));
-					rt_system.clear_target(game_target, Vadon::Render::RGBAColor(0.0f, 0.0f, 0.0f, 0.0f));
+					rt_system.clear_target(main_window_target, Vadon::Math::Vector4(0.0f, 0.0f, 0.0f, 0.0f));
+					rt_system.clear_target(game_target, Vadon::Math::Vector4(0.0f, 0.0f, 0.0f, 0.0f));
 
 					// Set game target
 					rt_system.set_target(game_target, Vadon::Render::DSVHandle());
@@ -300,7 +300,7 @@ namespace VadonDemo::Render
 
 		Vadon::Render::Canvas::RenderContext& render_context = common_render.get_context(m_canvas_context);
 		const Core::GlobalConfiguration& global_config = m_game_core.get_core().get_global_config();
-		VADON_ASSERT(Vadon::Utilities::all(Vadon::Utilities::greaterThan(global_config.viewport_size, Vadon::Utilities::Vector2_Zero)), "Invalid viewport dimensions!");
+		VADON_ASSERT(Vadon::Math::Vector::all(Vadon::Math::Vector::greaterThan(global_config.viewport_size, Vadon::Math::Vector2_Zero)), "Invalid viewport dimensions!");
 
 		// Create RT for game contents
 		{
@@ -357,7 +357,7 @@ namespace VadonDemo::Render
 		{
 			VadonApp::Core::Application& engine_app = m_game_core.get_engine_app();
 			VadonApp::Platform::WindowHandle main_window = m_game_core.get_platform_interface().get_main_window();
-			const Vadon::Utilities::Vector2i window_drawable_size = engine_app.get_system<VadonApp::Platform::PlatformInterface>().get_window_drawable_size(main_window);
+			const Vadon::Math::Vector2i window_drawable_size = engine_app.get_system<VadonApp::Platform::PlatformInterface>().get_window_drawable_size(main_window);
 
 			update_viewport(window_drawable_size);
 		}
@@ -365,9 +365,9 @@ namespace VadonDemo::Render
 		return true;
 	}
 
-	void RenderSystem::update_viewport(const Vadon::Utilities::Vector2i& window_size)
+	void RenderSystem::update_viewport(const Vadon::Math::Vector2i& window_size)
 	{
-		Vadon::Utilities::Vector2i clamped_size = Vadon::Utilities::max(window_size, Vadon::Utilities::Vector2i{ 1, 1 });
+		Vadon::Math::Vector2i clamped_size = Vadon::Math::Vector::max(window_size, Vadon::Math::Vector2i{ 1, 1 });
 
 		if (window_size.x > window_size.y)
 		{
@@ -459,7 +459,7 @@ namespace VadonDemo::Render
 				{
 					// Get drawable size							
 					VadonApp::Platform::WindowHandle main_window = m_game_core.get_platform_interface().get_main_window();
-					const Vadon::Utilities::Vector2i drawable_size = engine_app.get_system<VadonApp::Platform::PlatformInterface>().get_window_drawable_size(main_window);
+					const Vadon::Math::Vector2i drawable_size = engine_app.get_system<VadonApp::Platform::PlatformInterface>().get_window_drawable_size(main_window);
 
 					// Resize the window render target
 					Vadon::Render::RenderTargetSystem& rt_system = engine_app.get_engine_core().get_system<Vadon::Render::RenderTargetSystem>();

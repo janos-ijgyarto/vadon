@@ -181,7 +181,7 @@ namespace VadonDemo::Render
             clear_pass.targets.emplace_back("main_window", clear_pass_target);
             clear_pass.execution = [main_window_target, &rt_system]()
                 {
-                    rt_system.clear_target(main_window_target, Vadon::Render::RGBAColor(0.0f, 0.0f, 0.0f, 1.0f));
+                    rt_system.clear_target(main_window_target, Vadon::Math::Vector4(0.0f, 0.0f, 0.0f, 1.0f));
                     rt_system.set_target(main_window_target, Vadon::Render::DSVHandle());
                 };
         }
@@ -226,7 +226,7 @@ namespace VadonDemo::Render
                         VadonApp::Platform::WindowHandle main_window = common_editor.get_system<VadonEditor::Platform::PlatformInterface>().get_main_window();
 
                         VadonApp::Platform::PlatformInterface& platform_interface = common_editor.get_engine_app().get_system<VadonApp::Platform::PlatformInterface>();
-                        const Vadon::Utilities::Vector2i window_size = platform_interface.get_window_drawable_size(main_window);
+                        const Vadon::Math::Vector2i window_size = platform_interface.get_window_drawable_size(main_window);
 
                         render_context.camera.view_rectangle.size = window_size;
                         render_context.viewports.back().render_viewport.dimensions.size = window_size;
@@ -529,10 +529,10 @@ namespace VadonDemo::Render
 
         // Add viewport
         {
-            const Vadon::Utilities::Vector2& viewport_size = m_editor.get_core().get_global_config().viewport_size;
+            const Vadon::Math::Vector2& viewport_size = m_editor.get_core().get_global_config().viewport_size;
 
             Vadon::Render::Canvas::Rectangle viewport_rectangle;
-            viewport_rectangle.color = Vadon::Render::ColorRGBA::from_rgba_vector(Vadon::Utilities::ColorVector{ 0.0f, 0.0f, 1.0f, 1.0f });
+            viewport_rectangle.color = Vadon::Render::ColorRGBA::from_rgba_vector(Vadon::Math::ColorVector{ 0.0f, 0.0f, 1.0f, 1.0f });
             viewport_rectangle.dimensions.size = viewport_size;
             viewport_rectangle.thickness = 1.0f;
             viewport_rectangle.filled = false;
@@ -562,7 +562,7 @@ namespace VadonDemo::Render
                 {
                     // Get drawable size															
                     VadonApp::Platform::WindowHandle main_window = common_editor.get_system<VadonEditor::Platform::PlatformInterface>().get_main_window();
-                    const Vadon::Utilities::Vector2i drawable_size = platform_interface.get_window_drawable_size(main_window);
+                    const Vadon::Math::Vector2i drawable_size = platform_interface.get_window_drawable_size(main_window);
 
                     // Resize the render window
                     Vadon::Render::RenderTargetSystem& rt_system = engine_app.get_engine_core().get_system<Vadon::Render::RenderTargetSystem>();

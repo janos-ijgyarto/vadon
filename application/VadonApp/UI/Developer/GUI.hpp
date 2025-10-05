@@ -13,7 +13,7 @@ namespace VadonApp::UI::Developer
 	struct GUIStyle
 	{
 		// TODO: any other relevant style params?
-		Vadon::Utilities::Vector2 frame_padding = Vadon::Utilities::Vector2_Zero;
+		Vadon::Math::Vector2 frame_padding = Vadon::Math::Vector2_Zero;
 	};
 
 	// Developer GUI, primarily based on ImGui
@@ -73,8 +73,8 @@ namespace VadonApp::UI::Developer
 		virtual void begin_disabled(bool disabled = true) = 0;
 		virtual void end_disabled() = 0;
 
-		virtual Vadon::Utilities::Vector2 get_available_content_region() const = 0;
-		virtual Vadon::Utilities::Vector2 calculate_text_size(std::string_view text, std::string_view text_end = "", bool hide_after_double_hash = false, float wrap_width = -1.0f) const = 0;
+		virtual Vadon::Math::Vector2 get_available_content_region() const = 0;
+		virtual Vadon::Math::Vector2 calculate_text_size(std::string_view text, std::string_view text_end = "", bool hide_after_double_hash = false, float wrap_width = -1.0f) const = 0;
 
 		virtual void push_item_width(float item_width) = 0;
 		virtual void pop_item_width() = 0;
@@ -132,13 +132,18 @@ namespace VadonApp::UI::Developer
 
 		virtual bool draw_color_edit(ColorEdit& color) = 0;
 		
+		// TODO: implement flags, size, etc.
+		virtual bool draw_selectable(std::string_view label, bool is_selected) = 0;
+
 		virtual bool draw_button(const Button& button) = 0;
 
 		virtual bool draw_checkbox(Checkbox& checkbox) = 0;
 
-		// FIXME: implement flags and more flexible API
 		virtual bool draw_list_box(ListBox& list_box, bool* double_clicked = nullptr) = 0;
 		virtual bool draw_combo_box(ComboBox& combo_box) = 0;
+
+		virtual bool begin_list_box(std::string_view label, const Vadon::Math::Vector2& size = Vadon::Math::Vector2_Zero) = 0;
+		virtual void end_list_box() = 0;
 
 		// NOTE: use in combination with add_text to enter the cell contents
 		virtual bool begin_table(const Table& table) = 0;

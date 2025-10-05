@@ -242,6 +242,12 @@ namespace VadonEditor::Model
 			Vadon::Core::Logger::log_error("Editor resource database: failed to loading resource!\n");
 			return ResourceID();
 		}
+
+		if (serializer_instance->finalize() == false)
+		{
+			Vadon::Core::Logger::log_error("Editor resource database: failed to finalize serializer while loading resource!\n");
+			return ResourceID();
+		}
 		
 		const ResourceInfo* resource_info = find_resource_info(imported_resource_info.id);
 		if (resource_info != nullptr)

@@ -9,24 +9,26 @@ namespace
 		{
 		case Vadon::Utilities::type_list_index_v<int, Vadon::Utilities::Variant>:
 			return Vadon::Utilities::Variant(0);
+		case Vadon::Utilities::type_list_index_v<uint32_t, Vadon::Utilities::Variant>:
+			return Vadon::Utilities::Variant(0u);
 		case Vadon::Utilities::type_list_index_v<float, Vadon::Utilities::Variant>:
 			return Vadon::Utilities::Variant(0.0f);
 		case Vadon::Utilities::type_list_index_v<bool, Vadon::Utilities::Variant>:
 			return Vadon::Utilities::Variant(false);
 		case Vadon::Utilities::type_list_index_v<std::string, Vadon::Utilities::Variant>:
 			return Vadon::Utilities::Variant(std::string());
-		case Vadon::Utilities::type_list_index_v<Vadon::Utilities::Vector2, Vadon::Utilities::Variant>:
-			return Vadon::Utilities::Variant(Vadon::Utilities::Vector2_Zero);
-		case Vadon::Utilities::type_list_index_v<Vadon::Utilities::Vector2i, Vadon::Utilities::Variant>:
-			return Vadon::Utilities::Variant(Vadon::Utilities::Vector2i{0, 0});
-		case Vadon::Utilities::type_list_index_v<Vadon::Utilities::Vector3, Vadon::Utilities::Variant>:
-			return Vadon::Utilities::Variant(Vadon::Utilities::Vector3_Zero);
-		case Vadon::Utilities::type_list_index_v<Vadon::Utilities::Vector3i, Vadon::Utilities::Variant>:
-			return Vadon::Utilities::Variant(Vadon::Utilities::Vector3i{0, 0, 0});
-		case Vadon::Utilities::type_list_index_v<Vadon::Utilities::Vector4, Vadon::Utilities::Variant>:
-			return Vadon::Utilities::Variant(Vadon::Utilities::Vector4_Zero);
-		case Vadon::Utilities::type_list_index_v<Vadon::Utilities::ColorRGBA, Vadon::Utilities::Variant>:
-			return Vadon::Utilities::Variant(Vadon::Utilities::Color_White);
+		case Vadon::Utilities::type_list_index_v<Vadon::Math::Vector2, Vadon::Utilities::Variant>:
+			return Vadon::Utilities::Variant(Vadon::Math::Vector2_Zero);
+		case Vadon::Utilities::type_list_index_v<Vadon::Math::Vector2i, Vadon::Utilities::Variant>:
+			return Vadon::Utilities::Variant(Vadon::Math::Vector2i{0, 0});
+		case Vadon::Utilities::type_list_index_v<Vadon::Math::Vector3, Vadon::Utilities::Variant>:
+			return Vadon::Utilities::Variant(Vadon::Math::Vector3_Zero);
+		case Vadon::Utilities::type_list_index_v<Vadon::Math::Vector3i, Vadon::Utilities::Variant>:
+			return Vadon::Utilities::Variant(Vadon::Math::Vector3i{0, 0, 0});
+		case Vadon::Utilities::type_list_index_v<Vadon::Math::Vector4, Vadon::Utilities::Variant>:
+			return Vadon::Utilities::Variant(Vadon::Math::Vector4_Zero);
+		case Vadon::Utilities::type_list_index_v<Vadon::Math::ColorRGBA, Vadon::Utilities::Variant>:
+			return Vadon::Utilities::Variant(Vadon::Math::Color_White);
 		default:
 			break;
 		}

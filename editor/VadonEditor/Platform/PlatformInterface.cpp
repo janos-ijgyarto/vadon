@@ -20,7 +20,7 @@ namespace VadonEditor::Platform
 			// FIXME: have client provide platform config
 			VadonApp::Platform::WindowInfo main_window_info;
 			main_window_info.title = "Vadon Editor"; // TODO: version numbering?
-			main_window_info.position = Vadon::Utilities::Vector2i(-1, -1);
+			main_window_info.position = Vadon::Math::Vector2i(-1, -1);
 
 			// FIXME: add casting to CLI parsing so we don't need to do it here
 			// TODO: make these args global vars that are possible to toggle at all times (similar to Unreal)?
@@ -28,7 +28,7 @@ namespace VadonEditor::Platform
 			const std::string window_width_str = application.get_command_line_arg("window_w");
 			const std::string window_height_str = application.get_command_line_arg("window_h");
 
-			main_window_info.size = Vadon::Utilities::Vector2i(window_width_str.empty() ? c_default_window_width : std::stoi(window_width_str),
+			main_window_info.size = Vadon::Math::Vector2i(window_width_str.empty() ? c_default_window_width : std::stoi(window_width_str),
 			window_height_str.empty() ? c_default_window_height : std::stoi(window_height_str));
 
 			main_window_info.flags = VadonApp::Platform::WindowFlags::SHOWN | VadonApp::Platform::WindowFlags::RESIZABLE;

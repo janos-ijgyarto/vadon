@@ -11,6 +11,7 @@ namespace Vadon::Utilities
 		TypeID id = TypeID::INVALID;
 		TypeID base_id = TypeID::INVALID;
 		std::string name;
+		std::string hint_string;
 		size_t size;
 		size_t alignment;
 

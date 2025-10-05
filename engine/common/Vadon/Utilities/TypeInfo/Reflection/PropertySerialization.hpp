@@ -63,12 +63,12 @@ namespace Vadon::Utilities
 
 	inline Vadon::Utilities::Serializer::Result process_trivial_property(Vadon::Utilities::Serializer& serializer, std::string_view key, Vadon::Utilities::Variant& property_value, Vadon::Utilities::ErasedDataTypeID data_type)
 	{
-		return serialize_trivial_property_fold<int, float, bool, std::string, Vadon::Utilities::Vector2, Vadon::Utilities::Vector2i, Vadon::Utilities::Vector3, Vadon::Utilities::ColorRGBA, Vadon::Utilities::UUID>(serializer, key, property_value, data_type);
+		return serialize_trivial_property_fold<int, float, bool, std::string, Vadon::Math::Vector2, Vadon::Math::Vector2i, Vadon::Math::Vector3, Vadon::Math::ColorRGBA, Vadon::Utilities::UUID>(serializer, key, property_value, data_type);
 	}
 
 	inline Vadon::Utilities::Serializer::Result process_trivial_property(Vadon::Utilities::Serializer& serializer, size_t index, Vadon::Utilities::Variant& property_value, Vadon::Utilities::ErasedDataTypeID data_type)
 	{
-		return serialize_trivial_property_fold<int, float, bool, std::string, Vadon::Utilities::Vector2, Vadon::Utilities::Vector2i, Vadon::Utilities::Vector3, Vadon::Utilities::ColorRGBA, Vadon::Utilities::UUID>(serializer, index, property_value, data_type);
+		return serialize_trivial_property_fold<int, float, bool, std::string, Vadon::Math::Vector2, Vadon::Math::Vector2i, Vadon::Math::Vector3, Vadon::Math::ColorRGBA, Vadon::Utilities::UUID>(serializer, index, property_value, data_type);
 	}
 }
 #endif

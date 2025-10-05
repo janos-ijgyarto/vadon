@@ -12,12 +12,11 @@ namespace Vadon::Render::Canvas
 
 	// FIXME: move each primitive into their own headers?
 
-	// TODO: separate triangle primitive that only has colors?
 	struct TriangleVertex
 	{
 		Vector2 position = { 0,0 };
 		Vector2 uv = { 0, 0 };
-		ColorRGBA color = Vadon::Utilities::Color_White;
+		ColorRGBA color = Vadon::Math::Color_White;
 	};
 
 	struct Triangle
@@ -30,9 +29,17 @@ namespace Vadon::Render::Canvas
 	struct Rectangle
 	{
 		Render::Rectangle dimensions = { .position = Vector2_Zero, .size = Vector2_One };
-		ColorRGBA color = Vadon::Utilities::Color_White;
+		ColorRGBA color = Vadon::Math::Color_White;
 		bool filled = true; // TODO: replace with flags?
 		float thickness = 1.0f;
+	};
+
+	struct Circle
+	{
+		Vector2 position = { 0,0 };
+		float radius = 1.0f;
+		ColorRGBA color = Vadon::Math::Color_White;
+		Render::Rectangle uv_dimensions = { .position = Vector2_Zero, .size = Vector2_One };
 	};
 
 	// TODO: we could also require that textures used by the Canvas are "registered" with the system
@@ -49,7 +56,7 @@ namespace Vadon::Render::Canvas
 	{
 		Render::Rectangle dimensions = { .position = Vector2_Zero, .size = Vector2_One };
 		Render::Rectangle uv_dimensions = { .position = Vector2_Zero, .size = Vector2_One };
-		Vadon::Render::ColorRGBA color = Vadon::Utilities::Color_White;
+		Vadon::Render::ColorRGBA color = Vadon::Math::Color_White;
 	};
 
 	using SpriteList = std::vector<Sprite>;

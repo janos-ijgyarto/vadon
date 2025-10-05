@@ -23,7 +23,7 @@ namespace VadonEditor::Model
 		return Vadon::Scene::SceneID::from_resource_id(m_resource->get_id());
 	}
 
-	Vadon::Scene::ResourceInfo Scene::get_info() const
+	const Vadon::Scene::ResourceInfo& Scene::get_info() const
 	{
 		return m_resource->get_info();
 	}
@@ -279,7 +279,11 @@ namespace VadonEditor::Model
 
 	void Scene::internal_remove_entity(Entity* entity)
 	{
-		m_editor.get_system<ModelSystem>().get_ecs_world().remove_entity(entity->get_handle());
+		Vadon::ECS::World& ecs_world = m_editor.get_system<ModelSystem>().get_ecs_world();
+		ecs_world.get_entity_manager().remove_entity(entity->get_handle());
+
+		// In the editor, we immediately purge removed entities
+		ecs_world.remove_pending_entities();
 		delete entity;
 	}
 

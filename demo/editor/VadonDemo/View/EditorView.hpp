@@ -27,15 +27,14 @@ namespace VadonDemo::View
 		void remove_entity(Vadon::ECS::EntityHandle entity);
 
 		void resource_edited(Vadon::Scene::ResourceID resource_id);
-		void view_resource_edited(ViewResourceID view_resource);
+		void render_resource_edited(RenderResourceID view_render_resource);
 		void texture_resource_edited(VadonDemo::Render::TextureResourceID texture_id);
 
-		void load_view_resource(ViewResourceID view_resource);
+		void load_render_resource(RenderResourceID view_render_resource);
 
 		void update_camera(VadonEditor::Model::Scene* active_scene);
 
 		Core::Editor& m_editor;
-		bool m_entities_dirty;
 
 		friend Core::Editor;
 	};

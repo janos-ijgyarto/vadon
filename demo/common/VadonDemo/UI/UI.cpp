@@ -75,7 +75,7 @@ namespace VadonDemo::UI
 			// NOTE: offsetting position so we are drawing from the top left corner
 			Vadon::Render::Canvas::Rectangle frame_rect;
 			frame_rect.dimensions.size = base_component->dimensions;
-			frame_rect.dimensions.position = Vadon::Utilities::Vector2(base_component->dimensions.x, -base_component->dimensions.y) * 0.5f;
+			frame_rect.dimensions.position = Vadon::Math::Vector2(base_component->dimensions.x, -base_component->dimensions.y) * 0.5f;
 			frame_rect.color = frame_component->outline_color;
 			frame_rect.filled = false;
 
@@ -216,11 +216,11 @@ namespace VadonDemo::UI
 				continue;
 			}
 
-			const Vadon::Utilities::Vector2 min_corner(base_component.position.x, base_component.position.y - base_component.dimensions.y);
-			const Vadon::Utilities::Vector2 max_corner(base_component.position.x + base_component.dimensions.x, base_component.position.y);
+			const Vadon::Math::Vector2 min_corner(base_component.position.x, base_component.position.y - base_component.dimensions.y);
+			const Vadon::Math::Vector2 max_corner(base_component.position.x + base_component.dimensions.x, base_component.position.y);
 
-			if (Vadon::Utilities::any(Vadon::Utilities::lessThan(cursor.position, min_corner))
-				|| Vadon::Utilities::any(Vadon::Utilities::greaterThan(cursor.position, max_corner)))
+			if (Vadon::Math::Vector::any(Vadon::Math::Vector::lessThan(cursor.position, min_corner))
+				|| Vadon::Math::Vector::any(Vadon::Math::Vector::greaterThan(cursor.position, max_corner)))
 			{
 				continue;
 			}

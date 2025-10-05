@@ -12,6 +12,8 @@
 
 #include <Vadon/Core/Task/TaskSystem.hpp>
 
+#include <Vadon/Math/Matrix.hpp>
+
 // FIXME: could separate the renderer backend to make this file less cluttered?
 #include <Vadon/Render/GraphicsAPI/GraphicsAPI.hpp>
 #include <Vadon/Render/GraphicsAPI/Buffer/BufferSystem.hpp>
@@ -25,7 +27,6 @@
 
 #include <Vadon/Utilities/Data/DataUtilities.hpp>
 #include <Vadon/Utilities/Data/Visitor.hpp>
-#include <Vadon/Utilities/Math/Matrix.hpp>
 
 #include <Vadon/Utilities/Debugging/Assert.hpp>
 
@@ -50,6 +51,18 @@ namespace VadonApp::Private::UI::Developer::ImGUI
             if (Vadon::Utilities::to_bool(flags & VadonApp::UI::Developer::WindowFlags::HORIZONTAL_SCROLLBAR))
             {
                 imgui_flags |= ImGuiWindowFlags_HorizontalScrollbar;
+            }
+
+            return imgui_flags;
+        }
+
+        ImGuiInputTextFlags get_imgui_input_text_flags(VadonApp::UI::Developer::InputFlags flags)
+        {
+            // TODO: implement other flags and proper conversion!
+            ImGuiInputTextFlags imgui_flags = ImGuiInputTextFlags_None;
+            if (Vadon::Utilities::to_bool(flags & VadonApp::UI::Developer::InputFlags::ENTER_RETURNS_TRUE))
+            {
+                imgui_flags |= ImGuiInputTextFlags_EnterReturnsTrue;
             }
 
             return imgui_flags;
@@ -241,7 +254,7 @@ namespace VadonApp::Private::UI::Developer::ImGUI
 
         struct VertexConstantBuffer
         {
-            Vadon::Utilities::Matrix4 model_view_projection;
+            Vadon::Math::Matrix4 model_view_projection;
         };
 
         struct DrawCommand
@@ -501,10 +514,10 @@ namespace VadonApp::Private::UI::Developer::ImGUI
                     }
 
                     // Apply scissor/clipping rectangle
-                    pipeline_system.set_scissor(Vadon::Utilities::RectangleInt
+                    pipeline_system.set_scissor(Vadon::Math::RectangleInt
                         {
-                            Vadon::Utilities::Vector2i(current_command.clip_min.x, current_command.clip_min.y),
-                                Vadon::Utilities::Vector2i(current_command.clip_max.x - current_command.clip_min.x, current_command.clip_max.y - current_command.clip_min.y)
+                            Vadon::Math::Vector2i(current_command.clip_min.x, current_command.clip_min.y),
+                                Vadon::Math::Vector2i(current_command.clip_max.x - current_command.clip_min.x, current_command.clip_max.y - current_command.clip_min.y)
                         }
                     );
 
@@ -719,16 +732,16 @@ namespace VadonApp::Private::UI::Developer::ImGUI
         ImGui::EndDisabled();
     }
 
-    Vadon::Utilities::Vector2 GUISystem::get_available_content_region() const
+    Vadon::Math::Vector2 GUISystem::get_available_content_region() const
     {
         const ImVec2 content_region = ImGui::GetContentRegionAvail();
-        return Vadon::Utilities::Vector2{ content_region.x, content_region.y };
+        return Vadon::Math::Vector2{ content_region.x, content_region.y };
     }
 
-    Vadon::Utilities::Vector2 GUISystem::calculate_text_size(std::string_view text, std::string_view text_end, bool hide_after_double_hash, float wrap_width) const
+    Vadon::Math::Vector2 GUISystem::calculate_text_size(std::string_view text, std::string_view text_end, bool hide_after_double_hash, float wrap_width) const
     {
         const ImVec2 text_size = ImGui::CalcTextSize(text.data(), text_end.empty() ? nullptr : text_end.data(), hide_after_double_hash, wrap_width);
-        return Vadon::Utilities::Vector2{ text_size.x, text_size.y };
+        return Vadon::Math::Vector2{ text_size.x, text_size.y };
     }
 
     void GUISystem::push_item_width(float item_width)
@@ -874,30 +887,30 @@ namespace VadonApp::Private::UI::Developer::ImGUI
 
     bool GUISystem::draw_input_int(InputInt& input_int)
     {
-        return ImGui::InputInt(input_int.label.c_str(), &input_int.input);
+        return ImGui::InputInt(input_int.label.c_str(), &input_int.input, 1, 100, get_imgui_input_text_flags(input_int.flags));
     }
 
     bool GUISystem::draw_input_int2(InputInt2& input_int)
     {
         // FIXME: is this safe to use this way?
-        return ImGui::InputInt2(input_int.label.c_str(), &input_int.input.x);
+        return ImGui::InputInt2(input_int.label.c_str(), &input_int.input.x, get_imgui_input_text_flags(input_int.flags));
     }
 
     bool GUISystem::draw_input_float(InputFloat& input_float)
     {
-        return ImGui::InputFloat(input_float.label.c_str(), &input_float.input);
+        return ImGui::InputFloat(input_float.label.c_str(), &input_float.input, 0.0f, 0.0f, "%.3f", get_imgui_input_text_flags(input_float.flags));
     }
 
     bool GUISystem::draw_input_float2(InputFloat2& input_float)
     {
         // FIXME: is this safe to use this way?
-        return ImGui::InputFloat2(input_float.label.c_str(), &input_float.input.x);
+        return ImGui::InputFloat2(input_float.label.c_str(), &input_float.input.x, "%.3f", get_imgui_input_text_flags(input_float.flags));
     }
 
     bool GUISystem::draw_input_float3(InputFloat3& input_float)
     {
         // FIXME: is this safe to use this way?
-        return ImGui::InputFloat3(input_float.label.c_str(), &input_float.input.x);
+        return ImGui::InputFloat3(input_float.label.c_str(), &input_float.input.x, "%.3f", get_imgui_input_text_flags(input_float.flags));
     }
 
     bool GUISystem::draw_input_text(InputText& input_text) 
@@ -908,7 +921,7 @@ namespace VadonApp::Private::UI::Developer::ImGUI
         }
         else
         {
-            return ImGui::InputText(input_text.label.c_str(), &input_text.input, ImGuiInputTextFlags_EnterReturnsTrue);
+            return ImGui::InputText(input_text.label.c_str(), &input_text.input, get_imgui_input_text_flags(input_text.flags));
         }
     }
 
@@ -946,6 +959,11 @@ namespace VadonApp::Private::UI::Developer::ImGUI
         }
 
         return false;
+    }
+
+    bool GUISystem::draw_selectable(std::string_view label, bool is_selected)
+    {
+        return ImGui::Selectable(label.data(), is_selected);
     }
 
     bool GUISystem::draw_button(const Button& button)
@@ -1024,10 +1042,20 @@ namespace VadonApp::Private::UI::Developer::ImGUI
         return false;
     }
 
+    bool GUISystem::begin_list_box(std::string_view label, const Vadon::Math::Vector2& size)
+    {
+        return ImGui::BeginListBox(label.data(), ImVec2{ size.x, size.y });
+    }
+
+    void GUISystem::end_list_box()
+    {
+        ImGui::EndListBox();
+    }
+
     bool GUISystem::begin_table(const Table& table)
     {
         // FIXME: make flags modifiable!
-        return ImGui::BeginTable(table.label.c_str(), table.column_count, ImGuiTableFlags_ScrollX | ImGuiTableFlags_ScrollY);
+        return ImGui::BeginTable(table.label.c_str(), table.column_count, ImGuiTableFlags_ScrollX | ImGuiTableFlags_ScrollY, ImVec2(table.outer_size.x, table.outer_size.y));
     }
 
     void GUISystem::next_table_column()
@@ -1447,7 +1475,7 @@ namespace VadonApp::Private::UI::Developer::ImGUI
         }
         else
         {
-            const Vadon::Utilities::Vector2i window_size = platform_interface.get_window_size(m_platform_data.window_handle);
+            const Vadon::Math::Vector2i window_size = platform_interface.get_window_size(m_platform_data.window_handle);
             width = window_size.x;
             height = window_size.y;
         }
@@ -1455,7 +1483,7 @@ namespace VadonApp::Private::UI::Developer::ImGUI
         io.DisplaySize = ImVec2(static_cast<float>(width), static_cast<float>(height));
         if ((width > 0) && (height > 0))
         {
-            const Vadon::Utilities::Vector2i drawable_size = platform_interface.get_window_drawable_size(m_platform_data.window_handle);
+            const Vadon::Math::Vector2i drawable_size = platform_interface.get_window_drawable_size(m_platform_data.window_handle);
             io.DisplayFramebufferScale = ImVec2(static_cast<float>(drawable_size.x) / width, static_cast<float>(drawable_size.y) / height);
         }
 
@@ -1561,16 +1589,16 @@ namespace VadonApp::Private::UI::Developer::ImGUI
             // (Optional) Set OS mouse position from Dear ImGui if requested (rarely used, only when ImGuiConfigFlags_NavEnableSetMousePos is enabled by user)
             if (io.WantSetMousePos)
             {
-                platform_interface.warp_mouse(m_platform_data.window_handle, Vadon::Utilities::Vector2i(static_cast<int>(io.MousePos.x), static_cast<int>(io.MousePos.y)));
+                platform_interface.warp_mouse(m_platform_data.window_handle, Vadon::Math::Vector2i(static_cast<int>(io.MousePos.x), static_cast<int>(io.MousePos.y)));
             }
 
             // (Optional) Fallback to provide mouse position when focused
             if (m_platform_data.mouse_global_state && (m_platform_data.mouse_buttons_down == 0))
             {
-                const Vadon::Utilities::Vector2i mouse_position = platform_interface.get_global_mouse_state().position;
-                const Vadon::Utilities::Vector2i window_position = platform_interface.get_window_position(m_platform_data.window_handle);
+                const Vadon::Math::Vector2i mouse_position = platform_interface.get_global_mouse_state().position;
+                const Vadon::Math::Vector2i window_position = platform_interface.get_window_position(m_platform_data.window_handle);
 
-                const Vadon::Utilities::Vector2i mouse_window_position = mouse_position - window_position;
+                const Vadon::Math::Vector2i mouse_window_position = mouse_position - window_position;
 
                 io.AddMousePosEvent(static_cast<float>(mouse_window_position.x), static_cast<float>(mouse_window_position.y));
             }

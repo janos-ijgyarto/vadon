@@ -1,6 +1,6 @@
 #ifndef VADON_RENDER_UTILITIES_PROJECTION_HPP
 #define VADON_RENDER_UTILITIES_PROJECTION_HPP
-#include <Vadon/Utilities/Math/Matrix.hpp>
+#include <Vadon/Math/Matrix.hpp>
 #include <glm/ext/matrix_clip_space.hpp>
 namespace Vadon::Render
 {
@@ -12,7 +12,7 @@ namespace Vadon::Render
 	};
 
 	// NOTE: this corresponds to DirectX::XMMatrixPerspectiveFov (LH/RH determined by system)
-	Utilities::Matrix4 create_directx_perspective_projection_matrix(float near, float far, float aspect_ratio, float fov_y, CoordinateSystem system = CoordinateSystem::LEFT_HAND)
+	Math::Matrix4 create_directx_perspective_projection_matrix(float near, float far, float aspect_ratio, float fov_y, CoordinateSystem system = CoordinateSystem::LEFT_HAND)
 	{
 		const float half_fov_y = 0.5f * fov_y;
 		const float sin_fov = std::sinf(half_fov_y);
@@ -25,7 +25,7 @@ namespace Vadon::Render
 		{
 			const float range = far / (far - near);
 
-			return Utilities::Matrix4{
+			return Math::Matrix4{
 				{ width, 0, 0, 0 },
 				{ 0, height, 0, 0 },
 				{ 0, 0, range, 1.0f },
@@ -36,7 +36,7 @@ namespace Vadon::Render
 		{
 			float range = far / (near - far);
 
-			return Utilities::Matrix4{
+			return Math::Matrix4{
 				{ width, 0, 0, 0 },
 				{ 0, height, 0, 0 },
 				{ 0, 0, range, -1.0f },
@@ -46,7 +46,7 @@ namespace Vadon::Render
 	}
 
 	// NOTE: this corresponds to DirectX::XMMatrixOrthographicOffCenter (LH/RH determined by system)
-	constexpr Utilities::Matrix4 create_directx_orthographic_projection_matrix(float left, float right, float bottom, float top, float near, float far, CoordinateSystem system = CoordinateSystem::LEFT_HAND)
+	constexpr Math::Matrix4 create_directx_orthographic_projection_matrix(float left, float right, float bottom, float top, float near, float far, CoordinateSystem system = CoordinateSystem::LEFT_HAND)
 	{
 		const float reciprocal_width = 1.0f / (right - left);
 		const float reciprocal_height = 1.0f / (top - bottom);
@@ -56,7 +56,7 @@ namespace Vadon::Render
 		{
 			const float range = 1.0f / (far - near);
 
-			return Utilities::Matrix4{
+			return Math::Matrix4{
 				{ reciprocal_width + reciprocal_width, 0, 0, 0 },
 				{ 0, reciprocal_height + reciprocal_height, 0, 0 },
 				{ 0, 0, range, 0 },
@@ -67,7 +67,7 @@ namespace Vadon::Render
 		{
 			const float range = 1.0f / (near - far);
 
-			return Utilities::Matrix4{
+			return Math::Matrix4{
 				{ reciprocal_width + reciprocal_width, 0, 0, 0 },
 				{ 0, reciprocal_height + reciprocal_height, 0, 0 },
 				{ 0, 0, range, 0 },
@@ -78,14 +78,14 @@ namespace Vadon::Render
 
 	// Uses the glm perspective matrix
 	// NOTE: the result of this depends on the precompiler args passed to glm!
-	Utilities::Matrix4 create_opengl_perspective_projection_matrix(float near, float far, float aspect_ratio, float fov)
+	Math::Matrix4 create_opengl_perspective_projection_matrix(float near, float far, float aspect_ratio, float fov)
 	{
 		return glm::perspective(fov, aspect_ratio, near, far);
 	}
 
 	// Uses the glm orthographic matrix
 	// NOTE: the result of this depends on the precompiler args passed to glm!
-	Utilities::Matrix4 create_opengl_orthographic_projection_matrix(float left, float right, float bottom, float top, float near, float far)
+	Math::Matrix4 create_opengl_orthographic_projection_matrix(float left, float right, float bottom, float top, float near, float far)
 	{
 		return glm::ortho(left, right, bottom, top, near, far);
 	}

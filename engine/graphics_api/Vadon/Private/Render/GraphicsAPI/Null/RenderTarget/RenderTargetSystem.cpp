@@ -26,7 +26,7 @@ namespace Vadon::Private::Render::Null
 		// TODO
 	}
 
-	void RenderTargetSystem::resize_window(WindowHandle /*window_handle*/, const Utilities::Vector2i& /*window_size*/)
+	void RenderTargetSystem::resize_window(WindowHandle /*window_handle*/, const Math::Vector2i& /*window_size*/)
 	{
 		// TODO
 	}
@@ -57,7 +57,7 @@ namespace Vadon::Private::Render::Null
 		// TODO
 	}
 
-	void RenderTargetSystem::clear_target(Vadon::Render::RTVHandle /*rtv_handle*/, const Vadon::Render::RGBAColor& /*clear_color*/)
+	void RenderTargetSystem::clear_target(Vadon::Render::RTVHandle /*rtv_handle*/, const Vadon::Math::Vector4& /*clear_color*/)
 	{
 		// TODO
 	}

@@ -1,0 +1,10 @@
+{
+    "id": "FAGMoVRmTF62NDDymQs/mw==",
+    "properties": {
+        "color": "#ff7e00ff",
+        "name": "",
+        "radius": 50.0,
+        "type": 3
+    },
+    "type": "VadonDemo::View::Shape"
+}

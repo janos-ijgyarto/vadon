@@ -14,5 +14,7 @@ namespace Vadon::Private::Render::Canvas
 		SDFParameters sdf;
 		// TODO: other data?
 	};
+
+	using RenderState = Vadon::Render::Canvas::RenderState;
 }
 #endif

@@ -17,7 +17,7 @@ namespace Vadon::Private::Render::Null
 		WindowUpdateResult update_window(const WindowUpdateInfo& info) override;
 		void remove_window(WindowHandle window_handle) override;
 
-		void resize_window(WindowHandle window_handle, const Vadon::Utilities::Vector2i& window_size) override;
+		void resize_window(WindowHandle window_handle, const Vadon::Math::Vector2i& window_size) override;
 
 		Vadon::Render::RTVHandle create_render_target_view(Vadon::Render::ResourceHandle resource_handle, const Vadon::Render::RenderTargetViewInfo& rtv_info) override;
 		bool is_rtv_valid(Vadon::Render::RTVHandle /*rtv_handle*/) const override { return false; }
@@ -28,7 +28,7 @@ namespace Vadon::Private::Render::Null
 		void remove_depth_stencil_view(Vadon::Render::DSVHandle dsv_handle) override;
 
 		void set_target(Vadon::Render::RTVHandle rtv_handle, Vadon::Render::DSVHandle dsv_handle) override;
-		void clear_target(Vadon::Render::RTVHandle rtv_handle, const Vadon::Render::RGBAColor& clear_color) override;
+		void clear_target(Vadon::Render::RTVHandle rtv_handle, const Vadon::Math::Vector4& clear_color) override;
 		void clear_depth_stencil(Vadon::Render::DSVHandle dsv_handle, const Vadon::Render::DepthStencilClear& clear) override;
 
 		void apply_viewport(const Viewport& viewport) override;

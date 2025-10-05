@@ -6,8 +6,6 @@
 #include <Vadon/Render/GraphicsAPI/RenderTarget/Window.hpp>
 namespace Vadon::Render
 {
-	using RGBAColor = Utilities::Vector4;
-
 	class RenderTargetSystem : public GraphicsSystem<RenderTargetSystem>
 	{
 	public:
@@ -19,7 +17,7 @@ namespace Vadon::Render
 		virtual WindowUpdateResult update_window(const WindowUpdateInfo& info) = 0;
 		virtual void remove_window(WindowHandle window_handle) = 0;
 
-		virtual void resize_window(WindowHandle window_handle, const Utilities::Vector2i& window_size) = 0;
+		virtual void resize_window(WindowHandle window_handle, const Math::Vector2i& window_size) = 0;
 
 		virtual RTVHandle create_render_target_view(ResourceHandle resource_handle, const RenderTargetViewInfo& rtv_info) = 0;
 		virtual bool is_rtv_valid(RTVHandle rtv_handle) const = 0;
@@ -30,7 +28,7 @@ namespace Vadon::Render
 		virtual void remove_depth_stencil_view(DSVHandle dsv_handle) = 0;
 
 		virtual void set_target(RTVHandle rtv_handle, DSVHandle dsv_handle) = 0;
-		virtual void clear_target(RTVHandle rtv_handle, const RGBAColor& clear_color) = 0;
+		virtual void clear_target(RTVHandle rtv_handle, const Math::Vector4& clear_color) = 0;
 		virtual void clear_depth_stencil(DSVHandle dsv_handle, const DepthStencilClear& clear) = 0;
 
 		virtual void apply_viewport(const Viewport& viewport) = 0;

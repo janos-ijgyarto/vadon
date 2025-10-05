@@ -24,7 +24,7 @@ namespace VadonEditor::Model
 		void notify_modified() { m_modified = true; }
 		void clear_modified() { m_modified = false; }
 
-		Vadon::Scene::ResourceInfo get_info() const { return m_info; }
+		const Vadon::Scene::ResourceInfo& get_info() const { return m_info; }
 
 		std::string get_path() const;
 

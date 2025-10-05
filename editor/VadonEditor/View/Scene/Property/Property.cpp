@@ -11,6 +11,8 @@
 
 #include <Vadon/Utilities/TypeInfo/Reflection/FunctionBind.hpp>
 
+#include <algorithm>
+
 namespace VadonEditor::View
 {
 	namespace
@@ -29,17 +31,18 @@ namespace VadonEditor::View
 			m_input.input = std::get<int>(model_property.value);
 		}
 
-		bool render(VadonApp::UI::Developer::GUISystem& dev_gui) override
+		void value_updated() override { m_input.input = std::get<int>(m_property.value); }
+	protected:
+		bool internal_render(VadonApp::UI::Developer::GUISystem& dev_gui) override
 		{
 			if (dev_gui.draw_input_int(m_input) == true)
 			{
 				m_property.value = m_input.input;
 				return true;
 			}
+
 			return false;
 		}
-	protected:
-		void value_updated() override { m_input.input = std::get<int>(m_property.value); }
 	private:
 		UI::Developer::InputInt m_input;
 	};
@@ -54,17 +57,18 @@ namespace VadonEditor::View
 			m_input.input = std::get<float>(model_property.value);
 		}
 
-		bool render(VadonApp::UI::Developer::GUISystem& dev_gui) override
+		void value_updated() override { m_input.input = std::get<float>(m_property.value); }
+	protected:
+		bool internal_render(VadonApp::UI::Developer::GUISystem& dev_gui) override
 		{
 			if (dev_gui.draw_input_float(m_input) == true)
 			{
 				m_property.value = m_input.input;
 				return true;
 			}
+
 			return false;
 		}
-	protected:
-		void value_updated() override { m_input.input = std::get<float>(m_property.value); }
 	private:
 		UI::Developer::InputFloat m_input;
 	};
@@ -79,17 +83,19 @@ namespace VadonEditor::View
 			m_checkbox.checked = std::get<bool>(model_property.value);
 		}
 
-		bool render(VadonApp::UI::Developer::GUISystem& dev_gui) override
+		void value_updated() override { m_checkbox.checked = std::get<bool>(m_property.value); }
+	protected:
+
+		bool internal_render(VadonApp::UI::Developer::GUISystem& dev_gui) override
 		{
 			if (dev_gui.draw_checkbox(m_checkbox) == true)
 			{
 				m_property.value = m_checkbox.checked;
 				return true;
 			}
+
 			return false;
 		}
-	protected:
-		void value_updated() override { m_checkbox.checked = std::get<bool>(m_property.value); }
 	private:
 		UI::Developer::Checkbox m_checkbox;
 	};
@@ -101,20 +107,21 @@ namespace VadonEditor::View
 			: PropertyEditor(model_property)
 		{
 			m_input.label = model_property.name; // TODO: parse name to create a more readable label?
-			m_input.input = std::get<Vadon::Utilities::Vector2>(model_property.value);
+			m_input.input = std::get<Vadon::Math::Vector2>(model_property.value);
 		}
 
-		bool render(VadonApp::UI::Developer::GUISystem& dev_gui) override
+		void value_updated() override { m_input.input = std::get<Vadon::Math::Vector2>(m_property.value); }
+	protected:
+		bool internal_render(VadonApp::UI::Developer::GUISystem& dev_gui) override
 		{
 			if (dev_gui.draw_input_float2(m_input) == true)
 			{
 				m_property.value = m_input.input;
 				return true;
 			}
+
 			return false;
 		}
-	protected:
-		void value_updated() override { m_input.input = std::get<Vadon::Utilities::Vector2>(m_property.value); }
 	private:
 		UI::Developer::InputFloat2 m_input;
 	};
@@ -127,20 +134,21 @@ namespace VadonEditor::View
 			: PropertyEditor(model_property)
 		{
 			m_input.label = model_property.name; // TODO: parse name to create a more readable label?
-			m_input.input = std::get<Vadon::Utilities::Vector3>(model_property.value);
+			m_input.input = std::get<Vadon::Math::Vector3>(model_property.value);
 		}
 
-		bool render(VadonApp::UI::Developer::GUISystem& dev_gui) override
+		void value_updated() override { m_input.input = std::get<Vadon::Math::Vector3>(m_property.value); }
+	protected:
+		bool internal_render(VadonApp::UI::Developer::GUISystem& dev_gui) override
 		{
 			if (dev_gui.draw_input_float3(m_input) == true)
 			{
 				m_property.value = m_input.input;
 				return true;
 			}
+
 			return false;
 		}
-	protected:
-		void value_updated() override { m_input.input = std::get<Vadon::Utilities::Vector3>(m_property.value); }
 	private:
 		UI::Developer::InputFloat3 m_input;
 	};
@@ -152,20 +160,21 @@ namespace VadonEditor::View
 			: PropertyEditor(model_property)
 		{
 			m_input.label = model_property.name; // TODO: parse name to create a more readable label?
-			m_input.value = std::get<Vadon::Utilities::ColorRGBA>(model_property.value);
+			m_input.value = std::get<Vadon::Math::ColorRGBA>(model_property.value);
 		}
 
-		bool render(VadonApp::UI::Developer::GUISystem& dev_gui) override
+		void value_updated() override { m_input.value = std::get<Vadon::Math::ColorRGBA>(m_property.value); }
+	protected:
+		bool internal_render(VadonApp::UI::Developer::GUISystem& dev_gui) override
 		{
 			if (dev_gui.draw_color_edit(m_input) == true)
 			{
 				m_property.value = m_input.value;
 				return true;
 			}
+
 			return false;
 		}
-	protected:
-		void value_updated() override { m_input.value = std::get<Vadon::Utilities::ColorRGBA>(m_property.value); }
 	private:
 		UI::Developer::ColorEdit m_input;
 	};
@@ -180,7 +189,9 @@ namespace VadonEditor::View
 			m_input.input = std::get<std::string>(model_property.value);
 		}
 
-		bool render(VadonApp::UI::Developer::GUISystem& dev_gui) override
+		void value_updated() override { m_input.input = std::get<std::string>(m_property.value); }
+	protected:
+		bool internal_render(VadonApp::UI::Developer::GUISystem& dev_gui) override
 		{
 			if (dev_gui.draw_input_text(m_input) == true)
 			{
@@ -190,8 +201,6 @@ namespace VadonEditor::View
 
 			return false;
 		}
-	protected:
-		void value_updated() override { m_input.input = std::get<std::string>(m_property.value); }
 	private:
 		UI::Developer::InputText m_input;
 	};
@@ -204,7 +213,7 @@ namespace VadonEditor::View
 			, m_editor(editor)
 			, m_select_resource_dialog(editor)
 		{
-			update_resource_reference();
+			update_label();
 
 			m_header = model_property.name + ":";
 
@@ -214,12 +223,18 @@ namespace VadonEditor::View
 			m_select_resource_dialog.set_resource_type(Vadon::Utilities::to_enum<Vadon::Utilities::TypeID>(model_property.data_type.id));
 		}
 
-		bool render(VadonApp::UI::Developer::GUISystem& dev_gui) override
+		void value_updated() override
+		{
+			update_label();
+		}
+	protected:
+		bool internal_render(VadonApp::UI::Developer::GUISystem& dev_gui) override
 		{
 			bool edited = false;
 			if (m_select_resource_dialog.draw(dev_gui) == VadonApp::UI::Developer::Dialog::Result::ACCEPTED)
 			{
 				m_property.value = m_select_resource_dialog.get_selected_resource();
+				update_label();
 				edited = true;
 			}
 
@@ -235,18 +250,14 @@ namespace VadonEditor::View
 			if (dev_gui.draw_button(m_clear_button) == true)
 			{
 				m_property.value = Vadon::Scene::ResourceID();
+				update_label();
 				edited = true;
 			}
 
 			return edited;
 		}
-	protected:
-		void value_updated() override 
-		{
-			update_resource_reference();
-		}
 	private:
-		void update_resource_reference()
+		void update_label()
 		{
 			Vadon::Scene::ResourceID resource_id = std::get<Vadon::Scene::ResourceID>(m_property.value);
 			if (resource_id.is_valid() == true)
@@ -271,6 +282,7 @@ namespace VadonEditor::View
 		std::string m_label;
 		UI::Developer::Button m_select_resource_button;
 		UI::Developer::Button m_clear_button;
+
 		SelectResourceDialog m_select_resource_dialog; // FIXME: use a global instance instead of one per-property?
 	};
 
@@ -290,9 +302,24 @@ namespace VadonEditor::View
 			rebuild_array_editors();
 		}
 
-		bool render(VadonApp::UI::Developer::GUISystem& dev_gui) override
+		void value_updated() override
+		{
+			// Array was modified externally, so we rebuild the editors
+			// FIXME: this could be a problem if the array gets large, or if it messes up things during editing
+			rebuild_array_editors();
+		}
+	protected:
+		bool internal_render(VadonApp::UI::Developer::GUISystem& dev_gui) override
 		{
 			bool array_edited = false;
+
+			m_array_child_window.size = dev_gui.get_available_content_region();
+
+			// FIXME: make this properly align with the required vertical size
+			const VadonApp::UI::Developer::GUIStyle gui_style = dev_gui.get_style();
+			const float slot_size = (dev_gui.calculate_text_size(m_add_button.label).y + dev_gui.calculate_text_size(m_property.name).y + gui_style.frame_padding.y * 2);
+			m_array_child_window.size.y = slot_size * (std::max(m_array_elements.size(), 1ull) + 1);
+
 			if (dev_gui.begin_child_window(m_array_child_window) == true)
 			{
 				dev_gui.add_text(m_property.name);
@@ -306,12 +333,12 @@ namespace VadonEditor::View
 					dev_gui.push_id(array_index);
 					if (array_element_editor->render(dev_gui) == true)
 					{
+						// TODO: make proper use of this and only update once explicitly requested (and only the modified elements)?
+						array_element_editor->clear_modified();
+
 						// Update the modified element in the data array
 						Vadon::Utilities::VariantArray& array = *std::get<Vadon::Utilities::BoxedVariantArray>(m_property.value);
 						array.data[array_index] = array_element_editor->get_property().value;
-
-						// Notify the element editor
-						array_element_editor->value_updated();
 
 						array_edited = true;
 					}
@@ -346,26 +373,7 @@ namespace VadonEditor::View
 			}
 			dev_gui.end_child_window();
 
-			if (array_edited == true)
-			{
-				// Set the synced flag, as we will prompt the parent widget to send an update signal
-				m_array_editor_synced = true;
-			}
-
 			return array_edited;
-		}
-	protected:
-		void value_updated() override 
-		{
-			// Check whether the editor was already synced
-			if (m_array_editor_synced == false)
-			{
-				// Array was modified externally, so we rebuild the editors
-				rebuild_array_editors();
-			}
-
-			// Reset flag
-			m_array_editor_synced = false;
 		}
 	private:
 		void extract_array_data()
@@ -393,7 +401,6 @@ namespace VadonEditor::View
 		Core::Editor& m_editor;
 		
 		std::vector<PropertyEditor::Instance> m_array_elements;
-		bool m_array_editor_synced = false; // NOTE: this is used to avoid redundantly resetting the widgets
 
 		UI::Developer::ChildWindow m_array_child_window;
 		UI::Developer::Button m_add_button;
@@ -414,11 +421,11 @@ namespace VadonEditor::View
 				return Instance(new FloatPropertyEditor(model_property));
 			case variant_type_list_index_v<bool>:
 				return Instance(new BoolPropertyEditor(model_property));
-			case variant_type_list_index_v<Vadon::Utilities::Vector2>:
+			case variant_type_list_index_v<Vadon::Math::Vector2>:
 				return Instance(new Float2PropertyEditor(model_property));
-			case variant_type_list_index_v<Vadon::Utilities::Vector3>:
+			case variant_type_list_index_v<Vadon::Math::Vector3>:
 				return Instance(new Float3PropertyEditor(model_property));
-			case variant_type_list_index_v<Vadon::Utilities::ColorRGBA>:
+			case variant_type_list_index_v<Vadon::Math::ColorRGBA>:
 				return Instance(new ColorPropertyEditor(model_property));
 			case variant_type_list_index_v<std::string>:
 				return Instance(new StringPropertyEditor(model_property));

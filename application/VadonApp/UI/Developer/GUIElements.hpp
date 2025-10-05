@@ -1,8 +1,8 @@
 #ifndef VADONAPP_UI_DEVELOPER_GUIELEMENTS_HPP
 #define VADONAPP_UI_DEVELOPER_GUIELEMENTS_HPP
+#include <Vadon/Math/Color.hpp>
+#include <Vadon/Math/Vector.hpp>
 #include <Vadon/Utilities/Enum/EnumClassBitFlag.hpp>
-#include <Vadon/Utilities/Math/Color.hpp>
-#include <Vadon/Utilities/Math/Vector.hpp>
 #include <string>
 #include <memory>
 #include <span>
@@ -16,12 +16,25 @@ namespace VadonApp::UI::Developer
 		HORIZONTAL_SCROLLBAR = 1 << 1,
 		DEFAULT = NONE
 	};
+
+	enum class InputFlags
+	{
+		NONE = 0,
+		ENTER_RETURNS_TRUE = 1 << 0,
+		DEFAULT = NONE
+	};
 }
 
 namespace Vadon::Utilities
 {
 	template<>
 	struct EnableEnumBitwiseOperators<VadonApp::UI::Developer::WindowFlags> : public std::true_type
+	{
+
+	};
+
+	template<>
+	struct EnableEnumBitwiseOperators<VadonApp::UI::Developer::InputFlags> : public std::true_type
 	{
 
 	};
@@ -39,7 +52,7 @@ namespace VadonApp::UI::Developer
 	struct ChildWindow
 	{
 		std::string id;
-		Vadon::Utilities::Vector2 size = { 0, 0 };
+		Vadon::Math::Vector2 size = { 0, 0 };
 		bool border = false;
 		WindowFlags flags = WindowFlags::DEFAULT;
 	};
@@ -47,6 +60,7 @@ namespace VadonApp::UI::Developer
 	struct InputBase
 	{
 		std::string label;
+		InputFlags flags = InputFlags::DEFAULT;
 	};
 
 	template<typename Type>
@@ -56,15 +70,15 @@ namespace VadonApp::UI::Developer
 	};
 
 	using InputInt = Input<int>;
-	using InputInt2 = Input<Vadon::Utilities::Vector2i>;
+	using InputInt2 = Input<Vadon::Math::Vector2i>;
 	using InputFloat = Input<float>;
-	using InputFloat2 = Input<Vadon::Utilities::Vector2>;
-	using InputFloat3 = Input<Vadon::Utilities::Vector3>;
+	using InputFloat2 = Input<Vadon::Math::Vector2>;
+	using InputFloat3 = Input<Vadon::Math::Vector3>;
 
 	struct ColorEdit
 	{
 		std::string label;
-		Vadon::Utilities::ColorRGBA value;
+		Vadon::Math::ColorRGBA value;
 	};
 
 	struct SliderBase
@@ -82,15 +96,16 @@ namespace VadonApp::UI::Developer
 	};
 
 	using SliderInt = Slider<int, int>;
-	using SliderInt2 = Slider<Vadon::Utilities::Vector2i, int>;
+	using SliderInt2 = Slider<Vadon::Math::Vector2i, int>;
 	using SliderFloat = Slider<float, float>;
-	using SliderFloat2 = Slider<Vadon::Utilities::Vector2, float>;
+	using SliderFloat2 = Slider<Vadon::Math::Vector2, float>;
 
 	struct InputText
 	{
 		std::string label;
 		std::string input;
 		bool multiline = false;
+		InputFlags flags = InputFlags::DEFAULT;
 	};
 
 	struct Button
@@ -104,13 +119,14 @@ namespace VadonApp::UI::Developer
 		bool checked = false;
 	};
 
-	// FIXME: merge these two?
+	// NOTE: this is for simplified ListBox behavior
+	// If client code needs more complex handling for list items, use begin/end_list_box
 	struct ListBox
 	{
 		std::string label;
 		std::vector<std::string> items;
 		int32_t selected_item = -1;
-		Vadon::Utilities::Vector2 size = { 0, 0 };
+		Vadon::Math::Vector2 size = Vadon::Math::Vector2_Zero;
 
 		bool has_valid_selection() const
 		{
@@ -156,6 +172,7 @@ namespace VadonApp::UI::Developer
 		// TODO: flags!
 		std::string label;
 		int32_t column_count = 0;
+		Vadon::Math::Vector2 outer_size = Vadon::Math::Vector2_Zero;
 	};
 
 	struct MenuItem

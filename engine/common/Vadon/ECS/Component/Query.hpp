@@ -71,6 +71,9 @@ namespace Vadon::ECS
 			VADONCOMMON_API bool is_valid() const;
 			VADONCOMMON_API EntityHandle get_entity() const;
 			VADONCOMMON_API void next();
+			// NOTE: this is necessary because the current references can become invalid if the ECS is modified during iteration
+			// The iterator itself is still valid
+			VADONCOMMON_API void refresh();
 		protected:
 			VADONCOMMON_API IteratorBase(ComponentQueryBase& query, ComponentSpan components);
 			void advance();

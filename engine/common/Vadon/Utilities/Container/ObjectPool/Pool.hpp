@@ -106,7 +106,7 @@ namespace Vadon::Utilities
 		{
 			if (is_handle_valid(handle) == true)
 			{
-				return get(handle);
+				return &get(handle);
 			}
 
 			return nullptr;

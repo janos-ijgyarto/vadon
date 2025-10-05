@@ -19,6 +19,15 @@ namespace Vadon::ECS
 		advance();
 	}
 
+	void ComponentQueryBase::IteratorBase::refresh()
+	{
+		if (is_valid() == true)
+		{
+			// Assume we are already at a valid entry
+			m_query.get_components(m_offset, m_components);
+		}
+	}
+
 	ComponentQueryBase::IteratorBase::IteratorBase(ComponentQueryBase& query, ComponentSpan components)
 		: m_query(query)
 		, m_offset(0)

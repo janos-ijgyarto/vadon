@@ -3,7 +3,8 @@
     "properties": {
         "color": "#ff00ffff",
         "name": "",
-        "type": 2
+        "radius": 9.0,
+        "type": 3
     },
     "type": "VadonDemo::View::Shape"
 }

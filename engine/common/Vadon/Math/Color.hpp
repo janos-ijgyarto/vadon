@@ -1,9 +1,9 @@
-#ifndef VADON_UTILITIES_MATH_COLOR_HPP
-#define VADON_UTILITIES_MATH_COLOR_HPP
+#ifndef VADON_MATH_COLOR_HPP
+#define VADON_MATH_COLOR_HPP
 #include <glm/vec4.hpp>
 #include <glm/packing.hpp>
 
-namespace Vadon::Utilities
+namespace Vadon::Math
 {
 	using ColorVector = glm::vec4;
 
@@ -19,6 +19,11 @@ namespace Vadon::Utilities
 		static ColorRGBA from_rgba_vector(const ColorVector& vector) 
 		{
 			return ColorRGBA(glm::packUnorm4x8(vector));
+		}
+
+		static ColorRGBA multiply_colors(const ColorRGBA& lhs, const ColorRGBA& rhs)
+		{
+			return from_rgba_vector(to_rgba_vector(lhs) * to_rgba_vector(rhs));
 		}
 
 		bool operator==(const ColorRGBA& other) const { return value == other.value; }

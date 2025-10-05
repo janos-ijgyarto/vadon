@@ -100,7 +100,18 @@ namespace VadonDemo::Model
 
 	bool GameModel::initialize()
 	{
-		// TODO: anything?
+		m_game_core.get_core().add_entity_event_callback(
+			[this](Vadon::ECS::World& ecs_world, const VadonDemo::Core::EntityEvent& event)
+			{
+				switch (event.type)
+				{
+				case VadonDemo::Core::EntityEventType::ADDED:
+					m_game_core.get_core().get_model().init_entity_collision(ecs_world, event.entity);
+					break;
+				}
+			}
+		);
+
 		return true;
 	}
 
@@ -125,13 +136,14 @@ namespace VadonDemo::Model
 		float model_accumulator = m_model_accumulator;
 		model_accumulator += delta_time;
 
+		Vadon::ECS::World& ecs_world = m_game_core.get_ecs_world();
+
 		while (model_accumulator >= c_sim_timestep)
 		{
 			m_model_updated = true;
 
 			update_player_input();
 
-			Vadon::ECS::World& ecs_world = m_game_core.get_ecs_world();
 			VadonDemo::Model::Model& model = m_game_core.get_core().get_model();
 			model.update(ecs_world, c_sim_timestep);
 			if (model.is_in_end_state(ecs_world) == true)
@@ -144,6 +156,9 @@ namespace VadonDemo::Model
 		}
 
 		m_model_accumulator = model_accumulator;
+
+		// Clean up any pending entities
+		ecs_world.remove_pending_entities();
 	}
 
 	void GameModel::update_player_input()

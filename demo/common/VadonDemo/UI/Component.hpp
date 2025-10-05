@@ -10,8 +10,8 @@ namespace VadonDemo::UI
 	{
 		bool enabled = true;
 
-		Vadon::Utilities::Vector2 position = Vadon::Utilities::Vector2_Zero;
-		Vadon::Utilities::Vector2 dimensions = Vadon::Utilities::Vector2_Zero;
+		Vadon::Math::Vector2 position = Vadon::Math::Vector2_Zero;
+		Vadon::Math::Vector2 dimensions = Vadon::Math::Vector2_Zero;
 
 		// TODO: position and sizing style, whether to use absolute coords or relative to screen size
 
@@ -22,10 +22,10 @@ namespace VadonDemo::UI
 
 	struct Frame
 	{
-		Vadon::Render::ColorRGBA outline_color = Vadon::Utilities::Color_White;
+		Vadon::Render::ColorRGBA outline_color = Vadon::Math::Color_White;
 		float outline_thickness = 1.0f;
 
-		Vadon::Render::ColorRGBA fill_color = Vadon::Utilities::Color_White;
+		Vadon::Render::ColorRGBA fill_color = Vadon::Math::Color_White;
 		bool fill_enable = false;
 
 		// TODO: draw anchor, to decide whether to draw relative to center or top left corner
@@ -36,8 +36,8 @@ namespace VadonDemo::UI
 	struct Text
 	{
 		std::string text;
-		Vadon::Render::ColorRGBA color = Vadon::Utilities::Color_White;
-		Vadon::Utilities::Vector2 offset = Vadon::Utilities::Vector2_Zero;
+		Vadon::Render::ColorRGBA color = Vadon::Math::Color_White;
+		Vadon::Math::Vector2 offset = Vadon::Math::Vector2_Zero;
 		// TODO: font, text size, etc.
 		// TODO: alignment (left vs center)
 

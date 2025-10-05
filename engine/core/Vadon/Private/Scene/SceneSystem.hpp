@@ -3,6 +3,8 @@
 #include <Vadon/Scene/SceneSystem.hpp>
 #include <Vadon/Private/Scene/Scene.hpp>
 
+#include <Vadon/Private/Scene/Animation/AnimationSystem.hpp>
+
 #include <Vadon/Private/ECS/Entity/Entity.hpp>
 #include <Vadon/Private/ECS/World/World.hpp>
 
@@ -37,6 +39,8 @@ namespace Vadon::Private::Scene
 
 		const Scene* get_scene(SceneHandle scene_handle) const;
 		Scene* get_scene(SceneHandle scene_handle) { return const_cast<Scene*>(std::as_const(*this).get_scene(scene_handle)); }
+
+		AnimationSystem m_animation_system;
 
 		friend Core::EngineCore;
 	};

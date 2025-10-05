@@ -56,7 +56,7 @@ namespace VadonEditor::View
 			m_remove_entity_button.label = "Remove entity";
 
 			m_tree_window.id = "Tree";
-			m_tree_window.size = Vadon::Utilities::Vector2(400, 300);
+			m_tree_window.size = Vadon::Math::Vector2(400, 300);
 			m_tree_window.border = true;
 		}
 

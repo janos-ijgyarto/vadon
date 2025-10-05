@@ -2,7 +2,7 @@
 #define VADONAPP_PLATFORM_EVENT_EVENTHANDLER_HPP
 #include <VadonApp/Platform/Input/Keyboard.hpp>
 #include <VadonApp/Platform/Input/Mouse.hpp>
-#include <Vadon/Utilities/Math/Vector.hpp>
+#include <Vadon/Math/Vector.hpp>
 #include <variant>
 namespace VadonApp::Platform
 {
@@ -49,8 +49,8 @@ namespace VadonApp::Platform
 
 	struct MouseMotionEvent
 	{
-		Vadon::Utilities::Vector2i position = { 0, 0 };
-		Vadon::Utilities::Vector2i relative_motion = { 0, 0 };
+		Vadon::Math::Vector2i position = { 0, 0 };
+		Vadon::Math::Vector2i relative_motion = { 0, 0 };
 		// TODO: other data?
 	};
 

@@ -1,8 +1,8 @@
 #ifndef VADONAPP_PLATFORM_WINDOW_WINDOW_HPP
 #define VADONAPP_PLATFORM_WINDOW_WINDOW_HPP
+#include <Vadon/Math/Vector.hpp>
 #include <Vadon/Utilities/Container/ObjectPool/Handle.hpp>
 #include <Vadon/Utilities/Enum/EnumClassBitFlag.hpp>
-#include <Vadon/Utilities/Math/Vector.hpp>
 namespace VadonApp::Platform
 {
 	enum class WindowFlags
@@ -29,8 +29,8 @@ namespace VadonApp::Platform
 	struct WindowInfo
 	{
 		std::string title;
-		Vadon::Utilities::Vector2i position;
-		Vadon::Utilities::Vector2i size;
+		Vadon::Math::Vector2i position;
+		Vadon::Math::Vector2i size;
 		WindowFlags flags = WindowFlags::NONE;
 	};
 

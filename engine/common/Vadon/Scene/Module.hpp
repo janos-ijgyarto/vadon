@@ -4,7 +4,7 @@
 #include <Vadon/Core/System/SystemModule.hpp>
 namespace Vadon::Scene
 {
-	class SceneModule : public Core::SystemModule<Core::SystemModuleList, SceneModule, class SceneSystem, class ResourceSystem>
+	class SceneModule : public Core::SystemModule<Core::SystemModuleList, SceneModule, class SceneSystem, class AnimationSystem, class ResourceSystem>
 	{
 	};
 

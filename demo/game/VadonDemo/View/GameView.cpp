@@ -4,6 +4,7 @@
 #include <VadonDemo/Core/GameCore.hpp>
 
 #include <VadonDemo/Model/Component.hpp>
+#include <VadonDemo/Model/Weapon/Component.hpp>
 #include <VadonDemo/Model/GameModel.hpp>
 
 #include <VadonDemo/View/Component.hpp>
@@ -13,7 +14,10 @@
 #include <VadonApp/Core/Application.hpp>
 
 #include <Vadon/ECS/World/World.hpp>
+
+#include <Vadon/Scene/Animation/AnimationSystem.hpp>
 #include <Vadon/Scene/Resource/ResourceSystem.hpp>
+#include <Vadon/Scene/SceneSystem.hpp>
 
 namespace VadonDemo::View
 {
@@ -21,7 +25,6 @@ namespace VadonDemo::View
 
 	GameView::GameView(Core::GameCore& core)
 		: m_game_core(core)
-		, m_entities_dirty(false)
 	{ }
 
 	bool GameView::initialize()
@@ -67,36 +70,25 @@ namespace VadonDemo::View
 
 	void GameView::update_dirty_entities()
 	{
-		if (m_entities_dirty == false)
-		{
-			return;
-		}
-
-		m_entities_dirty = false;
-
 		Vadon::ECS::World& ecs_world = m_game_core.get_ecs_world();
-		auto view_query = ecs_world.get_component_manager().run_component_query<ViewComponent&>();
+		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
+		auto view_query = component_manager.run_component_query<EntityDirtyTag&, RenderComponent&>();
 
 		VadonDemo::View::View& common_view = m_game_core.get_core().get_view();
 
 		for (auto view_it = view_query.get_iterator(); view_it.is_valid() == true; view_it.next())
 		{
 			auto view_tuple = view_it.get_tuple();
-			ViewComponent& current_view_component = std::get<ViewComponent&>(view_tuple);
-
-			if (current_view_component.dirty == false)
-			{
-				continue;
-			}
+			RenderComponent& view_render_component = std::get<RenderComponent&>(view_tuple);
 
 			// Make sure the resource is up-to-date
-			init_resource(current_view_component.resource);
+			init_resource(view_render_component.resource);
 
 			// Attempt to redraw based on resource type
 			common_view.update_entity_draw_data(ecs_world, view_it.get_entity());
 
-			// Unset the flag
-			current_view_component.dirty = false;
+			// Remove the tag
+			component_manager.set_entity_tag<EntityDirtyTag>(view_it.get_entity(), false);
 		}
 	}
 
@@ -104,19 +96,16 @@ namespace VadonDemo::View
 	{
 		// Also update camera w.r.t player
 		// TODO: camera zoom?
-		auto player_query = m_game_core.get_ecs_world().get_component_manager().run_component_query<VadonDemo::Model::Player&, VadonDemo::View::ViewComponent&>();
+		auto player_query = m_game_core.get_ecs_world().get_component_manager().run_component_query<VadonDemo::Model::Player&, VadonDemo::View::TransformComponent&>();
 		auto player_it = player_query.get_iterator();
 		if (player_it.is_valid() == true)
 		{
 			auto player_components = player_it.get_tuple();
 
-			Model::GameModel& game_model = m_game_core.get_model();
-			const float lerp_factor = game_model.get_accumulator() / game_model.get_sim_timestep();
-
-			const VadonDemo::View::ViewComponent& player_view_component = std::get<VadonDemo::View::ViewComponent&>(player_components);
+			const VadonDemo::View::TransformComponent& player_view_transform = std::get<VadonDemo::View::TransformComponent&>(player_components);
 			Vadon::Render::Canvas::RenderContext& canvas_context = m_game_core.get_render_system().get_canvas_context();
 
-			canvas_context.camera.view_rectangle.position = player_view_component.prev_transform.position * (1.0f - lerp_factor) + player_view_component.current_transform.position * lerp_factor;
+			canvas_context.camera.view_rectangle.position = player_view_transform.position;
 		}
 	}
 
@@ -125,22 +114,92 @@ namespace VadonDemo::View
 	{
 		Vadon::ECS::World& ecs_world = m_game_core.get_ecs_world();
 		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
-		VadonDemo::View::ViewComponent* view_component = component_manager.get_component<VadonDemo::View::ViewComponent>(entity);
-		if (view_component == nullptr)
+		VadonDemo::View::RenderComponent* view_render_component = component_manager.get_component<VadonDemo::View::RenderComponent>(entity);
+		if (view_render_component == nullptr)
 		{
 			return;
 		}
 
-		view_component->dirty = true;
-		m_entities_dirty = true;
+		component_manager.set_entity_tag<EntityDirtyTag>(entity, true);
 	}
 
-	void GameView::remove_entity(Vadon::ECS::EntityHandle /*entity*/)
+	void GameView::remove_entity(Vadon::ECS::EntityHandle entity)
 	{
-		// TODO: anything?
+		// FIXME: this is a hacky solution, need a more efficient way to detect when a projectile expires to then activate its VFX
+		remove_projectile_entity(entity);
 	}
 
-	void GameView::init_resource(ViewResourceID resource_id)
+	void GameView::remove_projectile_entity(Vadon::ECS::EntityHandle entity)
+	{
+		// FIXME: technically we only want this logic to activate in-game, but ideally it should be in the common View
+		Vadon::ECS::World& ecs_world = m_game_core.get_ecs_world();
+		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
+
+		// Check if any projectiles with VFX have expired		
+		auto projectile_tuple = component_manager.get_component_tuple<Model::ProjectileComponent, VFXComponent>(entity);
+
+		const Model::ProjectileComponent* projectile_component = std::get<Model::ProjectileComponent*>(projectile_tuple);
+		const VFXComponent* projectile_vfx = std::get<VFXComponent*>(projectile_tuple);
+		if ((projectile_component == nullptr) || (projectile_vfx == nullptr))
+		{
+			return;
+		}
+
+		if (projectile_component->remaining_lifetime > 0.0f)
+		{
+			return;
+		}
+
+		if (projectile_vfx->vfx_prefab.is_valid() != true)
+		{
+			return;
+		}
+
+		Vadon::Scene::SceneSystem& scene_system = m_game_core.get_engine_core().get_system<Vadon::Scene::SceneSystem>();
+		const Vadon::Scene::SceneHandle vfx_scene = scene_system.load_scene(projectile_vfx->vfx_prefab);
+
+		Vadon::ECS::EntityHandle vfx_entity = scene_system.instantiate_scene(vfx_scene, ecs_world);
+
+		Vadon::ECS::EntityManager& entity_manager = ecs_world.get_entity_manager();
+		entity_manager.set_entity_parent(vfx_entity, m_game_core.get_core().get_model().get_root_entity(ecs_world));
+
+		if (projectile_vfx->lifetime > 0.0f)
+		{
+			VFXTimerComponent& timer_component = component_manager.add_component<VFXTimerComponent>(vfx_entity);
+			timer_component.remaining_lifetime = projectile_vfx->lifetime;
+		}
+
+		auto vfx_component_tuple = component_manager.get_component_tuple<TransformComponent, AnimationComponent>(vfx_entity);
+		TransformComponent* vfx_view_transform = std::get<TransformComponent*>(vfx_component_tuple);
+		if (vfx_view_transform != nullptr)
+		{
+			const Model::Transform2D* projectile_transform = component_manager.get_component<Model::Transform2D>(entity);
+			if (projectile_transform != nullptr)
+			{
+				vfx_view_transform->position = projectile_transform->position;
+			}
+		}
+
+		AnimationComponent* vfx_anim_component = std::get<AnimationComponent*>(vfx_component_tuple);
+		if (vfx_anim_component != nullptr)
+		{
+			if (projectile_vfx->animation.is_valid() == true)
+			{
+				Vadon::Scene::AnimationSystem& anim_system = m_game_core.get_engine_core().get_system<Vadon::Scene::AnimationSystem>();
+				const Vadon::Scene::AnimationHandle anim_handle = anim_system.load_animation(projectile_vfx->animation);
+
+				vfx_anim_component->animation_player.set_animation(m_game_core.get_engine_core(), anim_handle);
+			}
+
+			// TODO: asserts to make sure values are valid!
+			vfx_anim_component->animation_player.set_looping(vfx_anim_component->looping);
+			vfx_anim_component->animation_player.set_time_scale(vfx_anim_component->time_scale);
+		}
+
+		m_game_core.get_core().entity_added(ecs_world, vfx_entity);
+	}
+
+	void GameView::init_resource(RenderResourceID resource_id)
 	{
 		if (resource_id.is_valid() == false)
 		{
@@ -150,7 +209,7 @@ namespace VadonDemo::View
 		Vadon::Core::EngineCoreInterface& engine_core = m_game_core.get_engine_core();
 		Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
 
-		const ViewResourceHandle resource_handle = resource_system.load_resource(resource_id);
+		const RenderResourceHandle resource_handle = resource_system.load_resource(resource_id);
 
 		const Vadon::Scene::ResourceInfo resource_info = resource_system.get_resource_info(resource_handle);
 		if (resource_info.type_id == Vadon::Utilities::TypeRegistry::get_type_id<Sprite>())

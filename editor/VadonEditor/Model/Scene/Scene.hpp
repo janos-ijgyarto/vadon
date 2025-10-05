@@ -16,7 +16,7 @@ namespace VadonEditor::Model
 	public:
 		Vadon::Scene::SceneHandle get_handle() const;
 		Vadon::Scene::SceneID get_id() const;
-		Vadon::Scene::ResourceInfo get_info() const;
+		const Vadon::Scene::ResourceInfo& get_info() const;
 
 		std::string get_path() const;
 

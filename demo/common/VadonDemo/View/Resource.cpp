@@ -5,11 +5,11 @@
 
 namespace VadonDemo::View
 {
-	void ViewResource::register_resource()
+	void RenderResource::register_resource()
 	{
 		using ResourceRegistry = Vadon::Scene::ResourceRegistry;
 
-		ResourceRegistry::register_resource_type<ViewResource, Vadon::Scene::Resource>();
+		ResourceRegistry::register_resource_type<RenderResource, Vadon::Scene::Resource>();
 	}
 
 	void Shape::register_resource()
@@ -17,9 +17,10 @@ namespace VadonDemo::View
 		using ResourceRegistry = Vadon::Scene::ResourceRegistry;
 		using TypeRegistry = Vadon::Utilities::TypeRegistry;
 
-		ResourceRegistry::register_resource_type<Shape, ViewResource>();
+		ResourceRegistry::register_resource_type<Shape, RenderResource>();
 
 		TypeRegistry::add_property<Shape>("type", Vadon::Utilities::MemberVariableBind<&Shape::type>().bind_member_getter().bind_member_setter());
+		TypeRegistry::add_property<Shape>("radius", Vadon::Utilities::MemberVariableBind<&Shape::radius>().bind_member_getter().bind_member_setter());
 		TypeRegistry::add_property<Shape>("color", Vadon::Utilities::MemberVariableBind<&Shape::color>().bind_member_getter().bind_member_setter());
 	}
 
@@ -28,7 +29,7 @@ namespace VadonDemo::View
 		using ResourceRegistry = Vadon::Scene::ResourceRegistry;
 		using TypeRegistry = Vadon::Utilities::TypeRegistry;
 
-		ResourceRegistry::register_resource_type<Sprite, ViewResource>();
+		ResourceRegistry::register_resource_type<Sprite, RenderResource>();
 
 		TypeRegistry::add_property<Sprite>("texture", Vadon::Utilities::MemberVariableBind<&Sprite::texture>().bind_member_getter().bind_member_setter());
 	}

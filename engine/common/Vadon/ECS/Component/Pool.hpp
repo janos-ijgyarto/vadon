@@ -6,6 +6,7 @@
 #include <Vadon/Utilities/TypeInfo/Registry.hpp>
 
 #include <optional>
+#include <unordered_set>
 namespace Vadon::ECS
 {
 	class ComponentPoolInterface
@@ -25,10 +26,13 @@ namespace Vadon::ECS
 		virtual uint32_t get_active_count() const = 0;
 		virtual EntityList get_entities() const = 0;
 
-		template<typename T>
-		static ComponentID get_component_type_id();
-
 		virtual void clear() = 0;
+
+		template<typename T>
+		static ComponentID get_component_type_id()
+		{
+			return Vadon::Utilities::TypeRegistry::get_type_id<T>();
+		}
 	protected:
 		friend class ComponentManager;
 	};
@@ -138,11 +142,73 @@ namespace Vadon::ECS
 	class ComponentPool : public DefaultComponentPool<T>
 	{};
 
-	template<typename T>
-	ComponentID ComponentPoolInterface::get_component_type_id()
+	class TagPoolBase
 	{
-		static_assert(std::is_base_of_v<TypedComponentPool<T>, ComponentPool<T>>, "Error in Vadon::ECS: component type must be derived from Vadon::ECS::TypedComponentPool<T>!");
-		return Vadon::Utilities::TypeRegistry::get_type_id<T>();
-	}
+	protected:
+		VADONCOMMON_API bool add_entity(EntityHandle entity);
+		VADONCOMMON_API bool has_entity(EntityHandle entity) const;
+		VADONCOMMON_API void remove_entity(EntityHandle entity);
+
+		VADONCOMMON_API void tag_pool_clear();
+
+		VADONCOMMON_API EntityList get_tagged_entity_list() const;
+
+		std::unordered_set<uint64_t> m_entity_lookup;
+	};
+
+	template<typename T>
+	class TagPool : public TypedComponentPool<T>, public TagPoolBase
+	{
+	public:
+		void* add_component(EntityHandle entity) override
+		{
+			// TODO: assert if we try to add component more than once?
+			T& new_component = typed_add_component(entity);
+			return &new_component;
+		}
+
+		T& typed_add_component(EntityHandle entity) override
+		{
+			const bool is_added = add_entity(entity);
+			if (is_added == false)
+			{
+				// TODO: report error if entity already tagged?
+			}
+
+			return m_prototype;
+		}
+
+		const T* typed_get_component(EntityHandle entity) const override
+		{
+			if (has_entity(entity) == true)
+			{
+				return &m_prototype;
+			}
+
+			return nullptr;
+		}
+
+		void remove_component(EntityHandle entity) override
+		{
+			remove_entity(entity);
+		}
+
+		uint32_t get_active_count() const override
+		{
+			return static_cast<uint32_t>(m_entity_lookup.size());
+		}
+
+		EntityList get_entities() const override
+		{
+			return get_tagged_entity_list();
+		}
+
+		void clear() override
+		{
+			tag_pool_clear();
+		}
+	private:
+		T m_prototype;
+	};
 }
 #endif

@@ -66,7 +66,7 @@ namespace VadonDemo::UI
 
 		Vadon::ECS::EntityHandle m_main_menu_entity;
 
-		Vadon::Utilities::Vector2i m_mouse_pos;
+		Vadon::Math::Vector2i m_mouse_pos;
 		VadonApp::UI::Developer::Window m_dev_gui_window;
 
 		friend Core::GameCore;

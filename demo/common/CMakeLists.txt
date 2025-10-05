@@ -1,5 +1,7 @@
-MESSAGE("Building Vadon Demo Common")
+MESSAGE("Configuring Vadon Demo Common")
 
+# FIXME: a lot of this logic is the same as the engine targets
+# Find some way to deduplicate?
 set(VADONDEMO_CURRENT_TARGET "VadonDemoCommon")
 
 if(WIN32)
@@ -15,34 +17,26 @@ elseif(UNIX AND NOT APPLE)
 	add_library(${VADONDEMO_CURRENT_TARGET} STATIC)
 endif()
 
+# Add common build options
+target_link_libraries(${VADONDEMO_CURRENT_TARGET} PUBLIC $<BUILD_INTERFACE:VadonBuildOptions>)
+
 get_property("VADONDEMOCOMMON_SOURCES" TARGET ${VADONDEMO_CURRENT_TARGET} PROPERTY SOURCES)
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${VADONCOMMON_SOURCES})
 
 add_subdirectory(VadonDemo)
   
-target_compile_features(${VADONDEMO_CURRENT_TARGET} PRIVATE cxx_std_20)
 target_include_directories(${VADONDEMO_CURRENT_TARGET} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 set(VADONDEMOCOMMON_LIBRARIES Vadon::Common Vadon::Render)
 target_link_libraries(${VADONDEMO_CURRENT_TARGET} PUBLIC ${VADONDEMOCOMMON_LIBRARIES})
 
 if(WIN32)
-	target_compile_definitions(${VADONDEMO_CURRENT_TARGET} PRIVATE VADONDEMO_PLATFORM_WIN32)
-	
 	if(${VADON_LINK_STATIC} STREQUAL "ON")
 		# TODO
 	else()
 		# Provide compile def for DLL export/import
-		target_compile_definitions(${VADONDEMO_CURRENT_TARGET} PRIVATE VADON_LINK_DYNAMIC)
 		target_compile_definitions(${VADONDEMO_CURRENT_TARGET} PRIVATE VADONDEMO_EXPORTS)
 	endif()
-endif()
-
-if(MSVC)
-  target_compile_options(${VADONDEMO_CURRENT_TARGET} PRIVATE /W4 /WX /wd4251)
-  target_compile_options(${VADONDEMO_CURRENT_TARGET} PUBLIC)
-else()
-  target_compile_options(${VADONDEMO_CURRENT_TARGET} PRIVATE -Wall -Wextra -Wpedantic -Werror)
 endif()
 
 set_target_properties(${VADONDEMO_CURRENT_TARGET} PROPERTIES FOLDER ${VADON_PARENT_FOLDER}${PROJECT_NAME})

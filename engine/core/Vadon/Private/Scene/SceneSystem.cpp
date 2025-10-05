@@ -325,10 +325,25 @@ namespace Vadon::Private::Scene
 			const size_t component_count = serializer.is_reading() ? serializer.get_array_size() : entity_data.components.size();
 			for (size_t current_component_index = 0; current_component_index < component_count; ++current_component_index)
 			{
-				SceneData::ComponentData& current_component_data = serializer.is_reading() ? entity_data.components.emplace_back() : entity_data.components[current_component_index];
-				if (serialize_component(serializer, current_component_index, current_component_data) == false)
+				if (serializer.is_reading() == true)
 				{
-					return false;
+					SceneData::ComponentData current_component_data;
+					if (serialize_component(serializer, current_component_index, current_component_data) == true)
+					{
+						entity_data.components.push_back(current_component_data);
+					}
+					else
+					{
+						// TODO: have a "pedantic" mode where we early out if there are any errors?
+					}
+				}
+				else
+				{
+					SceneData::ComponentData& current_component_data = entity_data.components[current_component_index];
+					if (serialize_component(serializer, current_component_index, current_component_data) == false)
+					{
+						// TODO: have a "pedantic" mode where we early out if there are any errors?
+					}
 				}
 			}
 
@@ -500,7 +515,8 @@ namespace Vadon::Private::Scene
 					{
 						// Clean up from root
 						const Vadon::ECS::EntityHandle root_entity = entity_lookup.front();
-						ecs_world.remove_entity(root_entity);
+						ecs_world.get_entity_manager().remove_entity(root_entity);
+						ecs_world.remove_pending_entities();
 					}
 
 					return Vadon::ECS::EntityHandle();
@@ -512,7 +528,8 @@ namespace Vadon::Private::Scene
 					{
 						// Clean up from root
 						const Vadon::ECS::EntityHandle root_entity = entity_lookup.front();
-						ecs_world.remove_entity(root_entity);
+						ecs_world.get_entity_manager().remove_entity(root_entity);
+						ecs_world.remove_pending_entities();
 					}
 
 					return Vadon::ECS::EntityHandle();
@@ -595,12 +612,19 @@ namespace Vadon::Private::Scene
 
 	SceneSystem::SceneSystem(Vadon::Core::EngineCoreInterface& core)
 		: Vadon::Scene::SceneSystem(core)
+		, m_animation_system(core)
 	{}
 
 	bool SceneSystem::initialize()
 	{
 		log_message("Initializing Scene System\n");
 		SceneData::register_scene_type_info();
+
+		if (m_animation_system.initialize() == false)
+		{
+			return false;
+		}
+
 		log_message("Scene System initialized!\n");
 		return true;
 	}
@@ -608,7 +632,7 @@ namespace Vadon::Private::Scene
 	void SceneSystem::shutdown()
 	{
 		log_message("Shutting down Scene System\n");
-		// TODO: anything?
+		m_animation_system.shutdown();
 		log_message("Scene System shut down!\n");
 	}
 

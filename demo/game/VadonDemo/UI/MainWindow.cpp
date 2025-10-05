@@ -98,7 +98,7 @@ namespace
 			slider_float2.format = "%.4f";
 
 			color_edit.label = "Color edit";
-			color_edit.value = Vadon::Utilities::Color_White;
+			color_edit.value = Vadon::Math::Color_White;
 
 			console_button.label = "Show console";
 

@@ -1,3 +1,4 @@
+add_subdirectory(Animation)
 add_subdirectory(ECS)
 add_subdirectory(Property)
 add_subdirectory(Resource)

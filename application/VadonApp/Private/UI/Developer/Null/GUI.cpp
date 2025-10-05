@@ -85,14 +85,14 @@ namespace VadonApp::Private::UI::Developer::Null
         // TODO
     }
 
-    Vadon::Utilities::Vector2 GUISystem::get_available_content_region() const
+    Vadon::Math::Vector2 GUISystem::get_available_content_region() const
     {
-        return Vadon::Utilities::Vector2_Zero;
+        return Vadon::Math::Vector2_Zero;
     }
 
-    Vadon::Utilities::Vector2 GUISystem::calculate_text_size(std::string_view /*text*/, std::string_view /*text_end*/, bool /*hide_after_double_hash*/, float /*wrap_width*/) const
+    Vadon::Math::Vector2 GUISystem::calculate_text_size(std::string_view /*text*/, std::string_view /*text_end*/, bool /*hide_after_double_hash*/, float /*wrap_width*/) const
     {
-        return Vadon::Utilities::Vector2_Zero;
+        return Vadon::Math::Vector2_Zero;
     }
 
     void GUISystem::push_item_width(float /*item_width*/)
@@ -287,6 +287,11 @@ namespace VadonApp::Private::UI::Developer::Null
         return false;
     }
 
+    bool GUISystem::draw_selectable(std::string_view /*label*/, bool /*is_selected*/)
+    {
+        return false;
+    }
+
     bool GUISystem::draw_button(const Button& /*button*/)
     {
         // TODO!!!
@@ -307,6 +312,16 @@ namespace VadonApp::Private::UI::Developer::Null
     bool GUISystem::draw_combo_box(ComboBox& /*combo_box*/)
     {
         return false;
+    }
+
+    bool GUISystem::begin_list_box(std::string_view /*label*/, const Vadon::Math::Vector2& /*size*/)
+    {
+        return false;
+    }
+
+    void GUISystem::end_list_box()
+    {
+
     }
 
     bool GUISystem::begin_table(const Table& /*table*/)

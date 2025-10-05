@@ -5,9 +5,9 @@
                 "components": [
                     {
                         "properties": {
-                            "resource": "JemhbTdMQnCMb+X4G0bw2A=="
+                            "max_health": 100.0
                         },
-                        "type": "VadonDemo::View::ViewComponent"
+                        "type": "VadonDemo::Model::Health"
                     },
                     {
                         "properties": {
@@ -16,6 +16,12 @@
                             "z_order": 1.0
                         },
                         "type": "VadonDemo::Render::CanvasComponent"
+                    },
+                    {
+                        "properties": {
+                            "resource": "JemhbTdMQnCMb+X4G0bw2A=="
+                        },
+                        "type": "VadonDemo::View::RenderComponent"
                     },
                     {
                         "properties": {
@@ -37,12 +43,6 @@
                     },
                     {
                         "properties": {
-                            "max_health": 100.0
-                        },
-                        "type": "VadonDemo::Model::Health"
-                    },
-                    {
-                        "properties": {
                             "radius": 1.0
                         },
                         "type": "VadonDemo::Model::Collision"
@@ -53,6 +53,21 @@
                             "score_reward": 100
                         },
                         "type": "VadonDemo::Model::Enemy"
+                    },
+                    {
+                        "properties": {},
+                        "type": "VadonDemo::View::ModelTransformComponent"
+                    },
+                    {
+                        "properties": {
+                            "position": [
+                                0.0,
+                                0.0
+                            ],
+                            "rotation": 0.0,
+                            "scale": 20.0
+                        },
+                        "type": "VadonDemo::View::TransformComponent"
                     }
                 ],
                 "name": "Enemy",

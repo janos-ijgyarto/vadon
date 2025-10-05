@@ -51,10 +51,12 @@ namespace Vadon::Private::Render::Canvas
 		void add_item_batch_draw(ItemHandle item_handle, const BatchDrawCommand& batch_command) override;
 		void draw_item_triangle(ItemHandle item_handle, const Triangle& triangle) override;
 		void draw_item_rectangle(ItemHandle item_handle, const Rectangle& rectangle) override;
+		void draw_item_circle(ItemHandle item_handle, const Circle& circle) override;
 		void draw_item_sprite(ItemHandle item_handle, const Sprite& sprite) override;
 
 		void set_item_texture(ItemHandle item_handle, const Texture& texture) override;
 		void set_item_material(ItemHandle item_handle, MaterialHandle material_handle) override;
+		void set_item_render_state(ItemHandle item_handle, const RenderState& render_state) override;
 
 		MaterialHandle create_material(MaterialInfo info) override;
 		bool is_material_valid(MaterialHandle material_handle) const override { return m_material_pool.is_handle_valid(material_handle); }
@@ -71,10 +73,12 @@ namespace Vadon::Private::Render::Canvas
 		void clear_batch(BatchHandle batch_handle) override;
 		void draw_batch_triangle(BatchHandle batch_handle, const Triangle& triangle) override;
 		void draw_batch_rectangle(BatchHandle batch_handle, const Rectangle& rectangle) override;
+		void draw_batch_circle(BatchHandle batch_handle, const Circle& circle) override;
 		void draw_batch_sprite(BatchHandle batch_handle, const Sprite& sprite) override;
 
 		void set_batch_texture(BatchHandle batch_handle, const Texture& texture) override;
 		void set_batch_material(BatchHandle batch_handle, MaterialHandle material_handle) override;
+		void set_batch_render_state(BatchHandle batch_handle, const RenderState& render_state) override;
 
 		void render(const RenderContext& context) override;
 	protected:
@@ -123,6 +127,7 @@ namespace Vadon::Private::Render::Canvas
 			{
 				int32_t index_count = 0;
 				Vadon::Render::SRVHandle texture_srv;
+				RenderState render_state;
 			};
 
 			std::vector<Vector4> primitive_data;
@@ -131,6 +136,7 @@ namespace Vadon::Private::Render::Canvas
 			std::vector<PrimitiveBatch> primitive_batches;
 			MaterialHandle current_material;
 			Texture current_texture;
+			RenderState current_render_state;
 
 			bool is_valid() const { return primitive_batches.empty() == false; }
 
@@ -143,7 +149,7 @@ namespace Vadon::Private::Render::Canvas
 				primitive_batches.clear();
 			}
 
-			void add_command(PrimitiveType primitive_type, Vadon::Render::SRVHandle texture_srv);
+			void add_command(PrimitiveType primitive_type, Vadon::Render::SRVHandle texture_srv, const RenderState& render_state);
 			void add_primitive_indices(PrimitiveType primitive_type);
 
 			template<typename T>
