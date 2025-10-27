@@ -10,7 +10,7 @@
 
 #include <VadonEditor/View/ViewSystem.hpp>
 
-#include <VadonApp/UI/Developer/IconsFontAwesome5.h>
+#include <VadonApp/UI/Developer/IconsFontAwesome7.h>
 
 #include <Vadon/Scene/Resource/File.hpp>
 #include <Vadon/Utilities/TypeInfo/Registry.hpp>
@@ -29,13 +29,13 @@ namespace
 			label = ICON_FA_FOLDER + (" " + info.name);
 			break;
 		case VadonEditor::Core::AssetType::RESOURCE:
-			label = ICON_FA_FILE_ALT + (" " + info.name);
+			label = ICON_FA_FILE_LINES + (" " + info.name);
 			break;
 		case VadonEditor::Core::AssetType::SCENE:
 			label = ICON_FA_FILM + (" " + info.name);
 			break;
 		case VadonEditor::Core::AssetType::IMPORTED_FILE:
-			label = ICON_FA_DATABASE + (" " + info.name);
+			label = ICON_FA_FILE_IMPORT + (" " + info.name);
 		}
 	}
 }
@@ -107,7 +107,7 @@ namespace VadonEditor::View
 
 		m_import_button.label = "Import File";
 
-		m_asset_tree.id = "AssetTree";
+		m_asset_tree.string_id = "AssetTree";
 
 		m_save_file_dialog.set_accept_label("Save");
 

@@ -69,7 +69,7 @@ namespace VadonEditor::View
 
 		for (const Vadon::Utilities::Property& current_property : component_data.properties)
 		{
-			m_property_editors.emplace_back(PropertyEditor::create_property_editor(editor, current_property));
+			m_property_editors.emplace_back(PropertyEditor::create_property_editor(editor, current_property, false));
 		}
 	}
 

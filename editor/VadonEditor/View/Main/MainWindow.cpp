@@ -38,7 +38,7 @@ namespace VadonEditor::View
 		SceneListWindow m_scene_list;
 		SceneTreeWindow m_scene_tree;
 		EntityEditor m_entity_editor;
-		ResourceEditor m_resource_editor;
+		ResourceEditorWindow m_resource_editor;
 		AnimationEditor m_animation_editor;
 
 		Internal(Core::Editor& editor)

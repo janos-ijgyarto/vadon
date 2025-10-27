@@ -28,11 +28,12 @@ namespace VadonEditor::View
 		const Vadon::Utilities::Property& get_property() const { return m_property; }
 		void set_value(const Vadon::Utilities::Variant& value) { m_property.value = value; clear_modified(); value_updated(); }
 
-		static Instance create_property_editor(Core::Editor& editor, const Vadon::Utilities::Property& model_property);
+		static Instance create_property_editor(Core::Editor& editor, const Vadon::Utilities::Property& model_property, bool read_only);
 	protected:
-		PropertyEditor(const Vadon::Utilities::Property& model_property)
+		PropertyEditor(const Vadon::Utilities::Property& model_property, bool read_only)
 			: m_property(model_property)
 			, m_modified(false)
+			, m_read_only(read_only)
 		{}
 
 		virtual bool internal_render(UI::Developer::GUISystem& dev_gui) = 0;
@@ -43,6 +44,7 @@ namespace VadonEditor::View
 		// FIXME: could remove and retrieve data from derived classes?
 		Vadon::Utilities::Property m_property;
 		bool m_modified;
+		bool m_read_only;
 	};
 }
 #endif

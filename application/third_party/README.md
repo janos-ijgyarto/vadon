@@ -6,8 +6,8 @@ Below is a list of all third-party code in the engine application library, and t
 - Version: 1.89.8
 - License: MIT
 ## Font Awesome
-- Upstream: https://github.com/FortAwesome/Font-Awesome/tree/5.x
-- Version: 5.x
+- Upstream: https://github.com/FortAwesome/Font-Awesome
+- Version: 7.x
 - License: SIL OFL 1.1
 ## IconFontCppHeaders
 - Upstream: https://github.com/juliettef/IconFontCppHeaders

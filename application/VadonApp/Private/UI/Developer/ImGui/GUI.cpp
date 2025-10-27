@@ -8,7 +8,7 @@
 #include <VadonApp/Platform/PlatformInterface.hpp>
 #include <VadonApp/Platform/Input/Keyboard.hpp>
 
-#include <VadonApp/UI/Developer/IconsFontAwesome5.h>
+#include <VadonApp/UI/Developer/IconsFontAwesome7.h>
 
 #include <Vadon/Core/Task/TaskSystem.hpp>
 
@@ -44,6 +44,17 @@ namespace VadonApp::Private::UI::Developer::ImGUI
 {
     namespace
     {
+        ImGuiStyleVar get_imgui_style_var(VadonApp::UI::Developer::GUIStyleVar index)
+        {
+            switch (index)
+            {
+            case VadonApp::UI::Developer::GUIStyleVar::CHILD_BORDER_SIZE:
+                return ImGuiStyleVar_ChildBorderSize;
+            }
+
+            return ImGuiStyleVar_COUNT;
+        }
+
         ImGuiWindowFlags get_imgui_window_flags(VadonApp::UI::Developer::WindowFlags flags)
         {
             // TODO: implement other flags and proper conversion!
@@ -692,6 +703,11 @@ namespace VadonApp::Private::UI::Developer::ImGUI
         m_internal->render_draw_data(m_internal->m_draw_data);
     }
 
+    void GUISystem::show_demo_window(bool* open)
+    {
+        ImGui::ShowDemoWindow(open);
+    }
+
     void GUISystem::push_id(std::string_view string_id)
     {
         ImGui::PushID(string_id.data());
@@ -759,6 +775,21 @@ namespace VadonApp::Private::UI::Developer::ImGUI
         ImGui::SetNextItemWidth(item_width);
     }
 
+    void GUISystem::push_style_var(GUIStyleVar index, float value)
+    {
+        ImGui::PushStyleVar(get_imgui_style_var(index), value);
+    }
+
+    void GUISystem::push_style_var(GUIStyleVar index, const Vadon::Math::Vector2& value)
+    {
+        ImGui::PushStyleVar(get_imgui_style_var(index), ImVec2(value.x, value.y));
+    }
+
+    void GUISystem::pop_style_var(int count)
+    {
+        ImGui::PopStyleVar(count);
+    }
+
     bool GUISystem::begin_window(Window& window)
     {
         // TODO: add window initialization?
@@ -791,7 +822,14 @@ namespace VadonApp::Private::UI::Developer::ImGUI
 
     bool GUISystem::begin_child_window(const ChildWindow& window)
     {
-        return ImGui::BeginChild(window.id.c_str(), ImVec2(window.size.x, window.size.y), window.border, get_imgui_window_flags(window.flags));
+        if (window.string_id.empty() == true)
+        {
+            return ImGui::BeginChild(window.int_id, ImVec2(window.size.x, window.size.y), window.border, get_imgui_window_flags(window.flags));
+        }
+        else
+        {
+            return ImGui::BeginChild(window.string_id.c_str(), ImVec2(window.size.x, window.size.y), window.border, get_imgui_window_flags(window.flags));
+        }
     }
 
     void GUISystem::end_child_window()
@@ -947,12 +985,13 @@ namespace VadonApp::Private::UI::Developer::ImGUI
         return ImGui::SliderFloat2(slider.label.c_str(), &slider.value.x, slider.min, slider.max, slider.format.empty() ? "%.3f" : slider.format.c_str());
     }
 
-    bool GUISystem::draw_color_edit(ColorEdit& color_edit)
+    bool GUISystem::draw_color_edit(ColorEdit& color_edit, bool read_only)
     {
         // TODO: have ColorEdit cache the vector format so we don't have to convert every frame?
         const uint32_t original_color = color_edit.value.value;
         ImVec4 imgui_color_vec = ImGui::ColorConvertU32ToFloat4(original_color);
-        if (ImGui::ColorEdit4(color_edit.label.c_str(), &imgui_color_vec.x) == true)
+        ImGuiColorEditFlags flags = read_only ? (ImGuiColorEditFlags_NoPicker | ImGuiColorEditFlags_NoOptions | ImGuiColorEditFlags_NoInputs) : ImGuiColorEditFlags_None;
+        if (ImGui::ColorEdit4(color_edit.label.c_str(), &imgui_color_vec.x, flags) == true)
         {
             color_edit.value.value = ImGui::ColorConvertFloat4ToU32(imgui_color_vec);
             return true;

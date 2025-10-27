@@ -273,7 +273,7 @@ namespace VadonEditor::View
 
 		for (const Vadon::Utilities::Property& current_property : active_project.info.custom_properties)
 		{
-			m_property_editors.emplace_back(PropertyEditor::create_property_editor(m_editor, current_property));
+			m_property_editors.emplace_back(PropertyEditor::create_property_editor(m_editor, current_property, false));
 		}
 	}
 

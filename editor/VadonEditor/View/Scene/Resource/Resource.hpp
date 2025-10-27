@@ -33,25 +33,43 @@ namespace VadonEditor::View
 		UI::Developer::Button m_cancel_button;
 	};
 
-	class ResourceEditor
+	class ResourceEditorWidget
 	{
+	public:
+		ResourceEditorWidget(Core::Editor& editor, bool read_only);
+
+		void set_resource(Model::Resource* resource);
+		Model::Resource* get_resource() const { return m_resource; }
+
+		bool draw(UI::Developer::GUISystem& dev_gui, const Vadon::Math::Vector2& size = { 0, 0 }); // Returning "true" means a property was edited
 	private:
-		ResourceEditor(Core::Editor& editor);
-
-		void draw(UI::Developer::GUISystem& dev_gui);
-
-		void update_selected_resource(Model::Resource* resource);
-		void update_labels(Model::Resource* resource);
 		void reset_properties(Model::Resource* resource);
 
 		Core::Editor& m_editor;
 
-		Model::Resource* m_last_resource;
+		UI::Developer::ChildWindow m_child_window;
+
+		std::vector<PropertyEditor::Instance> m_property_editors;
+		bool m_read_only;
+
+		Model::Resource* m_resource;
+	};
+
+	class ResourceEditorWindow
+	{
+	private:
+		ResourceEditorWindow(Core::Editor& editor);
+
+		void draw(UI::Developer::GUISystem& dev_gui);
+		void update_label(Model::Resource* resource);
+
+		Core::Editor& m_editor;
 
 		UI::Developer::Window m_window;
-		std::vector<PropertyEditor::Instance> m_property_editors;
 
-		std::string m_path;
+		ResourceEditorWidget m_editor_widget;
+		std::string m_label;
+
 		UI::Developer::Button m_save_button; // FIXME: save automatically? Or use some other logic?
 
 		friend class MainWindow;

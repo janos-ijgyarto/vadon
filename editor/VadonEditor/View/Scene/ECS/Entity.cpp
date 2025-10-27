@@ -19,7 +19,7 @@ namespace VadonEditor::View
 
 		m_name_input.label = "Entity name";
 
-		m_component_tree.id = "ComponentTree";
+		m_component_tree.string_id = "ComponentTree";
 		m_component_tree.border = true;
 
 		m_add_component_button.label = "Add Component";

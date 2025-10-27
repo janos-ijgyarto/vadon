@@ -51,7 +51,8 @@ namespace VadonApp::UI::Developer
 
 	struct ChildWindow
 	{
-		std::string id;
+		int32_t int_id;
+		std::string string_id;
 		Vadon::Math::Vector2 size = { 0, 0 };
 		bool border = false;
 		WindowFlags flags = WindowFlags::DEFAULT;

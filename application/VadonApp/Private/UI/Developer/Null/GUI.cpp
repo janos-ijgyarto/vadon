@@ -30,6 +30,11 @@ namespace VadonApp::Private::UI::Developer::Null
         // TODO!!!
     }
 
+    void GUISystem::show_demo_window(bool* /*open*/)
+    {
+        // TODO!!!
+    }
+
     bool GUISystem::initialize()
     {
         // TODO!!!
@@ -104,6 +109,19 @@ namespace VadonApp::Private::UI::Developer::Null
     }
 
     void GUISystem::set_next_item_width(float /*item_width*/)
+    {
+    }
+
+    void GUISystem::push_style_var(GUIStyleVar /*index*/, float /*value*/)
+    {
+        
+    }
+
+    void GUISystem::push_style_var(GUIStyleVar /*index*/, const Vadon::Math::Vector2& /*value*/)
+    {
+    }
+
+    void GUISystem::pop_style_var(int /*count*/)
     {
     }
 
@@ -282,7 +300,7 @@ namespace VadonApp::Private::UI::Developer::Null
         return false;
     }
 
-    bool GUISystem::draw_color_edit(ColorEdit& /*color*/)
+    bool GUISystem::draw_color_edit(ColorEdit& /*color*/, bool /*read_only*/)
     {
         return false;
     }
