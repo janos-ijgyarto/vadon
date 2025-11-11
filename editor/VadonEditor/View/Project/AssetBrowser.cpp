@@ -42,60 +42,6 @@ namespace
 
 namespace VadonEditor::View
 {
-	void CreateResourceDialog::on_open()
-	{
-		m_resource_types = Vadon::Utilities::TypeRegistry::get_subclass_list(Vadon::Utilities::TypeRegistry::get_type_id<Vadon::Scene::Resource>());
-		m_resource_type_combo.deselect();
-		m_resource_type_combo.items.clear();
-
-		for (Vadon::Utilities::TypeID current_resource_type : m_resource_types)
-		{
-			const Vadon::Utilities::TypeInfo current_type_info = Vadon::Utilities::TypeRegistry::get_type_info(current_resource_type);
-			m_resource_type_combo.items.push_back(current_type_info.name);
-		}
-
-		m_resource_type_combo.selected_item = 0;
-	}
-
-	CreateResourceDialog::Result CreateResourceDialog::internal_draw(UI::Developer::GUISystem& dev_gui)
-	{
-		Result result = Result::NONE;
-
-		dev_gui.draw_combo_box(m_resource_type_combo);
-
-		if (dev_gui.draw_button(m_accept_button) == true)
-		{
-			result = Result::ACCEPTED;
-		}
-		dev_gui.same_line();
-		if (dev_gui.draw_button(m_cancel_button) == true)
-		{
-			result = Result::CANCELLED;
-		}
-
-		if (result != Result::NONE)
-		{
-			close();
-		}
-
-		return result;
-	}
-
-	Vadon::Utilities::TypeID CreateResourceDialog::get_selected_resource_type() const
-	{
-		return m_resource_types[m_resource_type_combo.selected_item];
-	}
-
-	CreateResourceDialog::CreateResourceDialog(Core::Editor& editor)
-		: Dialog("Create New Resource")
-		, m_editor(editor)
-	{
-		m_resource_type_combo.label = "Resource types";
-
-		m_accept_button.label = "Create";
-		m_cancel_button.label = "Cancel";
-	}
-
 	AssetBrowser::AssetBrowser(Core::Editor& editor)
 		: m_editor(editor)
 		, m_create_resource_dialog(editor)

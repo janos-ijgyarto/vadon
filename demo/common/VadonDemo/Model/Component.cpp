@@ -37,33 +37,11 @@ namespace VadonDemo::Model
 		Vadon::Utilities::TypeRegistry::add_property<Player>("starting_weapons", Vadon::Utilities::MemberVariableBind<&Player::starting_weapons>().bind_member_getter().bind_member_setter());
 	}
 
-	void Enemy::register_component()
-	{
-		Vadon::ECS::ComponentRegistry::register_component_type<Enemy>();
-
-		Vadon::Utilities::TypeRegistry::add_property<Enemy>("score_reward", Vadon::Utilities::MemberVariableBind<&Enemy::score_reward>().bind_member_getter().bind_member_setter());
-		Vadon::Utilities::TypeRegistry::add_property<Enemy>("damage", Vadon::Utilities::MemberVariableBind<&Enemy::damage>().bind_member_getter().bind_member_setter());
-	}
-
 	void Map::register_component()
 	{
 		Vadon::ECS::ComponentRegistry::register_component_type<Map>();
 
 		Vadon::Utilities::TypeRegistry::add_property<Map>("display_name", Vadon::Utilities::MemberVariableBind<&Map::display_name>().bind_member_getter().bind_member_setter());
 		Vadon::Utilities::TypeRegistry::add_property<Map>("dimensions", Vadon::Utilities::MemberVariableBind<&Map::dimensions>().bind_member_getter().bind_member_setter());
-	}
-
-	void Spawner::register_component()
-	{
-		Vadon::ECS::ComponentRegistry::register_component_type<Spawner>();
-
-		Vadon::Utilities::TypeRegistry::add_property<Spawner>("enemy_prefab", Vadon::Utilities::MemberVariableBind<&Spawner::enemy_prefab>().bind_member_getter().bind_member_setter());
-		Vadon::Utilities::TypeRegistry::add_property<Spawner>("activation_delay", Vadon::Utilities::MemberVariableBind<&Spawner::activation_delay>().bind_member_getter().bind_member_setter());
-		Vadon::Utilities::TypeRegistry::add_property<Spawner>("min_spawn_delay", Vadon::Utilities::MemberVariableBind<&Spawner::min_spawn_delay>().bind_member_getter().bind_member_setter());
-		Vadon::Utilities::TypeRegistry::add_property<Spawner>("start_spawn_count", Vadon::Utilities::MemberVariableBind<&Spawner::start_spawn_count>().bind_member_getter().bind_member_setter());
-		//Vadon::Utilities::TypeRegistry::add_property<Spawner>("spawn_rate", Vadon::Utilities::MemberVariableBind<&Spawner::spawn_rate>().bind_member_getter().bind_member_setter());
-		Vadon::Utilities::TypeRegistry::add_property<Spawner>("level_multiplier", Vadon::Utilities::MemberVariableBind<&Spawner::level_multiplier>().bind_member_getter().bind_member_setter());
-		Vadon::Utilities::TypeRegistry::add_property<Spawner>("level_up_delay", Vadon::Utilities::MemberVariableBind<&Spawner::level_up_delay>().bind_member_getter().bind_member_setter());
-		Vadon::Utilities::TypeRegistry::add_property<Spawner>("max_level", Vadon::Utilities::MemberVariableBind<&Spawner::max_level>().bind_member_getter().bind_member_setter());
 	}
 }

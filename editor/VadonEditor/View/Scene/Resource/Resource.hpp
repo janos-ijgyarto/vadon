@@ -9,6 +9,31 @@ namespace VadonEditor::Core
 }
 namespace VadonEditor::View
 {
+	class CreateResourceDialog : public UI::Developer::Dialog
+	{
+	public:
+		CreateResourceDialog(Core::Editor& editor);
+
+		void set_resource_type(Vadon::Utilities::TypeID resource_type);
+
+		Vadon::Utilities::TypeID get_selected_resource_type() const;
+	protected:
+		void on_open();
+		Result internal_draw(UI::Developer::GUISystem& dev_gui) override;
+	private:
+		void reset_type_list();
+
+		Core::Editor& m_editor;
+		Vadon::Utilities::TypeID m_resource_type;
+
+		// FIXME: use a tree view so we can see and search subclass hierarchies?
+		std::vector<Vadon::Utilities::TypeID> m_resource_types;
+		UI::Developer::ComboBox m_resource_type_combo;
+
+		UI::Developer::Button m_accept_button;
+		UI::Developer::Button m_cancel_button;
+	};
+
 	class SelectResourceDialog : public UI::Developer::Dialog
 	{
 	public:
@@ -36,7 +61,9 @@ namespace VadonEditor::View
 	class ResourceEditorWidget
 	{
 	public:
-		ResourceEditorWidget(Core::Editor& editor, bool read_only);
+		ResourceEditorWidget(Core::Editor& editor);
+
+		void set_read_only(bool read_only) { m_read_only = read_only; reset_properties(m_resource); }
 
 		void set_resource(Model::Resource* resource);
 		Model::Resource* get_resource() const { return m_resource; }

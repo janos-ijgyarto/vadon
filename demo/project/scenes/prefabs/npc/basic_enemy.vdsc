@@ -11,17 +11,17 @@
                     },
                     {
                         "properties": {
+                            "definition": "unDHWSnHQEqjtRfpOc8rcg=="
+                        },
+                        "type": "VadonDemo::Model::EnemyBase"
+                    },
+                    {
+                        "properties": {
                             "layer_def": "2bdWkqSdTuSxnfVFk+5q+g==",
                             "visible": true,
                             "z_order": 1.0
                         },
                         "type": "VadonDemo::Render::CanvasComponent"
-                    },
-                    {
-                        "properties": {
-                            "resource": "JemhbTdMQnCMb+X4G0bw2A=="
-                        },
-                        "type": "VadonDemo::View::RenderComponent"
                     },
                     {
                         "properties": {
@@ -33,6 +33,13 @@
                             "scale": 20.0
                         },
                         "type": "VadonDemo::Model::Transform2D"
+                    },
+                    {
+                        "properties": {
+                            "color": "#ffffffff",
+                            "resource": "JemhbTdMQnCMb+X4G0bw2A=="
+                        },
+                        "type": "VadonDemo::View::RenderComponent"
                     },
                     {
                         "properties": {
@@ -48,13 +55,6 @@
                         "type": "VadonDemo::Model::Collision"
                     },
                     {
-                        "properties": {
-                            "damage": 10.0,
-                            "score_reward": 100
-                        },
-                        "type": "VadonDemo::Model::Enemy"
-                    },
-                    {
                         "properties": {},
                         "type": "VadonDemo::View::ModelTransformComponent"
                     },
@@ -68,6 +68,18 @@
                             "scale": 20.0
                         },
                         "type": "VadonDemo::View::TransformComponent"
+                    },
+                    {
+                        "properties": {
+                            "definition": "YLSCSqPARNmetc85RGtRZQ=="
+                        },
+                        "type": "VadonDemo::Model::EnemyMovement"
+                    },
+                    {
+                        "properties": {
+                            "definition": "PU43V+7WQ0uiqAcIPHvfQA=="
+                        },
+                        "type": "VadonDemo::Model::EnemyContactDamage"
                     }
                 ],
                 "name": "Enemy",
@@ -75,6 +87,32 @@
             }
         ]
     },
+    "embedded": [
+        {
+            "id": "unDHWSnHQEqjtRfpOc8rcg==",
+            "properties": {
+                "name": "",
+                "score_reward": 50
+            },
+            "type": "VadonDemo::Model::EnemyDefinition"
+        },
+        {
+            "id": "YLSCSqPARNmetc85RGtRZQ==",
+            "properties": {
+                "movement_type": 2,
+                "name": ""
+            },
+            "type": "VadonDemo::Model::EnemyMovementDefinition"
+        },
+        {
+            "id": "PU43V+7WQ0uiqAcIPHvfQA==",
+            "properties": {
+                "damage": 10,
+                "name": ""
+            },
+            "type": "VadonDemo::Model::EnemyContactDamageDefinition"
+        }
+    ],
     "id": "upAiG77VR+aZR0UoIsLgvQ==",
     "properties": {
         "name": ""

@@ -16,6 +16,12 @@ namespace Vadon::Private::Scene
 	{
 	public:
 		ResourceHandle create_resource(Vadon::Utilities::TypeID type_id) override;
+
+		void add_embedded_resource(ResourceHandle owner_handle, ResourceHandle embedded_resource_handle) override;
+		ResourceHandle get_embedded_resource_onwer(ResourceHandle resource_handle) const override;
+		std::vector<ResourceHandle> get_embedded_resources(ResourceHandle resource_handle) const override;
+		void remove_embedded_resource(ResourceHandle owner_handle, ResourceHandle embedded_resource_handle) override;
+
 		ResourceHandle find_resource(ResourceID resource_id) const override;
 
 		ResourceInfo get_resource_info(ResourceHandle resource_handle) const override;
@@ -43,6 +49,10 @@ namespace Vadon::Private::Scene
 		{
 			ResourceInfo info;
 			Resource* resource = nullptr;
+
+			// NOTE: we can use handles here, these must either be loaded or they shouldn't be present
+			ResourceHandle owner;
+			std::vector<ResourceHandle> embedded_resources;
 		};
 
 		ResourceSystem(Vadon::Core::EngineCoreInterface& core);
@@ -50,7 +60,7 @@ namespace Vadon::Private::Scene
 		bool initialize();
 		void shutdown();
 
-		Resource* load_resource_data(Vadon::Utilities::Serializer& serializer, const ResourceInfo& info);
+		Resource* load_resource_data(Vadon::Utilities::Serializer& serializer, std::vector<ResourceHandle>& embedded_resources,  const ResourceInfo& info);
 
 		Resource* internal_create_resource(Vadon::Utilities::TypeID type_id) const;
 		ResourceHandle internal_add_resource(const ResourceInfo& info, Resource* resource);

@@ -1,8 +1,12 @@
 #include <VadonDemo/Core/Core.hpp>
 
+#include <Vadon/Core/CoreInterface.hpp>
 #include <Vadon/Core/Environment.hpp>
 #include <Vadon/Core/Project/Project.hpp>
+
 #include <Vadon/ECS/World/World.hpp>
+
+#include <Vadon/Scene/Resource/ResourceSystem.hpp>
 
 namespace VadonDemo::Core
 {
@@ -32,7 +36,15 @@ namespace VadonDemo::Core
 
 	bool Core::initialize(const Vadon::Core::Project& project_info)
 	{
-		Vadon::Utilities::TypeRegistry::apply_property_values(&m_global_config, Vadon::Utilities::TypeRegistry::get_type_id<GlobalConfiguration>(), project_info.custom_properties);
+		if (project_info.custom_data_id.is_valid() == true)
+		{
+			Vadon::Scene::ResourceSystem& resource_system = m_engine_core.get_system<Vadon::Scene::ResourceSystem>();
+			Vadon::Scene::ResourceHandle custom_data_resource = resource_system.load_resource_base(project_info.custom_data_id);
+
+			VADON_ASSERT(resource_system.get_resource_info(custom_data_resource).type_id == Vadon::Utilities::TypeRegistry::get_type_id<GlobalConfiguration>(), "Custom data is not GlobalConfiguration!");
+
+			m_global_config = GlobalConfigurationHandle::from_resource_handle(custom_data_resource);
+		}
 
 		if (m_render.initialize() == false)
 		{
@@ -57,16 +69,36 @@ namespace VadonDemo::Core
 		return true;
 	}
 
-	void Core::override_global_config(const Vadon::Core::Project& project_info)
+	void Core::update_global_config(const GlobalConfigurationID& global_config_id)
 	{
-		// Update global config values
-		Vadon::Utilities::TypeRegistry::apply_property_values(&m_global_config, Vadon::Utilities::TypeRegistry::get_type_id<GlobalConfiguration>(), project_info.custom_properties);
+		if (global_config_id.is_valid() == true)
+		{
+			Vadon::Scene::ResourceSystem& resource_system = m_engine_core.get_system<Vadon::Scene::ResourceSystem>();
+			Vadon::Scene::ResourceHandle custom_data_resource = resource_system.load_resource_base(global_config_id);
+
+			VADON_ASSERT(resource_system.get_resource_info(custom_data_resource).type_id == Vadon::Utilities::TypeRegistry::get_type_id<GlobalConfiguration>(), "Custom data is not GlobalConfiguration!");
+
+			m_global_config = GlobalConfigurationHandle::from_resource_handle(custom_data_resource);
+		}
 
 		// Notify subsystems
 		m_render.global_config_updated();
 		m_model.global_config_updated();
 		m_view.global_config_updated();
 		m_ui.global_config_updated();
+	}
+
+	const GlobalConfiguration& VadonDemo::Core::Core::get_global_config() const
+	{
+		if(m_global_config.is_valid() == true)
+		{
+			Vadon::Scene::ResourceSystem& resource_system = m_engine_core.get_system<Vadon::Scene::ResourceSystem>();
+			return *resource_system.get_resource(m_global_config);
+		}
+		else
+		{
+			return m_default_config;
+		}
 	}
 
 	void Core::add_entity_event_callback(EntityEventCallback callback)

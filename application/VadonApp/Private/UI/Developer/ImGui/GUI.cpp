@@ -75,6 +75,10 @@ namespace VadonApp::Private::UI::Developer::ImGUI
             {
                 imgui_flags |= ImGuiInputTextFlags_EnterReturnsTrue;
             }
+            else if (Vadon::Utilities::to_bool(flags & VadonApp::UI::Developer::InputFlags::READ_ONLY))
+            {
+                imgui_flags |= ImGuiInputTextFlags_ReadOnly;
+            }
 
             return imgui_flags;
         }

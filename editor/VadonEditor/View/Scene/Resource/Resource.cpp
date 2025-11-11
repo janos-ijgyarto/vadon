@@ -10,9 +10,81 @@
 
 namespace VadonEditor::View
 {
+	CreateResourceDialog::CreateResourceDialog(Core::Editor& editor)
+		: Dialog("Create New Resource")
+		, m_editor(editor)
+		, m_resource_type(Vadon::Utilities::TypeID::INVALID)
+	{
+		m_resource_type_combo.label = "Resource types";
+
+		m_accept_button.label = "Create";
+		m_cancel_button.label = "Cancel";
+	}
+
+	void CreateResourceDialog::set_resource_type(Vadon::Utilities::TypeID resource_type)
+	{
+		m_resource_type = resource_type;
+		reset_type_list();
+	}
+
+	Vadon::Utilities::TypeID CreateResourceDialog::get_selected_resource_type() const
+	{
+		return m_resource_types[m_resource_type_combo.selected_item];
+	}
+
+	void CreateResourceDialog::on_open()
+	{
+		if (m_resource_type == Vadon::Utilities::TypeID::INVALID)
+		{
+			m_resource_type = Vadon::Utilities::TypeRegistry::get_type_id<Vadon::Scene::Resource>();
+		}
+
+		reset_type_list();
+	}
+
+	CreateResourceDialog::Result CreateResourceDialog::internal_draw(UI::Developer::GUISystem& dev_gui)
+	{
+		Result result = Result::NONE;
+
+		dev_gui.draw_combo_box(m_resource_type_combo);
+
+		if (dev_gui.draw_button(m_accept_button) == true)
+		{
+			result = Result::ACCEPTED;
+		}
+		dev_gui.same_line();
+		if (dev_gui.draw_button(m_cancel_button) == true)
+		{
+			result = Result::CANCELLED;
+		}
+
+		if (result != Result::NONE)
+		{
+			close();
+		}
+
+		return result;
+	}
+
+	void CreateResourceDialog::reset_type_list()
+	{
+		m_resource_types = Vadon::Utilities::TypeRegistry::get_subclass_list(m_resource_type);
+		m_resource_type_combo.deselect();
+		m_resource_type_combo.items.clear();
+
+		for (Vadon::Utilities::TypeID current_resource_type : m_resource_types)
+		{
+			const Vadon::Utilities::TypeInfo current_type_info = Vadon::Utilities::TypeRegistry::get_type_info(current_resource_type);
+			m_resource_type_combo.items.push_back(current_type_info.name);
+		}
+
+		m_resource_type_combo.selected_item = 0;
+	}
+
 	SelectResourceDialog::SelectResourceDialog(Core::Editor& editor, std::string_view title)
 		: Dialog(title)
 		, m_editor(editor)
+		, m_resource_type(Vadon::Utilities::TypeID::INVALID)
 	{
 		m_select_button.label = "Select";
 		m_cancel_button.label = "Cancel";
@@ -61,6 +133,11 @@ namespace VadonEditor::View
 
 	void SelectResourceDialog::on_open()
 	{
+		if (m_resource_type == Vadon::Utilities::TypeID::INVALID)
+		{
+			m_resource_type = Vadon::Utilities::TypeRegistry::get_type_id<Vadon::Scene::Resource>();
+		}
+
 		m_resource_list.clear();
 
 		m_resource_list_box.items.clear();
@@ -81,9 +158,9 @@ namespace VadonEditor::View
 		}
 	}
 
-	ResourceEditorWidget::ResourceEditorWidget(Core::Editor& editor, bool read_only)
+	ResourceEditorWidget::ResourceEditorWidget(Core::Editor& editor)
 		: m_editor(editor)
-		, m_read_only(read_only)
+		, m_read_only(false)
 		, m_resource(nullptr)
 	{
 		m_child_window.int_id = 1;
@@ -105,6 +182,7 @@ namespace VadonEditor::View
 
 	bool ResourceEditorWidget::draw(UI::Developer::GUISystem& dev_gui, const Vadon::Math::Vector2& size)
 	{
+		// TODO: find a way to use the space even if there is nothing to draw?
 		bool edited = false;
 		if (m_resource != nullptr)
 		{
@@ -145,21 +223,27 @@ namespace VadonEditor::View
 			return;
 		}
 
+		PropertyEditorInfo property_editor_info;
+		property_editor_info.owner = resource; // Embedded resources will be owned by the resource in this widget
+		property_editor_info.read_only = m_read_only;
+
 		const Vadon::Utilities::PropertyList resource_properties = resource->get_properties();
 		for (const Vadon::Utilities::Property& current_property : resource_properties)
 		{
-			m_property_editors.emplace_back(PropertyEditor::create_property_editor(m_editor, current_property, m_read_only));
+			m_property_editors.emplace_back(PropertyEditor::create_property_editor(m_editor, current_property, property_editor_info));
 		}
 	}
 
 	ResourceEditorWindow::ResourceEditorWindow(Core::Editor& editor)
 		: m_editor(editor)
-		, m_editor_widget(editor, false)
+		, m_editor_widget(editor)
 	{
 		m_window.title = "Resource Editor";
 		m_window.open = false;
 
 		m_save_button.label = "Save";
+
+		m_editor_widget.set_read_only(false);
 
 		update_label(nullptr);
 	}
@@ -215,7 +299,14 @@ namespace VadonEditor::View
 			std::string resource_path = resource->get_path();
 			if (resource_path.empty() == true)
 			{
-				resource_path = "UNSAVED";
+				if (resource->is_embedded() == true)
+				{
+					resource_path = "EMBEDDED";
+				}
+				else
+				{
+					resource_path = "UNSAVED";
+				}
 			}
 
 			const Vadon::Utilities::TypeInfo resource_type_info = Vadon::Utilities::TypeRegistry::get_type_info(resource->get_info().type_id);

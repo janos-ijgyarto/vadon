@@ -24,18 +24,15 @@ namespace VadonEditor::View
 	class IntPropertyEditor final : public PropertyEditor
 	{
 	public:
-		IntPropertyEditor(const Vadon::Utilities::Property& model_property, bool read_only)
-			: PropertyEditor(model_property, read_only)
+		IntPropertyEditor(const Vadon::Utilities::Property& model_property, const PropertyEditorInfo& info)
+			: PropertyEditor(model_property, info)
 		{
-			if (read_only == false)
+			m_input.label = model_property.name; // TODO: parse name to create a more readable label?
+			m_input.input = std::get<int>(model_property.value);
+
+			if (m_info.read_only == true)
 			{
-				m_input.label = model_property.name; // TODO: parse name to create a more readable label?
-				m_input.input = std::get<int>(model_property.value);
-			}
-			else
-			{
-				// When read-only, use the label to store the read-only text
-				m_input.label = std::format("{}: {}", model_property.name, std::get<int>(model_property.value));
+				m_input.flags |= UI::Developer::InputFlags::READ_ONLY;
 			}
 		}
 
@@ -43,17 +40,10 @@ namespace VadonEditor::View
 	protected:
 		bool internal_render(VadonApp::UI::Developer::GUISystem& dev_gui) override
 		{
-			if (m_read_only == false)
+			if (dev_gui.draw_input_int(m_input) == true)
 			{
-				if (dev_gui.draw_input_int(m_input) == true)
-				{
-					m_property.value = m_input.input;
-					return true;
-				}
-			}
-			else
-			{
-				dev_gui.add_text(m_input.label);
+				m_property.value = m_input.input;
+				return true;
 			}
 
 			return false;
@@ -65,18 +55,15 @@ namespace VadonEditor::View
 	class FloatPropertyEditor final : public PropertyEditor
 	{
 	public:
-		FloatPropertyEditor(const Vadon::Utilities::Property& model_property, bool read_only)
-			: PropertyEditor(model_property, read_only)
+		FloatPropertyEditor(const Vadon::Utilities::Property& model_property, const PropertyEditorInfo& info)
+			: PropertyEditor(model_property, info)
 		{
-			if (read_only == false)
+			m_input.label = model_property.name; // TODO: parse name to create a more readable label?
+			m_input.input = std::get<float>(model_property.value);
+
+			if (m_info.read_only == true)
 			{
-				m_input.label = model_property.name; // TODO: parse name to create a more readable label?
-				m_input.input = std::get<float>(model_property.value);
-			}
-			else
-			{
-				// When read-only, use the label to store the read-only text
-				m_input.label = std::format("{}: {}", model_property.name, std::get<float>(model_property.value));
+				m_input.flags |= UI::Developer::InputFlags::READ_ONLY;
 			}
 		}
 
@@ -84,17 +71,10 @@ namespace VadonEditor::View
 	protected:
 		bool internal_render(VadonApp::UI::Developer::GUISystem& dev_gui) override
 		{
-			if (m_read_only == false)
+			if (dev_gui.draw_input_float(m_input) == true)
 			{
-				if (dev_gui.draw_input_float(m_input) == true)
-				{
-					m_property.value = m_input.input;
-					return true;
-				}
-			}
-			else
-			{
-				dev_gui.add_text(m_input.label);
+				m_property.value = m_input.input;
+				return true;
 			}
 
 			return false;
@@ -106,10 +86,11 @@ namespace VadonEditor::View
 	class BoolPropertyEditor final : public PropertyEditor
 	{
 	public:
-		BoolPropertyEditor(const Vadon::Utilities::Property& model_property, bool read_only)
-			: PropertyEditor(model_property, read_only)
+		BoolPropertyEditor(const Vadon::Utilities::Property& model_property, const PropertyEditorInfo& info)
+			: PropertyEditor(model_property, info)
 		{
-			if (m_read_only == false)
+			// TODO: simplify this once we have support for read-only checkbox?
+			if (m_info.read_only == false)
 			{
 				m_checkbox.label = model_property.name; // TODO: parse name to create a more readable label?
 				m_checkbox.checked = std::get<bool>(model_property.value);
@@ -127,7 +108,8 @@ namespace VadonEditor::View
 
 		bool internal_render(VadonApp::UI::Developer::GUISystem& dev_gui) override
 		{
-			if (m_read_only == false)
+			// TODO: simplify this once we have support for read-only checkbox?
+			if (m_info.read_only == false)
 			{
 				if (dev_gui.draw_checkbox(m_checkbox) == true)
 				{
@@ -149,18 +131,15 @@ namespace VadonEditor::View
 	class Float2PropertyEditor final : public PropertyEditor
 	{
 	public:
-		Float2PropertyEditor(const Vadon::Utilities::Property& model_property, bool read_only)
-			: PropertyEditor(model_property, read_only)
+		Float2PropertyEditor(const Vadon::Utilities::Property& model_property, const PropertyEditorInfo& info)
+			: PropertyEditor(model_property, info)
 		{
-			if (read_only == false)
+			m_input.label = model_property.name; // TODO: parse name to create a more readable label?
+			m_input.input = std::get<Vadon::Math::Vector2>(model_property.value);
+
+			if (m_info.read_only == true)
 			{
-				m_input.label = model_property.name; // TODO: parse name to create a more readable label?
-				m_input.input = std::get<Vadon::Math::Vector2>(model_property.value);
-			}
-			else
-			{
-				const Vadon::Math::Vector2 value = std::get<Vadon::Math::Vector2>(model_property.value);
-				m_input.label = std::format("{}: ( {} , {} )", model_property.name, value.x, value.y);
+				m_input.flags |= UI::Developer::InputFlags::READ_ONLY;
 			}
 		}
 
@@ -173,10 +152,6 @@ namespace VadonEditor::View
 				m_property.value = m_input.input;
 				return true;
 			}
-			else
-			{
-				dev_gui.add_text(m_input.label);
-			}
 
 			return false;
 		}
@@ -188,18 +163,15 @@ namespace VadonEditor::View
 	class Float3PropertyEditor final : public PropertyEditor
 	{
 	public:
-		Float3PropertyEditor(const Vadon::Utilities::Property& model_property, bool read_only)
-			: PropertyEditor(model_property, read_only)
+		Float3PropertyEditor(const Vadon::Utilities::Property& model_property, const PropertyEditorInfo& info)
+			: PropertyEditor(model_property, info)
 		{
-			if (read_only == false)
+			m_input.label = model_property.name; // TODO: parse name to create a more readable label?
+			m_input.input = std::get<Vadon::Math::Vector3>(model_property.value);
+
+			if (m_info.read_only == true)
 			{
-				m_input.label = model_property.name; // TODO: parse name to create a more readable label?
-				m_input.input = std::get<Vadon::Math::Vector3>(model_property.value);
-			}
-			else
-			{
-				const Vadon::Math::Vector3 value = std::get<Vadon::Math::Vector3>(model_property.value);
-				m_input.label = std::format("{}: ( {} , {} , {} )", model_property.name, value.x, value.y, value.z);
+				m_input.flags |= UI::Developer::InputFlags::READ_ONLY;
 			}
 		}
 
@@ -222,8 +194,8 @@ namespace VadonEditor::View
 	class ColorPropertyEditor final : public PropertyEditor
 	{
 	public:
-		ColorPropertyEditor(const Vadon::Utilities::Property& model_property, bool read_only)
-			: PropertyEditor(model_property, read_only)
+		ColorPropertyEditor(const Vadon::Utilities::Property& model_property, const PropertyEditorInfo& info)
+			: PropertyEditor(model_property, info)
 		{
 			m_input.label = model_property.name; // TODO: parse name to create a more readable label?
 			m_input.value = std::get<Vadon::Math::ColorRGBA>(model_property.value);
@@ -233,7 +205,7 @@ namespace VadonEditor::View
 	protected:
 		bool internal_render(VadonApp::UI::Developer::GUISystem& dev_gui) override
 		{
-			if (dev_gui.draw_color_edit(m_input, m_read_only) == true)
+			if (dev_gui.draw_color_edit(m_input, m_info.read_only) == true)
 			{
 				m_property.value = m_input.value;
 				return true;
@@ -248,17 +220,15 @@ namespace VadonEditor::View
 	class StringPropertyEditor final : public PropertyEditor
 	{
 	public:
-		StringPropertyEditor(const Vadon::Utilities::Property& model_property, bool read_only)
-			: PropertyEditor(model_property, read_only)
+		StringPropertyEditor(const Vadon::Utilities::Property& model_property, const PropertyEditorInfo& info)
+			: PropertyEditor(model_property, info)
 		{
-			if (read_only == false)
+			m_input.label = model_property.name; // TODO: parse name to create a more readable label?
+			m_input.input = std::get<std::string>(model_property.value);
+
+			if (m_info.read_only == true)
 			{
-				m_input.label = model_property.name; // TODO: parse name to create a more readable label?
-				m_input.input = std::get<std::string>(model_property.value);
-			}
-			else
-			{
-				m_input.label = std::format("{}: \"{}\"", model_property.name, std::get<std::string>(model_property.value));
+				m_input.flags |= UI::Developer::InputFlags::READ_ONLY;
 			}
 		}
 
@@ -266,17 +236,10 @@ namespace VadonEditor::View
 	protected:
 		bool internal_render(VadonApp::UI::Developer::GUISystem& dev_gui) override
 		{
-			if (m_read_only == false)
+			if (dev_gui.draw_input_text(m_input) == true)
 			{
-				if (dev_gui.draw_input_text(m_input) == true)
-				{
-					m_property.value = m_input.input;
-					return true;
-				}
-			}
-			else
-			{
-				dev_gui.add_text(m_input.label);
+				m_property.value = m_input.input;
+				return true;
 			}
 
 			return false;
@@ -288,20 +251,26 @@ namespace VadonEditor::View
 	struct ResourcePropertyEditor : public PropertyEditor
 	{
 	public:
-		ResourcePropertyEditor(Core::Editor& editor, const Vadon::Utilities::Property& model_property, bool read_only)
-			: PropertyEditor(model_property, read_only)
+		ResourcePropertyEditor(Core::Editor& editor, const Vadon::Utilities::Property& model_property, const PropertyEditorInfo& info)
+			: PropertyEditor(model_property, info)
 			, m_editor(editor)
-			, m_editor_widget(editor, true) // NOTE: the widget itself must be read-only, we're just showing the contents!
+			, m_editor_widget(editor)
+			, m_create_resource_dialog(editor)
 			, m_select_resource_dialog(editor)
 		{
 			m_header = model_property.name;
 
-			if (read_only == false)
+			m_editor_widget.set_read_only(m_info.read_only);
+
+			if (m_info.read_only == false)
 			{
+				m_create_resource_button.label = "Create##resource_create_" + model_property.name;
 				m_select_resource_button.label = "Select##resource_select_" + model_property.name;
 				m_clear_button.label = "Clear##resource_clear_" + model_property.name;
 
-				m_select_resource_dialog.set_resource_type(Vadon::Utilities::to_enum<Vadon::Utilities::TypeID>(model_property.data_type.id));
+				const Vadon::Utilities::TypeID resource_type = Vadon::Utilities::to_enum<Vadon::Utilities::TypeID>(model_property.data_type.id);
+				m_create_resource_dialog.set_resource_type(resource_type);
+				m_select_resource_dialog.set_resource_type(resource_type);
 			}
 
 			update_resource();
@@ -315,8 +284,36 @@ namespace VadonEditor::View
 		bool internal_render(VadonApp::UI::Developer::GUISystem& dev_gui) override
 		{
 			bool edited = false;
+			// NOTE: do not allow embedded resources if no owner is provided!
+			if (m_info.owner != nullptr)
+			{
+				if (m_create_resource_dialog.draw(dev_gui) == VadonApp::UI::Developer::Dialog::Result::ACCEPTED)
+				{
+					// TODO: check to make sure path is within project!		
+					// First try to create the resource
+					Model::ResourceSystem& editor_resource_system = m_editor.get_system<Model::ModelSystem>().get_resource_system();
+					Model::Resource* new_resource = editor_resource_system.create_resource(m_create_resource_dialog.get_selected_resource_type());
+
+					m_info.owner->add_embedded_resource(new_resource);
+
+					m_property.value = new_resource->get_id();
+					update_resource();
+					edited = true;
+				}
+			}
+
 			if (m_select_resource_dialog.draw(dev_gui) == VadonApp::UI::Developer::Dialog::Result::ACCEPTED)
 			{
+				Model::Resource* prev_resource = m_editor_widget.get_resource();
+				if (prev_resource != nullptr)
+				{
+					if (prev_resource->is_embedded() == true)
+					{
+						Model::ResourceSystem& editor_resource_system = m_editor.get_system<Model::ModelSystem>().get_resource_system();
+						editor_resource_system.remove_resource(prev_resource);
+					}
+				}
+
 				m_property.value = m_select_resource_dialog.get_selected_resource();
 				update_resource();
 				edited = true;
@@ -326,8 +323,17 @@ namespace VadonEditor::View
 			{
 				if (dev_gui.push_tree_node(m_label) == true)
 				{
-					if (m_read_only == false)
+					if (m_info.read_only == false)
 					{
+						// NOTE: do not allow embedded resources if no owner is provided!
+						if (m_info.owner != nullptr)
+						{
+							if (dev_gui.draw_button(m_create_resource_button) == true)
+							{
+								m_create_resource_dialog.open();
+							}
+						}
+						dev_gui.same_line();
 						if (dev_gui.draw_button(m_select_resource_button) == true)
 						{
 							m_select_resource_dialog.open();
@@ -335,6 +341,13 @@ namespace VadonEditor::View
 						dev_gui.same_line();
 						if (dev_gui.draw_button(m_clear_button) == true)
 						{
+							Model::Resource* prev_resource = m_editor_widget.get_resource();
+							if (prev_resource->is_embedded() == true)
+							{
+								Model::ResourceSystem& editor_resource_system = m_editor.get_system<Model::ModelSystem>().get_resource_system();
+								editor_resource_system.remove_resource(prev_resource);
+							}
+
 							m_property.value = Vadon::Scene::ResourceID();
 							update_resource();
 							edited = true;
@@ -356,6 +369,18 @@ namespace VadonEditor::View
 			else
 			{
 				dev_gui.add_text_wrapped(m_label);
+				if (m_info.read_only == false)
+				{
+					if (dev_gui.draw_button(m_create_resource_button) == true)
+					{
+						m_create_resource_dialog.open();
+					}
+					dev_gui.same_line();
+					if (dev_gui.draw_button(m_select_resource_button) == true)
+					{
+						m_select_resource_dialog.open();
+					}
+				}
 			}
 
 			return edited;
@@ -375,10 +400,20 @@ namespace VadonEditor::View
 					VADON_ERROR("Failed to load resource!");
 				}
 
+				// Read-only, unless it's an embedded resource
+				m_editor_widget.set_read_only((m_info.read_only == true) || (editor_resource->is_embedded() == false));
+
 				std::string resource_path = editor_resource->get_path();
 				if (resource_path.empty() == true)
 				{
-					resource_path = "UNSAVED";
+					if (editor_resource->is_embedded() == true)
+					{
+						resource_path = "EMBEDDED";
+					}
+					else
+					{
+						resource_path = "UNSAVED";
+					}
 				}
 
 				const Vadon::Utilities::TypeInfo resource_type_info = Vadon::Utilities::TypeRegistry::get_type_info(editor_resource->get_info().type_id);
@@ -395,20 +430,22 @@ namespace VadonEditor::View
 		Core::Editor& m_editor;
 
 		std::string m_header;
+		UI::Developer::Button m_create_resource_button;
 		UI::Developer::Button m_select_resource_button;
 		UI::Developer::Button m_clear_button;
 
 		ResourceEditorWidget m_editor_widget;
 		std::string m_label;
 
+		CreateResourceDialog m_create_resource_dialog;
 		SelectResourceDialog m_select_resource_dialog; // FIXME: use a global instance instead of one per-property?
 	};
 
 	class ArrayPropertyEditor final : public PropertyEditor
 	{
 	public:
-		ArrayPropertyEditor(Core::Editor& editor, const Vadon::Utilities::Property& model_property, bool read_only)
-			: PropertyEditor(model_property, read_only)
+		ArrayPropertyEditor(Core::Editor& editor, const Vadon::Utilities::Property& model_property, const PropertyEditorInfo& info)
+			: PropertyEditor(model_property, info)
 			, m_editor(editor)
 		{
 			m_array_child_window.string_id = model_property.name;
@@ -460,7 +497,7 @@ namespace VadonEditor::View
 
 						array_edited = true;
 					}
-					if (m_read_only == false)
+					if (m_info.read_only == false)
 					{
 						dev_gui.same_line();
 						// TODO: id for each button
@@ -474,6 +511,9 @@ namespace VadonEditor::View
 
 				if (element_removed >= 0)
 				{
+					// We need to make sure to clean up any embedded resources that might be stored here
+					remove_data_static(m_array_elements[element_removed]);
+
 					Vadon::Utilities::VariantArray& array = *std::get<Vadon::Utilities::BoxedVariantArray>(m_property.value);
 					array.data.erase(array.data.begin() + element_removed);
 
@@ -481,7 +521,7 @@ namespace VadonEditor::View
 					array_edited = true;
 				}
 
-				if (m_read_only == false)
+				if (m_info.read_only == false)
 				{
 					if (dev_gui.draw_button(m_add_button) == true)
 					{
@@ -489,7 +529,7 @@ namespace VadonEditor::View
 						array.data.push_back(Vadon::Utilities::get_erased_type_default_value(array.data_type));
 
 						const size_t element_index = m_array_elements.size();
-						m_array_elements.emplace_back(create_property_editor(m_editor, Vadon::Utilities::Property{ .name = std::format("{}", element_index), .data_type = array.data_type, .value = array.data.back() }, m_read_only));
+						m_array_elements.emplace_back(create_property_editor(m_editor, Vadon::Utilities::Property{ .name = std::format("{}", element_index), .data_type = array.data_type, .value = array.data.back() }, m_info));
 
 						array_edited = true;
 					}
@@ -518,7 +558,7 @@ namespace VadonEditor::View
 			const Vadon::Utilities::VariantArray& array = *std::get<Vadon::Utilities::BoxedVariantArray>(m_property.value);
 			for (size_t index = 0; index < array.data.size(); ++index)
 			{
-				m_array_elements.emplace_back(create_property_editor(m_editor, Vadon::Utilities::Property{ .name = std::format("{}", index), .data_type = array.data_type, .value = array.data[index] }, m_read_only));
+				m_array_elements.emplace_back(create_property_editor(m_editor, Vadon::Utilities::Property{ .name = std::format("{}", index), .data_type = array.data_type, .value = array.data[index] }, m_info));
 			}
 		}
 
@@ -531,7 +571,7 @@ namespace VadonEditor::View
 		UI::Developer::Button m_remove_button;
 	};
 
-	PropertyEditor::Instance PropertyEditor::create_property_editor(Core::Editor& editor, const Vadon::Utilities::Property& model_property, bool read_only)
+	PropertyEditor::Instance PropertyEditor::create_property_editor(Core::Editor& editor, const Vadon::Utilities::Property& model_property, const PropertyEditorInfo& info)
 	{
 		switch (model_property.data_type.type)
 		{
@@ -540,26 +580,26 @@ namespace VadonEditor::View
 			switch (model_property.data_type.id)
 			{
 			case variant_type_list_index_v<int>:
-				return Instance(new IntPropertyEditor(model_property, read_only));
+				return Instance(new IntPropertyEditor(model_property, info));
 			case variant_type_list_index_v<float>:
-				return Instance(new FloatPropertyEditor(model_property, read_only));
+				return Instance(new FloatPropertyEditor(model_property, info));
 			case variant_type_list_index_v<bool>:
-				return Instance(new BoolPropertyEditor(model_property, read_only));
+				return Instance(new BoolPropertyEditor(model_property, info));
 			case variant_type_list_index_v<Vadon::Math::Vector2>:
-				return Instance(new Float2PropertyEditor(model_property, read_only));
+				return Instance(new Float2PropertyEditor(model_property, info));
 			case variant_type_list_index_v<Vadon::Math::Vector3>:
-				return Instance(new Float3PropertyEditor(model_property, read_only));
+				return Instance(new Float3PropertyEditor(model_property, info));
 			case variant_type_list_index_v<Vadon::Math::ColorRGBA>:
-				return Instance(new ColorPropertyEditor(model_property, read_only));
+				return Instance(new ColorPropertyEditor(model_property, info));
 			case variant_type_list_index_v<std::string>:
-				return Instance(new StringPropertyEditor(model_property, read_only));
+				return Instance(new StringPropertyEditor(model_property, info));
 			}
 		}
 		break;
 		case Vadon::Utilities::ErasedDataType::RESOURCE_ID:
-			return Instance(new ResourcePropertyEditor(editor, model_property, read_only));
+			return Instance(new ResourcePropertyEditor(editor, model_property, info));
 		case Vadon::Utilities::ErasedDataType::ARRAY:
-			return Instance(new ArrayPropertyEditor(editor, model_property, read_only));
+			return Instance(new ArrayPropertyEditor(editor, model_property, info));
 		}
 
 		Vadon::Core::Logger::log_error("Property editor: no matching property editor available for data type!\n");

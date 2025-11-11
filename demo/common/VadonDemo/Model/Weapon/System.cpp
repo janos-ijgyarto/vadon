@@ -2,6 +2,7 @@
 
 #include <VadonDemo/Core/Core.hpp>
 #include <VadonDemo/Model/Component.hpp>
+#include <VadonDemo/Model/Enemy/Component.hpp>
 #include <VadonDemo/Model/Weapon/Component.hpp>
 
 #include <Vadon/ECS/World/World.hpp>
@@ -262,7 +263,7 @@ namespace VadonDemo::Model
 			// TODO: change which targets we look for depending on who is firing the weapon
 			Vadon::ECS::EntityHandle selected_target;
 			float min_distance = std::numeric_limits<float>::max();
-			auto enemy_query = component_manager.run_component_query<Enemy&, Transform2D&>();
+			auto enemy_query = component_manager.run_component_query<EnemyBase&, Transform2D&>();
 			for (auto enemy_it = enemy_query.get_iterator(); enemy_it.is_valid() == true; enemy_it.next())
 			{
 				auto enemy_tuple = enemy_it.get_tuple();

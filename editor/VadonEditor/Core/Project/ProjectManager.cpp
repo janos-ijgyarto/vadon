@@ -1,6 +1,7 @@
 #include <VadonEditor/Core/Project/ProjectManager.hpp>
 
 #include <VadonEditor/Model/ModelSystem.hpp>
+#include <VadonEditor/Model/Resource/Resource.hpp>
 
 #include <VadonApp/Core/Application.hpp>
 
@@ -19,36 +20,18 @@ namespace
 
 namespace VadonEditor::Core
 {
-	void ProjectManager::update_project_custom_properties(const Vadon::Utilities::PropertyList& properties)
+	bool ProjectManager::update_project_custom_data(const Model::Resource* resource)
 	{
-		for (const Vadon::Utilities::Property& current_property : properties)
+		if (resource != nullptr)
 		{
-			for (Vadon::Utilities::Property& project_property : m_active_project.info.custom_properties)
-			{
-				if (project_property.name == current_property.name)
-				{
-					VADON_ASSERT(current_property.data_type == project_property.data_type, "Mismatch in property data type!");
-					project_property.value = current_property.value;
-					break;
-				}
-			}
+			m_active_project.info.custom_data_id = resource->get_id();
+		}
+		else
+		{
+			m_active_project.info.custom_data_id.invalidate();
 		}
 
-		if (internal_save_project_file(m_active_project.info) == false)
-		{
-			// TODO: log error?
-			return;
-		}
-
-		for (const ProjectPropertiesCallback& current_callback : m_properties_callbacks)
-		{
-			current_callback(m_active_project);
-		}
-	}
-
-	void ProjectManager::register_project_properties_callback(ProjectPropertiesCallback callback)
-	{
-		m_properties_callbacks.push_back(callback);
+		return internal_save_project_file(m_active_project.info);
 	}
 
 	bool ProjectManager::create_project(std::string_view project_name, std::string_view root_path)
@@ -89,7 +72,7 @@ namespace VadonEditor::Core
 		}
 
 		// Create project file
-		Vadon::Core::Project new_project_info{ .name = std::string(project_name), .root_path = std::string(root_path), .custom_properties = m_custom_properties };
+		Vadon::Core::Project new_project_info{ .name = std::string(project_name), .root_path = std::string(root_path) };
 
 		if (internal_save_project_file(new_project_info) == false)
 		{			
@@ -341,7 +324,7 @@ namespace VadonEditor::Core
 
 		const std::string project_file_path = fs_root_path.generic_string();
 		Vadon::Core::Project& project_info = m_active_project.info;
-		project_info.custom_properties = m_custom_properties; // Reset custom properties
+		project_info.custom_data_id.invalidate(); // Reset custom properties
 
 		Vadon::Core::RawFileDataBuffer project_file_data;
 

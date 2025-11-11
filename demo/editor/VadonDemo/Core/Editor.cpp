@@ -14,6 +14,7 @@
 
 #include <Vadon/Core/Core.hpp>
 #include <Vadon/Core/CoreConfiguration.hpp>
+#include <Vadon/Scene/Resource/ResourceSystem.hpp>
 
 #include <thread>
 
@@ -167,27 +168,39 @@ namespace VadonDemo::Core
             return false;
         }
 
-        // FIXME: this needs to be done here to ensure that the parent types are already available
-        // Should refactor to instead have "auto-registering" (via macros on the declarations and static vars)
-        // that enqueues type registry metadata, and then use one explicit call to process all of it.
-        VadonDemo::Core::Core::register_types();
-
-        VadonEditor::Core::ProjectManager& editor_project_manager = m_common_editor.get_system<VadonEditor::Core::ProjectManager>();
-
-        editor_project_manager.set_project_custom_properties(VadonDemo::Core::GlobalConfiguration::get_default_properties());
-
-        editor_project_manager.register_project_properties_callback(
-            [this](const VadonEditor::Core::Project& project)
-            {
-                m_core->override_global_config(project.info);
-                m_render.update_editor_layer();
-            }
-        );
-
         if (m_render.initialize() == false)
         {
             return false;
         }
+
+        // Add a callback for when the global config is modified
+        VadonEditor::Model::ModelSystem& editor_model = m_common_editor.get_system<VadonEditor::Model::ModelSystem>();
+        VadonEditor::Model::ResourceSystem& editor_resource_system = editor_model.get_resource_system();
+        editor_resource_system.register_edit_callback(
+            [this, &editor_model](Vadon::Scene::ResourceID resource_id)
+            {
+                Vadon::Core::EngineCoreInterface& engine_core = m_common_editor.get_engine_core();
+                Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
+                Vadon::Scene::ResourceHandle resource_handle = resource_system.find_resource(resource_id);
+                VADON_ASSERT(resource_handle.is_valid() == true, "Resource not found!");
+
+                const Vadon::Scene::ResourceInfo resource_info = resource_system.get_resource_info(resource_handle);
+                if (Vadon::Utilities::TypeRegistry::is_base_of(Vadon::Utilities::TypeRegistry::get_type_id<GlobalConfiguration>(), resource_info.type_id))
+                {
+                    // Global config resource, check if it's the one in the current project config
+                    const VadonEditor::Core::Project& active_project = m_common_editor.get_system<VadonEditor::Core::ProjectManager>().get_active_project();
+                    if (active_project.info.custom_data_id == resource_id)
+                    {
+                        m_core->update_global_config(GlobalConfigurationID::from_resource_id(resource_id));
+                        m_render.update_editor_layer();
+                    }
+                }
+            }
+        );
+
+        // FIXME: currently we can register the types here, but ideally we should have a system that tracks
+        // the dependencies in the type registry and ensures they are registered in the correct order
+        VadonDemo::Core::Core::register_types();
 
         return true;
     }

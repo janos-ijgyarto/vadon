@@ -131,7 +131,16 @@ namespace VadonEditor::View
 		keyframe_property_data.name = "Keyframe value";
 		keyframe_property_data.value = keyframe_cell.value;
 
-		property_editor = PropertyEditor::create_property_editor(parent_window.m_editor, keyframe_property_data, false);
+		ViewSystem& view_system = parent_window.m_editor.get_system<ViewSystem>();
+		ViewModel& view_model = view_system.get_view_model();
+
+		Model::Resource* active_resource = view_model.get_active_resource();
+
+		PropertyEditorInfo property_editor_info;
+		property_editor_info.owner = active_resource;
+		property_editor_info.read_only = false;
+
+		property_editor = PropertyEditor::create_property_editor(parent_window.m_editor, keyframe_property_data, property_editor_info);
 	}
 
 	bool AnimationEditor::KeyframeEditor::draw(VadonApp::UI::Developer::GUISystem& dev_gui)
@@ -274,6 +283,7 @@ namespace VadonEditor::View
 								{
 									if (dev_gui.add_menu_item(m_remove_keyframe_menu_item) == true)
 									{
+										// TODO: if we ever allow channel types with resource values, we need to make sure to clear embedded resources here!
 										channel.cells[keyframe_index].value = Vadon::Utilities::Variant();
 										modified = true;
 									}

@@ -24,6 +24,11 @@ namespace Vadon::Scene
 
 		virtual ResourceHandle create_resource(Vadon::Utilities::TypeID type_id) = 0;
 
+		virtual void add_embedded_resource(ResourceHandle owner_handle, ResourceHandle embedded_resource_handle) = 0;
+		virtual ResourceHandle get_embedded_resource_onwer(ResourceHandle resource_handle) const = 0;
+		virtual std::vector<ResourceHandle> get_embedded_resources(ResourceHandle resource_handle) const = 0;
+		virtual void remove_embedded_resource(ResourceHandle owner_handle, ResourceHandle embedded_resource_handle) = 0;
+
 		virtual ResourceInfo get_resource_info(ResourceHandle resource_handle) const = 0;
 
 		virtual ResourceHandle find_resource(ResourceID resource_id) const = 0;
@@ -55,6 +60,7 @@ namespace Vadon::Scene
 		virtual bool save_resource(Vadon::Utilities::Serializer& serializer, ResourceHandle resource_handle) = 0;
 		virtual ResourceHandle load_resource(Vadon::Utilities::Serializer& serializer) = 0;
 
+		// NOTE: this effectively just unloads the resource, can always be reloaded via the ID
 		virtual void remove_resource(ResourceHandle resource_handle) = 0;
 
 		template<typename T>
