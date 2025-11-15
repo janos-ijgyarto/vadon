@@ -14,6 +14,8 @@ namespace VadonDemo::Model
 	struct EnemyMovement
 	{
 		EnemyMovementDefID definition;
+		EnemyMovementDefHandle def_handle;
+		float data = 0; // FIXME: this is to enable weaving, need a more modular solution!
 
 		static void register_component();
 	};

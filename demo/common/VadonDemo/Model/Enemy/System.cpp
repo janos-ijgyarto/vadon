@@ -27,6 +27,8 @@ namespace VadonDemo::Model
 	{
 		EnemyDefinition::register_resource();
 		EnemyMovementDefinition::register_resource();
+		EnemyMovementLookahead::register_resource();
+		EnemyMovementWeaving::register_resource();
 		EnemyWeaponAttackDefinition::register_resource();
 		EnemyContactDamageDefinition::register_resource();
 
@@ -112,16 +114,19 @@ namespace VadonDemo::Model
 		update_spawners(ecs_world, delta_time);
 	}
 
-	void EnemySystem::update_enemies(Vadon::ECS::World& ecs_world, float /*delta_time*/)
+	void EnemySystem::update_enemies(Vadon::ECS::World& ecs_world, float delta_time)
 	{
 		// FIXME: instead of having to do a query, we should just cache the player entity handle!
 		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
-		Vadon::Math::Vector2 player_position = Vadon::Math::Vector2_Zero;
 
+		Vadon::ECS::EntityHandle player_entity;
+		Vadon::Math::Vector2 player_position = Vadon::Math::Vector2_Zero;
 		{
 			auto player_query = component_manager.run_component_query<Player&, Transform2D&>();
 			for (auto player_it = player_query.get_iterator(); player_it.is_valid() == true;)
 			{
+				player_entity = player_it.get_entity();
+
 				auto player_tuple = player_it.get_tuple();
 				Transform2D& player_transform = std::get<Transform2D&>(player_tuple);
 
@@ -133,29 +138,36 @@ namespace VadonDemo::Model
 		const Core::GlobalConfiguration& global_config = m_core.get_global_config();
 		const float teleport_radius_sq = Vadon::Math::Vector::length_squared(global_config.viewport_size * 0.55f);
 
-		auto enemy_query = component_manager.run_component_query<EnemyBase&, Transform2D&, Velocity2D&>();
+		auto enemy_query = component_manager.run_component_query<EnemyBase&, Transform2D*, Velocity2D*, EnemyMovement*>();
 		for (auto enemy_it = enemy_query.get_iterator(); enemy_it.is_valid() == true; enemy_it.next())
 		{
 			auto enemy_tuple = enemy_it.get_tuple();
-			Transform2D& enemy_transform = std::get<Transform2D&>(enemy_tuple);
-			Velocity2D& enemy_velocity = std::get<Velocity2D&>(enemy_tuple);
 
-			const Vadon::Math::Vector2 enemy_to_player = player_position - enemy_transform.position;
-			if (Vadon::Math::Vector::dot(enemy_to_player, enemy_to_player) > 0.01f)
+			Velocity2D* velocity_component = std::get<Velocity2D*>(enemy_tuple);
+			const EnemyMovement* movement_component = std::get<EnemyMovement*>(enemy_tuple);
+			if ((player_entity.is_valid() == true) && (velocity_component != nullptr) && (movement_component != nullptr))
 			{
-				enemy_velocity.velocity = Vadon::Math::Vector::normalize(enemy_to_player) * enemy_velocity.top_speed;
+				Vadon::Scene::ResourceSystem& resource_system = m_core.get_engine_core().get_system<Vadon::Scene::ResourceSystem>();
+				const EnemyMovementDefinition* movement_def = resource_system.get_resource(movement_component->def_handle);
+
+				velocity_component->velocity = movement_def->get_movement_direction(ecs_world, enemy_it.get_entity(), player_entity, delta_time) * velocity_component->top_speed;
 			}
-			else
+			else if (velocity_component != nullptr)
 			{
-				enemy_velocity.velocity = Vadon::Math::Vector2_Zero;
+				velocity_component->velocity = Vadon::Math::Vector2_Zero;
 			}
 
-			const float enemy_dist_sq = Vadon::Math::Vector::length_squared(enemy_to_player);
-			if (enemy_dist_sq > teleport_radius_sq)
+			Transform2D* transform_component = std::get<Transform2D*>(enemy_tuple);
+			if (transform_component != nullptr)
 			{
-				const Vadon::Math::Vector2 new_position = player_position + (enemy_to_player * 0.9f);
-				enemy_transform.position = new_position;
-				enemy_transform.teleported = true;
+				const Vadon::Math::Vector2 enemy_to_player = player_position - transform_component->position;
+				const float enemy_dist_sq = Vadon::Math::Vector::length_squared(enemy_to_player);
+				if (enemy_dist_sq > teleport_radius_sq)
+				{
+					const Vadon::Math::Vector2 new_position = player_position + (enemy_to_player * 0.9f);
+					transform_component->position = new_position;
+					transform_component->teleported = true;
+				}
 			}
 		}
 	}
@@ -255,6 +267,16 @@ namespace VadonDemo::Model
 		if (health_component != nullptr)
 		{
 			health_component->current_health = health_component->max_health;
+		}
+
+		EnemyMovement* movement_component = component_manager.get_component<EnemyMovement>(spawned_enemy);
+		if (movement_component != nullptr)
+		{
+			if (movement_component->definition.is_valid() == true)
+			{
+				Vadon::Scene::ResourceSystem& resource_system = m_core.get_engine_core().get_system<Vadon::Scene::ResourceSystem>();
+				movement_component->def_handle = resource_system.load_resource(movement_component->definition);
+			}
 		}
 
 		m_core.entity_added(ecs_world, spawned_enemy);
