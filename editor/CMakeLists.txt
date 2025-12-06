@@ -24,7 +24,7 @@ elseif(UNIX AND NOT APPLE)
 endif()
 
 # Add common build options
-target_link_libraries(${VADONEDITOR_CURRENT_TARGET} PRIVATE $<BUILD_INTERFACE:VadonBuildOptions>)
+target_link_libraries(${VADONEDITOR_CURRENT_TARGET} PRIVATE VadonBuildOptions)
 
 add_subdirectory(VadonEditor)
 
@@ -46,3 +46,8 @@ if(WIN32)
 endif()
 
 set_target_properties(${VADONEDITOR_CURRENT_TARGET} PROPERTIES FOLDER "${VADON_PARENT_FOLDER}${PROJECT_NAME}")
+
+set_target_properties(${VADONEDITOR_CURRENT_TARGET}
+    PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+)

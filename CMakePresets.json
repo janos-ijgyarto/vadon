@@ -7,22 +7,49 @@
   },
   "configurePresets": [
     {
-      "name": "base",
+      "name": "common",
+      "description": "Shared settings for all configurations",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_SKIP_INSTALL_ALL_DEPENDENCY": true,
+        "CMAKE_POLICY_VERSION_MINIMUM": "3.5",
+        "VADON_PRESET_NAME": "${presetName}",
+        "VADON_BUILD_DIR_ROOT": "${sourceDir}/out/build",
+        "VADON_INSTALL_DIR_ROOT": "${sourceDir}/out/install",
+        "VADON_LINK_STATIC": "OFF"
+      },
+      "warnings": { "dev": false }
+    },
+    {
+      "name": "engine-base",
       "description": "Sets build and install directory",
       "hidden": true,
-      "binaryDir": "${sourceDir}/out/build/${presetName}",
+      "binaryDir": "${sourceDir}/out/build/engine/${presetName}",
+      "installDir": "${sourceDir}/out/install/engine/${presetName}",
       "cacheVariables": {
-        "CMAKE_POLICY_VERSION_MINIMUM": 3.5,
-        "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}",
-        "VADON_BUILD_DIR_ROOT": "${sourceDir}/out/build",
-        "VADON_CONFIGURATION_NAME": "${presetName}",
+        "VADON_CONFIGURATION_MODE": "ENGINE",
         "VADON_PLATFORM_INTERFACE": "DEFAULT",
         "VADON_GRAPHICS": "DEFAULT",
-        "VADON_LINK_STATIC": "OFF",
         "VADON_ENABLE_APPLICATION": "ON",
         "VADON_ENABLE_DEMO": "ON"
       },
-      "warnings": { "dev": false }
+      "inherits": "common"
+    },
+    {
+      "name": "tools-base",
+      "description": "Sets build and install directory",
+      "hidden": true,
+      "binaryDir": "${sourceDir}/out/build/tools/${presetName}",
+      "installDir": "${sourceDir}/out/install/tools/${presetName}",
+      "cacheVariables": {
+        "VADON_CONFIGURATION_MODE": "TOOLS",
+        "VADON_TOOLS_ENGINE_BUILD": "OFF",
+        "VADON_TOOLS_ENABLE_EDITOR": "OFF"
+      },
+      "environment": {
+        "VADON_TOOLS_INSTALL_OUT": "${sourceDir}/out/install/tools/${presetName}"
+      },
+      "inherits": "common"
     },
     {
       "name": "platform-windows",
@@ -32,6 +59,9 @@
         "type": "equals",
         "lhs": "${hostSystemName}",
         "rhs": "Windows"
+      },
+      "cacheVariables": {
+        "VADON_PLATFORM": "windows"
       }
     },
     {
@@ -42,6 +72,9 @@
         "microsoft.com/VisualStudioSettings/CMake/1.0": {
           "hostOS": [ "Linux" ]
         }
+      },
+      "cacheVariables": {
+        "VADON_PLATFORM": "linux"
       }
     },
     {
@@ -65,7 +98,8 @@
       "hidden": true,
       "cacheVariables": {
         "CMAKE_C_COMPILER": "cl",
-        "CMAKE_CXX_COMPILER": "cl"
+        "CMAKE_CXX_COMPILER": "cl",
+        "VADON_COMPILER": "cl"
       }
     },
     {
@@ -73,7 +107,8 @@
       "hidden": true,
       "cacheVariables": {
         "CMAKE_C_COMPILER": "clang-cl",
-        "CMAKE_CXX_COMPILER": "clang-cl"
+        "CMAKE_CXX_COMPILER": "clang-cl",
+        "VADON_COMPILER": "clang-cl"
       },
       "toolset": "ClangCL",
       "vendor": {
@@ -87,7 +122,8 @@
       "hidden": true,
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
-        "CMAKE_CXX_COMPILER": "g++"
+        "CMAKE_CXX_COMPILER": "g++",
+        "VADON_COMPILER": "g++"
       }
     },
     {
@@ -111,7 +147,8 @@
       "hidden": true,
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
-        "CMAKE_CONFIGURATION_TYPES": "Debug"
+        "CMAKE_CONFIGURATION_TYPES": "Debug",
+        "VADON_CONFIGURATION": "debug"
       }
     },
     {
@@ -119,11 +156,12 @@
       "hidden": true,
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
-        "CMAKE_CONFIGURATION_TYPES": "Release"
+        "CMAKE_CONFIGURATION_TYPES": "Release",
+        "VADON_CONFIGURATION": "release"
       }
     },
     {
-      "name": "engine-link-static",
+      "name": "link-static",
       "hidden": true,
       "cacheVariables": {
         "VADON_LINK_STATIC": "ON"
@@ -131,32 +169,61 @@
     },
     {
       "name": "windows-cl-debug",
+      "hidden": true,
       "displayName": "MSVC debug",
       "description": "Windows Ninja build using MSVC",
-      "inherits": [ "base", "platform-windows", "generator-ninja", "compiler-cl", "config-debug" ]
+      "inherits": [ "platform-windows", "generator-ninja", "compiler-cl", "config-debug" ]
     },
     {
       "name": "windows-cl-release",
+      "hidden": true,
       "displayName": "MSVC release",
       "description": "Windows Ninja build using MSVC",
-      "inherits": [ "base", "platform-windows", "generator-ninja", "compiler-cl", "config-release" ]
+      "inherits": [ "platform-windows", "generator-ninja", "compiler-cl", "config-release" ]
     },
     {
       "name": "windows-cl-debug-static",
+      "hidden": true,
       "displayName": "MSVC debug STATIC",
       "description": "Windows Ninja build using MSVC (static linkage)",
-      "inherits": [ "engine-link-static", "windows-cl-debug" ]
+      "inherits": [ "link-static", "windows-cl-debug" ]
     },
     {
       "name": "windows-cl-release-static",
+      "hidden": true,
       "displayName": "MSVC release STATIC",
       "description": "Windows Ninja build using MSVC (static linkage)",
-      "inherits": [ "engine-link-static", "windows-cl-release" ]
+      "inherits": [ "link-static", "windows-cl-release" ]
     },
     {
       "name": "linux-ninja-g++",
+      "hidden": true,
       "description": "Linux Ninja build using g++",
-      "inherits": [ "base", "platform-linux", "generator-ninja", "compiler-g++" ]
+      "inherits": [ "platform-linux", "generator-ninja", "compiler-g++" ]
+    },
+    {
+      "name": "engine-windows-cl-debug",
+      "displayName": "Engine Debug (MSVC)",
+      "description": "Windows Ninja build using MSVC",
+      "inherits": [ "engine-base", "windows-cl-debug" ]
+    },
+    {
+      "name": "tools-windows-cl-debug",
+      "displayName": "Tools Debug (MSVC)",
+      "description": "Windows Ninja build using MSVC",
+      "inherits": [ "tools-base", "windows-cl-debug" ]
+    },
+    {
+      "name": "engine-windows-cl-release",
+      "displayName": "Engine Release (MSVC)",
+      "description": "Windows Ninja build using MSVC",
+      "inherits": [ "engine-base", "windows-cl-release" ]
+    },
+    {
+      "name": "tools-windows-cl-release",
+      "displayName": "Tools Release (MSVC)",
+      "description": "Windows Ninja build using MSVC",
+      "inherits": [ "tools-base", "windows-cl-release" ]
     }
   ],
   "buildPresets": [
@@ -171,7 +238,7 @@
       "displayName": "MSVC Debug",
       "description": "Windows debug build using cl",
       "inherits": "Demo-base",
-      "configurePreset": "windows-cl-debug",
+      "configurePreset": "engine-windows-cl-debug",
       "configuration": "Debug"
     },
     {
@@ -179,7 +246,7 @@
       "displayName": "MSVC Release",
       "description": "Windows release build using cl",
       "inherits": "Demo-base",
-      "configurePreset": "windows-cl-release",
+      "configurePreset": "engine-windows-cl-release",
       "configuration": "Release"
     },
     {

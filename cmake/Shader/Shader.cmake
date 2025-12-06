@@ -14,6 +14,7 @@ function(vadon_generate_embedded_shader_source SHADER_TARGET SHADER_FILE SHADER_
 endfunction()
 
 function(vadon_compile_shader_to_object_files SHADER_FILE SHADER_TARGET)
+	# TODO
 endfunction()
 
 function(vadon_compile_shader_to_embedded SOURCE_LIST ROOT_DIR CODEGEN_DIR SHADER_FILE SHADER_TARGET SHADER_ENTRYPOINT SHADER_NAMESPACE)
@@ -37,7 +38,7 @@ function(vadon_compile_shader_to_embedded SOURCE_LIST ROOT_DIR CODEGEN_DIR SHADE
 	set(OUTPUT_FILE_FULL_PATH "${SHADER_OUTPUT_PATH}/${OUTPUT_FILE_NAME}.hpp")
 
 	add_custom_command(OUTPUT ${OUTPUT_FILE_FULL_PATH}
-		COMMAND VadonTools::VadonShaderCompiler ${ROOT_DIR} ${SHADER_FILE_ABS_PATH} ${OUTPUT_FILE_FULL_PATH} ${SHADER_TARGET} ${SHADER_ENTRYPOINT} "cpp" ${SHADER_NAMESPACE}
+		COMMAND VadonTools::ShaderCompiler ${ROOT_DIR} ${SHADER_FILE_ABS_PATH} ${OUTPUT_FILE_FULL_PATH} ${SHADER_TARGET} ${SHADER_ENTRYPOINT} "cpp" ${SHADER_NAMESPACE}
 		DEPENDS ${SHADER_FILE}
 		DEPFILE "${SHADER_OUTPUT_PATH}/${OUTPUT_FILE_NAME}.d"
 	)

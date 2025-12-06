@@ -1,13 +1,13 @@
 MESSAGE("Configuring Vadon Render")
 
 # Add shader compiler
-include(${VADON_TOOLS_EXPORT_FILE_DIR}/VadonShaderCompiler.cmake)
+include(${VADON_TOOLS_EXPORT_FILE_DIR}/ShaderCompiler.cmake)
 
 set(VADONRENDER_SHADERS_TARGET "VadonRenderShaders")
 add_custom_target(${VADONRENDER_SHADERS_TARGET})
 
 # Make dependent on the tools being built
-add_dependencies(${VADONRENDER_SHADERS_TARGET} "VadonToolsBuild")
+add_dependencies(${VADONRENDER_SHADERS_TARGET} VadonToolsBuild)
 set_target_properties(${VADONRENDER_SHADERS_TARGET} PROPERTIES FOLDER "${VADON_PARENT_FOLDER}${PROJECT_NAME}/Codegen")
 
 set(VADONRENDER_SHADERS_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})

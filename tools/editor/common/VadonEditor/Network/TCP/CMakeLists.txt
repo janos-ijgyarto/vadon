@@ -1,0 +1,9 @@
+target_sources(${VADONEDITOR_COMMON}
+    PRIVATE
+    Client.hpp
+    Client.cpp
+    Connection.hpp
+    Connection.cpp
+    Server.hpp
+    Server.cpp
+)
