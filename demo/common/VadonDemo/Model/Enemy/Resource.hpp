@@ -53,7 +53,8 @@ namespace VadonDemo::Model
 
 	struct EnemyWeaponAttackDefinition : public Vadon::Scene::Resource
 	{
-		// TODO: any logic settings?
+		int projectile_count = 1; // i.e how many are fired each volley
+		float reload_time = 1.0f; // i.e how long between volleys
 
 		static void register_resource();
 	};

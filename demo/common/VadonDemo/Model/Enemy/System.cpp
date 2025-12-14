@@ -43,8 +43,8 @@ namespace VadonDemo::Model
 	bool EnemySystem::init_collisions(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle entity)
 	{
 		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
-		Collision* collision_component = component_manager.get_component<Collision>(entity);
-		if (collision_component == nullptr)
+		auto collision_component = component_manager.get_component<Collision>(entity);
+		if (collision_component.is_valid() == false)
 		{
 			return false;
 		}
@@ -63,8 +63,8 @@ namespace VadonDemo::Model
 	void EnemySystem::enemy_collision_callback(VadonDemo::Core::Core& /*core*/, Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle enemy, Vadon::ECS::EntityHandle collider)
 	{
 		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
-		Health* enemy_health = component_manager.get_component<Health>(enemy);
-		if (enemy_health == nullptr)
+		auto enemy_health = component_manager.get_component<Health>(enemy);
+		if (enemy_health.is_valid() == false)
 		{
 			return;
 		}
@@ -75,16 +75,16 @@ namespace VadonDemo::Model
 			return;
 		}
 
-		ProjectileComponent* projectile = component_manager.get_component<ProjectileComponent>(collider);
-		if (projectile != nullptr)
+		auto projectile = component_manager.get_component<ProjectileComponent>(collider);
+		if (projectile.is_valid() == true)
 		{
 			// Apply damage
 			enemy_health->current_health -= projectile->damage;
 
 			if (projectile->knockback > 0.001f)
 			{
-				const Transform2D* projectile_transform = component_manager.get_component<Transform2D>(collider);
-				Transform2D* enemy_transform = component_manager.get_component<Transform2D>(enemy);
+				const auto projectile_transform = component_manager.get_component<Transform2D>(collider);
+				auto enemy_transform = component_manager.get_component<Transform2D>(enemy);
 
 				const Vadon::Math::Vector2 projectile_to_enemy = Vadon::Math::Vector::normalize(enemy_transform->position - projectile_transform->position);
 				enemy_transform->position += (projectile_to_enemy * projectile->knockback);
@@ -97,9 +97,9 @@ namespace VadonDemo::Model
 		return false;
 	}
 
-	bool EnemySystem::validate_spawner(const Spawner& spawner) const
+	bool EnemySystem::validate_spawner(const Vadon::ECS::TypedComponentHandle<Spawner>& spawner) const
 	{
-		if (spawner.enemy_prefab.is_valid() == false)
+		if (spawner->enemy_prefab.is_valid() == false)
 		{
 			// TODO: error!
 			return false;
@@ -127,10 +127,9 @@ namespace VadonDemo::Model
 			{
 				player_entity = player_it.get_entity();
 
-				auto player_tuple = player_it.get_tuple();
-				Transform2D& player_transform = std::get<Transform2D&>(player_tuple);
+				auto player_transform = player_it.get_component<Transform2D>();
 
-				player_position = player_transform.position;
+				player_position = player_transform->position;
 				break;
 			}
 		}
@@ -141,24 +140,22 @@ namespace VadonDemo::Model
 		auto enemy_query = component_manager.run_component_query<EnemyBase&, Transform2D*, Velocity2D*, EnemyMovement*>();
 		for (auto enemy_it = enemy_query.get_iterator(); enemy_it.is_valid() == true; enemy_it.next())
 		{
-			auto enemy_tuple = enemy_it.get_tuple();
-
-			Velocity2D* velocity_component = std::get<Velocity2D*>(enemy_tuple);
-			const EnemyMovement* movement_component = std::get<EnemyMovement*>(enemy_tuple);
-			if ((player_entity.is_valid() == true) && (velocity_component != nullptr) && (movement_component != nullptr))
+			auto velocity_component = enemy_it.get_component<Velocity2D>();
+			const auto movement_component = enemy_it.get_component<EnemyMovement>();
+			if ((player_entity.is_valid() == true) && (velocity_component.is_valid() == true) && (movement_component.is_valid() == true))
 			{
 				Vadon::Scene::ResourceSystem& resource_system = m_core.get_engine_core().get_system<Vadon::Scene::ResourceSystem>();
 				const EnemyMovementDefinition* movement_def = resource_system.get_resource(movement_component->def_handle);
 
 				velocity_component->velocity = movement_def->get_movement_direction(ecs_world, enemy_it.get_entity(), player_entity, delta_time) * velocity_component->top_speed;
 			}
-			else if (velocity_component != nullptr)
+			else if (velocity_component.is_valid() == true)
 			{
 				velocity_component->velocity = Vadon::Math::Vector2_Zero;
 			}
 
-			Transform2D* transform_component = std::get<Transform2D*>(enemy_tuple);
-			if (transform_component != nullptr)
+			auto transform_component = enemy_it.get_component<Transform2D>();
+			if (transform_component.is_valid() == true)
 			{
 				const Vadon::Math::Vector2 enemy_to_player = player_position - transform_component->position;
 				const float enemy_dist_sq = Vadon::Math::Vector::length_squared(enemy_to_player);
@@ -167,6 +164,43 @@ namespace VadonDemo::Model
 					const Vadon::Math::Vector2 new_position = player_position + (enemy_to_player * 0.9f);
 					transform_component->position = new_position;
 					transform_component->teleported = true;
+				}
+			}
+		}
+
+		Vadon::Scene::ResourceSystem& resource_system = m_core.get_engine_core().get_system<Vadon::Scene::ResourceSystem>();
+		auto enemy_weapon_query = component_manager.run_component_query<EnemyWeapon&, WeaponVolleyComponent*>();
+		for (auto weapon_it = enemy_weapon_query.get_iterator(); weapon_it.is_valid() == true; weapon_it.next())
+		{
+			auto enemy_weapon_component = weapon_it.get_component<EnemyWeapon>();
+			auto weapon_volley_component = weapon_it.get_component<WeaponVolleyComponent>();
+
+			if (weapon_volley_component.is_valid() == true)
+			{
+				// Enemy fires in volleys
+				if (weapon_volley_component->fire_count > 0)
+				{
+					// We are still firing a volley
+					continue;
+				}
+
+				// Update reload timer
+				enemy_weapon_component->reload_timer -= delta_time;
+				if (enemy_weapon_component->reload_timer <= 0.0f)
+				{
+					if (enemy_weapon_component->def_handle.is_valid() == false)
+					{
+						if (enemy_weapon_component->definition.is_valid() == false)
+						{
+							continue;
+						}
+
+						enemy_weapon_component->def_handle = resource_system.load_resource(enemy_weapon_component->definition);
+					}
+
+					const EnemyWeaponAttackDefinition* attack_def = resource_system.get_resource(enemy_weapon_component->def_handle);
+					weapon_volley_component->fire_count = std::max(attack_def->projectile_count, 1);
+					enemy_weapon_component->reload_timer = std::max(enemy_weapon_component->reload_timer + attack_def->reload_time, 0.0f);
 				}
 			}
 		}
@@ -183,10 +217,8 @@ namespace VadonDemo::Model
 			auto player_query = component_manager.run_component_query<Player&, Transform2D&>();
 			for (auto player_it = player_query.get_iterator(); player_it.is_valid() == true;)
 			{
-				auto player_tuple = player_it.get_tuple();
-				Transform2D& player_transform = std::get<Transform2D&>(player_tuple);
-
-				player_position = player_transform.position;
+				const auto player_transform = player_it.get_component<Transform2D>();
+				player_position = player_transform->position;
 				break;
 			}
 		}
@@ -200,34 +232,33 @@ namespace VadonDemo::Model
 		auto spawner_query = component_manager.run_component_query<Spawner&>();
 		for (auto spawner_it = spawner_query.get_iterator(); spawner_it.is_valid() == true; spawner_it.next())
 		{
-			auto spawner_tuple = spawner_it.get_tuple();
-			Spawner& current_spawner = std::get<Spawner&>(spawner_tuple);
+			auto current_spawner = spawner_it.get_component<Spawner>();
 
 			// Check if spawner is ready to activate
 			// TODO: move delay to def, use component with timer, remove component once activated
-			if (current_spawner.activation_delay > 0.0f)
+			if (current_spawner->activation_delay > 0.0f)
 			{
-				current_spawner.activation_delay -= delta_time;
+				current_spawner->activation_delay -= delta_time;
 			}
 			else
 			{
 				// Update level up timer
-				if (current_spawner.current_level < current_spawner.max_level)
+				if (current_spawner->current_level < current_spawner->max_level)
 				{
-					current_spawner.level_up_timer -= delta_time;
-					if (current_spawner.level_up_timer <= 0.0f)
+					current_spawner->level_up_timer -= delta_time;
+					if (current_spawner->level_up_timer <= 0.0f)
 					{
-						++current_spawner.current_level;
-						current_spawner.level_up_timer = std::max(current_spawner.level_up_timer + current_spawner.level_up_delay, 0.0f);
+						++current_spawner->current_level;
+						current_spawner->level_up_timer = std::max(current_spawner->level_up_timer + current_spawner->level_up_delay, 0.0f);
 					}
 				}
 
-				current_spawner.spawn_timer -= delta_time;
-				if (current_spawner.spawn_timer <= 0.0f)
+				current_spawner->spawn_timer -= delta_time;
+				if (current_spawner->spawn_timer <= 0.0f)
 				{
-					current_spawner.spawn_timer = std::max(current_spawner.spawn_timer + current_spawner.min_spawn_delay, 0.0f);
+					current_spawner->spawn_timer = std::max(current_spawner->spawn_timer + current_spawner->min_spawn_delay, 0.0f);
 
-					for (int32_t spawned_enemy_index = 0; spawned_enemy_index < current_spawner.current_spawn_count; ++spawned_enemy_index)
+					for (int32_t spawned_enemy_index = 0; spawned_enemy_index < current_spawner->current_spawn_count; ++spawned_enemy_index)
 					{
 						const float rand_angle = m_enemy_dist(m_core.get_model().get_random_engine());
 
@@ -240,12 +271,12 @@ namespace VadonDemo::Model
 		}
 	}
 
-	void EnemySystem::spawn_enemy(Vadon::ECS::World& ecs_world, const Spawner& spawner, const Vadon::Math::Vector2& position)
+	void EnemySystem::spawn_enemy(Vadon::ECS::World& ecs_world, const Vadon::ECS::TypedComponentHandle<Spawner>& spawner, const Vadon::Math::Vector2& position)
 	{
 		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
 		Vadon::Scene::SceneSystem& scene_system = m_core.get_engine_core().get_system<Vadon::Scene::SceneSystem>();
 
-		const Vadon::Scene::SceneHandle enemy_prefab_scene = scene_system.load_scene(spawner.enemy_prefab);
+		const Vadon::Scene::SceneHandle enemy_prefab_scene = scene_system.load_scene(spawner->enemy_prefab);
 		const Vadon::ECS::EntityHandle spawned_enemy = scene_system.instantiate_scene(enemy_prefab_scene, ecs_world);
 
 		// FIXME: make a parent entity for enemies?
@@ -253,9 +284,9 @@ namespace VadonDemo::Model
 		Vadon::ECS::EntityHandle root_entity = Model::get_root_entity(ecs_world);
 		ecs_world.get_entity_manager().add_child_entity(root_entity, spawned_enemy);
 
-		Transform2D* transform_component = component_manager.get_component<Transform2D>(spawned_enemy);
+		auto transform_component = component_manager.get_component<Transform2D>(spawned_enemy);
 
-		if (transform_component != nullptr)
+		if (transform_component.is_valid() == true)
 		{
 			// Spawn relative to player
 			transform_component->position = position;
@@ -263,14 +294,14 @@ namespace VadonDemo::Model
 
 		// Init health
 		// FIXME: could use event for this!
-		Health* health_component = component_manager.get_component<Health>(spawned_enemy);
-		if (health_component != nullptr)
+		auto health_component = component_manager.get_component<Health>(spawned_enemy);
+		if (health_component.is_valid() == true)
 		{
 			health_component->current_health = health_component->max_health;
 		}
 
-		EnemyMovement* movement_component = component_manager.get_component<EnemyMovement>(spawned_enemy);
-		if (movement_component != nullptr)
+		auto movement_component = component_manager.get_component<EnemyMovement>(spawned_enemy);
+		if (movement_component.is_valid() == true)
 		{
 			if (movement_component->definition.is_valid() == true)
 			{
@@ -288,15 +319,15 @@ namespace VadonDemo::Model
 
 		// TODO: at the moment we are only checking damage, so if the player is already dead, we early out
 		// Need other branches, e.g enemy which slows player
-		Player* player_component = component_manager.get_component<Player>(player);
+		auto player_component = component_manager.get_component<Player>(player);
 		if (player_component->damage_timer > 0.0f)
 		{
 			// Player took damage previously, still timing out
 			return;
 		}
 
-		Health* player_health = component_manager.get_component<Health>(player);
-		if (player_health == nullptr)
+		auto player_health = component_manager.get_component<Health>(player);
+		if (player_health.is_valid() == false)
 		{
 			return;
 		}
@@ -307,8 +338,8 @@ namespace VadonDemo::Model
 			return;
 		}
 
-		EnemyContactDamage* contact_damage = component_manager.get_component<EnemyContactDamage>(enemy);
-		if (contact_damage == nullptr)
+		auto contact_damage = component_manager.get_component<EnemyContactDamage>(enemy);
+		if (contact_damage.is_valid() == false)
 		{
 			return;
 		}

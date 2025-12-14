@@ -5,6 +5,8 @@ target_sources(${VADON_CURRENT_TARGET}
 	Batch.hpp
 	CanvasSystem.hpp
 	CanvasSystem.cpp
+	CommandBuffer.hpp
+	CommandBuffer.cpp
 	Context.hpp
 	Item.hpp
 	Layer.hpp

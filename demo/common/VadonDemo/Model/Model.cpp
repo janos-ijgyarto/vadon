@@ -11,17 +11,6 @@
 #include <Vadon/Scene/Resource/ResourceSystem.hpp>
 #include <Vadon/Scene/SceneSystem.hpp>
 
-namespace
-{
-	Vadon::Math::Vector2 rotate_2d_vector(const Vadon::Math::Vector2& vector, float angle)
-	{
-		const float sin_angle = std::sinf(angle);
-		const float cos_angle = std::cosf(angle);
-
-		return Vadon::Math::Vector2(cos_angle * vector.x - sin_angle * vector.y, sin_angle * vector.x + cos_angle * vector.y);
-	}
-}
-
 namespace VadonDemo::Model
 {
 	void Model::register_types()
@@ -108,8 +97,7 @@ namespace VadonDemo::Model
 		m_core.entity_removed(ecs_world, root_entity);
 
 		// TODO: error checking?
-		ecs_world.get_entity_manager().remove_entity(root_entity);
-		ecs_world.remove_pending_entities();
+		ecs_world.remove_entity(root_entity);
 	}
 
 	Vadon::ECS::EntityHandle Model::get_root_entity(Vadon::ECS::World& ecs_world)
@@ -130,8 +118,8 @@ namespace VadonDemo::Model
 	void Model::init_entity_collision(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle entity)
 	{
 		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
-		Collision* collision_component = component_manager.get_component<Collision>(entity);
-		if (collision_component == nullptr)
+		auto collision_component = component_manager.get_component<Collision>(entity);
+		if (collision_component.is_valid() == false)
 		{
 			return;
 		}
@@ -148,11 +136,19 @@ namespace VadonDemo::Model
 			return;
 		}
 
-		if(component_manager.has_component<ProjectileComponent>(entity))
+		auto projectile_component = component_manager.get_component<ProjectileComponent>(entity);
+		if(projectile_component.is_valid() == true)
 		{
 			collision_component->callback = &WeaponSystem::projectile_collision_callback;
 			collision_component->layers = 1 << static_cast<uint8_t>(CollisionLayer::PROJECTILES);
-			collision_component->mask = 1 << static_cast<uint8_t>(CollisionLayer::ENEMIES);
+			if (projectile_component->enemy == false)
+			{
+				collision_component->mask = 1 << static_cast<uint8_t>(CollisionLayer::ENEMIES);
+			}
+			else
+			{
+				collision_component->mask = 1 << static_cast<uint8_t>(CollisionLayer::PLAYER);
+			}
 			return;
 		}
 	}
@@ -199,14 +195,12 @@ namespace VadonDemo::Model
 			for (auto player_it = player_query.get_iterator(); player_it.is_valid() == true; player_it.next())
 			{
 				player_entity = player_it.get_entity();
-				auto player_tuple = player_it.get_tuple();
+				const auto player_component = player_it.get_component<Player>();
+				auto player_weapon = player_it.get_component<WeaponComponent>();
 
-				const Player& player_component = std::get<Player&>(player_tuple);
-				WeaponComponent& player_weapon = std::get<WeaponComponent&>(player_tuple);
+				std::uniform_int_distribution<int> m_int_distribution(0, static_cast<int>(player_component->starting_weapons.size()) - 1);
 
-				std::uniform_int_distribution<int> m_int_distribution(0, static_cast<int>(player_component.starting_weapons.size()) - 1);
-
-				player_weapon.definition = player_component.starting_weapons[m_int_distribution(m_random_engine)];
+				player_weapon->definition = player_component->starting_weapons[m_int_distribution(m_random_engine)];
 			}
 		}
 
@@ -260,20 +254,21 @@ namespace VadonDemo::Model
 				}
 
 				player_entity = player_it.get_entity();
-				auto player_components = component_manager.get_component_tuple<Transform2D, Velocity2D, Health, WeaponComponent>(player_entity);
-				if (std::get<Transform2D*>(player_components) == nullptr)
+				const auto player_transform = component_manager.get_component<Transform2D>(player_entity);
+				if (player_transform.is_valid() == false)
 				{
 					// TODO: error!
 					return false;
 				}
-				if (std::get<Velocity2D*>(player_components) == nullptr)
+				const auto player_velocity = component_manager.get_component<Velocity2D>(player_entity);
+				if (player_velocity.is_valid() == false)
 				{
 					// TODO: error!
 					return false;
 				}
 
-				Health* player_health = std::get<Health*>(player_components);
-				if (player_health == nullptr)
+				auto player_health = component_manager.get_component<Health>(player_entity);
+				if (player_health.is_valid() == false)
 				{
 					// TODO: error!
 					return false;
@@ -281,15 +276,15 @@ namespace VadonDemo::Model
 
 				player_health->current_health = player_health->max_health;
 
-				WeaponComponent* player_weapon = std::get<WeaponComponent*>(player_components);
-				if (player_weapon == nullptr)
+				auto player_weapon = component_manager.get_component<WeaponComponent>(player_entity);
+				if (player_weapon.is_valid() == false)
 				{
 					// TODO: error!
 					return false;
 				}
-
-				auto player_tuple = player_it.get_tuple();
-				if (m_weapon_system.validate_weapon(std::get<Player&>(player_tuple), *player_weapon) == false)
+				
+				auto player_component = player_it.get_component<Player>();
+				if (m_weapon_system.validate_weapon(player_component, *player_weapon) == false)
 				{
 					// TODO: error!
 					return false;
@@ -316,13 +311,6 @@ namespace VadonDemo::Model
 				}
 
 				map_entity = map_it.get_entity();
-
-				auto map_components = component_manager.get_component_tuple<Transform2D, Map>(map_entity);
-				if (std::get<Map*>(map_components) == nullptr)
-				{
-					// TODO: error!
-					return false;
-				}
 			}
 
 			if (map_entity.is_valid() == false)
@@ -338,8 +326,7 @@ namespace VadonDemo::Model
 
 			for (auto spawner_it = spawner_query.get_iterator(); spawner_it.is_valid() == true; spawner_it.next())
 			{
-				auto spawner_tuple = spawner_it.get_tuple();
-				Spawner& current_spawner = std::get<Spawner&>(spawner_tuple);
+				auto current_spawner = spawner_it.get_component<Spawner>();
 
 				if (m_enemy_system.validate_spawner(current_spawner) == false)
 				{
@@ -363,29 +350,28 @@ namespace VadonDemo::Model
 	{
 		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
 
-		auto player_query = component_manager.run_component_query<Player&, Velocity2D*>();
+		auto player_query = component_manager.run_component_query<Player&, Velocity2D*, WeaponComponent*>();
 		for (auto player_it = player_query.get_iterator(); player_it.is_valid() == true; player_it.next())
 		{
-			auto player_tuple = player_it.get_tuple();
-			Player& player_component = std::get<Player&>(player_tuple);
+			auto player_component = player_it.get_component<Player>();
 
-			if (player_component.damage_timer > 0.0f)
+			if (player_component->damage_timer > 0.0f)
 			{
-				player_component.damage_timer = std::max(0.0f, player_component.damage_timer - delta_time);
+				player_component->damage_timer = std::max(0.0f, player_component->damage_timer - delta_time);
 			}
 
-			Velocity2D* player_velocity = std::get<Velocity2D*>(player_tuple);
-			Vadon::Math::Vector2 facing = player_component.last_move_dir;
-			if (player_velocity != nullptr)
+			auto player_velocity = player_it.get_component<Velocity2D>();
+			Vadon::Math::Vector2 facing = player_component->last_move_dir;
+			if (player_velocity.is_valid() == true)
 			{
 				// TODO: use acceleration!
-				player_velocity->velocity = player_component.input.move_dir * player_velocity->top_speed;
-				if (player_component.input.move_dir != Vadon::Math::Vector2_Zero)
+				player_velocity->velocity = player_component->input.move_dir * player_velocity->top_speed;
+				if (player_component->input.move_dir != Vadon::Math::Vector2_Zero)
 				{
-					facing = Vadon::Math::Vector::normalize(player_component.input.move_dir);
+					facing = Vadon::Math::Vector::normalize(player_component->input.move_dir);
 				}
 			}
-			player_component.last_move_dir = facing;
+			player_component->last_move_dir = facing;
 		}
 	}
 
@@ -396,12 +382,11 @@ namespace VadonDemo::Model
 		auto dynamic_entity_query = component_manager.run_component_query<Transform2D&, Velocity2D&>();
 		for (auto dynamic_entity_it = dynamic_entity_query.get_iterator(); dynamic_entity_it.is_valid() == true; dynamic_entity_it.next())
 		{
-			auto dynamic_tuple = dynamic_entity_it.get_tuple();
-			Transform2D& current_transform = std::get<Transform2D&>(dynamic_tuple);
-			const Velocity2D& current_velocity = std::get<Velocity2D&>(dynamic_tuple);
+			auto current_transform = dynamic_entity_it.get_component<Transform2D>();
+			const auto current_velocity = dynamic_entity_it.get_component<Velocity2D>();
 
-			current_transform.position += current_velocity.velocity * delta_time;
-			current_transform.teleported = false;
+			current_transform->position += current_velocity->velocity * delta_time;
+			current_transform->teleported = false;
 		}
 	}
 
@@ -412,10 +397,9 @@ namespace VadonDemo::Model
 		auto health_query = component_manager.run_component_query<Health&>();
 		for (auto health_it = health_query.get_iterator(); health_it.is_valid() == true; health_it.next())
 		{
-			auto health_tuple = health_it.get_tuple();
-			const Health& health_component = std::get<Health&>(health_tuple);
+			const auto health_component = health_it.get_component<Health>();
 
-			if (health_component.current_health <= 0.0f)
+			if (health_component->current_health <= 0.0f)
 			{
 				// TODO: instead of removing, we should just set a flag and use the ECS as a "pool"
 				// Whenever we spawn an entity again, we can just "resurrect" one that was already spawned
@@ -427,31 +411,34 @@ namespace VadonDemo::Model
 	void Model::player_collision_callback(VadonDemo::Core::Core& core, Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle player, Vadon::ECS::EntityHandle collider)
 	{
 		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
-		Player* player_component = component_manager.get_component<Player>(player);
-		VADON_ASSERT(player_component != nullptr, "Cannot find player component!");
+		auto player_component = component_manager.get_component<Player>(player);
+		VADON_ASSERT(player_component.is_valid() == true, "Cannot find player component!");
 
 		// Check if we collided with enemy
-		const EnemyBase* enemy_component = component_manager.get_component<EnemyBase>(collider);
-		if (enemy_component != nullptr)
+		const auto enemy_component = component_manager.get_component<EnemyBase>(collider);
+		if (enemy_component.is_valid() == true)
 		{
 			core.get_model().m_enemy_system.enemy_player_contact(ecs_world, player, collider);
+		}
+
+		// Check if we collided with projectile
+		const auto projectile_component = component_manager.get_component<ProjectileComponent>(collider);
+		if (projectile_component.is_valid() == true)
+		{
+			core.get_model().m_weapon_system.projectile_player_contact(ecs_world, player, collider);
 		}
 	}
 
 	void Model::clear_removed_entities(Vadon::ECS::World& ecs_world)
 	{
 		// Find all tagged entities, mark them for removal
-		Vadon::ECS::EntityManager& entity_manager = ecs_world.get_entity_manager();
 		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
 
 		auto destroy_entity_query = component_manager.run_component_query<DestroyEntityTag&>();
 		for (auto entity_it = destroy_entity_query.get_iterator(); entity_it.is_valid() == true; entity_it.next())
 		{
 			m_core.entity_removed(ecs_world, entity_it.get_entity());
-			entity_manager.remove_entity(entity_it.get_entity());
+			ecs_world.remove_entity(entity_it.get_entity());
 		}
-
-		// Purge from the ECS world completely
-		ecs_world.remove_pending_entities();
 	}
 }

@@ -88,24 +88,20 @@ namespace VadonDemo::Model
 	{
 		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
 
-		auto target_component_tuple = component_manager.get_component_tuple<Transform2D, Velocity2D>(target);
+		const auto target_transform = component_manager.get_component<Transform2D>(target);
+		VADON_ASSERT(target_transform.is_valid() == true, "Cannot find component!");
 
-		const Transform2D* target_transform = std::get<Transform2D*>(target_component_tuple);
-		VADON_ASSERT(target_transform != nullptr, "Cannot find component!");
+		const auto target_velocity = component_manager.get_component<Velocity2D>(target);
+		VADON_ASSERT(target_velocity.is_valid() == true, "Cannot find component!");
 
-		const Velocity2D* target_velocity = std::get<Velocity2D*>(target_component_tuple);
-		VADON_ASSERT(target_velocity != nullptr, "Cannot find component!");
+		const auto enemy_transform = component_manager.get_component<Transform2D>(enemy);
+		VADON_ASSERT(enemy_transform.is_valid() == true, "Cannot find component!");
 
-		auto enemy_component_tuple = component_manager.get_component_tuple<Transform2D, Velocity2D, EnemyMovement>(enemy);
+		const auto enemy_velocity = component_manager.get_component<Velocity2D>(enemy);
+		VADON_ASSERT(enemy_velocity.is_valid() == true, "Cannot find component!");
 
-		const Transform2D* enemy_transform = std::get<Transform2D*>(enemy_component_tuple);
-		VADON_ASSERT(enemy_transform != nullptr, "Cannot find component!");
-
-		const Velocity2D* enemy_velocity = std::get<Velocity2D*>(enemy_component_tuple);
-		VADON_ASSERT(enemy_velocity != nullptr, "Cannot find component!");
-
-		EnemyMovement* enemy_movement = std::get<EnemyMovement*>(enemy_component_tuple);
-		VADON_ASSERT(enemy_movement != nullptr, "Cannot find component!");
+		auto enemy_movement = component_manager.get_component<EnemyMovement>(enemy);
+		VADON_ASSERT(enemy_movement.is_valid() == true, "Cannot find component!");
 		
 		const Vadon::Math::Vector2 enemy_to_target = target_transform->position - enemy_transform->position;
 
@@ -137,16 +133,14 @@ namespace VadonDemo::Model
 	{
 		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
 
-		const Transform2D* target_transform = component_manager.get_component<Transform2D>(target);
-		VADON_ASSERT(target_transform != nullptr, "Cannot find component!");
+		const auto target_transform = component_manager.get_component<Transform2D>(target);
+		VADON_ASSERT(target_transform.is_valid() == true, "Cannot find component!");
 
-		auto enemy_component_tuple = component_manager.get_component_tuple<Transform2D, EnemyMovement>(enemy);
+		const auto enemy_transform = component_manager.get_component<Transform2D>(enemy);
+		VADON_ASSERT(enemy_transform.is_valid() == true, "Cannot find component!");
 
-		const Transform2D* enemy_transform = std::get<Transform2D*>(enemy_component_tuple);
-		VADON_ASSERT(enemy_transform != nullptr, "Cannot find component!");
-
-		EnemyMovement* enemy_movement = std::get<EnemyMovement*>(enemy_component_tuple);
-		VADON_ASSERT(enemy_movement != nullptr, "Cannot find component!");
+		auto enemy_movement = component_manager.get_component<EnemyMovement>(enemy);
+		VADON_ASSERT(enemy_movement.is_valid() == true, "Cannot find component!");
 
 		const Vadon::Math::Vector2 enemy_to_target = Vadon::Math::Vector::normalize(target_transform->position - enemy_transform->position);
 
@@ -168,8 +162,12 @@ namespace VadonDemo::Model
 	void EnemyWeaponAttackDefinition::register_resource()
 	{
 		using ResourceRegistry = Vadon::Scene::ResourceRegistry;
+		using TypeRegistry = Vadon::Utilities::TypeRegistry;
 
 		ResourceRegistry::register_resource_type<EnemyWeaponAttackDefinition, Vadon::Scene::Resource>();
+
+		TypeRegistry::add_property<EnemyWeaponAttackDefinition>("projectile_count", Vadon::Utilities::MemberVariableBind<&EnemyWeaponAttackDefinition::projectile_count>().bind_member_getter().bind_member_setter());
+		TypeRegistry::add_property<EnemyWeaponAttackDefinition>("reload_time", Vadon::Utilities::MemberVariableBind<&EnemyWeaponAttackDefinition::reload_time>().bind_member_getter().bind_member_setter());
 	}
 
 	void EnemyContactDamageDefinition::register_resource()

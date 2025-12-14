@@ -5,15 +5,11 @@
                 "components": [
                     {
                         "properties": {
-                            "definition": "unDHWSnHQEqjtRfpOc8rcg=="
+                            "layer_def": "2bdWkqSdTuSxnfVFk+5q+g==",
+                            "visible": true,
+                            "z_order": 1.0
                         },
-                        "type": "VadonDemo::Model::EnemyBase"
-                    },
-                    {
-                        "properties": {
-                            "max_health": 100.0
-                        },
-                        "type": "VadonDemo::Model::Health"
+                        "type": "VadonDemo::Render::CanvasComponent"
                     },
                     {
                         "properties": {
@@ -28,18 +24,9 @@
                     },
                     {
                         "properties": {
-                            "layer_def": "2bdWkqSdTuSxnfVFk+5q+g==",
-                            "visible": true,
-                            "z_order": 1.0
+                            "radius": 1.0
                         },
-                        "type": "VadonDemo::Render::CanvasComponent"
-                    },
-                    {
-                        "properties": {
-                            "color": "#ffffffff",
-                            "resource": "JemhbTdMQnCMb+X4G0bw2A=="
-                        },
-                        "type": "VadonDemo::View::RenderComponent"
+                        "type": "VadonDemo::Model::Collision"
                     },
                     {
                         "properties": {
@@ -47,16 +34,6 @@
                             "top_speed": 30.0
                         },
                         "type": "VadonDemo::Model::Velocity2D"
-                    },
-                    {
-                        "properties": {
-                            "radius": 1.0
-                        },
-                        "type": "VadonDemo::Model::Collision"
-                    },
-                    {
-                        "properties": {},
-                        "type": "VadonDemo::View::ModelTransformComponent"
                     },
                     {
                         "properties": {
@@ -71,6 +48,29 @@
                     },
                     {
                         "properties": {
+                            "color": "#ffffffff",
+                            "resource": "JemhbTdMQnCMb+X4G0bw2A=="
+                        },
+                        "type": "VadonDemo::View::RenderComponent"
+                    },
+                    {
+                        "properties": {},
+                        "type": "VadonDemo::View::ModelTransformComponent"
+                    },
+                    {
+                        "properties": {
+                            "definition": "unDHWSnHQEqjtRfpOc8rcg=="
+                        },
+                        "type": "VadonDemo::Model::EnemyBase"
+                    },
+                    {
+                        "properties": {
+                            "max_health": 100.0
+                        },
+                        "type": "VadonDemo::Model::Health"
+                    },
+                    {
+                        "properties": {
                             "definition": "XnMsOBFBTNu2LKWJXVTXzg=="
                         },
                         "type": "VadonDemo::Model::EnemyMovement"
@@ -80,6 +80,18 @@
                             "definition": "PU43V+7WQ0uiqAcIPHvfQA=="
                         },
                         "type": "VadonDemo::Model::EnemyContactDamage"
+                    },
+                    {
+                        "properties": {
+                            "definition": "8MimgFT4ReSlhZpoTPLUZw=="
+                        },
+                        "type": "VadonDemo::Model::WeaponComponent"
+                    },
+                    {
+                        "properties": {
+                            "definition": "dyEAUo0AT++X5HpXBxNnmQ=="
+                        },
+                        "type": "VadonDemo::Model::EnemyWeapon"
                     }
                 ],
                 "name": "Enemy",
@@ -111,6 +123,33 @@
                 "name": ""
             },
             "type": "VadonDemo::Model::EnemyMovementLookahead"
+        },
+        {
+            "id": "tQe+fb0FQjOCc0pc9z8Prg==",
+            "properties": {
+                "name": "",
+                "projectile_prefab": "GjWv9sLkS3q5L6IejWPQqQ==",
+                "rate_of_fire": 20.0
+            },
+            "type": "VadonDemo::Model::WeaponDefinition"
+        },
+        {
+            "id": "8MimgFT4ReSlhZpoTPLUZw==",
+            "properties": {
+                "name": "",
+                "projectile_prefab": "GjWv9sLkS3q5L6IejWPQqQ==",
+                "rate_of_fire": 20.0
+            },
+            "type": "VadonDemo::Model::WeaponDefinition"
+        },
+        {
+            "id": "dyEAUo0AT++X5HpXBxNnmQ==",
+            "properties": {
+                "name": "",
+                "projectile_count": 1,
+                "reload_time": 1.0
+            },
+            "type": "VadonDemo::Model::EnemyWeaponAttackDefinition"
         }
     ],
     "id": "upAiG77VR+aZR0UoIsLgvQ==",

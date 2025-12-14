@@ -5,68 +5,75 @@
 
 namespace Vadon::ECS
 {
-	std::optional<EntityList::const_iterator> DefaultComponentPoolBase::add_entity(EntityHandle entity)
+	bool DefaultComponentPoolBase::add_entity(EntityHandle entity)
 	{
-		auto entity_it = std::lower_bound(m_entity_lookup.begin(), m_entity_lookup.end(), entity);
-		if (entity_it != m_entity_lookup.end())
+		if (entity.handle.index >= m_sparse_lookup.size())
 		{
-			if (entity == *entity_it)
-			{
-				// Entity already has this component
-				// FIXME: do we allow one entity to own more than one of the same component?
-				return entity_it;
-			}
+			// New entity, need to extend lookup
+			m_sparse_lookup.insert(m_sparse_lookup.end(), (entity.handle.index - m_sparse_lookup.size()) + 1, c_invalid_component_index);
 		}
-		uint32_t component_offset = static_cast<uint32_t>(m_component_offsets.size());
 
-		// Insert into lookup while keeping it ordered
-		m_component_offsets.insert(m_component_offsets.begin() + std::distance(m_entity_lookup.begin(), entity_it), component_offset);
-		m_entity_lookup.insert(entity_it, entity);
+		const uint32_t prev_index = m_sparse_lookup[entity.handle.index];
+		if (prev_index != c_invalid_component_index)
+		{
+			// If there is a valid offset at this entry, then this Entity was already registered, otherwise something went very wrong
+			VADON_ASSERT(m_reverse_lookup[prev_index] == entity, "Invalid index in component pool!");
+			return false;
+		}
 
-		return std::nullopt;
+		// New component is added at the back, so we push the entity to the back as well (for reverse lookup)
+		m_sparse_lookup[entity.handle.index] = static_cast<uint32_t>(m_reverse_lookup.size());
+		m_reverse_lookup.push_back(entity);
+
+		return true;
 	}
 
-	EntityList::const_iterator DefaultComponentPoolBase::find_entity(EntityHandle entity) const
+	uint32_t DefaultComponentPoolBase::get_component_index(EntityHandle entity) const
 	{
-		auto entity_it = std::lower_bound(m_entity_lookup.begin(), m_entity_lookup.end(), entity);
-		if (entity_it == m_entity_lookup.end())
+		if (entity.handle.index >= m_sparse_lookup.size())
 		{
-			return entity_it;
+			return c_invalid_component_index;
 		}
 
-		if (entity != (*entity_it))
-		{
-			return m_entity_lookup.end();
-		}
-
-		return entity_it;
+		return m_sparse_lookup[entity.handle.index];
 	}
 
-	void DefaultComponentPoolBase::remove_entity(EntityList::const_iterator entity_iterator)
+	uint32_t DefaultComponentPoolBase::remove_entity(EntityHandle entity)
 	{
-		const size_t entity_index = std::distance(m_entity_lookup.cbegin(), entity_iterator);
-
-		// Find the Entity that pointed to the end of the component pool
-		// FIXME: more efficient approach? Could use intrusive linked list to find last element
-		auto remapped_offset_it = std::find(m_component_offsets.begin(), m_component_offsets.end(), static_cast<uint32_t>(m_entity_lookup.size()) - 1);
-
-		const size_t remapped_entity_index = std::distance(m_component_offsets.begin(), remapped_offset_it);
-
-		if (entity_index != remapped_entity_index)
+		if (entity.handle.index >= m_sparse_lookup.size())
 		{
-			// Remap entity that used to point to the end, now it should point to where the removed entity's component was
-			*remapped_offset_it = m_component_offsets[entity_index];
+			// Entity doesn't have a component in this pool
+			return c_invalid_component_index;
 		}
 
-		// Remove the entity and its offset
-		m_entity_lookup.erase(entity_iterator);
-		m_component_offsets.erase(m_component_offsets.begin() + entity_index);
+		const uint32_t component_index = m_sparse_lookup[entity.handle.index];
+		if (component_index == c_invalid_component_index)
+		{
+			// Entity doesn't have a component in this pool
+			return c_invalid_component_index;
+		}
+
+		VADON_ASSERT(m_reverse_lookup[component_index] == entity, "Invalid handle in component pool!");
+
+		if (component_index != (m_reverse_lookup.size() - 1))
+		{
+			// Make sure we update the entry in the sparse lookup for the component we moved
+			const EntityHandle moved_entry = m_reverse_lookup.back();
+			m_reverse_lookup[component_index] = moved_entry;
+
+			m_sparse_lookup[moved_entry.handle.index] = component_index;
+		}
+		m_reverse_lookup.pop_back();
+
+		// TODO: shrink if possible?
+		m_sparse_lookup[entity.handle.index] = c_invalid_component_index;
+		return component_index;
 	}
 
 	void DefaultComponentPoolBase::default_pool_clear()
 	{
-		m_entity_lookup.clear();
-		m_component_offsets.clear();
+		m_reverse_lookup.clear();
+		m_sparse_lookup.clear();
 	}
 
 	bool TagPoolBase::add_entity(EntityHandle entity)

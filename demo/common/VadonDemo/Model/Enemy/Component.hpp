@@ -24,6 +24,9 @@ namespace VadonDemo::Model
 	struct EnemyWeapon
 	{
 		EnemyWeaponAttackDefID definition;
+		EnemyWeaponAttackDefHandle def_handle;
+
+		float reload_timer = 0.0f;
 
 		static void register_component();
 	};

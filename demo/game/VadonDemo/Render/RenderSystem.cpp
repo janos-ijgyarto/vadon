@@ -385,15 +385,16 @@ namespace VadonDemo::Render
 	{
 		Vadon::ECS::World& ecs_world = m_game_core.get_ecs_world();
 		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
-		CanvasComponent* canvas_component = component_manager.get_component<CanvasComponent>(entity);
+		auto canvas_component = component_manager.get_component<CanvasComponent>(entity);
 
 		VadonDemo::Render::Render& common_render = m_game_core.get_core().get_render();
-		if (canvas_component != nullptr)
+		if (canvas_component.is_valid() == true)
 		{
 			common_render.init_canvas_entity(ecs_world, entity, m_canvas_context);
 		}
 
-		if (SpriteTilingComponent* sprite_component = component_manager.get_component<SpriteTilingComponent>(entity))
+		auto sprite_component = component_manager.get_component<SpriteTilingComponent>(entity);
+		if (sprite_component.is_valid() == true)
 		{
 			load_texture_resource(sprite_component->texture);
 			common_render.init_sprite_tiling_entity(ecs_world, entity);
@@ -420,9 +421,8 @@ namespace VadonDemo::Render
 
 			for (auto sprite_it = sprite_query.get_iterator(); sprite_it.is_valid() == true; sprite_it.next())
 			{
-				auto sprite_tuple = sprite_it.get_tuple();
-				SpriteTilingComponent& current_sprite_component = std::get<SpriteTilingComponent&>(sprite_tuple);
-				const CanvasComponent& current_canvas_component = std::get<CanvasComponent&>(sprite_tuple);
+				auto current_sprite_component = sprite_it.get_component<SpriteTilingComponent>();
+				const auto current_canvas_component = sprite_it.get_component<CanvasComponent>();
 
 				common_render.update_sprite_tiling_entity(current_canvas_component, current_sprite_component, culling_rect);
 			}

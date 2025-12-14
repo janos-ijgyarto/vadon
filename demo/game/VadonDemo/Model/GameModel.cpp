@@ -83,10 +83,8 @@ namespace VadonDemo::Model
 		auto player_it = player_query.get_iterator();
 		if (player_it.is_valid() == true)
 		{
-			auto player_components = player_it.get_tuple();
-
-			VadonDemo::Model::Health& player_health = std::get<VadonDemo::Model::Health&>(player_components);
-			return static_cast<int>(player_health.current_health);
+			auto player_health = player_it.get_component<VadonDemo::Model::Health>();
+			return static_cast<int>(player_health->current_health);
 		}
 
 		// TODO: error?
@@ -156,9 +154,6 @@ namespace VadonDemo::Model
 		}
 
 		m_model_accumulator = model_accumulator;
-
-		// Clean up any pending entities
-		ecs_world.remove_pending_entities();
 	}
 
 	void GameModel::update_player_input()
@@ -196,10 +191,8 @@ namespace VadonDemo::Model
 		auto player_it = player_query.get_iterator();
 		if (player_it.is_valid() == true)
 		{
-			auto player_components = player_it.get_tuple();
-
-			VadonDemo::Model::Player& player_component = std::get<VadonDemo::Model::Player&>(player_components);
-			player_component.input = player_input;
+			auto player_component = player_it.get_component<VadonDemo::Model::Player>();
+			player_component->input = player_input;
 		}
 	}
 }

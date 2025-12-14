@@ -116,7 +116,7 @@ struct RectanglePrimitiveData
     uint info;
     uint color;
     float thickness;
-    uint _padding;
+    float rotation;
 
     PrimitiveRectangle dimensions;
 };
@@ -135,7 +135,8 @@ struct SpritePrimitiveData
 {
     uint info;
     uint color;
-    uint2 _padding;
+    float rotation;
+    uint _padding;
 
     PrimitiveRectangle dimensions;
     PrimitiveRectangle uv_dimensions;
@@ -204,7 +205,7 @@ RectanglePrimitiveData unpack_rectangle_data(uint vertex_index)
     rectangle_data.info = asuint(rectangle_data0.x);
     rectangle_data.color = asuint(rectangle_data0.y);
     rectangle_data.thickness = rectangle_data0.z;
-    rectangle_data._padding = asuint(rectangle_data0.w);
+    rectangle_data.rotation = rectangle_data0.w;
     
     const float4 rectangle_data1 = primitive_buffer[rectangle_data_offset + 1];
     rectangle_data.dimensions.position = rectangle_data1.xy;
@@ -246,7 +247,8 @@ SpritePrimitiveData unpack_sprite_data(uint vertex_index)
     const float4 sprite_data0 = primitive_buffer[sprite_data_offset];
     sprite_data.info = asuint(sprite_data0.x);
     sprite_data.color = asuint(sprite_data0.y);
-    sprite_data._padding = asuint(sprite_data0.zw);
+    sprite_data.rotation = sprite_data0.z;
+    sprite_data._padding = asuint(sprite_data0.w);
     
     const float4 sprite_data1 = primitive_buffer[sprite_data_offset + 1];
     sprite_data.dimensions.position = sprite_data1.xy;
@@ -268,7 +270,7 @@ void get_rectangle_fill_vertex(uint vertex_index, out PS_INPUT output)
     const uint corner_index = get_primitive_vertex_index(vertex_index);
     
     // TODO: add logic so sprites can also be rotated, mirrored, etc.
-    const float2 corner_position = rectangle_data.dimensions.position + (rectangle_data.dimensions.size * 0.5f * c_rectangle_offsets[corner_index]);
+    const float2 corner_position = rectangle_data.dimensions.position + rotate_2d_vector((rectangle_data.dimensions.size * 0.5f * c_rectangle_offsets[corner_index]), rectangle_data.rotation);
     
     output.pos = float4(corner_position, 0, 1);
     output.col = decode_rgba_uint(rectangle_data.color);
@@ -284,7 +286,7 @@ void get_rectangle_outline_vertex(uint vertex_index, out PS_INPUT output)
     const RectanglePrimitiveData rectangle_data = unpack_rectangle_data(vertex_index);
     const uint corner_index = get_primitive_vertex_index(vertex_index);
     
-    float2 corner_position = rectangle_data.dimensions.position + (rectangle_data.dimensions.size * 0.5f * c_rectangle_offsets[corner_index % 4]);
+    float2 corner_position = rectangle_data.dimensions.position + rotate_2d_vector((rectangle_data.dimensions.size * 0.5f * c_rectangle_offsets[corner_index % 4]), rectangle_data.rotation);
     corner_position += c_rectangle_thickness_offsets[corner_index] * rectangle_data.thickness;
     
     output.pos = float4(corner_position, 0, 1);
@@ -300,7 +302,7 @@ void get_sprite_vertex(uint vertex_index, out PS_INPUT output)
     const uint corner_index = get_primitive_vertex_index(vertex_index);
     
     // TODO: add logic so sprites can also be rotated, mirrored, etc.
-    const float2 corner_position = sprite_data.dimensions.position + (sprite_data.dimensions.size * 0.5f * c_rectangle_offsets[corner_index]);
+    const float2 corner_position = sprite_data.dimensions.position + rotate_2d_vector((sprite_data.dimensions.size * 0.5f * c_rectangle_offsets[corner_index]), sprite_data.rotation);
     const float2 corner_uv = sprite_data.uv_dimensions.position + (sprite_data.uv_dimensions.size * c_rectangle_uv_offsets[corner_index]);
     
     output.pos = float4(corner_position, 0, 1);

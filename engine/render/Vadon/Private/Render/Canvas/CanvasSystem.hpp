@@ -2,6 +2,7 @@
 #define VADON_PRIVATE_RENDER_CANVAS_CANVASSYSTEM_HPP
 #include <Vadon/Render/Canvas/CanvasSystem.hpp>
 
+#include <Vadon/Private/Render/Canvas/Batch.hpp>
 #include <Vadon/Private/Render/Canvas/Context.hpp>
 #include <Vadon/Private/Render/Canvas/Item.hpp>
 #include <Vadon/Private/Render/Canvas/Layer.hpp>
@@ -46,17 +47,8 @@ namespace Vadon::Private::Render::Canvas
 		void set_item_transform(ItemHandle item_handle, const Transform& transform) override;
 		void set_item_z_order(ItemHandle item_handle, float z_order) override;
 
-		size_t get_item_buffer_size(ItemHandle item_handle) const override;
-		void clear_item(ItemHandle item_handle) override;
-		void add_item_batch_draw(ItemHandle item_handle, const BatchDrawCommand& batch_command) override;
-		void draw_item_triangle(ItemHandle item_handle, const Triangle& triangle) override;
-		void draw_item_rectangle(ItemHandle item_handle, const Rectangle& rectangle) override;
-		void draw_item_circle(ItemHandle item_handle, const Circle& circle) override;
-		void draw_item_sprite(ItemHandle item_handle, const Sprite& sprite) override;
-
-		void set_item_texture(ItemHandle item_handle, const Texture& texture) override;
-		void set_item_material(ItemHandle item_handle, MaterialHandle material_handle) override;
-		void set_item_render_state(ItemHandle item_handle, const RenderState& render_state) override;
+		CommandBuffer& get_item_command_buffer(ItemHandle item_handle) override;
+		MaterialOverride& get_item_material_override(ItemHandle item_handle) override;
 
 		MaterialHandle create_material(MaterialInfo info) override;
 		bool is_material_valid(MaterialHandle material_handle) const override { return m_material_pool.is_handle_valid(material_handle); }
@@ -69,16 +61,7 @@ namespace Vadon::Private::Render::Canvas
 		bool is_batch_valid(BatchHandle batch_handle) const override { return m_batch_pool.is_handle_valid(batch_handle); }
 		void remove_batch(BatchHandle batch_handle) override;
 
-		size_t get_batch_buffer_size(BatchHandle batch_handle) const override;
-		void clear_batch(BatchHandle batch_handle) override;
-		void draw_batch_triangle(BatchHandle batch_handle, const Triangle& triangle) override;
-		void draw_batch_rectangle(BatchHandle batch_handle, const Rectangle& rectangle) override;
-		void draw_batch_circle(BatchHandle batch_handle, const Circle& circle) override;
-		void draw_batch_sprite(BatchHandle batch_handle, const Sprite& sprite) override;
-
-		void set_batch_texture(BatchHandle batch_handle, const Texture& texture) override;
-		void set_batch_material(BatchHandle batch_handle, MaterialHandle material_handle) override;
-		void set_batch_render_state(BatchHandle batch_handle, const RenderState& render_state) override;
+		CommandBuffer& get_batch_command_buffer(BatchHandle batch_handle);
 
 		void render(const RenderContext& context) override;
 	protected:
@@ -133,6 +116,9 @@ namespace Vadon::Private::Render::Canvas
 			std::vector<Vector4> primitive_data;
 			std::vector<uint32_t> indices;
 
+			// Replace with more generic API which can encapsulate both the draw command and other render state
+			// (resource slots, etc.)
+			// Allow introspection so compatible commands can be merged
 			std::vector<PrimitiveBatch> primitive_batches;
 			MaterialHandle current_material;
 			Texture current_texture;
@@ -153,10 +139,13 @@ namespace Vadon::Private::Render::Canvas
 			void add_primitive_indices(PrimitiveType primitive_type);
 
 			template<typename T>
-			void add_primitive_data(const T& data)
+			T* add_primitive_data(const T& data)
 			{
+				const size_t prev_size = primitive_data.size();
 				const Vector4* data_ptr = (const Vector4*)&data;
 				primitive_data.insert(primitive_data.end(), data_ptr, data_ptr + (sizeof(T) / sizeof(Vector4)));
+				
+				return reinterpret_cast<T*>(primitive_data.data() + prev_size);
 			}
 		};
 

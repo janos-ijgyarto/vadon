@@ -4,7 +4,7 @@
 
 #include <VadonDemo/Render/Component.hpp>
 
-#include <Vadon/ECS/Entity/Entity.hpp>
+#include <Vadon/ECS/Component/Component.hpp>
 #include <Vadon/Render/Canvas/Context.hpp>
 #include <Vadon/Utilities/Container/ObjectPool/Pool.hpp>
 
@@ -45,7 +45,7 @@ namespace VadonDemo::Render
 		VADONDEMO_API void update_layer_definition(CanvasLayerDefHandle layer_def_handle);
 
 		VADONDEMO_API void init_sprite_tiling_entity(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle entity);
-		VADONDEMO_API void update_sprite_tiling_entity(const CanvasComponent& canvas_component, SpriteTilingComponent& sprite_component, const Vadon::Render::Rectangle& culling_rect);
+		VADONDEMO_API void update_sprite_tiling_entity(const Vadon::ECS::TypedComponentHandle<CanvasComponent>& canvas_component, Vadon::ECS::TypedComponentHandle<SpriteTilingComponent>& sprite_component, const Vadon::Render::Rectangle& culling_rect);
 		VADONDEMO_API void remove_sprite_tiling_entity(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle entity);
 
 		VADONDEMO_API void init_fullscreen_effect_entity(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle entity);

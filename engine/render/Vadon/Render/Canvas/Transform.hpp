@@ -8,10 +8,11 @@ namespace Vadon::Render::Canvas
 	{
 		static Transform combine(const Transform& lhs, const Transform& rhs)
 		{
-			return Transform{ .position = lhs.position + rhs.position, .scale = lhs.scale * rhs.scale };
+			return Transform{ .position = lhs.position + rhs.position, .rotation = lhs.rotation + rhs.rotation, .scale = lhs.scale * rhs.scale };
 		}
 
 		Vadon::Render::Vector2 position = Vadon::Render::Vector2_Zero;
+		float rotation = 0.0f;
 		float scale = 1.0f;
 	};
 }

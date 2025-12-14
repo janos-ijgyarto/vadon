@@ -2,6 +2,8 @@
 #define VADON_PRIVATE_RENDER_CANVAS_PRIMITIVE_HPP
 #include <Vadon/Render/Canvas/Primitive.hpp>
 #include <Vadon/Private/Render/Utilities/Vector.hpp>
+
+#include <Vadon/Utilities/Enum/EnumClass.hpp>
 namespace Vadon::Private::Render::Canvas
 {
 	using Triangle = Vadon::Render::Canvas::Triangle;
@@ -74,12 +76,20 @@ namespace Vadon::Private::Render::Canvas
 		PrimitiveRectangle uv_dimensions;
 	};
 
+	// NOTE: this is only used during the command buffer phase,
+	// the shader interprets filled vs outline rectangles as different primitives
+	enum class RectanglePrimitiveFlags : uint32_t
+	{
+		FILLED = 1 << 0,
+		DEFAULT = FILLED
+	};
+
 	struct alignas(16) RectanglePrimitiveData
 	{
 		uint32_t info = 0;
 		uint32_t color = 0xFFFFFFFF;
 		float thickness = 1.0f;
-		uint32_t _padding = 0;
+		float rotation = 0.0f;
 
 		PrimitiveRectangle dimensions;
 	};
@@ -88,7 +98,8 @@ namespace Vadon::Private::Render::Canvas
 	{
 		uint32_t info = 0;
 		uint32_t color = 0xFFFFFFF;
-		Vector2u _padding = { 0, 0 };
+		float rotation = 0.0f;
+		float _padding = 0.0f;
 
 		PrimitiveRectangle dimensions;
 		PrimitiveRectangle uv_dimensions;

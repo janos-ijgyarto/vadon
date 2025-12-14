@@ -11,4 +11,9 @@ float4 decode_rgba_uint(uint color_uint)
     
     return color;
 }
+
+float2 rotate_2d_vector(float2 position, float angle)
+{
+    return float2(position.x * cos(angle) - position.y * sin(angle), position.x * sin(angle) + position.y * cos(angle));
+}
 #endif

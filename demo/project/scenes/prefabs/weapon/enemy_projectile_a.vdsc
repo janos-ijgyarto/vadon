@@ -5,6 +5,22 @@
                 "components": [
                     {
                         "properties": {
+                            "layer_def": "2bdWkqSdTuSxnfVFk+5q+g==",
+                            "visible": true,
+                            "z_order": 2.0
+                        },
+                        "type": "VadonDemo::Render::CanvasComponent"
+                    },
+                    {
+                        "properties": {
+                            "damage": 10.0,
+                            "knockback": 0.0,
+                            "range": 100.0
+                        },
+                        "type": "VadonDemo::Model::ProjectileComponent"
+                    },
+                    {
+                        "properties": {
                             "position": [
                                 0.0,
                                 0.0
@@ -16,43 +32,16 @@
                     },
                     {
                         "properties": {
-                            "layer_def": "2bdWkqSdTuSxnfVFk+5q+g==",
-                            "visible": true,
-                            "z_order": 2.0
-                        },
-                        "type": "VadonDemo::Render::CanvasComponent"
-                    },
-                    {
-                        "properties": {
-                            "damage": 10.0,
-                            "knockback": 0.0,
-                            "range": 300.0
-                        },
-                        "type": "VadonDemo::Model::ProjectileComponent"
-                    },
-                    {
-                        "properties": {
-                            "radius": 1.0
-                        },
-                        "type": "VadonDemo::Model::Collision"
-                    },
-                    {
-                        "properties": {
-                            "color": "#ffffffff",
-                            "resource": "oXIVWPdZQMi0TGxI2zV63A=="
-                        },
-                        "type": "VadonDemo::View::RenderComponent"
-                    },
-                    {
-                        "properties": {
                             "acceleration": 0.0,
-                            "top_speed": 300.0
+                            "top_speed": 100.0
                         },
                         "type": "VadonDemo::Model::Velocity2D"
                     },
                     {
-                        "properties": {},
-                        "type": "VadonDemo::View::ModelTransformComponent"
+                        "properties": {
+                            "radius": 10.0
+                        },
+                        "type": "VadonDemo::Model::Collision"
                     },
                     {
                         "properties": {
@@ -67,18 +56,34 @@
                     },
                     {
                         "properties": {
-                            "aimed_on_launch": true,
-                            "turn_speed": 1.5
+                            "color": "#ffffffff",
+                            "resource": "rxLIbS7jR/KaLkRezEbdAw=="
                         },
-                        "type": "VadonDemo::Model::ProjectileHomingComponent"
+                        "type": "VadonDemo::View::RenderComponent"
+                    },
+                    {
+                        "properties": {},
+                        "type": "VadonDemo::View::ModelTransformComponent"
                     }
                 ],
-                "name": "Projectile_A",
+                "name": "EnemyProjectile",
                 "parent": -1
             }
         ]
     },
-    "id": "blj/Gv9aSDis//T2XV/W3A==",
+    "embedded": [
+        {
+            "id": "rxLIbS7jR/KaLkRezEbdAw==",
+            "properties": {
+                "color": "#ff8000ff",
+                "name": "",
+                "radius": 10.0,
+                "type": 0
+            },
+            "type": "VadonDemo::View::Shape"
+        }
+    ],
+    "id": "GjWv9sLkS3q5L6IejWPQqQ==",
     "properties": {
         "name": ""
     },

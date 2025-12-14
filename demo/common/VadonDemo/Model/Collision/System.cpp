@@ -51,18 +51,17 @@ namespace VadonDemo::Model
 		auto collision_query = component_manager.run_component_query<Transform2D&, Collision&>();
 		for (auto collision_it = collision_query.get_iterator(); collision_it.is_valid() == true; collision_it.next())
 		{
-			auto collision_tuple = collision_it.get_tuple();
-			const Transform2D& current_transform = std::get<Transform2D&>(collision_tuple);
-			const Collision& current_collision = std::get<Collision&>(collision_tuple);
+			const auto current_transform = collision_it.get_component<Transform2D>();
+			const auto current_collision = collision_it.get_component<Collision>();
 
 			CollisionData& collision_data = collision_data_vec.emplace_back();
 			collision_data.entity = collision_it.get_entity();
-			collision_data.callback = current_collision.callback;
-			collision_data.layers = current_collision.layers;
-			collision_data.mask = current_collision.mask;
+			collision_data.callback = current_collision->callback;
+			collision_data.layers = current_collision->layers;
+			collision_data.mask = current_collision->mask;
 
-			collision_data.position = current_transform.position;
-			collision_data.radius = current_transform.scale * current_collision.radius;
+			collision_data.position = current_transform->position;
+			collision_data.radius = current_transform->scale * current_collision->radius;
 
 			VADON_ASSERT(collision_data.radius > 0.0f, "Something is wrong!");
 		}

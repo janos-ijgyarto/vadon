@@ -5,14 +5,6 @@
                 "components": [
                     {
                         "properties": {
-                            "layer_def": "2bdWkqSdTuSxnfVFk+5q+g==",
-                            "visible": true,
-                            "z_order": 1.0
-                        },
-                        "type": "VadonDemo::Render::CanvasComponent"
-                    },
-                    {
-                        "properties": {
                             "position": [
                                 0.0,
                                 0.0
@@ -24,15 +16,23 @@
                     },
                     {
                         "properties": {
-                            "max_health": 100.0
+                            "layer_def": "2bdWkqSdTuSxnfVFk+5q+g==",
+                            "visible": true,
+                            "z_order": 1.0
                         },
-                        "type": "VadonDemo::Model::Health"
+                        "type": "VadonDemo::Render::CanvasComponent"
                     },
                     {
                         "properties": {
                             "definition": "vF8UDKuwR8uj5aL0swsm2g=="
                         },
                         "type": "VadonDemo::Model::EnemyBase"
+                    },
+                    {
+                        "properties": {
+                            "max_health": 100.0
+                        },
+                        "type": "VadonDemo::Model::Health"
                     },
                     {
                         "properties": {
@@ -50,7 +50,7 @@
                     },
                     {
                         "properties": {
-                            "radius": 10.0
+                            "radius": 20.0
                         },
                         "type": "VadonDemo::Model::Collision"
                     },

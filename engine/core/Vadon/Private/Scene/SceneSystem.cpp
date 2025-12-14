@@ -515,8 +515,7 @@ namespace Vadon::Private::Scene
 					{
 						// Clean up from root
 						const Vadon::ECS::EntityHandle root_entity = entity_lookup.front();
-						ecs_world.get_entity_manager().remove_entity(root_entity);
-						ecs_world.remove_pending_entities();
+						ecs_world.remove_entity(root_entity);
 					}
 
 					return Vadon::ECS::EntityHandle();
@@ -528,8 +527,7 @@ namespace Vadon::Private::Scene
 					{
 						// Clean up from root
 						const Vadon::ECS::EntityHandle root_entity = entity_lookup.front();
-						ecs_world.get_entity_manager().remove_entity(root_entity);
-						ecs_world.remove_pending_entities();
+						ecs_world.remove_entity(root_entity);
 					}
 
 					return Vadon::ECS::EntityHandle();
@@ -540,17 +538,11 @@ namespace Vadon::Private::Scene
 
 			for (const SceneData::ComponentData& current_component_data : current_entity_data.components)
 			{
-				void* current_component = nullptr;
-				if (current_entity_data.scene.is_valid() == false)
-				{
-					current_component = component_manager.add_component(current_entity, current_component_data.type_id);
-				}
-				else
-				{
-					current_component = component_manager.get_component(current_entity, current_component_data.type_id);
-				}
+				Vadon::ECS::ComponentHandle current_component = current_entity_data.scene.is_valid() == false
+					? component_manager.add_component(current_entity, current_component_data.type_id) 
+					: component_manager.get_component(current_entity, current_component_data.type_id);
 
-				if (current_component == nullptr)
+				if (current_component.is_valid() == false)
 				{
 					// TODO: error?
 					continue;
@@ -559,7 +551,7 @@ namespace Vadon::Private::Scene
 				using ErasedDataType = Vadon::Utilities::ErasedDataType;
 				for (const Vadon::Utilities::Property& current_property_data : current_component_data.properties)
 				{
-					Vadon::Utilities::TypeRegistry::set_property(current_component, current_component_data.type_id, current_property_data.name, current_property_data.value);
+					Vadon::Utilities::TypeRegistry::set_property(current_component.get_raw(), current_component_data.type_id, current_property_data.name, current_property_data.value);
 				}
 			}
 
@@ -579,17 +571,18 @@ namespace Vadon::Private::Scene
 			Vadon::Scene::ResourceSystem& resource_system = m_engine_core.get_system<Vadon::Scene::ResourceSystem>();
 			const SceneID scene_id = SceneID::from_resource_id(resource_system.get_resource_info(scene_handle).id);
 
-			SceneComponent& root_scene_component = component_manager.add_component<SceneComponent>(root_entity);
-			root_scene_component.root_scene = scene_id;
+			auto root_scene_component = component_manager.add_component<SceneComponent>(root_entity);
+			root_scene_component->root_scene = scene_id;
 
 			// Add scene component to each child, indicates that these were instantiated from the scene
 			for (Vadon::ECS::EntityHandle current_child : entity_manager.get_children(root_entity))
 			{
-				SceneComponent* child_scene_component = component_manager.get_component<SceneComponent>(current_child);
-				if (child_scene_component == nullptr)
+				if (component_manager.has_component<SceneComponent>(current_child) == false)
 				{
-					child_scene_component = &component_manager.add_component<SceneComponent>(current_child);
+					component_manager.add_component<SceneComponent>(current_child);
 				}
+
+				auto child_scene_component = component_manager.get_component<SceneComponent>(current_child);
 				child_scene_component->parent_scene = scene_id;
 			}
 		}	
@@ -642,8 +635,8 @@ namespace Vadon::Private::Scene
 
 		Vadon::ECS::EntityManager& entity_manager = ecs_world.get_entity_manager();
 		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
-		const SceneComponent* scene_comp = component_manager.get_component<SceneComponent>(entity);
-		if (scene_comp != nullptr)
+		const auto scene_comp = component_manager.get_component<SceneComponent>(entity);
+		if (scene_comp.is_valid() == true)
 		{
 			if (scene_comp->parent_scene.is_valid() == true)
 			{
@@ -670,7 +663,7 @@ namespace Vadon::Private::Scene
 				property_data.value = component_property.value;
 			};
 
-		if (scene_comp != nullptr)
+		if (scene_comp.is_valid() == true)
 		{
 			if (scene_comp->root_scene.is_valid() == false)
 			{
@@ -708,8 +701,8 @@ namespace Vadon::Private::Scene
 					continue;
 				}
 
-				void* component_ptr = component_manager.get_component(entity, current_component_type_id);
-				const Vadon::Utilities::PropertyList component_properties = Vadon::Utilities::TypeRegistry::get_properties(component_ptr, current_component_type_id);
+				Vadon::ECS::ComponentHandle component_handle = component_manager.get_component(entity, current_component_type_id);
+				const Vadon::Utilities::PropertyList component_properties = Vadon::Utilities::TypeRegistry::get_properties(component_handle.get_raw(), current_component_type_id);
 
 				bool found = false;
 				for (const SceneData::ComponentData& sub_scene_component : sub_scene_root.components)
@@ -776,8 +769,8 @@ namespace Vadon::Private::Scene
 					continue;
 				}
 
-				void* component_ptr = component_manager.get_component(entity, current_component_type_id);
-				const Vadon::Utilities::PropertyList component_properties = Vadon::Utilities::TypeRegistry::get_properties(component_ptr, current_component_type_id);
+				Vadon::ECS::ComponentHandle current_component = component_manager.get_component(entity, current_component_type_id);
+				const Vadon::Utilities::PropertyList component_properties = Vadon::Utilities::TypeRegistry::get_properties(current_component.get_raw(), current_component_type_id);
 
 				SceneData::ComponentData& current_component_data = entity_data.components.emplace_back();
 				current_component_data.type_id = current_component_type_id;

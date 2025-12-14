@@ -2,6 +2,7 @@ target_sources(${VADON_CURRENT_TARGET}
 	PRIVATE
 	Batch.hpp
 	CanvasSystem.hpp
+	CommandBuffer.hpp
 	Context.hpp
 	Item.hpp
 	Layer.hpp
