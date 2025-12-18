@@ -2,7 +2,7 @@
 #include <VadonApp/UI/Developer/Widgets/FileBrowser.hpp>
 
 #include <VadonApp/UI/Developer/GUI.hpp>
-#include <VadonApp/UI/Developer/IconsFontAwesome5.h>
+#include <VadonApp/UI/Developer/IconsFontAwesome7.h>
 
 #include <filesystem>
 

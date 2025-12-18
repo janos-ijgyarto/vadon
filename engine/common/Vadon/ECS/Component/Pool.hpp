@@ -53,14 +53,16 @@ namespace Vadon::ECS
 	class DefaultComponentPoolBase
 	{
 	protected:
-		VADONCOMMON_API std::optional<EntityList::const_iterator> add_entity(EntityHandle entity);
-		VADONCOMMON_API EntityList::const_iterator find_entity(EntityHandle entity) const;
-		VADONCOMMON_API void remove_entity(EntityList::const_iterator entity_iterator);
+		static constexpr uint32_t c_invalid_component_index = static_cast<uint32_t>(-1);
+
+		VADONCOMMON_API bool add_entity(EntityHandle entity);
+		VADONCOMMON_API uint32_t get_component_index(EntityHandle entity) const;
+		VADONCOMMON_API uint32_t remove_entity(EntityHandle entity);
 
 		VADONCOMMON_API void default_pool_clear();
 
-		EntityList m_entity_lookup;
-		std::vector<uint32_t> m_component_offsets;
+		EntityList m_reverse_lookup;
+		std::vector<uint32_t> m_sparse_lookup;
 	};
 
 	template<typename T>
@@ -76,13 +78,10 @@ namespace Vadon::ECS
 
 		T& typed_add_component(EntityHandle entity) override
 		{
-			auto entity_it = add_entity(entity);
-			if (entity_it)
+			if (add_entity(entity) == false)
 			{
 				// Entity already present
-				// FIXME: move to shared utility function!
-				const uint32_t component_offset = m_component_offsets[std::distance(m_entity_lookup.cbegin(), entity_it.value())];
-				return m_components[component_offset];
+				return m_components[m_sparse_lookup[entity.handle.index]];
 			}
 
 			m_components.emplace_back();			
@@ -91,11 +90,10 @@ namespace Vadon::ECS
 
 		const T* typed_get_component(EntityHandle entity) const override
 		{
-			auto entity_it = find_entity(entity);
-			if (entity_it != m_entity_lookup.end())
+			const uint32_t component_index = get_component_index(entity);
+			if (component_index != c_invalid_component_index)
 			{
-				const uint32_t component_offset = m_component_offsets[std::distance(m_entity_lookup.begin(), entity_it)];
-				return &m_components[component_offset];
+				return &m_components[component_index];
 			}
 
 			return nullptr;
@@ -103,18 +101,14 @@ namespace Vadon::ECS
 
 		void remove_component(EntityHandle entity) override
 		{
-			auto entity_it = find_entity(entity);
-			if (entity_it != m_entity_lookup.end())
+			const uint32_t component_index = remove_entity(entity);
+			if (component_index != c_invalid_component_index)
 			{
-				const uint32_t component_offset = m_component_offsets[std::distance(m_entity_lookup.cbegin(), entity_it)];
-				auto removed_it = m_components.begin() + component_offset;
-				auto back_it = m_components.end() - 1;
-				if (removed_it != back_it)
+				if (component_index != (m_components.size() - 1))
 				{
-					*removed_it = std::move(m_components.back());
+					m_components[component_index] = std::move(m_components.back());
 				}
 				m_components.pop_back();
-				remove_entity(entity_it);
 			}
 		}
 
@@ -125,7 +119,7 @@ namespace Vadon::ECS
 
 		EntityList get_entities() const override
 		{
-			return m_entity_lookup;
+			return m_reverse_lookup;
 		}
 
 		void clear() override

@@ -13,6 +13,13 @@ namespace VadonDemo::Model
 		Vadon::Utilities::TypeRegistry::add_property<WeaponComponent>("definition", Vadon::Utilities::MemberVariableBind<&WeaponComponent::definition>().bind_member_getter().bind_member_setter());
 	}
 
+	void WeaponVolleyComponent::register_component()
+	{
+		Vadon::ECS::ComponentRegistry::register_component_type<WeaponVolleyComponent>();
+
+		Vadon::Utilities::TypeRegistry::add_property<WeaponVolleyComponent>("fire_count", Vadon::Utilities::MemberVariableBind<&WeaponVolleyComponent::fire_count>().bind_member_getter().bind_member_setter());
+	}
+
 	void ProjectileComponent::register_component()
 	{
 		Vadon::ECS::ComponentRegistry::register_component_type<ProjectileComponent>();

@@ -16,5 +16,9 @@ namespace Vadon::Private::Render::Canvas
 	};
 
 	using RenderState = Vadon::Render::Canvas::RenderState;
+
+	using ColorOverride = Vadon::Render::Canvas::ColorOverride;
+	using MaterialOverrideFlags = Vadon::Render::Canvas::MaterialOverrideFlags;
+	using MaterialOverride = Vadon::Render::Canvas::MaterialOverride;
 }
 #endif

@@ -39,6 +39,9 @@ namespace VadonEditor::Model
 		Vadon::Utilities::PropertyList get_properties() const;
 		Vadon::Utilities::Variant get_property(std::string_view property_name) const;
 		void edit_property(std::string_view property_name, const Vadon::Utilities::Variant& value);
+
+		void add_embedded_resource(Resource* resource);
+		bool is_embedded() const { return m_owner != nullptr; }
 	private:
 		Resource(Core::Editor& editor, ResourceID resource_id, EditorResourceID editor_id);
 
@@ -51,6 +54,10 @@ namespace VadonEditor::Model
 
 		Vadon::Scene::ResourceInfo m_info;
 		EditorResourceID m_editor_id;
+
+		// NOTE: can keep pointers, with embedded resources either these are valid or the resource shouldn't exist!
+		Resource* m_owner;
+		std::vector<Resource*> m_embedded_resources;
 
 		bool m_modified;
 

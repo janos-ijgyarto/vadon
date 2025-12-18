@@ -10,10 +10,14 @@ namespace VadonDemo::Model
 	{
 		WeaponDefID definition;
 
-		Vadon::ECS::EntityHandle target_entity;
-		Vadon::Math::Vector2 travel_direction;
-
 		float firing_timer = 0.0f;
+
+		static void register_component();
+	};
+
+	struct WeaponVolleyComponent
+	{
+		uint32_t fire_count = 0;
 
 		static void register_component();
 	};
@@ -25,6 +29,7 @@ namespace VadonDemo::Model
 		float knockback = 0.0f;
 
 		float remaining_lifetime = 0.0f;
+		bool enemy = false; // TODO: hack to get it working, need to improve this!
 
 		static void register_component();
 	};

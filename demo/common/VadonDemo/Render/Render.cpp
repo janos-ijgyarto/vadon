@@ -7,6 +7,8 @@
 #include <Vadon/ECS/World/World.hpp>
 
 #include <Vadon/Render/Canvas/CanvasSystem.hpp>
+#include <Vadon/Render/Canvas/CommandBuffer.hpp>
+
 #include <Vadon/Render/GraphicsAPI/Resource/ResourceSystem.hpp>
 #include <Vadon/Render/GraphicsAPI/Shader/ShaderSystem.hpp>
 #include <Vadon/Render/GraphicsAPI/Texture/TextureSystem.hpp>
@@ -54,9 +56,9 @@ namespace VadonDemo::Render
 
 	void Render::init_canvas_entity(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle entity, CanvasContextHandle context_handle)
 	{
-		VADON_ASSERT(context_handle.is_valid(), "Must provide valid canvas context!"); 
-		CanvasComponent* canvas_component = ecs_world.get_component_manager().get_component<CanvasComponent>(entity);
-		VADON_ASSERT(canvas_component != nullptr, "Entity does not have canvas component!");
+		VADON_ASSERT(context_handle.is_valid() == true, "Must provide valid canvas context!"); 
+		auto canvas_component = ecs_world.get_component_manager().get_component<CanvasComponent>(entity);
+		VADON_ASSERT(canvas_component.is_valid() == true, "Entity does not have canvas component!");
 
 		canvas_component->context_handle = context_handle;
 
@@ -69,8 +71,8 @@ namespace VadonDemo::Render
 		
 	void Render::update_canvas_entity(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle entity)
 	{
-		CanvasComponent* canvas_component = ecs_world.get_component_manager().get_component<CanvasComponent>(entity);
-		if (canvas_component == nullptr)
+		auto canvas_component = ecs_world.get_component_manager().get_component<CanvasComponent>(entity);
+		if (canvas_component.is_valid() == false)
 		{
 			return;
 		}
@@ -91,8 +93,8 @@ namespace VadonDemo::Render
 
 	void Render::remove_canvas_entity(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle entity)
 	{
-		CanvasComponent* canvas_component = ecs_world.get_component_manager().get_component<CanvasComponent>(entity);
-		if (canvas_component == nullptr)
+		auto canvas_component = ecs_world.get_component_manager().get_component<CanvasComponent>(entity);
+		if (canvas_component.is_valid() == false)
 		{
 			return;
 		}
@@ -135,21 +137,21 @@ namespace VadonDemo::Render
 
 	void Render::init_sprite_tiling_entity(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle entity)
 	{
-		SpriteTilingComponent* sprite_component = ecs_world.get_component_manager().get_component<SpriteTilingComponent>(entity);
-		VADON_ASSERT(sprite_component, "Cannot find component!");
+		auto sprite_component = ecs_world.get_component_manager().get_component<SpriteTilingComponent>(entity);
+		VADON_ASSERT(sprite_component.is_valid() == true, "Cannot find component!");
 
 		// TODO: any other initialization?
 		sprite_component->reset_rect();
 	}
 
-	void Render::update_sprite_tiling_entity(const CanvasComponent& canvas_component, SpriteTilingComponent& sprite_component, const Vadon::Render::Rectangle& culling_rect)
+	void Render::update_sprite_tiling_entity(const Vadon::ECS::TypedComponentHandle<CanvasComponent>& canvas_component, Vadon::ECS::TypedComponentHandle<SpriteTilingComponent>& sprite_component, const Vadon::Render::Rectangle& culling_rect)
 	{
-		if (canvas_component.canvas_item.is_valid() == false)
+		if (canvas_component->canvas_item.is_valid() == false)
 		{
 			return;
 		}
 
-		if (sprite_component.texture.is_valid() == false)
+		if (sprite_component->texture.is_valid() == false)
 		{
 			return;
 		}
@@ -158,10 +160,10 @@ namespace VadonDemo::Render
 		const Vadon::Render::Vector2 min = culling_rect.position - extent;
 		const Vadon::Render::Vector2 max = culling_rect.position + extent;
 
-		const Vadon::Render::Vector2i min_index = glm::floor(min / sprite_component.tile_size);
-		const Vadon::Render::Vector2i max_index = Vadon::Render::Vector2i(glm::floor(max / sprite_component.tile_size)) + Vadon::Render::Vector2i{ 1, 1 };
+		const Vadon::Render::Vector2i min_index = glm::floor(min / sprite_component->tile_size);
+		const Vadon::Render::Vector2i max_index = Vadon::Render::Vector2i(glm::floor(max / sprite_component->tile_size)) + Vadon::Render::Vector2i{ 1, 1 };
 
-		if ((sprite_component.tile_rect.position == min_index) && (sprite_component.tile_rect.size == (max_index - min_index)))
+		if ((sprite_component->tile_rect.position == min_index) && (sprite_component->tile_rect.size == (max_index - min_index)))
 		{
 			// Sprite hasn't changed
 			return;
@@ -170,11 +172,12 @@ namespace VadonDemo::Render
 		Vadon::Core::EngineCoreInterface& engine_core = m_core.get_engine_core();
 		Vadon::Render::Canvas::CanvasSystem& canvas_system = engine_core.get_system<Vadon::Render::Canvas::CanvasSystem>();
 
-		canvas_system.clear_item(canvas_component.canvas_item);
+		Vadon::Render::Canvas::CommandBuffer& command_buffer = canvas_system.get_item_command_buffer(canvas_component->canvas_item);
+		command_buffer.clear();
 
 		Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
 
-		const TextureResourceHandle texture_handle = resource_system.load_resource(sprite_component.texture);
+		const TextureResourceHandle texture_handle = resource_system.load_resource(sprite_component->texture);
 		const TextureResource* sprite_texture = resource_system.get_resource(texture_handle);
 		if (sprite_texture->texture.is_valid() == false)
 		{
@@ -182,49 +185,50 @@ namespace VadonDemo::Render
 			return;
 		}
 
-		canvas_system.set_item_texture(canvas_component.canvas_item, Vadon::Render::Canvas::Texture{ sprite_texture->texture_srv });
+		command_buffer.set_texture(Vadon::Render::Canvas::Texture{ sprite_texture->texture_srv });
 
 		Vadon::Render::Canvas::Sprite sprite;
-		sprite.dimensions.size = sprite_component.tile_size;
-		const Vadon::Render::Vector2 tile_offset = sprite_component.tile_size * 0.5f;
+		sprite.dimensions.size = sprite_component->tile_size;
+		const Vadon::Render::Vector2 tile_offset = sprite_component->tile_size * 0.5f;
 		for (int current_x = min_index.x; current_x < max_index.x; ++current_x)
 		{
 			for (int current_y = min_index.y; current_y < max_index.y; ++current_y)
 			{
-				sprite.dimensions.position = Vadon::Render::Vector2(current_x, current_y) * sprite_component.tile_size + tile_offset;
-				canvas_system.draw_item_sprite(canvas_component.canvas_item, sprite);
+				sprite.dimensions.position = Vadon::Render::Vector2(current_x, current_y) * sprite_component->tile_size + tile_offset;
+				command_buffer.draw_sprite(sprite);
 			}
 		}
 
-		sprite_component.tile_rect.position = min_index;
-		sprite_component.tile_rect.size = max_index - min_index;
+		sprite_component->tile_rect.position = min_index;
+		sprite_component->tile_rect.size = max_index - min_index;
 	}
 
 	void Render::remove_sprite_tiling_entity(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle entity)
 	{
 		// TODO: reference counting for resources so we unload a texture once nothing is referencing it
-		CanvasComponent* canvas_component = ecs_world.get_component_manager().get_component<CanvasComponent>(entity);
-		if (canvas_component != nullptr)
+		auto canvas_component = ecs_world.get_component_manager().get_component<CanvasComponent>(entity);
+		if (canvas_component.is_valid() == true)
 		{
 			Vadon::Core::EngineCoreInterface& engine_core = m_core.get_engine_core();
 			Vadon::Render::Canvas::CanvasSystem& canvas_system = engine_core.get_system<Vadon::Render::Canvas::CanvasSystem>();
 
-			canvas_system.clear_item(canvas_component->canvas_item);
+			Vadon::Render::Canvas::CommandBuffer& command_buffer = canvas_system.get_item_command_buffer(canvas_component->canvas_item);
+			command_buffer.clear();
 		}
 	}
 
 	void Render::init_fullscreen_effect_entity(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle entity)
 	{
-		FullscreenEffectComponent* fullscreen_component = ecs_world.get_component_manager().get_component<FullscreenEffectComponent>(entity);
-		VADON_ASSERT(fullscreen_component != nullptr, "Entity does not have fullscreen component!");
+		auto fullscreen_component = ecs_world.get_component_manager().get_component<FullscreenEffectComponent>(entity);
+		VADON_ASSERT(fullscreen_component.is_valid() == true, "Entity does not have fullscreen component!");
 
 		// TODO: anything?
 	}
 
 	void Render::update_fullscreen_effect_entity(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle entity)
 	{
-		FullscreenEffectComponent* fullscreen_component = ecs_world.get_component_manager().get_component<FullscreenEffectComponent>(entity);
-		if (fullscreen_component == nullptr)
+		auto fullscreen_component = ecs_world.get_component_manager().get_component<FullscreenEffectComponent>(entity);
+		if (fullscreen_component.is_valid() == false)
 		{
 			return;
 		}
@@ -236,8 +240,8 @@ namespace VadonDemo::Render
 
 	void Render::remove_fullscreen_effect_entity(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle entity)
 	{
-		FullscreenEffectComponent* fullscreen_component = ecs_world.get_component_manager().get_component<FullscreenEffectComponent>(entity);
-		if (fullscreen_component == nullptr)
+		auto fullscreen_component = ecs_world.get_component_manager().get_component<FullscreenEffectComponent>(entity);
+		if (fullscreen_component.is_valid() == false)
 		{
 			return;
 		}

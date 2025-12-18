@@ -1,0 +1,91 @@
+{
+    "data": {
+        "entities": [
+            {
+                "components": [
+                    {
+                        "properties": {
+                            "layer_def": "2bdWkqSdTuSxnfVFk+5q+g==",
+                            "visible": true,
+                            "z_order": 2.0
+                        },
+                        "type": "VadonDemo::Render::CanvasComponent"
+                    },
+                    {
+                        "properties": {
+                            "damage": 10.0,
+                            "knockback": 0.0,
+                            "range": 100.0
+                        },
+                        "type": "VadonDemo::Model::ProjectileComponent"
+                    },
+                    {
+                        "properties": {
+                            "position": [
+                                0.0,
+                                0.0
+                            ],
+                            "rotation": 0.0,
+                            "scale": 1.0
+                        },
+                        "type": "VadonDemo::Model::Transform2D"
+                    },
+                    {
+                        "properties": {
+                            "acceleration": 0.0,
+                            "top_speed": 100.0
+                        },
+                        "type": "VadonDemo::Model::Velocity2D"
+                    },
+                    {
+                        "properties": {
+                            "radius": 10.0
+                        },
+                        "type": "VadonDemo::Model::Collision"
+                    },
+                    {
+                        "properties": {
+                            "position": [
+                                0.0,
+                                0.0
+                            ],
+                            "rotation": 0.0,
+                            "scale": 1.0
+                        },
+                        "type": "VadonDemo::View::TransformComponent"
+                    },
+                    {
+                        "properties": {
+                            "color": "#ffffffff",
+                            "resource": "rxLIbS7jR/KaLkRezEbdAw=="
+                        },
+                        "type": "VadonDemo::View::RenderComponent"
+                    },
+                    {
+                        "properties": {},
+                        "type": "VadonDemo::View::ModelTransformComponent"
+                    }
+                ],
+                "name": "EnemyProjectile",
+                "parent": -1
+            }
+        ]
+    },
+    "embedded": [
+        {
+            "id": "rxLIbS7jR/KaLkRezEbdAw==",
+            "properties": {
+                "color": "#ff8000ff",
+                "name": "",
+                "radius": 10.0,
+                "type": 0
+            },
+            "type": "VadonDemo::View::Shape"
+        }
+    ],
+    "id": "GjWv9sLkS3q5L6IejWPQqQ==",
+    "properties": {
+        "name": ""
+    },
+    "type": "Vadon::Scene::Scene"
+}

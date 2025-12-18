@@ -23,6 +23,8 @@ namespace VadonDemo::Model
 
 	struct Velocity2D
 	{
+		// FIXME: Velocity should not define these, should instead delegate to other logic
+		// This component should only have runtime values that are used to update the transform
 		float top_speed = 0.0f;
 		float acceleration = 0.0f;
 		Vadon::Math::Vector2 velocity = Vadon::Math::Vector2_Zero;
@@ -58,41 +60,11 @@ namespace VadonDemo::Model
 		static void register_component();
 	};
 
-	struct Enemy
-	{
-		int32_t score_reward = 0;
-		float damage = 0.0f;
-
-		static void register_component();
-	};
-
 	struct Map
 	{
 		std::string display_name;
 		Vadon::Math::Vector2 dimensions = Vadon::Math::Vector2_Zero;
 		// TODO: limit on spawned enemies (could do with some kind of "value" system where it limits number based on how much they add up to?)
-
-		static void register_component();
-	};
-
-	struct Spawner
-	{
-		// TODO: implement a utility type which takes care of both the persistent resource ID and the loaded resource handle?
-		Vadon::Scene::SceneID enemy_prefab;
-
-		float activation_delay = 60.0f;
-		float min_spawn_delay = 0.0f;
-		int32_t start_spawn_count = 1;
-		// TODO: spawn rate!
-
-		float level_multiplier = 1.0f;
-		float level_up_delay = 30.0f;
-		int32_t max_level = 1;
-
-		int32_t current_level = 0;
-		int32_t current_spawn_count = 1;
-		float spawn_timer = 0.0f;
-		float level_up_timer = 0.0f;
 
 		static void register_component();
 	};

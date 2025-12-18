@@ -16,6 +16,12 @@ namespace VadonApp::UI::Developer
 		Vadon::Math::Vector2 frame_padding = Vadon::Math::Vector2_Zero;
 	};
 
+	enum class GUIStyleVar
+	{
+		// TODO: implement other style vars!
+		CHILD_BORDER_SIZE
+	};
+
 	// Developer GUI, primarily based on ImGui
 	class GUISystem : public UISystemBase<GUISystem>
 	{
@@ -62,6 +68,8 @@ namespace VadonApp::UI::Developer
 
 		// TODO: revise multithreaded rendering by getting a "render context", drawing to it, then returning it!
 
+		virtual void show_demo_window(bool* open = nullptr) = 0;
+
 		virtual void push_id(std::string_view string_id) = 0;
 		virtual void push_id(const void* pointer_id) = 0;
 		virtual void push_id(int32_t int_id) = 0;
@@ -79,6 +87,10 @@ namespace VadonApp::UI::Developer
 		virtual void push_item_width(float item_width) = 0;
 		virtual void pop_item_width() = 0;
 		virtual void set_next_item_width(float item_width) = 0;
+
+		virtual void push_style_var(GUIStyleVar index, float value) = 0;
+		virtual void push_style_var(GUIStyleVar index, const Vadon::Math::Vector2& value) = 0;
+		virtual void pop_style_var(int count = 1) = 0;
 
 		virtual bool begin_window(Window& window) = 0;
 		virtual void end_window() = 0;
@@ -130,7 +142,8 @@ namespace VadonApp::UI::Developer
 		virtual bool draw_slider_float(SliderFloat& slider) = 0;
 		virtual bool draw_slider_float2(SliderFloat2& slider) = 0;
 
-		virtual bool draw_color_edit(ColorEdit& color) = 0;
+		// FIXME: implement flags, etc.!
+		virtual bool draw_color_edit(ColorEdit& color, bool read_only = false) = 0;
 		
 		// TODO: implement flags, size, etc.
 		virtual bool draw_selectable(std::string_view label, bool is_selected) = 0;

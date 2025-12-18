@@ -6,11 +6,85 @@
 
 #include <VadonEditor/View/ViewSystem.hpp>
 
+#include <Vadon/Utilities/TypeInfo/Registry.hpp>
+
 namespace VadonEditor::View
 {
+	CreateResourceDialog::CreateResourceDialog(Core::Editor& editor)
+		: Dialog("Create New Resource")
+		, m_editor(editor)
+		, m_resource_type(Vadon::Utilities::TypeID::INVALID)
+	{
+		m_resource_type_combo.label = "Resource types";
+
+		m_accept_button.label = "Create";
+		m_cancel_button.label = "Cancel";
+	}
+
+	void CreateResourceDialog::set_resource_type(Vadon::Utilities::TypeID resource_type)
+	{
+		m_resource_type = resource_type;
+		reset_type_list();
+	}
+
+	Vadon::Utilities::TypeID CreateResourceDialog::get_selected_resource_type() const
+	{
+		return m_resource_types[m_resource_type_combo.selected_item];
+	}
+
+	void CreateResourceDialog::on_open()
+	{
+		if (m_resource_type == Vadon::Utilities::TypeID::INVALID)
+		{
+			m_resource_type = Vadon::Utilities::TypeRegistry::get_type_id<Vadon::Scene::Resource>();
+		}
+
+		reset_type_list();
+	}
+
+	CreateResourceDialog::Result CreateResourceDialog::internal_draw(UI::Developer::GUISystem& dev_gui)
+	{
+		Result result = Result::NONE;
+
+		dev_gui.draw_combo_box(m_resource_type_combo);
+
+		if (dev_gui.draw_button(m_accept_button) == true)
+		{
+			result = Result::ACCEPTED;
+		}
+		dev_gui.same_line();
+		if (dev_gui.draw_button(m_cancel_button) == true)
+		{
+			result = Result::CANCELLED;
+		}
+
+		if (result != Result::NONE)
+		{
+			close();
+		}
+
+		return result;
+	}
+
+	void CreateResourceDialog::reset_type_list()
+	{
+		m_resource_types = Vadon::Utilities::TypeRegistry::get_subclass_list(m_resource_type);
+		m_resource_type_combo.deselect();
+		m_resource_type_combo.items.clear();
+
+		for (Vadon::Utilities::TypeID current_resource_type : m_resource_types)
+		{
+			const Vadon::Utilities::TypeInfo current_type_info = Vadon::Utilities::TypeRegistry::get_type_info(current_resource_type);
+			m_resource_type_combo.items.push_back(current_type_info.name);
+		}
+
+		m_resource_type_combo.selected_item = 0;
+	}
+
 	SelectResourceDialog::SelectResourceDialog(Core::Editor& editor, std::string_view title)
 		: Dialog(title)
 		, m_editor(editor)
+		, m_resource_type(Vadon::Utilities::TypeID::INVALID)
 	{
 		m_select_button.label = "Select";
 		m_cancel_button.label = "Cancel";
@@ -59,6 +133,11 @@ namespace VadonEditor::View
 
 	void SelectResourceDialog::on_open()
 	{
+		if (m_resource_type == Vadon::Utilities::TypeID::INVALID)
+		{
+			m_resource_type = Vadon::Utilities::TypeRegistry::get_type_id<Vadon::Scene::Resource>();
+		}
+
 		m_resource_list.clear();
 
 		m_resource_list_box.items.clear();
@@ -79,17 +158,97 @@ namespace VadonEditor::View
 		}
 	}
 
-	ResourceEditor::ResourceEditor(Core::Editor& editor)
+	ResourceEditorWidget::ResourceEditorWidget(Core::Editor& editor)
 		: m_editor(editor)
-		, m_last_resource(nullptr)
+		, m_read_only(false)
+		, m_resource(nullptr)
+	{
+		m_child_window.int_id = 1;
+		m_child_window.border = true;
+	}
+
+	void ResourceEditorWidget::set_resource(Model::Resource* resource)
+	{
+		if (m_resource == resource)
+		{
+			return;
+		}
+
+		m_child_window.int_id = resource != nullptr ? (resource->get_editor_id() + 1) : 1; // Offset by 1 to ensure it's not 0
+		m_resource = resource;
+
+		reset_properties(resource);
+	}
+
+	bool ResourceEditorWidget::draw(UI::Developer::GUISystem& dev_gui, const Vadon::Math::Vector2& size)
+	{
+		// TODO: find a way to use the space even if there is nothing to draw?
+		bool edited = false;
+		if (m_resource != nullptr)
+		{
+			dev_gui.push_style_var(UI::Developer::GUIStyleVar::CHILD_BORDER_SIZE, 0.5f);
+			m_child_window.size = size;
+
+			if (dev_gui.begin_child_window(m_child_window) == true)
+			{
+				for (auto& current_property : m_property_editors)
+				{
+					if (current_property->render(dev_gui) == true)
+					{
+						// Property edited, update the resource
+						const Vadon::Utilities::Property& property_data = current_property->get_property();
+						m_resource->edit_property(property_data.name, property_data.value);
+
+						// Re-enter the value from the property into the editor (in case something changed it, e.g constraints)
+						// FIXME: this will cause redundant refreshes of the UI!
+						// TODO: make proper use of the "modified" flag and only update once explicitly requested (and only the modified elements)?
+						current_property->set_value(m_resource->get_property(property_data.name));
+
+						edited = true;
+					}
+				}
+			}
+			dev_gui.end_child_window();
+			dev_gui.pop_style_var();
+		}
+
+		return edited;
+	}
+
+	void ResourceEditorWidget::reset_properties(Model::Resource* resource)
+	{
+		m_property_editors.clear();
+		if (resource == nullptr)
+		{
+			return;
+		}
+
+		PropertyEditorInfo property_editor_info;
+		property_editor_info.owner = resource; // Embedded resources will be owned by the resource in this widget
+		property_editor_info.read_only = m_read_only;
+
+		const Vadon::Utilities::PropertyList resource_properties = resource->get_properties();
+		for (const Vadon::Utilities::Property& current_property : resource_properties)
+		{
+			m_property_editors.emplace_back(PropertyEditor::create_property_editor(m_editor, current_property, property_editor_info));
+		}
+	}
+
+	ResourceEditorWindow::ResourceEditorWindow(Core::Editor& editor)
+		: m_editor(editor)
+		, m_editor_widget(editor)
 	{
 		m_window.title = "Resource Editor";
 		m_window.open = false;
 
 		m_save_button.label = "Save";
+
+		m_editor_widget.set_read_only(false);
+
+		update_label(nullptr);
 	}
 
-	void ResourceEditor::draw(UI::Developer::GUISystem& dev_gui)
+	void ResourceEditorWindow::draw(UI::Developer::GUISystem& dev_gui)
 	{
 		if (dev_gui.begin_window(m_window) == true)
 		{
@@ -97,75 +256,65 @@ namespace VadonEditor::View
 			ViewModel& view_model = view_system.get_view_model();
 
 			Model::Resource* active_resource = view_model.get_active_resource();
-			update_selected_resource(active_resource);
-			if (active_resource != nullptr)
-			{
-				dev_gui.push_id(active_resource->get_editor_id());
-				dev_gui.add_text_wrapped(m_path);
-				for (auto& current_property : m_property_editors)
-				{
-					if (current_property->render(dev_gui) == true)
-					{
-						// Property edited, update the resource
-						const Vadon::Utilities::Property& property_data = current_property->get_property();
-						active_resource->edit_property(property_data.name, property_data.value);
 
-						// Re-enter the value from the property into the editor (in case something changed it, e.g constraints)
-						// FIXME: this will cause redundant refreshes of the UI!
-						// TODO: make proper use of the "modified" flag and only update once explicitly requested (and only the modified elements)?
-						current_property->set_value(active_resource->get_property(property_data.name));
-					}
-				}
-				if (dev_gui.draw_button(m_save_button) == true)
-				{
-					active_resource->save();
-				}
-				dev_gui.pop_id();
+			if (active_resource != m_editor_widget.get_resource())
+			{
+				m_editor_widget.set_resource(active_resource);
+				update_label(active_resource);
+			}
+
+			dev_gui.add_text_wrapped(m_label);
+
+			Vadon::Math::Vector2 editor_widget_size = dev_gui.get_available_content_region();
+
+			// TODO: use separator, ensure enough space is left for it!
+			const VadonApp::UI::Developer::GUIStyle gui_style = dev_gui.get_style();
+			editor_widget_size.y -= dev_gui.calculate_text_size(m_save_button.label).y + gui_style.frame_padding.y * 2 + 5.0f;
+
+			if (m_editor_widget.draw(dev_gui, editor_widget_size) == true)
+			{
+				// TODO: set a "modified" flag to notify user if they have unsaved changes?
+			}
+
+			if (active_resource == nullptr)
+			{
+				dev_gui.begin_disabled(true);
+			}
+			if (dev_gui.draw_button(m_save_button) == true)
+			{
+				active_resource->save();
+			}
+			if (active_resource == nullptr)
+			{
+				dev_gui.end_disabled();
 			}
 		}
 		dev_gui.end_window();
 	}
 
-	void ResourceEditor::update_selected_resource(Model::Resource* resource)
+	void ResourceEditorWindow::update_label(Model::Resource* resource)
 	{
-		if (resource == m_last_resource)
+		if (resource != nullptr)
 		{
-			return;
-		}
+			std::string resource_path = resource->get_path();
+			if (resource_path.empty() == true)
+			{
+				if (resource->is_embedded() == true)
+				{
+					resource_path = "EMBEDDED";
+				}
+				else
+				{
+					resource_path = "UNSAVED";
+				}
+			}
 
-		m_last_resource = resource;
-		if (resource == nullptr)
-		{
-			return;
-		}
-
-		update_labels(resource);
-		reset_properties(resource);
-	}
-
-	void ResourceEditor::update_labels(Model::Resource* resource)
-	{
-		Model::ResourceSystem& resource_system = m_editor.get_system<Model::ModelSystem>().get_resource_system();
-		const Model::ResourceInfo* resource_info = resource_system.get_database().find_resource_info(resource->get_id());
-		VADON_ASSERT(resource_info != nullptr, "Resource not found!");
-		if (resource_info->path.empty() == false)
-		{
-			m_path = resource_info->path;
+			const Vadon::Utilities::TypeInfo resource_type_info = Vadon::Utilities::TypeRegistry::get_type_info(resource->get_info().type_id);
+			m_label = std::format("{} ({})", resource_path, resource_type_info.name);
 		}
 		else
 		{
-			m_path.clear();
-		}
-	}
-
-	void ResourceEditor::reset_properties(Model::Resource* resource)
-	{
-		m_property_editors.clear();
-		const Vadon::Utilities::PropertyList resource_properties = resource->get_properties();
-
-		for (const Vadon::Utilities::Property& current_property : resource_properties)
-		{
-			m_property_editors.emplace_back(PropertyEditor::create_property_editor(m_editor, current_property));
+			m_label = "<NONE>";
 		}
 	}
 }

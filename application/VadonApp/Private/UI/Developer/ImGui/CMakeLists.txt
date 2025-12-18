@@ -20,5 +20,5 @@ add_custom_target("VadonAppImGuiShaders"
 	DEPENDS ${VADONAPP_IMGUI_SHADER_LIST}
 )
 set_target_properties("VadonAppImGuiShaders" PROPERTIES FOLDER "${VADON_PARENT_FOLDER}${PROJECT_NAME}/Codegen")
-
+add_dependencies("VadonAppImGuiShaders" VadonToolsBuild) # Make sure shader compiler is built first
 add_dependencies(${VADONAPP_SHADERS_TARGET} "VadonAppImGuiShaders")

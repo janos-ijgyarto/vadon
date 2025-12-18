@@ -145,10 +145,9 @@ namespace VadonDemo::View
         {
             dirty_entities.push_back(dirty_entity_it.get_entity());
 
-            auto dirty_entity_tuple = dirty_entity_it.get_tuple();
-            RenderComponent* render_component = std::get<RenderComponent*>(dirty_entity_tuple);
+            auto render_component = dirty_entity_it.get_component<RenderComponent>();
 
-            if (render_component != nullptr)
+            if (render_component.is_valid() == true)
             {
                 // Make sure the resource is up-to-date
                 load_render_resource(render_component->resource);
@@ -176,8 +175,8 @@ namespace VadonDemo::View
         Vadon::ECS::World& ecs_world = editor_model.get_ecs_world();
 
         Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
-        RenderComponent* render_component = component_manager.get_component<RenderComponent>(entity);
-        if (render_component == nullptr)
+        auto render_component = component_manager.get_component<RenderComponent>(entity);
+        if (render_component.is_valid() == false)
         {
             return;
         }
@@ -227,10 +226,9 @@ namespace VadonDemo::View
 
         for (auto view_it = view_query.get_iterator(); view_it.is_valid() == true; view_it.next())
         {
-            auto view_tuple = view_it.get_tuple();
-            RenderComponent& view_render_component = std::get<RenderComponent&>(view_tuple);
+            auto view_render_component = view_it.get_component<RenderComponent>();
 
-            if (view_render_component.resource != view_render_resource)
+            if (view_render_component->resource != view_render_resource)
             {
                 continue;
             }
@@ -257,15 +255,14 @@ namespace VadonDemo::View
 
         for (auto view_it = view_query.get_iterator(); view_it.is_valid() == true; view_it.next())
         {
-            auto view_tuple = view_it.get_tuple();
-            RenderComponent& current_view_component = std::get<RenderComponent&>(view_tuple);
+            auto current_view_component = view_it.get_component<RenderComponent>();
 
-            if (current_view_component.resource.is_valid() == false)
+            if (current_view_component->resource.is_valid() == false)
             {
                 continue;
             }
 
-            const RenderResourceHandle view_render_resource_handle = common_view.load_render_resource(current_view_component.resource);
+            const RenderResourceHandle view_render_resource_handle = common_view.load_render_resource(current_view_component->resource);
             if (resource_system.get_resource_info(view_render_resource_handle).type_id != Vadon::Utilities::TypeRegistry::get_type_id<Sprite>())
             {
                 continue;
@@ -278,7 +275,7 @@ namespace VadonDemo::View
             }
 
             // Reset the sprite that uses this texture
-            common_view.reset_resource_data(current_view_component.resource);
+            common_view.reset_resource_data(current_view_component->resource);
 
             // Mark the entity as "dirty"
             component_manager.set_entity_tag<EntityDirtyTag>(view_it.get_entity(), true);

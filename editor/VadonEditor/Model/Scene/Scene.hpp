@@ -39,6 +39,8 @@ namespace VadonEditor::Model
 		bool is_modified() const;
 		void notify_modified();
 		void clear_modified();
+
+		Resource* get_scene_resource() const { return m_resource; }
 	private:
 		Scene(Core::Editor& editor, Resource* scene_resource);
 

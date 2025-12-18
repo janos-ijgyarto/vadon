@@ -1,0 +1,13 @@
+{
+    "id": "4Bs/g76MTPy8q3quyDpQYg==",
+    "properties": {
+        "default_start_level": "jlis1+rNQpmey1q0JNLhxw==",
+        "main_menu_scene": "logqRpQYSLqnn8W+lZaOwg==",
+        "name": "",
+        "viewport_size": [
+            1024.0,
+            768.0
+        ]
+    },
+    "type": "VadonDemo::Core::GlobalConfiguration"
+}

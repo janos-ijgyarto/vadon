@@ -1,7 +1,7 @@
 #ifndef VADONEDITOR_VIEW_PROJECT_ASSETBROWSER_HPP
 #define VADONEDITOR_VIEW_PROJECT_ASSETBROWSER_HPP
 #include <VadonEditor/Core/Project/Asset/Asset.hpp>
-#include <VadonEditor/UI/Developer/Widgets.hpp>
+#include <VadonEditor/View/Scene/Resource/Resource.hpp>
 #include <Vadon/Utilities/TypeInfo/TypeInfo.hpp>
 #include <array>
 namespace VadonEditor::Core
@@ -14,28 +14,6 @@ namespace VadonEditor::Model
 }
 namespace VadonEditor::View
 {
-	class CreateResourceDialog : public UI::Developer::Dialog
-	{
-	protected:
-		void on_open();
-		Result internal_draw(UI::Developer::GUISystem& dev_gui) override;
-	private:
-		CreateResourceDialog(Core::Editor& editor);
-
-		Vadon::Utilities::TypeID get_selected_resource_type() const;
-
-		Core::Editor& m_editor;
-
-		// FIXME: use a tree view so we can see and search subclass hierarchies?
-		std::vector<Vadon::Utilities::TypeID> m_resource_types;
-		UI::Developer::ComboBox m_resource_type_combo;
-
-		UI::Developer::Button m_accept_button;
-		UI::Developer::Button m_cancel_button;
-
-		friend class AssetBrowser;
-	};
-
 	class AssetBrowser
 	{
 	private:

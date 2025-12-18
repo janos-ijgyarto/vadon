@@ -38,7 +38,7 @@ namespace VadonEditor::View
 		SceneListWindow m_scene_list;
 		SceneTreeWindow m_scene_tree;
 		EntityEditor m_entity_editor;
-		ResourceEditor m_resource_editor;
+		ResourceEditorWindow m_resource_editor;
 		AnimationEditor m_animation_editor;
 
 		Internal(Core::Editor& editor)
@@ -150,7 +150,7 @@ namespace VadonEditor::View
 			if (m_project_properties.draw(dev_gui) == UI::Developer::Dialog::Result::ACCEPTED)
 			{
 				Core::ProjectManager& project_manager = m_editor.get_system<Core::ProjectManager>();
-				project_manager.update_project_custom_properties(m_project_properties.get_edited_properties());
+				project_manager.update_project_custom_data(m_project_properties.get_custom_data_resource());
 			}
 
 			if (m_export_project_browser.draw(dev_gui) == UI::Developer::Dialog::Result::ACCEPTED)

@@ -11,7 +11,7 @@
 
 #include <Vadon/Utilities/TypeInfo/TypeErasure.hpp>
 
-#include <VadonApp/UI/Developer/IconsFontAwesome5.h>
+#include <VadonApp/UI/Developer/IconsFontAwesome7.h>
 
 #include <algorithm>
 
@@ -99,7 +99,7 @@ namespace VadonEditor::View
 	AnimationEditor::KeyframeEditor::KeyframeEditor(AnimationEditor& parent)
 		: parent_window(parent)
 	{
-		child_window.id = "##keyframe_editor";
+		child_window.string_id = "##keyframe_editor";
 		child_window.border = true;
 	}
 
@@ -131,7 +131,16 @@ namespace VadonEditor::View
 		keyframe_property_data.name = "Keyframe value";
 		keyframe_property_data.value = keyframe_cell.value;
 
-		property_editor = PropertyEditor::create_property_editor(parent_window.m_editor, keyframe_property_data);
+		ViewSystem& view_system = parent_window.m_editor.get_system<ViewSystem>();
+		ViewModel& view_model = view_system.get_view_model();
+
+		Model::Resource* active_resource = view_model.get_active_resource();
+
+		PropertyEditorInfo property_editor_info;
+		property_editor_info.owner = active_resource;
+		property_editor_info.read_only = false;
+
+		property_editor = PropertyEditor::create_property_editor(parent_window.m_editor, keyframe_property_data, property_editor_info);
 	}
 
 	bool AnimationEditor::KeyframeEditor::draw(VadonApp::UI::Developer::GUISystem& dev_gui)
@@ -266,7 +275,7 @@ namespace VadonEditor::View
 							{
 								// Keyframe
 								dev_gui.push_id(dev_gui_push_id);
-								if (dev_gui.draw_selectable(ICON_FA_DOT_CIRCLE, m_keyframe_editor.selected_frame_coords == frame_coords))
+								if (dev_gui.draw_selectable(ICON_FA_CIRCLE_DOT, m_keyframe_editor.selected_frame_coords == frame_coords))
 								{
 									m_keyframe_editor.update_selection(frame_coords);
 								}
@@ -274,6 +283,7 @@ namespace VadonEditor::View
 								{
 									if (dev_gui.add_menu_item(m_remove_keyframe_menu_item) == true)
 									{
+										// TODO: if we ever allow channel types with resource values, we need to make sure to clear embedded resources here!
 										channel.cells[keyframe_index].value = Vadon::Utilities::Variant();
 										modified = true;
 									}

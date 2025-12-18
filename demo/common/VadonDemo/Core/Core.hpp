@@ -37,8 +37,8 @@ namespace VadonDemo::Core
 		VADONDEMO_API static void register_types();
 
 		VADONDEMO_API bool initialize(const Vadon::Core::Project& project_info);
-		VADONDEMO_API void override_global_config(const Vadon::Core::Project& project_info);
-		const GlobalConfiguration& get_global_config() const { return m_global_config; }
+		VADONDEMO_API void update_global_config(const GlobalConfigurationID& global_config_id);
+		VADONDEMO_API const GlobalConfiguration& get_global_config() const;
 
 		Vadon::Core::EngineCoreInterface& get_engine_core() { return m_engine_core; }
 
@@ -63,7 +63,8 @@ namespace VadonDemo::Core
 
 		std::vector<EntityEventCallback> m_entity_callbacks;
 
-		GlobalConfiguration m_global_config;
+		GlobalConfigurationHandle m_global_config;
+		GlobalConfiguration m_default_config;
 	};
 }
 #endif

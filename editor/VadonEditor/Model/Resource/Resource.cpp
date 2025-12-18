@@ -132,10 +132,25 @@ namespace VadonEditor::Model
 		notify_modified();
 	}
 
+	void Resource::add_embedded_resource(Resource* resource)
+	{
+		VADON_ASSERT(is_loaded() == true, "Resource must be loaded!");
+		VADON_ASSERT(resource->is_loaded() == true, "Embedded resource must be loaded!");
+		VADON_ASSERT(resource->is_embedded() == false, "Cannot embed resource that is already embedded!");
+
+		// TODO: make sure the resource cannot be something from file (that cannot be an embedded resource!)
+		Vadon::Scene::ResourceSystem& resource_system = m_editor.get_engine_core().get_system<Vadon::Scene::ResourceSystem>();
+		resource_system.add_embedded_resource(m_handle, resource->m_handle);
+
+		resource->m_owner = this;
+		m_embedded_resources.push_back(resource);
+	}
+
 	Resource::Resource(Core::Editor& editor, ResourceID resource_id, EditorResourceID editor_id)
 		: m_editor(editor)
 		, m_resource_id(resource_id)
 		, m_editor_id(editor_id)
+		, m_owner(nullptr)
 		, m_modified(false)
 	{
 	}
@@ -146,6 +161,23 @@ namespace VadonEditor::Model
 
 		Vadon::Scene::ResourceSystem& resource_system = m_editor.get_engine_core().get_system<Vadon::Scene::ResourceSystem>();
 		m_info = resource_system.get_resource_info(resource_handle);
+
+		ResourceSystem& editor_resource_system = m_editor.get_system<ModelSystem>().get_resource_system();
+		Vadon::Scene::ResourceHandle owner_handle = resource_system.get_embedded_resource_onwer(m_handle);
+		if (owner_handle.is_valid() == true)
+		{
+			m_owner = editor_resource_system.get_resource(owner_handle);
+			VADON_ASSERT(m_owner != nullptr, "Cannot find owner!");
+		}
+
+		const std::vector<Vadon::Scene::ResourceHandle> embedded_resources = resource_system.get_embedded_resources(m_handle);
+		for (Vadon::Scene::ResourceHandle current_embedded_resource : embedded_resources)
+		{
+			Resource* editor_embedded_resource = editor_resource_system.get_resource(current_embedded_resource);
+			VADON_ASSERT(editor_embedded_resource != nullptr, "Cannot find embedded resource!");
+
+			m_embedded_resources.push_back(editor_embedded_resource);
+		}
 
 		clear_modified();
 	}

@@ -19,19 +19,9 @@ namespace Vadon::ECS
 		advance();
 	}
 
-	void ComponentQueryBase::IteratorBase::refresh()
-	{
-		if (is_valid() == true)
-		{
-			// Assume we are already at a valid entry
-			m_query.get_components(m_offset, m_components);
-		}
-	}
-
-	ComponentQueryBase::IteratorBase::IteratorBase(ComponentQueryBase& query, ComponentSpan components)
+	ComponentQueryBase::IteratorBase::IteratorBase(ComponentQueryBase& query)
 		: m_query(query)
 		, m_offset(0)
-		, m_components(components)
 	{
 		advance();
 	}
@@ -40,7 +30,7 @@ namespace Vadon::ECS
 	{
 		while (is_valid() == true)
 		{
-			if (m_query.get_components(m_offset, m_components) == true)
+			if (m_query.check_components(m_offset) == true)
 			{
 				break;
 			}
@@ -107,30 +97,25 @@ namespace Vadon::ECS
 		}
 	}
 
-	bool ComponentQueryBase::get_components(size_t index, ComponentSpan components)
+	bool ComponentQueryBase::check_components(size_t index)
 	{
 		EntityHandle entity = m_entities[index];
 
-		auto component_it = components.begin();
+		bool has_any = false; // Check whether at least one of the queried components is present (in case they were all optional)
 		for (const ComponentInfo& current_component_info : m_component_info)
 		{
 			if (current_component_info.pool != nullptr)
 			{
-				void* component_ptr = current_component_info.pool->get_component(entity);
-				if ((current_component_info.required == true) && (component_ptr == nullptr))
+				const bool has_component = current_component_info.pool->has_component(entity);
+				if ((current_component_info.required == true) && (has_component == false))
 				{
 					// Required component not present
 					return false;
 				}
-				*component_it = component_ptr;
+				has_any |= has_component;
 			}
-			else
-			{
-				*component_it = nullptr;
-			}
-			++component_it;
 		}
 
-		return true;
+		return has_any;
 	}
 }

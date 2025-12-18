@@ -78,11 +78,10 @@ namespace VadonDemo::View
 
 		for (auto view_it = view_query.get_iterator(); view_it.is_valid() == true; view_it.next())
 		{
-			auto view_tuple = view_it.get_tuple();
-			RenderComponent& view_render_component = std::get<RenderComponent&>(view_tuple);
+			auto view_render_component = view_it.get_component<RenderComponent>();
 
 			// Make sure the resource is up-to-date
-			init_resource(view_render_component.resource);
+			init_resource(view_render_component->resource);
 
 			// Attempt to redraw based on resource type
 			common_view.update_entity_draw_data(ecs_world, view_it.get_entity());
@@ -100,12 +99,10 @@ namespace VadonDemo::View
 		auto player_it = player_query.get_iterator();
 		if (player_it.is_valid() == true)
 		{
-			auto player_components = player_it.get_tuple();
-
-			const VadonDemo::View::TransformComponent& player_view_transform = std::get<VadonDemo::View::TransformComponent&>(player_components);
+			const auto player_view_transform = player_it.get_component<VadonDemo::View::TransformComponent>();
 			Vadon::Render::Canvas::RenderContext& canvas_context = m_game_core.get_render_system().get_canvas_context();
 
-			canvas_context.camera.view_rectangle.position = player_view_transform.position;
+			canvas_context.camera.view_rectangle.position = player_view_transform->position;
 		}
 	}
 
@@ -114,8 +111,8 @@ namespace VadonDemo::View
 	{
 		Vadon::ECS::World& ecs_world = m_game_core.get_ecs_world();
 		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
-		VadonDemo::View::RenderComponent* view_render_component = component_manager.get_component<VadonDemo::View::RenderComponent>(entity);
-		if (view_render_component == nullptr)
+		auto view_render_component = component_manager.get_component<VadonDemo::View::RenderComponent>(entity);
+		if (view_render_component.is_valid() == false)
 		{
 			return;
 		}
@@ -136,11 +133,9 @@ namespace VadonDemo::View
 		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
 
 		// Check if any projectiles with VFX have expired		
-		auto projectile_tuple = component_manager.get_component_tuple<Model::ProjectileComponent, VFXComponent>(entity);
-
-		const Model::ProjectileComponent* projectile_component = std::get<Model::ProjectileComponent*>(projectile_tuple);
-		const VFXComponent* projectile_vfx = std::get<VFXComponent*>(projectile_tuple);
-		if ((projectile_component == nullptr) || (projectile_vfx == nullptr))
+		const auto projectile_component = component_manager.get_component<Model::ProjectileComponent>(entity);
+		const auto projectile_vfx = component_manager.get_component<VFXComponent>(entity);
+		if ((projectile_component.is_valid() == false) || (projectile_vfx.is_valid() == false))
 		{
 			return;
 		}
@@ -165,23 +160,22 @@ namespace VadonDemo::View
 
 		if (projectile_vfx->lifetime > 0.0f)
 		{
-			VFXTimerComponent& timer_component = component_manager.add_component<VFXTimerComponent>(vfx_entity);
-			timer_component.remaining_lifetime = projectile_vfx->lifetime;
+			auto timer_component = component_manager.add_component<VFXTimerComponent>(vfx_entity);
+			timer_component->remaining_lifetime = projectile_vfx->lifetime;
 		}
 
-		auto vfx_component_tuple = component_manager.get_component_tuple<TransformComponent, AnimationComponent>(vfx_entity);
-		TransformComponent* vfx_view_transform = std::get<TransformComponent*>(vfx_component_tuple);
-		if (vfx_view_transform != nullptr)
+		auto vfx_view_transform = component_manager.add_component<TransformComponent>(vfx_entity);
+		if (vfx_view_transform.is_valid() == true)
 		{
-			const Model::Transform2D* projectile_transform = component_manager.get_component<Model::Transform2D>(entity);
-			if (projectile_transform != nullptr)
+			const auto projectile_transform = component_manager.get_component<Model::Transform2D>(entity);
+			if (projectile_transform.is_valid() == true)
 			{
 				vfx_view_transform->position = projectile_transform->position;
 			}
 		}
 
-		AnimationComponent* vfx_anim_component = std::get<AnimationComponent*>(vfx_component_tuple);
-		if (vfx_anim_component != nullptr)
+		auto vfx_anim_component = component_manager.add_component<AnimationComponent>(vfx_entity);
+		if (vfx_anim_component.is_valid() == true)
 		{
 			if (projectile_vfx->animation.is_valid() == true)
 			{

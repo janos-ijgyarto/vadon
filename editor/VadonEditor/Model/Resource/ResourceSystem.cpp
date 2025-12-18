@@ -415,10 +415,52 @@ namespace VadonEditor::Model
 		return get_resource(resource_system.get_resource_info(resource_handle).id);
 	}
 
-	void ResourceSystem::remove_resource(Resource* /*resource*/)
+	void ResourceSystem::remove_resource(Resource* resource)
 	{
-		// TODO: implement refcounting or some other system to track when a resource should be unloaded/removed!
-		// TODO2: remove from engine resource system!
+		// TODO: use some kind of reference tracking to make sure we unset all references to this resource!
+
+		// Remove from owner
+		if (resource->is_embedded() == true)
+		{
+			for (size_t embedded_resource_index = 0; embedded_resource_index < resource->m_owner->m_embedded_resources.size(); ++embedded_resource_index)
+			{
+				if (resource->m_owner->m_embedded_resources[embedded_resource_index] == resource)
+				{
+					resource->m_owner->m_embedded_resources.erase(resource->m_owner->m_embedded_resources.begin() + embedded_resource_index);
+					break;
+				}
+			}
+		}
+
+		// Remove embedded resources
+		for (Resource* embedded_resource : resource->m_embedded_resources)
+		{
+			// Invalidate the handles of embedded resources (they will be recursively cleaned up by the engine resource system)
+			embedded_resource->m_owner = nullptr;
+			embedded_resource->m_handle.invalidate();
+
+			// Remove the editor object
+			remove_resource(embedded_resource);
+		}
+
+		// Remove the engine resource as well (unless we are already being cleaned up by owner)
+		if (resource->m_handle.is_valid() == true)
+		{
+			Vadon::Core::EngineCoreInterface& engine_core = m_editor.get_engine_core();
+			Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
+
+			if (resource->is_embedded() == true)
+			{
+				// Need to remove as an embedded resource
+				resource_system.remove_embedded_resource(resource->m_owner->m_handle, resource->m_handle);
+			}
+			else
+			{
+				resource_system.remove_resource(resource->m_handle);
+			}
+		}
+		
+		m_resource_lookup.erase(resource->get_id());
 	}
 
 	void ResourceSystem::register_edit_callback(EditCallback callback)

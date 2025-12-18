@@ -1,4 +1,4 @@
-set(VADON_SHADER_COMPILER "VadonShaderCompiler")
+set(VADON_SHADER_COMPILER "ShaderCompiler")
 
 project(${VADON_SHADER_COMPILER}
         VERSION 0.0.1
@@ -9,8 +9,12 @@ project(${VADON_SHADER_COMPILER}
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
 
 add_executable(${VADON_SHADER_COMPILER} main.cpp)
+target_link_libraries(${VADON_SHADER_COMPILER} PRIVATE VadonBuildOptions)
 
-target_compile_features(${VADON_SHADER_COMPILER} PRIVATE cxx_std_20)
+set_target_properties(${VADONEDITOR_APPLICATION}
+    PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin"
+)
 
 # Link to relevant libraries based on platform
 if(WIN32)
@@ -26,15 +30,9 @@ if(UNIX AND NOT APPLE)
 	# TODO: set up OpenGL/Vulkan for Linux!
 endif()
 
-if(MSVC)
-  target_compile_options(${VADON_SHADER_COMPILER} PRIVATE /W4 /WX)
-else()
-  target_compile_options(${VADON_SHADER_COMPILER} PRIVATE -Wall -Wextra -Wpedantic -Werror)
-endif()
-
 if(VADON_TOOLS_EXPORT)
 	export(TARGETS ${VADON_SHADER_COMPILER}
-		   NAMESPACE VadonTools::
-		   FILE "${VADON_TOOLS_EXPORT_FILE_DIR}/${VADON_SHADER_COMPILER}.cmake"
+		FILE "${VADON_TOOLS_EXPORT_FILE_DIR}/ShaderCompiler.cmake"
+		NAMESPACE VadonTools::
 	)
 endif()

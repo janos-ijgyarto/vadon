@@ -1,6 +1,6 @@
 #ifndef VADONDEMO_MODEL_WEAPON_SYSTEM_HPP
 #define VADONDEMO_MODEL_WEAPON_SYSTEM_HPP
-#include <Vadon/ECS/Entity/Entity.hpp>
+#include <Vadon/ECS/Component/Component.hpp>
 namespace Vadon::ECS
 {
 	class World;
@@ -27,11 +27,13 @@ namespace VadonDemo::Model
 		void update_weapons(Vadon::ECS::World& ecs_world, float delta_time);
 		void update_projectiles(Vadon::ECS::World& ecs_world, float delta_time);
 
-		void create_projectile(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle weapon_entity, const WeaponDefinition* weapon_definition);
+		void create_projectile(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle weapon_entity, const WeaponDefinition* weapon_definition, float time_offset);
 
-		bool validate_weapon(const Player& player, const WeaponComponent& weapon_component);
+		bool validate_weapon(const Vadon::ECS::TypedComponentHandle<Player>& player, const WeaponComponent& weapon_component);
 
 		static void projectile_collision_callback(Core::Core& core, Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle player, Vadon::ECS::EntityHandle collider);
+
+		void projectile_player_contact(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle player, Vadon::ECS::EntityHandle collider);
 
 		Core::Core& m_core;
 

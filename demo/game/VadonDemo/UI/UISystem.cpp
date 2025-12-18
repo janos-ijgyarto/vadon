@@ -43,7 +43,7 @@ namespace VadonDemo::UI
 			m_console_window.open = true;
 			m_console_window.flags = VadonApp::UI::Developer::WindowFlags::ENABLE_CLOSE;
 
-			m_log_child_window.id = "##log";
+			m_log_child_window.string_id = "##log";
 			m_log_child_window.flags |= VadonApp::UI::Developer::WindowFlags::HORIZONTAL_SCROLLBAR;
 
 			m_input.label = "Input";
@@ -375,10 +375,9 @@ namespace VadonDemo::UI
 
 		for (auto base_it = base_ui_query.get_iterator(); base_it.is_valid() == true; base_it.next())
 		{
-			auto base_tuple = base_it.get_tuple();
-			Base& current_base_component = std::get<Base&>(base_tuple);
+			auto current_base_component = base_it.get_component<Base>();
 
-			if (current_base_component.dirty == false)
+			if (current_base_component->dirty == false)
 			{
 				continue;
 			}
@@ -387,7 +386,7 @@ namespace VadonDemo::UI
 			common_ui.update_ui_element(ecs_world, base_it.get_entity());
 
 			// Unset the flag
-			current_base_component.dirty = false;
+			current_base_component->dirty = false;
 		}
 	}
 
@@ -414,8 +413,8 @@ namespace VadonDemo::UI
 		Vadon::ECS::World& ecs_world = m_game_core.get_ecs_world();
 
 		// Make sure we at least have a base UI component!
-		Base* base_component = ecs_world.get_component_manager().get_component<Base>(entity);
-		if (base_component == nullptr)
+		auto base_component = ecs_world.get_component_manager().get_component<Base>(entity);
+		if (base_component.is_valid() == false)
 		{
 			return;
 		}
@@ -428,8 +427,8 @@ namespace VadonDemo::UI
 	{
 		Vadon::ECS::World& ecs_world = m_game_core.get_ecs_world();
 		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
-		VadonDemo::UI::Base* base_component = component_manager.get_component<VadonDemo::UI::Base>(entity);
-		if (base_component == nullptr)
+		auto base_component = component_manager.get_component<VadonDemo::UI::Base>(entity);
+		if (base_component.is_valid() == false)
 		{
 			return;
 		}
@@ -447,8 +446,7 @@ namespace VadonDemo::UI
 		// Dispatch events (to ensure we clean up used resources)
 		m_game_core.get_core().entity_removed(ecs_world, m_main_menu_entity);
 
-		ecs_world.get_entity_manager().remove_entity(m_main_menu_entity);
-		ecs_world.remove_pending_entities();
+		ecs_world.remove_entity(m_main_menu_entity);
 		m_main_menu_entity.invalidate();
 
 		// Load default level

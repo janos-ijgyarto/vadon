@@ -31,7 +31,7 @@ namespace
 			m_console_window.title = "Editor Console";
 			m_console_window.open = true;
 
-			m_log_child_window.id = "##log";
+			m_log_child_window.string_id = "##log";
 			m_log_child_window.flags |= VadonApp::UI::Developer::WindowFlags::HORIZONTAL_SCROLLBAR;
 
 			m_input.label = "Input";

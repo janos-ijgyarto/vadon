@@ -7,18 +7,29 @@ namespace Vadon::ECS
 
 	World::~World() = default;
 
-	void World::remove_pending_entities()
+	void World::remove_entity(EntityHandle entity)
 	{
-		if (m_entity_manager.m_pending_remove_list.empty() == true)
+		// Remove root from its parent so it's not affected
 		{
-			return;
+			EntityHandle parent_entity = m_entity_manager.get_entity_parent(entity);
+			if (parent_entity.is_valid() == true)
+			{
+				m_entity_manager.remove_child_entity(parent_entity, entity);
+			}
 		}
 
-		// Remove all the components
-		m_component_manager.remove_entity_batch(m_entity_manager.m_pending_remove_list);
+		const EntityList entity_subtree = m_entity_manager.get_children(entity, true);
 
-		// Remove from entity manager
-		m_entity_manager.remove_pending_entities();
+		// Remove all the components
+		m_component_manager.remove_entity_batch(entity_subtree);
+		m_component_manager.remove_entity(entity);
+
+		// Remove all from entity manager (no need to manage parent-child connections)
+		for (EntityHandle current_entity : entity_subtree)
+		{
+			m_entity_manager.internal_remove_entity(current_entity);
+		}
+		m_entity_manager.internal_remove_entity(entity);
 	}
 
 	void World::clear()

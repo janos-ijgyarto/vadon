@@ -1,6 +1,9 @@
 #include <VadonEditor/View/Scene/ECS/Component.hpp>
 
+#include <VadonEditor/Model/Resource/Resource.hpp>
+
 #include <VadonEditor/Model/Scene/Entity.hpp>
+#include <VadonEditor/Model/Scene/Scene.hpp>
 
 namespace VadonEditor::View
 {
@@ -67,9 +70,13 @@ namespace VadonEditor::View
 		const VadonEditor::Model::Component component_data = entity.get_component_data(m_type_id);
 		m_name = component_data.name;
 
+		PropertyEditorInfo property_editor_info;
+		property_editor_info.read_only = false;
+		property_editor_info.owner = entity.get_owning_scene()->get_scene_resource(); // Use the owning scene as the owner for any embedded resources
+
 		for (const Vadon::Utilities::Property& current_property : component_data.properties)
 		{
-			m_property_editors.emplace_back(PropertyEditor::create_property_editor(editor, current_property));
+			m_property_editors.emplace_back(PropertyEditor::create_property_editor(editor, current_property, property_editor_info));
 		}
 	}
 

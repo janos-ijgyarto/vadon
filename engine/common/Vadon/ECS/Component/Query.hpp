@@ -5,12 +5,7 @@
 #include <algorithm>
 namespace Vadon::ECS
 {
-	using ComponentSpan = std::span<void*>;
-
 	using ComponentIDSpan = std::span<const ComponentID>;
-
-	template<typename ...Components>
-	using ComponentTuple = std::tuple<Components...>;
 
 	template<typename ...Components>
 	using ComponentIDArray = std::array<ComponentID, sizeof...(Components)>;
@@ -71,25 +66,27 @@ namespace Vadon::ECS
 			VADONCOMMON_API bool is_valid() const;
 			VADONCOMMON_API EntityHandle get_entity() const;
 			VADONCOMMON_API void next();
-			// NOTE: this is necessary because the current references can become invalid if the ECS is modified during iteration
-			// The iterator itself is still valid
-			VADONCOMMON_API void refresh();
 		protected:
-			VADONCOMMON_API IteratorBase(ComponentQueryBase& query, ComponentSpan components);
+			VADONCOMMON_API IteratorBase(ComponentQueryBase& query);
 			void advance();
 
-			template<typename T> static DecayedComponentType<T>* as_component(void* component_pointer) { return static_cast<DecayedComponentType<T>*>(component_pointer); }
+			ComponentManager& get_manager() const { return m_query.m_manager; }
+
+			EntityList& get_entity_list() { return m_query.m_entities; }
+			const EntityList& get_entity_list() const { return m_query.m_entities; }
 
 			ComponentQueryBase& m_query;
 			size_t m_offset;
-			ComponentSpan m_components;
 		};
 
-		ComponentQueryBase() = default;
+		ComponentQueryBase(ComponentManager& manager)
+			: m_manager(manager)
+		{ }
 
 		VADONCOMMON_API void initialize(std::span<ComponentInfo> component_info);
-		bool get_components(size_t index, ComponentSpan components);
+		bool check_components(size_t index);
 
+		ComponentManager& m_manager;
 		EntityList m_entities;
 		std::span<ComponentInfo> m_component_info;
 	};
@@ -99,43 +96,26 @@ namespace Vadon::ECS
 	{
 	public:
 		using _Query = ComponentQuery<Components...>;
-		using Tuple = ComponentTuple<Components...>;
 
 		class Iterator : public ComponentQueryBase::IteratorBase
 		{
-		public:
-			ComponentTuple<Components...> get_tuple() { return internal_get_tuple(); }
 		private:
-			using ComponentPointerArray = std::array<void*, sizeof...(Components)>;
-
-			Iterator(_Query& query)
-				: ComponentQueryBase::IteratorBase(query, m_component_array)
-			{
-
-			}
-
-			ComponentTuple<Components...> internal_get_tuple()
-			{
-				// Use fold expression to iterate through our iterator array and assemble the tuple
-				auto component_it = m_component_array.begin();
-				return { get_tuple_element<Components>(component_it++) ... };
-			}
-
 			template<typename T>
-			T get_tuple_element(typename ComponentPointerArray::iterator&& array_it)
+			static constexpr bool contains_type() 
 			{
-				auto* element_ptr = as_component<T>(*array_it);
-				if constexpr (std::is_pointer_v<T>)
-				{
-					return element_ptr;
-				}
-				else
-				{
-					return *element_ptr;
-				}
+				return (std::is_same_v<T, DecayedComponentType<Components>> || ...);
 			}
-
-			ComponentPointerArray m_component_array;
+		public:
+			template<typename T>
+			TypedComponentHandle<T> get_component() const
+			{
+				static_assert(contains_type<T>() == true, "Type not in query!");
+				return get_manager().get_component<T>(get_entity_list()[m_offset]);
+			}
+		private:
+			Iterator(_Query& query) : ComponentQueryBase::IteratorBase(query)
+			{
+			}
 
 			friend _Query;
 		};
@@ -145,14 +125,15 @@ namespace Vadon::ECS
 	private:
 		using ComponentInfoArray = std::array<ComponentInfo, sizeof...(Components)>;
 
-		ComponentQuery(ComponentInfoArray component_info)
-			: m_component_info_array(component_info)
+		ComponentQuery(ComponentManager& manager, ComponentInfoArray component_info)
+			: ComponentQueryBase(manager)
+			, m_component_info_array(component_info)
 		{		
 			initialize(m_component_info_array);
 		}
 
 		ComponentInfoArray m_component_info_array;
-		friend class ComponentManager;
+		friend ComponentManager;
 	};
 
 }

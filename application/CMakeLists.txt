@@ -23,9 +23,7 @@ elseif(UNIX AND NOT APPLE)
 endif()
 
 # Add common build options
-target_link_libraries(${VADONAPP_CURRENT_TARGET} PRIVATE $<BUILD_INTERFACE:VadonBuildOptions>)
-
-include(${VADON_TOOLS_EXPORT_FILE_DIR}/VadonShaderCompiler.cmake)
+target_link_libraries(${VADONAPP_CURRENT_TARGET} PRIVATE VadonBuildOptions)
 
 # Set SDL as default platform interface
 if(NOT DEFINED VADON_PLATFORM_INTERFACE)
@@ -35,7 +33,8 @@ endif()
 set(VADONAPP_SHADERS_TARGET "VadonAppShaders")
 add_custom_target(${VADONAPP_SHADERS_TARGET})
 
-add_dependencies(${VADONAPP_SHADERS_TARGET} "VadonToolsBuild")
+include(${VADON_TOOLS_EXPORT_FILE_DIR}/ShaderCompiler.cmake)
+add_dependencies(${VADONAPP_SHADERS_TARGET} VadonToolsBuild)
 set_target_properties(${VADONAPP_SHADERS_TARGET} PROPERTIES FOLDER "${VADON_PARENT_FOLDER}${PROJECT_NAME}/Codegen")
 
 add_dependencies(${VADONAPP_CURRENT_TARGET} ${VADONAPP_SHADERS_TARGET})
@@ -67,3 +66,8 @@ if(WIN32)
 endif()
 
 set_target_properties(${VADONAPP_CURRENT_TARGET} PROPERTIES FOLDER "${VADON_PARENT_FOLDER}${PROJECT_NAME}")
+
+set_target_properties(${VADONAPP_CURRENT_TARGET}
+    PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+)

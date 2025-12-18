@@ -1,50 +1,19 @@
 #ifndef VADON_PRIVATE_RENDER_CANVAS_ITEM_HPP
 #define VADON_PRIVATE_RENDER_CANVAS_ITEM_HPP
 #include <Vadon/Render/Canvas/Item.hpp>
-#include <Vadon/Private/Render/Canvas/Batch.hpp>
+#include <Vadon/Private/Render/Canvas/CommandBuffer.hpp>
+#include <Vadon/Private/Render/Canvas/Material.hpp>
 namespace Vadon::Private::Render::Canvas
 {
 	using ItemInfo = Vadon::Render::Canvas::ItemInfo;
 	using ItemHandle = Vadon::Render::Canvas::ItemHandle;
 
-	enum class ItemCommandType
-	{
-		DRAW_BATCH,
-		DRAW_DIRECT,
-		SET_TEXTURE,
-		SET_MATERIAL,
-		SET_RENDER_STATE
-	};
-
-	using ItemCommandBuffer = Vadon::Utilities::PacketQueue;
-
-	template<typename T, BatchCommandType BATCH_COMMAND>
-	struct ItemDirectDrawCommand
-	{
-		ItemDirectDrawCommand(const T& data = T{})
-			: batch_type(Vadon::Utilities::to_integral(BATCH_COMMAND))
-			, command_data(data)
-		{}
-
-		uint32_t batch_type;
-		T command_data;
-	};
-
-	struct ItemSetTextureCommand
-	{
-		Texture texture;
-	};
-
-	struct ItemSetMaterialCommand
-	{
-		MaterialHandle material;
-	};
-
 	struct ItemData
 	{
 		ItemInfo info;
+		MaterialOverride material_override;
 		bool visible = true;
-		ItemCommandBuffer command_buffer;
+		CommandBuffer command_buffer;
 	};
 }
 #endif

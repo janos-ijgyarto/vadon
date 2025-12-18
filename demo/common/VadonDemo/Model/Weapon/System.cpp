@@ -2,6 +2,7 @@
 
 #include <VadonDemo/Core/Core.hpp>
 #include <VadonDemo/Model/Component.hpp>
+#include <VadonDemo/Model/Enemy/Component.hpp>
 #include <VadonDemo/Model/Weapon/Component.hpp>
 
 #include <Vadon/ECS/World/World.hpp>
@@ -10,6 +11,8 @@
 #include <Vadon/Scene/Resource/ResourceSystem.hpp>
 #include <Vadon/Scene/SceneSystem.hpp>
 
+#include <Vadon/Math/Vector/Rotate.hpp>
+
 namespace
 {
 	float angle_between_vectors(const Vadon::Math::Vector2& vec_a, const Vadon::Math::Vector2& vec_b)
@@ -17,15 +20,6 @@ namespace
 		const float dot = Vadon::Math::Vector::dot(vec_a, vec_b);
 		const float det = vec_a.x * vec_b.y - vec_a.y * vec_b.x;
 		return std::atan2f(det, dot);
-	}
-
-	Vadon::Math::Vector2 rotate_2d_vector(const Vadon::Math::Vector2& vector, float angle)
-	{
-
-		const float sin_angle = std::sinf(angle);
-		const float cos_angle = std::cosf(angle);
-
-		return Vadon::Math::Vector2(cos_angle * vector.x - sin_angle * vector.y, sin_angle * vector.x + cos_angle * vector.y);
 	}
 }
 
@@ -42,6 +36,7 @@ namespace VadonDemo::Model
 		WeaponDefinition::register_resource();
 
 		WeaponComponent::register_component();
+		WeaponVolleyComponent::register_component();
 
 		ProjectileComponent::register_component();
 		ProjectileHomingComponent::register_component();
@@ -61,29 +56,52 @@ namespace VadonDemo::Model
 		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
 		Vadon::Core::EngineCoreInterface& engine_core = m_core.get_engine_core();
 
-		auto weapon_query = component_manager.run_component_query<WeaponComponent&>();
+		auto weapon_query = component_manager.run_component_query<WeaponComponent&, WeaponVolleyComponent*>();
 		for (auto weapon_it = weapon_query.get_iterator(); weapon_it.is_valid() == true; weapon_it.next())
 		{
-			auto weapon_tuple = weapon_it.get_tuple();
-			WeaponComponent& current_weapon = std::get<WeaponComponent&>(weapon_tuple);
+			auto current_weapon = weapon_it.get_component<WeaponComponent>();
+			auto volley_component = weapon_it.get_component<WeaponVolleyComponent>();
 
-			if (current_weapon.firing_timer > 0.0f)
+			if (current_weapon->firing_timer > 0.0f)
 			{
-				current_weapon.firing_timer -= delta_time;
+				current_weapon->firing_timer -= delta_time;
 			}
 
-			if (current_weapon.firing_timer <= 0.0f)
+			if (current_weapon->firing_timer <= 0.0f)
 			{
+				if (volley_component.is_valid() == true)
+				{
+					if (volley_component->fire_count == 0)
+					{
+						continue;
+					}
+				}
+
 				// Reset firing timer
 				Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
 
-				const WeaponDefHandle weapon_def_handle = resource_system.load_resource(current_weapon.definition);
+				const WeaponDefHandle weapon_def_handle = resource_system.load_resource(current_weapon->definition);
 				const WeaponDefinition* weapon_def = resource_system.get_resource(weapon_def_handle);
-				current_weapon.firing_timer += 60.0f / std::max(weapon_def->rate_of_fire, 0.001f);
+				const float timer_reset_value = 60.0f / std::max(weapon_def->rate_of_fire, 0.001f);
 
-				// IMPORTANT: this step will modify component containers
-				// Must refresh the iterator to avoid problems after this point
-				create_projectile(ecs_world, weapon_it.get_entity(), weapon_def);
+				while (current_weapon->firing_timer <= 0.0f)
+				{
+					const float time_offset = std::abs(current_weapon->firing_timer);
+					current_weapon->firing_timer += timer_reset_value;
+
+					// IMPORTANT: this step will modify component containers
+					// Must refresh the iterator to avoid problems after this point
+					create_projectile(ecs_world, weapon_it.get_entity(), weapon_def, time_offset);
+
+					if (volley_component.is_valid() == true)
+					{
+						volley_component->fire_count -= 1;
+						if (volley_component->fire_count == 0)
+						{
+							break;
+						}
+					}
+				}
 			}
 		}
 	}
@@ -111,15 +129,13 @@ namespace VadonDemo::Model
 			auto projectile_query = component_manager.run_component_query<ProjectileComponent&, ProjectileHomingComponent*, ProjectileAOEComponent*, ProjectileExplosionTag*>();
 			for (auto projectile_it = projectile_query.get_iterator(); projectile_it.is_valid() == true; projectile_it.next())
 			{
-				auto projectile_tuple = projectile_it.get_tuple();
-
-				const ProjectileExplosionTag* current_explosion = std::get<ProjectileExplosionTag*>(projectile_tuple);
-				if (current_explosion != nullptr)
+				const auto current_explosion = projectile_it.get_component<ProjectileExplosionTag>();
+				if (current_explosion.is_valid() == true)
 				{
 					continue;
 				}
 
-				ProjectileComponent* current_projectile = &std::get<ProjectileComponent&>(projectile_tuple);
+				auto current_projectile = projectile_it.get_component<ProjectileComponent>();
 				current_projectile->remaining_lifetime -= delta_time;
 
 				if (current_projectile->remaining_lifetime <= 0.0f)
@@ -129,8 +145,8 @@ namespace VadonDemo::Model
 					component_manager.set_entity_tag<DestroyEntityTag>(projectile_it.get_entity(), true);
 
 					// If projectile has AOE, spawn an explosion
-					const ProjectileAOEComponent* aoe_component = std::get<ProjectileAOEComponent*>(projectile_tuple);
-					if (aoe_component != nullptr)
+					const auto aoe_component = projectile_it.get_component<ProjectileAOEComponent>();
+					if (aoe_component.is_valid() == true)
 					{
 						// FIXME: this is all really janky
 						// Need a better system to ensure that adding/removing Entities or Components
@@ -138,29 +154,25 @@ namespace VadonDemo::Model
 						Vadon::ECS::EntityHandle explosion_entity = entity_manager.create_entity();
 
 						{
-							Transform2D& explosion_transform = component_manager.add_component<Transform2D>(explosion_entity);
+							auto explosion_transform = component_manager.add_component<Transform2D>(explosion_entity);
 
-							Transform2D* original_transform = component_manager.get_component<Transform2D>(projectile_it.get_entity());
-							if (original_transform != nullptr)
+							const auto original_transform = component_manager.get_component<Transform2D>(projectile_it.get_entity());
+							if (original_transform.is_valid() == true)
 							{
-								explosion_transform = *original_transform;
+								*explosion_transform = *original_transform;
 							}
-							VADON_ASSERT(explosion_transform.scale > 0.0f, "Something is wrong!");
+							VADON_ASSERT(explosion_transform->scale > 0.0f, "Something is wrong!");
 						}
 						{
-							ProjectileComponent& explosion_projectile = component_manager.add_component<ProjectileComponent>(explosion_entity);
+							auto explosion_projectile = component_manager.add_component<ProjectileComponent>(explosion_entity);
 
-							// FIXME: need to do this because the iterator gets invalidated!
-							projectile_it.refresh();
-							current_projectile = &std::get<ProjectileComponent&>(projectile_it.get_tuple());
-
-							explosion_projectile.damage = current_projectile->damage;
-							explosion_projectile.knockback = current_projectile->knockback;
+							explosion_projectile->damage = current_projectile->damage;
+							explosion_projectile->knockback = current_projectile->knockback;
 							// TODO: copy any other stats?
 						}
 						{
-							Collision& explosion_collision = component_manager.add_component<Collision>(explosion_entity);
-							explosion_collision.radius = aoe_component->radius;
+							auto explosion_collision = component_manager.add_component<Collision>(explosion_entity);
+							explosion_collision->radius = aoe_component->radius;
 						}
 
 						// Set the explosion tag
@@ -179,8 +191,8 @@ namespace VadonDemo::Model
 					continue;
 				}
 
-				ProjectileHomingComponent* homing_component = std::get<ProjectileHomingComponent*>(projectile_tuple);
-				if (homing_component != nullptr)
+				auto homing_component = projectile_it.get_component<ProjectileHomingComponent>();
+				if (homing_component.is_valid() == true)
 				{
 					// Make sure target is still valid
 					if (homing_component->target_entity.is_valid() == true)
@@ -193,11 +205,11 @@ namespace VadonDemo::Model
 
 					if (homing_component->target_entity.is_valid() == true)
 					{
-						const Transform2D* target_transform = component_manager.get_component<Transform2D>(homing_component->target_entity);
-						if (target_transform != nullptr)
+						const auto target_transform = component_manager.get_component<Transform2D>(homing_component->target_entity);
+						if (target_transform.is_valid() == true)
 						{
-							const Transform2D* projectile_transform = component_manager.get_component<Transform2D>(projectile_it.get_entity());
-							Velocity2D* projectile_velocity = component_manager.get_component<Velocity2D>(projectile_it.get_entity());
+							const auto projectile_transform = component_manager.get_component<Transform2D>(projectile_it.get_entity());
+							auto projectile_velocity = component_manager.get_component<Velocity2D>(projectile_it.get_entity());
 
 							const Vadon::Math::Vector2 direction = Vadon::Math::Vector::normalize(target_transform->position - projectile_transform->position);
 							const Vadon::Math::Vector2 current_dir = Vadon::Math::Vector::normalize(projectile_velocity->velocity);
@@ -211,7 +223,7 @@ namespace VadonDemo::Model
 								angle_change = angle_diff;
 							}
 
-							projectile_velocity->velocity = rotate_2d_vector(current_dir, angle_change) * projectile_velocity->top_speed;
+							projectile_velocity->velocity = Vadon::Math::Vector::rotate(current_dir, angle_change) * projectile_velocity->top_speed;
 						}
 					}
 				}
@@ -219,7 +231,7 @@ namespace VadonDemo::Model
 		}
 	}
 
-	void WeaponSystem::create_projectile(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle weapon_entity, const WeaponDefinition* weapon_def)
+	void WeaponSystem::create_projectile(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle weapon_entity, const WeaponDefinition* weapon_def, float time_offset)
 	{
 		Vadon::Core::EngineCoreInterface& engine_core = m_core.get_engine_core();
 		Vadon::Scene::SceneSystem& scene_system = engine_core.get_system<Vadon::Scene::SceneSystem>();
@@ -236,77 +248,103 @@ namespace VadonDemo::Model
 
 		// Get the weapon that fired the projectile
 		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
-		auto weapon_tuple = component_manager.get_component_tuple<Transform2D, WeaponComponent>(weapon_entity);
-
-		auto projectile_tuple = component_manager.get_component_tuple<Transform2D, Velocity2D, ProjectileComponent>(spawned_projectile);
 
 		// Set the initial position
-		Transform2D* weapon_transform = std::get<Transform2D*>(weapon_tuple);
-		Transform2D* projectile_transform = std::get<Transform2D*>(projectile_tuple);
+		auto weapon_transform = component_manager.get_component<Transform2D>(weapon_entity);
+		auto projectile_transform = component_manager.get_component<Transform2D>(spawned_projectile);
 
-		VADON_ASSERT((weapon_transform != nullptr) && (projectile_transform != nullptr), "Invalid component setup!");
+		VADON_ASSERT((weapon_transform.is_valid() == true) && (projectile_transform.is_valid() == true), "Invalid component setup!");
 		projectile_transform->position = weapon_transform->position;
 
 		// Set velocity and lifetime
-		Velocity2D* projectile_velocity = std::get<Velocity2D*>(projectile_tuple);
-		ProjectileComponent* projectile_component = std::get<ProjectileComponent*>(projectile_tuple);
+		auto projectile_velocity = component_manager.get_component<Velocity2D>(spawned_projectile);
+		auto projectile_component = component_manager.get_component<ProjectileComponent>(spawned_projectile);
 
-		projectile_component->remaining_lifetime = projectile_component->range / projectile_velocity->top_speed;
+		projectile_component->remaining_lifetime = (projectile_component->range / projectile_velocity->top_speed) - time_offset;
 
-		Vadon::Math::Vector2 initial_direction = Vadon::Math::Vector2_One;
+		auto player_component = component_manager.get_component<Player>(weapon_entity);
+		auto enemy_component = component_manager.get_component<EnemyBase>(weapon_entity);
+		auto homing_component = component_manager.get_component<ProjectileHomingComponent>(spawned_projectile);
 
-		ProjectileHomingComponent* homing_component = component_manager.get_component<ProjectileHomingComponent>(spawned_projectile);
-		if (homing_component != nullptr)
+		// Find best target (logic depends on who is firing)
+		Vadon::ECS::EntityHandle selected_target;
+
+		if (player_component.is_valid() == true && homing_component.is_valid() == true)
 		{
-			// Find nearest target
-			// TODO: change which targets we look for depending on who is firing the weapon
-			Vadon::ECS::EntityHandle selected_target;
 			float min_distance = std::numeric_limits<float>::max();
-			auto enemy_query = component_manager.run_component_query<Enemy&, Transform2D&>();
+			auto enemy_query = component_manager.run_component_query<EnemyBase&, Transform2D&>();
 			for (auto enemy_it = enemy_query.get_iterator(); enemy_it.is_valid() == true; enemy_it.next())
 			{
-				auto enemy_tuple = enemy_it.get_tuple();
-				const Transform2D& enemy_transform = std::get<Transform2D&>(enemy_tuple);
+				const auto enemy_transform = enemy_it.get_component<Transform2D>();
 
-				const float distance_sq = Vadon::Math::Vector::distance_squared(weapon_transform->position, enemy_transform.position);
+				const float distance_sq = Vadon::Math::Vector::distance_squared(weapon_transform->position, enemy_transform->position);
 				if (distance_sq < min_distance)
 				{
 					selected_target = enemy_it.get_entity();
 					min_distance = distance_sq;
 				}
 			}
+		}
+		else if (enemy_component.is_valid() == true)
+		{
+			projectile_component->enemy = true;
 
-			homing_component->target_entity = selected_target;
-			if ((homing_component->aimed_on_launch == true) && (selected_target.is_valid() == true))
+			auto player_query = component_manager.run_component_query<Player&, Velocity2D*, WeaponComponent*>();
+			for (auto player_it = player_query.get_iterator(); player_it.is_valid() == true; player_it.next())
 			{
-				const Transform2D* target_transform = component_manager.get_component<Transform2D>(homing_component->target_entity);
-				initial_direction = Vadon::Math::Vector::normalize(target_transform->position - projectile_transform->position);
-			}
-			else if (const Player* player_component = component_manager.get_component<Player>(weapon_entity))
-			{
-				// Choose the last direction the player moved in
-				initial_direction = player_component->last_move_dir;
+				if (selected_target.is_valid() == false)
+				{
+					selected_target = player_it.get_entity();
+					break;
+				}
 			}
 		}
-		else
+
+		Vadon::Math::Vector2 target_direction = Vadon::Math::Vector2_One;
+		if (selected_target.is_valid() == true)
 		{
-			if (const Player* player_component = component_manager.get_component<Player>(weapon_entity))
+			const auto target_transform = component_manager.get_component<Transform2D>(selected_target);
+			if (target_transform.is_valid() == true)
 			{
-				// Choose the last direction the player moved in
-				initial_direction = player_component->last_move_dir;
+				target_direction = Vadon::Math::Vector::normalize(target_transform->position - projectile_transform->position);
+			}
+		}
+
+		Vadon::Math::Vector2 projectile_direction = Vadon::Math::Vector2_One;
+		if (player_component.is_valid() == true)
+		{
+			// Choose the last direction the player moved in
+			projectile_direction = player_component->last_move_dir;
+		}
+		else if (enemy_component.is_valid() == true)
+		{
+			// Enemies aim for the player
+			projectile_direction = target_direction;
+		}
+
+		// Homing logic can override target
+		if (homing_component.is_valid() == true)
+		{
+			homing_component->target_entity = selected_target;
+			if (homing_component->aimed_on_launch == true)
+			{
+				projectile_direction = target_direction;
 			}
 		}
 
 		// Set the velocity
-		projectile_velocity->velocity = initial_direction * projectile_velocity->top_speed;
+		projectile_velocity->velocity = projectile_direction * projectile_velocity->top_speed;
+
+		// Advance the projectile position by the time that passed relative to when it was fired
+		projectile_transform->position = projectile_transform->position + (projectile_velocity->velocity * time_offset);
 
 		// Dispatch event
 		m_core.entity_added(ecs_world, spawned_projectile);
 	}
 
-	bool WeaponSystem::validate_weapon(const Player& player, const WeaponComponent& weapon_component)
+	bool WeaponSystem::validate_weapon(const Vadon::ECS::TypedComponentHandle<Player>& player, const WeaponComponent& weapon_component)
 	{
-		if (player.starting_weapons.empty() == true)
+		if (player->starting_weapons.empty() == true)
 		{
 			// TODO: error!
 			return false;
@@ -325,10 +363,50 @@ namespace VadonDemo::Model
 	void WeaponSystem::projectile_collision_callback(Core::Core& /*core*/, Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle projectile, Vadon::ECS::EntityHandle /*collider*/)
 	{
 		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
-		ProjectileComponent* projectile_component = component_manager.get_component<ProjectileComponent>(projectile);
-		VADON_ASSERT(projectile_component != nullptr, "Cannot find projectile component!");
+		auto projectile_component = component_manager.get_component<ProjectileComponent>(projectile);
+		VADON_ASSERT(projectile_component.is_valid() == true, "Cannot find projectile component!");
 
 		// Collision will make the projectile expire
 		projectile_component->remaining_lifetime = 0.0f;
+	}
+
+	void WeaponSystem::projectile_player_contact(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle player, Vadon::ECS::EntityHandle collider)
+	{
+		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
+
+		// TODO: at the moment we are only checking damage, so if the player is already dead, we early out
+		// Need other branches, e.g enemy which slows player
+		auto player_component = component_manager.get_component<Player>(player);
+		if (player_component->damage_timer > 0.0f)
+		{
+			// Player took damage previously, still timing out
+			return;
+		}
+
+		auto player_health = component_manager.get_component<Health>(player);
+		if (player_health.is_valid() == false)
+		{
+			return;
+		}
+
+		if (player_health->current_health <= 0.0f)
+		{
+			// Player is no longer alive
+			return;
+		}
+
+		auto projectile = component_manager.get_component<ProjectileComponent>(collider);
+		if (projectile.is_valid() == true)
+		{
+			// Apply damage
+			player_health->current_health -= projectile->damage;
+
+			// TODO: knockback?
+		}
+
+		// Restart damage timer
+		// TODO: this will only allow the player to take damage from the first thing they collided with!
+		// May need to revise to give certain damage sources priority!
+		player_component->damage_timer = player_component->damage_delay;
 	}
 }

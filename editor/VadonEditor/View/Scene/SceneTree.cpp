@@ -7,7 +7,7 @@
 #include <VadonEditor/View/ViewSystem.hpp>
 #include <VadonEditor/View/Scene/Resource/Scene.hpp>
 
-#include <VadonApp/UI/Developer/IconsFontAwesome5.h>
+#include <VadonApp/UI/Developer/IconsFontAwesome7.h>
 
 #include <Vadon/Scene/Resource/ResourceSystem.hpp>
 
@@ -55,7 +55,7 @@ namespace VadonEditor::View
 			m_instantiate_scene_button.label = "Instantiate Child Scene";
 			m_remove_entity_button.label = "Remove entity";
 
-			m_tree_window.id = "Tree";
+			m_tree_window.string_id = "Tree";
 			m_tree_window.size = Vadon::Math::Vector2(400, 300);
 			m_tree_window.border = true;
 		}

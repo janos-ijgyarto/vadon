@@ -280,10 +280,8 @@ namespace VadonEditor::Model
 	void Scene::internal_remove_entity(Entity* entity)
 	{
 		Vadon::ECS::World& ecs_world = m_editor.get_system<ModelSystem>().get_ecs_world();
-		ecs_world.get_entity_manager().remove_entity(entity->get_handle());
+		ecs_world.remove_entity(entity->get_handle());
 
-		// In the editor, we immediately purge removed entities
-		ecs_world.remove_pending_entities();
 		delete entity;
 	}
 
@@ -312,8 +310,8 @@ namespace VadonEditor::Model
 		SceneSystem& model_scene_system = m_editor.get_system<Model::ModelSystem>().get_scene_system();
 
 		// FIXME: should we instead just avoid making these child nodes altogether?
-		const Vadon::Scene::SceneComponent* scene_component = ecs_world.get_component_manager().get_component<Vadon::Scene::SceneComponent>(instantiated_scene_entity->get_handle());
-		if (scene_component != nullptr)
+		const auto scene_component = ecs_world.get_component_manager().get_component<Vadon::Scene::SceneComponent>(instantiated_scene_entity->get_handle());
+		if (scene_component.is_valid() == true)
 		{
 			if (scene_component->root_scene.is_valid())
 			{

@@ -5,6 +5,8 @@ target_sources(${VADON_CURRENT_TARGET}
 	Batch.hpp
 	CanvasSystem.hpp
 	CanvasSystem.cpp
+	CommandBuffer.hpp
+	CommandBuffer.cpp
 	Context.hpp
 	Item.hpp
 	Layer.hpp
@@ -27,3 +29,4 @@ add_custom_target("VadonRenderCanvasShaders"
 set_target_properties("VadonRenderCanvasShaders" PROPERTIES FOLDER "${VADON_PARENT_FOLDER}${PROJECT_NAME}/Codegen")
 
 add_dependencies(${VADONRENDER_SHADERS_TARGET} "VadonRenderCanvasShaders")
+add_dependencies("VadonRenderCanvasShaders" VadonToolsBuild) # Make sure shader compiler is built first!

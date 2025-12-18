@@ -1,41 +1,40 @@
-macro(VadonCreateEngineTarget TARGET_NAME TARGET_ALIAS DLLEXPORT_MACRO_NAME)
+function(VadonCreateBuildOptions)
+	set(BUILD_OPTIONS_TARGET "VadonBuildOptions")
 
-set(VADON_CURRENT_TARGET ${TARGET_NAME})
-if(WIN32)
-	# TODO: Windows-specific instructions
-	if(${VADON_LINK_STATIC} STREQUAL "ON")
-		add_library(${VADON_CURRENT_TARGET} STATIC)
+	# Interface library for common build options (inspired by SDL)
+	add_library(${BUILD_OPTIONS_TARGET} INTERFACE)
+
+	if(NOT DEFINED VADON_COMPILE_DEFINITIONS)
+		if(WIN32)
+			target_compile_definitions(${BUILD_OPTIONS_TARGET} INTERFACE VADON_PLATFORM_WIN32)
+		
+			if(${VADON_LINK_STATIC} STREQUAL "ON")
+				# TODO!!!
+			else()
+				# Provide compile def for DLL export/import
+				target_compile_definitions(${BUILD_OPTIONS_TARGET} INTERFACE VADON_LINK_DYNAMIC)
+			endif()
+		elseif(UNIX AND NOT APPLE)
+			target_compile_definitions(${BUILD_OPTIONS_TARGET} INTERFACE VADON_PLATFORM_LINUX)
+		endif()
 	else()
-		add_library(${VADON_CURRENT_TARGET} SHARED)
+		target_compile_definitions(${BUILD_OPTIONS_TARGET} INTERFACE ${VADON_COMPILE_DEFINITIONS})
 	endif()
-elseif(UNIX AND NOT APPLE)
-	# TODO: Linux-specific instructions
-	# FIXME: shared lib needs to be compiled differently if it links to static libs
-	add_library(${VADON_CURRENT_TARGET} STATIC)
-endif()
 
-# Add an alias for referral
-add_library("Vadon::${TARGET_ALIAS}" ALIAS ${VADON_CURRENT_TARGET})
-
-target_include_directories(${VADON_CURRENT_TARGET} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-
-# Add common build options
-target_link_libraries(${VADON_CURRENT_TARGET} PRIVATE $<BUILD_INTERFACE:VadonBuildOptions>)
-
-get_property("${VADON_CURRENT_TARGET}_SOURCES" TARGET ${VADON_CURRENT_TARGET} PROPERTY SOURCES)
-source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES "${VADON_CURRENT_TARGET}_SOURCES")
-
-add_subdirectory(Vadon)
-
-if(WIN32)
-	if(${VADON_LINK_STATIC} STREQUAL "ON")
-		# TODO!!!
+	if(NOT DEFINED VADON_COMPILE_FEATURES)
+		target_compile_features(${BUILD_OPTIONS_TARGET} INTERFACE cxx_std_20)
 	else()
-		# Provide compile def for DLL export/import
-		target_compile_definitions(${VADON_CURRENT_TARGET} PRIVATE ${DLLEXPORT_MACRO_NAME})
+		target_compile_features(${BUILD_OPTIONS_TARGET} INTERFACE ${VADON_COMPILE_FEATURES})
 	endif()
-endif()
 
-set_target_properties(${VADON_CURRENT_TARGET} PROPERTIES FOLDER ${VADON_PARENT_FOLDER}${PROJECT_NAME})
-
-endmacro()
+	if(NOT DEFINED VADON_COMPILE_OPTIONS)
+		if(MSVC)
+			# NOTE: need to disable warning related to dll-interface
+			target_compile_options(${BUILD_OPTIONS_TARGET} INTERFACE /W4 /WX /wd4251)
+		else()
+			target_compile_options(${BUILD_OPTIONS_TARGET} INTERFACE -Wall -Wextra -Wpedantic -Werror)
+		endif()
+	else()
+		target_compile_options(${BUILD_OPTIONS_TARGET} INTERFACE ${VADON_COMPILE_OPTIONS})
+	endif()
+endfunction()

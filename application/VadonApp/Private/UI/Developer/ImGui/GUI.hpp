@@ -14,6 +14,8 @@ namespace VadonApp::Private::UI::Developer::ImGUI
 {
 	using GUIStyle = VadonApp::UI::Developer::GUIStyle;
 
+	using GUIStyleVar = VadonApp::UI::Developer::GUIStyleVar;
+
 	class GUISystem final : public VadonApp::Private::UI::Developer::GUISystem
 	{
 	public:
@@ -33,6 +35,8 @@ namespace VadonApp::Private::UI::Developer::ImGUI
 
 		void render() override;
 
+		void show_demo_window(bool* open) override;
+
 		void push_id(std::string_view string_id) override;
 		void push_id(const void* pointer_id) override;
 		void push_id(int32_t int_id) override;
@@ -50,6 +54,10 @@ namespace VadonApp::Private::UI::Developer::ImGUI
 		void push_item_width(float item_width) override;
 		void pop_item_width() override;
 		void set_next_item_width(float item_width) override;
+
+		void push_style_var(GUIStyleVar index, float value) override;
+		void push_style_var(GUIStyleVar index, const Vadon::Math::Vector2& value) override;
+		void pop_style_var(int count = 1) override;
 
 		bool begin_window(Window& window) override;
 		void end_window() override;
@@ -98,7 +106,7 @@ namespace VadonApp::Private::UI::Developer::ImGUI
 		bool draw_slider_float(SliderFloat& slider) override;
 		bool draw_slider_float2(SliderFloat2& slider) override;
 
-		bool draw_color_edit(ColorEdit& color) override;
+		bool draw_color_edit(ColorEdit& color, bool read_only) override;
 
 		bool draw_selectable(std::string_view label, bool is_selected) override;
 

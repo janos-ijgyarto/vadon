@@ -10,6 +10,7 @@
 #include <Vadon/ECS/World/World.hpp>
 
 #include <Vadon/Render/Canvas/CanvasSystem.hpp>
+#include <Vadon/Render/Canvas/CommandBuffer.hpp>
 
 #include <Vadon/Scene/Resource/ResourceSystem.hpp>
 #include <Vadon/Scene/SceneSystem.hpp>
@@ -56,26 +57,24 @@ namespace VadonDemo::View
 		auto transform_query = component_manager.run_component_query<Model::Transform2D&, ModelTransformComponent&>();
 		for (auto transform_it = transform_query.get_iterator(); transform_it.is_valid() == true; transform_it.next())
 		{
-			auto transform_tuple = transform_it.get_tuple();
+			const auto model_transform = transform_it.get_component<Model::Transform2D>();
+			auto view_model_transform = transform_it.get_component<ModelTransformComponent>();
 
-			const Model::Transform2D& model_transform = std::get<Model::Transform2D&>(transform_tuple);
-			ModelTransformComponent& view_model_transform = std::get<ModelTransformComponent&>(transform_tuple);
-
-			if (model_transform.teleported == false)
+			if (model_transform->teleported == false)
 			{
-				view_model_transform.prev_transform = view_model_transform.current_transform;
+				view_model_transform->prev_transform = view_model_transform->current_transform;
 
-				// TODO: rotation!
-				view_model_transform.current_transform.position = model_transform.position;
-				view_model_transform.current_transform.scale = model_transform.scale;
+				view_model_transform->current_transform.position = model_transform->position;
+				view_model_transform->current_transform.rotation = model_transform->rotation;
+				view_model_transform->current_transform.scale = model_transform->scale;
 			}
 			else
 			{
-				// TODO: rotation!
-				view_model_transform.current_transform.position = model_transform.position;
-				view_model_transform.current_transform.scale = model_transform.scale;
+				view_model_transform->current_transform.position = model_transform->position;
+				view_model_transform->current_transform.rotation = model_transform->rotation;
+				view_model_transform->current_transform.scale = model_transform->scale;
 
-				view_model_transform.prev_transform = view_model_transform.current_transform;
+				view_model_transform->prev_transform = view_model_transform->current_transform;
 			}
 		}
 
@@ -100,12 +99,12 @@ namespace VadonDemo::View
 			auto transform_query = component_manager.run_component_query<TransformComponent&, ModelTransformComponent&>();
 			for (auto transform_it = transform_query.get_iterator(); transform_it.is_valid() == true; transform_it.next())
 			{
-				auto transform_tuple = transform_it.get_tuple();
-				TransformComponent& current_transform = std::get<TransformComponent&>(transform_tuple);
-				const ModelTransformComponent& model_transform = std::get<ModelTransformComponent&>(transform_tuple);
+				auto current_transform = transform_it.get_component<TransformComponent>();
+				const auto model_transform = transform_it.get_component<ModelTransformComponent>();
 
-				current_transform.position = model_transform.current_transform.position * lerp_factor + model_transform.prev_transform.position * neg_lerp_factor;
-				current_transform.scale = model_transform.current_transform.scale * lerp_factor + model_transform.prev_transform.scale * neg_lerp_factor;
+				current_transform->position = model_transform->current_transform.position * lerp_factor + model_transform->prev_transform.position * neg_lerp_factor;
+				current_transform->rotation = model_transform->current_transform.rotation * lerp_factor + model_transform->prev_transform.rotation * neg_lerp_factor;
+				current_transform->scale = model_transform->current_transform.scale * lerp_factor + model_transform->prev_transform.scale * neg_lerp_factor;
 			}
 		}
 
@@ -114,13 +113,11 @@ namespace VadonDemo::View
 			auto anim_query = component_manager.run_component_query<AnimationComponent&, TransformComponent*, RenderComponent*>();
 			for (auto anim_it = anim_query.get_iterator(); anim_it.is_valid() == true; anim_it.next())
 			{
-				auto anim_tuple = anim_it.get_tuple();
+				auto anim_component = anim_it.get_component<AnimationComponent>();
 
-				AnimationComponent& anim_component = std::get<AnimationComponent&>(anim_tuple);
+				anim_component->animation_player.update(view_delta_time);
 
-				anim_component.animation_player.update(view_delta_time);
-
-				const Vadon::Scene::AnimationSample anim_sample = anim_component.animation_player.get_sample();
+				const Vadon::Scene::AnimationSample anim_sample = anim_component->animation_player.get_sample();
 
 				for (const Vadon::Scene::AnimationChannelSample& current_channel : anim_sample.channels)
 				{
@@ -129,16 +126,16 @@ namespace VadonDemo::View
 					{
 						// TODO: make this compatible with model interpolation?
 						// OR assume that this only works for view-only objects?
-						TransformComponent* transform_component = std::get<TransformComponent*>(anim_tuple);
-						if (transform_component != nullptr)
+						auto transform_component = anim_it.get_component<TransformComponent>();
+						if (transform_component.is_valid() == true)
 						{
 							transform_component->scale = std::get<float>(current_channel.value);
 						}
 					}
 					else if (current_channel.tag == "opacity")
 					{
-						RenderComponent* render_component = std::get<RenderComponent*>(anim_tuple);
-						if (render_component != nullptr)
+						auto render_component = anim_it.get_component<RenderComponent>();
+						if (render_component.is_valid() == true)
 						{
 							Vadon::Math::ColorVector color_vec = Vadon::Math::ColorRGBA::to_rgba_vector(render_component->color);
 							color_vec.a = std::get<float>(current_channel.value);
@@ -154,19 +151,17 @@ namespace VadonDemo::View
 
 		// Update VFX timers
 		{
-			Vadon::ECS::EntityManager& entity_manager = ecs_world.get_entity_manager();
 			auto vfx_timer_query = component_manager.run_component_query<VFXTimerComponent&>();
 			for (auto vfx_timer_it = vfx_timer_query.get_iterator(); vfx_timer_it.is_valid() == true; vfx_timer_it.next())
 			{
-				auto vfx_timer_tuple = vfx_timer_it.get_tuple();
-				VFXTimerComponent& timer_component = std::get<VFXTimerComponent&>(vfx_timer_tuple);
+				auto timer_component = vfx_timer_it.get_component<VFXTimerComponent>();
 
-				timer_component.remaining_lifetime -= view_delta_time;
+				timer_component->remaining_lifetime -= view_delta_time;
 
-				if (timer_component.remaining_lifetime <= 0.0f)
+				if (timer_component->remaining_lifetime <= 0.0f)
 				{
 					m_core.entity_removed(ecs_world, vfx_timer_it.get_entity());
-					entity_manager.remove_entity(vfx_timer_it.get_entity());
+					ecs_world.remove_entity(vfx_timer_it.get_entity());
 				}
 			}
 		}
@@ -177,11 +172,10 @@ namespace VadonDemo::View
 			auto render_query = component_manager.run_component_query<TransformComponent&, Render::CanvasComponent&>();
 			for (auto render_it = render_query.get_iterator(); render_it.is_valid() == true; render_it.next())
 			{
-				auto render_tuple = render_it.get_tuple();
-				const TransformComponent& view_transform = std::get<TransformComponent&>(render_tuple);
-				Render::CanvasComponent& canvas_component = std::get<Render::CanvasComponent&>(render_tuple);
+				const auto view_transform = render_it.get_component<TransformComponent>();
+				auto canvas_component = render_it.get_component<Render::CanvasComponent>();
 
-				if (canvas_component.canvas_item.is_valid() == false)
+				if (canvas_component->canvas_item.is_valid() == false)
 				{
 					// Canvas item not yet initialized!
 					continue;
@@ -189,10 +183,11 @@ namespace VadonDemo::View
 
 				// Update canvas item transform
 				Vadon::Render::Canvas::Transform canvas_transform;
-				canvas_transform.position = view_transform.position;
-				canvas_transform.scale = view_transform.scale;
+				canvas_transform.position = view_transform->position;
+				canvas_transform.rotation = view_transform->rotation;
+				canvas_transform.scale = view_transform->scale;
 
-				canvas_system.set_item_transform(canvas_component.canvas_item, canvas_transform);
+				canvas_system.set_item_transform(canvas_component->canvas_item, canvas_transform);
 			}
 		}
 
@@ -202,39 +197,41 @@ namespace VadonDemo::View
 	void View::update_entity_transform(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle view_entity)
 	{
 		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
-		auto component_tuple = component_manager.get_component_tuple<TransformComponent, Model::Transform2D, ModelTransformComponent, Render::CanvasComponent>(view_entity);
 
-		TransformComponent* view_transform = std::get<TransformComponent*>(component_tuple);
-		const Model::Transform2D* model_transform = std::get<Model::Transform2D*>(component_tuple);
-		ModelTransformComponent* view_model_transform = std::get<ModelTransformComponent*>(component_tuple);
+		auto view_transform = component_manager.get_component<TransformComponent>(view_entity);
+		const auto model_transform = component_manager.get_component<Model::Transform2D>(view_entity);
+		auto view_model_transform = component_manager.get_component<ModelTransformComponent>(view_entity);
 
-		if ((model_transform != nullptr) && (view_model_transform != nullptr))
+		if ((model_transform.is_valid() == true) && (view_model_transform.is_valid() == true))
 		{
-			if (view_transform != nullptr)
+			if (view_transform.is_valid() == true)
 			{
 				// Set transform to that of model
 				view_transform->position = model_transform->position;
+				view_transform->rotation = model_transform->rotation;
 				view_transform->scale = model_transform->scale;
 			}
 
 			// Set both previous and current transform to be the same (to prevent "snapping")
 			view_model_transform->prev_transform.position = model_transform->position;
+			view_model_transform->prev_transform.rotation = model_transform->rotation;
 			view_model_transform->prev_transform.scale = model_transform->scale;
 
 			view_model_transform->current_transform = view_model_transform->prev_transform;
 		}
 
-		Render::CanvasComponent* canvas_component = std::get<Render::CanvasComponent*>(component_tuple);
-		if ((canvas_component == nullptr) || (canvas_component->canvas_item.is_valid() == false))
+		auto canvas_component = component_manager.get_component<Render::CanvasComponent>(view_entity);
+		if ((canvas_component.is_valid() == false) || (canvas_component->canvas_item.is_valid() == false))
 		{
 			// Canvas item not yet initialized
 			return;
 		}
 
 		Vadon::Render::Canvas::Transform new_transform;
-		if (view_transform != nullptr)
+		if (view_transform.is_valid() == true)
 		{
 			new_transform.position = view_transform->position;
+			new_transform.rotation = view_transform->rotation;
 			new_transform.scale = view_transform->scale;
 		}
 
@@ -245,8 +242,8 @@ namespace VadonDemo::View
 
 	void View::update_entity_draw_data(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle view_entity)
 	{
-		RenderComponent* render_component = ecs_world.get_component_manager().get_component<RenderComponent>(view_entity);
-		if (render_component != nullptr)
+		auto render_component = ecs_world.get_component_manager().get_component<RenderComponent>(view_entity);
+		if (render_component.is_valid() == true)
 		{
 			update_entity_draw_data(ecs_world, view_entity, render_component);
 		}
@@ -255,16 +252,16 @@ namespace VadonDemo::View
 	void View::remove_entity(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle view_entity)
 	{
 		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
-		RenderComponent* view_render_component = component_manager.get_component<RenderComponent>(view_entity);
+		auto view_render_component = component_manager.get_component<RenderComponent>(view_entity);
 
-		if (view_render_component == nullptr)
+		if (view_render_component.is_valid() == false)
 		{
 			// Did not have a render component, so not our concern
 			return;
 		}
 
-		Render::CanvasComponent* canvas_component = component_manager.get_component<Render::CanvasComponent>(view_entity);
-		if (canvas_component == nullptr)
+		auto canvas_component = component_manager.get_component<Render::CanvasComponent>(view_entity);
+		if (canvas_component.is_valid() == false)
 		{
 			return;
 		}
@@ -276,7 +273,9 @@ namespace VadonDemo::View
 
 		Vadon::Core::EngineCoreInterface& engine_core = m_core.get_engine_core();
 		Vadon::Render::Canvas::CanvasSystem& canvas_system = engine_core.get_system<Vadon::Render::Canvas::CanvasSystem>();
-		canvas_system.clear_item(canvas_component->canvas_item);
+		
+		Vadon::Render::Canvas::CommandBuffer& item_command_buffer = canvas_system.get_item_command_buffer(canvas_component->canvas_item);
+		item_command_buffer.clear();
 	}
 
 	RenderResourceHandle View::load_render_resource(RenderResourceID resource_id) const
@@ -338,7 +337,9 @@ namespace VadonDemo::View
 		}
 
 		Vadon::Render::Canvas::CanvasSystem& canvas_system = engine_core.get_system<Vadon::Render::Canvas::CanvasSystem>();
-		canvas_system.clear_batch(view_render_resource->batch);
+		Vadon::Render::Canvas::CommandBuffer& batch_command_buffer = canvas_system.get_batch_command_buffer(view_render_resource->batch);
+
+		batch_command_buffer.clear();
 
 		view_render_resource->batch_range = Vadon::Utilities::DataRange();
 	}
@@ -371,14 +372,16 @@ namespace VadonDemo::View
 		Vadon::Core::EngineCoreInterface& engine_core = m_core.get_engine_core();
 		Vadon::Render::Canvas::CanvasSystem& canvas_system = engine_core.get_system<Vadon::Render::Canvas::CanvasSystem>();
 
+		Vadon::Render::Canvas::CommandBuffer& command_buffer = canvas_system.get_batch_command_buffer(shape->batch);
+
 		if (color_has_transparency(shape->color) == true)
 		{
 			// Make sure batch sets render state for alpha blend
 			Vadon::Render::Canvas::RenderState alpha_blend_state = { .alpha_blend = true };
-			canvas_system.set_batch_render_state(shape->batch, alpha_blend_state);
+			command_buffer.set_render_state(alpha_blend_state);
 		}
 
-		shape->batch_range.offset = static_cast<int32_t>(canvas_system.get_batch_buffer_size(shape->batch));
+		shape->batch_range.offset = static_cast<int32_t>(command_buffer.get_size());
 
 		switch (Vadon::Utilities::to_enum<ShapeType>(shape->type))
 		{
@@ -394,7 +397,7 @@ namespace VadonDemo::View
 			triangle.points[2].position = Vadon::Math::Vector2{ -0.5f, -0.5f } * shape->radius;
 			triangle.points[2].color = shape->color;
 
-			canvas_system.draw_batch_triangle(shape->batch, triangle);
+			command_buffer.draw_triangle(triangle);
 			shape->batch_range.count = 1;
 		}
 		break;
@@ -405,7 +408,7 @@ namespace VadonDemo::View
 			box_rectangle.dimensions.size = Vadon::Math::Vector2{ 1.0f, 1.0f } * shape->radius;
 			box_rectangle.filled = true;
 
-			canvas_system.draw_batch_rectangle(shape->batch, box_rectangle);
+			command_buffer.draw_rectangle(box_rectangle);
 			shape->batch_range.count = 1;
 		}
 		break;
@@ -421,13 +424,13 @@ namespace VadonDemo::View
 				diamond_half_triangle.points[triangle_index].color = shape->color;
 			}
 
-			canvas_system.draw_batch_triangle(shape->batch, diamond_half_triangle);
+			command_buffer.draw_triangle(diamond_half_triangle);
 
 			diamond_half_triangle.points[0].position = Vadon::Math::Vector2{ -1.0f, 0 } * shape->radius;
 			diamond_half_triangle.points[1].position = Vadon::Math::Vector2{ 1.0f, 0 } * shape->radius;
 			diamond_half_triangle.points[2].position = Vadon::Math::Vector2{ 0, -1.0f } * shape->radius;
 
-			canvas_system.draw_batch_triangle(shape->batch, diamond_half_triangle);
+			command_buffer.draw_triangle(diamond_half_triangle);
 			shape->batch_range.count = 2;
 		}
 		break;
@@ -438,7 +441,7 @@ namespace VadonDemo::View
 			circle.radius = 0.5f * shape->radius;
 			circle.color = shape->color;
 
-			canvas_system.draw_batch_circle(shape->batch, circle);
+			command_buffer.draw_circle(circle);
 			shape->batch_range.count = 1;
 		}
 		break;
@@ -469,7 +472,9 @@ namespace VadonDemo::View
 
 		// TODO: sprite color to allow transparency, etc?
 
-		sprite->batch_range.offset = static_cast<int32_t>(canvas_system.get_batch_buffer_size(sprite->batch));
+		Vadon::Render::Canvas::CommandBuffer& command_buffer = canvas_system.get_batch_command_buffer(sprite->batch);
+
+		sprite->batch_range.offset = static_cast<int32_t>(command_buffer.get_size());
 		sprite->batch_range.count = 2;
 
 		Vadon::Render::Canvas::Sprite canvas_sprite;
@@ -477,16 +482,16 @@ namespace VadonDemo::View
 		canvas_sprite.uv_dimensions.size = Vadon::Math::Vector2_One;
 		canvas_sprite.color = Vadon::Math::Color_White;
 
-		canvas_system.set_batch_texture(sprite->batch, Vadon::Render::Canvas::Texture{ .srv = sprite_texture->texture_srv });
-		canvas_system.draw_batch_sprite(sprite->batch, canvas_sprite);
+		command_buffer.set_texture(Vadon::Render::Canvas::Texture{ .srv = sprite_texture->texture_srv });
+		command_buffer.draw_sprite(canvas_sprite);
 	}
 
-	void View::update_entity_draw_data(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle view_entity, RenderComponent* view_render_component)
+	void View::update_entity_draw_data(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle view_entity, Vadon::ECS::TypedComponentHandle<RenderComponent>& view_render_component)
 	{
 		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
 
-		Render::CanvasComponent* canvas_component = component_manager.get_component<Render::CanvasComponent>(view_entity);
-		if (canvas_component == nullptr)
+		auto canvas_component = component_manager.get_component<Render::CanvasComponent>(view_entity);
+		if (canvas_component.is_valid() == false)
 		{
 			return;
 		}
@@ -503,7 +508,9 @@ namespace VadonDemo::View
 		// TODO: show some placeholder instead?
 		Vadon::Core::EngineCoreInterface& engine_core = m_core.get_engine_core();
 		Vadon::Render::Canvas::CanvasSystem& canvas_system = engine_core.get_system<Vadon::Render::Canvas::CanvasSystem>();
-		canvas_system.clear_item(canvas_component->canvas_item);
+
+		Vadon::Render::Canvas::CommandBuffer& command_buffer = canvas_system.get_item_command_buffer(canvas_component->canvas_item);
+		command_buffer.clear();
 
 		if (view_render_component->resource.is_valid() == false)
 		{
@@ -528,7 +535,7 @@ namespace VadonDemo::View
 		}
 
 		// Add batch draw command
-		canvas_system.add_item_batch_draw(canvas_component->canvas_item,
+		command_buffer.add_batch_draw(
 			Vadon::Render::Canvas::BatchDrawCommand
 			{
 				.batch = view_resource->batch,
@@ -537,7 +544,7 @@ namespace VadonDemo::View
 		);
 	}
 
-	void View::set_entity_custom_draw_data(RenderComponent* view_render_component, Render::CanvasComponent* canvas_component, RenderResourceHandle view_render_resource_handle)
+	void View::set_entity_custom_draw_data(Vadon::ECS::TypedComponentHandle<RenderComponent>& view_render_component, Vadon::ECS::TypedComponentHandle<Render::CanvasComponent>& canvas_component, RenderResourceHandle view_render_resource_handle)
 	{
 		Vadon::Core::EngineCoreInterface& engine_core = m_core.get_engine_core();
 		Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
@@ -559,18 +566,20 @@ namespace VadonDemo::View
 		}
 	}
 
-	void View::set_entity_shape_data(const RenderComponent* view_render_component, Render::CanvasComponent* canvas_component, const Shape* shape)
+	void View::set_entity_shape_data(const Vadon::ECS::TypedComponentHandle<RenderComponent>& view_render_component, Vadon::ECS::TypedComponentHandle<Render::CanvasComponent>& canvas_component, const Shape* shape)
 	{
 		Vadon::Core::EngineCoreInterface& engine_core = m_core.get_engine_core();
 		Vadon::Render::Canvas::CanvasSystem& canvas_system = engine_core.get_system<Vadon::Render::Canvas::CanvasSystem>();
 
+		Vadon::Render::Canvas::CommandBuffer& command_buffer = canvas_system.get_item_command_buffer(canvas_component->canvas_item);
+		
 		const Vadon::Math::ColorRGBA custom_color = Vadon::Math::ColorRGBA::multiply_colors(shape->color, view_render_component->color);
 
 		if (color_has_transparency(custom_color) == true)
 		{
 			// Make sure item sets render state for alpha blend
 			Vadon::Render::Canvas::RenderState alpha_blend_state = { .alpha_blend = true };
-			canvas_system.set_item_render_state(canvas_component->canvas_item, alpha_blend_state);
+			command_buffer.set_render_state(alpha_blend_state);
 		}
 
 		switch (Vadon::Utilities::to_enum<ShapeType>(shape->type))
@@ -587,7 +596,7 @@ namespace VadonDemo::View
 			triangle.points[2].position = Vadon::Math::Vector2{ -0.5f, -0.5f } * shape->radius;
 			triangle.points[2].color = custom_color;
 
-			canvas_system.draw_item_triangle(canvas_component->canvas_item, triangle);
+			command_buffer.draw_triangle(triangle);
 		}
 		break;
 		case ShapeType::RECTANGLE:
@@ -597,7 +606,7 @@ namespace VadonDemo::View
 			box_rectangle.dimensions.size = Vadon::Math::Vector2{ 1.0f, 1.0f } *shape->radius;
 			box_rectangle.filled = true;
 
-			canvas_system.draw_item_rectangle(canvas_component->canvas_item, box_rectangle);
+			command_buffer.draw_rectangle(box_rectangle);
 		}
 		break;
 		case ShapeType::DIAMOND:
@@ -612,13 +621,13 @@ namespace VadonDemo::View
 				diamond_half_triangle.points[triangle_index].color = custom_color;
 			}
 
-			canvas_system.draw_item_triangle(canvas_component->canvas_item, diamond_half_triangle);
+			command_buffer.draw_triangle(diamond_half_triangle);
 
 			diamond_half_triangle.points[0].position = Vadon::Math::Vector2{ -1.0f, 0 } *shape->radius;
 			diamond_half_triangle.points[1].position = Vadon::Math::Vector2{ 1.0f, 0 } *shape->radius;
 			diamond_half_triangle.points[2].position = Vadon::Math::Vector2{ 0, -1.0f } *shape->radius;
 
-			canvas_system.draw_item_triangle(canvas_component->canvas_item, diamond_half_triangle);
+			command_buffer.draw_triangle(diamond_half_triangle);
 		}
 		break;
 		case ShapeType::CIRCLE:
@@ -628,13 +637,13 @@ namespace VadonDemo::View
 			circle.radius = 0.5f * shape->radius;
 			circle.color = custom_color;
 
-			canvas_system.draw_item_circle(canvas_component->canvas_item, circle);
+			command_buffer.draw_circle(circle);
 		}
 		break;
 		}
 	}
 
-	void View::set_entity_sprite_data(const RenderComponent* view_render_component, Render::CanvasComponent* canvas_component, const Sprite* sprite_resource)
+	void View::set_entity_sprite_data(const Vadon::ECS::TypedComponentHandle<RenderComponent>& view_render_component, Vadon::ECS::TypedComponentHandle<Render::CanvasComponent>& canvas_component, const Sprite* sprite_resource)
 	{
 		Vadon::Core::EngineCoreInterface& engine_core = m_core.get_engine_core();
 		Vadon::Render::Canvas::CanvasSystem& canvas_system = engine_core.get_system<Vadon::Render::Canvas::CanvasSystem>();
@@ -654,13 +663,15 @@ namespace VadonDemo::View
 			return;
 		}
 
+		Vadon::Render::Canvas::CommandBuffer& command_buffer = canvas_system.get_item_command_buffer(canvas_component->canvas_item);
+
 		const Vadon::Math::ColorRGBA custom_color = Vadon::Math::ColorRGBA::multiply_colors(Vadon::Math::Color_White, view_render_component->color);
 
 		if (color_has_transparency(custom_color) == true)
 		{
 			// Make sure item sets render state for alpha blend
 			Vadon::Render::Canvas::RenderState alpha_blend_state = { .alpha_blend = true };
-			canvas_system.set_item_render_state(canvas_component->canvas_item, alpha_blend_state);
+			command_buffer.set_render_state(alpha_blend_state);
 		}
 
 		Vadon::Render::Canvas::Sprite canvas_sprite;
@@ -668,7 +679,7 @@ namespace VadonDemo::View
 		canvas_sprite.uv_dimensions.size = Vadon::Math::Vector2_One;
 		canvas_sprite.color = custom_color;
 
-		canvas_system.set_item_texture(canvas_component->canvas_item, Vadon::Render::Canvas::Texture{ .srv = sprite_texture->texture_srv });
-		canvas_system.draw_item_sprite(canvas_component->canvas_item, canvas_sprite);
+		command_buffer.set_texture(Vadon::Render::Canvas::Texture{ .srv = sprite_texture->texture_srv });
+		command_buffer.draw_sprite(canvas_sprite);
 	}
 }

@@ -149,6 +149,53 @@ namespace Vadon::Private::Scene
 		return internal_add_resource(ResourceInfo{ .id = new_resource_id, .type_id = type_id }, resource);
 	}
 
+	void ResourceSystem::add_embedded_resource(ResourceHandle owner_handle, ResourceHandle embedded_resource_handle)
+	{
+		// TODO: check to make sure we didn't create a circular embedding
+		ResourceData& embedded_resource_data = m_resource_pool.get(embedded_resource_handle);
+		VADON_ASSERT(embedded_resource_data.owner.is_valid() == false, "Cannot embed resource that is already embedded!");
+
+		embedded_resource_data.owner = owner_handle;
+
+		ResourceData& owner_data = m_resource_pool.get(owner_handle);
+		owner_data.embedded_resources.push_back(embedded_resource_handle);
+	}
+
+	ResourceHandle ResourceSystem::get_embedded_resource_onwer(ResourceHandle resource_handle) const
+	{
+		const ResourceData& resource_data = m_resource_pool.get(resource_handle);
+		return resource_data.owner;
+	}
+
+	std::vector<ResourceHandle> ResourceSystem::get_embedded_resources(ResourceHandle resource_handle) const
+	{
+		const ResourceData& resource_data = m_resource_pool.get(resource_handle);
+		return resource_data.embedded_resources;
+	}
+
+	void ResourceSystem::remove_embedded_resource(ResourceHandle owner_handle, ResourceHandle embedded_resource_handle)
+	{
+		ResourceData& embedded_resource_data = m_resource_pool.get(embedded_resource_handle);
+		VADON_ASSERT(embedded_resource_data.owner.is_valid() == true, "Must be an embedded resource!");
+		VADON_ASSERT(embedded_resource_data.owner == owner_handle, "Owner handle does not match!");
+
+		embedded_resource_data.owner.invalidate();
+
+		// Remove from owner
+		ResourceData& owner_data = m_resource_pool.get(owner_handle);
+		for (size_t embedded_resource_index = 0; embedded_resource_index < owner_data.embedded_resources.size(); ++embedded_resource_index)
+		{
+			if (owner_data.embedded_resources[embedded_resource_index] == embedded_resource_handle)
+			{
+				owner_data.embedded_resources.erase(owner_data.embedded_resources.begin() + embedded_resource_index);
+				break;
+			}
+		}
+
+		// Now we can remove the resource itself
+		remove_resource(embedded_resource_handle);
+	}
+
 	ResourceHandle ResourceSystem::find_resource(ResourceID resource_id) const
 	{
 		auto resource_handle_it = m_resource_lookup.find(resource_id);
@@ -353,6 +400,42 @@ namespace Vadon::Private::Scene
 			}
 		}
 
+		if (resource_data.embedded_resources.empty() == false)
+		{
+			if (serializer.open_array("embedded") != SerializerResult::SUCCESSFUL)
+			{
+				resource_data_failed_to_serialize();
+				return false;
+			}
+
+			for (size_t embedded_resource_index = 0; embedded_resource_index < resource_data.embedded_resources.size(); ++embedded_resource_index)
+			{
+				if (serializer.open_object(embedded_resource_index) != SerializerResult::SUCCESSFUL)
+				{
+					resource_data_failed_to_serialize();
+					return false;
+				}
+
+				if (save_resource(serializer, resource_data.embedded_resources[embedded_resource_index]) == false)
+				{
+					resource_data_failed_to_serialize();
+					return false;
+				}
+
+				if (serializer.close_object() != SerializerResult::SUCCESSFUL)
+				{
+					resource_data_failed_to_serialize();
+					return false;
+				}
+			}
+
+			if (serializer.close_array() != SerializerResult::SUCCESSFUL)
+			{
+				resource_data_failed_to_serialize();
+				return false;
+			}
+		}
+
 		return true;
 	}
 
@@ -375,7 +458,8 @@ namespace Vadon::Private::Scene
 		}
 
 		// Attempt to load Resource data
-		Resource* resource_data = load_resource_data(serializer, resource_info);
+		std::vector<ResourceHandle> embedded_resources;
+		Resource* resource_data = load_resource_data(serializer, embedded_resources, resource_info);
 		if (resource_data == nullptr)
 		{
 			log_error("Resource system: failed to deserialize Resource data!\n");
@@ -383,12 +467,26 @@ namespace Vadon::Private::Scene
 		}
 
 		// Everything succeeded, add to pool
-		return internal_add_resource(resource_info, resource_data);
+		loaded_resource_handle = internal_add_resource(resource_info, resource_data);
+
+		// Add embedded resources
+		for (ResourceHandle current_embedded_resource : embedded_resources)
+		{
+			add_embedded_resource(loaded_resource_handle, current_embedded_resource);
+		}
+
+		return loaded_resource_handle;
 	}
 
 	void ResourceSystem::remove_resource(ResourceHandle resource_handle)
 	{
 		ResourceData& resource_data = m_resource_pool.get(resource_handle);
+
+		if (resource_data.owner.is_valid() == true)
+		{
+			VADON_ERROR("Embedded resource must be removed explicitly from owner!");
+			return;
+		}
 
 		// Remove from lookup
 		m_resource_lookup.erase(resource_data.info.id);
@@ -396,6 +494,18 @@ namespace Vadon::Private::Scene
 		// Delete resource data
 		delete resource_data.resource;
 		resource_data.resource = nullptr;
+
+		// Remove embedded resources
+		for (const ResourceHandle& embedded_resource_handle : resource_data.embedded_resources)
+		{
+			// Invalidate self in embedded resource (allows them to be removed)
+			ResourceData& embedded_resource_data = m_resource_pool.get(embedded_resource_handle);
+			VADON_ASSERT(embedded_resource_data.owner == resource_handle, "Embedded resource owner mismatch!");
+			embedded_resource_data.owner.invalidate();
+
+			// Remove the embedded resource as well
+			remove_resource(embedded_resource_handle);
+		}
 
 		m_resource_pool.remove(resource_handle);
 	}
@@ -462,7 +572,7 @@ namespace Vadon::Private::Scene
 		log_message("Resource System shut down!\n");
 	}
 
-	Resource* ResourceSystem::load_resource_data(Vadon::Utilities::Serializer& serializer, const ResourceInfo& info)
+	Resource* ResourceSystem::load_resource_data(Vadon::Utilities::Serializer& serializer, std::vector<ResourceHandle>& embedded_resources, const ResourceInfo& info)
 	{
 		using SerializerResult = Vadon::Utilities::Serializer::Result;
 		using ErasedDataType = Vadon::Utilities::ErasedDataType;
@@ -563,6 +673,44 @@ namespace Vadon::Private::Scene
 				return nullptr;
 			}
 			if (serializer.close_object() != SerializerResult::SUCCESSFUL)
+			{
+				resource_custom_data_failed_to_serialize();
+				return nullptr;
+			}
+		}
+
+		if (serializer.has_key("embedded") == true)
+		{
+			if (serializer.open_array("embedded") != SerializerResult::SUCCESSFUL)
+			{
+				resource_custom_data_failed_to_serialize();
+				return nullptr;
+			}
+			const size_t embedded_resource_count = serializer.get_array_size();
+			for (size_t embedded_resource_index = 0; embedded_resource_index < embedded_resource_count; ++embedded_resource_index)
+			{
+				if (serializer.open_object(embedded_resource_index) != SerializerResult::SUCCESSFUL)
+				{
+					resource_data_failed_to_serialize();
+					return nullptr;
+				}
+
+				ResourceHandle embedded_resource_handle = load_resource(serializer);
+				if (embedded_resource_handle.is_valid() == false)
+				{
+					resource_data_failed_to_serialize();
+					return nullptr;
+				}
+
+				embedded_resources.push_back(embedded_resource_handle);
+
+				if (serializer.close_object() != SerializerResult::SUCCESSFUL)
+				{
+					resource_data_failed_to_serialize();
+					return nullptr;
+				}
+			}
+			if (serializer.close_array() != SerializerResult::SUCCESSFUL)
 			{
 				resource_custom_data_failed_to_serialize();
 				return nullptr;

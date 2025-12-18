@@ -41,6 +41,24 @@
                 "name": "Controller",
                 "parent": 0,
                 "scene": "77/pFO4USs67NlcVYdxWVw=="
+            },
+            {
+                "components": [
+                    {
+                        "properties": {
+                            "activation_delay": 1.0,
+                            "enemy_prefab": "GwzqCA8DRS2C8jQHkSVc7Q==",
+                            "level_multiplier": 2.0,
+                            "level_up_delay": 10.0,
+                            "max_level": 1,
+                            "min_spawn_delay": 5.0,
+                            "start_spawn_count": 1
+                        },
+                        "type": "VadonDemo::Model::Spawner"
+                    }
+                ],
+                "name": "WeavingEnemySpawner",
+                "parent": 0
             }
         ]
     },

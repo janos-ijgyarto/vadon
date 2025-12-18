@@ -9,4 +9,5 @@ target_sources(${VADONDEMO_CURRENT_TARGET}
     )
 
 add_subdirectory(Collision)
+add_subdirectory(Enemy)
 add_subdirectory(Weapon)

@@ -1,0 +1,132 @@
+{
+    "data": {
+        "entities": [
+            {
+                "components": [
+                    {
+                        "properties": {
+                            "position": [
+                                0.0,
+                                0.0
+                            ],
+                            "rotation": 0.0,
+                            "scale": 1.0
+                        },
+                        "type": "VadonDemo::Model::Transform2D"
+                    },
+                    {
+                        "properties": {
+                            "layer_def": "2bdWkqSdTuSxnfVFk+5q+g==",
+                            "visible": true,
+                            "z_order": 1.0
+                        },
+                        "type": "VadonDemo::Render::CanvasComponent"
+                    },
+                    {
+                        "properties": {
+                            "definition": "vF8UDKuwR8uj5aL0swsm2g=="
+                        },
+                        "type": "VadonDemo::Model::EnemyBase"
+                    },
+                    {
+                        "properties": {
+                            "max_health": 100.0
+                        },
+                        "type": "VadonDemo::Model::Health"
+                    },
+                    {
+                        "properties": {
+                            "color": "#ffffffff",
+                            "resource": "19rb8WrWTxyfYbYGP2lh3Q=="
+                        },
+                        "type": "VadonDemo::View::RenderComponent"
+                    },
+                    {
+                        "properties": {
+                            "acceleration": 0.0,
+                            "top_speed": 100.0
+                        },
+                        "type": "VadonDemo::Model::Velocity2D"
+                    },
+                    {
+                        "properties": {
+                            "radius": 20.0
+                        },
+                        "type": "VadonDemo::Model::Collision"
+                    },
+                    {
+                        "properties": {},
+                        "type": "VadonDemo::View::ModelTransformComponent"
+                    },
+                    {
+                        "properties": {
+                            "position": [
+                                0.0,
+                                0.0
+                            ],
+                            "rotation": 0.0,
+                            "scale": 1.0
+                        },
+                        "type": "VadonDemo::View::TransformComponent"
+                    },
+                    {
+                        "properties": {
+                            "definition": "2Roesh94RHq4oMQGQDEOsg=="
+                        },
+                        "type": "VadonDemo::Model::EnemyMovement"
+                    },
+                    {
+                        "properties": {
+                            "definition": "yaapSvRURTS/kXxzbdvB9w=="
+                        },
+                        "type": "VadonDemo::Model::EnemyContactDamage"
+                    }
+                ],
+                "name": "WeavingEnemy",
+                "parent": -1
+            }
+        ]
+    },
+    "embedded": [
+        {
+            "id": "2Roesh94RHq4oMQGQDEOsg==",
+            "properties": {
+                "cycle_duration": 2.0,
+                "name": "",
+                "weave_factor": 0.75
+            },
+            "type": "VadonDemo::Model::EnemyMovementWeaving"
+        },
+        {
+            "id": "yaapSvRURTS/kXxzbdvB9w==",
+            "properties": {
+                "damage": 20,
+                "name": ""
+            },
+            "type": "VadonDemo::Model::EnemyContactDamageDefinition"
+        },
+        {
+            "id": "19rb8WrWTxyfYbYGP2lh3Q==",
+            "properties": {
+                "color": "#0000ffff",
+                "name": "",
+                "radius": 20.0,
+                "type": 1
+            },
+            "type": "VadonDemo::View::Shape"
+        },
+        {
+            "id": "vF8UDKuwR8uj5aL0swsm2g==",
+            "properties": {
+                "name": "",
+                "score_reward": 100
+            },
+            "type": "VadonDemo::Model::EnemyDefinition"
+        }
+    ],
+    "id": "GwzqCA8DRS2C8jQHkSVc7Q==",
+    "properties": {
+        "name": ""
+    },
+    "type": "Vadon::Scene::Scene"
+}

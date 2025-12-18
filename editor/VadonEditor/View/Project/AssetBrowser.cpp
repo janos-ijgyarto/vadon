@@ -10,7 +10,7 @@
 
 #include <VadonEditor/View/ViewSystem.hpp>
 
-#include <VadonApp/UI/Developer/IconsFontAwesome5.h>
+#include <VadonApp/UI/Developer/IconsFontAwesome7.h>
 
 #include <Vadon/Scene/Resource/File.hpp>
 #include <Vadon/Utilities/TypeInfo/Registry.hpp>
@@ -29,73 +29,19 @@ namespace
 			label = ICON_FA_FOLDER + (" " + info.name);
 			break;
 		case VadonEditor::Core::AssetType::RESOURCE:
-			label = ICON_FA_FILE_ALT + (" " + info.name);
+			label = ICON_FA_FILE_LINES + (" " + info.name);
 			break;
 		case VadonEditor::Core::AssetType::SCENE:
 			label = ICON_FA_FILM + (" " + info.name);
 			break;
 		case VadonEditor::Core::AssetType::IMPORTED_FILE:
-			label = ICON_FA_DATABASE + (" " + info.name);
+			label = ICON_FA_FILE_IMPORT + (" " + info.name);
 		}
 	}
 }
 
 namespace VadonEditor::View
 {
-	void CreateResourceDialog::on_open()
-	{
-		m_resource_types = Vadon::Utilities::TypeRegistry::get_subclass_list(Vadon::Utilities::TypeRegistry::get_type_id<Vadon::Scene::Resource>());
-		m_resource_type_combo.deselect();
-		m_resource_type_combo.items.clear();
-
-		for (Vadon::Utilities::TypeID current_resource_type : m_resource_types)
-		{
-			const Vadon::Utilities::TypeInfo current_type_info = Vadon::Utilities::TypeRegistry::get_type_info(current_resource_type);
-			m_resource_type_combo.items.push_back(current_type_info.name);
-		}
-
-		m_resource_type_combo.selected_item = 0;
-	}
-
-	CreateResourceDialog::Result CreateResourceDialog::internal_draw(UI::Developer::GUISystem& dev_gui)
-	{
-		Result result = Result::NONE;
-
-		dev_gui.draw_combo_box(m_resource_type_combo);
-
-		if (dev_gui.draw_button(m_accept_button) == true)
-		{
-			result = Result::ACCEPTED;
-		}
-		dev_gui.same_line();
-		if (dev_gui.draw_button(m_cancel_button) == true)
-		{
-			result = Result::CANCELLED;
-		}
-
-		if (result != Result::NONE)
-		{
-			close();
-		}
-
-		return result;
-	}
-
-	Vadon::Utilities::TypeID CreateResourceDialog::get_selected_resource_type() const
-	{
-		return m_resource_types[m_resource_type_combo.selected_item];
-	}
-
-	CreateResourceDialog::CreateResourceDialog(Core::Editor& editor)
-		: Dialog("Create New Resource")
-		, m_editor(editor)
-	{
-		m_resource_type_combo.label = "Resource types";
-
-		m_accept_button.label = "Create";
-		m_cancel_button.label = "Cancel";
-	}
-
 	AssetBrowser::AssetBrowser(Core::Editor& editor)
 		: m_editor(editor)
 		, m_create_resource_dialog(editor)
@@ -107,7 +53,7 @@ namespace VadonEditor::View
 
 		m_import_button.label = "Import File";
 
-		m_asset_tree.id = "AssetTree";
+		m_asset_tree.string_id = "AssetTree";
 
 		m_save_file_dialog.set_accept_label("Save");
 

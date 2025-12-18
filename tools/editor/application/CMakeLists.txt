@@ -1,0 +1,56 @@
+set(VADONEDITOR_APPLICATION "VadonEditor")
+
+# FIXME: ideally find_package should find Qt but it has some issues
+if(DEFINED VADON_TOOLS_QT6_PATH)
+    message(STATUS "Looking for Qt6 at ${VADON_TOOLS_QT6_PATH}")
+    set(CMAKE_PREFIX_PATH ${VADON_TOOLS_QT6_PATH})
+else()
+    message(FATAL_ERROR "Cannot build editor without Qt path!" )
+endif()
+
+find_package(Qt6 REQUIRED COMPONENTS Widgets)
+
+qt_standard_project_setup()
+
+set(CMAKE_AUTOUIC_SEARCH_PATHS "${CMAKE_CURRENT_SOURCE_DIR}/VadonEditor/Application/Forms")
+
+qt_add_executable(${VADONEDITOR_APPLICATION})
+target_link_libraries(${VADONEDITOR_APPLICATION} PRIVATE VadonBuildOptions VadonEditorCommon)
+
+target_include_directories(${VADONEDITOR_APPLICATION} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+
+add_subdirectory(VadonEditor)
+
+target_link_libraries(${VADONEDITOR_APPLICATION} PRIVATE Qt6::Widgets)
+
+set_target_properties(${VADONEDITOR_APPLICATION} PROPERTIES
+    WIN32_EXECUTABLE ON
+    MACOSX_BUNDLE ON
+)
+set_target_properties(${VADONEDITOR_APPLICATION} PROPERTIES FOLDER ${PROJECT_NAME})
+
+set_target_properties(${VADONEDITOR_APPLICATION}
+    PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${VADON_EDITOR_RUNTIME_OUTPUT_DIRECTORY}
+)
+
+set(VADONEDITOR_INSTALL_COMPONENT "VadonEditor")
+
+install(TARGETS ${VADONEDITOR_APPLICATION}
+    COMPONENT ${VADONEDITOR_INSTALL_COMPONENT}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    BUNDLE DESTINATION .
+)
+install(FILES $<TARGET_RUNTIME_DLLS:${VADONEDITOR_APPLICATION}> COMPONENT ${VADONEDITOR_INSTALL_COMPONENT} DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+# Generate a deployment script to be executed at install time
+qt_generate_deploy_app_script(
+    TARGET ${VADONEDITOR_APPLICATION}
+    OUTPUT_SCRIPT VADONEDITOR_DEPLOY_SCRIPT
+    NO_TRANSLATIONS
+    NO_COMPILER_RUNTIME
+    DEPLOY_TOOL_OPTIONS "--release"
+)
+
+install(SCRIPT ${VADONEDITOR_DEPLOY_SCRIPT}
+COMPONENT ${VADONEDITOR_INSTALL_COMPONENT})

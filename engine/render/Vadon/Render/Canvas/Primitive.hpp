@@ -1,6 +1,5 @@
 #ifndef VADON_RENDER_CANVAS_PRIMITIVE_HPP
 #define VADON_RENDER_CANVAS_PRIMITIVE_HPP
-#include <Vadon/Render/Canvas/Material.hpp>
 #include <Vadon/Render/Utilities/Color.hpp>
 #include <Vadon/Render/Utilities/Vector.hpp>
 #include <Vadon/Render/Utilities/Rectangle.hpp>
@@ -29,6 +28,8 @@ namespace Vadon::Render::Canvas
 	struct Rectangle
 	{
 		Render::Rectangle dimensions = { .position = Vector2_Zero, .size = Vector2_One };
+		float rotation = 0.0f;
+
 		ColorRGBA color = Vadon::Math::Color_White;
 		bool filled = true; // TODO: replace with flags?
 		float thickness = 1.0f;
@@ -55,6 +56,8 @@ namespace Vadon::Render::Canvas
 	struct Sprite
 	{
 		Render::Rectangle dimensions = { .position = Vector2_Zero, .size = Vector2_One };
+		float rotation = 0.0f;
+
 		Render::Rectangle uv_dimensions = { .position = Vector2_Zero, .size = Vector2_One };
 		Vadon::Render::ColorRGBA color = Vadon::Math::Color_White;
 	};

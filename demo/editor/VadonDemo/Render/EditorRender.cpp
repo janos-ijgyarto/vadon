@@ -19,6 +19,8 @@
 #include <Vadon/ECS/World/World.hpp>
 
 #include <Vadon/Render/Canvas/CanvasSystem.hpp>
+#include <Vadon/Render/Canvas/CommandBuffer.hpp>
+
 #include <Vadon/Render/Frame/FrameSystem.hpp>
 #include <Vadon/Render/GraphicsAPI/RenderTarget/RenderTargetSystem.hpp>
 
@@ -68,8 +70,8 @@ namespace VadonDemo::Render
         // TODO: implement better decoupling of the main system from the component-specific logic
         // Have shared code for managing certain resources, but otherwise delegate to subsystems
         // (e.g SpriteTiling could use shared texture logic, the component should just provide parameters)
-
-        if(CanvasComponent* canvas_component = component_manager.get_component<CanvasComponent>(entity))
+        auto canvas_component = component_manager.get_component<CanvasComponent>(entity);
+        if(canvas_component.is_valid() == true)
         {
             // If Canvas item is set, assume it's already initialized
             // FIXME: check if context is correctly set?
@@ -87,13 +89,15 @@ namespace VadonDemo::Render
             }
         }
 
-        if (SpriteTilingComponent* sprite_component = component_manager.get_component<SpriteTilingComponent>(entity))
+        auto sprite_component = component_manager.get_component<SpriteTilingComponent>(entity);
+        if (sprite_component.is_valid() == true)
         {
             load_texture_resource_data(sprite_component->texture);
             common_render.init_sprite_tiling_entity(ecs_world, entity);
         }
 
-        if (FullscreenEffectComponent* fullscreen_effect_component = component_manager.get_component<FullscreenEffectComponent>(entity))
+        auto fullscreen_effect_component = component_manager.get_component<FullscreenEffectComponent>(entity);
+        if (fullscreen_effect_component.is_valid() == true)
         {
             load_shader_resource_data(fullscreen_effect_component->shader);
             common_render.init_fullscreen_effect_entity(ecs_world, entity);
@@ -244,9 +248,8 @@ namespace VadonDemo::Render
 
                         for (auto sprite_it = sprite_query.get_iterator(); sprite_it.is_valid() == true; sprite_it.next())
                         {
-                            auto sprite_tuple = sprite_it.get_tuple();
-                            SpriteTilingComponent& current_sprite_component = std::get<SpriteTilingComponent&>(sprite_tuple);
-                            const CanvasComponent& current_canvas_component = std::get<CanvasComponent&>(sprite_tuple);
+                            auto current_sprite_component = sprite_it.get_component<SpriteTilingComponent>();
+                            const auto current_canvas_component = sprite_it.get_component<CanvasComponent>();
 
                             common_render.update_sprite_tiling_entity(current_canvas_component, current_sprite_component, culling_rect);
                         }
@@ -362,10 +365,8 @@ namespace VadonDemo::Render
                     
                     for (auto sprite_it = sprite_query.get_iterator(); sprite_it.is_valid() == true; sprite_it.next())
                     {
-                        auto sprite_tuple = sprite_it.get_tuple();
-                        SpriteTilingComponent& current_sprite_component = std::get<SpriteTilingComponent&>(sprite_tuple);
-
-                        if (current_sprite_component.texture != texture_id)
+                        auto current_sprite_component = sprite_it.get_component<SpriteTilingComponent>();
+                        if (current_sprite_component->texture != texture_id)
                         {
                             continue;
                         }
@@ -374,11 +375,12 @@ namespace VadonDemo::Render
                         load_texture_resource_data(texture_id);
 
                         // Clear the canvas item
-                        const CanvasComponent& current_canvas_component = std::get<CanvasComponent&>(sprite_tuple);
-                        canvas_system.clear_item(current_canvas_component.canvas_item);
+                        const auto current_canvas_component = sprite_it.get_component<CanvasComponent>();
+                        Vadon::Render::Canvas::CommandBuffer& item_command_buffer = canvas_system.get_item_command_buffer(current_canvas_component->canvas_item);
+                        item_command_buffer.get_data().clear();
 
                         // Reset rect (this will force an update)
-                        current_sprite_component.reset_rect();
+                        current_sprite_component->reset_rect();
                     }
                 }
                 else if (resource_info.type_id == Vadon::Utilities::TypeRegistry::get_type_id<ShaderResource>())
@@ -430,13 +432,15 @@ namespace VadonDemo::Render
         Vadon::ECS::World& ecs_world = editor_model.get_ecs_world();
         Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
 
-        if (CanvasComponent* canvas_component = component_manager.get_component<CanvasComponent>(entity))
+        auto canvas_component = component_manager.get_component<CanvasComponent>(entity);
+        if (canvas_component.is_valid() == true)
         {
             m_editor.get_core().get_render().update_canvas_entity(ecs_world, entity);
             set_layers_dirty();
         }
 
-        if (SpriteTilingComponent* sprite_component = component_manager.get_component<SpriteTilingComponent>(entity))
+        auto sprite_component = component_manager.get_component<SpriteTilingComponent>(entity);
+        if (sprite_component.is_valid() == true)
         {
             if (sprite_component->texture.is_valid() == true)
             {
@@ -447,9 +451,10 @@ namespace VadonDemo::Render
             sprite_component->reset_rect();
         }
 
-        if (FullscreenEffectComponent* fullscreen_effect_component = component_manager.get_component<FullscreenEffectComponent>(entity))
-        {
-            
+        
+        auto fullscreen_effect_component = component_manager.get_component<FullscreenEffectComponent>(entity);
+        if (fullscreen_effect_component.is_valid() == true)
+        {            
             m_editor.get_core().get_render().update_fullscreen_effect_entity(ecs_world, entity);
         }
     }
@@ -460,17 +465,20 @@ namespace VadonDemo::Render
         Vadon::ECS::World& ecs_world = editor_model.get_ecs_world();
         Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
 
-        if (CanvasComponent* canvas_component = component_manager.get_component<CanvasComponent>(entity))
+        auto canvas_component = component_manager.get_component<CanvasComponent>(entity);
+        if (canvas_component.is_valid() == true)
         {
             m_editor.get_core().get_render().remove_canvas_entity(ecs_world, entity);
         }
 
-        if (SpriteTilingComponent* sprite_component = component_manager.get_component<SpriteTilingComponent>(entity))
+        auto sprite_component = component_manager.get_component<SpriteTilingComponent>(entity);
+        if (sprite_component.is_valid() == true)
         {
             m_editor.get_core().get_render().remove_sprite_tiling_entity(ecs_world, entity);
         }
 
-        if (FullscreenEffectComponent* fullscreen_effect_component = component_manager.get_component<FullscreenEffectComponent>(entity))
+        auto fullscreen_effect_component = component_manager.get_component<FullscreenEffectComponent>(entity);
+        if (fullscreen_effect_component.is_valid() == true)
         {
             m_editor.get_core().get_render().remove_fullscreen_effect_entity(ecs_world, entity);
         }
@@ -481,8 +489,8 @@ namespace VadonDemo::Render
         VadonEditor::Model::ModelSystem& editor_model = m_editor.get_common_editor().get_system<VadonEditor::Model::ModelSystem>();
         Vadon::ECS::World& ecs_world = editor_model.get_ecs_world();
 
-        SpriteTilingComponent* sprite_component = ecs_world.get_component_manager().get_component<SpriteTilingComponent>(entity);
-        VADON_ASSERT(sprite_component, "Missing component!");
+        auto sprite_component = ecs_world.get_component_manager().get_component<SpriteTilingComponent>(entity);
+        VADON_ASSERT(sprite_component.is_valid() == true, "Missing component!");
         
         // Make the rect empty so we're forced to recalculate next frame
         sprite_component->reset_rect();
@@ -525,7 +533,8 @@ namespace VadonDemo::Render
         Vadon::Core::EngineCoreInterface& engine_core = m_editor.get_common_editor().get_engine_core();
         Vadon::Render::Canvas::CanvasSystem& canvas_system = engine_core.get_system<Vadon::Render::Canvas::CanvasSystem>();
 
-        canvas_system.clear_item(m_editor_item);
+        Vadon::Render::Canvas::CommandBuffer& item_command_buffer = canvas_system.get_item_command_buffer(m_editor_item);
+        item_command_buffer.get_data().clear();
 
         // Add viewport
         {
@@ -537,7 +546,7 @@ namespace VadonDemo::Render
             viewport_rectangle.thickness = 1.0f;
             viewport_rectangle.filled = false;
 
-            canvas_system.draw_item_rectangle(m_editor_item, viewport_rectangle);
+            item_command_buffer.draw_rectangle(viewport_rectangle);
         }
     }
 

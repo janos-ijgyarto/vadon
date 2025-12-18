@@ -3,7 +3,6 @@
 #include <Vadon/Core/Project/Project.hpp>
 
 #include <Vadon/Utilities/Serialization/Serializer.hpp>
-#include <Vadon/Utilities/TypeInfo/Reflection/PropertySerialization.hpp>
 
 #include <filesystem>
 #include <format>
@@ -57,80 +56,8 @@ namespace Vadon::Core
 			return false;
 		}
 
-		// Serialize any custom properties to a separate object
-		if (serializer.open_object("custom_properties") != SerializerResult::SUCCESSFUL)
-		{
-			project_serialization_error_log();
-			return false;
-		}
-
-		if (serializer.is_reading() == true)
-		{
-			for (Vadon::Utilities::Property& current_property : project_data.custom_properties)
-			{
-				// Check if key is present (if not, assume we should just use default value)
-				// FIXME: invert this to instead only process keys that are actually in the data?
-				if (serializer.has_key(current_property.name) == false)
-				{
-					continue;
-				}
-
-				switch (current_property.data_type.type)
-				{
-				case Vadon::Utilities::ErasedDataType::TRIVIAL:
-				{
-					const SerializerResult result = Vadon::Utilities::process_trivial_property(serializer, current_property.name, current_property.value, current_property.data_type);
-					if (result != SerializerResult::SUCCESSFUL)
-					{
-						project_serialization_error_log();
-						return false;
-					}
-				}
-				break;
-				case Vadon::Utilities::ErasedDataType::RESOURCE_ID:
-				{
-					Vadon::Scene::ResourceID& resource_id = std::get<Vadon::Scene::ResourceID>(current_property.value);
-					if (serializer.serialize(current_property.name, resource_id) != SerializerResult::SUCCESSFUL)
-					{
-						project_serialization_error_log();
-						return false;
-					}
-				}
-				break;
-				}
-			}
-		}
-		else
-		{
-			for (Vadon::Utilities::Property& current_property : project_data.custom_properties)
-			{
-				switch (current_property.data_type.type)
-				{
-				case Vadon::Utilities::ErasedDataType::TRIVIAL:
-				{
-					const SerializerResult result = Vadon::Utilities::process_trivial_property(serializer, current_property.name, current_property.value, current_property.data_type);
-					if (result != SerializerResult::SUCCESSFUL)
-					{
-						project_serialization_error_log();
-						return false;
-					}
-				}
-				break;
-				case Vadon::Utilities::ErasedDataType::RESOURCE_ID:
-				{
-					Vadon::Scene::ResourceID& resource_id = std::get<Vadon::Scene::ResourceID>(current_property.value);
-					if (serializer.serialize(current_property.name, resource_id) != SerializerResult::SUCCESSFUL)
-					{
-						project_serialization_error_log();
-						return false;
-					}
-				}
-				break;
-				}
-			}
-		}
-
-		if (serializer.close_object() != SerializerResult::SUCCESSFUL)
+		// Serialize any custom data to a separate object
+		if (serializer.serialize("custom_project_data", project_data.custom_data_id) != SerializerResult::SUCCESSFUL)
 		{
 			project_serialization_error_log();
 			return false;

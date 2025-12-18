@@ -179,7 +179,8 @@ namespace VadonEditor::Model
 			return false;
 		}
 
-		if (world.get_component_manager().add_component(m_entity_handle, type_id) == nullptr)
+		Vadon::ECS::ComponentHandle added_component = world.get_component_manager().add_component(m_entity_handle, type_id);
+		if (added_component.is_valid() == false)
 		{
 			return false;
 		}
@@ -233,9 +234,9 @@ namespace VadonEditor::Model
 		Component component;
 		component.name = Vadon::Utilities::TypeRegistry::get_type_info(component_id).name;
 
-		void* component_ptr = component_manager.get_component(get_handle(), component_id);
+		Vadon::ECS::ComponentHandle component_handle = component_manager.get_component(get_handle(), component_id);
 
-		component.properties = Vadon::Utilities::TypeRegistry::get_properties(component_ptr, component_id);
+		component.properties = Vadon::Utilities::TypeRegistry::get_properties(component_handle.get_raw(), component_id);
 
 		return component;
 	}
@@ -275,8 +276,8 @@ namespace VadonEditor::Model
 		Vadon::ECS::ComponentManager& component_manager = world.get_component_manager();
 
 		// FIXME: wrap this in the ECS?
-		void* component = component_manager.get_component(m_entity_handle, component_type_id);
-		return Vadon::Utilities::TypeRegistry::get_property(component, component_type_id, property_name);
+		Vadon::ECS::ComponentHandle component_handle = component_manager.get_component(m_entity_handle, component_type_id);
+		return Vadon::Utilities::TypeRegistry::get_property(component_handle.get_raw(), component_type_id, property_name);
 	}
 
 	void Entity::edit_component_property(Vadon::ECS::ComponentID component_type_id, std::string_view property_name, const Vadon::Utilities::Variant& value)
@@ -285,8 +286,8 @@ namespace VadonEditor::Model
 		Vadon::ECS::ComponentManager& component_manager = world.get_component_manager();
 
 		// FIXME: wrap this in the ECS?
-		void* component = component_manager.get_component(m_entity_handle, component_type_id);
-		Vadon::Utilities::TypeRegistry::set_property(component, component_type_id, property_name, value);
+		Vadon::ECS::ComponentHandle component_handle = component_manager.get_component(m_entity_handle, component_type_id);
+		Vadon::Utilities::TypeRegistry::set_property(component_handle.get_raw(), component_type_id, property_name, value);
 
 		// Dispatch event
 		m_editor.get_system<ModelSystem>().get_scene_system().component_edited(*this, component_type_id);

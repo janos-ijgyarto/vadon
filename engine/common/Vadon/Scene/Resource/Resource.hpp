@@ -62,4 +62,7 @@ namespace Vadon::Scene
 
 #define VADON_SCENE_DECLARE_TYPED_RESOURCE_ID(_resource, _name) using _name = Vadon::Scene::TypedResourceID<_resource>
 #define VADON_SCENE_DECLARE_TYPED_RESOURCE_HANDLE(_resource, _name) using _name = Vadon::Scene::TypedResourceHandle<_resource>
+#define VADON_SCENE_DECLARE_TYPED_RESOURCE_REFERENCES(_resource, _id_name, _handle_name) VADON_SCENE_DECLARE_TYPED_RESOURCE_ID(_resource, _id_name); \
+																						VADON_SCENE_DECLARE_TYPED_RESOURCE_HANDLE(_resource, _handle_name)
+			
 #endif

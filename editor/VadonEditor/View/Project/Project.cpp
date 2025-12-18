@@ -2,7 +2,11 @@
 
 #include <VadonEditor/Core/Project/ProjectManager.hpp>
 
+#include <VadonEditor/Model/ModelSystem.hpp>
+#include <VadonEditor/Model/Resource/ResourceSystem.hpp>
+
 #include <Vadon/Core/File/FileSystem.hpp>
+#include <Vadon/Utilities/TypeInfo/Registry.hpp>
 
 #include <format>
 
@@ -208,50 +212,49 @@ namespace VadonEditor::View
 	{
 		Result result = Result::NONE;
 
+		if (m_select_resource_dialog.draw(dev_gui) == VadonApp::UI::Developer::Dialog::Result::ACCEPTED)
+		{
+			Vadon::Scene::ResourceID selected_resource_id = m_select_resource_dialog.get_selected_resource();
+
+			Model::Resource* custom_data_resource = m_editor.get_system<Model::ModelSystem>().get_resource_system().get_resource(selected_resource_id);
+			custom_data_resource->load(); // Make sure we load the resource so we can display its properties
+			m_custom_data_editor.set_resource(custom_data_resource);
+
+			update_label();
+		}
+
 		Core::ProjectManager& project_manager = m_editor.get_system<Core::ProjectManager>();
 		const Core::Project& active_project = project_manager.get_active_project();
 
 		// TODO: draw other attributes?
 		dev_gui.add_text(active_project.info.name);
 		dev_gui.add_separator();
-		dev_gui.add_text("Properties");
+		dev_gui.add_text("Custom Data Resource");
 
-		for (auto& current_property : m_property_editors)
+		dev_gui.add_text_wrapped(m_resource_label);
+		dev_gui.same_line();
+		if (dev_gui.draw_button(m_select_resource_button) == true)
 		{
-			if (current_property->render(dev_gui) == true)
-			{
-				current_property->clear_modified();
-
-				bool added = false;
-				const Vadon::Utilities::Property& property_data = current_property->get_property();
-				for (Vadon::Utilities::Property& edited_property : m_edited_properties)
-				{
-					if (edited_property.name == property_data.name)
-					{
-						edited_property.value = current_property->get_property().value;
-						added = true;
-						break;
-					}
-				}
-				if (added == false)
-				{
-					m_edited_properties.push_back(current_property->get_property());
-				}
-			}
+			m_select_resource_dialog.open();
+		}
+		dev_gui.same_line();
+		if (dev_gui.draw_button(m_clear_resource_button) == true)
+		{
+			m_custom_data_editor.set_resource(nullptr);
+			update_label();
 		}
 
-		if (m_edited_properties.empty() == true)
+		Vadon::Math::Vector2 editor_widget_size = dev_gui.get_available_content_region();
+
+		if (m_custom_data_editor.draw(dev_gui, editor_widget_size) == true)
 		{
-			dev_gui.begin_disabled();
+			// TODO: set a "modified" flag to notify user if they have unsaved changes?
 		}
+
 		if (dev_gui.draw_button(m_ok_button) == true)
 		{
 			result = Result::ACCEPTED;
 			close();
-		}
-		if (m_edited_properties.empty() == true)
-		{
-			dev_gui.end_disabled();
 		}
 		dev_gui.same_line();
 		if (dev_gui.draw_button(m_cancel_button) == true)
@@ -265,23 +268,55 @@ namespace VadonEditor::View
 
 	void ProjectPropertiesDialog::on_open()
 	{
-		m_property_editors.clear();
-		m_edited_properties.clear();
-
 		Core::ProjectManager& project_manager = m_editor.get_system<Core::ProjectManager>();
 		const Core::Project& active_project = project_manager.get_active_project();
 
-		for (const Vadon::Utilities::Property& current_property : active_project.info.custom_properties)
+		if (active_project.info.custom_data_id.is_valid() == true)
 		{
-			m_property_editors.emplace_back(PropertyEditor::create_property_editor(m_editor, current_property));
+			Model::Resource* custom_data_resource = m_editor.get_system<Model::ModelSystem>().get_resource_system().get_resource(active_project.info.custom_data_id);
+			m_custom_data_editor.set_resource(custom_data_resource);
 		}
+		else
+		{
+			m_custom_data_editor.set_resource(nullptr);
+		}
+
+		update_label();
 	}
 
 	ProjectPropertiesDialog::ProjectPropertiesDialog(Core::Editor& editor)
 		: Dialog("Edit Project Properties")
 		, m_editor(editor)
+		, m_custom_data_editor(editor)
+		, m_select_resource_dialog(editor)
 	{
 		m_ok_button.label = "Ok";
 		m_cancel_button.label = "Cancel";
+
+		m_select_resource_button.label = "Select resource";
+		m_clear_resource_button.label = "Clear resource";
+
+		m_custom_data_editor.set_read_only(true);
+	}
+
+	void ProjectPropertiesDialog::update_label()
+	{
+		// FIXME: duplicated from resource widgets, could find a way to deduplicate?
+		Model::Resource* resource = m_custom_data_editor.get_resource();
+		if (resource != nullptr)
+		{
+			std::string resource_path = resource->get_path();
+			if (resource_path.empty() == true)
+			{
+				resource_path = "UNSAVED";
+			}
+
+			const Vadon::Utilities::TypeInfo resource_type_info = Vadon::Utilities::TypeRegistry::get_type_info(resource->get_info().type_id);
+			m_resource_label = std::format("{} ({})", resource_path, resource_type_info.name);
+		}
+		else
+		{
+			m_resource_label = "<NONE>";
+		}
 	}
 }

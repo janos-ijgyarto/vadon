@@ -9,8 +9,6 @@ namespace Vadon::ECS
 	public:
 		VADONCOMMON_API EntityHandle create_entity();
 		bool is_entity_valid(EntityHandle entity_handle) const { return m_entity_pool.is_handle_valid(entity_handle); }
-		bool is_entity_pending_remove(EntityHandle entity_handle) const;
-		VADONCOMMON_API void remove_entity(EntityHandle entity_handle);
 
 		VADONCOMMON_API std::string get_entity_name(EntityHandle entity_handle) const;
 		VADONCOMMON_API void set_entity_name(EntityHandle entity_handle, std::string_view name);
@@ -31,7 +29,6 @@ namespace Vadon::ECS
 			std::string name;
 			EntityHandle parent;
 			EntityList children;
-			bool pending_remove = false;
 
 			void remove_child(EntityHandle child);
 		};
@@ -39,15 +36,12 @@ namespace Vadon::ECS
 		EntityManager();
 
 		void internal_add_child_entity(EntityHandle parent, EntityHandle child);
+		void internal_remove_entity(EntityHandle entity);
 
-		void internal_set_entity_pending_remove(EntityHandle entity, EntityData& entity_data);
-
-		void remove_pending_entities();
 		void clear();
 
 		using EntityPool = Vadon::Utilities::ObjectPool<Vadon::ECS::Entity, EntityData>;
 		EntityPool m_entity_pool;
-		std::vector<EntityHandle> m_pending_remove_list;
 
 		friend class World;
 	};

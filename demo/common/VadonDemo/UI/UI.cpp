@@ -10,6 +10,8 @@
 #include <Vadon/ECS/World/World.hpp>
 
 #include <Vadon/Render/Canvas/CanvasSystem.hpp>
+#include <Vadon/Render/Canvas/CommandBuffer.hpp>
+
 #include <Vadon/Render/Text/TextSystem.hpp>
 
 namespace VadonDemo::UI
@@ -36,16 +38,15 @@ namespace VadonDemo::UI
 	{
 		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
 
-		auto component_tuple = component_manager.get_component_tuple<Base, Frame, Text, Selectable, Render::CanvasComponent>(entity);
-		Base* base_component = std::get<Base*>(component_tuple);
-		if (base_component == nullptr)
+		auto base_component = component_manager.get_component<Base>(entity);
+		if (base_component.is_valid() == false)
 		{
 			// TODO: error?
 			return;
 		}
 
-		Render::CanvasComponent* canvas_component = std::get<Render::CanvasComponent*>(component_tuple);
-		if (canvas_component == nullptr)
+		auto canvas_component = component_manager.get_component<Render::CanvasComponent>(entity);
+		if (canvas_component.is_valid() == false)
 		{
 			// Cannot draw without canvas component
 			return;
@@ -59,7 +60,9 @@ namespace VadonDemo::UI
 
 		Vadon::Core::EngineCoreInterface& engine_core = m_core.get_engine_core();
 		Vadon::Render::Canvas::CanvasSystem& canvas_system = engine_core.get_system<Vadon::Render::Canvas::CanvasSystem>();
-		canvas_system.clear_item(canvas_component->canvas_item);
+
+		Vadon::Render::Canvas::CommandBuffer& item_command_buffer = canvas_system.get_item_command_buffer(canvas_component->canvas_item);
+		item_command_buffer.get_data().clear();
 
 		// Update transform
 		{
@@ -69,8 +72,8 @@ namespace VadonDemo::UI
 			canvas_system.set_item_transform(canvas_component->canvas_item, transform);
 		}
 
-		const Frame* frame_component = std::get<Frame*>(component_tuple);
-		if (frame_component != nullptr)
+		const auto frame_component = component_manager.get_component<Frame>(entity);
+		if (frame_component.is_valid() == true)
 		{
 			// NOTE: offsetting position so we are drawing from the top left corner
 			Vadon::Render::Canvas::Rectangle frame_rect;
@@ -79,11 +82,11 @@ namespace VadonDemo::UI
 			frame_rect.color = frame_component->outline_color;
 			frame_rect.filled = false;
 
-			canvas_system.draw_item_rectangle(canvas_component->canvas_item, frame_rect);
+			item_command_buffer.draw_rectangle(frame_rect);
 		}
 
-		const Text* text_component = std::get<Text*>(component_tuple);
-		if ((text_component != nullptr) && (text_component->text.empty() == false))
+		const auto text_component = component_manager.get_component<Text>(entity);
+		if ((text_component.is_valid() == true) && (text_component->text.empty() == false))
 		{
 			Vadon::Render::TextSystem& text_system = engine_core.get_system<Vadon::Render::TextSystem>();
 
@@ -96,8 +99,8 @@ namespace VadonDemo::UI
 
 			Vadon::Render::Canvas::Sprite glyph_sprite;
 
-			canvas_system.set_item_material(canvas_component->canvas_item, m_text_sdf_material);
-			canvas_system.set_item_texture(canvas_component->canvas_item, Vadon::Render::Canvas::Texture{ .srv = text_render_data.font_texture_view });
+			item_command_buffer.set_material(m_text_sdf_material);
+			item_command_buffer.set_texture(Vadon::Render::Canvas::Texture{ .srv = text_render_data.font_texture_view });
 
 			for (Vadon::Render::TextGlyph& current_glyph : text_render_data.glyphs)
 			{
@@ -107,7 +110,7 @@ namespace VadonDemo::UI
 				glyph_sprite.uv_dimensions.position = current_glyph.uv_rect.position;
 				glyph_sprite.uv_dimensions.size = current_glyph.uv_rect.size;
 				glyph_sprite.color = text_component->color;
-				canvas_system.draw_item_sprite(canvas_component->canvas_item, glyph_sprite);
+				item_command_buffer.draw_sprite(glyph_sprite);
 			}
 		}
 	}
@@ -116,16 +119,15 @@ namespace VadonDemo::UI
 	{
 		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
 
-		auto component_tuple = component_manager.get_component_tuple<Base, Render::CanvasComponent>(entity);
-		Base* base_component = std::get<Base*>(component_tuple);
-		if (base_component == nullptr)
+		auto base_component = component_manager.get_component<Base>(entity);
+		if (base_component.is_valid() == false)
 		{
 			// TODO: error?
 			return;
 		}
 
-		Render::CanvasComponent* canvas_component = std::get<Render::CanvasComponent*>(component_tuple);
-		if (canvas_component == nullptr)
+		auto canvas_component = component_manager.get_component<Render::CanvasComponent>(entity);
+		if (canvas_component.is_valid() == false)
 		{
 			return;
 		}
@@ -137,7 +139,9 @@ namespace VadonDemo::UI
 
 		Vadon::Core::EngineCoreInterface& engine_core = m_core.get_engine_core();
 		Vadon::Render::Canvas::CanvasSystem& canvas_system = engine_core.get_system<Vadon::Render::Canvas::CanvasSystem>();
-		canvas_system.clear_item(canvas_component->canvas_item);
+
+		Vadon::Render::Canvas::CommandBuffer& item_command_buffer = canvas_system.get_item_command_buffer(canvas_component->canvas_item);
+		item_command_buffer.get_data().clear();
 	}
 
 	UI::UI(VadonDemo::Core::Core& core)
@@ -201,23 +205,21 @@ namespace VadonDemo::UI
 		auto selectable_query = component_manager.run_component_query<Base&, Selectable&>();
 		for (auto selectable_it = selectable_query.get_iterator(); selectable_it.is_valid() == true; selectable_it.next())
 		{
-			auto selectable_tuple = selectable_it.get_tuple();
+			const auto base_component = selectable_it.get_component<Base>();
+			const auto selectable_component = selectable_it.get_component<Selectable>();
 
-			const Base& base_component = std::get<Base&>(selectable_tuple);
-			const Selectable& selectable_component = std::get<Selectable&>(selectable_tuple);
-
-			if (base_component.enabled == false)
+			if (base_component->enabled == false)
 			{
 				continue;
 			}
 
-			if (selectable_component.clicked_key.empty() == true)
+			if (selectable_component->clicked_key.empty() == true)
 			{
 				continue;
 			}
 
-			const Vadon::Math::Vector2 min_corner(base_component.position.x, base_component.position.y - base_component.dimensions.y);
-			const Vadon::Math::Vector2 max_corner(base_component.position.x + base_component.dimensions.x, base_component.position.y);
+			const Vadon::Math::Vector2 min_corner(base_component->position.x, base_component->position.y - base_component->dimensions.y);
+			const Vadon::Math::Vector2 max_corner(base_component->position.x + base_component->dimensions.x, base_component->position.y);
 
 			if (Vadon::Math::Vector::any(Vadon::Math::Vector::lessThan(cursor.position, min_corner))
 				|| Vadon::Math::Vector::any(Vadon::Math::Vector::greaterThan(cursor.position, max_corner)))
@@ -227,7 +229,7 @@ namespace VadonDemo::UI
 
 			// TODO: sort by Z order and pick the top
 			// For now just activate all
-			signal_selectable_callbacks(selectable_component.clicked_key);
+			signal_selectable_callbacks(selectable_component->clicked_key);
 		}
 	}
 

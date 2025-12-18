@@ -21,6 +21,7 @@ namespace VadonApp::UI::Developer
 	{
 		NONE = 0,
 		ENTER_RETURNS_TRUE = 1 << 0,
+		READ_ONLY = 1 << 1,
 		DEFAULT = NONE
 	};
 }
@@ -42,6 +43,11 @@ namespace Vadon::Utilities
 
 namespace VadonApp::UI::Developer
 {
+	// TODO: at the moment, we are actually storing strings/arrays/etc. in each of these objects
+	// instead of using lightweight structs that just have views (so creating it for each GUI call is more expensive)
+	// Change it so we have a "view" version of each object where needed, all GUI commands only use these
+	// The "data" object then uses a "get_view" function where it maps to and from the members of the data object
+	// Client code can then either use these data objects, or create views directly
 	struct Window
 	{
 		std::string title;
@@ -51,7 +57,8 @@ namespace VadonApp::UI::Developer
 
 	struct ChildWindow
 	{
-		std::string id;
+		int32_t int_id;
+		std::string string_id;
 		Vadon::Math::Vector2 size = { 0, 0 };
 		bool border = false;
 		WindowFlags flags = WindowFlags::DEFAULT;

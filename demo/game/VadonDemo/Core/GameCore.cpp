@@ -600,9 +600,6 @@ namespace VadonDemo::Core
 				}
 			}
 
-			// Initialize with default properties
-			m_project_info.custom_properties = GlobalConfiguration::get_default_properties();
-
 			const std::string project_file_path = fs_root_path.generic_string();
 			Vadon::Core::RawFileDataBuffer project_file_data;
 

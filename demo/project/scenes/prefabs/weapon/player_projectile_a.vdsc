@@ -5,6 +5,17 @@
                 "components": [
                     {
                         "properties": {
+                            "position": [
+                                0.0,
+                                0.0
+                            ],
+                            "rotation": 0.0,
+                            "scale": 1.0
+                        },
+                        "type": "VadonDemo::Model::Transform2D"
+                    },
+                    {
+                        "properties": {
                             "layer_def": "2bdWkqSdTuSxnfVFk+5q+g==",
                             "visible": true,
                             "z_order": 2.0
@@ -13,10 +24,11 @@
                     },
                     {
                         "properties": {
-                            "color": "#ffffffff",
-                            "resource": "oXIVWPdZQMi0TGxI2zV63A=="
+                            "damage": 10.0,
+                            "knockback": 0.0,
+                            "range": 300.0
                         },
-                        "type": "VadonDemo::View::RenderComponent"
+                        "type": "VadonDemo::Model::ProjectileComponent"
                     },
                     {
                         "properties": {
@@ -26,14 +38,10 @@
                     },
                     {
                         "properties": {
-                            "position": [
-                                0.0,
-                                0.0
-                            ],
-                            "rotation": 0.0,
-                            "scale": 1.0
+                            "color": "#ffffffff",
+                            "resource": "oXIVWPdZQMi0TGxI2zV63A=="
                         },
-                        "type": "VadonDemo::Model::Transform2D"
+                        "type": "VadonDemo::View::RenderComponent"
                     },
                     {
                         "properties": {
@@ -59,15 +67,7 @@
                     },
                     {
                         "properties": {
-                            "damage": 10.0,
-                            "knockback": 0.0,
-                            "range": 300.0
-                        },
-                        "type": "VadonDemo::Model::ProjectileComponent"
-                    },
-                    {
-                        "properties": {
-                            "aimed_on_launch": false,
+                            "aimed_on_launch": true,
                             "turn_speed": 1.5
                         },
                         "type": "VadonDemo::Model::ProjectileHomingComponent"
