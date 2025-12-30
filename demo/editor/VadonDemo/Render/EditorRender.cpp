@@ -286,6 +286,11 @@ namespace VadonDemo::Render
 
         return true;
     }
+
+    void EditorRender::register_type_metadata()
+    {
+
+    }
     
     bool EditorRender::project_loaded()
     {

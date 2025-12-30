@@ -14,7 +14,7 @@
 namespace
 {
 #ifdef VADON_PLATFORM_WIN32
-    Vadon::Utilities::UUID generate_uuid_impl()
+    ::Vadon::Foundation::UUID generate_uuid_impl()
 	{
 		// TODO: report if error occurs?
 		GUID guid;
@@ -23,10 +23,10 @@ namespace
         if (FAILED(result))
         {
             Vadon::Core::Logger::log_error("UUID: failed to generate GUID!\n");
-            return Vadon::Utilities::UUID{};
+            return ::Vadon::Foundation::UUID{};
         }
 
-        return Vadon::Utilities::UUID{
+        return ::Vadon::Foundation::UUID{
             .data = {
                 static_cast<unsigned char>((guid.Data1 >> 24) & 0xFF),
                 static_cast<unsigned char>((guid.Data1 >> 16) & 0xFF),
@@ -67,21 +67,52 @@ namespace
 
 namespace Vadon::Utilities
 {
-	UUID UUID::generate()
+	::Vadon::Foundation::UUID generate_uuid()
 	{
 		return generate_uuid_impl();
 	}
 
-    std::string UUID::to_base64_string() const
+    std::string uuid_to_string(const ::Vadon::Foundation::UUID& uuid)
     {
-        return is_valid() ? Base64::encode(data) : "";
+        std::string uuid_string;
+        uuid_string.resize(36);
+
+        constexpr auto half_byte_to_hex = [](const char c) {
+            if (c < 10)
+            {
+                return char('0' + c);
+            }
+            else
+            {
+                return char('A' + (c - 10));
+            }
+        };
+
+        constexpr char half_byte_mask = ((1 << 4) - 1);
+        size_t char_index = 0;
+        for (size_t index = 0; index < ::Vadon::Foundation::UUID::c_uuid_width; ++index)
+        {
+            const char uuid_byte = uuid.data[index];
+            
+            uuid_string[char_index] = half_byte_to_hex((uuid_byte >> 4) & half_byte_mask);
+            uuid_string[char_index + 1] = half_byte_to_hex(uuid_byte & half_byte_mask);
+            char_index += 2;
+        }
+
+        return uuid_string;
     }
 
-    bool UUID::from_base64_string(std::string_view data_string)
+    std::string uuid_to_base64_string(const ::Vadon::Foundation::UUID& uuid)
     {
+        return uuid.is_valid() ? Base64::encode(uuid.data) : "";
+    }
+
+    bool uuid_from_base64_string(std::string_view data_string, ::Vadon::Foundation::UUID& uuid)
+    {
+        // NOTE: empty is considered a valid parse as a "null" UUID
         if (data_string.empty())
         {
-            invalidate();
+            uuid.invalidate();
             return true;
         }
 
@@ -91,8 +122,8 @@ namespace Vadon::Utilities
             return false;
         }
 
-        VADON_ASSERT(decoded_data.size() == data.size(), "UUID decoded data is incorrect size!");
-        std::copy(decoded_data.begin(), decoded_data.end(), data.begin());
+        VADON_ASSERT(decoded_data.size() == ::Vadon::Foundation::UUID::c_uuid_width, "UUID decoded data is incorrect size!");
+        std::copy(decoded_data.begin(), decoded_data.end(), uuid.data);
         return true;
     }
 }

@@ -1,10 +1,10 @@
 #ifndef VADON_CORE_FILE_FILE_HPP
 #define VADON_CORE_FILE_FILE_HPP
-#include <Vadon/Utilities/System/UUID/UUID.hpp>
+#include <Vadon/Foundation/Utilities/UUID.hpp>
 #include <vector>
 namespace Vadon::Core
 {
-	using FileID = Vadon::Utilities::UUID;
+	using FileID = ::Vadon::Foundation::UUID;
 
 	struct FileInfo
 	{

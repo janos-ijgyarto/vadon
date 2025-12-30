@@ -13,22 +13,22 @@ namespace VadonEditor::Network
 		memcpy(message_data, source_data, message_size);
 	}
 
-	void MessageSerializer::write_message_header(MessageCategory category, uint64_t type, std::vector<char>& buffer)
+	void MessageSerializer::write_message_header(::Vadon::Foundation::EditorMessageCategory category, uint64_t type, std::vector<char>& buffer)
 	{
-		MessageHeader header;
+		::Vadon::Foundation::EditorMessageHeader header;
 		header.category = static_cast<uint64_t>(category);
 		header.type = type;
 		header.size = 0;
 
 		const char* header_ptr = reinterpret_cast<char*>(&header);
 
-		buffer.insert(buffer.end(), header_ptr, header_ptr + sizeof(MessageHeader));
+		buffer.insert(buffer.end(), header_ptr, header_ptr + sizeof(::Vadon::Foundation::EditorMessageHeader));
 	}
 
 	void MessageSerializer::fixup_message_size(std::vector<char>& buffer)
 	{
 		// TODO: assert if invalid
-		MessageHeader* header = reinterpret_cast<MessageHeader*>(buffer.data());
-		header->size = buffer.size() - sizeof(MessageHeader);
+		::Vadon::Foundation::EditorMessageHeader* header = reinterpret_cast<::Vadon::Foundation::EditorMessageHeader*>(buffer.data());
+		header->size = buffer.size() - sizeof(::Vadon::Foundation::EditorMessageHeader);
 	}
 }

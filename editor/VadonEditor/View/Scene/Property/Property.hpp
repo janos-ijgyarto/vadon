@@ -1,7 +1,7 @@
 #ifndef VADONEDITOR_VIEW_SCENE_PROPERTY_PROPERTY_HPP
 #define VADONEDITOR_VIEW_SCENE_PROPERTY_PROPERTY_HPP
+#include <VadonEditor/Model/Property.hpp>
 #include <VadonEditor/UI/Developer/GUI.hpp>
-#include <Vadon/Utilities/TypeInfo/Reflection/Property.hpp>
 namespace VadonEditor::Core
 {
 	class Editor;
@@ -35,13 +35,13 @@ namespace VadonEditor::View
 		bool is_modified() const { return m_modified; }
 		void clear_modified() { m_modified = false; }
 
-		const Vadon::Utilities::Property& get_property() const { return m_property; }
+		const Model::Property& get_property() const { return m_property; }
 		void set_value(const Vadon::Utilities::Variant& value) { m_property.value = value; clear_modified(); value_updated(); }
 
-		static Instance create_property_editor(Core::Editor& editor, const Vadon::Utilities::Property& model_property, const PropertyEditorInfo& info);
+		static Instance create_property_editor(Core::Editor& editor, const Model::Property& property_data, const PropertyEditorInfo& info);
 	protected:
-		PropertyEditor(const Vadon::Utilities::Property& model_property, const PropertyEditorInfo& info)
-			: m_property(model_property)
+		PropertyEditor(const Model::Property& property_data, const PropertyEditorInfo& info)
+			: m_property(property_data)
 			, m_info(info)
 			, m_modified(false)
 		{
@@ -60,7 +60,7 @@ namespace VadonEditor::View
 		static void remove_data_static(Instance& instance) { instance->remove_data(); }
 
 		// FIXME: could remove and retrieve data from derived classes?
-		Vadon::Utilities::Property m_property;
+		Model::Property m_property;
 		PropertyEditorInfo m_info;
 
 		bool m_modified;

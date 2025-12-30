@@ -33,11 +33,7 @@ namespace VadonDemo::View
 		Shape::register_resource();
 		Sprite::register_resource();
 
-		{
-			Vadon::ECS::ComponentRegistry::TagTypeInfo tag_info;
-			tag_info.hint_string = "VadonEditor:exclude";
-			Vadon::ECS::ComponentRegistry::register_tag_type<EntityDirtyTag>(tag_info);
-		}
+		Vadon::ECS::ComponentRegistry::register_tag_type<EntityDirtyTag>();
 
 		TransformComponent::register_component();
 		ModelTransformComponent::register_component();

@@ -3,4 +3,13 @@
 #include <Vadon/Utilities/Data/VariantBase.hpp>
 #include <Vadon/Utilities/Data/VariantArray.hpp>
 #include <Vadon/Utilities/Data/VariantDictionary.hpp>
+
+namespace Vadon::Utilities
+{
+	VADON_REGISTER_TYPE_UUID(NoReturnValue, "82a04f80-b040-4154-94a6-8a0212f5cff8");
+	VADON_DECLARE_BASE_DATA_TYPE(NoReturnValue);
+
+	VADON_REGISTER_TYPE_UUID(BoxedVariantArray, ::Vadon::Foundation::c_base_type_uuids[static_cast<uint32_t>(::Vadon::Foundation::BaseType::ARRAY)]);
+	VADON_DECLARE_BASE_DATA_TYPE(BoxedVariantArray);
+}
 #endif

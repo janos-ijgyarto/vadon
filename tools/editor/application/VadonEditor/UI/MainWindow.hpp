@@ -19,6 +19,7 @@ namespace VadonEditor::UI
         void log_message(const QString& message);
         
         void generate_uuid_triggered();
+        void schema_editor_triggered();
     private:
         Ui::MainWindow m_ui;
 

@@ -6,12 +6,13 @@
 #include <VadonEditor/Network/MessageSystem.hpp>
 #include <VadonEditor/Network/NetworkSystem.hpp>
 
-#include <VadonEditor/Simulator/API/Plugin.hpp>
 #include <VadonEditor/Simulator/Plugin/PluginManager.hpp>
 
 #include <VadonEditor/UI/MainWindow.hpp>
 
 #include <VadonEditor/Network/Message/MessageSerializer.hpp>
+
+#include <Vadon/Foundation/Editor/PluginInterface.hpp>
 
 #include <QCommandLineParser>
 #include <QtWidgets/QApplication>
@@ -160,7 +161,7 @@ namespace VadonEditor::Core
 			QObject::connect(m_main_window, &UI::MainWindow::menu_test,
 				[this]()
 				{
-					VadonEditor::Network::TestMessage test_message;
+					::Vadon::Foundation::EditorTestMessage test_message;
 					test_message.number = 123;
 					test_message.other_number = 4.567f;
 
@@ -202,17 +203,17 @@ namespace VadonEditor::Core
 			QObject::connect(&m_message_system, &Network::MessageSystem::received_message,
 				[&](const QByteArray& data)
 				{
-					const VadonEditor::Network::MessageHeader* message_header = reinterpret_cast<const VadonEditor::Network::MessageHeader*>(data.data());
-					const VadonEditor::Network::MessageCategory category = static_cast<VadonEditor::Network::MessageCategory>(message_header->category);
+					const ::Vadon::Foundation::EditorMessageHeader* message_header = reinterpret_cast<const ::Vadon::Foundation::EditorMessageHeader*>(data.data());
+					const ::Vadon::Foundation::EditorMessageCategory category = static_cast<::Vadon::Foundation::EditorMessageCategory>(message_header->category);
 
 					switch (category)
 					{
-					case VadonEditor::Network::MessageCategory::TEST:
+					case ::Vadon::Foundation::EditorMessageCategory::TEST:
 					{
 						if (m_settings.is_simulator == false)
 						{
-							VadonEditor::Network::TestMessage client_test;
-							VadonEditor::Network::MessageSerializer::deserialize_message(client_test, data.data() + sizeof(VadonEditor::Network::MessageHeader));
+							::Vadon::Foundation::EditorTestMessage client_test;
+							VadonEditor::Network::MessageSerializer::deserialize_message(client_test, data.data() + sizeof(::Vadon::Foundation::EditorMessageHeader));
 
 							qInfo() << "Client test message: number = " << client_test.number << ", other number = " << client_test.other_number << Qt::endl;
 						}
@@ -220,7 +221,7 @@ namespace VadonEditor::Core
 						{
 							// Send to plugin
 							// FIXME: move to other system!
-							application.get_plugin_manager().get_plugin()->process_message_from_editor(*message_header, data.data() + sizeof(VadonEditor::Network::MessageHeader));
+							application.get_plugin_manager().get_plugin()->process_message_from_editor(*message_header, data.data() + sizeof(::Vadon::Foundation::EditorMessageHeader));
 						}
 					}
 					break;

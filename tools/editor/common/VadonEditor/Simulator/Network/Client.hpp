@@ -11,7 +11,7 @@ namespace VadonEditor::Simulator::Network
 	{
 	public:
 		virtual void on_connected() = 0;
-		virtual void on_received(const VadonEditor::Network::MessageHeader& header, const char* data) = 0;
+		virtual void on_received(const ::Vadon::Foundation::EditorMessageHeader& header, const char* data) = 0;
 		virtual void on_disconnected() = 0;
 	};
 

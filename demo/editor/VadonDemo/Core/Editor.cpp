@@ -4,6 +4,8 @@
 #include <VadonDemo/Model/Model.hpp>
 
 #include <VadonEditor/Core/Project/ProjectManager.hpp>
+#include <VadonEditor/Core/TypeInfo/MetadataRegistry.hpp>
+
 #include <VadonEditor/Model/ModelSystem.hpp>
 #include <VadonEditor/Model/Resource/ResourceSystem.hpp>
 #include <VadonEditor/Model/Scene/SceneSystem.hpp>
@@ -14,8 +16,12 @@
 
 #include <Vadon/Core/Core.hpp>
 #include <Vadon/Core/CoreConfiguration.hpp>
+#include <Vadon/Core/File/FileSystem.hpp>
 #include <Vadon/Scene/Resource/ResourceSystem.hpp>
 
+#include <Vadon/Utilities/Serialization/Serializer.hpp>
+
+#include <filesystem>
 #include <thread>
 
 namespace VadonDemo::Core
@@ -41,6 +47,8 @@ namespace VadonDemo::Core
         {
             return -1;
         }
+
+#if 0
 
         using Clock = std::chrono::steady_clock;
         using TimePoint = std::chrono::time_point<Clock>;
@@ -99,6 +107,7 @@ namespace VadonDemo::Core
             }
         }
 
+#endif
         shutdown();
         return 0;
     }
@@ -108,6 +117,19 @@ namespace VadonDemo::Core
         // TODO: shut down demo subsystems (clean up resources, etc.)
         m_common_editor.shutdown();
         m_engine_core->shutdown();
+    }
+
+    void Editor::register_type_metadata()
+    {
+        VadonEditor::Core::MetadataRegistry& metadata_registry = m_common_editor.get_metadata_registry();
+        {
+            metadata_registry.set_type_metadata(VADON_GET_TYPE_UUID(Vadon::Scene::Resource), "name", "Vadon::Scene::Resource");
+            metadata_registry.set_property_metadata(VADON_GET_TYPE_UUID(Vadon::Scene::Resource), VADON_GET_MEMBER_UUID(Vadon::Scene::Resource, name), "name", "Name");
+        }
+
+        m_render.register_type_metadata();
+        m_ui.register_type_metadata();
+        m_view.register_type_metadata();
     }
 
     void Editor::begin_frame()
@@ -201,6 +223,8 @@ namespace VadonDemo::Core
         // FIXME: currently we can register the types here, but ideally we should have a system that tracks
         // the dependencies in the type registry and ensures they are registered in the correct order
         VadonDemo::Core::Core::register_types();
+
+        register_type_metadata();
 
         return true;
     }

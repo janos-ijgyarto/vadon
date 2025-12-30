@@ -15,19 +15,19 @@ namespace Vadon::Utilities
 	using ConstMemberFunction = Ret(T::*)(Args...) const;
 
 	template <typename T, typename Ret, typename... Args>
-	static constexpr std::vector<ErasedDataTypeID> make_argument_type_index_list(MemberFunction<T, Ret, Args...>)
+	static constexpr std::vector<TypeID> make_argument_type_id_list(MemberFunction<T, Ret, Args...>)
 	{
-		return std::vector<ErasedDataTypeID> { get_erased_data_type_id<Args>()...};
+		return std::vector<TypeID> { get_erased_data_type_id<Args>()...};
 	}
 
 	template <typename T, typename Ret, typename... Args>
-	static constexpr std::vector<ErasedDataTypeID> make_argument_type_index_list(ConstMemberFunction<T, Ret, Args...>)
+	static constexpr std::vector<TypeID> make_argument_type_id_list(ConstMemberFunction<T, Ret, Args...>)
 	{
-		return std::vector<ErasedDataTypeID> { get_erased_data_type_id<Args>()...};
+		return std::vector<TypeID> { get_erased_data_type_id<Args>()...};
 	}
 
 	template <typename T, typename Ret, typename... Args>
-	static constexpr ErasedDataTypeID get_return_type_index(MemberFunction<T, Ret, Args...>)
+	static constexpr TypeID get_return_type_id(MemberFunction<T, Ret, Args...>)
 	{
 		if constexpr (std::is_void_v<Ret>)
 		{
@@ -40,7 +40,7 @@ namespace Vadon::Utilities
 	}
 
 	template <typename T, typename Ret, typename... Args>
-	static constexpr ErasedDataTypeID get_return_type_index(ConstMemberFunction<T, Ret, Args...>)
+	static constexpr TypeID get_return_type_index(ConstMemberFunction<T, Ret, Args...>)
 	{
 		if constexpr (std::is_void_v<Ret>)
 		{

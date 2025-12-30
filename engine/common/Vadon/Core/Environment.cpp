@@ -78,5 +78,9 @@ namespace Vadon::Core
 	{
         VADON_ASSERT((s_instance == nullptr) || (s_instance == &instance), "Attempted to set different engine environment instances!\n");
 		s_instance = &instance;
+
+        // FIXME: have to initialize the type registry here, as it tries to access the global instance
+        // Find a way to instead let the type registry initialize itself internally
+        s_instance->m_internal->m_type_registry.initialize();
 	}
 }

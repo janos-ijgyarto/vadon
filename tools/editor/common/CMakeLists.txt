@@ -14,7 +14,7 @@ elseif(UNIX AND NOT APPLE)
 endif()
 
 target_include_directories(${VADONEDITOR_COMMON} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(${VADONEDITOR_COMMON} PUBLIC VadonBuildOptions asio)
+target_link_libraries(${VADONEDITOR_COMMON} PUBLIC VadonBuildOptions VadonFoundation asio)
 
 set_target_properties(${VADONEDITOR_COMMON} PROPERTIES FOLDER ${PROJECT_NAME})
 

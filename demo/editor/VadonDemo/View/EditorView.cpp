@@ -128,6 +128,10 @@ namespace VadonDemo::View
         update_camera(active_scene);
     }
 
+    void EditorView::register_type_metadata()
+    {
+    }
+
     void EditorView::update_dirty_entities()
     {
         VadonEditor::Core::Editor& common_editor = m_editor.get_common_editor();

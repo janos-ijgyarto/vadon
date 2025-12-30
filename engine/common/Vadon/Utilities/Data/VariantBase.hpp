@@ -1,6 +1,6 @@
 #ifndef VADON_UTILITIES_DATA_VARIANTBASE_HPP
 #define VADON_UTILITIES_DATA_VARIANTBASE_HPP
-#include <Vadon/Scene/Resource/Resource.hpp>
+#include <Vadon/Foundation/Utilities/UUID.hpp>
 #include <Vadon/Math/Color.hpp>
 #include <Vadon/Math/Vector.hpp>
 #include <Vadon/Utilities/Container/Box.hpp>
@@ -19,7 +19,7 @@ namespace Vadon::Utilities
 	using Variant = std::variant<std::monostate, int, uint32_t, float, bool, std::string,
 		Math::Vector2, Math::Vector2i, Math::Vector3, Math::Vector3i, Math::Vector4,
 		Math::ColorRGBA,
-		Vadon::Scene::ResourceHandle, Utilities::UUID,
+		::Vadon::Foundation::UUID, // TODO: allow handles?
 		BoxedVariantArray, BoxedVariantDictionary, NoReturnValue>;
 
 	template<typename T>
@@ -38,18 +38,6 @@ namespace Vadon::Utilities
 		return Variant(value);
 	}
 
-	template<Vadon::Scene::is_resource_id T>
-	Variant to_variant(const T& value)
-	{
-		return to_variant<Vadon::Scene::ResourceID>(value);
-	}
-
-	template<Vadon::Scene::is_resource_handle T>
-	Variant to_variant(const T& value)
-	{
-		return to_variant<Vadon::Scene::ResourceHandle>(value);
-	}
-
 	template<typename T>
 	T from_variant(const Variant& variant)
 	{
@@ -63,16 +51,21 @@ namespace Vadon::Utilities
 		return std::get<T>(variant);
 	}
 
-	template<Vadon::Scene::is_resource_id T>
-	T from_variant(const Variant& variant)
+	// FIXME: have to "forward declare" this for Resource IDs because of how arrays are declared
+	// Need to revise to make sure we have an overload for arrays that contain ResourceIDs
+	template<typename T>
+	concept is_derived_uuid = std::is_base_of_v<::Vadon::Foundation::UUID, T> && (std::is_same_v<::Vadon::Foundation::UUID, T> == false);
+
+	template<is_derived_uuid T>
+	Variant to_variant(const T& value)
 	{
-		return T(from_variant<Vadon::Scene::ResourceID>(variant));
+		return to_variant<::Vadon::Foundation::UUID>(value);
 	}
 
-	template<Vadon::Scene::is_resource_handle T>
+	template<is_derived_uuid T>
 	T from_variant(const Variant& variant)
 	{
-		return T(from_variant<Vadon::Scene::ResourceHandle>(variant));
+		return T(from_variant<::Vadon::Foundation::UUID>(variant));
 	}
 }
 #endif

@@ -20,6 +20,8 @@ namespace VadonDemo::View
 		bool initialize();
         void update();
 
+		void register_type_metadata();
+
 		void update_dirty_entities();
 
 		void init_entity(Vadon::ECS::EntityHandle entity);

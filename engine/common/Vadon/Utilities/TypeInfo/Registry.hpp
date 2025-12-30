@@ -1,9 +1,7 @@
 #ifndef VADON_UTILITIES_TYPEINFO_REGISTRY_HPP
 #define VADON_UTILITIES_TYPEINFO_REGISTRY_HPP
 #include <Vadon/Common.hpp>
-#include <Vadon/Utilities/TypeInfo/TypeName.hpp>
 
-#include <Vadon/Utilities/TypeInfo/Reflection/FunctionBindBase.hpp>
 #include <Vadon/Utilities/TypeInfo/Reflection/MemberBindBase.hpp>
 #include <Vadon/Utilities/TypeInfo/Reflection/Property.hpp>
 
@@ -12,53 +10,57 @@ namespace Vadon::Utilities
 	class TypeRegistry
 	{
 	public:
+		TypeRegistry();
+
+		bool initialize();
+
 		template<typename T, typename Base = T>
-		static void register_type(std::string_view hint_string = std::string_view())
+		static void register_type()
 		{
 			if constexpr (std::is_same_v<T, Base>)
 			{
-				internal_register_type(Vadon::Utilities::TypeName<T>::trimmed(), hint_string, sizeof(T), alignof(T));
+				internal_register_type(TypeRegistryTrait<T>::get_type_uuid(), sizeof(T), alignof(T));
 			}
 			else
 			{
-				internal_register_type(Vadon::Utilities::TypeName<T>::trimmed(), hint_string, sizeof(T), alignof(T), get_type_id<Base>());
+				// NOTE: calling it this way ensures that Base was registered first
+				internal_register_type(TypeRegistryTrait<T>::get_type_uuid(), sizeof(T), alignof(T), get_type_id<Base>());
 			}
 		}
 
 		template<typename T>
 		static TypeID get_type_id()
 		{
-			static TypeID type_id = get_type_id(Vadon::Utilities::TypeName<T>::trimmed());
+			static TypeID type_id = get_type_id(TypeRegistryTrait<T>::get_type_uuid());
 			return type_id;
 		}
 
-		VADONCOMMON_API static TypeID get_type_id(std::string_view type_name);
+		VADONCOMMON_API static TypeID get_type_id(const TypeUUID& type_uuid);
 
 		VADONCOMMON_API static bool is_base_of(TypeID base_id, TypeID type_id);
 
-		// TODO: property hints?
 		template<typename T>
-		static bool add_property(std::string_view name, MemberVariableBindBase property_bind)
+		static bool add_property(const PropertyUUID& property_uuid, MemberVariableBindBase property_bind)
 		{
-			return internal_add_property(get_type_id<T>(), name, std::move(property_bind));
+			return internal_add_property(get_type_id<T>(), property_uuid, std::move(property_bind));
 		}
 
 		// FIXME: extract type from member function?
 		template <typename T, auto Ptr>
-		static bool bind_method(std::string_view name)
+		static bool bind_method(const MemberFunctionUUID& method_uuid)
 		{
-			return internal_bind_method(get_type_id<T>(), name, std::move(create_member_function_bind<Ptr>()));
+			return internal_bind_method(get_type_id<T>(), method_uuid, std::move(create_member_function_bind<Ptr>()));
 		}
 
 		// TODO: use std::expected so we can check for failure?
 		template<typename T>
-		static TypeInfo get_type_info()
+		static ::Vadon::Foundation::TypeInfo get_type_info()
 		{
 			return get_type_info(get_type_id<T>());
 		}
 
 		// TODO: use std::expected so we can check for failure?
-		VADONCOMMON_API static TypeInfo get_type_info(TypeID type_id);
+		VADONCOMMON_API static ::Vadon::Foundation::TypeInfo get_type_info(TypeID type_id);
 
 		// TODO: use std::expected so we can check for failure?
 		template<typename T>
@@ -89,43 +91,60 @@ namespace Vadon::Utilities
 
 		VADONCOMMON_API static PropertyList get_properties(void* object, TypeID type_id);
 
-		VADONCOMMON_API static Variant get_property(void* object, TypeID type_id, std::string_view property_name);
-		VADONCOMMON_API static void set_property(void* object, TypeID type_id, std::string_view property_name, const Variant& value);
+		VADONCOMMON_API static PropertyInfo get_property_info(TypeID type_id, const PropertyUUID& property_uuid);
+
+		VADONCOMMON_API static Variant get_property(void* object, TypeID type_id, const PropertyUUID& property_uuid);
+		VADONCOMMON_API static void set_property(void* object, TypeID type_id, const PropertyUUID& property_uuid, const Variant& value);
 
 		VADONCOMMON_API static void apply_property_values(void* object, TypeID type_id, const PropertyList& properties);
+
+		VADONCOMMON_API static std::vector<TypeUUID> get_all_registered_types();
 	private:
-		struct TypeData
+		struct PropertyData
 		{
-			TypeInfo info;
-
-			// FIXME: implement more efficient lookups and bookkeeping!
-			std::unordered_map<std::string, MemberFunctionBind> methods;
-			std::unordered_map<std::string, MemberVariableBindBase> properties;
-
-			bool bind_method(std::string_view name, MemberFunctionBind method);
-			bool add_property(std::string_view name, MemberVariableBindBase property);
-
-			bool has_method(std::string_view name) const;
-			bool has_property(std::string_view name) const;
+			::Vadon::Foundation::Property info;
+			MemberVariableBindBase member_bind;
 		};
 
-		static VADONCOMMON_API void internal_register_type(std::string_view type_name, std::string_view hint_string, size_t size, size_t alignment, TypeID base_type_id = TypeID::INVALID);
-		static VADONCOMMON_API bool internal_add_property(TypeID type_id, std::string_view name, MemberVariableBindBase property_bind);
-		static VADONCOMMON_API bool internal_bind_method(TypeID type_id, std::string_view name, MemberFunctionBind method_bind);
-		
+		struct TypeData
+		{
+			// TODO: allow storing readable name (if provided by client code)
+			// Add utility function to print the name if available
+			::Vadon::Foundation::TypeInfo info;
+			TypeID base_id;
+			bool base_type = false;
+
+			std::unordered_map<MemberFunctionUUID, MemberFunctionBind> methods;
+			std::unordered_map<PropertyUUID, PropertyData> properties;
+
+			bool bind_method(const MemberFunctionUUID& method_uuid, MemberFunctionBind method);
+			bool add_property(const PropertyUUID& property_uuid, const ::Vadon::Foundation::Property& property_info, MemberVariableBindBase member_bind);
+
+			bool has_method(const MemberFunctionUUID& method_uuid) const;
+			bool has_property(const PropertyUUID& property_uuid) const;
+		};
+
+		static VADONCOMMON_API void internal_register_type(const TypeUUID& type_uuid, size_t size, size_t alignment, TypeID base_id = TypeID::INVALID);
+		static VADONCOMMON_API bool internal_add_property(TypeID type_id, const PropertyUUID& property_uuid, MemberVariableBindBase property_bind);
+		static VADONCOMMON_API bool internal_bind_method(TypeID type_id, const MemberFunctionUUID& method_uuid, MemberFunctionBind method_bind);
+
 		void register_type_with_base(TypeID type_id, TypeData& data, TypeID base_id);
 
-		bool has_method(TypeID type_id, std::string_view method_name) const;
-		bool has_property(TypeID type_id, std::string_view property_name) const;
+		bool has_method(TypeID type_id, const MemberFunctionUUID& method_uuid) const;
+		bool has_property(TypeID type_id, const PropertyUUID& property_uuid) const;
 
 		void internal_get_type_properties(TypeID type_id, PropertyInfoList& property_list) const;
 		void internal_get_properties(void* object, TypeID type_id, PropertyList& property_list) const;
 
-		const MemberVariableBindBase* internal_find_property(const TypeData& type_data, std::string_view name) const;
-		void internal_apply_property_value(const TypeData& type_data, void* object, std::string_view property_name, const Variant& value);
+		const PropertyData* internal_find_property(const TypeData& type_data, const PropertyUUID& property_uuid) const;
+		PropertyData* internal_find_property(const TypeData& type_data, const PropertyUUID& property_uuid) { return const_cast<PropertyData*>(std::as_const(*this).internal_find_property(type_data, property_uuid)); }
+
+		void internal_apply_property_value(const TypeData& type_data, void* object, const PropertyUUID& property_uuid, const Variant& value);
 
 		// FIXME: hide via PIMPL?
-		std::unordered_map<std::string, TypeID> m_id_lookup;
+		bool m_initialized = false;
+
+		std::unordered_map<TypeUUID, TypeID> m_id_lookup;
 		std::underlying_type_t<TypeID> m_id_counter = 1;
 
 		// FIXME: use vector to improve lookup times?

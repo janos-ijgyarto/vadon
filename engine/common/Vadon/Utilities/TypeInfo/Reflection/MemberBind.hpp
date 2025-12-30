@@ -56,7 +56,7 @@ namespace Vadon::Utilities
 		constexpr MemberVariableBind()
 		{
 			using MemberInfo = decltype(get_member_pointer_info(MemberPtr));
-			data_type = get_erased_data_type_id<MemberInfo::_MemberType>();
+			type = get_erased_data_type_id<MemberInfo::_MemberType>();
 		}
 
 		MemberVariableBind& bind_member_getter()
@@ -90,5 +90,13 @@ namespace Vadon::Utilities
 			return *this;
 		}
 	};
+
+	template<typename T, auto MemberPtr>
+	constexpr MemberVariableBind<MemberPtr> create_member_variable_bind()
+	{
+		using MemberInfo = decltype(get_member_pointer_info(MemberPtr));
+		static_assert(std::is_same_v<typename MemberInfo::_ObjectType, T>, "A type may only register its own members!");
+		return MemberVariableBind<MemberPtr>();
+	}
 }
 #endif

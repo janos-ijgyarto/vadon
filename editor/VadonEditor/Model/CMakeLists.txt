@@ -6,4 +6,5 @@ target_sources(${VADONEDITOR_CURRENT_TARGET}
     ModelSystem.hpp
     ModelSystem.cpp
     Module.hpp
+    Property.hpp
    )

@@ -287,6 +287,12 @@ namespace Vadon::Utilities
 				const Object& object = m_object_stack[parent_ref.stack_index];
 				return object.values.find(string_id) != object.values.end();
 			}
+
+			// FIXME: use UUIDs directly instead of strings!
+			bool has_key(const ::Vadon::Foundation::UUID& key) const override
+			{
+				return has_key(uuid_to_base64_string(key));
+			}
 		protected:
 			enum class ReferenceType
 			{
@@ -358,19 +364,19 @@ namespace Vadon::Utilities
 			Result serialize_color(Vadon::Math::ColorRGBA& color_value) override { return serialize_direct(color_value.value); }
 
 			// TODO: find a way to generalize where we just provide a data pointer and a size?
-			Result serialize_uuid(Vadon::Utilities::UUID& value) override
+			Result serialize_uuid(::Vadon::Foundation::UUID& value) override
 			{
 				if (is_reading() == true)
 				{
 					const std::byte* data_ptr = m_buffer.data() + m_current_ref.value;
-					memcpy(value.data.data(), data_ptr, sizeof(Vadon::Utilities::UUIDData));
+					memcpy(value.data, data_ptr, ::Vadon::Foundation::UUID::c_uuid_width);
 				}
 				else
 				{
 					const size_t prev_size = m_buffer.size();
-					m_buffer.insert(m_buffer.end(), sizeof(Vadon::Utilities::UUIDData), std::byte{0});
+					m_buffer.insert(m_buffer.end(), ::Vadon::Foundation::UUID::c_uuid_width, std::byte{0});
 
-					memcpy(m_buffer.data() + prev_size, value.data.data(), sizeof(Vadon::Utilities::UUIDData));
+					memcpy(m_buffer.data() + prev_size, value.data, ::Vadon::Foundation::UUID::c_uuid_width);
 
 					write_value_entry(static_cast<uint32_t>(prev_size));
 				}
@@ -502,6 +508,12 @@ namespace Vadon::Utilities
 				}
 
 				return Result::SUCCESSFUL; 
+			}
+
+			// FIXME: use UUIDs directly instead of strings!
+			Result set_value_reference(const ::Vadon::Foundation::UUID& uuid_key) override
+			{
+				return set_value_reference(uuid_to_base64_string(uuid_key));
 			}
 
 			Result set_value_reference(size_t index) override 
@@ -826,6 +838,12 @@ namespace Vadon::Utilities
 				}
 				return false;
 			}
+
+			// FIXME: use UUIDs directly instead of strings!
+			bool has_key(const ::Vadon::Foundation::UUID& key) const override
+			{
+				return has_key(uuid_to_base64_string(key));
+			}
 		protected:
 			Result set_value_reference(std::string_view key) override
 			{
@@ -851,6 +869,12 @@ namespace Vadon::Utilities
 				}				
 
 				return Result::SUCCESSFUL;
+			}
+
+			// FIXME: use UUIDs directly instead of strings!
+			Result set_value_reference(const ::Vadon::Foundation::UUID& uuid_key) override
+			{
+				return set_value_reference(uuid_to_base64_string(uuid_key));
 			}
 
 			Result set_value_reference(size_t index) override
@@ -972,7 +996,7 @@ namespace Vadon::Utilities
 				}
 			}
 
-			Result serialize_uuid(Vadon::Utilities::UUID& value) override
+			Result serialize_uuid(::Vadon::Foundation::UUID& value) override
 			{
 				std::string base64_uuid;
 				if (is_reading() == true)
@@ -982,14 +1006,15 @@ namespace Vadon::Utilities
 					{
 						return parse_result;
 					}
-					if (value.from_base64_string(base64_uuid) == false)
+
+					if (uuid_from_base64_string(base64_uuid, value) == false)
 					{
 						return Result::INVALID_DATA;
 					}
 				}
 				else
 				{
-					base64_uuid = value.to_base64_string();
+					base64_uuid = uuid_to_base64_string(value);
 					return internal_serialize_value(base64_uuid);
 				}
 
@@ -1076,6 +1101,12 @@ namespace Vadon::Utilities
 		return key_result;
 	}
 
+	// FIXME: use UUIDs directly instead of strings!
+	Serializer::Result Serializer::open_array(const ::Vadon::Foundation::UUID& key)
+	{
+		return open_array(uuid_to_base64_string(key));
+	}
+
 	Serializer::Result Serializer::open_array(size_t index)
 	{
 		const Result index_result = set_value_reference(index);
@@ -1096,6 +1127,12 @@ namespace Vadon::Utilities
 		}
 
 		return key_result;
+	}
+
+	// FIXME: use UUIDs directly instead of strings!
+	Serializer::Result Serializer::open_object(const ::Vadon::Foundation::UUID& key)
+	{
+		return open_object(uuid_to_base64_string(key));
 	}
 
 	Serializer::Result Serializer::open_object(size_t index)

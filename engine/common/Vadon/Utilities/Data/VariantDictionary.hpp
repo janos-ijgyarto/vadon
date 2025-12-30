@@ -1,6 +1,7 @@
 #ifndef VADON_UTILITIES_DATA_VARIANTDICTIONARY_HPP
 #define VADON_UTILITIES_DATA_VARIANTDICTIONARY_HPP
 #include <Vadon/Utilities/Data/VariantBase.hpp>
+#include <Vadon/Utilities/TypeInfo/TypeInfo.hpp>
 #include <unordered_map>
 namespace Vadon::Utilities
 {
@@ -9,7 +10,7 @@ namespace Vadon::Utilities
 	struct VariantDictionary
 	{
 		VariantUnorderedMap data;
-		ErasedDataTypeID data_type;
+		TypeID data_type;
 
 		bool operator==(const VariantDictionary& /*other*/) const
 		{

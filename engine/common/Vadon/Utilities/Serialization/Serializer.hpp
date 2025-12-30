@@ -8,10 +8,12 @@
 #include <memory>
 #include <string>
 #include <span>
-namespace Vadon::Utilities
+namespace Vadon::Foundation
 {
 	struct UUID;
-
+}
+namespace Vadon::Utilities
+{
 	class Serializer
 	{
 	public:
@@ -63,6 +65,19 @@ namespace Vadon::Utilities
 			return key_result;
 		}
 
+		// Object members (using UUID)
+		template<typename T>
+		Result serialize(const ::Vadon::Foundation::UUID& key, T& value)
+		{
+			const Result key_result = set_value_reference(key);
+			if (key_result == Result::SUCCESSFUL)
+			{
+				return internal_serialize_value<T>(value);
+			}
+
+			return key_result;
+		}
+
 		// Array elements
 		template<typename T>
 		Result serialize(size_t index, T& value)
@@ -77,21 +92,25 @@ namespace Vadon::Utilities
 		}
 
 		VADONCOMMON_API Result open_array(std::string_view key);
+		VADONCOMMON_API Result open_array(const ::Vadon::Foundation::UUID& key);
 		VADONCOMMON_API Result open_array(size_t index);
 
 		virtual size_t get_array_size() const = 0;
 		virtual Result close_array() = 0;
 
 		virtual bool has_key(std::string_view key) const = 0;
+		virtual bool has_key(const ::Vadon::Foundation::UUID& key) const = 0;
 		// TODO: get list of keys from object?
 
 		VADONCOMMON_API Result open_object(std::string_view key);
+		VADONCOMMON_API Result open_object(const ::Vadon::Foundation::UUID& key);
 		VADONCOMMON_API Result open_object(size_t index);
 		virtual Result close_object() = 0;
 	protected:
 		Serializer(std::vector<std::byte>& buffer, Mode mode);
 
 		virtual Result set_value_reference(std::string_view key) = 0;
+		virtual Result set_value_reference(const ::Vadon::Foundation::UUID& uuid_key) = 0;
 		virtual Result set_value_reference(size_t index) = 0;
 
 		virtual Result internal_open_object() = 0;
@@ -136,13 +155,16 @@ namespace Vadon::Utilities
 		template<> Result internal_serialize_value(float& value) { return serialize_float(value); }
 		template<> Result internal_serialize_value(bool& value) { return serialize_bool(value); }
 		template<> Result internal_serialize_value(std::string& value) { return serialize_string(value); }
-		template<> Result internal_serialize_value(Vadon::Utilities::UUID& value) { return serialize_uuid(value); }
+		template<> Result internal_serialize_value(::Vadon::Foundation::UUID& value) { return serialize_uuid(value); }
 
 		// TODO: can make a template wrapper for all vectors with size param (just point to first value)
 		template<> Result internal_serialize_value(Vadon::Math::Vector2& value) { return serialize_array_values(std::span(&value.x, 2)); }
 		template<> Result internal_serialize_value(Vadon::Math::Vector2i& value) { return serialize_array_values(std::span(&value.x, 2)); }
 
 		template<> Result internal_serialize_value(Vadon::Math::Vector3& value) { return serialize_array_values(std::span(&value.x, 3)); }
+		template<> Result internal_serialize_value(Vadon::Math::Vector3i& value) { return serialize_array_values(std::span(&value.x, 3)); }
+
+		template<> Result internal_serialize_value(Vadon::Math::Vector4& value) { return serialize_array_values(std::span(&value.x, 4)); }
 
 		template<> Result internal_serialize_value(Vadon::Math::ColorRGBA& value) { return serialize_color(value); }
 
@@ -152,7 +174,7 @@ namespace Vadon::Utilities
 		virtual Result serialize_bool(bool& value) = 0;
 		virtual Result serialize_string(std::string& value) = 0;
 		virtual Result serialize_color(Vadon::Math::ColorRGBA& color) = 0;
-		virtual Result serialize_uuid(Vadon::Utilities::UUID& value) = 0;
+		virtual Result serialize_uuid(::Vadon::Foundation::UUID& value) = 0;
 
 		std::vector<std::byte>& m_buffer;
 		Mode m_mode;

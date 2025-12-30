@@ -49,7 +49,7 @@ qt_generate_deploy_app_script(
     OUTPUT_SCRIPT VADONEDITOR_DEPLOY_SCRIPT
     NO_TRANSLATIONS
     NO_COMPILER_RUNTIME
-    DEPLOY_TOOL_OPTIONS "--release"
+    DEPLOY_TOOL_OPTIONS "$<$<CONFIG:Debug>:--debug>$<$<NOT:$<CONFIG:Debug>>:--release>"
 )
 
 install(SCRIPT ${VADONEDITOR_DEPLOY_SCRIPT}

@@ -1,16 +1,18 @@
 #ifndef VADONEDITOR_SIMULATOR_PLUGIN_PLUGINMANAGER_HPP
 #define VADONEDITOR_SIMULATOR_PLUGIN_PLUGINMANAGER_HPP
-#include <VadonEditor/Simulator/API/Simulator.hpp>
+#include <Vadon/Foundation/Editor/SimulatorInterface.hpp>
 #include <memory>
+namespace Vadon::Foundation
+{
+	class EditorPluginInterface;
+}
 namespace VadonEditor::Core
 {
 	class Application;
 }
 namespace VadonEditor::Simulator
 {
-	class PluginInterface;
-
-	class PluginManager : public VadonEditor::Simulator::SimulatorInterface
+	class PluginManager : public Vadon::Foundation::EditorSimulatorInterface
 	{
 	public:
 		PluginManager(Core::Application& application);
@@ -20,7 +22,7 @@ namespace VadonEditor::Simulator
 		void update();
 		void shutdown();
 
-		PluginInterface* get_plugin() const;
+		::Vadon::Foundation::EditorPluginInterface* get_plugin() const;
 
 		void dispatch_message_to_editor(const void* data, size_t size) override;
 	private:

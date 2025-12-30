@@ -16,11 +16,6 @@ namespace VadonEditor::UI
 	void UUIDDialog::generate_clicked()
 	{
 		QUuid new_uuid = QUuid::createUuid();
-		QUuid::Id128Bytes new_uuid_bytes = new_uuid.toBytes();
-
-		QByteArray uuid_byte_array;
-		uuid_byte_array.append(QByteArrayView(new_uuid_bytes));
-
-		m_ui.uuidLineEdit->setText(uuid_byte_array.toBase64(QByteArray::Base64Encoding));
+		m_ui.uuidLineEdit->setText(new_uuid.toString(QUuid::StringFormat::WithoutBraces));
 	}
 }

@@ -2,11 +2,11 @@
 #define VADON_SCENE_RESOURCE_RESOURCE_HPP
 #include <Vadon/Utilities/Container/ObjectPool/Handle.hpp>
 #include <Vadon/Utilities/System/UUID/UUID.hpp>
-#include <Vadon/Utilities/TypeInfo/TypeInfo.hpp>
+#include <Vadon/Utilities/TypeInfo/Registry.hpp>
 namespace Vadon::Scene
 {
 	VADON_DECLARE_TYPED_POOL_HANDLE(ResourceBase, ResourceHandle);
-	using ResourceID = Vadon::Utilities::UUID;
+	using ResourceID = ::Vadon::Foundation::UUID;
 		
 	struct ResourceInfo
 	{
@@ -19,6 +19,8 @@ namespace Vadon::Scene
 	// TODO: revise as class to restrict access to base members?
 	struct Resource
 	{
+		VADON_DECLARE_MEMBER_UUID(name, "27c87325-75f7-4c32-b309-0dd56f8cc5d9");
+
 		ResourceID id;
 		std::string name;
 
@@ -34,7 +36,7 @@ namespace Vadon::Scene
 		TypedResourceID<T>& operator=(const ResourceID& id) { data = id.data; return *this; }
 
 		ResourceID to_resource_id() const { return ResourceID{ .data = this->data }; }
-		static TypedResourceID<T> from_resource_id(ResourceID id) { _TypedID typed_id; typed_id.data = id.data; return typed_id; }
+		static TypedResourceID<T> from_resource_id(ResourceID id) { _TypedID typed_id; memcpy(typed_id.data, id.data, ::Vadon::Foundation::UUID::c_uuid_width); return typed_id; }
 
 		ResourceID& as_resource_id() { return *this; }
 	};
@@ -59,6 +61,17 @@ namespace Vadon::Scene
 	template<typename T>
 	concept is_resource_handle = std::is_base_of_v<Vadon::Scene::ResourceHandle, T> && (std::is_same_v<Vadon::Scene::ResourceHandle, T> == false);
 }
+
+namespace Vadon::Utilities
+{
+	template<Vadon::Scene::is_resource_id T>
+	static constexpr Vadon::Utilities::TypeID get_erased_data_type_id()
+	{
+		return Vadon::Utilities::TypeRegistry::get_type_id<Vadon::Scene::ResourceID>();
+	}
+}
+
+VADON_REGISTER_TYPE_UUID(Vadon::Scene::Resource, "2cb091c4-53e5-4481-9454-72b68424690b");
 
 #define VADON_SCENE_DECLARE_TYPED_RESOURCE_ID(_resource, _name) using _name = Vadon::Scene::TypedResourceID<_resource>
 #define VADON_SCENE_DECLARE_TYPED_RESOURCE_HANDLE(_resource, _name) using _name = Vadon::Scene::TypedResourceHandle<_resource>

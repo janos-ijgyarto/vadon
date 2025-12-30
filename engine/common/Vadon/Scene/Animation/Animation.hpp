@@ -35,7 +35,7 @@ namespace Vadon::Scene
 		AnimationChannelType data_type = AnimationChannelType::INVALID;
 		Vadon::Utilities::DataRange keyframe_range;
 
-		VADONCOMMON_API static Vadon::Utilities::ErasedDataTypeID get_data_type_id(AnimationChannelType channel_type);
+		VADONCOMMON_API static Vadon::Utilities::TypeID get_data_type_id(AnimationChannelType channel_type);
 	};
 
 	struct AnimationData
@@ -50,4 +50,6 @@ namespace Vadon::Scene
 	VADON_SCENE_DECLARE_TYPED_RESOURCE_ID(Animation, AnimationID);
 	VADON_SCENE_DECLARE_TYPED_RESOURCE_HANDLE(Animation, AnimationHandle);
 }
+
+VADON_REGISTER_TYPE_UUID(Vadon::Scene::Animation, "8b41bdad-0036-45d2-ac31-81729abe6c25");
 #endif

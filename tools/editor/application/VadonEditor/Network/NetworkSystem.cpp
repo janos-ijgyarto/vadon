@@ -3,11 +3,12 @@
 #include <VadonEditor/Core/Application.hpp>
 #include <VadonEditor/Core/Settings.hpp>
 
-#include <VadonEditor/Network/Message/Message.hpp>
 #include <VadonEditor/Network/TCP/Server.hpp>
 #include <VadonEditor/Network/TCP/Client.hpp>
 
-#include <VadonEditor/Simulator/API/Plugin.hpp>
+#include <Vadon/Foundation/Editor/Message.hpp>
+#include <Vadon/Foundation/Editor/PluginInterface.hpp>
+
 #include <VadonEditor/Simulator/Plugin/PluginManager.hpp>
 
 #include <QApplication>
@@ -108,11 +109,11 @@ namespace VadonEditor::Network
 		{
 			m_buffer.append(data, size);
 
-			while (m_buffer.size() >= sizeof(VadonEditor::Network::MessageHeader))
+			while (m_buffer.size() >= sizeof(::Vadon::Foundation::EditorMessageHeader))
 			{
 				// We have enough data for a header, check payload
-				const VadonEditor::Network::MessageHeader header = *reinterpret_cast<VadonEditor::Network::MessageHeader*>(m_buffer.data());
-				if ((m_buffer.size() - sizeof(VadonEditor::Network::MessageHeader)) < header.size)
+				const ::Vadon::Foundation::EditorMessageHeader header = *reinterpret_cast<::Vadon::Foundation::EditorMessageHeader*>(m_buffer.data());
+				if ((m_buffer.size() - sizeof(::Vadon::Foundation::EditorMessageHeader)) < header.size)
 				{
 					// Didn't get the rest of the packet yet
 					return;
@@ -120,11 +121,11 @@ namespace VadonEditor::Network
 
 				// Add header and payload to byte array and send out as a signal
 				QByteArray message_data;
-				message_data.append(m_buffer.data(), header.size + sizeof(VadonEditor::Network::MessageHeader));
+				message_data.append(m_buffer.data(), header.size + sizeof(::Vadon::Foundation::EditorMessageHeader));
 
 				emit m_application.get_network_system().received_message(message_data);
 
-				m_buffer.slice(sizeof(VadonEditor::Network::MessageHeader) + header.size);
+				m_buffer.slice(sizeof(::Vadon::Foundation::EditorMessageHeader) + header.size);
 			}
 		}
 

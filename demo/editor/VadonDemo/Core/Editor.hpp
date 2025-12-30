@@ -49,6 +49,8 @@ namespace VadonDemo::Core
         bool initialize(int argc, char* argv[]);
         void shutdown();
 
+        void register_type_metadata();
+
         void begin_frame();
         void update_subsystems();
 

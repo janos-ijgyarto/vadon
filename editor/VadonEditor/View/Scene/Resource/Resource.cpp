@@ -1,6 +1,7 @@
 #include <VadonEditor/View/Scene/Resource/Resource.hpp>
 
 #include <VadonEditor/Core/Editor.hpp>
+#include <VadonEditor/Core/TypeInfo/MetadataRegistry.hpp>
 
 #include <VadonEditor/Model/ModelSystem.hpp>
 
@@ -72,10 +73,18 @@ namespace VadonEditor::View
 		m_resource_type_combo.deselect();
 		m_resource_type_combo.items.clear();
 
+		Core::MetadataRegistry& metadata_registry = m_editor.get_metadata_registry();
+
 		for (Vadon::Utilities::TypeID current_resource_type : m_resource_types)
 		{
-			const Vadon::Utilities::TypeInfo current_type_info = Vadon::Utilities::TypeRegistry::get_type_info(current_resource_type);
-			m_resource_type_combo.items.push_back(current_type_info.name);
+			const Vadon::Utilities::TypeUUID current_type_uuid = Vadon::Utilities::TypeRegistry::get_type_info(current_resource_type).id;
+			const char* resource_type_name = metadata_registry.get_type_metadata(current_type_uuid, "name");
+			if (resource_type_name == nullptr)
+			{
+				VADON_ERROR("Must provide type metadata!");
+			}
+
+			m_resource_type_combo.items.push_back(std::string(resource_type_name));
 		}
 
 		m_resource_type_combo.selected_item = 0;
@@ -196,13 +205,13 @@ namespace VadonEditor::View
 					if (current_property->render(dev_gui) == true)
 					{
 						// Property edited, update the resource
-						const Vadon::Utilities::Property& property_data = current_property->get_property();
-						m_resource->edit_property(property_data.name, property_data.value);
+						const Model::Property& property_data = current_property->get_property();
+						m_resource->edit_property(property_data.id, property_data.value);
 
 						// Re-enter the value from the property into the editor (in case something changed it, e.g constraints)
 						// FIXME: this will cause redundant refreshes of the UI!
 						// TODO: make proper use of the "modified" flag and only update once explicitly requested (and only the modified elements)?
-						current_property->set_value(m_resource->get_property(property_data.name));
+						current_property->set_value(m_resource->get_property(property_data.id));
 
 						edited = true;
 					}
@@ -227,8 +236,8 @@ namespace VadonEditor::View
 		property_editor_info.owner = resource; // Embedded resources will be owned by the resource in this widget
 		property_editor_info.read_only = m_read_only;
 
-		const Vadon::Utilities::PropertyList resource_properties = resource->get_properties();
-		for (const Vadon::Utilities::Property& current_property : resource_properties)
+		const std::vector<Model::Property> resource_properties = resource->get_properties();
+		for (const Model::Property& current_property : resource_properties)
 		{
 			m_property_editors.emplace_back(PropertyEditor::create_property_editor(m_editor, current_property, property_editor_info));
 		}
@@ -309,8 +318,15 @@ namespace VadonEditor::View
 				}
 			}
 
-			const Vadon::Utilities::TypeInfo resource_type_info = Vadon::Utilities::TypeRegistry::get_type_info(resource->get_info().type_id);
-			m_label = std::format("{} ({})", resource_path, resource_type_info.name);
+			Core::MetadataRegistry& metadata_registry = m_editor.get_metadata_registry();
+
+			const char* resource_type_name = metadata_registry.get_type_metadata(resource->get_info().id, "name");
+			if (resource_type_name == nullptr)
+			{
+				VADON_ERROR("Must provide type metadata!");
+			}
+
+			m_label = std::format("{} ({})", resource_path, resource_type_name);
 		}
 		else
 		{

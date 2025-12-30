@@ -60,10 +60,10 @@ namespace VadonEditor::Model
 		Vadon::ECS::ComponentIDList get_component_types() const;
 		Component get_component_data(Vadon::ECS::ComponentID component_id) const;
 
-		Vadon::Utilities::TypeInfoList get_available_component_list() const;
+		std::vector<ComponentInfo> get_available_component_list() const;
 
-		Vadon::Utilities::Variant get_component_property(Vadon::ECS::ComponentID component_type_id, std::string_view property_name) const;
-		void edit_component_property(Vadon::ECS::ComponentID component_type_id, std::string_view property_name, const Vadon::Utilities::Variant& value);
+		Vadon::Utilities::Variant get_component_property(Vadon::ECS::ComponentID component_type_id, const Vadon::Utilities::PropertyUUID& property_uuid) const;
+		void edit_component_property(Vadon::ECS::ComponentID component_type_id, const Vadon::Utilities::PropertyUUID& property_uuid, const Vadon::Utilities::Variant& value);
 	private:
 		Entity(Core::Editor& editor, Vadon::ECS::EntityHandle entity_handle, EntityID id, Scene* owning_scene);
 

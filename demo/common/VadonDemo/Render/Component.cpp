@@ -11,9 +11,9 @@ namespace VadonDemo::Render
 
 		Vadon::ECS::ComponentRegistry::register_component_type<CanvasComponent>();
 
-		TypeRegistry::add_property<CanvasComponent>("visible", Vadon::Utilities::MemberVariableBind<&CanvasComponent::visible>().bind_member_getter().bind_member_setter());
-		TypeRegistry::add_property<CanvasComponent>("z_order", Vadon::Utilities::MemberVariableBind<&CanvasComponent::z_order>().bind_member_getter().bind_member_setter());
-		TypeRegistry::add_property<CanvasComponent>("layer_def", Vadon::Utilities::MemberVariableBind<&CanvasComponent::layer_def>().bind_member_getter().bind_member_setter());
+		TypeRegistry::add_property<CanvasComponent>(VADON_GET_MEMBER_UUID(CanvasComponent, visible), Vadon::Utilities::MemberVariableBind<&CanvasComponent::visible>().bind_member_getter().bind_member_setter());
+		TypeRegistry::add_property<CanvasComponent>(VADON_GET_MEMBER_UUID(CanvasComponent, z_order), Vadon::Utilities::MemberVariableBind<&CanvasComponent::z_order>().bind_member_getter().bind_member_setter());
+		TypeRegistry::add_property<CanvasComponent>(VADON_GET_MEMBER_UUID(CanvasComponent, layer_def), Vadon::Utilities::MemberVariableBind<&CanvasComponent::layer_def>().bind_member_getter().bind_member_setter());
 	}
 
 	void SpriteTilingComponent::register_component()
@@ -22,10 +22,10 @@ namespace VadonDemo::Render
 
 		Vadon::ECS::ComponentRegistry::register_component_type<SpriteTilingComponent>();
 
-		TypeRegistry::add_property<SpriteTilingComponent>("texture", Vadon::Utilities::MemberVariableBind<&SpriteTilingComponent::texture>().bind_member_getter().bind_member_setter());
-		TypeRegistry::add_property<SpriteTilingComponent>("tile_size", Vadon::Utilities::MemberVariableBind<&SpriteTilingComponent::tile_size>().bind_member_getter().bind_member_setter());
-		TypeRegistry::add_property<SpriteTilingComponent>("repeat", Vadon::Utilities::MemberVariableBind<&SpriteTilingComponent::repeat>().bind_member_getter().bind_member_setter());
-		TypeRegistry::add_property<SpriteTilingComponent>("rotate", Vadon::Utilities::MemberVariableBind<&SpriteTilingComponent::rotate>().bind_member_getter().bind_member_setter());
+		TypeRegistry::add_property<SpriteTilingComponent>(VADON_GET_MEMBER_UUID(SpriteTilingComponent, texture), Vadon::Utilities::MemberVariableBind<&SpriteTilingComponent::texture>().bind_member_getter().bind_member_setter());
+		TypeRegistry::add_property<SpriteTilingComponent>(VADON_GET_MEMBER_UUID(SpriteTilingComponent, tile_size), Vadon::Utilities::MemberVariableBind<&SpriteTilingComponent::tile_size>().bind_member_getter().bind_member_setter());
+		TypeRegistry::add_property<SpriteTilingComponent>(VADON_GET_MEMBER_UUID(SpriteTilingComponent, repeat), Vadon::Utilities::MemberVariableBind<&SpriteTilingComponent::repeat>().bind_member_getter().bind_member_setter());
+		TypeRegistry::add_property<SpriteTilingComponent>(VADON_GET_MEMBER_UUID(SpriteTilingComponent, rotate), Vadon::Utilities::MemberVariableBind<&SpriteTilingComponent::rotate>().bind_member_getter().bind_member_setter());
 	}
 
 	void FullscreenEffectComponent::register_component()
@@ -34,7 +34,7 @@ namespace VadonDemo::Render
 
 		Vadon::ECS::ComponentRegistry::register_component_type<FullscreenEffectComponent>();
 
-		TypeRegistry::add_property<FullscreenEffectComponent>("shader", Vadon::Utilities::MemberVariableBind<&FullscreenEffectComponent::shader>().bind_member_getter().bind_member_setter());
-		TypeRegistry::add_property<FullscreenEffectComponent>("view_agnostic", Vadon::Utilities::MemberVariableBind<&FullscreenEffectComponent::view_agnostic>().bind_member_getter().bind_member_setter());
+		TypeRegistry::add_property<FullscreenEffectComponent>(VADON_GET_MEMBER_UUID(FullscreenEffectComponent, shader), Vadon::Utilities::MemberVariableBind<&FullscreenEffectComponent::shader>().bind_member_getter().bind_member_setter());
+		TypeRegistry::add_property<FullscreenEffectComponent>(VADON_GET_MEMBER_UUID(FullscreenEffectComponent, view_agnostic), Vadon::Utilities::MemberVariableBind<&FullscreenEffectComponent::view_agnostic>().bind_member_getter().bind_member_setter());
 	}
 }

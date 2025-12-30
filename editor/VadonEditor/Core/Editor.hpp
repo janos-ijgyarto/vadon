@@ -24,6 +24,8 @@ namespace VadonEditor::Core
 		// TODO: editor settings?
 	};
 
+	class MetadataRegistry;
+
 	class Editor : public SystemRegistry
 	{
 	public:
@@ -35,6 +37,8 @@ namespace VadonEditor::Core
 
 		VADONEDITOR_API VadonApp::Core::Application& get_engine_app();
 		VADONEDITOR_API Vadon::Core::EngineCoreInterface& get_engine_core();
+
+		VADONEDITOR_API MetadataRegistry& get_metadata_registry();
 	private:
 		struct Internal;
 		std::unique_ptr<Internal> m_internal;

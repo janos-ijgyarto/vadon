@@ -67,6 +67,8 @@ if(MSVC OR ${CMAKE_GENERATOR} MATCHES "Xcode")
 	set_property(GLOBAL PROPERTY PREDEFINED_TARGETS_FOLDER "CMake Targets")
 endif()
 
+add_subdirectory(foundation)
+
 # FIXME: we allow either only engine or only tools configuration
 # Doing both at the same time is more complicated (need to make sure engine has access to all necessary tools)
 if(${VADON_CONFIGURATION_MODE} STREQUAL "ENGINE")

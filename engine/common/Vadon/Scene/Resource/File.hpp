@@ -15,4 +15,6 @@ namespace Vadon::Scene
 	VADON_SCENE_DECLARE_TYPED_RESOURCE_ID(FileResource, FileResourceID);
 	VADON_SCENE_DECLARE_TYPED_RESOURCE_HANDLE(FileResource, FileResourceHandle);
 }
+
+VADON_REGISTER_TYPE_UUID(Vadon::Scene::FileResource, "af09a2a9-b4eb-4a64-b654-0f7b8a1c0ffb");
 #endif

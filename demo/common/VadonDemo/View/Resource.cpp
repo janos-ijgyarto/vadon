@@ -19,9 +19,9 @@ namespace VadonDemo::View
 
 		ResourceRegistry::register_resource_type<Shape, RenderResource>();
 
-		TypeRegistry::add_property<Shape>("type", Vadon::Utilities::MemberVariableBind<&Shape::type>().bind_member_getter().bind_member_setter());
-		TypeRegistry::add_property<Shape>("radius", Vadon::Utilities::MemberVariableBind<&Shape::radius>().bind_member_getter().bind_member_setter());
-		TypeRegistry::add_property<Shape>("color", Vadon::Utilities::MemberVariableBind<&Shape::color>().bind_member_getter().bind_member_setter());
+		TypeRegistry::add_property<Shape>(VADON_GET_MEMBER_UUID(Shape, type), Vadon::Utilities::MemberVariableBind<&Shape::type>().bind_member_getter().bind_member_setter());
+		TypeRegistry::add_property<Shape>(VADON_GET_MEMBER_UUID(Shape, radius), Vadon::Utilities::MemberVariableBind<&Shape::radius>().bind_member_getter().bind_member_setter());
+		TypeRegistry::add_property<Shape>(VADON_GET_MEMBER_UUID(Shape, color), Vadon::Utilities::MemberVariableBind<&Shape::color>().bind_member_getter().bind_member_setter());
 	}
 
 	void Sprite::register_resource()
@@ -31,6 +31,6 @@ namespace VadonDemo::View
 
 		ResourceRegistry::register_resource_type<Sprite, RenderResource>();
 
-		TypeRegistry::add_property<Sprite>("texture", Vadon::Utilities::MemberVariableBind<&Sprite::texture>().bind_member_getter().bind_member_setter());
+		TypeRegistry::add_property<Sprite>(VADON_GET_MEMBER_UUID(Sprite, texture), Vadon::Utilities::MemberVariableBind<&Sprite::texture>().bind_member_getter().bind_member_setter());
 	}
 }

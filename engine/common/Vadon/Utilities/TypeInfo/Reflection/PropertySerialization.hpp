@@ -1,21 +1,14 @@
 #ifndef VADON_UTILITIES_TYPEINFO_REFLECTION_PROPERTYSERIALIZATION_HPP
 #define VADON_UTILITIES_TYPEINFO_REFLECTION_PROPERTYSERIALIZATION_HPP
+#include <Vadon/Foundation/TypeInfo/TypeInfo.hpp>
 #include <Vadon/Utilities/Serialization/Serializer.hpp>
-#include <Vadon/Utilities/TypeInfo/TypeList/VariantTypeList.hpp>
 namespace Vadon::Utilities
 {
-	template<typename T>
-	constexpr size_t variant_type_list_index_v = Vadon::Utilities::type_list_index_v<T, Vadon::Utilities::Variant>;
-
 	// TODO: default value?
 	template<typename T, typename Key>
-	bool serialize_trivial_property(Vadon::Utilities::Serializer& serializer, Key key, Vadon::Utilities::Variant& property_value, Vadon::Utilities::Serializer::Result& result, Vadon::Utilities::ErasedDataTypeID data_type)
+	Vadon::Utilities::Serializer::Result serialize_trivial_property(Vadon::Utilities::Serializer& serializer, Key key, Vadon::Utilities::Variant& property_value)
 	{
-		if (data_type.id != variant_type_list_index_v<T>)
-		{
-			return false;
-		}
-
+		Vadon::Utilities::Serializer::Result result = Vadon::Utilities::Serializer::Result::NOT_IMPLEMENTED;
 		if (serializer.is_reading() == true)
 		{
 			// TODO: allow setting default value if not found?
@@ -32,43 +25,47 @@ namespace Vadon::Utilities
 			result = serializer.serialize(key, value);
 		}
 
-		return true;
-	}
-
-	template <typename... Types>
-	Vadon::Utilities::Serializer::Result serialize_trivial_property_fold(Vadon::Utilities::Serializer& serializer, std::string_view property_name, Vadon::Utilities::Variant& property_value, Vadon::Utilities::ErasedDataTypeID data_type)
-	{
-		Vadon::Utilities::Serializer::Result result;
-		const bool fold_result = (serialize_trivial_property<Types, std::string_view>(serializer, property_name, property_value, result, data_type) || ...);
-		if (fold_result == false)
-		{
-			result = Vadon::Utilities::Serializer::Result::NOT_IMPLEMENTED;
-		}
-
 		return result;
 	}
 
-	template <typename... Types>
-	Vadon::Utilities::Serializer::Result serialize_trivial_property_fold(Vadon::Utilities::Serializer& serializer, size_t index, Vadon::Utilities::Variant& property_value, Vadon::Utilities::ErasedDataTypeID data_type)
+	// FIXME: find a more elegant solution where we can "register" each of these trivial types
+	// and search for the relevant function based on data type
+	template<typename Key>
+	inline Vadon::Utilities::Serializer::Result process_trivial_property(Vadon::Utilities::Serializer& serializer, Key key, Vadon::Utilities::Variant& property_value, Vadon::Utilities::TypeID data_type)
 	{
-		Vadon::Utilities::Serializer::Result result;
-		const bool fold_result = (serialize_trivial_property<Types, size_t>(serializer, index, property_value, result, data_type) || ...);
-		if (fold_result == false)
+		const Vadon::Foundation::BaseType base_type = static_cast<Vadon::Foundation::BaseType>(data_type);
+		switch (base_type)
 		{
-			result = Vadon::Utilities::Serializer::Result::NOT_IMPLEMENTED;
+		case Vadon::Foundation::BaseType::INT32:
+			return serialize_trivial_property<int, Key>(serializer, key, property_value);
+		case Vadon::Foundation::BaseType::UINT32:
+			return serialize_trivial_property<uint32_t, Key>(serializer, key, property_value);
+		case Vadon::Foundation::BaseType::FLOAT:
+			return serialize_trivial_property<float, Key>(serializer, key, property_value);
+		case Vadon::Foundation::BaseType::BOOL:
+			return serialize_trivial_property<bool, Key>(serializer, key, property_value);
+		case Vadon::Foundation::BaseType::STRING:
+			return serialize_trivial_property<std::string, Key>(serializer, key, property_value);
+		case Vadon::Foundation::BaseType::VECTOR2:
+			return serialize_trivial_property<Vadon::Math::Vector2, Key>(serializer, key, property_value);
+		case Vadon::Foundation::BaseType::VECTOR2I:
+			return serialize_trivial_property<Vadon::Math::Vector2i, Key>(serializer, key, property_value);
+		case Vadon::Foundation::BaseType::VECTOR3:
+			return serialize_trivial_property<Vadon::Math::Vector3, Key>(serializer, key, property_value);
+		case Vadon::Foundation::BaseType::VECTOR3I:
+			return serialize_trivial_property<Vadon::Math::Vector3i, Key>(serializer, key, property_value);
+		case Vadon::Foundation::BaseType::VECTOR4:
+			return serialize_trivial_property<Vadon::Math::Vector4, Key>(serializer, key, property_value);
+		case Vadon::Foundation::BaseType::COLORRGBA:
+			return serialize_trivial_property<Vadon::Math::ColorRGBA, Key>(serializer, key, property_value);
+		case Vadon::Foundation::BaseType::UUID:
+			return serialize_trivial_property<Vadon::Foundation::UUID, Key>(serializer, key, property_value);
+		default:
+			VADON_ERROR("Invalid property type!");
+			break;
 		}
 
-		return result;
-	}
-
-	inline Vadon::Utilities::Serializer::Result process_trivial_property(Vadon::Utilities::Serializer& serializer, std::string_view key, Vadon::Utilities::Variant& property_value, Vadon::Utilities::ErasedDataTypeID data_type)
-	{
-		return serialize_trivial_property_fold<int, float, bool, std::string, Vadon::Math::Vector2, Vadon::Math::Vector2i, Vadon::Math::Vector3, Vadon::Math::ColorRGBA, Vadon::Utilities::UUID>(serializer, key, property_value, data_type);
-	}
-
-	inline Vadon::Utilities::Serializer::Result process_trivial_property(Vadon::Utilities::Serializer& serializer, size_t index, Vadon::Utilities::Variant& property_value, Vadon::Utilities::ErasedDataTypeID data_type)
-	{
-		return serialize_trivial_property_fold<int, float, bool, std::string, Vadon::Math::Vector2, Vadon::Math::Vector2i, Vadon::Math::Vector3, Vadon::Math::ColorRGBA, Vadon::Utilities::UUID>(serializer, index, property_value, data_type);
+		return Vadon::Utilities::Serializer::Result::NOT_IMPLEMENTED;
 	}
 }
 #endif

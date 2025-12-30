@@ -6,8 +6,9 @@
 #include <VadonEditor/Network/MessageSystem.hpp>
 #include <VadonEditor/Network/Message/MessageSerializer.hpp>
 
-#include <VadonEditor/Simulator/API/LibraryInterface.hpp>
-#include <VadonEditor/Simulator/API/Plugin.hpp>
+#include <Vadon/Foundation/Editor/LibraryInterface.hpp>
+#include <Vadon/Foundation/Editor/PluginInterface.hpp>
+#include <Vadon/Foundation/TypeInfo/MetadataRegistry.hpp>
 
 // FIXME: ifdef this to only be used on Windows!
 #define WIN32_LEAN_AND_MEAN
@@ -61,12 +62,28 @@
 
 namespace
 {
+	class NullMetadataRegistry : public Vadon::Foundation::TypeMetadataRegistry
+	{
+	public:
+		size_t get_registered_type_count() const override { return 0; }
+		::Vadon::Foundation::UUID get_type_uuid(size_t) const override { return ::Vadon::Foundation::UUID{}; }
+
+		size_t get_type_property_count(const ::Vadon::Foundation::UUID&) const override { return 0; }
+		::Vadon::Foundation::UUID get_type_property_uuid(const ::Vadon::Foundation::UUID&, size_t) const override { return ::Vadon::Foundation::UUID{}; }
+
+		void set_type_metadata(const ::Vadon::Foundation::UUID&, const char*, const char*) override {}
+		const char* get_type_metadata(const ::Vadon::Foundation::UUID&, const char*) const override { return nullptr; }
+
+		void set_property_metadata(const ::Vadon::Foundation::UUID&, const ::Vadon::Foundation::UUID&, const char*, const char*) override {}
+		const char* get_property_metadata(const ::Vadon::Foundation::UUID&, const ::Vadon::Foundation::UUID&, const char*) const override { return nullptr; }
+	};
+
 	// NOTE: null implementation of plugin in case no plugin path was provided (useful for testing)
-	class NullPlugin : public VadonEditor::Simulator::PluginInterface
+	class NullPlugin : public Vadon::Foundation::EditorPluginInterface
 	{
 	public:
 		NullPlugin(VadonEditor::Core::Application& application)
-			: VadonEditor::Simulator::PluginInterface(application.get_plugin_manager())
+			: Vadon::Foundation::EditorPluginInterface(application.get_plugin_manager())
 		{
 		}
 
@@ -75,20 +92,20 @@ namespace
 			// TODO: anything?
 		}
 
-		void process_message_from_editor(const VadonEditor::Network::MessageHeader& header, const void* data) override
+		void process_message_from_editor(const ::Vadon::Foundation::EditorMessageHeader& header, const void* data) override
 		{
-			const VadonEditor::Network::MessageCategory category = static_cast<VadonEditor::Network::MessageCategory>(header.category);
+			const ::Vadon::Foundation::EditorMessageCategory category = static_cast<::Vadon::Foundation::EditorMessageCategory>(header.category);
 			switch (category)
 			{
-			case VadonEditor::Network::MessageCategory::TEST:
+			case ::Vadon::Foundation::EditorMessageCategory::TEST:
 			{
 				// Send back a test message of our own
-				VadonEditor::Network::TestMessage test_message_in;
+				::Vadon::Foundation::EditorTestMessage test_message_in;
 				VadonEditor::Network::MessageSerializer::parse_message(header, data, test_message_in);
 
 				qInfo() << "Server test message received: number = " << test_message_in.number << ", other number = " << test_message_in.other_number << Qt::endl;
 
-				VadonEditor::Network::TestMessage test_message_out;
+				::Vadon::Foundation::EditorTestMessage test_message_out;
 				test_message_out.number = 2 * test_message_in.number;
 				test_message_out.other_number = 3 * test_message_in.other_number;
 
@@ -110,6 +127,10 @@ namespace
 		{
 			QCoreApplication::quit();
 		}
+
+		const Vadon::Foundation::TypeMetadataRegistry& get_metadata_registry() const { return m_metadata_registry; }
+	private:
+		NullMetadataRegistry m_metadata_registry;
 	};
 
 	struct SimulatorSettings
@@ -128,7 +149,7 @@ namespace VadonEditor::Simulator
 		VADONEDITOR_SIMULATOR_API_FUNCTION_POINTER(VadonEditorPluginEntrypoint) m_entrypoint_func;
 		VADONEDITOR_SIMULATOR_API_FUNCTION_POINTER(VadonEditorPluginExit) m_exit_func;
 
-		PluginInterface* m_plugin;
+		::Vadon::Foundation::EditorPluginInterface* m_plugin;
 
 		Internal(Core::Application& application)
 			: m_application(application)
@@ -237,7 +258,7 @@ namespace VadonEditor::Simulator
 		m_internal->shutdown();
 	}
 
-	PluginInterface* PluginManager::get_plugin() const
+	::Vadon::Foundation::EditorPluginInterface* PluginManager::get_plugin() const
 	{
 		return m_internal->m_plugin;
 	}

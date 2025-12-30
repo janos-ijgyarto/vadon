@@ -64,7 +64,7 @@ namespace VadonDemo::Model
 
 		ResourceRegistry::register_resource_type<EnemyDefinition, Vadon::Scene::Resource>();
 
-		TypeRegistry::add_property<EnemyDefinition>("score_reward", Vadon::Utilities::MemberVariableBind<&EnemyDefinition::score_reward>().bind_member_getter().bind_member_setter());
+		TypeRegistry::add_property<EnemyDefinition>(VADON_GET_MEMBER_UUID(EnemyDefinition, score_reward), Vadon::Utilities::MemberVariableBind<&EnemyDefinition::score_reward>().bind_member_getter().bind_member_setter());
 	}
 
 	void EnemyMovementDefinition::register_resource()
@@ -81,7 +81,7 @@ namespace VadonDemo::Model
 
 		ResourceRegistry::register_resource_type<EnemyMovementLookahead, EnemyMovementDefinition>();
 
-		TypeRegistry::add_property<EnemyMovementLookahead>("lookahead_factor", Vadon::Utilities::MemberVariableBind<&EnemyMovementLookahead::lookahead_factor>().bind_member_getter().bind_member_setter());
+		TypeRegistry::add_property<EnemyMovementLookahead>(VADON_GET_MEMBER_UUID(EnemyMovementLookahead, lookahead_factor), Vadon::Utilities::MemberVariableBind<&EnemyMovementLookahead::lookahead_factor>().bind_member_getter().bind_member_setter());
 	}
 
 	Vadon::Math::Vector2 EnemyMovementLookahead::get_movement_direction(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle enemy, Vadon::ECS::EntityHandle target, float /*delta_time*/) const
@@ -125,8 +125,8 @@ namespace VadonDemo::Model
 
 		ResourceRegistry::register_resource_type<EnemyMovementWeaving, EnemyMovementDefinition>();
 
-		TypeRegistry::add_property<EnemyMovementWeaving>("cycle_duration", Vadon::Utilities::MemberVariableBind<&EnemyMovementWeaving::cycle_duration>().bind_member_getter().bind_member_setter());
-		TypeRegistry::add_property<EnemyMovementWeaving>("weave_factor", Vadon::Utilities::MemberVariableBind<&EnemyMovementWeaving::weave_factor>().bind_member_getter().bind_member_setter());
+		TypeRegistry::add_property<EnemyMovementWeaving>(VADON_GET_MEMBER_UUID(EnemyMovementWeaving, cycle_duration), Vadon::Utilities::MemberVariableBind<&EnemyMovementWeaving::cycle_duration>().bind_member_getter().bind_member_setter());
+		TypeRegistry::add_property<EnemyMovementWeaving>(VADON_GET_MEMBER_UUID(EnemyMovementWeaving, weave_factor), Vadon::Utilities::MemberVariableBind<&EnemyMovementWeaving::weave_factor>().bind_member_getter().bind_member_setter());
 	}
 
 	Vadon::Math::Vector2 VadonDemo::Model::EnemyMovementWeaving::get_movement_direction(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle enemy, Vadon::ECS::EntityHandle target, float delta_time) const
@@ -166,8 +166,8 @@ namespace VadonDemo::Model
 
 		ResourceRegistry::register_resource_type<EnemyWeaponAttackDefinition, Vadon::Scene::Resource>();
 
-		TypeRegistry::add_property<EnemyWeaponAttackDefinition>("projectile_count", Vadon::Utilities::MemberVariableBind<&EnemyWeaponAttackDefinition::projectile_count>().bind_member_getter().bind_member_setter());
-		TypeRegistry::add_property<EnemyWeaponAttackDefinition>("reload_time", Vadon::Utilities::MemberVariableBind<&EnemyWeaponAttackDefinition::reload_time>().bind_member_getter().bind_member_setter());
+		TypeRegistry::add_property<EnemyWeaponAttackDefinition>(VADON_GET_MEMBER_UUID(EnemyWeaponAttackDefinition, projectile_count), Vadon::Utilities::MemberVariableBind<&EnemyWeaponAttackDefinition::projectile_count>().bind_member_getter().bind_member_setter());
+		TypeRegistry::add_property<EnemyWeaponAttackDefinition>(VADON_GET_MEMBER_UUID(EnemyWeaponAttackDefinition, reload_time), Vadon::Utilities::MemberVariableBind<&EnemyWeaponAttackDefinition::reload_time>().bind_member_getter().bind_member_setter());
 	}
 
 	void EnemyContactDamageDefinition::register_resource()
@@ -177,6 +177,6 @@ namespace VadonDemo::Model
 
 		ResourceRegistry::register_resource_type<EnemyContactDamageDefinition, Vadon::Scene::Resource>();
 
-		TypeRegistry::add_property<EnemyContactDamageDefinition>("damage", Vadon::Utilities::MemberVariableBind<&EnemyContactDamageDefinition::damage>().bind_member_getter().bind_member_setter());
+		TypeRegistry::add_property<EnemyContactDamageDefinition>(VADON_GET_MEMBER_UUID(EnemyContactDamageDefinition, damage), Vadon::Utilities::MemberVariableBind<&EnemyContactDamageDefinition::damage>().bind_member_getter().bind_member_setter());
 	}
 }

@@ -1,19 +1,11 @@
 #ifndef VADONEDITOR_NETWORK_MESSAGE_MESSAGESERIALIZER_HPP
 #define VADONEDITOR_NETWORK_MESSAGE_MESSAGESERIALIZER_HPP
 #include <VadonEditor/Common.hpp>
-#include <VadonEditor/Network/Message/Message.hpp>
+#include <Vadon/Foundation/Editor/Message.hpp>
 #include <vector>
 namespace VadonEditor::Network
 {
-	template <MessageCategory C, uint64_t T>
-	constexpr void check_is_message_type(const MessageAttribute<C, T>&);
-
-	template <class T>
-	constexpr bool is_message_type() 
-	{
-		return requires { check_is_message_type(T{}); };
-	}
-
+	// FIXME: move to Foundation so the engine-side code can also use this!
 	class MessageSerializer
 	{
 	public:
@@ -36,21 +28,21 @@ namespace VadonEditor::Network
 		template<typename T>
 		static void write_message(const T& message, std::vector<char>& buffer)
 		{
-			static_assert(is_message_type<T>(), "Object must have valid MessageAttribute!");
-			write_message_header(T::c_category, T::c_type, buffer);
+			using MessageTypeTrait = Vadon::Foundation::EditorMessageTypeTrait<T>;
+
+			write_message_header(MessageTypeTrait::get_category(), MessageTypeTrait::get_type(), buffer);
 			serialize_message(message, buffer);
 			fixup_message_size(buffer);
 		}
 
 		template<typename T>
-		static void parse_message(const MessageHeader& /*header*/, const void* message_data, T& out_message)
+		static void parse_message(const ::Vadon::Foundation::EditorMessageHeader& /*header*/, const void* message_data, T& out_message)
 		{
-			static_assert(is_message_type<T>(), "Object must have valid MessageAttribute!");
 			// TODO: ensure header matches!
 			deserialize_message(out_message, message_data);
 		}
 	private:
-		VADONEDITORCOMMON_API static void write_message_header(MessageCategory category, uint64_t type, std::vector<char>& buffer);
+		VADONEDITORCOMMON_API static void write_message_header(::Vadon::Foundation::EditorMessageCategory category, uint64_t type, std::vector<char>& buffer);
 		VADONEDITORCOMMON_API static void fixup_message_size(std::vector<char>& buffer);
 	};
 }

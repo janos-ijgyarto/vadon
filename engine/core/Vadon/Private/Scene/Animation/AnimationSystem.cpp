@@ -5,6 +5,8 @@
 #include <Vadon/Scene/Resource/Registry.hpp>
 #include <Vadon/Scene/Resource/ResourceSystem.hpp>
 
+#include <Vadon/Utilities/Enum/EnumClass.hpp>
+
 #include <Vadon/Utilities/Serialization/Serializer.hpp>
 
 #include <Vadon/Utilities/TypeInfo/Reflection/PropertySerialization.hpp>

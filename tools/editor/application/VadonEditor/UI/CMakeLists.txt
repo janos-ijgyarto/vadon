@@ -2,6 +2,8 @@ target_sources(${VADONEDITOR_APPLICATION}
     PRIVATE
     MainWindow.hpp
     MainWindow.cpp
+    SchemaEditor.hpp
+    SchemaEditor.cpp
     UUIDDialog.hpp
     UUIDDialog.cpp
 )

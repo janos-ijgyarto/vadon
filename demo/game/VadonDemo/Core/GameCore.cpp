@@ -41,10 +41,10 @@ namespace
 		// Decode resource ID from file name
 		const std::string file_stem = file_path.stem().generic_string();
 		Vadon::Scene::ResourceID resource_id;
-		VADON_ASSERT(file_stem.length() == resource_id.data.size() * 2, "Invalid file name!");
+		VADON_ASSERT(file_stem.length() == ::Vadon::Foundation::UUID::c_uuid_width * 2, "Invalid file name!");
 
 		char temp_chars[] = "00";
-		for (size_t i = 0; i < resource_id.data.size(); ++i)
+		for (size_t i = 0; i < ::Vadon::Foundation::UUID::c_uuid_width; ++i)
 		{
 			int value = 0;
 			temp_chars[0] = file_stem[i * 2];

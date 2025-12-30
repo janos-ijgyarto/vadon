@@ -43,21 +43,31 @@ namespace
 
 namespace Vadon::Scene
 {
-	Vadon::Utilities::ErasedDataTypeID AnimationChannel::get_data_type_id(AnimationChannelType channel_type)
+	Vadon::Utilities::TypeID AnimationChannel::get_data_type_id(AnimationChannelType channel_type)
 	{
-		static constexpr uint32_t c_channel_type_map[static_cast<size_t>(AnimationChannelType::TYPE_COUNT)] = {
-			static_cast<uint32_t>(Vadon::Utilities::type_list_index_v<int, Vadon::Utilities::Variant>),
-			static_cast<uint32_t>(Vadon::Utilities::type_list_index_v<uint32_t, Vadon::Utilities::Variant>),
-			static_cast<uint32_t>(Vadon::Utilities::type_list_index_v<float, Vadon::Utilities::Variant>),
-			static_cast<uint32_t>(Vadon::Utilities::type_list_index_v<Vadon::Math::Vector2, Vadon::Utilities::Variant>),
-			static_cast<uint32_t>(Vadon::Utilities::type_list_index_v<Vadon::Math::Vector2i, Vadon::Utilities::Variant>),
-			static_cast<uint32_t>(Vadon::Utilities::type_list_index_v<Vadon::Math::Vector3, Vadon::Utilities::Variant>),
-			static_cast<uint32_t>(Vadon::Utilities::type_list_index_v<Vadon::Math::Vector3i, Vadon::Utilities::Variant>),
-			static_cast<uint32_t>(Vadon::Utilities::type_list_index_v<Vadon::Math::Vector4, Vadon::Utilities::Variant>),
-			static_cast<uint32_t>(Vadon::Utilities::type_list_index_v<Vadon::Math::ColorRGBA, Vadon::Utilities::Variant>)
-		};
+		switch (channel_type)
+		{
+		case AnimationChannelType::INT:
+			return Vadon::Utilities::TypeRegistry::get_type_id<int>();
+		case AnimationChannelType::UINT32:
+			return Vadon::Utilities::TypeRegistry::get_type_id<uint32_t>();
+		case AnimationChannelType::FLOAT:
+			return Vadon::Utilities::TypeRegistry::get_type_id<float>();
+		case AnimationChannelType::VEC2:
+			return Vadon::Utilities::TypeRegistry::get_type_id<Vadon::Math::Vector2>();
+		case AnimationChannelType::VEC2I:
+			return Vadon::Utilities::TypeRegistry::get_type_id<Vadon::Math::Vector2i>();
+		case AnimationChannelType::VEC3:
+			return Vadon::Utilities::TypeRegistry::get_type_id<Vadon::Math::Vector3>();
+		case AnimationChannelType::VEC3I:
+			return Vadon::Utilities::TypeRegistry::get_type_id<Vadon::Math::Vector3i>();
+		case AnimationChannelType::VEC4:
+			return Vadon::Utilities::TypeRegistry::get_type_id<Vadon::Math::Vector4>();
+		case AnimationChannelType::COLORRGBA:
+			return Vadon::Utilities::TypeRegistry::get_type_id<Vadon::Math::ColorRGBA>();
+		}
 
-		return Vadon::Utilities::ErasedDataTypeID{ .type = Vadon::Utilities::ErasedDataType::TRIVIAL, .id = c_channel_type_map[static_cast<size_t>(channel_type)] };
+		VADON_UNREACHABLE;
 	}
 
 	void AnimationPlayer::set_animation(Vadon::Core::EngineCoreInterface& engine_core, AnimationHandle animation_handle)

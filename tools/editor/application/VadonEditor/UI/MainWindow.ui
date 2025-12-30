@@ -84,6 +84,7 @@
      <string>Utilities</string>
     </property>
     <addaction name="actionGenerate_UUID"/>
+    <addaction name="actionSchema_Editor"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuProject"/>
@@ -120,7 +121,32 @@
     <string>Generate UUID</string>
    </property>
   </action>
+  <action name="actionSchema_Editor">
+   <property name="text">
+    <string>Schema Editor</string>
+   </property>
+  </action>
  </widget>
  <resources/>
- <connections/>
+ <connections>
+  <connection>
+   <sender>actionSchema_Editor</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>schema_editor_triggered()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>399</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+ <slots>
+  <slot>schema_editor_triggered()</slot>
+ </slots>
 </ui>

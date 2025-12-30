@@ -1,4 +1,3 @@
-target_sources(VadonFoundation
-	PRIVATE
-	DataDefinition.hpp
-)
+add_subdirectory(Editor)
+add_subdirectory(TypeInfo)
+add_subdirectory(Utilities)

@@ -12,7 +12,7 @@ namespace VadonDemo::Model
 
 		ResourceRegistry::register_resource_type<WeaponDefinition, Vadon::Scene::Resource>();
 
-		TypeRegistry::add_property<WeaponDefinition>("projectile_prefab", Vadon::Utilities::MemberVariableBind<&WeaponDefinition::projectile_prefab>().bind_member_getter().bind_member_setter());
-		TypeRegistry::add_property<WeaponDefinition>("rate_of_fire", Vadon::Utilities::MemberVariableBind<&WeaponDefinition::rate_of_fire>().bind_member_getter().bind_member_setter());
+		TypeRegistry::add_property<WeaponDefinition>(VADON_GET_MEMBER_UUID(WeaponDefinition, projectile_prefab), Vadon::Utilities::MemberVariableBind<&WeaponDefinition::projectile_prefab>().bind_member_getter().bind_member_setter());
+		TypeRegistry::add_property<WeaponDefinition>(VADON_GET_MEMBER_UUID(WeaponDefinition, rate_of_fire), Vadon::Utilities::MemberVariableBind<&WeaponDefinition::rate_of_fire>().bind_member_getter().bind_member_setter());
 	}
 }

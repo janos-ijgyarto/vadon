@@ -14,6 +14,9 @@ namespace VadonDemo::UI
 		EditorUI(Core::Editor& editor);
 		
 		bool initialize();
+
+		void register_type_metadata();
+
 		void update();
 
 		void update_dirty_entities();

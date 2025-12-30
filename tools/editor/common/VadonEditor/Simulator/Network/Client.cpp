@@ -1,6 +1,6 @@
 #include <VadonEditor/Simulator/Network/Client.hpp>
 
-#include <VadonEditor/Network/Message/Message.hpp>
+#include <Vadon/Foundation/Editor/Message.hpp>
 
 namespace VadonEditor::Simulator::Network
 {
@@ -35,20 +35,20 @@ namespace VadonEditor::Simulator::Network
 		m_buffer.resize(prev_size + size);
 		memcpy(m_buffer.data() + prev_size, data, size);
 
-		while (m_buffer.size() >= sizeof(VadonEditor::Network::MessageHeader))
+		while (m_buffer.size() >= sizeof(::Vadon::Foundation::EditorMessageHeader))
 		{
 			// We have enough data for a header, check payload
-			const VadonEditor::Network::MessageHeader* header = reinterpret_cast<VadonEditor::Network::MessageHeader*>(m_buffer.data());
+			const ::Vadon::Foundation::EditorMessageHeader* header = reinterpret_cast<::Vadon::Foundation::EditorMessageHeader*>(m_buffer.data());
 			
-			if ((m_buffer.size() - sizeof(VadonEditor::Network::MessageHeader)) < header->size)
+			if ((m_buffer.size() - sizeof(::Vadon::Foundation::EditorMessageHeader)) < header->size)
 			{
 				// Didn't get the rest of the message yet
 				return;
 			}
 
 			// Offset data pointer from header to payload, then forward to the client
-			m_client_interface.on_received(*header, m_buffer.data() + sizeof(VadonEditor::Network::MessageHeader));
-			m_buffer.erase(m_buffer.begin(), m_buffer.begin() + sizeof(VadonEditor::Network::MessageHeader) + header->size);
+			m_client_interface.on_received(*header, m_buffer.data() + sizeof(::Vadon::Foundation::EditorMessageHeader));
+			m_buffer.erase(m_buffer.begin(), m_buffer.begin() + sizeof(::Vadon::Foundation::EditorMessageHeader) + header->size);
 		}
 	}
 

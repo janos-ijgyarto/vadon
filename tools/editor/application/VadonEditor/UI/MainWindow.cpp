@@ -1,5 +1,6 @@
 #include <VadonEditor/UI/MainWindow.hpp>
 
+#include <VadonEditor/UI/SchemaEditor.hpp>
 #include <VadonEditor/UI/UUIDDialog.hpp>
 
 namespace VadonEditor::UI
@@ -27,5 +28,11 @@ namespace VadonEditor::UI
 	{
 		UUIDDialog* uuid_dialog = new UUIDDialog(this);
 		uuid_dialog->open();
+	}
+
+	void MainWindow::schema_editor_triggered()
+	{
+		SchemaEditor* schema_editor = new SchemaEditor(this);
+		schema_editor->open();
 	}
 }
