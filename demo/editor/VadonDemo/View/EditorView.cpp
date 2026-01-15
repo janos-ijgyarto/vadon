@@ -7,14 +7,8 @@
 #include <VadonDemo/Platform/EditorPlatform.hpp>
 #include <VadonDemo/View/Component.hpp>
 
-#include <VadonEditor/Model/ModelSystem.hpp>
-#include <VadonEditor/Model/Resource/ResourceSystem.hpp>
-#include <VadonEditor/Model/Scene/SceneSystem.hpp>
-#include <VadonEditor/View/ViewSystem.hpp>
-
-#include <VadonApp/Platform/PlatformInterface.hpp>
-#include <VadonApp/Platform/Input/InputSystem.hpp>
-#include <VadonApp/UI/Developer/GUI.hpp>
+#include <VadonEditor/Scene/SceneSystem.hpp>
+#include <VadonEditor/Scene/Resource/ResourceSystem.hpp>
 
 #include <Vadon/Core/CoreInterface.hpp>
 
@@ -28,24 +22,24 @@ namespace VadonDemo::View
 {
     EditorView::EditorView(Core::Editor& editor)
         : m_editor(editor)
+        , m_active_scene(nullptr)
     {
 
     }
 
 	bool EditorView::initialize()
 	{
-        VadonEditor::Model::ModelSystem& editor_model = m_editor.get_common_editor().get_system<VadonEditor::Model::ModelSystem>();
-        VadonEditor::Model::SceneSystem& editor_scene_system = editor_model.get_scene_system();
+        VadonEditor::Scene::SceneSystem& editor_scene_system = m_editor.get_common_editor().get_scene_system();
 
         editor_scene_system.add_entity_event_callback(
-            [this](const VadonEditor::Model::EntityEvent& entity_event)
+            [this](const VadonEditor::Scene::EntityEvent& entity_event)
             {
                 switch (entity_event.type)
                 {
-                case VadonEditor::Model::EntityEventType::ADDED:
+                case VadonEditor::Scene::EntityEventType::ADDED:
                     init_entity(entity_event.entity);
                     break;
-                case VadonEditor::Model::EntityEventType::REMOVED:
+                case VadonEditor::Scene::EntityEventType::REMOVED:
                     remove_entity(entity_event.entity);
                     break;
                 }
@@ -53,19 +47,19 @@ namespace VadonDemo::View
         );
 
         editor_scene_system.add_component_event_callback(
-            [this](const VadonEditor::Model::ComponentEvent& component_event)
+            [this](const VadonEditor::Scene::ComponentEvent& component_event)
             {
                 if (component_event.component_type == Vadon::Utilities::TypeRegistry::get_type_id<RenderComponent>())
                 {
                     switch (component_event.type)
                     {
-                    case VadonEditor::Model::ComponentEventType::ADDED:
+                    case VadonEditor::Scene::ComponentEventType::ADDED:
                         init_entity(component_event.owner);
                         break;
-                    case VadonEditor::Model::ComponentEventType::EDITED:
+                    case VadonEditor::Scene::ComponentEventType::EDITED:
                         update_entity(component_event.owner);
                         break;
-                    case VadonEditor::Model::ComponentEventType::REMOVED:
+                    case VadonEditor::Scene::ComponentEventType::REMOVED:
                         remove_entity(component_event.owner);
                         break;
                     }
@@ -75,8 +69,7 @@ namespace VadonDemo::View
                     || (component_event.component_type == Vadon::Utilities::TypeRegistry::get_type_id<VadonDemo::View::ModelTransformComponent>())
                     )
                 {
-                    VadonEditor::Model::ModelSystem& editor_model = m_editor.get_common_editor().get_system<VadonEditor::Model::ModelSystem>();
-                    Vadon::ECS::World& ecs_world = editor_model.get_ecs_world();
+                    Vadon::ECS::World& ecs_world = m_editor.get_ecs_world();
 
                     m_editor.get_core().get_view().update_entity_transform(ecs_world, component_event.owner);
                 }
@@ -85,7 +78,7 @@ namespace VadonDemo::View
                     // TODO: could also make this event-driven
                     // EditorRender initializes CanvasComponent, fires event asking for it to be initialized
                     // Other subsystems can add listener and add draw data
-                    if (component_event.type == VadonEditor::Model::ComponentEventType::ADDED)
+                    if (component_event.type == VadonEditor::Scene::ComponentEventType::ADDED)
                     {
                         update_entity(component_event.owner);
                     }
@@ -93,7 +86,7 @@ namespace VadonDemo::View
             }
         );
 
-        VadonEditor::Model::ResourceSystem& editor_resource_system = editor_model.get_resource_system();
+        VadonEditor::Scene::ResourceSystem& editor_resource_system = m_editor.get_common_editor().get_resource_system();
         editor_resource_system.register_edit_callback(
             [this, &editor_resource_system](Vadon::Scene::ResourceID resource_id)
             {
@@ -114,18 +107,12 @@ namespace VadonDemo::View
     void EditorView::update()
     {
         update_dirty_entities();
-
-        VadonEditor::View::ViewModel& view_model = m_editor.get_common_editor().get_system<VadonEditor::View::ViewSystem>().get_view_model();
-        VadonEditor::Model::Scene* active_scene = view_model.get_active_scene();
-
-        if (active_scene == nullptr)
+                
+        if (m_active_scene != nullptr)
         {
-            // Nothing to do
-            return;
+            // Control camera per-scene
+            update_camera();
         }
-
-        // Control camera per-scene
-        update_camera(active_scene);
     }
 
     void EditorView::register_type_metadata()
@@ -134,10 +121,7 @@ namespace VadonDemo::View
 
     void EditorView::update_dirty_entities()
     {
-        VadonEditor::Core::Editor& common_editor = m_editor.get_common_editor();
-        VadonEditor::Model::ModelSystem& editor_model = common_editor.get_system<VadonEditor::Model::ModelSystem>();
-
-        Vadon::ECS::World& ecs_world = editor_model.get_ecs_world();
+        Vadon::ECS::World& ecs_world = m_editor.get_ecs_world();
         Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
         auto dirty_entity_query = component_manager.run_component_query<EntityDirtyTag&, RenderComponent*>();
 
@@ -175,8 +159,7 @@ namespace VadonDemo::View
     {
         // Try to update the draw data
         // If it fails, we can just try again the next time the components/resources are updated
-        VadonEditor::Model::ModelSystem& editor_model = m_editor.get_common_editor().get_system<VadonEditor::Model::ModelSystem>();
-        Vadon::ECS::World& ecs_world = editor_model.get_ecs_world();
+        Vadon::ECS::World& ecs_world = m_editor.get_ecs_world();
 
         Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
         auto render_component = component_manager.get_component<RenderComponent>(entity);
@@ -190,15 +173,14 @@ namespace VadonDemo::View
 
     void EditorView::remove_entity(Vadon::ECS::EntityHandle entity)
     {
-        VadonEditor::Model::ModelSystem& editor_model = m_editor.get_common_editor().get_system<VadonEditor::Model::ModelSystem>();
-        Vadon::ECS::World& ecs_world = editor_model.get_ecs_world();
+        Vadon::ECS::World& ecs_world = m_editor.get_ecs_world();
 
         m_editor.get_core().get_view().remove_entity(ecs_world, entity);
     }
 
     void EditorView::resource_edited(Vadon::Scene::ResourceID resource_id)
     {   
-        Vadon::Scene::ResourceSystem& resource_system = m_editor.get_common_editor().get_engine_core().get_system<Vadon::Scene::ResourceSystem>();
+        Vadon::Scene::ResourceSystem& resource_system = m_editor.get_engine_core().get_system<Vadon::Scene::ResourceSystem>();
         Vadon::Scene::ResourceHandle resource_handle = resource_system.find_resource(resource_id);
         VADON_ASSERT(resource_handle.is_valid() == true, "Resource not found!");
 
@@ -221,9 +203,7 @@ namespace VadonDemo::View
         common_view.reset_resource_data(view_render_resource);
 
         // Tag all entities that use this resource
-        VadonEditor::Core::Editor& common_editor = m_editor.get_common_editor();
-        VadonEditor::Model::ModelSystem& editor_model = common_editor.get_system<VadonEditor::Model::ModelSystem>();
-        Vadon::ECS::World& ecs_world = editor_model.get_ecs_world();
+        Vadon::ECS::World& ecs_world = m_editor.get_ecs_world();
 
         Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
         auto view_query = component_manager.run_component_query<RenderComponent&, VadonDemo::Render::CanvasComponent&>();
@@ -245,14 +225,12 @@ namespace VadonDemo::View
     {
         // Run a query to find all entities that use this texture
         // Tag as "dirty" so they get updated
-        VadonEditor::Core::Editor& common_editor = m_editor.get_common_editor();
-        Vadon::Core::EngineCoreInterface& engine_core = common_editor.get_engine_core();
+        Vadon::Core::EngineCoreInterface& engine_core = m_editor.get_engine_core();
         Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
 
         VadonDemo::View::View& common_view = m_editor.get_core().get_view();
 
-        VadonEditor::Model::ModelSystem& editor_model = common_editor.get_system<VadonEditor::Model::ModelSystem>();
-        Vadon::ECS::World& ecs_world = editor_model.get_ecs_world();
+        Vadon::ECS::World& ecs_world = m_editor.get_ecs_world();
 
         Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
         auto view_query = component_manager.run_component_query<RenderComponent&, VadonDemo::Render::CanvasComponent&>();
@@ -293,7 +271,7 @@ namespace VadonDemo::View
             return;
         }
 
-        Vadon::Core::EngineCoreInterface& engine_core = m_editor.get_common_editor().get_engine_core();
+        Vadon::Core::EngineCoreInterface& engine_core = m_editor.get_engine_core();
         Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
 
         VadonDemo::View::View& common_view = m_editor.get_core().get_view();
@@ -310,42 +288,33 @@ namespace VadonDemo::View
         common_view.load_resource_data(view_render_resource);
     }
 
-    void EditorView::update_camera(VadonEditor::Model::Scene* active_scene)
+    void EditorView::update_camera()
     {
-        VadonApp::Core::Application& engine_app = m_editor.get_common_editor().get_engine_app();
-        if (Vadon::Utilities::to_bool(engine_app.get_system<VadonApp::UI::Developer::GUISystem>().get_io_flags() &
-            (VadonApp::UI::Developer::GUISystem::IOFlags::KEYBOARD_CAPTURE | VadonApp::UI::Developer::GUISystem::IOFlags::MOUSE_CAPTURE)) == true)
-        {
-            // Dev GUI is capturing input
-            return;
-        }
-
         Vadon::Math::Vector2 camera_velocity = Vadon::Math::Vector2_Zero;
         float camera_zoom = 0.0f;
 
-        VadonApp::Platform::InputSystem& input_system = engine_app.get_system<VadonApp::Platform::InputSystem>();
         Platform::EditorPlatform& editor_platform = m_editor.get_platform();
-        if (input_system.is_action_pressed(editor_platform.get_action(Platform::EditorInputAction::CAMERA_LEFT)) == true)
+        if (editor_platform.is_action_pressed(Platform::EditorInputAction::CAMERA_LEFT) == true)
         {
             camera_velocity.x = -1.0f;
         }
-        else if (input_system.is_action_pressed(editor_platform.get_action(Platform::EditorInputAction::CAMERA_RIGHT)) == true)
+        else if (editor_platform.is_action_pressed(Platform::EditorInputAction::CAMERA_RIGHT) == true)
         {
             camera_velocity.x = 1.0f;
         }
 
-        if (input_system.is_action_pressed(editor_platform.get_action(Platform::EditorInputAction::CAMERA_UP)) == true)
+        if (editor_platform.is_action_pressed(Platform::EditorInputAction::CAMERA_UP) == true)
         {
             camera_velocity.y = 1.0f;
         }
-        else if (input_system.is_action_pressed(editor_platform.get_action(Platform::EditorInputAction::CAMERA_DOWN)) == true)
+        else if (editor_platform.is_action_pressed(Platform::EditorInputAction::CAMERA_DOWN) == true)
         {
             camera_velocity.y = -1.0f;
         }
 
-        camera_zoom = input_system.get_action_strength(editor_platform.get_action(Platform::EditorInputAction::CAMERA_ZOOM));
+        camera_zoom = editor_platform.get_action_strength(Platform::EditorInputAction::CAMERA_ZOOM);
 
-        VadonDemo::Render::CanvasContextHandle scene_context = m_editor.get_render().get_scene_canvas_context(active_scene);
+        VadonDemo::Render::CanvasContextHandle scene_context = m_editor.get_render().get_scene_canvas_context(m_active_scene);
         Vadon::Render::Canvas::RenderContext& render_context = m_editor.get_core().get_render().get_context(scene_context);
 
         render_context.camera.view_rectangle.position += m_editor.get_delta_time() * 200 * camera_velocity;

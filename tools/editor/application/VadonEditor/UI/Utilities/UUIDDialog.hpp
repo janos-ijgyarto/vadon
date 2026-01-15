@@ -1,5 +1,5 @@
-#ifndef VADONEDITOR_UI_UUIDDIALOG_HPP
-#define VADONEDITOR_UI_UUIDDIALOG_HPP
+#ifndef VADONEDITOR_UI_UTILITIES_UUIDDIALOG_HPP
+#define VADONEDITOR_UI_UTILITIES_UUIDDIALOG_HPP
 #include <QDialog>
 #include <VadonEditor/Forms/ui_UUIDDialog.h>
 namespace VadonEditor::UI

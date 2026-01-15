@@ -494,7 +494,7 @@ namespace VadonApp::Private::Platform::SDL
 		SDL_GetVersion(&sdl_wm_info.version);
 		SDL_GetWindowWMInfo(window.sdl_window, &sdl_wm_info);
 
-		return sdl_wm_info.info.win.window;
+		return PlatformWindowHandle(sdl_wm_info.info.win.window);
 	}
 
 	Vadon::Math::Vector2i PlatformInterface::get_window_drawable_size(WindowHandle window_handle) const

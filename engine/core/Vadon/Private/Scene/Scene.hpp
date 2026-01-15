@@ -21,7 +21,6 @@ namespace Vadon::Private::Scene
 
 		struct EntityData
 		{
-			std::string name;
 			int32_t parent = -1;
 			SceneID scene;
 			std::vector<ComponentData> components;

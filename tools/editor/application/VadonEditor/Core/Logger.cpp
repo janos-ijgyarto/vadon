@@ -2,8 +2,8 @@
 
 namespace VadonEditor::Core
 {
-	void Logger::internal_log_message(const QString& message)
+	void Logger::log_message(const QString& message)
 	{
-		emit log_message(message);
+		emit message_logged(message);
 	}
 }

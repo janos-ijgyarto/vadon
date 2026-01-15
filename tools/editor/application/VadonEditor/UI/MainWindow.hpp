@@ -3,24 +3,30 @@
 #include <QtWidgets/QMainWindow>
 
 #include <VadonEditor/UI/Forms/ui_MainWindow.h>
-
+namespace VadonEditor::Core
+{
+    class Application;
+}
 namespace VadonEditor::UI
 {
     class MainWindow : public QMainWindow
     {
         Q_OBJECT
     public:
-        MainWindow(QWidget* parent = Q_NULLPTR);
+        MainWindow(Core::Application& application, QWidget* parent = Q_NULLPTR);
 
         ~MainWindow();
-    signals:
-        void menu_test();
-    public slots:
-        void log_message(const QString& message);
-        
+
+        QWidget* get_viewport() const { return m_ui.viewport; }
+    private slots:
+        void message_logged(const QString& message);
+
+        void new_triggered();
+        void quit_triggered();
         void generate_uuid_triggered();
-        void schema_editor_triggered();
+        void project_settings_triggered();
     private:
+        Core::Application& m_application;
         Ui::MainWindow m_ui;
 
         friend class Application;

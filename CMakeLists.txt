@@ -107,10 +107,11 @@ if(${VADON_CONFIGURATION_MODE} STREQUAL "ENGINE")
 	)
 
 	add_subdirectory(engine)
+	add_subdirectory(editor/common)
 
 	if(${VADON_ENABLE_APPLICATION} STREQUAL "ON")
 		add_subdirectory(application)
-		add_subdirectory(editor)
+		#add_subdirectory(editor)
 	
 		if(${VADON_ENABLE_DEMO} STREQUAL "ON")
 			add_subdirectory(demo)

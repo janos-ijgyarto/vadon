@@ -35,7 +35,7 @@ if(WIN32)
 		# TODO
 	else()
 		# Provide compile def for DLL export/import
-		target_compile_definitions(${VADONDEMO_CURRENT_TARGET} PRIVATE VADONDEMO_EXPORTS)
+		target_compile_definitions(${VADONDEMO_CURRENT_TARGET} PRIVATE "VADONDEMO_EXPORTS")
 	endif()
 endif()
 

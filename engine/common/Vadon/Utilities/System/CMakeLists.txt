@@ -1,2 +1,3 @@
+add_subdirectory(CommandLine)
 add_subdirectory(Singleton)
 add_subdirectory(UUID)

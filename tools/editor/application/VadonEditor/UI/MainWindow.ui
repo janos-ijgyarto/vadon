@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>800</width>
-    <height>600</height>
+    <width>1024</width>
+    <height>768</height>
    </rect>
   </property>
   <property name="focusPolicy">
@@ -26,29 +26,119 @@
    <property name="focusPolicy">
     <enum>Qt::FocusPolicy::StrongFocus</enum>
    </property>
-   <layout class="QVBoxLayout" name="verticalLayout" stretch="3,0,1">
+   <layout class="QVBoxLayout" name="verticalLayout_2">
     <item>
-     <widget class="QWidget" name="container" native="true">
-      <property name="focusPolicy">
-       <enum>Qt::FocusPolicy::StrongFocus</enum>
+     <widget class="QSplitter" name="mainSplitter">
+      <property name="orientation">
+       <enum>Qt::Orientation::Horizontal</enum>
       </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QLabel" name="consoleLabel">
-      <property name="text">
-       <string>Console</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QPlainTextEdit" name="console">
-      <property name="documentTitle">
-       <string/>
-      </property>
-      <property name="readOnly">
-       <bool>true</bool>
-      </property>
+      <widget class="QSplitter" name="leftPanelSplitter">
+       <property name="orientation">
+        <enum>Qt::Orientation::Vertical</enum>
+       </property>
+       <widget class="QWidget" name="verticalLayoutWidget_3">
+        <layout class="QVBoxLayout" name="sceneTreeVBox">
+         <item>
+          <widget class="QLabel" name="sceneTreeLabel">
+           <property name="text">
+            <string>Scene Tree</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QTreeView" name="sceneTree"/>
+         </item>
+        </layout>
+       </widget>
+       <widget class="QWidget" name="verticalLayoutWidget_2">
+        <layout class="QVBoxLayout" name="assetBrowserVBox">
+         <item>
+          <widget class="QLabel" name="assetBrowserLabel">
+           <property name="text">
+            <string>Asset Browser</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QTreeView" name="assetBrowser"/>
+         </item>
+        </layout>
+       </widget>
+      </widget>
+      <widget class="QSplitter" name="centralSplitter">
+       <property name="orientation">
+        <enum>Qt::Orientation::Vertical</enum>
+       </property>
+       <widget class="QWidget" name="verticalLayoutWidget_5">
+        <layout class="QVBoxLayout" name="centralVBox" stretch="0,1">
+         <item>
+          <widget class="QTabBar" name="sceneTabBar" native="true">
+           <layout class="QVBoxLayout" name="verticalLayout">
+            <item>
+             <widget class="QWidget" name="sceneTabBarFiller" native="true"/>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <widget class="QWidget" name="viewport" native="true">
+           <property name="statusTip">
+            <string>This is the main viewport</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+       <widget class="QWidget" name="verticalLayoutWidget">
+        <layout class="QVBoxLayout" name="consoleVBox">
+         <item>
+          <widget class="QLabel" name="consoleLabel">
+           <property name="text">
+            <string>Console</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPlainTextEdit" name="console">
+           <property name="documentTitle">
+            <string/>
+           </property>
+           <property name="readOnly">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </widget>
+      <widget class="QWidget" name="verticalLayoutWidget_4">
+       <layout class="QVBoxLayout" name="inspectorVBox">
+        <item>
+         <widget class="QLabel" name="inspectorLabel">
+          <property name="text">
+           <string>Inspector</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="Line" name="inspectorSeparator">
+          <property name="orientation">
+           <enum>Qt::Orientation::Horizontal</enum>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="propertyListLabel">
+          <property name="text">
+           <string>Properties</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QListWidget" name="propertyList"/>
+        </item>
+       </layout>
+      </widget>
      </widget>
     </item>
    </layout>
@@ -58,7 +148,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>800</width>
+     <width>1024</width>
      <height>21</height>
     </rect>
    </property>
@@ -71,26 +161,29 @@
     <addaction name="actionSave"/>
     <addaction name="actionLoad"/>
     <addaction name="separator"/>
-    <addaction name="actionExit"/>
+    <addaction name="actionQuit"/>
    </widget>
    <widget class="QMenu" name="menuProject">
     <property name="title">
      <string>Project</string>
     </property>
-    <addaction name="actionProperties"/>
+    <addaction name="actionProjectSettings"/>
    </widget>
    <widget class="QMenu" name="menuUtilities">
     <property name="title">
      <string>Utilities</string>
     </property>
     <addaction name="actionGenerate_UUID"/>
-    <addaction name="actionSchema_Editor"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuProject"/>
    <addaction name="menuUtilities"/>
   </widget>
-  <widget class="QStatusBar" name="statusbar"/>
+  <widget class="QStatusBar" name="statusbar">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+  </widget>
   <action name="actionNew">
    <property name="text">
     <string>New</string>
@@ -106,14 +199,14 @@
     <string>Load</string>
    </property>
   </action>
-  <action name="actionExit">
+  <action name="actionQuit">
    <property name="text">
-    <string>Exit</string>
+    <string>Quit</string>
    </property>
   </action>
-  <action name="actionProperties">
+  <action name="actionProjectSettings">
    <property name="text">
-    <string>Properties</string>
+    <string>Project Settings</string>
    </property>
   </action>
   <action name="actionGenerate_UUID">
@@ -127,13 +220,69 @@
    </property>
   </action>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>QTabBar</class>
+   <extends>QWidget</extends>
+   <header location="global">QTabBar</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections>
   <connection>
-   <sender>actionSchema_Editor</sender>
+   <sender>actionProjectSettings</sender>
    <signal>triggered()</signal>
    <receiver>MainWindow</receiver>
-   <slot>schema_editor_triggered()</slot>
+   <slot>project_settings_triggered()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>399</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionGenerate_UUID</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>generate_uuid_triggered()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>399</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionQuit</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>quit_triggered()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>399</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionNew</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>new_triggered()</slot>
    <hints>
     <hint type="sourcelabel">
      <x>-1</x>
@@ -148,5 +297,9 @@
  </connections>
  <slots>
   <slot>schema_editor_triggered()</slot>
+  <slot>project_settings_triggered()</slot>
+  <slot>generate_uuid_triggered()</slot>
+  <slot>new_triggered()</slot>
+  <slot>quit_triggered()</slot>
  </slots>
 </ui>

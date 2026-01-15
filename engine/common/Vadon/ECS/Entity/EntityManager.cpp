@@ -17,18 +17,6 @@ namespace Vadon::ECS
 		return new_entity_handle;
 	}
 
-	std::string EntityManager::get_entity_name(EntityHandle entity_handle) const
-	{
-		const EntityData& entity_data = m_entity_pool.get(entity_handle);
-		return entity_data.name;
-	}
-
-	void EntityManager::set_entity_name(EntityHandle entity_handle, std::string_view name)
-	{
-		EntityData& entity_data = m_entity_pool.get(entity_handle);
-		entity_data.name = name;
-	}
-
 	EntityHandle EntityManager::get_entity_parent(EntityHandle entity) const
 	{
 		const EntityData& entity_data = m_entity_pool.get(entity);

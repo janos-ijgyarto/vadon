@@ -1,4 +1,4 @@
-#include <VadonEditor/UI/UUIDDialog.hpp>
+#include <VadonEditor/UI/Utilities/UUIDDialog.hpp>
 
 #include <QUuid>
 

@@ -1,9 +1,10 @@
+add_subdirectory(Project)
+add_subdirectory(Utilities)
+
 target_sources(${VADONEDITOR_APPLICATION}
     PRIVATE
     MainWindow.hpp
     MainWindow.cpp
-    SchemaEditor.hpp
-    SchemaEditor.cpp
-    UUIDDialog.hpp
-    UUIDDialog.cpp
+    UISystem.hpp
+    UISystem.cpp
 )

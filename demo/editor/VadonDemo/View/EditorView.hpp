@@ -2,7 +2,7 @@
 #define VADONDEMO_VIEW_EDITORVIEW_HPP
 #include <VadonDemo/View/Resource.hpp>
 #include <Vadon/ECS/Entity/Entity.hpp>
-namespace VadonEditor::Model
+namespace VadonEditor::Scene
 {
 	class Scene;
 }
@@ -15,6 +15,7 @@ namespace VadonDemo::View
 	class EditorView
 	{
 	public:
+		VadonEditor::Scene::Scene* get_active_scene() const { return m_active_scene; }
 	private:
 		EditorView(Core::Editor& editor);
 		bool initialize();
@@ -34,9 +35,10 @@ namespace VadonDemo::View
 
 		void load_render_resource(RenderResourceID view_render_resource);
 
-		void update_camera(VadonEditor::Model::Scene* active_scene);
+		void update_camera();
 
 		Core::Editor& m_editor;
+		VadonEditor::Scene::Scene* m_active_scene;
 
 		friend Core::Editor;
 	};

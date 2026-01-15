@@ -1,13 +1,16 @@
 #include <VadonEditor/Simulator/Plugin/PluginManager.hpp>
 
 #include <VadonEditor/Core/Application.hpp>
-#include <VadonEditor/Core/Settings.hpp>
+#include <VadonEditor/Core/CommandLine.hpp>
+#include <VadonEditor/Core/Project/ProjectManager.hpp>
 
-#include <VadonEditor/Network/MessageSystem.hpp>
+#include <VadonEditor/Network/NetworkSystem.hpp>
 #include <VadonEditor/Network/Message/MessageSerializer.hpp>
 
 #include <Vadon/Foundation/Editor/LibraryInterface.hpp>
 #include <Vadon/Foundation/Editor/PluginInterface.hpp>
+#include <Vadon/Foundation/Editor/Network/Message/Simulator.hpp>
+
 #include <Vadon/Foundation/TypeInfo/MetadataRegistry.hpp>
 
 // FIXME: ifdef this to only be used on Windows!
@@ -59,6 +62,9 @@
 
 #include <QDebug>
 #include <QCommandLineParser>
+#include <QFileInfo>
+#include <QProcess>
+#include <QTimer>
 
 namespace
 {
@@ -87,32 +93,37 @@ namespace
 		{
 		}
 
+		bool initialize() override
+		{
+			// TODO: test sending message to editor!
+			return true;
+		}
+
 		void update() override
 		{
 			// TODO: anything?
 		}
 
-		void process_message_from_editor(const ::Vadon::Foundation::EditorMessageHeader& header, const void* data) override
+		void process_message_from_editor(const char* data, size_t size) override
 		{
-			const ::Vadon::Foundation::EditorMessageCategory category = static_cast<::Vadon::Foundation::EditorMessageCategory>(header.category);
-			switch (category)
+			::Vadon::Foundation::EditorMessageReader message_reader(data, size);
+			switch (message_reader.get_current_category())
 			{
 			case ::Vadon::Foundation::EditorMessageCategory::TEST:
 			{
 				// Send back a test message of our own
-				::Vadon::Foundation::EditorTestMessage test_message_in;
-				VadonEditor::Network::MessageSerializer::parse_message(header, data, test_message_in);
+				::Vadon::Foundation::EditorMessageTest test_message_in;
 
-				qInfo() << "Server test message received: number = " << test_message_in.number << ", other number = " << test_message_in.other_number << Qt::endl;
+				qInfo() << "Server test message received: number = " << test_message_in.number << ", other number = " << test_message_in.other_number;
 
-				::Vadon::Foundation::EditorTestMessage test_message_out;
+				::Vadon::Foundation::EditorMessageTest test_message_out;
 				test_message_out.number = 2 * test_message_in.number;
 				test_message_out.other_number = 3 * test_message_in.other_number;
 
-				std::vector<char> message_buffer;
-				VadonEditor::Network::MessageSerializer::write_message(test_message_out, message_buffer);
+				VadonEditor::Network::MessageSerializer serializer;
+				serializer.write_message_trivial(::Vadon::Foundation::EditorMessageCategory::TEST, test_message_out);
 
-				m_simulator.dispatch_message_to_editor(message_buffer.data(), message_buffer.size());
+				m_simulator.dispatch_message_to_editor(serializer.get_buffer().data(), serializer.get_buffer().size());
 			}
 				break;
 			}
@@ -145,11 +156,14 @@ namespace VadonEditor::Simulator
 	{
 		Core::Application& m_application;
 
+		QProcess m_simulator_process;
+
 		HMODULE m_library;
 		VADONEDITOR_SIMULATOR_API_FUNCTION_POINTER(VadonEditorPluginEntrypoint) m_entrypoint_func;
 		VADONEDITOR_SIMULATOR_API_FUNCTION_POINTER(VadonEditorPluginExit) m_exit_func;
 
 		::Vadon::Foundation::EditorPluginInterface* m_plugin;
+		QTimer m_plugin_timer;
 
 		Internal(Core::Application& application)
 			: m_application(application)
@@ -162,39 +176,47 @@ namespace VadonEditor::Simulator
 
 		bool initialize()
 		{
-			const QString& plugin_path = m_application.get_settings().plugin_path;
-			if (plugin_path.isEmpty() == false)
-			{
-				return launch_plugin(plugin_path);
-			}
-			else
-			{
-				qCritical() << "Did not provide a path to a plugin!" << Qt::endl;
-				m_plugin = new NullPlugin(m_application);
-				return true;
-			}
+			// TODO: anything?
+			return true;
 		}
 
-		bool launch_plugin(const QString& plugin_path)
+		bool load_plugin()
 		{
-			m_library = LoadLibraryA(qPrintable(plugin_path));
-			if (m_library == NULL)
+			const VadonEditor::Core::ProjectManager& project_manager = m_application.get_project_manager();
+			const VadonEditor::Core::ProjectInfo& project_info = project_manager.get_project_info();
+
+			const QFileInfo plugin_file_info(project_info.plugin_path);
+			if (plugin_file_info.exists() == false
+				|| plugin_file_info.isFile() == false
+				|| plugin_file_info.suffix() != "dll")
 			{
-				qCritical() << "Failed to load library at \"" << plugin_path << "\"" << Qt::endl;
 				return false;
 			}
+
+			DLL_DIRECTORY_COOKIE plugin_dir_cookie = AddDllDirectory(plugin_file_info.absolutePath().toStdWString().c_str());
+
+			m_library = LoadLibraryExA(qPrintable(project_info.plugin_path), NULL, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
+			if (m_library == NULL)
+			{
+				auto last_error = GetLastError();
+				qCritical() << "Failed to load library at \"" << project_info.plugin_path << "\"" << "(last error: " << last_error << ")";
+				RemoveDllDirectory(plugin_dir_cookie);
+				return false;
+			}
+
+			RemoveDllDirectory(plugin_dir_cookie);
 
 			m_entrypoint_func = VADONEDITOR_SIMULATOR_GET_API_FUNCTION_POINTER(m_library, VadonEditorPluginEntrypoint);
 			if (m_entrypoint_func == nullptr)
 			{
-				qCritical() << "Failed to get entrypoint function address!" << Qt::endl;
+				qCritical() << "Failed to get entrypoint function address!";
 				return false;
 			}
 
 			m_exit_func = VADONEDITOR_SIMULATOR_GET_API_FUNCTION_POINTER(m_library, VadonEditorPluginExit);
 			if (m_exit_func == nullptr)
 			{
-				qCritical() << "Failed to get exit function address!" << Qt::endl;
+				qCritical() << "Failed to get exit function address!";
 				return false;
 			}
 
@@ -207,6 +229,60 @@ namespace VadonEditor::Simulator
 			return true;
 		}
 
+		bool run_plugin()
+		{
+			if (load_plugin() == false)
+			{
+				return false;
+			}
+
+			if (m_plugin == nullptr)
+			{
+				qCritical() << "No plugin object was created!";
+				return false;
+			}
+
+			if (m_plugin->initialize() == false)
+			{
+				qCritical() << "Plugin failed to initialize!";
+				return false;
+			}
+
+			QObject::connect(&m_application.get_network_system(), &Network::NetworkSystem::received_message,
+				[this](const QByteArray& data)
+				{
+					::Vadon::Foundation::EditorMessageReader message_reader(data.constData(), data.size());
+
+					switch (message_reader.get_current_category())
+					{
+					case ::Vadon::Foundation::EditorMessageCategory::SIMULATOR:
+					{
+						const ::Vadon::Foundation::EditorSimulatorMessageHeader* simulator_message_header = reinterpret_cast<const ::Vadon::Foundation::EditorSimulatorMessageHeader*>(message_reader.get_current_message_data());
+						switch (simulator_message_header->message_type)
+						{
+						case ::Vadon::Foundation::EditorSimulatorMessageType::SIMULATOR_SHUTDOWN:
+						{
+							// TODO: run shutdown code in plugin
+							// Stop timer so it doesn't try to update during shutdown
+							m_plugin_timer.stop();
+							QCoreApplication::quit();
+							return;
+						}
+						break;
+						}
+					}
+					break;
+					}
+
+					// Pass on to plugin
+					// TODO: any messages that we should handle in the simulator?
+					m_plugin->process_message_from_editor(data.data(), data.size());
+				}
+			);
+
+			return true;
+		}
+
 		void update()
 		{
 			m_plugin->update();
@@ -214,22 +290,156 @@ namespace VadonEditor::Simulator
 
 		void shutdown()
 		{
-			if (m_exit_func != nullptr)
+			const Core::CommandLineParameters& command_line_params = m_application.get_command_line_parameters();
+			if (command_line_params.is_simulator == false)
 			{
-				// Pass the interface back to plugin (it knows how it was allocated)
-				m_exit_func(m_plugin);
+				if (m_simulator_process.state() != QProcess::ProcessState::NotRunning)
+				{
+					// Message process to make sure it shuts down
+					{
+						VadonEditor::Network::MessageSerializer message_serializer;
+
+						::Vadon::Foundation::EditorSimulatorMessageShutdown shutdown_message;
+						shutdown_message.message_type = ::Vadon::Foundation::EditorSimulatorMessageType::SIMULATOR_SHUTDOWN;
+
+						message_serializer.write_message_trivial(::Vadon::Foundation::EditorMessageCategory::SIMULATOR, shutdown_message);
+
+						QByteArray message_buffer;
+						message_buffer.append(message_serializer.get_buffer().data(), message_serializer.get_buffer().size());
+
+						m_application.get_network_system().send_message(message_buffer);
+					}
+
+					// Wait for process to finish
+					if (m_simulator_process.waitForFinished() == false)
+					{
+						qCritical() << "Error shutting down simulator!";
+					}
+
+					if (m_simulator_process.exitStatus() == QProcess::ExitStatus::NormalExit)
+					{
+						qDebug() << "Simulator process exited with " << m_simulator_process.exitCode();
+					}
+					else
+					{
+						qCritical() << "Simulator process crashed!";
+					}
+				}
 			}
 			else
 			{
-				delete m_plugin;
-			}
-			m_plugin = nullptr;
+				if (m_plugin == nullptr)
+				{
+					return;
+				}
 
-			if (m_library != NULL)
-			{
-				FreeLibrary(m_library);
-				m_library = NULL;
+				if (m_exit_func != nullptr)
+				{
+					// Pass the interface back to plugin (it knows how it was allocated)
+					m_exit_func(m_plugin);
+				}
+				else
+				{
+					delete m_plugin;
+				}
+				m_plugin = nullptr;
+
+				if (m_library != NULL)
+				{
+					FreeLibrary(m_library);
+					m_library = NULL;
+				}
 			}
+		}
+
+		bool run_simulator()
+		{
+			const Core::CommandLineParameters& command_line_params = m_application.get_command_line_parameters();
+
+			Core::ProjectManager& project_manager = m_application.get_project_manager();
+			const Core::ProjectInfo& project_info = project_manager.get_project_info();
+
+			if (project_info.plugin_path.isEmpty() == true)
+			{
+				return false;
+			}
+
+			if (command_line_params.is_simulator == false)
+			{
+				if (m_simulator_process.state() != QProcess::NotRunning)
+				{
+					qWarning() << "Simulator already running!";
+					return false;
+				}
+
+				QString program_path = QCoreApplication::applicationFilePath();
+				m_simulator_process.setProgram(program_path);
+
+				QStringList arguments{ "--simulator" };
+				arguments.push_back("--startup-project");
+				arguments.push_back(project_info.get_project_file_path());
+				arguments.push_back("--debug-break-on-init");
+
+				m_simulator_process.setArguments(arguments);
+
+				QObject::connect(&m_simulator_process, &QProcess::aboutToClose, [this]() { cleanup_process(); });
+				QObject::connect(&m_simulator_process, &QProcess::errorOccurred, [this](QProcess::ProcessError error) { process_error(error); });
+
+				QObject::connect(&m_simulator_process, &QProcess::readyReadStandardOutput,
+					[this]()
+					{
+						qInfo() << qPrintable(m_simulator_process.readAllStandardOutput());
+					}
+				);
+
+				m_simulator_process.start(QIODevice::ReadOnly);
+			}
+			else
+			{
+				// We are the simulator, load plugin!
+				if (run_plugin() == false)
+				{
+					return false;
+				}
+
+				// Connect network signals
+				QObject::connect(&m_application.get_network_system(), &Network::NetworkSystem::connected_to_server,
+					[this]()
+					{
+						m_plugin->editor_connected();
+					}
+				);
+
+				QObject::connect(&m_application.get_network_system(), &Network::NetworkSystem::disconnected_from_server,
+					[this]()
+					{
+						m_plugin->editor_disconnected();
+					}
+				);
+
+				// Start timer to update the plugin
+				QObject::connect(&m_plugin_timer, &QTimer::timeout,
+					[this]()
+					{
+						update();
+					}
+				);
+				m_plugin_timer.start();
+			}
+
+			qDebug() << "Simulator started";
+
+			return true;
+		}
+
+		void cleanup_process()
+		{
+			qInfo() << "Simulator process shutting down";
+		}
+
+		void process_error(QProcess::ProcessError error)
+		{
+			qCritical() << "Error running simulator process: " << error;
 		}
 	};
 
@@ -238,19 +448,16 @@ namespace VadonEditor::Simulator
 	{
 	}
 
-	PluginManager::~PluginManager()
-	{
-		shutdown();
-	}
+	PluginManager::~PluginManager() = default;
 
 	bool PluginManager::initialize()
 	{
-		return m_internal->initialize();
-	}
+		if (m_internal->initialize() == false)
+		{
+			return false;
+		}
 
-	void PluginManager::update()
-	{
-		m_internal->update();
+		return true;
 	}
 
 	void PluginManager::shutdown()
@@ -258,16 +465,21 @@ namespace VadonEditor::Simulator
 		m_internal->shutdown();
 	}
 
+	bool PluginManager::run_simulator()
+	{
+		return m_internal->run_simulator();
+	}
+
 	::Vadon::Foundation::EditorPluginInterface* PluginManager::get_plugin() const
 	{
 		return m_internal->m_plugin;
 	}
 
-	void PluginManager::dispatch_message_to_editor(const void* data, size_t size)
+	void PluginManager::dispatch_message_to_editor(const char* data, size_t size)
 	{
 		QByteArray message_buffer;
-		message_buffer.append(reinterpret_cast<const char*>(data), size);
+		message_buffer.append(data, size);
 
-		m_internal->m_application.get_message_system().send_message(message_buffer);
+		m_internal->m_application.get_network_system().send_message(message_buffer);
 	}
 }

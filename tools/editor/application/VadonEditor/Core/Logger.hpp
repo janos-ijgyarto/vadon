@@ -3,15 +3,15 @@
 #include <QObject>
 namespace VadonEditor::Core
 {
-    // NOTE: utility object that sends QDebug messages to the UI via signals
+    // NOTE: utility object that sends QDebug messages to the UI via signals (ensures thread safety)
     class Logger : public QObject
     {
         Q_OBJECT
     signals:
-        void log_message(const QString& message);
+        void message_logged(const QString& message);
 
     private:
-        void internal_log_message(const QString& message);
+        void log_message(const QString& message);
 
         friend class Application;
     };

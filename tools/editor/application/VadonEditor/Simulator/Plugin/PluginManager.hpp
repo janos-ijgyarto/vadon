@@ -19,13 +19,14 @@ namespace VadonEditor::Simulator
 		~PluginManager();
 
 		bool initialize();
-		void update();
 		void shutdown();
 
 		::Vadon::Foundation::EditorPluginInterface* get_plugin() const;
 
-		void dispatch_message_to_editor(const void* data, size_t size) override;
+		void dispatch_message_to_editor(const char* data, size_t size) override;
 	private:
+		bool run_simulator();
+
 		struct Internal;
 		std::unique_ptr<Internal> m_internal;
 

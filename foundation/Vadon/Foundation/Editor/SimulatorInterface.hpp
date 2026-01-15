@@ -8,7 +8,7 @@ namespace Vadon
 		{
 		public:
 			virtual ~EditorSimulatorInterface() {}
-			virtual void dispatch_message_to_editor(const void* data, size_t size) = 0;
+			virtual void dispatch_message_to_editor(const char* data, size_t size) = 0;
 		};
 	}
 }

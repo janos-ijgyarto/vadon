@@ -1,7 +1,5 @@
 target_sources(${VADONEDITOR_APPLICATION}
-    PRIVATE
-    MessageSystem.hpp
-    MessageSystem.cpp
+    PRIVATE    
     NetworkSystem.hpp
     NetworkSystem.cpp    
 )

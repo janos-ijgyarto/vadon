@@ -3,7 +3,6 @@
 #include <memory>
 namespace VadonEditor::Network
 {
-	class MessageSystem;
 	class NetworkSystem;
 }
 namespace VadonEditor::Simulator
@@ -12,34 +11,42 @@ namespace VadonEditor::Simulator
 }
 namespace VadonEditor::UI
 {
-	class MainWindow;
+	class UISystem;
 }
 
 class QCoreApplication;
 
 namespace VadonEditor::Core
 {
-	struct EditorSettings;
+	struct CommandLineParameters;
+	class Logger;
+	class ProjectManager;
 
 	class Application
 	{
 	public:
+		static constexpr const char* c_org_name = "VadonEngine";
+		static constexpr const char* c_app_name = "Vadon Editor";
+
 		Application(int argc, char* argv[]);
 		~Application();
 
 		int exec();
 
-		const EditorSettings& get_settings() const;
+		const CommandLineParameters& get_command_line_parameters() const;
 
-		Network::MessageSystem& get_message_system();
+		Logger& get_logger();
+		ProjectManager& get_project_manager();
+
 		Network::NetworkSystem& get_network_system();
 
 		Simulator::PluginManager& get_plugin_manager();
 
-		UI::MainWindow* get_main_window();
+		UI::UISystem& get_ui_system();
+
+		QCoreApplication* get_qt_application() const;
 	private:
 		bool initialize();
-		void about_to_quit();
 
 		struct Internal;
 		std::unique_ptr<Internal> m_internal;

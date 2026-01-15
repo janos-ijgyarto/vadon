@@ -99,7 +99,7 @@ namespace Vadon::Private::Render::DirectX
 {
 	WindowHandle RenderTargetSystem::create_window(const WindowInfo& window_info)
 	{
-		HWND platform_handle = static_cast<HWND>(window_info.platform_handle);
+		HWND platform_handle = HWND(window_info.platform_handle);
 
 		// Check existing windows first to make sure we don't add it twice
 		for (const WindowPool::ObjectPair& current_window_pair : m_window_pool)
@@ -137,7 +137,7 @@ namespace Vadon::Private::Render::DirectX
 
 		swap_chain_desc.BufferCount = window_info.buffer_count; // 2 is enough, 3 might be better (need to combine with SetMaximumFrameLatency)
 
-		HWND window_handle = static_cast<HWND>(window_info.platform_handle);
+		HWND window_handle = HWND(window_info.platform_handle);
 		swap_chain_desc.OutputWindow = window_handle; // Use the HWND
 		swap_chain_desc.Windowed = TRUE; // Always start in windowed, programmatically change to fullscreen afterward if needed (TODO: check the HWND to make sure it's in the correct state?)
 

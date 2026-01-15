@@ -1,124 +1,20 @@
-#include <VadonEditor/UI/SchemaEditor.hpp>
-
-#include <QFileDialog>
-#include <QJsonDocument>
-#include <QJsonObject>
-#include <QJsonArray>
+#include <VadonEditor/Core/Project/DataSchema.hpp>
 
 namespace
 {
+#if 0
 	QUuid json_string_to_uuid(const QJsonValue& uuid_string_value)
 	{
 		QString uuid_string = uuid_string_value.toString();
 		QByteArray uuid_arr = QByteArray::fromBase64(uuid_string.toUtf8());
 		return QUuid::fromBytes(uuid_arr);
 	}
+#endif
 }
 
-namespace VadonEditor::UI
+namespace VadonEditor::Core
 {
-	UI::TypeListModel::TypeListModel()
-		: m_schema(nullptr)
-	{
-	}
-
-	void TypeListModel::schema_loaded(const Schema* schema)
-	{
-		beginResetModel();
-		m_schema = schema;
-		endResetModel();
-	}
-
-	int TypeListModel::rowCount(const QModelIndex& /*parent*/) const
-	{
-		return m_schema != nullptr ? m_schema->types.size() : 0;
-	}
-
-	QVariant TypeListModel::data(const QModelIndex& index, int role) const
-	{
-		if (m_schema != nullptr)
-		{
-			if (role == Qt::DisplayRole)
-			{
-				const TypeData& type_data = m_schema->types[index.row()];
-				return QString("ID: %1, Name: %2")
-					.arg(type_data.id.toString(QUuid::StringFormat::WithoutBraces))
-					.arg(type_data.name);
-			}
-		}
-
-		return QVariant();
-	}
-
-	TypeInfoModel::TypeInfoModel(QObject* /*parent*/)
-		: m_selected_type(nullptr)
-	{
-	}
-
-	void TypeInfoModel::select_type(const TypeData* type_data)
-	{
-		beginResetModel();
-		m_selected_type = type_data;
-		endResetModel();
-	}
-
-	int TypeInfoModel::rowCount(const QModelIndex& /*parent*/) const
-	{
-		return m_selected_type != nullptr ? m_selected_type->properties.size() : 0;
-	}
-
-	int TypeInfoModel::columnCount(const QModelIndex& /*parent*/) const
-	{
-		return 3;
-	}
-
-	QVariant TypeInfoModel::headerData(int section, Qt::Orientation orientation, int role) const
-	{
-		if (role == Qt::DisplayRole && orientation == Qt::Horizontal) {
-			switch (section) {
-			case 0:
-				return QString("ID");
-			case 1:
-				return QString("Type");
-			case 2:
-				return QString("Name");
-			}
-		}
-		return QVariant();
-	}
-
-	QVariant TypeInfoModel::data(const QModelIndex& index, int role) const
-	{
-		if (m_selected_type != nullptr)
-		{
-			if (role == Qt::DisplayRole)
-			{
-				const PropertyData& property_data = m_selected_type->properties[index.row()];
-				switch (index.column())
-				{
-				case 0:
-					return property_data.id.toString(QUuid::StringFormat::WithoutBraces);
-				case 1:
-					return property_data.type.toString(QUuid::StringFormat::WithoutBraces);
-				case 2:
-					return property_data.name;
-				}
-			}
-		}
-
-		return QVariant();
-	}
-
-	SchemaEditor::SchemaEditor(QWidget* parent)
-		: QDialog(parent)
-	{
-		setAttribute(Qt::WA_DeleteOnClose, true);
-		m_ui.setupUi(this);
-
-		m_ui.metadataTableView->setModel(&m_type_info);
-		m_ui.typeListView->setModel(&m_type_list);
-	}
-
+#if 0
 	void SchemaEditor::loadClicked()
 	{
 		QString schema_file = QFileDialog::getOpenFileName(this, "Select Schema File", QDir::currentPath(), tr("Schema Files (*.txt)"));
@@ -200,13 +96,5 @@ namespace VadonEditor::UI
 			m_type_list.schema_loaded(&m_schema);
 		}
 	}
-
-	void SchemaEditor::type_clicked(const QModelIndex& index)
-	{
-		const TypeData& type_data = m_schema.types[index.row()];
-		m_ui.nameEdit->setText(type_data.name.isEmpty() ? "<UNNAMED>" : type_data.name);
-		m_ui.uuidEdit->setText(type_data.id.toString(QUuid::StringFormat::WithoutBraces));
-
-		m_type_info.select_type(&type_data);
-	}
+#endif
 }

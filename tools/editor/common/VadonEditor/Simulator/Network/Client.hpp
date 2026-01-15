@@ -1,7 +1,6 @@
 #ifndef VADONEDITOR_SIMULATOR_NETWORK_CLIENT_HPP
 #define VADONEDITOR_SIMULATOR_NETWORK_CLIENT_HPP
 #include <VadonEditor/Common.hpp>
-#include <VadonEditor/Network/Message/MessageSerializer.hpp>
 #include <VadonEditor/Network/TCP/Client.hpp>
 namespace VadonEditor::Simulator::Network
 {
@@ -11,7 +10,7 @@ namespace VadonEditor::Simulator::Network
 	{
 	public:
 		virtual void on_connected() = 0;
-		virtual void on_received(const ::Vadon::Foundation::EditorMessageHeader& header, const char* data) = 0;
+		virtual void on_received(const char* data, size_t size) = 0;
 		virtual void on_disconnected() = 0;
 	};
 

@@ -7,10 +7,13 @@
 #define VADON_EDITOR_SIMULATOR_PLUGIN_DLLEXPORT __declspec(dllexport)
 #endif
 
-namespace Vadon::Foundation
+namespace Vadon
 {
-    class EditorPluginInterface;
-    class EditorSimulatorInterface;
+    namespace Foundation
+    {
+        class EditorPluginInterface;
+        class EditorSimulatorInterface;
+    }
 }
 
 using VadonEditorPluginInterface = Vadon::Foundation::EditorPluginInterface;

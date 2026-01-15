@@ -4,7 +4,11 @@ MESSAGE("Configuring Vadon Editor Demo")
 # Find some way to deduplicate?
 set(VADONDEMO_CURRENT_TARGET "VadonDemoEditor")
 
-add_executable(${VADONDEMO_CURRENT_TARGET})
+# NOTE: this is always a shared library, to allow the simulator to load it dynamically
+add_library(${VADONDEMO_CURRENT_TARGET} SHARED)
+
+# Add define to export the necessary functions
+target_compile_definitions(${VADONDEMO_CURRENT_TARGET} PRIVATE VADON_EDITOR_SIMULATOR_PLUGIN_IMPLEMENTATION)
 
 add_subdirectory(VadonDemo)
 
@@ -13,16 +17,8 @@ source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${VADONEDITORDEMO_SOURCES})
 
 target_include_directories(${VADONDEMO_CURRENT_TARGET} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
-set(VADONEDITORDEMO_LIBRARIES VadonEditor VadonDemoCommon)
+set(VADONEDITORDEMO_LIBRARIES VadonEditorPluginCommon VadonDemoCommon Vadon::Vadon)
 target_link_libraries(${VADONDEMO_CURRENT_TARGET} PRIVATE ${VADONEDITORDEMO_LIBRARIES})
-	
-# Enable console window for debug builds, disable in release
-if(WIN32)
-    target_link_options(${VADONDEMO_CURRENT_TARGET} PRIVATE "$<IF:$<CONFIG:Debug>,/SUBSYSTEM:CONSOLE,/SUBSYSTEM:WINDOWS>" "/ENTRY:mainCRTStartup")
-else()
-	# Enable console window for debug builds, disable in release
-    target_link_options(${VADONDEMO_CURRENT_TARGET} PRIVATE "$<IF:$<NOT:$<CONFIG:Debug>>,-mwindows,>")
-endif()
 
 set_target_properties(${VADONDEMO_CURRENT_TARGET} PROPERTIES FOLDER ${VADON_PARENT_FOLDER}${PROJECT_NAME})
 

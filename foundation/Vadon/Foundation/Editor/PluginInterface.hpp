@@ -5,7 +5,6 @@ namespace Vadon
 	namespace Foundation
 	{
 		class EditorSimulatorInterface;
-		struct EditorMessageHeader;
 		class TypeMetadataRegistry;
 
 		class EditorPluginInterface
@@ -13,8 +12,11 @@ namespace Vadon
 		public:
 			virtual ~EditorPluginInterface() {}
 
+			EditorSimulatorInterface& get_simulator() { return m_simulator; }
+
+			virtual bool initialize() = 0;
 			virtual void update() = 0;
-			virtual void process_message_from_editor(const EditorMessageHeader& header, const void* data) = 0;
+			virtual void process_message_from_editor(const char* data, size_t size) = 0;
 
 			virtual void editor_connected() = 0;
 			virtual void editor_disconnected() = 0;

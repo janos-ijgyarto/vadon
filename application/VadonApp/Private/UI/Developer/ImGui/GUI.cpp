@@ -675,7 +675,7 @@ namespace VadonApp::Private::UI::Developer::ImGUI
 #ifdef _WIN32
         // Set platform dependent data in viewport
         VadonApp::Platform::PlatformInterface& platform_interface = m_application.get_system<VadonApp::Platform::PlatformInterface>();
-        ImGui::GetMainViewport()->PlatformHandleRaw = platform_interface.get_platform_window_handle(window_handle);
+        ImGui::GetMainViewport()->PlatformHandleRaw = (void*)platform_interface.get_platform_window_handle(window_handle);
 #endif
     }
 

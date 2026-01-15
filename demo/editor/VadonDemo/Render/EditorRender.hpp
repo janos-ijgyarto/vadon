@@ -5,13 +5,13 @@
 #include <Vadon/Render/Frame/Graph.hpp>
 #include <Vadon/Render/GraphicsAPI/RenderTarget/Window.hpp>
 #include <unordered_map>
-namespace VadonEditor::Model
-{
-	class Scene;
-}
 namespace VadonDemo::Core
 {
 	class Editor;
+}
+namespace VadonEditor::Scene
+{
+	class Scene;
 }
 namespace Vadon::Render::Canvas
 {
@@ -22,7 +22,7 @@ namespace VadonDemo::Render
 	class EditorRender
 	{
 	public:
-		CanvasContextHandle get_scene_canvas_context(const VadonEditor::Model::Scene* active_scene);
+		CanvasContextHandle get_scene_canvas_context(const VadonEditor::Scene::Scene* active_scene);
 
 		// TODO: unload unused resources!
 		void init_entity(Vadon::ECS::EntityHandle entity);
@@ -36,6 +36,8 @@ namespace VadonDemo::Render
 		bool init_frame_graph();
 
 		void register_type_metadata();
+
+		void process_message(const char* data, size_t size);
 
 		bool project_loaded();
 
@@ -51,14 +53,14 @@ namespace VadonDemo::Render
 		void update_dirty_layers();
 		void update_editor_layer();
 
-		void process_platform_events();
-
 		Core::Editor& m_editor;
 		
 		Vadon::Render::FrameGraphHandle m_frame_graph;
+
+		// TODO: more flexible system to allow multiple windows, etc.
 		Vadon::Render::WindowHandle m_render_window;
 		
-		std::unordered_map<const VadonEditor::Model::Scene*, CanvasContextHandle> m_scene_canvas_contexts;
+		std::unordered_map<const VadonEditor::Scene::Scene*, CanvasContextHandle> m_scene_canvas_contexts;
 
 		std::unordered_map<std::string, TextureResource> m_textures;
 
@@ -66,6 +68,8 @@ namespace VadonDemo::Render
 		Vadon::Render::Canvas::ItemHandle m_editor_item;
 
 		bool m_layers_dirty;
+
+		float m_clear_value;
 
 		friend Core::Editor;
 	};

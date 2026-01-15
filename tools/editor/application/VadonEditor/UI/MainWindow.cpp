@@ -1,27 +1,53 @@
 #include <VadonEditor/UI/MainWindow.hpp>
 
-#include <VadonEditor/UI/SchemaEditor.hpp>
-#include <VadonEditor/UI/UUIDDialog.hpp>
+#include <VadonEditor/Core/Application.hpp>
+#include <VadonEditor/Core/Logger.hpp>
+
+#include <VadonEditor/Network/NetworkSystem.hpp>
+
+#include <VadonEditor/UI/Project/ProjectSettingsDialog.hpp>
+#include <VadonEditor/UI/Utilities/UUIDDialog.hpp>
+
+#include <VadonEditor/Network/Message/MessageSerializer.hpp>
 
 namespace VadonEditor::UI
 {
-	MainWindow::MainWindow(QWidget* parent)
+	MainWindow::MainWindow(Core::Application& application, QWidget* parent)
 		: QMainWindow(parent)
+		, m_application(application)
 	{
 		m_ui.setupUi(this);
 
-		connect(m_ui.actionNew, &QAction::triggered, this, &MainWindow::menu_test);
-
-		connect(m_ui.actionGenerate_UUID, &QAction::triggered, this, &MainWindow::generate_uuid_triggered);
+		QObject::connect(&m_application.get_logger(), &Core::Logger::message_logged, this, &UI::MainWindow::message_logged);
 	}
 
 	MainWindow::~MainWindow()
 	{
 	}
 
-	void MainWindow::log_message(const QString& message)
+	void MainWindow::message_logged(const QString& message)
 	{
 		m_ui.console->appendPlainText(message);
+	}
+
+	void MainWindow::new_triggered()
+	{
+		::Vadon::Foundation::EditorMessageTest test_message;
+		test_message.number = 123;
+		test_message.other_number = 4.567f;
+
+		VadonEditor::Network::MessageSerializer message_serializer;
+		message_serializer.write_message_trivial(::Vadon::Foundation::EditorMessageCategory::TEST, test_message);
+
+		QByteArray message_buffer;
+		message_buffer.append(message_serializer.get_buffer().data(), message_serializer.get_buffer().size());
+
+		m_application.get_network_system().send_message(message_buffer);
+	}
+
+	void MainWindow::quit_triggered()
+	{
+		close();
 	}
 
 	void MainWindow::generate_uuid_triggered()
@@ -30,9 +56,9 @@ namespace VadonEditor::UI
 		uuid_dialog->open();
 	}
 
-	void MainWindow::schema_editor_triggered()
+	void MainWindow::project_settings_triggered()
 	{
-		SchemaEditor* schema_editor = new SchemaEditor(this);
-		schema_editor->open();
+		ProjectSettingsDialog* project_settings_dialog = new ProjectSettingsDialog(m_application, this);
+		project_settings_dialog->open();
 	}
 }

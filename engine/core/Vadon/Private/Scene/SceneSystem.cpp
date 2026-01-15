@@ -15,8 +15,6 @@ namespace Vadon::Private::Scene
 {
 	namespace
 	{
-
-
 		enum class SceneProperty
 		{
 			ENTITIES,
@@ -35,7 +33,6 @@ namespace Vadon::Private::Scene
 
 		enum class EntityProperty
 		{
-			NAME,
 			PARENT,
 			SCENE,
 			COMPONENTS,
@@ -46,7 +43,6 @@ namespace Vadon::Private::Scene
 		{
 			using Vadon::Utilities::operator""_uuid;
 			constexpr ::Vadon::Foundation::UUID c_property_uuids[static_cast<size_t>(EntityProperty::PROPERTY_COUNT)] = {
-				"2749b0e2-0db5-4a2f-af6a-9fd3e7d86df4"_uuid,
 				"7855074b-bde1-49a9-9dab-6b8be3665be1"_uuid,
 				"1d56f085-7e25-4182-a73f-54d027cb6f2a"_uuid,
 				"f3132351-f4e7-4ae9-ac6f-68a1ea92d3ae"_uuid
@@ -83,29 +79,6 @@ namespace Vadon::Private::Scene
 		{
 			// TODO: pair up UUIDs with debug strings!
 			log_property_serialization_error(get_component_property_uuid(property));
-		}
-
-		std::string get_entity_path(const SceneData& scene, int32_t entity_index)
-		{
-			const SceneData::EntityData& entity_data = scene.entities[entity_index];
-			if (entity_data.has_parent() == false)
-			{
-				return ".";
-			}
-
-			std::string path;
-
-			const SceneData::EntityData* current_entity_data = &entity_data;
-			while (current_entity_data->has_parent() == true)
-			{
-				path = current_entity_data->name + "/" + path;
-				current_entity_data = &scene.entities[current_entity_data->parent];
-			}
-
-			// Trim a final slash
-			path.pop_back();
-
-			return path;
 		}
 
 		bool save_scene_array_data(Vadon::Utilities::Serializer& serializer, Vadon::Utilities::Variant& array_value)
@@ -341,7 +314,6 @@ namespace Vadon::Private::Scene
 				Vadon::Core::Logger::log_error(c_entity_obj_error_message);
 				return false;
 			}
-			serializer.serialize(get_entity_property_uuid(EntityProperty::NAME), entity_data.name);
 			serializer.serialize(get_entity_property_uuid(EntityProperty::PARENT), entity_data.parent);
 			// NOTE: scene needs to be handled separately because it may or may not be set
 			if ((serializer.is_reading() == true) || ((serializer.is_reading() == false) && (entity_data.scene.is_valid() == true)))
@@ -567,8 +539,6 @@ namespace Vadon::Private::Scene
 				}
 			}
 
-			entity_manager.set_entity_name(current_entity, current_entity_data.name);
-
 			for (const SceneData::ComponentData& current_component_data : current_entity_data.components)
 			{
 				Vadon::ECS::ComponentHandle current_component = current_entity_data.scene.is_valid() == false
@@ -678,7 +648,6 @@ namespace Vadon::Private::Scene
 		const int32_t entity_index = static_cast<int32_t>(scene_data.entities.size());
 		SceneData::EntityData& entity_data = scene_data.entities.emplace_back();
 
-		entity_data.name = entity_manager.get_entity_name(entity);
 		entity_data.parent = parent_index;
 
 		Vadon::Scene::ResourceSystem& resource_system = m_engine_core.get_system<Vadon::Scene::ResourceSystem>();
