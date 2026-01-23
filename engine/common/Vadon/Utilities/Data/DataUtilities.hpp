@@ -1,5 +1,6 @@
 #ifndef VADON_UTILITIES_DATA_DATAUTILITIES_HPP
 #define VADON_UTILITIES_DATA_DATAUTILITIES_HPP
+#include <cstdint>
 namespace Vadon::Utilities
 {
 	struct DataRange

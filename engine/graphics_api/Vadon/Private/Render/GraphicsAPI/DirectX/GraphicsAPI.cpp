@@ -1,4 +1,3 @@
-#include <Vadon/Private/PCH/GraphicsAPI.hpp>
 #include <Vadon/Private/Render/GraphicsAPI/DirectX/GraphicsAPI.hpp>
 
 #include <Vadon/Private/Render/GraphicsAPI/DirectX/Buffer/BufferSystem.hpp>

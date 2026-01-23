@@ -1,5 +1,6 @@
-#include <Vadon/Private/PCH/Common.hpp>
 #include <Vadon/Utilities/TypeInfo/TypeErasure.hpp>
+
+#include <Vadon/Utilities/Debugging/Assert.hpp>
 
 namespace Vadon::Utilities
 {

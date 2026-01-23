@@ -1,8 +1,9 @@
-#include <Vadon/Private/PCH/Common.hpp>
 #include <Vadon/Utilities/System/UUID/UUID.hpp>
 
 #include <Vadon/Core/Logger.hpp>
+
 #include <Vadon/Utilities/Data/Encoding/Base64.hpp>
+#include <Vadon/Utilities/Debugging/Assert.hpp>
 
 // UUID generation implementation taken from: http://graemehill.ca/minimalist-cross-platform-uuid-guid-generation-in-c++/
 #ifdef VADON_PLATFORM_WIN32
@@ -10,6 +11,8 @@
 #elif defined(VADON_PLATFORM_LINUX)
 #include <uuid/uuid.h>
 #endif
+
+#include <vector>
 
 namespace
 {

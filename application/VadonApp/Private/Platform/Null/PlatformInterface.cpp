@@ -1,4 +1,3 @@
-#include <VadonApp/Private/PCH/VadonApp.hpp>
 #include <VadonApp/Private/Platform/Null/PlatformInterface.hpp>
 
 #include <VadonApp/Private/Core/Application.hpp>

@@ -2,6 +2,7 @@
 #define VADON_CORE_CORE_HPP
 #include <Vadon/Core.hpp>
 #include <Vadon/Core/CoreInterface.hpp>
+#include <memory>
 namespace Vadon::Core
 {
 	class EngineCoreInterface;

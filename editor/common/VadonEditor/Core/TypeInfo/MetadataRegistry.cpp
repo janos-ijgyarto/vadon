@@ -1,5 +1,7 @@
 #include <VadonEditor/Core/TypeInfo/MetadataRegistry.hpp>
 
+#include <Vadon/Utilities/Debugging/Assert.hpp>
+
 namespace
 {
 	struct PropertyMetadata

@@ -1,10 +1,11 @@
-#include <Vadon/Private/PCH/Common.hpp>
 #include <Vadon/Core/Environment.hpp>
 
 #include <Vadon/Core/Logger.hpp>
 #include <Vadon/ECS/Component/Registry.hpp>
 #include <Vadon/Scene/Resource/Registry.hpp>
 #include <Vadon/Utilities/TypeInfo/Registry.hpp>
+
+#include <Vadon/Utilities/Debugging/Assert.hpp>
 
 namespace Vadon::Core
 {

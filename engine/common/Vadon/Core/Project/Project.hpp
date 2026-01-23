@@ -1,6 +1,9 @@
 #ifndef VADON_CORE_PROJECT_PROJECT_HPP
 #define VADON_CORE_PROJECT_PROJECT_HPP
+#include <Vadon/Common.hpp>
 #include <Vadon/Foundation/Utilities/UUID.hpp>
+#include <string>
+#include <vector>
 namespace Vadon::Utilities
 {
 	class Serializer;

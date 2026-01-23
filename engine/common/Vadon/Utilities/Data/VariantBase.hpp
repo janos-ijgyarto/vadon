@@ -5,6 +5,7 @@
 #include <Vadon/Math/Vector.hpp>
 #include <Vadon/Utilities/Container/Box.hpp>
 #include <Vadon/Utilities/TypeInfo/TypeList/VariantTypeList.hpp>
+#include <string>
 namespace Vadon::Utilities
 {
 	// Used by function bindings to indicate a void function

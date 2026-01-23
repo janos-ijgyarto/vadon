@@ -1,4 +1,3 @@
-#include <Vadon/Private/PCH/Common.hpp>
 #include <Vadon/Utilities/TypeInfo/Registry.hpp>
 
 #include <Vadon/Core/Environment.hpp>
@@ -6,6 +5,8 @@
 
 #include <Vadon/Utilities/Enum/EnumClass.hpp>
 #include <Vadon/Utilities/System/UUID/UUID.hpp>
+
+#include <Vadon/Utilities/Debugging/Assert.hpp>
 
 #include <format>
 

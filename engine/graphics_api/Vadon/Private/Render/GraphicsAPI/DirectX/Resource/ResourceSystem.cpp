@@ -1,4 +1,3 @@
-#include <Vadon/Private/PCH/GraphicsAPI.hpp>
 #include <Vadon/Private/Render/GraphicsAPI/DirectX/Resource/ResourceSystem.hpp>
 
 #include <Vadon/Private/Render/GraphicsAPI/DirectX/GraphicsAPI.hpp>

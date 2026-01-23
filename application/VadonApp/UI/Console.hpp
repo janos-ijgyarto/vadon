@@ -2,6 +2,8 @@
 #define VADONAPP_UI_CONSOLE_HPP
 #include <VadonApp/VadonApp.hpp>
 #include <Vadon/Utilities/Event/Event.hpp>
+
+#include <string>
 namespace VadonApp::UI
 {
 	struct ConsoleCommandEvent : public Vadon::Utilities::Event<const ConsoleCommandEvent&, bool>

@@ -21,6 +21,8 @@
 #include <Vadon/Private/Render/Canvas/Shader_VS.hpp>
 #include <Vadon/Private/Render/Canvas/Shader_PS.hpp>
 
+#include <algorithm>
+
 namespace Vadon::Private::Render::Canvas
 {
 	namespace

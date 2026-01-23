@@ -1,4 +1,3 @@
-#include <Vadon/Private/PCH/Core.hpp>
 #include <Vadon/Private/Scene/Resource/ResourceSystem.hpp>
 
 #include <Vadon/Scene/Resource/File.hpp>

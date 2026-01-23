@@ -2,6 +2,7 @@
 #define VADON_PRIVATE_RENDER_GRAPHICSAPI_GRAPHICSAPI_HPP
 #include <Vadon/GraphicsAPI.hpp>
 #include <Vadon/Render/GraphicsAPI/GraphicsAPI.hpp>
+#include <memory>
 namespace Vadon::Core
 {
 	class EngineEnvironment;

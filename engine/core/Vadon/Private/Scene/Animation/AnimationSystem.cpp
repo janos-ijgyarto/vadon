@@ -1,5 +1,3 @@
-#include <Vadon/Private/PCH/Core.hpp>
-
 #include <Vadon/Private/Scene/Animation/AnimationSystem.hpp>
 
 #include <Vadon/Scene/Resource/Registry.hpp>

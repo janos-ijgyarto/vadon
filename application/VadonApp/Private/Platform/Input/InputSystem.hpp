@@ -5,6 +5,8 @@
 #include <VadonApp/Platform/Event/Event.hpp>
 
 #include <Vadon/Utilities/Container/ObjectPool/Pool.hpp>
+
+#include <array>
 namespace VadonApp::Private::Platform
 {
 	class InputSystem final : public VadonApp::Platform::InputSystem

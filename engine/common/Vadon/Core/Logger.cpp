@@ -1,4 +1,3 @@
-#include <Vadon/Private/PCH/Common.hpp>
 #include <Vadon/Core/Logger.hpp>
 
 #include <Vadon/Core/Environment.hpp>

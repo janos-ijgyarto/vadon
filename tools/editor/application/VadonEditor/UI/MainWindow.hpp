@@ -2,7 +2,7 @@
 #define VADONEDITOR_UI_MAINWINDOW_HPP
 #include <QtWidgets/QMainWindow>
 
-#include <VadonEditor/UI/Forms/ui_MainWindow.h>
+#include <VadonEditor/UI/ui_MainWindow.h>
 namespace VadonEditor::Core
 {
     class Application;

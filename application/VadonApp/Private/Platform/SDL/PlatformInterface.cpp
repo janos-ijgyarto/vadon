@@ -1,7 +1,6 @@
-#include <VadonApp/Private/PCH/VadonApp.hpp>
 #include <VadonApp/Private/Platform/SDL/PlatformInterface.hpp>
 
-#include <SDL_syswm.h>
+#include <SDL2/SDL_syswm.h>
 
 // FIXME: defines taken from ImGui, should be investigated if it fits general usage
 #if SDL_VERSION_ATLEAST(2,0,4) //&& !defined(__EMSCRIPTEN__) && !defined(__ANDROID__) && !(defined(__APPLE__) && TARGET_OS_IOS) && !defined(__amigaos4__)

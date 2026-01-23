@@ -1,6 +1,8 @@
 #ifndef VADON_UTILITIES_DATA_ENCODING_BASE64_HPP
 #define VADON_UTILITIES_DATA_ENCODING_BASE64_HPP
 #include <span>
+#include <string>
+#include <vector>
 
 namespace Vadon::Utilities
 {

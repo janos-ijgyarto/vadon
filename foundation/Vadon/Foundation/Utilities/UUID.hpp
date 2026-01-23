@@ -1,6 +1,8 @@
 #ifndef VADON_FOUNDATION_UUID_HPP
 #define VADON_FOUNDATION_UUID_HPP
 #include <Vadon/Foundation/Utilities/Numeric.hpp>
+#include <cstring>
+#include <memory>
 namespace Vadon
 {
 	namespace Foundation

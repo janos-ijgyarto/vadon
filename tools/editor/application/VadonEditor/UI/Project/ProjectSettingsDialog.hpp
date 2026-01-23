@@ -1,7 +1,7 @@
 #ifndef VADONEDITOR_UI_PROJECT_PROJECTSETTINGSDIALOG_HPP
 #define VADONEDITOR_UI_PROJECT_PROJECTSETTINGSDIALOG_HPP
 #include <QDialog>
-#include <VadonEditor/UI/Forms/ui_ProjectSettingsDialog.h>
+#include <VadonEditor/UI/Project/ui_ProjectSettingsDialog.h>
 namespace VadonEditor::Core
 {
 	class Application;

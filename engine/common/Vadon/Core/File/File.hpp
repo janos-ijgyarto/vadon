@@ -1,6 +1,7 @@
 #ifndef VADON_CORE_FILE_FILE_HPP
 #define VADON_CORE_FILE_FILE_HPP
 #include <Vadon/Foundation/Utilities/UUID.hpp>
+#include <string>
 #include <vector>
 namespace Vadon::Core
 {

@@ -406,6 +406,12 @@ R"(namespace {} {{
 		const std::string namespace_title = config.namespace_title.empty() == false ? config.namespace_title : output_path.stem().generic_string();
 
 		std::string output_string = std::format(file_template_string, namespace_title, shader_bundle.shaders.size(), shader_apis, shader_data_sizes, shader_data);
+		std::error_code filesystem_error_code;
+		std::filesystem::create_directories(output_path.parent_path(), filesystem_error_code);
+		if (filesystem_error_code)
+		{
+			return ErrorCode::FILE_ERROR;
+		}
 
 		std::ofstream output_file(output_path);
 		if (output_file.is_open() == false)
@@ -435,6 +441,13 @@ R"(namespace {} {{
 		dependency_list_string = std::format("{} : {}", config.input_path.generic_string(), dependency_list_string);
 
 		const std::filesystem::path output_path = std::filesystem::path(config.output_path).replace_extension(".d").generic_string();
+		std::error_code filesystem_error_code;
+
+		std::filesystem::create_directories(output_path.parent_path(), filesystem_error_code);
+		if (filesystem_error_code)
+		{
+			return ErrorCode::FILE_ERROR;
+		}
 
 		std::ofstream output_file(output_path);
 		if (output_file.is_open() == false)

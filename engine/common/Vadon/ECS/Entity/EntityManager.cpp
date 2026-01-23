@@ -1,4 +1,3 @@
-#include <Vadon/Private/PCH/Common.hpp>
 #include <Vadon/ECS/Entity/EntityManager.hpp>
 
 #include <Vadon/Core/Logger.hpp>

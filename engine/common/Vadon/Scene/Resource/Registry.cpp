@@ -1,7 +1,8 @@
-#include <Vadon/Private/PCH/Common.hpp>
 #include <Vadon/Scene/Resource/Registry.hpp>
 
 #include <Vadon/Core/Environment.hpp>
+
+#include <Vadon/Utilities/Debugging/Assert.hpp>
 
 namespace
 {

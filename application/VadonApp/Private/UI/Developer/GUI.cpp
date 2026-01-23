@@ -1,4 +1,3 @@
-#include <VadonApp/Private/PCH/VadonApp.hpp>
 #include <VadonApp/Private/UI/Developer/GUI.hpp>
 
 #ifdef VADON_DEVELOPER_GUI_IMGUI

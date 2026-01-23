@@ -1,7 +1,8 @@
-#include <Vadon/Private/PCH/Common.hpp>
 #include <Vadon/ECS/Component/Registry.hpp>
 
 #include <Vadon/Core/Environment.hpp>
+
+#include <Vadon/Utilities/Debugging/Assert.hpp>
 
 namespace Vadon::ECS
 {

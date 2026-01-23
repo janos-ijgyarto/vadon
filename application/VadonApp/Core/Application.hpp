@@ -4,6 +4,7 @@
 #include <VadonApp/Core/Configuration.hpp>
 #include <VadonApp/Core/SystemRegistry.hpp>
 
+#include <memory>
 #include <unordered_map>
 
 namespace Vadon::Core

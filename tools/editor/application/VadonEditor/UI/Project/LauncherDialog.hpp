@@ -1,7 +1,7 @@
 #ifndef VADONEDITOR_UI_PROJECT_LAUNCHERDIALOG_HPP
 #define VADONEDITOR_UI_PROJECT_LAUNCHERDIALOG_HPP
 #include <QDialog>
-#include <VadonEditor/Forms/ui_LauncherDialog.h>
+#include <VadonEditor/UI/Project/ui_LauncherDialog.h>
 namespace VadonEditor::Core
 {
 	class Application;

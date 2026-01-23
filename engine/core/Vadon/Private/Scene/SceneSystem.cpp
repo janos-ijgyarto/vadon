@@ -1,4 +1,3 @@
-#include <Vadon/Private/PCH/Core.hpp>
 #include <Vadon/Private/Scene/SceneSystem.hpp>
 
 #include <Vadon/ECS/Component/Registry.hpp>

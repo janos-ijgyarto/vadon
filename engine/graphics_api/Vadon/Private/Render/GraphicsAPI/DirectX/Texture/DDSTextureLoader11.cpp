@@ -15,6 +15,7 @@
 //--------------------------------------------------------------------------------------
 
 #include "DDSTextureLoader11.h"
+#include <Vadon/Utilities/Debugging/Assert.hpp>
 
 #include <algorithm>
 #include <memory>

@@ -1,7 +1,7 @@
 #ifndef VADONEDITOR_UI_PROJECT_NEWPROJECTDIALOG_HPP
 #define VADONEDITOR_UI_PROJECT_NEWPROJECTDIALOG_HPP
 #include <QDialog>
-#include <VadonEditor/UI/Forms/ui_NewProjectDialog.h>
+#include <VadonEditor/UI/Project/ui_NewProjectDialog.h>
 namespace VadonEditor::Core
 {
 	struct ProjectInfo;

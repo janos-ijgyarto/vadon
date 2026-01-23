@@ -1,4 +1,3 @@
-#include <VadonApp/Private/PCH/VadonApp.hpp>
 #include <VadonApp/Private/Platform/PlatformInterface.hpp>
 
 #ifdef VADON_PLATFORM_INTERFACE_SDL

@@ -19,6 +19,11 @@ namespace VadonEditor::Network::TCP
     {
     }
 
+    Server::~Server()
+    {
+
+    }
+
     bool Server::listen(const asio::ip::tcp& protocol, uint16_t port)
     {
         try

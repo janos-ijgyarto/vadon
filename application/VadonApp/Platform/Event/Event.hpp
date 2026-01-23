@@ -3,6 +3,7 @@
 #include <VadonApp/Platform/Input/Keyboard.hpp>
 #include <VadonApp/Platform/Input/Mouse.hpp>
 #include <Vadon/Math/Vector.hpp>
+#include <string>
 #include <variant>
 namespace VadonApp::Platform
 {

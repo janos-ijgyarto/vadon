@@ -14,6 +14,7 @@ namespace VadonEditor::Network::TCP
         };
 
         VADONEDITORCOMMON_API Client(asio::io_context& io_context, Observer& observer, LoggingInterface& logging_interface);
+        VADONEDITORCOMMON_API ~Client();
 
         VADONEDITORCOMMON_API void connect(const asio::ip::tcp::endpoint& endpoint);
         VADONEDITORCOMMON_API void send(const char* data, size_t size);

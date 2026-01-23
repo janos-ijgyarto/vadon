@@ -1,4 +1,3 @@
-#include <VadonApp/Private/PCH/VadonApp.hpp>
 #include <VadonApp/Private/UI/Developer/ImGui/GUI.hpp>
 
 #include <VadonApp/Private/Core/Application.hpp>
@@ -38,7 +37,7 @@
 #endif
 
 #include <imgui.h>
-#include <misc/cpp/imgui_stdlib.h> // NOTE: required to allow using std::string with input text
+#include <imgui_stdlib.h> // NOTE: required to allow using std::string with input text
 
 namespace VadonApp::Private::UI::Developer::ImGUI
 {
