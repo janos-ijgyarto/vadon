@@ -23,6 +23,9 @@ namespace Vadon.Engine
                 conf.Defines.Add("VADONGRAPHICSAPI_EXPORTS");
             }
 
+            // TODO: allow client code to override this?
+            conf.Defines.Add("VADON_GRAPHICS_API_DEFAULT");
+
             conf.AddPublicDependency<Render>(target);
 
             switch(target.Platform)

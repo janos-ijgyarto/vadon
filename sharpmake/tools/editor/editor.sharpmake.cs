@@ -55,6 +55,7 @@ namespace Vadon.Tools.Editor
         { 
             base.ConfigureAll(conf, target);
 
+            conf.TargetFileName = "VadonEditorCommon";
             conf.ProjectPath += "/common";
 
             if(target.Optimization != Optimization.Release)
@@ -87,6 +88,7 @@ namespace Vadon.Tools.Editor
         { 
             base.ConfigureAll(conf, target);
 
+            conf.TargetFileName = "VadonEditor";
             conf.ProjectPath += "/application";
 
             conf.Output = Configuration.OutputType.Exe;

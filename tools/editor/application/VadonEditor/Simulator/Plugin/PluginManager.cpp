@@ -265,7 +265,7 @@ namespace VadonEditor::Simulator
 							// TODO: run shutdown code in plugin
 							// Stop timer so it doesn't try to update during shutdown
 							m_plugin_timer.stop();
-							QCoreApplication::quit();
+							m_application.request_quit();
 							return;
 						}
 						break;
@@ -279,6 +279,9 @@ namespace VadonEditor::Simulator
 					m_plugin->process_message_from_editor(data.data(), data.size());
 				}
 			);
+
+			// The editor is also connected by this point, so we can notify the plugin
+			m_plugin->editor_connected();
 
 			return true;
 		}
@@ -304,10 +307,7 @@ namespace VadonEditor::Simulator
 
 						message_serializer.write_message_trivial(::Vadon::Foundation::EditorMessageCategory::SIMULATOR, shutdown_message);
 
-						QByteArray message_buffer;
-						message_buffer.append(message_serializer.get_buffer().data(), message_serializer.get_buffer().size());
-
-						m_application.get_network_system().send_message(message_buffer);
+						m_application.get_network_system().send_message(message_serializer);
 					}
 
 					// Wait for process to finish
@@ -388,7 +388,13 @@ namespace VadonEditor::Simulator
 				QObject::connect(&m_simulator_process, &QProcess::readyReadStandardOutput,
 					[this]()
 					{
-						qInfo() << qPrintable(m_simulator_process.readAllStandardOutput());
+						qInfo() << "SIMULATOR: " << qPrintable(m_simulator_process.readAllStandardOutput().trimmed());
+					}
+				);
+				QObject::connect(&m_simulator_process, &QProcess::readyReadStandardError,
+					[this]()
+					{
+						qWarning() << "SIMULATOR: " << qPrintable(m_simulator_process.readAllStandardError().trimmed());
 					}
 				);
 
@@ -403,13 +409,6 @@ namespace VadonEditor::Simulator
 				}
 
 				// Connect network signals
-				QObject::connect(&m_application.get_network_system(), &Network::NetworkSystem::connected_to_server,
-					[this]()
-					{
-						m_plugin->editor_connected();
-					}
-				);
-
 				QObject::connect(&m_application.get_network_system(), &Network::NetworkSystem::disconnected_from_server,
 					[this]()
 					{
@@ -477,9 +476,6 @@ namespace VadonEditor::Simulator
 
 	void PluginManager::dispatch_message_to_editor(const char* data, size_t size)
 	{
-		QByteArray message_buffer;
-		message_buffer.append(data, size);
-
-		m_internal->m_application.get_network_system().send_message(message_buffer);
+		m_internal->m_application.get_network_system().send_message(QByteArrayView(data, size));
 	}
 }

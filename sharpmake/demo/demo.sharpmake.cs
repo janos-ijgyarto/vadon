@@ -79,11 +79,18 @@ namespace Vadon.Demo
                 conf.Defines.Add("VADON_LINK_DYNAMIC");
             }
 
+            // Adding macro to export the plugin functions
+            conf.Defines.Add("VADON_EDITOR_SIMULATOR_PLUGIN_IMPLEMENTATION");
+
             conf.AddPrivateDependency<Common>(target);
             conf.AddPrivateDependency<Engine.Common>(target);
             conf.AddPrivateDependency<Engine.Render>(target);
             conf.AddPrivateDependency<Engine.Core>(target);
             conf.AddPrivateDependency<Vadon.Editor.Common>(target);
+
+            // NOTE: forcing the files to be copied because the editor needs to load them
+            // from the same subdirectory
+            conf.ExecuteTargetCopy = true;
         }
     }
 

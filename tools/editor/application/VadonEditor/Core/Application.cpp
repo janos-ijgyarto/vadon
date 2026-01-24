@@ -82,8 +82,7 @@ namespace VadonEditor::Core
 
 		static void message_handler(QtMsgType type, const QMessageLogContext& context, const QString& message)
 		{
-			s_logger_instance->log_message(message);
-			s_original_message_handler(type, context, message);
+			s_logger_instance->handle_message(type, context, message);
 		}
 
 		Internal(Application& application, QCoreApplication* qt_application, const CommandLineParameters& command_line_params)
@@ -101,7 +100,12 @@ namespace VadonEditor::Core
 			s_original_message_handler = qInstallMessageHandler(&Internal::message_handler);
 
 			// Make sure we can clean up before quitting
-			QObject::connect(m_qt_application.data(), &QCoreApplication::aboutToQuit, [this]() { about_to_quit(); });
+			QObject::connect(m_qt_application.data(), &QCoreApplication::aboutToQuit, 
+				[this]() 
+				{ 
+					about_to_quit(); 
+				}
+			);
 		}
 
 		~Internal()
@@ -116,16 +120,6 @@ namespace VadonEditor::Core
 
 		bool initialize()
 		{
-#if defined(VADON_EDITOR_ENABLE_DEBUGBREAK_ON_INIT)
-			if (m_command_line_params.debug_break_on_init == true)
-			{
-				// TODO: make this properly platform-independent!
-				while (IsDebuggerPresent() == 0)
-				{
-					QThread::sleep(std::chrono::seconds{ 1 });
-				}
-			}
-#endif
 			QObject::connect(&m_project_manager, &ProjectManager::project_loaded,
 				[this]()
 				{
@@ -146,6 +140,16 @@ namespace VadonEditor::Core
 					[&](const QByteArray& data)
 					{
 						received_message(data);
+					}
+				);
+			}
+			else
+			{
+				// On startup, the simulator needs to connect to the editor, then we can load the project
+				QObject::connect(&m_network_system, &Network::NetworkSystem::connected_to_server,
+					[this]()
+					{
+						editor_connected();
 					}
 				);
 			}
@@ -171,6 +175,17 @@ namespace VadonEditor::Core
 				return false;
 			}
 
+			return true;
+		}
+
+		bool load_startup_project()
+		{
+			if (m_command_line_params.is_simulator == true)
+			{
+				// Simulator should run network right away to be able to notify editor server 
+				m_network_system.run_network();
+			}
+
 			if (m_command_line_params.startup_project_path.isEmpty() == false)
 			{
 				qInfo() << "Loading startup project";
@@ -181,6 +196,18 @@ namespace VadonEditor::Core
 			}
 
 			return true;
+		}
+
+		void editor_connected()
+		{
+			if (m_command_line_params.is_simulator == true)
+			{
+				if (m_plugin_manager.run_simulator() == false)
+				{
+					// Failed to load plugin, exit!
+					request_quit();
+				}
+			}
 		}
 
 		void cleanup()
@@ -195,6 +222,11 @@ namespace VadonEditor::Core
 		void about_to_quit()
 		{
 			cleanup();
+		}
+
+		void request_quit()
+		{
+			QMetaObject::invokeMethod(m_qt_application.data(), &QCoreApplication::quit, Qt::QueuedConnection);
 		}
 
 		void project_loaded()
@@ -216,8 +248,15 @@ namespace VadonEditor::Core
 				// Start the server
 				m_network_system.run_network();
 
-				// Run simulator
-				m_plugin_manager.run_simulator();
+				// In the server, we run the simulator right away
+				// Simulator will only run plugin once it connects to the editor
+				if (m_command_line_params.is_simulator == false)
+				{
+					if (m_plugin_manager.run_simulator() == false)
+					{
+						qCritical() << "Failed to run simulator!";
+					}
+				}
 			}
 		}
 
@@ -245,6 +284,17 @@ namespace VadonEditor::Core
 		QCoreApplication* qt_application = new QCoreApplication(argc, argv);
 		const CommandLineParameters command_line_params = parse_command_line(*qt_application);
 
+#if defined(VADON_EDITOR_ENABLE_DEBUGBREAK_ON_INIT)
+		if (command_line_params.debug_break_on_init == true)
+		{
+			// TODO: make this properly platform-independent!
+			while (IsDebuggerPresent() == 0)
+			{
+				QThread::sleep(std::chrono::seconds{ 1 });
+			}
+		}
+#endif
+
 		if (command_line_params.is_simulator == false)
 		{
 			// Replace with Widgets Application
@@ -267,6 +317,11 @@ namespace VadonEditor::Core
 		if (initialize() == false)
 		{
 			return -1;
+		}
+
+		if (m_internal->load_startup_project() == false)
+		{
+			return -2;
 		}
 
 		return m_internal->m_qt_application->exec();
@@ -302,9 +357,14 @@ namespace VadonEditor::Core
 		return m_internal->m_ui_system;
 	}
 
-	QCoreApplication* VadonEditor::Core::Application::get_qt_application() const
+	QCoreApplication* Application::get_qt_application() const
 	{
 		return m_internal->m_qt_application.data();
+	}
+
+	void Application::request_quit()
+	{
+		m_internal->request_quit();
 	}
 
 	bool Application::initialize()

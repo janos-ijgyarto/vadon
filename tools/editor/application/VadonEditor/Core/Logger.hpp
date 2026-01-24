@@ -11,7 +11,8 @@ namespace VadonEditor::Core
         void message_logged(const QString& message);
 
     private:
-        void log_message(const QString& message);
+        void handle_message(QtMsgType type, const QMessageLogContext& context, const QString& message);
+        void log_message(QtMsgType type, const QString& message_string);
 
         friend class Application;
     };

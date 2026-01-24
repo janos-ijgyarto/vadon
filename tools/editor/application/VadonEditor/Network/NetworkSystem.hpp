@@ -35,6 +35,8 @@ namespace VadonEditor::Network
 		friend class NetworkSystem;
 	};
 
+	class MessageSerializer;
+
 	class NetworkSystem : public QObject
 	{
 		Q_OBJECT
@@ -42,7 +44,8 @@ namespace VadonEditor::Network
 		NetworkSystem(Core::Application& application);
 		~NetworkSystem();
 
-		void send_message(const QByteArray& data);
+		void send_message(QByteArrayView data);
+		void send_message(const MessageSerializer& message_serializer);
 	signals:
 		void received_message(const QByteArray& data);
 

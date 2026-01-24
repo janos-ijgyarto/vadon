@@ -1,7 +1,7 @@
 #ifndef VADONEDITOR_CORE_PROJECT_DATASCHEMA_HPP
 #define VADONEDITOR_CORE_PROJECT_DATASCHEMA_HPP
-#include <QUuid>
 #include <QList>
+#include <QUuid>
 namespace VadonEditor::Core
 {
 	struct PropertyData
@@ -23,7 +23,7 @@ namespace VadonEditor::Core
 	public:
 		bool load_schema(const QString& schema_file_path);
 	private:
-
+		QList<TypeData> m_types;
 	};
 }
 #endif

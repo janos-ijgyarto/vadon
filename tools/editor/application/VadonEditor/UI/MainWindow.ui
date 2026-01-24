@@ -167,7 +167,15 @@
     <property name="title">
      <string>Project</string>
     </property>
+    <widget class="QMenu" name="menuProject_Plugin">
+     <property name="title">
+      <string>Project Plugin</string>
+     </property>
+     <addaction name="actionRun_Plugin"/>
+     <addaction name="actionShutdown_Plugin"/>
+    </widget>
     <addaction name="actionProjectSettings"/>
+    <addaction name="menuProject_Plugin"/>
    </widget>
    <widget class="QMenu" name="menuUtilities">
     <property name="title">
@@ -217,6 +225,16 @@
   <action name="actionSchema_Editor">
    <property name="text">
     <string>Schema Editor</string>
+   </property>
+  </action>
+  <action name="actionRun_Plugin">
+   <property name="text">
+    <string>Run Plugin</string>
+   </property>
+  </action>
+  <action name="actionShutdown_Plugin">
+   <property name="text">
+    <string>Shutdown Plugin</string>
    </property>
   </action>
  </widget>
@@ -301,5 +319,7 @@
   <slot>generate_uuid_triggered()</slot>
   <slot>new_triggered()</slot>
   <slot>quit_triggered()</slot>
+  <slot>run_plugin_triggered()</slot>
+  <slot>shutdown_plugin_triggered()</slot>
  </slots>
 </ui>

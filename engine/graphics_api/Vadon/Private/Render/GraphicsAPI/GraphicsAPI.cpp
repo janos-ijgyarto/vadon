@@ -2,6 +2,15 @@
 
 #include <Vadon/Private/Render/GraphicsAPI/Null/GraphicsAPI.hpp>
 
+#if defined(VADON_GRAPHICS_API_DEFAULT)
+	#if defined(VADON_PLATFORM_WIN32)
+		#if !defined(VADON_GRAPHICS_API_DIRECTX)
+			#define VADON_GRAPHICS_API_DIRECTX
+		#endif
+	#endif
+	// TODO: other platforms!
+#endif
+
 #ifdef VADON_GRAPHICS_API_DIRECTX
 #include <Vadon/Private/Render/GraphicsAPI/DirectX/GraphicsAPI.hpp>
 #endif

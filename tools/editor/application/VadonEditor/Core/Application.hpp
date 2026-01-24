@@ -45,6 +45,7 @@ namespace VadonEditor::Core
 		UI::UISystem& get_ui_system();
 
 		QCoreApplication* get_qt_application() const;
+		void request_quit();
 	private:
 		bool initialize();
 

@@ -8,7 +8,8 @@
 		},
 		{
 			"name": "freetype",
-			"host": true
+			"host": true,
+			"default-features": false
 		},
 		{
 			"name": "glm",

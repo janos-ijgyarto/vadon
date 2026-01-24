@@ -125,10 +125,7 @@ namespace VadonEditor::UI
 				VadonEditor::Network::MessageSerializer message_serializer;
 				message_serializer.write_message_trivial(::Vadon::Foundation::EditorMessageCategory::PLATFORM, window_request_response);
 
-				QByteArray message_buffer;
-				message_buffer.append(message_serializer.get_buffer().data(), message_serializer.get_buffer().size());
-
-				m_application.get_network_system().send_message(message_buffer);
+				m_application.get_network_system().send_message(message_serializer);
 			}
 			break;
 			}

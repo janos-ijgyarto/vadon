@@ -24,7 +24,10 @@ namespace VadonEditor::UI
         void new_triggered();
         void quit_triggered();
         void generate_uuid_triggered();
+
         void project_settings_triggered();
+        void run_plugin_triggered();
+        void shutdown_plugin_triggered();
     private:
         Core::Application& m_application;
         Ui::MainWindow m_ui;

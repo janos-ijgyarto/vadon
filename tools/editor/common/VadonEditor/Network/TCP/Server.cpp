@@ -62,7 +62,7 @@ namespace VadonEditor::Network::TCP
     void Server::close() 
     {
         m_is_closing = true;
-        m_acceptor.cancel();
+        m_acceptor.close();
         for (const auto& connection : m_connections)
         {
             connection.second->close();
@@ -80,7 +80,10 @@ namespace VadonEditor::Network::TCP
             {
                 if (error)
                 {
-                    m_logging_interface.log_error(std::format("Server::do_accept() error: {}", error.message()));
+                    if (error.value() != asio::error::operation_aborted)
+                    {
+                        m_logging_interface.log_error(std::format("Server::do_accept() error: {}", error.message()));
+                    }
                     m_is_accepting = false;
                     return;
                 }

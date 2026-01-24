@@ -24,6 +24,7 @@ namespace Vadon
 			uintptr_t handle;
 		};
 
+		// TODO: create derived structs for each message so they can be read/written as one object?
 		struct EditorPlatformEventHeader : public EditorPlatformMessageHeader
 		{
 			PlatformEventType event_type;

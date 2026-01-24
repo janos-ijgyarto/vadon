@@ -39,10 +39,7 @@ namespace VadonEditor::UI
 		VadonEditor::Network::MessageSerializer message_serializer;
 		message_serializer.write_message_trivial(::Vadon::Foundation::EditorMessageCategory::TEST, test_message);
 
-		QByteArray message_buffer;
-		message_buffer.append(message_serializer.get_buffer().data(), message_serializer.get_buffer().size());
-
-		m_application.get_network_system().send_message(message_buffer);
+		m_application.get_network_system().send_message(message_serializer);
 	}
 
 	void MainWindow::quit_triggered()
@@ -60,5 +57,15 @@ namespace VadonEditor::UI
 	{
 		ProjectSettingsDialog* project_settings_dialog = new ProjectSettingsDialog(m_application, this);
 		project_settings_dialog->open();
+	}
+
+	void MainWindow::run_plugin_triggered()
+	{
+		// TODO!!!
+	}
+
+	void MainWindow::shutdown_plugin_triggered()
+	{
+		// TODO!!!
 	}
 }

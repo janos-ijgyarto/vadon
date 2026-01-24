@@ -3,12 +3,14 @@
 #include <VadonEditor/Core/Application.hpp>
 #include <VadonEditor/Core/CommandLine.hpp>
 
+#include <VadonEditor/Network/Message/MessageSerializer.hpp>
+
 #include <VadonEditor/Network/TCP/Server.hpp>
 #include <VadonEditor/Network/TCP/Client.hpp>
 
-#include <Vadon/Foundation/Editor/Network/Message/Message.hpp>
-
 #include <VadonEditor/Simulator/Plugin/PluginManager.hpp>
+
+#include <Vadon/Foundation/Editor/Network/Message/Message.hpp>
 
 #include <QApplication>
 #include <QDebug>
@@ -169,7 +171,7 @@ namespace VadonEditor::Network
 				}
 			);
 			m_timer->start(200);
-			qDebug() << "Server started";
+			qDebug() << "Network started";
 		}
 
 		void close()
@@ -282,9 +284,9 @@ namespace VadonEditor::Network
 			}
 		}
 
-		void send_message(const QByteArray& data)
+		void send_message(QByteArrayView data)
 		{
-			QMetaObject::invokeMethod(&m_worker_object, &NetworkThreadWorker::send_message, Qt::ConnectionType::QueuedConnection, data);
+			QMetaObject::invokeMethod(&m_worker_object, &NetworkThreadWorker::send_message, Qt::ConnectionType::QueuedConnection, QByteArray(data));
 		}
 
 		void run_network()
@@ -314,9 +316,14 @@ namespace VadonEditor::Network
 
 	}
 
-	void NetworkSystem::send_message(const QByteArray& data)
+	void NetworkSystem::send_message(QByteArrayView data)
 	{
 		m_internal->send_message(data);
+	}
+
+	void NetworkSystem::send_message(const MessageSerializer& message_serializer)
+	{
+		send_message(QByteArrayView{ message_serializer.get_buffer().data(), static_cast<qsizetype>(message_serializer.get_buffer().size()) });
 	}
 
 	void NetworkSystem::internal_received_message(const QByteArray& data)
