@@ -1,6 +1,7 @@
 #ifndef VADONEDITOR_CORE_PROJECT_PROJECTMANAGER_HPP
 #define VADONEDITOR_CORE_PROJECT_PROJECTMANAGER_HPP
 #include <VadonEditor/Core/Project/Project.hpp>
+#include <VadonEditor/Core/Project/DataSchema.hpp>
 #include <QObject>
 #include <QHash>
 class QFileInfo;
@@ -22,6 +23,11 @@ namespace VadonEditor::Core
 
 		const ProjectInfo& get_project_info() const { return m_loaded_project_info; }
 		bool is_project_loaded() const { return m_loaded_project_info.name.isEmpty() == false; }
+
+		const DataSchema& get_project_data_schema() const { return m_loaded_project_schema; }
+
+		bool generate_project_data_schema();
+		bool load_project_data_schema();
 		
 		const QList<CachedProjectInfo> get_cached_project_list() const;
 
@@ -35,7 +41,6 @@ namespace VadonEditor::Core
 		void remove_project(const QString& project_path);
 	signals:
 		void project_loaded();
-		void project_plugin_path_modified();
 	private:
 		ProjectManager(Application& application);
 
@@ -54,6 +59,7 @@ namespace VadonEditor::Core
 		Application& m_application;
 
 		ProjectInfo m_loaded_project_info;
+		DataSchema m_loaded_project_schema;
 
 		// NOTE: using this for more convenient lookup, serialization is done via QSettings!
 		QHash<QString, CachedProjectInfo> m_project_cache;

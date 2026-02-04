@@ -27,7 +27,7 @@ namespace
 
 namespace VadonDemo::View
 {
-	void View::register_types()
+	void View::register_types(::Vadon::Foundation::TypeMetadataRegistry& /*metadata_registry*/)
 	{
 		RenderResource::register_resource();
 		Shape::register_resource();

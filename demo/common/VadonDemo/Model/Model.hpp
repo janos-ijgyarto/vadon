@@ -8,6 +8,10 @@
 #include <Vadon/Math/Vector.hpp>
 #include <Vadon/Scene/Scene.hpp>
 #include <random>
+namespace Vadon::Foundation
+{
+	class TypeMetadataRegistry;
+}
 namespace Vadon::ECS
 {
 	class World;
@@ -27,7 +31,7 @@ namespace VadonDemo::Model
 	class Model
 	{
 	public:
-		static void register_types();
+		static void register_types(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry);
 
 		VADONDEMO_API bool init_simulation(Vadon::ECS::World& ecs_world, Vadon::Scene::SceneID level_scene_id);
 		VADONDEMO_API void update(Vadon::ECS::World& ecs_world, float delta_time);

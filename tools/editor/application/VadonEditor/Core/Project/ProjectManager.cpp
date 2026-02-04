@@ -2,12 +2,22 @@
 
 #include <VadonEditor/Core/Application.hpp>
 #include <VadonEditor/Core/CommandLine.hpp>
+#include <VadonEditor/Core/Configuration.hpp>
+
+#include <VadonEditor/Core/Plugin/Plugin.hpp>
+#include <VadonEditor/Core/Plugin/PluginManager.hpp>
+
+#include <Vadon/Foundation/Editor/Simulator/LibraryInterface.hpp>
+
+#include <QCoreApplication>
 
 #include <QDir>
 
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+
+#include <QProcess>
 
 #include <QSettings>
 
@@ -89,10 +99,139 @@ namespace
 		
 		return true;
 	}
+
+	QString get_project_data_schema_path(const VadonEditor::Core::ProjectInfo& project_info)
+	{
+		return QString("%1/.vadon/data_schema.json").arg(project_info.root_path);
+	}
 }
 
 namespace VadonEditor::Core
 {
+	bool ProjectManager::generate_project_data_schema()
+	{
+		Q_ASSERT_X(is_project_loaded() == true, "ProjectManager::generate_project_data_schema", "Project not loaded");
+		const Core::ProjectInfo& project_info = get_project_info();
+
+		if (project_info.plugin_path.isEmpty() == true)
+		{
+			qCritical() << "Project has no plugin set for exporting data schema!";
+			return false;
+		}
+
+		switch (m_application.get_configuration().mode)
+		{
+		case Core::ApplicationMode::EDITOR:
+		{
+			// Start process to export the schema
+			QProcess exporter_process;
+
+			QString program_path = QCoreApplication::applicationFilePath();
+			exporter_process.setProgram(program_path);
+
+			QStringList arguments{ QString("--%1").arg(Core::CommandLineState::get_parameter_key(Core::CommandLineParameter::IS_SCHEMA_EXPORTER)) };
+			arguments.push_back(QString("--%1").arg(Core::CommandLineState::get_parameter_key(Core::CommandLineParameter::STARTUP_PROJECT_PATH)));
+			arguments.push_back(project_info.get_project_file_path());
+
+			arguments.push_back(QString("--%1").arg(Core::CommandLineState::get_parameter_key(Core::CommandLineParameter::DEBUG_BREAK_ON_INIT)));
+
+			exporter_process.setArguments(arguments);
+
+			QObject::connect(&exporter_process, &QProcess::readyReadStandardOutput,
+				[&]()
+				{
+					qInfo() << "SCHEMA EXPORTER: " << qPrintable(exporter_process.readAllStandardOutput().trimmed());
+				}
+			);
+			QObject::connect(&exporter_process, &QProcess::readyReadStandardError,
+				[&]()
+				{
+					qWarning() << "SCHEMA EXPORTER: " << qPrintable(exporter_process.readAllStandardError().trimmed());
+				}
+			);
+
+			// Start process
+			exporter_process.start(QIODevice::ReadOnly);
+
+			// Wait for process to finish
+			if (exporter_process.waitForFinished() == false)
+			{
+				qCritical() << "Error shutting down simulator!";
+			}
+
+			if (exporter_process.exitStatus() == QProcess::ExitStatus::NormalExit)
+			{
+				qDebug() << "Schema exporter process exited with " << exporter_process.exitCode();
+				if (exporter_process.exitCode() != 0)
+				{
+					qCritical() << "Data schema export failed (return code: " << exporter_process.exitCode() << ")";
+					return false;
+				}
+			}
+			else
+			{
+				qCritical() << "Schema exporter process crashed!";
+				return false;
+			}
+		}
+		break;
+		case Core::ApplicationMode::SCHEMA_EXPORTER:
+		{
+			VadonEditor::Core::PluginManager& plugin_manager = m_application.get_plugin_manager();
+
+			Core::PluginInfo plugin_info;
+			plugin_info.path = project_info.plugin_path;
+
+			Core::PluginHandle plugin_handle = plugin_manager.load_plugin(plugin_info);
+			if (plugin_handle == Core::PluginManager::c_invalid_plugin_handle)
+			{
+				qCritical() << "Failed to load plugin to export data schema!";
+				return false;
+			}
+
+			VADONEDITOR_API_FUNCTION_POINTER(VadonEditorPluginExportDataSchema) export_data_schema_ptr = reinterpret_cast<VADONEDITOR_API_FUNCTION_POINTER(VadonEditorPluginExportDataSchema)>(plugin_manager.get_plugin_function(plugin_handle, VADONEDITOR_API_FUNCTION_NAME(VadonEditorPluginExportDataSchema)));
+			if (export_data_schema_ptr == nullptr)
+			{
+				qCritical() << "Failed to get export schema function address!";
+				plugin_manager.unload_plugin(plugin_handle);
+				return false;
+			}
+
+			// Plugin is loaded, pass in the schema to gather all the types
+			export_data_schema_ptr(&m_loaded_project_schema);
+
+			// Data is exported, we can unload the plugin
+			plugin_manager.unload_plugin(plugin_handle);
+
+			if (m_loaded_project_schema.save_schema(get_project_data_schema_path(project_info)) == false)
+			{
+				qCritical() << "Failed to save data schema!";
+				return false;
+			}
+		}
+		break;
+		}
+
+		return true;
+	}
+
+	bool ProjectManager::load_project_data_schema()
+	{
+		Q_ASSERT_X(is_project_loaded() == true, "ProjectManager::load_project_data_schema", "Project not loaded");
+		const Core::ProjectInfo& project_info = get_project_info();
+
+		// NOTE: load into temporary object, only replace the one in system if the load was successful
+		DataSchema loaded_schema;
+		if (loaded_schema.load_schema(get_project_data_schema_path(project_info)) == false)
+		{
+			qCritical() << "Failed to load data schema!";
+			return false;
+		}
+
+		m_loaded_project_schema = loaded_schema;
+		return true;
+	}
+
 	const QList<ProjectManager::CachedProjectInfo> ProjectManager::get_cached_project_list() const
 	{
 		QList<ProjectManager::CachedProjectInfo> project_list;
@@ -399,6 +538,8 @@ namespace VadonEditor::Core
 		}
 
 		project_info.root_path = project_file_info.absolutePath();
+
+		// TODO: load project data schema!
 
 		auto cached_project_it = m_project_cache.find(project_info.root_path);
 		if (cached_project_it != m_project_cache.end())

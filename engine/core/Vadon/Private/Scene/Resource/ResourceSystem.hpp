@@ -4,6 +4,10 @@
 #include <Vadon/Private/Scene/Resource/Resource.hpp>
 
 #include <Vadon/Utilities/Container/ObjectPool/Pool.hpp>
+namespace Vadon::Foundation
+{
+	class TypeMetadataRegistry;
+}
 namespace Vadon::Private::Core
 {
 	class EngineCore;
@@ -56,6 +60,9 @@ namespace Vadon::Private::Scene
 		};
 
 		ResourceSystem(Vadon::Core::EngineCoreInterface& core);
+
+		static void register_types();
+		static void register_type_metadata(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry);
 
 		bool initialize();
 		void shutdown();

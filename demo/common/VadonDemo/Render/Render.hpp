@@ -9,7 +9,10 @@
 #include <Vadon/Utilities/Container/ObjectPool/Pool.hpp>
 
 #include <unordered_map>
-
+namespace Vadon::Foundation
+{
+	class TypeMetadataRegistry;
+}
 namespace Vadon::Core
 {
 	struct FileSystemPath;
@@ -32,7 +35,7 @@ namespace VadonDemo::Render
 	class Render
 	{
 	public:
-		static void register_types();
+		static void register_types(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry);
 
 		// NOTE: each new Context will create its own Layer instances
 		VADONDEMO_API CanvasContextHandle create_canvas_context();

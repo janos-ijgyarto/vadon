@@ -20,6 +20,9 @@ namespace Vadon::Private::Core
 		EngineCore();
 		~EngineCore();
 
+		static void register_types();
+		static void register_type_metadata(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry);
+
 		bool initialize(const Vadon::Core::CoreConfiguration& config) override;
 		void shutdown() override;
 

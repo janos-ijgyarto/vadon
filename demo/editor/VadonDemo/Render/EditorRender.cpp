@@ -242,11 +242,6 @@ namespace VadonDemo::Render
         return true;
     }
 
-    void EditorRender::register_type_metadata()
-    {
-
-    }
-
     void EditorRender::process_message(const char* data, size_t size)
     {
         ::Vadon::Foundation::EditorMessageReader message_reader(data, size);
@@ -276,6 +271,37 @@ namespace VadonDemo::Render
 
                 // Now we can initialize the frame graph
                 init_frame_graph();
+            }
+            break;
+            case ::Vadon::Foundation::EditorPlatformMessageType::PLATFORM_EVENT:
+            {
+                const ::Vadon::Foundation::EditorPlatformEventHeader* platform_event_header = reinterpret_cast<const ::Vadon::Foundation::EditorPlatformEventHeader*>(message_data);
+                const char* platform_event_data = message_data + sizeof(::Vadon::Foundation::EditorPlatformEventHeader);
+                switch (platform_event_header->event_type)
+                {
+                case ::Vadon::Foundation::PlatformEventType::WINDOW:
+                {
+                    // TODO: check whether window ID matches!
+                    const ::Vadon::Foundation::PlatformWindowEvent* window_event = reinterpret_cast<const ::Vadon::Foundation::PlatformWindowEvent*>(platform_event_data);
+                    using WindowEventType = ::Vadon::Foundation::PlatformWindowEventType;
+                    switch (window_event->type)
+                    {
+                    case WindowEventType::RESIZED:
+                    {
+                        if (m_render_window.is_valid() == true)
+                        {
+                            Vadon::Core::EngineCoreInterface& engine_core = m_editor.get_engine_core();
+                            Vadon::Render::RenderTargetSystem& rt_system = engine_core.get_system<Vadon::Render::RenderTargetSystem>();
+
+                            Vadon::Math::Vector2i window_size = { window_event->data1, window_event->data2 };
+                            rt_system.resize_window(m_render_window, window_size);
+                        }
+                    }
+                    break;
+                    }
+                }
+                break;
+                }
             }
             break;
             }

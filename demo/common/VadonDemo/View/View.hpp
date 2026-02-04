@@ -4,6 +4,10 @@
 #include <VadonDemo/View/Resource.hpp>
 #include <Vadon/ECS/Component/Component.hpp>
 #include <random>
+namespace Vadon::Foundation
+{
+	class TypeMetadataRegistry;
+}
 namespace Vadon::ECS
 {
 	class World;
@@ -27,7 +31,7 @@ namespace VadonDemo::View
 	class View
 	{
 	public:
-		static void register_types();
+		static void register_types(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry);
 
 		VADONDEMO_API void extract_model_state(Vadon::ECS::World& ecs_world);
 		VADONDEMO_API void lerp_view_state(Vadon::ECS::World& ecs_world, float lerp_factor);

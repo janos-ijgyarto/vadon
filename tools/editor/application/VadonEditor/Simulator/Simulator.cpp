@@ -1,68 +1,23 @@
-#include <VadonEditor/Simulator/Plugin/PluginManager.hpp>
+#include <VadonEditor/Simulator/Simulator.hpp>
 
 #include <VadonEditor/Core/Application.hpp>
 #include <VadonEditor/Core/CommandLine.hpp>
+#include <VadonEditor/Core/Configuration.hpp>
+
+#include <VadonEditor/Core/Plugin/Plugin.hpp>
+#include <VadonEditor/Core/Plugin/PluginManager.hpp>
+
 #include <VadonEditor/Core/Project/ProjectManager.hpp>
 
 #include <VadonEditor/Network/NetworkSystem.hpp>
 #include <VadonEditor/Network/Message/MessageSerializer.hpp>
 
-#include <Vadon/Foundation/Editor/LibraryInterface.hpp>
-#include <Vadon/Foundation/Editor/PluginInterface.hpp>
+#include <Vadon/Foundation/Editor/Simulator/LibraryInterface.hpp>
+#include <Vadon/Foundation/Editor/Simulator/PluginInterface.hpp>
 #include <Vadon/Foundation/Editor/Network/Message/Simulator.hpp>
 
-#include <Vadon/Foundation/TypeInfo/MetadataRegistry.hpp>
-
-// FIXME: ifdef this to only be used on Windows!
-#define WIN32_LEAN_AND_MEAN
-
-#define NOGDICAPMASKS
-#define NOVIRTUALKEYCODES
-//#define NOWINMESSAGES // message types WM_*
-//#define NOWINSTYLES   // window styles WS_*
-#define NOSYSMETRICS
-#define NOMENUS
-#define NOICONS
-#define NOKEYSTATES
-#define NOSYSCOMMANDS
-#define NORASTEROPS
-#define NOSHOWWINDOW
-//#define OEMRESOURCE // includes various image/GUI related stuff if defined
-#define NOATOM
-#define NOCLIPBOARD
-#define NOCOLOR
-#define NOCTLMGR
-#define NODRAWTEXT
-#define NOGDI
-#define NOKERNEL
-//#define NOUSER // all the window-related and lots of other stuff
-//#define NONLS  // WideCharToMultiByte/MultiByteToWideChar, CP_UTF8, GetACP()
-//#define NOMB   // MessageBox
-#define NOMEMMGR
-#define NOMETAFILE
-//#define NOMSG // PeekMessage, etc.
-#define NOOPENFILE
-#define NOSCROLL
-#define NOSERVICE
-#define NOSOUND
-#define NOTEXTMETRIC
-#define NOWH
-#define NOWINOFFSETS
-#define NOCOMM
-#define NOKANJI
-#define NOHELP
-#define NOPROFILER
-#define NODEFERWINDOWPOS
-#define NOMCX
-
-#define VADONEDITOR_SIMULATOR_API_FUNCTION_POINTER(_name) decltype(&(_name))
-#define VADONEDITOR_SIMULATOR_GET_API_FUNCTION_POINTER(_library, _name) (VADONEDITOR_SIMULATOR_API_FUNCTION_POINTER(_name))GetProcAddress((_library), #_name);
-
-#include <Windows.h>
-
+#include <QCoreApplication>
 #include <QDebug>
-#include <QCommandLineParser>
-#include <QFileInfo>
 #include <QProcess>
 #include <QTimer>
 
@@ -71,25 +26,29 @@ namespace
 	class NullMetadataRegistry : public Vadon::Foundation::TypeMetadataRegistry
 	{
 	public:
+		void register_type(const ::Vadon::Foundation::TypeInfo&) override {}
+
 		size_t get_registered_type_count() const override { return 0; }
 		::Vadon::Foundation::UUID get_type_uuid(size_t) const override { return ::Vadon::Foundation::UUID{}; }
 
-		size_t get_type_property_count(const ::Vadon::Foundation::UUID&) const override { return 0; }
+		::Vadon::Foundation::TypeInfo get_type_info(const ::Vadon::Foundation::UUID&) const override { return ::Vadon::Foundation::TypeInfo{}; }
 		::Vadon::Foundation::UUID get_type_property_uuid(const ::Vadon::Foundation::UUID&, size_t) const override { return ::Vadon::Foundation::UUID{}; }
 
 		void set_type_metadata(const ::Vadon::Foundation::UUID&, const char*, const char*) override {}
 		const char* get_type_metadata(const ::Vadon::Foundation::UUID&, const char*) const override { return nullptr; }
+
+		void register_property(const ::Vadon::Foundation::UUID&, const ::Vadon::Foundation::Property&) override {}
 
 		void set_property_metadata(const ::Vadon::Foundation::UUID&, const ::Vadon::Foundation::UUID&, const char*, const char*) override {}
 		const char* get_property_metadata(const ::Vadon::Foundation::UUID&, const ::Vadon::Foundation::UUID&, const char*) const override { return nullptr; }
 	};
 
 	// NOTE: null implementation of plugin in case no plugin path was provided (useful for testing)
-	class NullPlugin : public Vadon::Foundation::EditorPluginInterface
+	class NullPlugin : public Vadon::Foundation::EditorSimulatorPluginInterface
 	{
 	public:
 		NullPlugin(VadonEditor::Core::Application& application)
-			: Vadon::Foundation::EditorPluginInterface(application.get_plugin_manager())
+			: Vadon::Foundation::EditorSimulatorPluginInterface(application.get_simulator())
 		{
 		}
 
@@ -100,6 +59,11 @@ namespace
 		}
 
 		void update() override
+		{
+			// TODO: anything?
+		}
+
+		void shutdown() override
 		{
 			// TODO: anything?
 		}
@@ -125,7 +89,7 @@ namespace
 
 				m_simulator.dispatch_message_to_editor(serializer.get_buffer().data(), serializer.get_buffer().size());
 			}
-				break;
+			break;
 			}
 		}
 
@@ -152,25 +116,26 @@ namespace
 
 namespace VadonEditor::Simulator
 {
-	struct PluginManager::Internal
+	struct Simulator::Internal
 	{
 		Core::Application& m_application;
 
+		// TODO: split contents into editor and simulator objects (only one or the other will be initialized
 		QProcess m_simulator_process;
 
-		HMODULE m_library;
-		VADONEDITOR_SIMULATOR_API_FUNCTION_POINTER(VadonEditorPluginEntrypoint) m_entrypoint_func;
-		VADONEDITOR_SIMULATOR_API_FUNCTION_POINTER(VadonEditorPluginExit) m_exit_func;
+		Core::PluginHandle m_simulator_plugin;
+		VADONEDITOR_API_FUNCTION_POINTER(VadonEditorPluginEntrypoint) m_entrypoint_func;
+		VADONEDITOR_API_FUNCTION_POINTER(VadonEditorPluginExit) m_exit_func;
 
-		::Vadon::Foundation::EditorPluginInterface* m_plugin;
+		::Vadon::Foundation::EditorSimulatorPluginInterface* m_plugin_interface;
 		QTimer m_plugin_timer;
 
 		Internal(Core::Application& application)
 			: m_application(application)
-			, m_library(NULL)
+			, m_simulator_plugin(Core::PluginManager::c_invalid_plugin_handle)
 			, m_entrypoint_func(nullptr)
 			, m_exit_func(nullptr)
-			, m_plugin(nullptr)
+			, m_plugin_interface(nullptr)
 		{
 		}
 
@@ -182,48 +147,42 @@ namespace VadonEditor::Simulator
 
 		bool load_plugin()
 		{
+			VadonEditor::Core::PluginManager& plugin_manager = m_application.get_plugin_manager();
 			const VadonEditor::Core::ProjectManager& project_manager = m_application.get_project_manager();
 			const VadonEditor::Core::ProjectInfo& project_info = project_manager.get_project_info();
 
-			const QFileInfo plugin_file_info(project_info.plugin_path);
-			if (plugin_file_info.exists() == false
-				|| plugin_file_info.isFile() == false
-				|| plugin_file_info.suffix() != "dll")
+			Core::PluginInfo plugin_info;
+			plugin_info.path = project_info.plugin_path;
+
+			m_simulator_plugin = plugin_manager.load_plugin(plugin_info);
+			if (m_simulator_plugin == Core::PluginManager::c_invalid_plugin_handle)
 			{
+				qCritical() << "Simulator failed to load plugin!";
+				unload_plugin();
 				return false;
 			}
 
-			DLL_DIRECTORY_COOKIE plugin_dir_cookie = AddDllDirectory(plugin_file_info.absolutePath().toStdWString().c_str());
-
-			m_library = LoadLibraryExA(qPrintable(project_info.plugin_path), NULL, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
-			if (m_library == NULL)
-			{
-				auto last_error = GetLastError();
-				qCritical() << "Failed to load library at \"" << project_info.plugin_path << "\"" << "(last error: " << last_error << ")";
-				RemoveDllDirectory(plugin_dir_cookie);
-				return false;
-			}
-
-			RemoveDllDirectory(plugin_dir_cookie);
-
-			m_entrypoint_func = VADONEDITOR_SIMULATOR_GET_API_FUNCTION_POINTER(m_library, VadonEditorPluginEntrypoint);
+			// FIXME: wrap this in a more concise macro?
+			m_entrypoint_func = reinterpret_cast<VADONEDITOR_API_FUNCTION_POINTER(VadonEditorPluginEntrypoint)>(plugin_manager.get_plugin_function(m_simulator_plugin, VADONEDITOR_API_FUNCTION_NAME(VadonEditorPluginEntrypoint)));
 			if (m_entrypoint_func == nullptr)
 			{
 				qCritical() << "Failed to get entrypoint function address!";
+				unload_plugin();
 				return false;
 			}
 
-			m_exit_func = VADONEDITOR_SIMULATOR_GET_API_FUNCTION_POINTER(m_library, VadonEditorPluginExit);
+			m_exit_func = reinterpret_cast<VADONEDITOR_API_FUNCTION_POINTER(VadonEditorPluginExit)>(plugin_manager.get_plugin_function(m_simulator_plugin, VADONEDITOR_API_FUNCTION_NAME(VadonEditorPluginExit)));
 			if (m_exit_func == nullptr)
 			{
 				qCritical() << "Failed to get exit function address!";
+				unload_plugin();
 				return false;
 			}
 
 			if (m_entrypoint_func != nullptr)
 			{
 				// Plugin will create its interface and return it to us
-				m_plugin = m_entrypoint_func(&m_application.get_plugin_manager());
+				m_plugin_interface = m_entrypoint_func(&m_application.get_simulator());
 			}
 
 			return true;
@@ -236,13 +195,13 @@ namespace VadonEditor::Simulator
 				return false;
 			}
 
-			if (m_plugin == nullptr)
+			if (m_plugin_interface == nullptr)
 			{
-				qCritical() << "No plugin object was created!";
+				qCritical() << "No plugin interface object was created!";
 				return false;
 			}
 
-			if (m_plugin->initialize() == false)
+			if (m_plugin_interface->initialize() == false)
 			{
 				qCritical() << "Plugin failed to initialize!";
 				return false;
@@ -265,7 +224,7 @@ namespace VadonEditor::Simulator
 							// TODO: run shutdown code in plugin
 							// Stop timer so it doesn't try to update during shutdown
 							m_plugin_timer.stop();
-							m_application.request_quit();
+							m_application.request_quit(0);
 							return;
 						}
 						break;
@@ -276,109 +235,61 @@ namespace VadonEditor::Simulator
 
 					// Pass on to plugin
 					// TODO: any messages that we should handle in the simulator?
-					m_plugin->process_message_from_editor(data.data(), data.size());
+					m_plugin_interface->process_message_from_editor(data.data(), data.size());
 				}
 			);
 
 			// The editor is also connected by this point, so we can notify the plugin
-			m_plugin->editor_connected();
+			m_plugin_interface->editor_connected();
 
 			return true;
 		}
 
 		void update()
 		{
-			m_plugin->update();
+			m_plugin_interface->update();
 		}
 
 		void shutdown()
 		{
-			const Core::CommandLineParameters& command_line_params = m_application.get_command_line_parameters();
-			if (command_line_params.is_simulator == false)
-			{
-				if (m_simulator_process.state() != QProcess::ProcessState::NotRunning)
-				{
-					// Message process to make sure it shuts down
-					{
-						VadonEditor::Network::MessageSerializer message_serializer;
-
-						::Vadon::Foundation::EditorSimulatorMessageShutdown shutdown_message;
-						shutdown_message.message_type = ::Vadon::Foundation::EditorSimulatorMessageType::SIMULATOR_SHUTDOWN;
-
-						message_serializer.write_message_trivial(::Vadon::Foundation::EditorMessageCategory::SIMULATOR, shutdown_message);
-
-						m_application.get_network_system().send_message(message_serializer);
-					}
-
-					// Wait for process to finish
-					if (m_simulator_process.waitForFinished() == false)
-					{
-						qCritical() << "Error shutting down simulator!";
-					}
-
-					if (m_simulator_process.exitStatus() == QProcess::ExitStatus::NormalExit)
-					{
-						qDebug() << "Simulator process exited with " << m_simulator_process.exitCode();
-					}
-					else
-					{
-						qCritical() << "Simulator process crashed!";
-					}
-				}
-			}
-			else
-			{
-				if (m_plugin == nullptr)
-				{
-					return;
-				}
-
-				if (m_exit_func != nullptr)
-				{
-					// Pass the interface back to plugin (it knows how it was allocated)
-					m_exit_func(m_plugin);
-				}
-				else
-				{
-					delete m_plugin;
-				}
-				m_plugin = nullptr;
-
-				if (m_library != NULL)
-				{
-					FreeLibrary(m_library);
-					m_library = NULL;
-				}
-			}
+			// Make sure we stop the simulator
+			stop_simulator();
 		}
 
-		bool run_simulator()
+		bool run_simulator(const SimulatorSettings& settings)
 		{
-			const Core::CommandLineParameters& command_line_params = m_application.get_command_line_parameters();
+			const Core::Configuration& configuration = m_application.get_configuration();
 
 			Core::ProjectManager& project_manager = m_application.get_project_manager();
 			const Core::ProjectInfo& project_info = project_manager.get_project_info();
 
 			if (project_info.plugin_path.isEmpty() == true)
 			{
+				qWarning() << "Project has no runnable simulator plugin set!";
 				return false;
 			}
 
-			if (command_line_params.is_simulator == false)
+			switch (configuration.mode)
+			{
+			case Core::ApplicationMode::EDITOR:
 			{
 				if (m_simulator_process.state() != QProcess::NotRunning)
 				{
 					qWarning() << "Simulator already running!";
-					return false;
+					return true;
 				}
 
 				QString program_path = QCoreApplication::applicationFilePath();
 				m_simulator_process.setProgram(program_path);
 
-				QStringList arguments{ "--simulator" };
-				arguments.push_back("--startup-project");
+				QStringList arguments{ QString("--%1").arg(Core::CommandLineState::get_parameter_key(Core::CommandLineParameter::IS_SIMULATOR)) };
+				arguments.push_back(QString("--%1").arg(Core::CommandLineState::get_parameter_key(Core::CommandLineParameter::STARTUP_PROJECT_PATH)));
 				arguments.push_back(project_info.get_project_file_path());
-				arguments.push_back("--debug-break-on-init");
+
+				if (settings.debug_break_on_init == true)
+				{
+					arguments.push_back(QString("--%1").arg(Core::CommandLineState::get_parameter_key(Core::CommandLineParameter::DEBUG_BREAK_ON_INIT)));
+				}
 
 				m_simulator_process.setArguments(arguments);
 
@@ -400,7 +311,8 @@ namespace VadonEditor::Simulator
 
 				m_simulator_process.start(QIODevice::ReadOnly);
 			}
-			else
+			break;
+			case Core::ApplicationMode::SIMULATOR:
 			{
 				// We are the simulator, load plugin!
 				if (run_plugin() == false)
@@ -412,7 +324,7 @@ namespace VadonEditor::Simulator
 				QObject::connect(&m_application.get_network_system(), &Network::NetworkSystem::disconnected_from_server,
 					[this]()
 					{
-						m_plugin->editor_disconnected();
+						m_plugin_interface->editor_disconnected();
 					}
 				);
 
@@ -425,31 +337,135 @@ namespace VadonEditor::Simulator
 				);
 				m_plugin_timer.start();
 			}
+			break;
+			}
 
 			qDebug() << "Simulator started";
 
 			return true;
 		}
 
+		void stop_simulator()
+		{
+			const Core::Configuration& configuration = m_application.get_configuration();
+			switch (configuration.mode)
+			{
+			case Core::ApplicationMode::EDITOR:
+			{
+				if (m_simulator_process.state() == QProcess::ProcessState::NotRunning)
+				{
+					// Simulator is already turned off
+					return;
+				}
+
+				// Message process to make sure it shuts down
+				{
+					VadonEditor::Network::MessageSerializer message_serializer;
+
+					::Vadon::Foundation::EditorSimulatorMessageShutdown shutdown_message;
+					shutdown_message.message_type = ::Vadon::Foundation::EditorSimulatorMessageType::SIMULATOR_SHUTDOWN;
+
+					message_serializer.write_message_trivial(::Vadon::Foundation::EditorMessageCategory::SIMULATOR, shutdown_message);
+
+					m_application.get_network_system().send_message(message_serializer);
+				}
+
+				// Wait for process to finish
+				if (m_simulator_process.waitForFinished() == false)
+				{
+					qCritical() << "Error shutting down simulator!";
+				}
+
+				if (m_simulator_process.exitStatus() == QProcess::ExitStatus::NormalExit)
+				{
+					qDebug() << "Simulator process exited with " << m_simulator_process.exitCode();
+				}
+				else
+				{
+					qCritical() << "Simulator process crashed!";
+				}
+			}
+			break;
+			case Core::ApplicationMode::SIMULATOR:
+			{
+				if (m_plugin_interface == nullptr)
+				{
+					return;
+				}
+
+				// Call shutdown on the plugin itself
+				m_plugin_interface->shutdown();
+
+				if (m_exit_func != nullptr)
+				{
+					// Pass the interface back to plugin (it knows how it was allocated)
+					m_exit_func(m_plugin_interface);
+				}
+				else
+				{
+					delete m_plugin_interface;
+				}
+				m_plugin_interface = nullptr;
+
+				unload_plugin();
+
+				m_entrypoint_func = nullptr;
+				m_exit_func = nullptr;
+			}
+			break;
+			}
+		}
+
+		void unload_plugin()
+		{
+			if (m_simulator_plugin != Core::PluginManager::c_invalid_plugin_handle)
+			{
+				m_application.get_plugin_manager().unload_plugin(m_simulator_plugin);
+				m_simulator_plugin = Core::PluginManager::c_invalid_plugin_handle;
+			}
+		}
+
 		void cleanup_process()
 		{
+			// TODO: anything else?
 			qInfo() << "Simulator process shutting down";
 		}
 
 		void process_error(QProcess::ProcessError error)
 		{
+			// TODO: anything else?
 			qCritical() << "Error running simulator process: " << error;
 		}
 	};
 
-	PluginManager::PluginManager(Core::Application& application)
+	Simulator::~Simulator() = default;
+
+	bool Simulator::run_simulator(const SimulatorSettings& settings)
+	{
+		return m_internal->run_simulator(settings);
+	}
+
+	void Simulator::stop_simulator()
+	{
+		m_internal->stop_simulator();
+	}
+
+	::Vadon::Foundation::EditorSimulatorPluginInterface* Simulator::get_plugin_interface() const
+	{
+		return m_internal->m_plugin_interface;
+	}
+
+	void Simulator::dispatch_message_to_editor(const char* data, size_t size)
+	{
+		m_internal->m_application.get_network_system().send_message(QByteArrayView(data, size));
+	}
+
+	Simulator::Simulator(Core::Application& application)
 		: m_internal(std::make_unique<Internal>(application))
 	{
 	}
 
-	PluginManager::~PluginManager() = default;
-
-	bool PluginManager::initialize()
+	bool Simulator::initialize()
 	{
 		if (m_internal->initialize() == false)
 		{
@@ -459,23 +475,8 @@ namespace VadonEditor::Simulator
 		return true;
 	}
 
-	void PluginManager::shutdown()
+	void Simulator::shutdown()
 	{
 		m_internal->shutdown();
-	}
-
-	bool PluginManager::run_simulator()
-	{
-		return m_internal->run_simulator();
-	}
-
-	::Vadon::Foundation::EditorPluginInterface* PluginManager::get_plugin() const
-	{
-		return m_internal->m_plugin;
-	}
-
-	void PluginManager::dispatch_message_to_editor(const char* data, size_t size)
-	{
-		m_internal->m_application.get_network_system().send_message(QByteArrayView(data, size));
 	}
 }

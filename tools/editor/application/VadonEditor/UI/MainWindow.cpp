@@ -3,12 +3,16 @@
 #include <VadonEditor/Core/Application.hpp>
 #include <VadonEditor/Core/Logger.hpp>
 
+#include <VadonEditor/Core/Project/ProjectManager.hpp>
+
 #include <VadonEditor/Network/NetworkSystem.hpp>
 
 #include <VadonEditor/UI/Project/ProjectSettingsDialog.hpp>
 #include <VadonEditor/UI/Utilities/UUIDDialog.hpp>
 
 #include <VadonEditor/Network/Message/MessageSerializer.hpp>
+
+#include <QMessageBox>
 
 namespace VadonEditor::UI
 {
@@ -61,11 +65,19 @@ namespace VadonEditor::UI
 
 	void MainWindow::run_plugin_triggered()
 	{
-		// TODO!!!
+		emit run_simulator_requested();
 	}
 
 	void MainWindow::shutdown_plugin_triggered()
 	{
-		// TODO!!!
+		emit stop_simulator_requested();
+	}
+
+	void MainWindow::generate_data_schema_triggered()
+	{
+		if (m_application.get_project_manager().generate_project_data_schema() == false)
+		{
+			QMessageBox::critical(this, "Project manager error", "Failed to generate project data schema!");
+		}
 	}
 }

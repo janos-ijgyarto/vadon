@@ -33,7 +33,7 @@ namespace
 
 namespace VadonDemo::Render
 {
-	void Render::register_types()
+	void Render::register_types(::Vadon::Foundation::TypeMetadataRegistry& /*metadata_registry*/)
 	{
 		CanvasLayerDefinition::register_resource();
 		TextureResource::register_resource();

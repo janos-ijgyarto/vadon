@@ -10,6 +10,8 @@ namespace Vadon
 			UUID id;
 			UUID type;
 			// TODO: any other metadata?
+
+			bool is_valid() const { return (id.is_valid() == true) && (type.is_valid() == true); }
 		};
 	}
 }

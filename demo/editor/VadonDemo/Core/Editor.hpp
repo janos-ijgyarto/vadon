@@ -7,7 +7,7 @@
 
 #include <VadonEditor/Core/Editor.hpp>
 
-#include <Vadon/Foundation/Editor/PluginInterface.hpp>
+#include <Vadon/Foundation/Editor/Simulator/PluginInterface.hpp>
 
 #include <Vadon/Core/Core.hpp>
 #include <Vadon/ECS/World/World.hpp>
@@ -28,11 +28,13 @@ namespace VadonDemo::Core
     class Core;
     class EditorPluginInterface;
 
-    class Editor : public ::Vadon::Foundation::EditorPluginInterface
+    class Editor : public ::Vadon::Foundation::EditorSimulatorPluginInterface
     {
     public:
-        Editor(Vadon::Core::EngineEnvironment& environment, ::Vadon::Foundation::EditorSimulatorInterface& simulator_interface);
+        Editor(::Vadon::Foundation::EditorSimulatorInterface& simulator_interface);
         ~Editor();
+
+        static void init_environment(Vadon::Core::EngineEnvironment& environment);
 
         VadonEditor::Core::Editor& get_common_editor() { return m_common_editor; }
 
@@ -50,20 +52,20 @@ namespace VadonDemo::Core
 
         bool initialize() override;
         void update() override;
+        void shutdown() override;
+
         void process_message_from_editor(const char* data, size_t size) override;
 
         void editor_connected() override;
         void editor_disconnected() override;
 
         const ::Vadon::Foundation::TypeMetadataRegistry& get_metadata_registry() const override;
+
+        static void register_type_metadata(::Vadon::Foundation::TypeMetadataRegistry& registry);
     private:
         using Clock = std::chrono::steady_clock;
         using TimePoint = std::chrono::time_point<Clock>;
         using Duration = std::chrono::duration<float>;
-
-        void shutdown();
-
-        void register_type_metadata();
 
         void update_subsystems();
 

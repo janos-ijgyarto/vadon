@@ -6,6 +6,9 @@
 #include <Vadon/Utilities/Serialization/Serializer.hpp>
 
 #include <Vadon/Utilities/Enum/EnumClass.hpp>
+
+#include <Vadon/Utilities/TypeInfo/Metadata.hpp>
+
 #include <Vadon/Utilities/TypeInfo/Reflection/MemberBind.hpp>
 #include <Vadon/Utilities/TypeInfo/Reflection/PropertySerialization.hpp>
 
@@ -543,18 +546,31 @@ namespace Vadon::Private::Scene
 		: Vadon::Scene::ResourceSystem(core)
 	{}
 
-	bool ResourceSystem::initialize()
+	void ResourceSystem::register_types()
 	{
-		using Vadon::Utilities::operator""_uuid;
-
-		log_message("Initializing Resource System\n");
-
 		Vadon::Scene::ResourceRegistry::register_resource_type<Resource>();
 		Vadon::Utilities::TypeRegistry::add_property<Resource>(VADON_GET_MEMBER_UUID(Resource, name),
 			Vadon::Utilities::create_member_variable_bind<Resource, &Resource::name>().bind_member_getter().bind_member_setter());
 
 		Vadon::Scene::ResourceRegistry::register_resource_type<Vadon::Scene::FileResource, Vadon::Scene::Resource>();
+	}
 
+	void ResourceSystem::register_type_metadata(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry)
+	{
+		Vadon::Utilities::TypeMetadata resource_metadata(metadata_registry, VADON_GET_TYPE_UUID(Vadon::Scene::Resource));
+
+		resource_metadata.set_metadata("name", "Vadon::Scene::Resource");
+
+		Vadon::Utilities::TypePropertyMetadata name_property(resource_metadata, VADON_GET_MEMBER_UUID(Vadon::Scene::Resource, name));
+		name_property.set_metadata("name", "Name");
+	}
+
+	bool ResourceSystem::initialize()
+	{
+		using Vadon::Utilities::operator""_uuid;
+
+		log_message("Initializing Resource System\n");
+		// TODO: anything?
 		log_message("Resource System initialized successfully!\n");
 		return true;
 	}

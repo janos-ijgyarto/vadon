@@ -15,8 +15,6 @@ namespace VadonDemo::UI
 		
 		bool initialize();
 
-		void register_type_metadata();
-
 		void update();
 
 		void update_dirty_entities();

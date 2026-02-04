@@ -55,13 +55,6 @@
        <item>
         <layout class="QVBoxLayout" name="selectedProjectButtonVBox">
          <item>
-          <widget class="QCheckBox" name="debugBreakOnStartCheckbox">
-           <property name="text">
-            <string>Debug break on start</string>
-           </property>
-          </widget>
-         </item>
-         <item>
           <widget class="QPushButton" name="runButton">
            <property name="enabled">
             <bool>false</bool>

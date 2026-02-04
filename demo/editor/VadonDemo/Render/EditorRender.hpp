@@ -35,8 +35,6 @@ namespace VadonDemo::Render
 		bool initialize();
 		bool init_frame_graph();
 
-		void register_type_metadata();
-
 		void process_message(const char* data, size_t size);
 
 		bool project_loaded();

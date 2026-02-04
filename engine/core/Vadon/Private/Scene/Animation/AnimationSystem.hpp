@@ -2,6 +2,10 @@
 #define VADON_PRIVATE_SCENE_ANIMATION_ANIMATIONSYSTEM_HPP
 #include <Vadon/Scene/Animation/AnimationSystem.hpp>
 #include <Vadon/Private/Scene/Animation/Animation.hpp>
+namespace Vadon::Foundation
+{
+	class TypeMetadataRegistry;
+}
 namespace Vadon::Private::Scene
 {
 	class AnimationSystem final : public Vadon::Scene::AnimationSystem
@@ -16,6 +20,9 @@ namespace Vadon::Private::Scene
 		void set_animation_data(AnimationHandle animation_handle, const AnimationData& data) override;
 	private:
 		AnimationSystem(Vadon::Core::EngineCoreInterface& core);
+
+		static void register_types();
+		static void register_type_metadata(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry);
 
 		bool initialize();
 		void shutdown();

@@ -7,14 +7,23 @@ namespace VadonEditor::Core
 }
 namespace VadonEditor::UI
 {
+	struct RenderClientInfo
+	{
+		Core::Application* application = nullptr;
+		int client_id = -1;
+
+		bool is_valid() const { return application != nullptr; }
+	};
+
 	class RenderWidget : public QWidget
 	{
 		Q_OBJECT
 	public:
+		RenderWidget(QWidget* parent = nullptr);
 		~RenderWidget();
-	protected:
-		RenderWidget(Core::Application& application, int window_id, QWidget* parent = nullptr);
 
+		void register_client(const RenderClientInfo& client_info) { m_client_info = client_info; }
+	protected:
 		void showEvent(QShowEvent* showEvent) override;
 
 		void resizeEvent(QResizeEvent* resizeEvent) override;
@@ -30,10 +39,7 @@ namespace VadonEditor::UI
 
 		void wheelEvent(QWheelEvent* event) override;
 
-		Core::Application& m_application;
-		int m_window_id;
-
-		friend class UISystem;
+		RenderClientInfo m_client_info;
 	};
 }
 #endif

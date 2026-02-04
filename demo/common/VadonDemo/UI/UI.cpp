@@ -16,7 +16,7 @@
 
 namespace VadonDemo::UI
 {
-	void UI::register_types()
+	void UI::register_types(::Vadon::Foundation::TypeMetadataRegistry& /*metadata_registry*/)
 	{
 		Base::register_component();
 		Frame::register_component();

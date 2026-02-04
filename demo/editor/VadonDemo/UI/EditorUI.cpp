@@ -73,11 +73,6 @@ namespace VadonDemo::UI
         return true;
 	}
 
-    void EditorUI::register_type_metadata()
-    {
-
-    }
-
     void EditorUI::update()
     {
         update_dirty_entities();

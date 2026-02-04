@@ -10,6 +10,8 @@ namespace VadonEditor::UI
 	class LauncherDialog;
 	class MainWindow;
 
+	class RenderWidget;
+
 	class UISystem
 	{
 	public:
@@ -25,6 +27,9 @@ namespace VadonEditor::UI
 		void request_close();
 
 		void received_message(const QByteArray& data);
+
+		void run_simulator();
+		void stop_simulator();
 
 		Core::Application& m_application;
 

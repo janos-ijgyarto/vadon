@@ -16,6 +16,16 @@ namespace Vadon::Core
         Vadon::Private::Render::GraphicsAPIBase::init_engine_environment(environment);
     }
 
+    void register_engine_types()
+    {
+        Vadon::Private::Core::EngineCore::register_types();
+    }
+
+    void register_engine_type_metadata(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry)
+    {
+        Vadon::Private::Core::EngineCore::register_type_metadata(metadata_registry);
+    }
+
     EngineCorePtr create_engine_core()
     {
         return std::make_unique<Vadon::Private::Core::EngineCore>();
@@ -34,6 +44,18 @@ namespace Vadon::Private::Core
     }
 
     EngineCore::~EngineCore() = default;
+
+    void EngineCore::register_types()
+    {
+        Vadon::Private::Scene::ResourceSystem::register_types();
+        Vadon::Private::Scene::SceneSystem::register_types();
+    }
+
+    void EngineCore::register_type_metadata(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry)
+    {
+        Vadon::Private::Scene::ResourceSystem::register_type_metadata(metadata_registry);
+        Vadon::Private::Scene::SceneSystem::register_type_metadata(metadata_registry);
+    }
 
     bool EngineCore::initialize(const Vadon::Core::CoreConfiguration& config)
     {

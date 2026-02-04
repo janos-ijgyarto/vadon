@@ -1,14 +1,12 @@
 #include <VadonEditor/Network/NetworkSystem.hpp>
 
 #include <VadonEditor/Core/Application.hpp>
-#include <VadonEditor/Core/CommandLine.hpp>
+#include <VadonEditor/Core/Configuration.hpp>
 
 #include <VadonEditor/Network/Message/MessageSerializer.hpp>
 
 #include <VadonEditor/Network/TCP/Server.hpp>
 #include <VadonEditor/Network/TCP/Client.hpp>
-
-#include <VadonEditor/Simulator/Plugin/PluginManager.hpp>
 
 #include <Vadon/Foundation/Editor/Network/Message/Message.hpp>
 
@@ -61,7 +59,7 @@ namespace VadonEditor::Network
 
 		bool initialize()
 		{
-			if (m_application.get_command_line_parameters().is_simulator == false)
+			if (m_application.get_configuration().mode == Core::ApplicationMode::EDITOR)
 			{
 				m_tcp_server = std::make_unique<TCP::Server>(m_io_context, *this, m_logging_interface);
 			}

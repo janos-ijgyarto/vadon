@@ -24,14 +24,14 @@ namespace VadonDemo::Core
 		Vadon::Core::EngineEnvironment::initialize(environment);
 	}
 
-	void Core::register_types()
+	void Core::register_types(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry)
 	{
-		GlobalConfiguration::register_type();
+		GlobalConfiguration::register_type(metadata_registry);
 
-		Model::Model::register_types();
-		Render::Render::register_types();
-		UI::UI::register_types();
-		View::View::register_types();
+		Model::Model::register_types(metadata_registry);
+		Render::Render::register_types(metadata_registry);
+		UI::UI::register_types(metadata_registry);
+		View::View::register_types(metadata_registry);
 	}
 
 	bool Core::initialize(const Vadon::Core::Project& project_info)

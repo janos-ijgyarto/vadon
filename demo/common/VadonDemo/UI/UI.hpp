@@ -5,6 +5,10 @@
 #include <Vadon/Render/Canvas/Material.hpp>
 #include <Vadon/Render/Text/Font.hpp>
 #include <functional>
+namespace Vadon::Foundation
+{
+	class TypeMetadataRegistry;
+}
 namespace Vadon::ECS
 {
 	class World;
@@ -27,7 +31,7 @@ namespace VadonDemo::UI
 	public:
 		using SelectableCallback = std::function<void(std::string_view)>;
 
-		static void register_types();
+		static void register_types(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry);
 
 		VADONDEMO_API void register_selectable_callback(std::string_view key, SelectableCallback callback);
 

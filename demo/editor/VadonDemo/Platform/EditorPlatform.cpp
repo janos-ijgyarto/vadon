@@ -4,7 +4,7 @@
 
 #include <VadonDemo/Network/Message/MessageSerializer.hpp>
 
-#include <Vadon/Foundation/Editor/SimulatorInterface.hpp>
+#include <Vadon/Foundation/Editor/Simulator/SimulatorInterface.hpp>
 
 #include <Vadon/Foundation/Editor/Network/Message/Message.hpp>
 #include <Vadon/Foundation/Editor/Network/Message/Platform.hpp>

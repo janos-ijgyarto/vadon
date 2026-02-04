@@ -17,7 +17,10 @@ namespace VadonEditor::UI
 
         ~MainWindow();
 
-        QWidget* get_viewport() const { return m_ui.viewport; }
+        RenderWidget* get_viewport() const { return m_ui.viewport; }
+    signals:
+        void run_simulator_requested();
+        void stop_simulator_requested();
     private slots:
         void message_logged(const QString& message);
 
@@ -28,6 +31,7 @@ namespace VadonEditor::UI
         void project_settings_triggered();
         void run_plugin_triggered();
         void shutdown_plugin_triggered();
+        void generate_data_schema_triggered();
     private:
         Core::Application& m_application;
         Ui::MainWindow m_ui;

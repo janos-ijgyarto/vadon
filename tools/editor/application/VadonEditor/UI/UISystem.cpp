@@ -1,16 +1,21 @@
 #include <VadonEditor/UI/UISystem.hpp>
 
 #include <VadonEditor/Core/Application.hpp>
-#include <VadonEditor/Core/CommandLine.hpp>
+#include <VadonEditor/Core/Configuration.hpp>
+
+#include <VadonEditor/Core/Project/ProjectManager.hpp>
 
 #include <VadonEditor/Network/NetworkSystem.hpp>
 #include <VadonEditor/Network/Message/MessageSerializer.hpp>
+
+#include <VadonEditor/Simulator/Simulator.hpp>
 
 #include <VadonEditor/UI/MainWindow.hpp>
 #include <VadonEditor/UI/Project/LauncherDialog.hpp>
 
 #include <Vadon/Foundation/Editor/Network/Message/Platform.hpp>
 
+#include <QMessageBox>
 #include <QStyleFactory>
 
 namespace VadonEditor::UI
@@ -25,7 +30,8 @@ namespace VadonEditor::UI
 
 	bool UISystem::initialize()
 	{
-		if (m_application.get_command_line_parameters().is_simulator == true)
+		const Core::Configuration& configuration = m_application.get_configuration();
+		if (configuration.mode != Core::ApplicationMode::EDITOR)
 		{
 			// Running as simulator, no GUI
 			return true;
@@ -45,7 +51,10 @@ namespace VadonEditor::UI
 
 		m_main_window = new MainWindow(m_application);
 
-		if (m_application.get_command_line_parameters().startup_project_path.isEmpty() == true)
+		QObject::connect(m_main_window, &MainWindow::run_simulator_requested, [this]() { run_simulator(); });
+		QObject::connect(m_main_window, &MainWindow::stop_simulator_requested, [this]() { stop_simulator(); });
+
+		if (configuration.startup_project_path.isEmpty() == true)
 		{
 			// Open launcher dialog first
 			m_launcher_dialog = new LauncherDialog(m_application);
@@ -92,6 +101,11 @@ namespace VadonEditor::UI
 	void UISystem::show_main_window()
 	{
 		m_main_window->show();
+
+		if (m_application.get_project_manager().get_project_data_schema().is_valid() == false)
+		{
+			QMessageBox::warning(m_main_window, "Project Manager", QObject::tr("Project does not have valid data schema!"));
+		}
 	}
 
 	void UISystem::request_close()
@@ -115,12 +129,20 @@ namespace VadonEditor::UI
 			case ::Vadon::Foundation::EditorPlatformMessageType::MANAGER_WINDOW_REQUEST:
 			{
 				// Send the main viewport as our response
+				// TODO: allow clients to create and register other widgets!
 				const ::Vadon::Foundation::EditorPlatformManagerWindowRequest* window_request = reinterpret_cast<const ::Vadon::Foundation::EditorPlatformManagerWindowRequest*>(message_reader.get_current_message_data());
+
+				RenderClientInfo client_info;
+				client_info.application = &m_application;
+				client_info.client_id = window_request->id;
+
+				RenderWidget* main_viewport = m_main_window->get_viewport();
+				main_viewport->register_client(client_info);
 
 				::Vadon::Foundation::EditorPlatformManagerWindowRequest window_request_response;
 				window_request_response.message_type = ::Vadon::Foundation::EditorPlatformMessageType::MANAGER_WINDOW_REQUEST;
 				window_request_response.id = window_request->id;
-				window_request_response.handle = m_main_window->get_viewport()->winId();
+				window_request_response.handle = main_viewport->winId();
 
 				VadonEditor::Network::MessageSerializer message_serializer;
 				message_serializer.write_message_trivial(::Vadon::Foundation::EditorMessageCategory::PLATFORM, window_request_response);
@@ -132,5 +154,21 @@ namespace VadonEditor::UI
 		}
 		break;
 		}
+	}
+
+	void UISystem::run_simulator()
+	{
+		// TODO: gather settings!
+		Simulator::SimulatorSettings settings;
+		settings.debug_break_on_init = true;
+		if (m_application.get_simulator().run_simulator(settings) == false)
+		{
+			// TODO: error popup?
+		}
+	}
+
+	void UISystem::stop_simulator()
+	{
+		m_application.get_simulator().stop_simulator();
 	}
 }

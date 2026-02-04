@@ -3,6 +3,10 @@
 #include <VadonDemo/VadonDemoCommon.hpp>
 #include <Vadon/Scene/Scene.hpp>
 #include <Vadon/Utilities/TypeInfo/Reflection/Property.hpp>
+namespace Vadon::Foundation
+{
+	class TypeMetadataRegistry;
+}
 namespace VadonDemo::Core
 {
 	// This is a resource that we will reference in the project file
@@ -16,7 +20,7 @@ namespace VadonDemo::Core
 		Vadon::Scene::SceneID default_start_level;
 		Vadon::Math::Vector2 viewport_size = { 1024, 768 };
 
-		VADONDEMO_API static void register_type();
+		VADONDEMO_API static void register_type(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry);
 	};
 
 	// FIXME: use pointer-to-member trait 

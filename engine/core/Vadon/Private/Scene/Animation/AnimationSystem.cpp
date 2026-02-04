@@ -239,10 +239,20 @@ namespace Vadon::Private::Scene
 
 	}
 
+	void AnimationSystem::register_types()
+	{
+		Vadon::Scene::Animation::register_type_info();
+	}
+
+	void AnimationSystem::register_type_metadata(::Vadon::Foundation::TypeMetadataRegistry& /*metadata_registry*/)
+	{
+
+	}
+
 	bool AnimationSystem::initialize()
 	{
 		log_message("Initializing Animation System\n");
-		Vadon::Scene::Animation::register_type_info();
+		// TODO: anything?
 		log_message("Animation System initialized!\n");
 		return true;
 	}

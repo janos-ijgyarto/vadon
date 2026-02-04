@@ -7,7 +7,7 @@ namespace VadonEditor::Network
 }
 namespace VadonEditor::Simulator
 {
-	class PluginManager;
+	class Simulator;
 }
 namespace VadonEditor::UI
 {
@@ -18,8 +18,10 @@ class QCoreApplication;
 
 namespace VadonEditor::Core
 {
-	struct CommandLineParameters;
+	struct Configuration;
+
 	class Logger;
+	class PluginManager;
 	class ProjectManager;
 
 	class Application
@@ -33,19 +35,20 @@ namespace VadonEditor::Core
 
 		int exec();
 
-		const CommandLineParameters& get_command_line_parameters() const;
+		const Configuration& get_configuration() const;
 
 		Logger& get_logger();
+		PluginManager& get_plugin_manager();
 		ProjectManager& get_project_manager();
 
 		Network::NetworkSystem& get_network_system();
 
-		Simulator::PluginManager& get_plugin_manager();
+		Simulator::Simulator& get_simulator();
 
 		UI::UISystem& get_ui_system();
 
 		QCoreApplication* get_qt_application() const;
-		void request_quit();
+		void request_quit(int exit_code);
 	private:
 		bool initialize();
 

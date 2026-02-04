@@ -17,7 +17,7 @@ namespace VadonEditor::Network
 		memcpy(m_buffer.data() + prev_buffer_size + sizeof(::Vadon::Foundation::EditorMessageCategory), &message_size_uint, sizeof(uint32_t));
 
 		// Return the location to write to
-		return m_buffer.data() + prev_buffer_size + +sizeof(::Vadon::Foundation::EditorMessageCategory) + sizeof(uint32_t);
+		return m_buffer.data() + prev_buffer_size + sizeof(::Vadon::Foundation::EditorMessageCategory) + sizeof(uint32_t);
 	}
 
 	void MessageSerializer::write_message(::Vadon::Foundation::EditorMessageCategory category, const void* message_data, size_t message_size)

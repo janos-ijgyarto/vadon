@@ -13,7 +13,7 @@
 
 namespace VadonDemo::Model
 {
-	void Model::register_types()
+	void Model::register_types(::Vadon::Foundation::TypeMetadataRegistry& /*metadata_registry*/)
 	{
 		Vadon::ECS::ComponentRegistry::register_tag_type<LevelRootTag>();
 		Vadon::ECS::ComponentRegistry::register_tag_type<DestroyEntityTag>();

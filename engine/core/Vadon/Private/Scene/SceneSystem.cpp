@@ -5,6 +5,8 @@
 #include <Vadon/Scene/Resource/Registry.hpp>
 #include <Vadon/Scene/Resource/ResourceSystem.hpp>
 
+#include <Vadon/Utilities/TypeInfo/Metadata.hpp>
+
 #include <Vadon/Utilities/TypeInfo/Reflection/PropertySerialization.hpp>
 #include <Vadon/Utilities/TypeInfo/TypeErasure.hpp>
 
@@ -413,11 +415,6 @@ namespace Vadon::Private::Scene
 
 	void SceneData::register_scene_type_info()
 	{
-		Vadon::Scene::ResourceRegistry::register_resource_type<Vadon::Scene::Scene, Resource>();
-
-		Vadon::Scene::ResourceRegistry::register_resource_serializer<Scene>(&serialize_scene);
-
-		Vadon::ECS::ComponentRegistry::register_component_type<SceneComponent>();
 	}
 
 	SceneHandle SceneSystem::create_scene()
@@ -608,6 +605,22 @@ namespace Vadon::Private::Scene
 		: Vadon::Scene::SceneSystem(core)
 		, m_animation_system(core)
 	{}
+
+	void SceneSystem::register_types()
+	{
+		Vadon::Scene::ResourceRegistry::register_resource_type<Vadon::Scene::Scene, Resource>();
+
+		Vadon::Scene::ResourceRegistry::register_resource_serializer<Scene>(&serialize_scene);
+
+		Vadon::ECS::ComponentRegistry::register_component_type<SceneComponent>();
+
+		AnimationSystem::register_types();
+	}
+
+	void SceneSystem::register_type_metadata(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry)
+	{
+		AnimationSystem::register_type_metadata(metadata_registry);
+	}
 
 	bool SceneSystem::initialize()
 	{

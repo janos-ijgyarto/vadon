@@ -7,6 +7,10 @@
 #include <VadonDemo/View/View.hpp>
 
 #include <functional>
+namespace Vadon::Foundation
+{
+	class TypeMetadataRegistry;
+}
 namespace Vadon::Core
 {
 	class EngineEnvironment;
@@ -34,7 +38,7 @@ namespace VadonDemo::Core
 
 		VADONDEMO_API Core(Vadon::Core::EngineCoreInterface& engine_core);		
 		VADONDEMO_API static void init_environment(Vadon::Core::EngineEnvironment& environment);
-		VADONDEMO_API static void register_types();
+		VADONDEMO_API static void register_types(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry);
 
 		VADONDEMO_API bool initialize(const Vadon::Core::Project& project_info);
 		VADONDEMO_API void update_global_config(const GlobalConfigurationID& global_config_id);

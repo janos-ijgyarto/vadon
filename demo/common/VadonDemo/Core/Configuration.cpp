@@ -5,7 +5,7 @@
 
 namespace VadonDemo::Core
 {
-	void GlobalConfiguration::register_type()
+	void GlobalConfiguration::register_type(::Vadon::Foundation::TypeMetadataRegistry& /*metadata_registry*/)
 	{
 		using ResourceRegistry = Vadon::Scene::ResourceRegistry;
 		using TypeRegistry = Vadon::Utilities::TypeRegistry;

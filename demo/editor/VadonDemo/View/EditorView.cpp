@@ -115,10 +115,6 @@ namespace VadonDemo::View
         }
     }
 
-    void EditorView::register_type_metadata()
-    {
-    }
-
     void EditorView::update_dirty_entities()
     {
         Vadon::ECS::World& ecs_world = m_editor.get_ecs_world();
