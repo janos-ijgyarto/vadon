@@ -4,6 +4,10 @@
 #include <Vadon/Math/Color.hpp>
 #include <Vadon/Utilities/Enum/EnumClass.hpp>
 #include <Vadon/Render/Canvas/Batch.hpp>
+namespace Vadon::Foundation
+{
+	class TypeMetadataRegistry;
+}
 namespace VadonDemo::View
 {
 	struct RenderResource : public Vadon::Scene::Resource
@@ -11,7 +15,7 @@ namespace VadonDemo::View
 		Vadon::Render::Canvas::BatchHandle batch;
 		Vadon::Utilities::DataRange batch_range;
 
-		static void register_resource();
+		static void register_resource(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry);
 	};
 
 	VADON_SCENE_DECLARE_TYPED_RESOURCE_ID(RenderResource, RenderResourceID);
@@ -37,7 +41,7 @@ namespace VadonDemo::View
 		// TODO: create material resource to unify this (color + texture + anything else)?
 		Vadon::Math::ColorRGBA color = Vadon::Math::Color_White;
 
-		static void register_resource();
+		static void register_resource(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry);
 	};
 
 	VADON_SCENE_DECLARE_TYPED_RESOURCE_ID(Shape, ShapeResourceID);
@@ -52,7 +56,7 @@ namespace VadonDemo::View
 		VadonDemo::Render::TextureResourceID texture;
 		// TODO: additional properties?
 
-		static void register_resource();
+		static void register_resource(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry);
 	};
 
 	VADON_SCENE_DECLARE_TYPED_RESOURCE_ID(Sprite, SpriteResourceID);

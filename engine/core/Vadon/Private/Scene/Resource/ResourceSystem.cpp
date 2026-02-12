@@ -12,6 +12,8 @@
 #include <Vadon/Utilities/TypeInfo/Reflection/MemberBind.hpp>
 #include <Vadon/Utilities/TypeInfo/Reflection/PropertySerialization.hpp>
 
+#include <Vadon/Foundation/TypeInfo/Metadata.hpp>
+
 #include <format>
 
 namespace
@@ -559,10 +561,13 @@ namespace Vadon::Private::Scene
 	{
 		Vadon::Utilities::TypeMetadata resource_metadata(metadata_registry, VADON_GET_TYPE_UUID(Vadon::Scene::Resource));
 
-		resource_metadata.set_metadata("name", "Vadon::Scene::Resource");
+		resource_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "Vadon::Scene::Resource");
 
 		Vadon::Utilities::TypePropertyMetadata name_property(resource_metadata, VADON_GET_MEMBER_UUID(Vadon::Scene::Resource, name));
-		name_property.set_metadata("name", "Name");
+		name_property.set_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Name");
+
+		Vadon::Utilities::TypeMetadata(metadata_registry, VADON_GET_TYPE_UUID(Vadon::Scene::FileResource))
+			.add_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "Vadon::Scene::FileResource");
 	}
 
 	bool ResourceSystem::initialize()

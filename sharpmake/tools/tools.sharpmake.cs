@@ -120,6 +120,8 @@ namespace Vadon.Tools
             conf.IncludePaths.Add(SourceRootPath);
 
             conf.Options.Add(Sharpmake.Options.Vc.Compiler.CppLanguageStandard.CPP20);
+            conf.Options.Add(Sharpmake.Options.Vc.General.TreatWarningsAsErrors.Enable);
+            conf.Options.Add(Sharpmake.Options.Vc.Compiler.Exceptions.Enable);
 
             conf.ObjectFileName = ObjectFileName;
         }

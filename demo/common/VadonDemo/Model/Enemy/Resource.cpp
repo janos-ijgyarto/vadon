@@ -7,6 +7,7 @@
 
 #include <Vadon/Scene/Resource/Registry.hpp>
 
+#include <Vadon/Utilities/TypeInfo/Metadata.hpp>
 #include <Vadon/Utilities/TypeInfo/Reflection/MemberBind.hpp>
 
 #include <numbers>
@@ -57,7 +58,7 @@ namespace
 
 namespace VadonDemo::Model
 {
-	void EnemyDefinition::register_resource()
+	void EnemyDefinition::register_resource(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry)
 	{
 		using ResourceRegistry = Vadon::Scene::ResourceRegistry;
 		using TypeRegistry = Vadon::Utilities::TypeRegistry;
@@ -65,16 +66,25 @@ namespace VadonDemo::Model
 		ResourceRegistry::register_resource_type<EnemyDefinition, Vadon::Scene::Resource>();
 
 		TypeRegistry::add_property<EnemyDefinition>(VADON_GET_MEMBER_UUID(EnemyDefinition, score_reward), Vadon::Utilities::MemberVariableBind<&EnemyDefinition::score_reward>().bind_member_getter().bind_member_setter());
+
+		Vadon::Utilities::TypeMetadata(metadata_registry, VADON_GET_TYPE_UUID(EnemyDefinition))
+			.add_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "VadonDemo::Model::EnemyDefinition")
+			.add_property(VADON_GET_MEMBER_UUID(EnemyDefinition, score_reward))
+				.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Score Reward")
+				.commit_property();
 	}
 
-	void EnemyMovementDefinition::register_resource()
+	void EnemyMovementDefinition::register_resource(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry)
 	{
 		using ResourceRegistry = Vadon::Scene::ResourceRegistry;
 
 		ResourceRegistry::register_resource_type<EnemyMovementDefinition, Vadon::Scene::Resource>();
+
+		Vadon::Utilities::TypeMetadata(metadata_registry, VADON_GET_TYPE_UUID(EnemyMovementDefinition))
+			.add_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "VadonDemo::Model::EnemyMovementDefinition");
 	}
 
-	void EnemyMovementLookahead::register_resource()
+	void EnemyMovementLookahead::register_resource(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry)
 	{
 		using ResourceRegistry = Vadon::Scene::ResourceRegistry;
 		using TypeRegistry = Vadon::Utilities::TypeRegistry;
@@ -82,6 +92,12 @@ namespace VadonDemo::Model
 		ResourceRegistry::register_resource_type<EnemyMovementLookahead, EnemyMovementDefinition>();
 
 		TypeRegistry::add_property<EnemyMovementLookahead>(VADON_GET_MEMBER_UUID(EnemyMovementLookahead, lookahead_factor), Vadon::Utilities::MemberVariableBind<&EnemyMovementLookahead::lookahead_factor>().bind_member_getter().bind_member_setter());
+
+		Vadon::Utilities::TypeMetadata(metadata_registry, VADON_GET_TYPE_UUID(EnemyMovementLookahead))
+			.add_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "VadonDemo::Model::EnemyMovementLookahead")
+			.add_property(VADON_GET_MEMBER_UUID(EnemyMovementLookahead, lookahead_factor))
+				.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Lookahead Factor")
+				.commit_property();
 	}
 
 	Vadon::Math::Vector2 EnemyMovementLookahead::get_movement_direction(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle enemy, Vadon::ECS::EntityHandle target, float /*delta_time*/) const
@@ -118,7 +134,7 @@ namespace VadonDemo::Model
 		return Vadon::Math::Vector::normalize(enemy_to_target);
 	}
 
-	void EnemyMovementWeaving::register_resource()
+	void EnemyMovementWeaving::register_resource(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry)
 	{
 		using ResourceRegistry = Vadon::Scene::ResourceRegistry;
 		using TypeRegistry = Vadon::Utilities::TypeRegistry;
@@ -127,6 +143,15 @@ namespace VadonDemo::Model
 
 		TypeRegistry::add_property<EnemyMovementWeaving>(VADON_GET_MEMBER_UUID(EnemyMovementWeaving, cycle_duration), Vadon::Utilities::MemberVariableBind<&EnemyMovementWeaving::cycle_duration>().bind_member_getter().bind_member_setter());
 		TypeRegistry::add_property<EnemyMovementWeaving>(VADON_GET_MEMBER_UUID(EnemyMovementWeaving, weave_factor), Vadon::Utilities::MemberVariableBind<&EnemyMovementWeaving::weave_factor>().bind_member_getter().bind_member_setter());
+
+		Vadon::Utilities::TypeMetadata(metadata_registry, VADON_GET_TYPE_UUID(EnemyMovementWeaving))
+			.add_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "VadonDemo::Model::EnemyMovementWeaving")
+			.add_property(VADON_GET_MEMBER_UUID(EnemyMovementWeaving, cycle_duration))
+				.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Cycle Duration")
+				.commit_property()
+			.add_property(VADON_GET_MEMBER_UUID(EnemyMovementWeaving, weave_factor))
+				.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Weave Factor")
+				.commit_property();
 	}
 
 	Vadon::Math::Vector2 VadonDemo::Model::EnemyMovementWeaving::get_movement_direction(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle enemy, Vadon::ECS::EntityHandle target, float delta_time) const
@@ -159,7 +184,7 @@ namespace VadonDemo::Model
 		return Vadon::Math::Vector::normalize((enemy_to_target * (1.0f - clamped_weave_factor)) + (weave_component * clamped_weave_factor));
 	}
 
-	void EnemyWeaponAttackDefinition::register_resource()
+	void EnemyWeaponAttackDefinition::register_resource(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry)
 	{
 		using ResourceRegistry = Vadon::Scene::ResourceRegistry;
 		using TypeRegistry = Vadon::Utilities::TypeRegistry;
@@ -168,9 +193,18 @@ namespace VadonDemo::Model
 
 		TypeRegistry::add_property<EnemyWeaponAttackDefinition>(VADON_GET_MEMBER_UUID(EnemyWeaponAttackDefinition, projectile_count), Vadon::Utilities::MemberVariableBind<&EnemyWeaponAttackDefinition::projectile_count>().bind_member_getter().bind_member_setter());
 		TypeRegistry::add_property<EnemyWeaponAttackDefinition>(VADON_GET_MEMBER_UUID(EnemyWeaponAttackDefinition, reload_time), Vadon::Utilities::MemberVariableBind<&EnemyWeaponAttackDefinition::reload_time>().bind_member_getter().bind_member_setter());
+
+		Vadon::Utilities::TypeMetadata(metadata_registry, VADON_GET_TYPE_UUID(EnemyWeaponAttackDefinition))
+			.add_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "VadonDemo::Model::EnemyWeaponAttackDefinition")
+			.add_property(VADON_GET_MEMBER_UUID(EnemyWeaponAttackDefinition, projectile_count))
+				.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Projectile Count")
+				.commit_property()
+			.add_property(VADON_GET_MEMBER_UUID(EnemyWeaponAttackDefinition, reload_time))
+				.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Reload Time")
+				.commit_property();
 	}
 
-	void EnemyContactDamageDefinition::register_resource()
+	void EnemyContactDamageDefinition::register_resource(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry)
 	{
 		using ResourceRegistry = Vadon::Scene::ResourceRegistry;
 		using TypeRegistry = Vadon::Utilities::TypeRegistry;
@@ -178,5 +212,11 @@ namespace VadonDemo::Model
 		ResourceRegistry::register_resource_type<EnemyContactDamageDefinition, Vadon::Scene::Resource>();
 
 		TypeRegistry::add_property<EnemyContactDamageDefinition>(VADON_GET_MEMBER_UUID(EnemyContactDamageDefinition, damage), Vadon::Utilities::MemberVariableBind<&EnemyContactDamageDefinition::damage>().bind_member_getter().bind_member_setter());
+
+		Vadon::Utilities::TypeMetadata(metadata_registry, VADON_GET_TYPE_UUID(EnemyContactDamageDefinition))
+			.add_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "VadonDemo::Model::EnemyContactDamageDefinition")
+			.add_property(VADON_GET_MEMBER_UUID(EnemyContactDamageDefinition, damage))
+				.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Damage")
+				.commit_property();
 	}
 }

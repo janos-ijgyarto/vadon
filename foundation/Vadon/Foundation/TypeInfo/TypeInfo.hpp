@@ -22,7 +22,8 @@ namespace Vadon
 			COLORRGBA,
 			UUID,
 			ARRAY, // TODO: add typed version!
-			DICTIONARY // TODO: add typed version!
+			DICTIONARY, // TODO: add typed version!
+			TYPE_COUNT
 		};
 
 		struct TypeInfo

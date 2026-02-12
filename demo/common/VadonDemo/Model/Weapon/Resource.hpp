@@ -1,6 +1,10 @@
 #ifndef VADONDEMO_MODEL_WEAPON_RESOURCE_HPP
 #define VADONDEMO_MODEL_WEAPON_RESOURCE_HPP
 #include <Vadon/Scene/Scene.hpp>
+namespace Vadon::Foundation
+{
+	class TypeMetadataRegistry;
+}
 namespace VadonDemo::Model
 {
 	struct WeaponDefinition : public Vadon::Scene::Resource
@@ -12,7 +16,7 @@ namespace VadonDemo::Model
 		Vadon::Scene::SceneID projectile_prefab;
 		float rate_of_fire = 1.0f;
 
-		static void register_resource();
+		static void register_resource(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry);
 	};
 
 	VADON_SCENE_DECLARE_TYPED_RESOURCE_ID(WeaponDefinition, WeaponDefID);

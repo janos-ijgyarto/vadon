@@ -2,6 +2,8 @@
 
 #include <VadonEditor/Core/Project/Project.hpp>
 
+#include <VadonEditor/Utilities/UUID.hpp>
+
 #include <QDir>
 #include <QFile>
 
@@ -9,25 +11,11 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 
+#define VADON_BASE_TYPE_UUID_STRING(type) ::Vadon::Foundation::c_base_type_uuids[static_cast<size_t>(type)]
+
 // FIXME: move these to shared utilities?
 namespace
 {
-	QUuid vadon_uuid_to_qt_uuid(const ::Vadon::Foundation::UUID& uuid)
-	{
-		// NOTE: Qt defaults to Big Endian, worth taking a second look?
-		return QUuid::fromBytes(uuid.data, QSysInfo::Endian::LittleEndian);
-	}
-
-	::Vadon::Foundation::UUID qt_uuid_to_vadon_uuid(const QUuid& uuid)
-	{
-		// NOTE: Qt defaults to Big Endian, worth taking a second look?
-		::Vadon::Foundation::UUID vadon_uuid;
-		const QUuid::Id128Bytes uuid_bytes = uuid.toBytes(QSysInfo::Endian::LittleEndian);
-		memcpy(vadon_uuid.data, &uuid_bytes, ::Vadon::Foundation::UUID::c_uuid_width);
-
-		return vadon_uuid;
-	}
-
 	QUuid json_string_to_uuid(const QJsonValue& uuid_string_value)
 	{
 		QString uuid_string = uuid_string_value.toString();
@@ -45,18 +33,143 @@ namespace
 		{
 			return "";
 		}
-		QUuid::Id128Bytes uuid_bytes = uuid.toBytes(QSysInfo::LittleEndian);
+		QUuid::Id128Bytes uuid_bytes = uuid.toBytes();
 		return QString(QByteArray(QByteArrayView(uuid_bytes)).toBase64());
 	}
+
+	QUuid s_base_type_uuids[] = {
+		QUuid(),
+		QUuid::fromString(VADON_BASE_TYPE_UUID_STRING(::Vadon::Foundation::BaseType::INT32)),
+		QUuid::fromString(VADON_BASE_TYPE_UUID_STRING(::Vadon::Foundation::BaseType::UINT32)),
+		QUuid::fromString(VADON_BASE_TYPE_UUID_STRING(::Vadon::Foundation::BaseType::FLOAT)),
+		QUuid::fromString(VADON_BASE_TYPE_UUID_STRING(::Vadon::Foundation::BaseType::BOOL)),
+		QUuid::fromString(VADON_BASE_TYPE_UUID_STRING(::Vadon::Foundation::BaseType::STRING)),
+		QUuid::fromString(VADON_BASE_TYPE_UUID_STRING(::Vadon::Foundation::BaseType::VECTOR2)),
+		QUuid::fromString(VADON_BASE_TYPE_UUID_STRING(::Vadon::Foundation::BaseType::VECTOR2I)),
+		QUuid::fromString(VADON_BASE_TYPE_UUID_STRING(::Vadon::Foundation::BaseType::VECTOR3)),
+		QUuid::fromString(VADON_BASE_TYPE_UUID_STRING(::Vadon::Foundation::BaseType::VECTOR3I)),
+		QUuid::fromString(VADON_BASE_TYPE_UUID_STRING(::Vadon::Foundation::BaseType::VECTOR4)),
+		QUuid::fromString(VADON_BASE_TYPE_UUID_STRING(::Vadon::Foundation::BaseType::COLORRGBA)),
+		QUuid::fromString(VADON_BASE_TYPE_UUID_STRING(::Vadon::Foundation::BaseType::UUID)),
+		QUuid::fromString(VADON_BASE_TYPE_UUID_STRING(::Vadon::Foundation::BaseType::ARRAY)),
+		QUuid::fromString(VADON_BASE_TYPE_UUID_STRING(::Vadon::Foundation::BaseType::DICTIONARY))
+	};
 }
 
 namespace VadonEditor::Core
 {
-	void DataSchema::register_type(const::Vadon::Foundation::TypeInfo& type_info)
+	QString PropertyData::find_metadata(const char* key) const
+	{
+		auto metadata_it = metadata.find(key);
+		if(metadata_it == metadata.end())
+		{
+			return QString();
+		}
+
+		return metadata_it->constData();
+	}
+
+	PropertyCategory PropertyData::get_category() const
+	{
+		const ::Vadon::Foundation::BaseType base_type = DataSchema::get_base_type(info.type);
+		switch (base_type)
+		{
+		case ::Vadon::Foundation::BaseType::UUID:
+		{
+			// Resource type only if it has valid metadata
+			if (find_metadata(::Vadon::Foundation::CommonPropertyMetadata::RESOURCE_TYPE).isEmpty() == false)
+			{
+				return PropertyCategory::RESOURCE;
+			}
+		}
+		break;
+		case ::Vadon::Foundation::BaseType::ARRAY:
+			return PropertyCategory::ARRAY;
+		}
+
+		// Fall back on trivial
+		return PropertyCategory::TRIVIAL;
+	}
+
+	QString PropertyData::get_name() const
+	{
+		QString name = find_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME);
+		if (name.isEmpty() == true)
+		{
+			name = QString("Property_%1").arg(Utilities::vadon_uuid_to_qt_uuid(info.id).toString(QUuid::StringFormat::WithoutBraces));
+		}
+
+		return name;
+	}
+
+	::Vadon::Foundation::UUID PropertyData::get_data_type() const
+	{
+		switch (get_category())
+		{
+		case PropertyCategory::RESOURCE:
+		{
+			// FIXME: we should also make sure the resource type is registered!
+			const QString uuid_string = find_metadata(::Vadon::Foundation::CommonPropertyMetadata::RESOURCE_TYPE);
+			const ::Vadon::Foundation::UUID resource_type_uuid = Utilities::base64_string_to_uuid(uuid_string);
+			Q_ASSERT_X(resource_type_uuid.is_valid() == true, "VadonEditor::Core::PropertyData", "Invalid resource type!");
+			return resource_type_uuid;
+		}
+		case PropertyCategory::ARRAY:
+		{
+			const QString uuid_string = find_metadata(::Vadon::Foundation::CommonPropertyMetadata::ARRAY_TYPE);
+			Q_ASSERT_X(uuid_string.isEmpty() == false, "VadonEditor::Core::PropertyData", "Invalid array type!");
+
+			const ::Vadon::Foundation::UUID array_type_uuid = Utilities::base64_string_to_uuid(uuid_string);
+			Q_ASSERT_X(array_type_uuid.is_valid() == true, "VadonEditor::Core::PropertyData", "Invalid array type!");
+			return array_type_uuid;
+		}
+		}
+
+		// Fallback is the actual data type
+		return info.type;
+	}
+
+	const PropertyData* TypeData::find_property_data(const ::Vadon::Foundation::UUID& property_uuid) const
+	{
+		const QUuid qt_property_uuid = Utilities::vadon_uuid_to_qt_uuid(property_uuid);
+		auto property_it = properties.find(qt_property_uuid);
+
+		if(property_it == properties.end())
+		{
+			// TODO: warning?
+			return nullptr;
+		}
+
+		return &property_it.value();
+	}
+
+	QString TypeData::find_metadata(const char* key) const
+	{
+		auto metadata_it = metadata.find(key);
+		if (metadata_it == metadata.end())
+		{
+			return QString();
+		}
+
+		return metadata_it->constData();
+	}
+
+	QString TypeData::get_name() const
+	{
+		QString name = find_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME);
+		if (name.isEmpty() == true)
+		{
+			name = QString("Type_%1").arg(Utilities::vadon_uuid_to_qt_uuid(info.id).toString(QUuid::StringFormat::WithoutBraces));
+		}
+
+		return name;
+	}
+
+	void DataSchema::TypeMetadataRegistry::register_type(const::Vadon::Foundation::TypeInfo& type_info)
 	{
 		Q_ASSERT_X(type_info.id.is_valid() == true, "VadonEditor::Core::DataSchema::register_type", "Type not registered!");
 
-		const QUuid qt_type_uuid = vadon_uuid_to_qt_uuid(type_info.id);
+		const QUuid qt_type_uuid = Utilities::vadon_uuid_to_qt_uuid(type_info.id);
 		if (m_types.find(qt_type_uuid) != m_types.end())
 		{
 			qWarning() << "Type already registered!";
@@ -70,11 +183,11 @@ namespace VadonEditor::Core
 		m_type_list.push_back(type_info.id);
 	}
 
-	::Vadon::Foundation::TypeInfo DataSchema::get_type_info(const ::Vadon::Foundation::UUID& type_uuid) const
+	::Vadon::Foundation::TypeInfo DataSchema::TypeMetadataRegistry::get_type_info(const ::Vadon::Foundation::UUID& type_uuid) const
 	{
 		Q_ASSERT_X(type_uuid.is_valid() == true, "VadonEditor::Core::DataSchema::get_type_info", "Invalid type UUID!");
 
-		const QUuid qt_type_uuid = vadon_uuid_to_qt_uuid(type_uuid);
+		const QUuid qt_type_uuid = Utilities::vadon_uuid_to_qt_uuid(type_uuid);
 		auto type_it = m_types.find(qt_type_uuid);
 
 		if (type_it == m_types.end())
@@ -87,11 +200,11 @@ namespace VadonEditor::Core
 		return type_it->info;
 	}
 
-	::Vadon::Foundation::UUID DataSchema::get_type_property_uuid(const ::Vadon::Foundation::UUID& type_uuid, size_t property_index) const
+	::Vadon::Foundation::UUID DataSchema::TypeMetadataRegistry::get_type_property_uuid(const ::Vadon::Foundation::UUID& type_uuid, size_t property_index) const
 	{
 		Q_ASSERT_X(type_uuid.is_valid() == true, "VadonEditor::Core::DataSchema::get_type_property_uuid", "Invalid type UUID!");
 
-		const QUuid qt_type_uuid = vadon_uuid_to_qt_uuid(type_uuid);
+		const QUuid qt_type_uuid = Utilities::vadon_uuid_to_qt_uuid(type_uuid);
 		auto type_it = m_types.find(qt_type_uuid);
 
 		if (type_it == m_types.end())
@@ -104,12 +217,12 @@ namespace VadonEditor::Core
 		return type_it->property_list[property_index];
 	}
 
-	void DataSchema::set_type_metadata(const ::Vadon::Foundation::UUID& type_uuid, const char* key, const char* value)
+	void DataSchema::TypeMetadataRegistry::set_type_metadata(const ::Vadon::Foundation::UUID& type_uuid, const char* key, const char* value)
 	{
 		Q_ASSERT_X(type_uuid.is_valid() == true, "VadonEditor::Core::DataSchema::set_type_metadata", "Invalid type UUID!");
 		Q_ASSERT_X(key != nullptr, "VadonEditor::Core::DataSchema::set_type_metadata", "Invalid key!");
 
-		const QUuid qt_type_uuid = vadon_uuid_to_qt_uuid(type_uuid);
+		const QUuid qt_type_uuid = Utilities::vadon_uuid_to_qt_uuid(type_uuid);
 		auto type_it = m_types.find(qt_type_uuid);
 		
 		if (type_it == m_types.end())
@@ -122,12 +235,12 @@ namespace VadonEditor::Core
 		type_it.value().metadata.insert(QString(key), QString(value).toUtf8());
 	}
 
-	const char* DataSchema::get_type_metadata(const ::Vadon::Foundation::UUID& type_uuid, const char* key) const
+	const char* DataSchema::TypeMetadataRegistry::get_type_metadata(const ::Vadon::Foundation::UUID& type_uuid, const char* key) const
 	{
 		Q_ASSERT_X(type_uuid.is_valid() == true, "VadonEditor::Core::DataSchema::get_type_metadata", "Invalid type UUID!");
 		Q_ASSERT_X(key != nullptr, "VadonEditor::Core::DataSchema::get_type_metadata", "Invalid key!");
 
-		const QUuid qt_type_uuid = vadon_uuid_to_qt_uuid(type_uuid);
+		const QUuid qt_type_uuid = Utilities::vadon_uuid_to_qt_uuid(type_uuid);
 		auto type_it = m_types.find(qt_type_uuid);
 
 		if (type_it == m_types.end())
@@ -146,12 +259,12 @@ namespace VadonEditor::Core
 		return metadata_it->constData();
 	}
 
-	void DataSchema::register_property(const::Vadon::Foundation::UUID& type_uuid, const::Vadon::Foundation::Property& property)
+	void DataSchema::TypeMetadataRegistry::register_property(const::Vadon::Foundation::UUID& type_uuid, const::Vadon::Foundation::Property& property)
 	{
 		Q_ASSERT_X(type_uuid.is_valid() == true, "VadonEditor::Core::DataSchema::register_property", "Invalid type UUID!");
 		Q_ASSERT_X(property.is_valid() == true, "VadonEditor::Core::DataSchema::register_property", "Invalid property info!");
 
-		const QUuid qt_type_uuid = vadon_uuid_to_qt_uuid(type_uuid);
+		const QUuid qt_type_uuid = Utilities::vadon_uuid_to_qt_uuid(type_uuid);
 		auto type_it = m_types.find(qt_type_uuid);
 
 		if (type_it == m_types.end())
@@ -161,7 +274,7 @@ namespace VadonEditor::Core
 			return;
 		}
 
-		const QUuid qt_property_uuid = vadon_uuid_to_qt_uuid(property.id);
+		const QUuid qt_property_uuid = Utilities::vadon_uuid_to_qt_uuid(property.id);
 		if (type_it->properties.find(qt_property_uuid) != type_it->properties.end())
 		{
 			qWarning() << "Property already registered!";
@@ -175,13 +288,40 @@ namespace VadonEditor::Core
 		type_it->property_list.push_back(property.id);
 	}
 
-	void DataSchema::set_property_metadata(const ::Vadon::Foundation::UUID& type_uuid, const ::Vadon::Foundation::UUID& property_uuid, const char* key, const char* value)
+	::Vadon::Foundation::Property DataSchema::TypeMetadataRegistry::get_property_info(const ::Vadon::Foundation::UUID& type_uuid, const ::Vadon::Foundation::UUID& property_uuid) const
+	{
+		Q_ASSERT_X(type_uuid.is_valid() == true, "VadonEditor::Core::DataSchema::get_property_info", "Invalid type UUID!");
+		Q_ASSERT_X(property_uuid.is_valid() == true, "VadonEditor::Core::DataSchema::get_property_info", "Invalid property UUID!");
+
+		const QUuid qt_type_uuid = Utilities::vadon_uuid_to_qt_uuid(type_uuid);
+		auto type_it = m_types.find(qt_type_uuid);
+
+		if (type_it == m_types.end())
+		{
+			// TODO: Q_ERROR macro?
+			Q_ASSERT_X(false, "VadonEditor::Core::DataSchema::get_property_info", "Type not registered!");
+			return ::Vadon::Foundation::Property{};
+		}
+
+		const QUuid qt_property_uuid = Utilities::vadon_uuid_to_qt_uuid(property_uuid);
+		auto property_it = type_it->properties.find(qt_property_uuid);
+		if (property_it == type_it->properties.end())
+		{
+			// TODO: Q_ERROR macro?
+			Q_ASSERT_X(false, "VadonEditor::Core::DataSchema::get_property_info", "Property not registered!");
+			return ::Vadon::Foundation::Property{};
+		}
+
+		return property_it->info;
+	}
+
+	void DataSchema::TypeMetadataRegistry::set_property_metadata(const ::Vadon::Foundation::UUID& type_uuid, const ::Vadon::Foundation::UUID& property_uuid, const char* key, const char* value)
 	{
 		Q_ASSERT_X(type_uuid.is_valid() == true, "VadonEditor::Core::DataSchema::set_property_metadata", "Invalid type UUID!");
 		Q_ASSERT_X(property_uuid.is_valid() == true, "VadonEditor::Core::DataSchema::set_property_metadata", "Invalid property UUID!");
 		Q_ASSERT_X(key != nullptr, "VadonEditor::Core::DataSchema::set_property_metadata", "Invalid key!");
 		
-		const QUuid qt_type_uuid = vadon_uuid_to_qt_uuid(type_uuid);
+		const QUuid qt_type_uuid = Utilities::vadon_uuid_to_qt_uuid(type_uuid);
 		auto type_it = m_types.find(qt_type_uuid);
 
 		if (type_it == m_types.end())
@@ -191,7 +331,7 @@ namespace VadonEditor::Core
 			return;
 		}
 
-		const QUuid qt_property_uuid = vadon_uuid_to_qt_uuid(property_uuid);
+		const QUuid qt_property_uuid = Utilities::vadon_uuid_to_qt_uuid(property_uuid);
 		auto property_it = type_it->properties.find(qt_property_uuid);
 
 		if (property_it == type_it->properties.end())
@@ -204,13 +344,13 @@ namespace VadonEditor::Core
 		property_it->metadata.insert(QString(key), QString(value).toUtf8());
 	}
 
-	const char* DataSchema::get_property_metadata(const ::Vadon::Foundation::UUID& type_uuid, const ::Vadon::Foundation::UUID& property_uuid, const char* key) const
+	const char* DataSchema::TypeMetadataRegistry::get_property_metadata(const ::Vadon::Foundation::UUID& type_uuid, const ::Vadon::Foundation::UUID& property_uuid, const char* key) const
 	{
 		Q_ASSERT_X(type_uuid.is_valid() == true, "VadonEditor::Core::DataSchema::get_property_metadata", "Invalid type UUID!");
 		Q_ASSERT_X(property_uuid.is_valid() == true, "VadonEditor::Core::DataSchema::get_property_metadata", "Invalid property UUID!");
 		Q_ASSERT_X(key != nullptr, "VadonEditor::Core::DataSchema::get_property_metadata", "Invalid key!");
 
-		const QUuid qt_type_uuid = vadon_uuid_to_qt_uuid(type_uuid);
+		const QUuid qt_type_uuid = Utilities::vadon_uuid_to_qt_uuid(type_uuid);
 		auto type_it = m_types.find(qt_type_uuid);
 
 		if (type_it == m_types.end())
@@ -220,7 +360,7 @@ namespace VadonEditor::Core
 			return nullptr;
 		}
 
-		const QUuid qt_property_uuid = vadon_uuid_to_qt_uuid(property_uuid);
+		const QUuid qt_property_uuid = Utilities::vadon_uuid_to_qt_uuid(property_uuid);
 		auto property_it = type_it->properties.find(qt_property_uuid);
 
 		if (property_it == type_it->properties.end())
@@ -239,12 +379,26 @@ namespace VadonEditor::Core
 		return metadata_it->constData();
 	}
 
+	const TypeData* DataSchema::find_type_data(const::Vadon::Foundation::UUID& type_uuid) const
+	{
+		const QUuid qt_type_uuid = Utilities::vadon_uuid_to_qt_uuid(type_uuid);
+		auto type_it = m_registry.m_types.find(qt_type_uuid);
+
+		if (type_it == m_registry.m_types.end())
+		{
+			// TODO: warning?
+			return nullptr;
+		}
+
+		return &type_it.value();
+	}
+
 	bool DataSchema::save_schema(const QString& schema_file_path)
 	{
 		QJsonObject data_schema_root;
 
 		QJsonArray type_list_array;
-		for (auto type_it = m_types.begin(); type_it != m_types.end(); ++type_it)
+		for (auto type_it = m_registry.m_types.begin(); type_it != m_registry.m_types.end(); ++type_it)
 		{
 			const TypeData& current_type_data = type_it.value();
 
@@ -252,8 +406,8 @@ namespace VadonEditor::Core
 			{
 				QJsonObject type_info_object;
 
-				const QUuid type_uuid = vadon_uuid_to_qt_uuid(current_type_data.info.id);
-				const QUuid base_uuid = vadon_uuid_to_qt_uuid(current_type_data.info.base_id);
+				const QUuid type_uuid = Utilities::vadon_uuid_to_qt_uuid(current_type_data.info.id);
+				const QUuid base_uuid = Utilities::vadon_uuid_to_qt_uuid(current_type_data.info.base_id);
 
 				type_info_object["id"] = uuid_to_json_string(type_uuid);
 				type_info_object["base"] = uuid_to_json_string(base_uuid);
@@ -279,7 +433,7 @@ namespace VadonEditor::Core
 					QJsonObject property_object;
 
 					property_object["id"] = uuid_to_json_string(property_it.key());
-					property_object["type"] = uuid_to_json_string(vadon_uuid_to_qt_uuid(current_property_data.info.type));
+					property_object["type"] = uuid_to_json_string(Utilities::vadon_uuid_to_qt_uuid(current_property_data.info.type));
 
 					QJsonObject property_metadata_object;
 					for (auto metadata_it = current_property_data.metadata.begin(); metadata_it != current_property_data.metadata.end(); ++metadata_it)
@@ -347,7 +501,7 @@ namespace VadonEditor::Core
 		const QJsonObject& root_obj = schema_document.object();
 		if (const QJsonValue type_arr_value = root_obj["type_list"]; type_arr_value.isArray())
 		{
-			m_types.clear();
+			m_registry.m_types.clear();
 
 			const QJsonArray& type_array = type_arr_value.toArray();
 			for (const QJsonValue& current_type : type_array)
@@ -362,7 +516,7 @@ namespace VadonEditor::Core
 					if (const QJsonValue type_uuid_value = type_info["id"]; type_uuid_value.isString())
 					{
 						new_type_uuid = json_string_to_uuid(type_uuid_value);
-						new_type_data.info.id = qt_uuid_to_vadon_uuid(new_type_uuid);
+						new_type_data.info.id = Utilities::qt_uuid_to_vadon_uuid(new_type_uuid);
 					}
 					else
 					{
@@ -371,7 +525,7 @@ namespace VadonEditor::Core
 					}
 					if (const QJsonValue base_uuid_value = type_info["base"]; base_uuid_value.isString())
 					{
-						new_type_data.info.base_id = qt_uuid_to_vadon_uuid(json_string_to_uuid(base_uuid_value));
+						new_type_data.info.base_id = Utilities::qt_uuid_to_vadon_uuid(json_string_to_uuid(base_uuid_value));
 					}
 					else
 					{
@@ -408,7 +562,7 @@ namespace VadonEditor::Core
 						if (const QJsonValue property_id_value = current_property_obj["id"]; property_id_value.isString())
 						{
 							property_uuid = json_string_to_uuid(property_id_value);
-							new_property_data.info.id = qt_uuid_to_vadon_uuid(property_uuid);
+							new_property_data.info.id = Utilities::qt_uuid_to_vadon_uuid(property_uuid);
 						}
 						else
 						{
@@ -418,7 +572,7 @@ namespace VadonEditor::Core
 
 						if (const QJsonValue property_type_value = current_property_obj["type"]; property_type_value.isString())
 						{
-							new_property_data.info.type = qt_uuid_to_vadon_uuid(json_string_to_uuid(property_type_value));
+							new_property_data.info.type = Utilities::qt_uuid_to_vadon_uuid(json_string_to_uuid(property_type_value));
 						}
 						else
 						{
@@ -447,8 +601,8 @@ namespace VadonEditor::Core
 					return false;
 				}
 
-				m_types.insert(new_type_uuid, new_type_data);
-				m_type_list.push_back(new_type_data.info.id);
+				m_registry.m_types.insert(new_type_uuid, new_type_data);
+				m_registry.m_type_list.push_back(new_type_data.info.id);
 			}
 		}
 		else
@@ -458,5 +612,29 @@ namespace VadonEditor::Core
 		}
 
 		return true;
+	}
+
+	::Vadon::Foundation::UUID DataSchema::get_base_type_uuid(::Vadon::Foundation::BaseType type)
+	{
+		return Utilities::qt_uuid_to_vadon_uuid(s_base_type_uuids[static_cast<size_t>(type)]);
+	}
+
+	::Vadon::Foundation::BaseType DataSchema::get_base_type(const::Vadon::Foundation::UUID& type_uuid)
+	{
+		if (type_uuid.is_valid() == false)
+		{
+			return ::Vadon::Foundation::BaseType::INVALID;
+		}
+
+		const QUuid qt_uuid = Utilities::vadon_uuid_to_qt_uuid(type_uuid);
+		for (int type_index = 0; type_index < static_cast<int>(::Vadon::Foundation::BaseType::TYPE_COUNT); ++type_index)
+		{
+			if (qt_uuid == s_base_type_uuids[type_index])
+			{
+				return static_cast<::Vadon::Foundation::BaseType>(type_index);
+			}
+		}
+
+		return ::Vadon::Foundation::BaseType::INVALID;
 	}
 }

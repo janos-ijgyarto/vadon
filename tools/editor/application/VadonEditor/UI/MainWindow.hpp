@@ -31,6 +31,8 @@ namespace VadonEditor::UI
         void project_settings_triggered();
         void run_plugin_triggered();
         void shutdown_plugin_triggered();
+
+        void project_data_schema_triggered();
         void generate_data_schema_triggered();
     private:
         Core::Application& m_application;

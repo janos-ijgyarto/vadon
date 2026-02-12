@@ -19,6 +19,7 @@ namespace Vadon
 			virtual UUID get_type_property_uuid(const UUID& type_uuid, size_t property_index) const = 0;
 
 			virtual void register_property(const UUID& type_uuid, const Property& property) = 0;
+			virtual Property get_property_info(const UUID& type_uuid, const UUID& property_uuid) const = 0;
 
 			virtual void set_type_metadata(const UUID& type_uuid, const char* key, const char* value) = 0;
 			virtual const char* get_type_metadata(const UUID& type_uuid, const char* key) const = 0;

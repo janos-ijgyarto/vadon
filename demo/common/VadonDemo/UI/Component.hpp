@@ -3,6 +3,10 @@
 #include <Vadon/Render/Canvas/Item.hpp>
 #include <Vadon/Render/Utilities/Color.hpp>
 #include <Vadon/Utilities/TypeInfo/TypeInfo.hpp>
+namespace Vadon::Foundation
+{
+	class TypeMetadataRegistry;
+}
 namespace VadonDemo::UI
 {
 	// TODO: implement some kind of logic which allows controlling "groups" of UI entities
@@ -22,7 +26,7 @@ namespace VadonDemo::UI
 
 		bool dirty = false; // FIXME: replace with editor-specific "tag component" implementation!
 
-		static void register_component();
+		static void register_component(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry);
 	};
 
 	struct Frame
@@ -40,7 +44,7 @@ namespace VadonDemo::UI
 
 		// TODO: draw anchor, to decide whether to draw relative to center or top left corner
 
-		static void register_component();
+		static void register_component(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry);
 	};
 
 	struct Text
@@ -55,7 +59,7 @@ namespace VadonDemo::UI
 		// TODO: font, text size, etc.
 		// TODO: alignment (left vs center)
 
-		static void register_component();
+		static void register_component(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry);
 	};
 
 	struct Selectable
@@ -65,7 +69,7 @@ namespace VadonDemo::UI
 		// TODO: more advanced signal/callback system?
 		std::string clicked_key;
 
-		static void register_component();
+		static void register_component(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry);
 	};
 }
 

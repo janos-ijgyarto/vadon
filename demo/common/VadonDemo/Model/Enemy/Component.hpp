@@ -1,6 +1,10 @@
 #ifndef VADONDEMO_MODEL_ENEMY_COMPONENT_HPP
 #define VADONDEMO_MODEL_ENEMY_COMPONENT_HPP
 #include <VadonDemo/Model/Enemy/Resource.hpp>
+namespace Vadon::Foundation
+{
+	class TypeMetadataRegistry;
+}
 namespace VadonDemo::Model
 {
 	struct EnemyBase
@@ -9,7 +13,7 @@ namespace VadonDemo::Model
 		EnemyDefinitionID definition;
 		// TODO: anything else?
 
-		static void register_component();
+		static void register_component(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry);
 	};
 
 	struct EnemyMovement
@@ -20,7 +24,7 @@ namespace VadonDemo::Model
 		EnemyMovementDefHandle def_handle;
 		float data = 0; // FIXME: this is to enable weaving, need a more modular solution!
 
-		static void register_component();
+		static void register_component(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry);
 	};
 
 	// Enemy attacks with a weapon
@@ -33,7 +37,7 @@ namespace VadonDemo::Model
 
 		float reload_timer = 0.0f;
 
-		static void register_component();
+		static void register_component(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry);
 	};
 
 	// Enemy just deals damage on contact
@@ -42,7 +46,7 @@ namespace VadonDemo::Model
 		VADON_DECLARE_MEMBER_UUID(definition, "49c8f694-b86c-467a-983f-f35e32a3908b");
 		EnemyContactDamageDefID definition;
 
-		static void register_component();
+		static void register_component(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry);
 	};
 
 	struct Spawner
@@ -72,7 +76,7 @@ namespace VadonDemo::Model
 		float spawn_timer = 0.0f;
 		float level_up_timer = 0.0f;
 
-		static void register_component();
+		static void register_component(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry);
 	};
 }
 

@@ -13,22 +13,22 @@
 
 namespace VadonDemo::Model
 {
-	void Model::register_types(::Vadon::Foundation::TypeMetadataRegistry& /*metadata_registry*/)
+	void Model::register_types(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry)
 	{
 		Vadon::ECS::ComponentRegistry::register_tag_type<LevelRootTag>();
 		Vadon::ECS::ComponentRegistry::register_tag_type<DestroyEntityTag>();
 
 		// FIXME: have to do this first because it gets referenced by player component
 		// Need to create a system where we can set initialization order based on dependencies!
-		WeaponSystem::register_types();
-		EnemySystem::register_types();
-		CollisionSystem::register_types();
+		WeaponSystem::register_types(metadata_registry);
+		EnemySystem::register_types(metadata_registry);
+		CollisionSystem::register_types(metadata_registry);
 
-		Transform2D::register_component();
-		Velocity2D::register_component();
-		Health::register_component();
-		Player::register_component();
-		Map::register_component();
+		Transform2D::register_component(metadata_registry);
+		Velocity2D::register_component(metadata_registry);
+		Health::register_component(metadata_registry);
+		Player::register_component(metadata_registry);
+		Map::register_component(metadata_registry);
 	}
 
 	bool Model::init_simulation(Vadon::ECS::World& ecs_world, Vadon::Scene::SceneID level_scene_id)

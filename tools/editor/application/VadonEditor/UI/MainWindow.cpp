@@ -7,7 +7,9 @@
 
 #include <VadonEditor/Network/NetworkSystem.hpp>
 
+#include <VadonEditor/UI/Project/DataSchemaDialog.hpp>
 #include <VadonEditor/UI/Project/ProjectSettingsDialog.hpp>
+
 #include <VadonEditor/UI/Utilities/UUIDDialog.hpp>
 
 #include <VadonEditor/Network/Message/MessageSerializer.hpp>
@@ -73,11 +75,23 @@ namespace VadonEditor::UI
 		emit stop_simulator_requested();
 	}
 
+	void MainWindow::project_data_schema_triggered()
+	{
+		DataSchemaDialog* data_schema_dialog = new DataSchemaDialog(m_application, this);
+		data_schema_dialog->open();
+	}
+
 	void MainWindow::generate_data_schema_triggered()
 	{
-		if (m_application.get_project_manager().generate_project_data_schema() == false)
+		Core::ProjectManager& project_manager = m_application.get_project_manager();
+		if (project_manager.generate_project_data_schema() == false)
 		{
 			QMessageBox::critical(this, "Project manager error", "Failed to generate project data schema!");
+		}
+
+		if(project_manager.load_project_data_schema() == false)
+		{
+			QMessageBox::critical(this, "Project manager error", "Failed to load project data schema!");
 		}
 	}
 }

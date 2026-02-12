@@ -3,6 +3,10 @@
 #include <Vadon/Render/Canvas/Item.hpp>
 #include <Vadon/Render/Utilities/Rectangle.hpp>
 #include <VadonDemo/Render/Resource.hpp>
+namespace Vadon::Foundation
+{
+	class TypeMetadataRegistry;
+}
 namespace VadonDemo::Render
 {
 	VADON_DECLARE_TYPED_POOL_HANDLE(CanvasContext, CanvasContextHandle);
@@ -22,7 +26,7 @@ namespace VadonDemo::Render
 		Vadon::Render::Canvas::ItemHandle canvas_item;
 		CanvasContextHandle context_handle;
 
-		static void register_component();
+		static void register_component(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry);
 	};
 
 	// NOTE: this allows implementing "background tiling" based on the view position
@@ -42,7 +46,7 @@ namespace VadonDemo::Render
 
 		Vadon::Render::RectangleInt tile_rect;
 
-		static void register_component();
+		static void register_component(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry);
 
 		void reset_rect()
 		{
@@ -60,7 +64,7 @@ namespace VadonDemo::Render
 		ShaderResourceID shader;
 		bool view_agnostic = false;
 
-		static void register_component();
+		static void register_component(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry);
 	};
 }
 

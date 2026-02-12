@@ -33,15 +33,15 @@ namespace
 
 namespace VadonDemo::Render
 {
-	void Render::register_types(::Vadon::Foundation::TypeMetadataRegistry& /*metadata_registry*/)
+	void Render::register_types(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry)
 	{
-		CanvasLayerDefinition::register_resource();
-		TextureResource::register_resource();
-		ShaderResource::register_resource();
+		CanvasLayerDefinition::register_resource(metadata_registry);
+		TextureResource::register_resource(metadata_registry);
+		ShaderResource::register_resource(metadata_registry);
 
-		CanvasComponent::register_component();
-		SpriteTilingComponent::register_component();
-		FullscreenEffectComponent::register_component();
+		CanvasComponent::register_component(metadata_registry);
+		SpriteTilingComponent::register_component(metadata_registry);
+		FullscreenEffectComponent::register_component(metadata_registry);
 	}
 
 	CanvasContextHandle Render::create_canvas_context()

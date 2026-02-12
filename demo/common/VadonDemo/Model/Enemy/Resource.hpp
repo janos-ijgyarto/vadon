@@ -4,6 +4,10 @@
 #include <Vadon/ECS/Entity/Entity.hpp>
 #include <Vadon/Utilities/Enum/EnumClass.hpp>
 #include <Vadon/Math/Vector.hpp>
+namespace Vadon::Foundation
+{
+	class TypeMetadataRegistry;
+}
 namespace Vadon::ECS
 {
 	class World;
@@ -15,14 +19,14 @@ namespace VadonDemo::Model
 		VADON_DECLARE_MEMBER_UUID(score_reward, "7d1c4df9-bc1b-4d0a-8030-636f5d8e718b");
 		int32_t score_reward = 0;
 
-		static void register_resource();
+		static void register_resource(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry);
 	};
 
 	VADON_SCENE_DECLARE_TYPED_RESOURCE_REFERENCES(EnemyDefinition, EnemyDefinitionID, EnemyDefinitionHandle);
 
 	struct EnemyMovementDefinition : public Vadon::Scene::Resource
 	{
-		static void register_resource();
+		static void register_resource(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry);
 
 		virtual Vadon::Math::Vector2 get_movement_direction(Vadon::ECS::World& /*ecs_world*/, Vadon::ECS::EntityHandle /*enemy*/, Vadon::ECS::EntityHandle /*target*/, float /*delta_time*/) const { return Vadon::Math::Vector2_One; }
 	};
@@ -34,13 +38,14 @@ namespace VadonDemo::Model
 		VADON_DECLARE_MEMBER_UUID(lookahead_factor, "ef5af30c-2726-43b8-a427-0d4e8bf98ef1");
 		float lookahead_factor = 1.0f;
 
-		static void register_resource();
+		static void register_resource(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry);
 
 		Vadon::Math::Vector2 get_movement_direction(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle enemy, Vadon::ECS::EntityHandle target, float delta_time) const override;
 	};
 
 	VADON_SCENE_DECLARE_TYPED_RESOURCE_REFERENCES(EnemyMovementLookahead, EnemyMovementLookaheadID, EnemyMovementLookaheadHandle);
 
+	// FIXME: replace with definition that uses an animation
 	struct EnemyMovementWeaving : public EnemyMovementDefinition
 	{
 		VADON_DECLARE_MEMBER_UUID(cycle_duration, "3476be00-2d62-4977-92d4-43b0e1d34427");
@@ -49,7 +54,7 @@ namespace VadonDemo::Model
 		float cycle_duration = 0.0f;
 		float weave_factor = 0.5f;
 
-		static void register_resource();
+		static void register_resource(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry);
 
 		Vadon::Math::Vector2 get_movement_direction(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle enemy, Vadon::ECS::EntityHandle target, float delta_time) const override;
 	};
@@ -64,7 +69,7 @@ namespace VadonDemo::Model
 		int projectile_count = 1; // i.e how many are fired each volley
 		float reload_time = 1.0f; // i.e how long between volleys
 
-		static void register_resource();
+		static void register_resource(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry);
 	};
 
 	VADON_SCENE_DECLARE_TYPED_RESOURCE_REFERENCES(EnemyWeaponAttackDefinition, EnemyWeaponAttackDefID, EnemyWeaponAttackDefHandle);
@@ -75,7 +80,7 @@ namespace VadonDemo::Model
 
 		int damage = 1;
 
-		static void register_resource();
+		static void register_resource(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry);
 	};
 
 	VADON_SCENE_DECLARE_TYPED_RESOURCE_REFERENCES(EnemyContactDamageDefinition, EnemyContactDamageDefID, EnemyContactDamageDefHandle);

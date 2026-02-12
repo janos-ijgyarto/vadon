@@ -27,21 +27,21 @@ namespace
 
 namespace VadonDemo::View
 {
-	void View::register_types(::Vadon::Foundation::TypeMetadataRegistry& /*metadata_registry*/)
+	void View::register_types(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry)
 	{
-		RenderResource::register_resource();
-		Shape::register_resource();
-		Sprite::register_resource();
+		RenderResource::register_resource(metadata_registry);
+		Shape::register_resource(metadata_registry);
+		Sprite::register_resource(metadata_registry);
 
 		Vadon::ECS::ComponentRegistry::register_tag_type<EntityDirtyTag>();
 
-		TransformComponent::register_component();
-		ModelTransformComponent::register_component();
-		RenderComponent::register_component();
-		AnimationComponent::register_component();
-		DamageComponent::register_component();
-		VFXComponent::register_component();
-		VFXTimerComponent::register_component();
+		TransformComponent::register_component(metadata_registry);
+		ModelTransformComponent::register_component(metadata_registry);
+		RenderComponent::register_component(metadata_registry);
+		AnimationComponent::register_component(metadata_registry);
+		DamageComponent::register_component(metadata_registry);
+		VFXComponent::register_component(metadata_registry);
+		VFXTimerComponent::register_component(metadata_registry);
 	}
 
 	void View::extract_model_state(Vadon::ECS::World& ecs_world)

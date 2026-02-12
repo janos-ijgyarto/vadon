@@ -1,10 +1,16 @@
 #ifndef VADON_UTILITIES_TYPEINFO_METADATA_HPP
 #define VADON_UTILITIES_TYPEINFO_METADATA_HPP
+#include <Vadon/Foundation/TypeInfo/Metadata.hpp>
 #include <Vadon/Foundation/TypeInfo/MetadataRegistry.hpp>
 #include <Vadon/Utilities/TypeInfo/Registry.hpp>
 namespace Vadon::Utilities
 {
+	// TODO: this could be moved to the MetadataRegistry
+	// - Set functor in registry for getting type/property info
+	// - When registering type, functor is called to get info
+
 	// NOTE: helper classes to make it less cumbersome to register metadata for types and their properties
+	struct TypePropertyMetadata;
 	struct TypeMetadata
 	{
 		::Vadon::Foundation::TypeMetadataRegistry& registry;
@@ -23,6 +29,25 @@ namespace Vadon::Utilities
 		{
 			registry.set_type_metadata(uuid, key, value);
 		}
+
+		TypeMetadata& add_metadata(const char* key, const char* value)
+		{
+			set_metadata(key, value);
+			return *this;
+		}
+
+		void set_metadata(::Vadon::Foundation::CommonTypeMetadata::Key key, const char* value)
+		{
+			set_metadata(::Vadon::Foundation::CommonTypeMetadata::key_string(key), value);
+		}
+
+		TypeMetadata& add_metadata(::Vadon::Foundation::CommonTypeMetadata::Key key, const char* value)
+		{
+			set_metadata(key, value);
+			return *this;
+		}
+
+		TypePropertyMetadata add_property(const ::Vadon::Foundation::UUID& property_uuid);
 	};
 
 	// TODO: some template trickery to get a TypeMetadata object via the type itself
@@ -43,6 +68,23 @@ namespace Vadon::Utilities
 		{
 			type_metadata.registry.set_property_metadata(type_metadata.uuid, uuid, key, value);
 		}
+
+		TypePropertyMetadata& add_metadata(const char* key, const char* value) { set_metadata(key, value); return *this; }
+
+		void set_metadata(::Vadon::Foundation::CommonPropertyMetadata::Key key, const char* value)
+		{
+			set_metadata(::Vadon::Foundation::CommonPropertyMetadata::key_string(key), value);
+		}
+
+		TypePropertyMetadata& add_metadata(::Vadon::Foundation::CommonPropertyMetadata::Key key, const char* value) { set_metadata(key, value); return *this; }
+
+		// NOTE: this is intended as the "end" for the initialization sequence, returning to the TypeMetadata to add other metadata/properties
+		TypeMetadata& commit_property() { return type_metadata; }
 	};
+
+	inline TypePropertyMetadata TypeMetadata::add_property(const ::Vadon::Foundation::UUID& property_uuid)
+	{
+		return TypePropertyMetadata(*this, property_uuid);
+	}
 }
 #endif

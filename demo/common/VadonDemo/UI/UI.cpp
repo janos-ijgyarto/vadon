@@ -16,12 +16,12 @@
 
 namespace VadonDemo::UI
 {
-	void UI::register_types(::Vadon::Foundation::TypeMetadataRegistry& /*metadata_registry*/)
+	void UI::register_types(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry)
 	{
-		Base::register_component();
-		Frame::register_component();
-		Text::register_component();
-		Selectable::register_component();
+		Base::register_component(metadata_registry);
+		Frame::register_component(metadata_registry);
+		Text::register_component(metadata_registry);
+		Selectable::register_component(metadata_registry);
 	}
 
 	void UI::register_selectable_callback(std::string_view key, SelectableCallback callback)

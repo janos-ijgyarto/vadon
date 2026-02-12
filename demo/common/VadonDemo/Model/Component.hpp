@@ -4,7 +4,10 @@
 
 #include <Vadon/ECS/Entity/Entity.hpp>
 #include <Vadon/Math/Vector.hpp>
-
+namespace Vadon::Foundation
+{
+	class TypeMetadataRegistry;
+}
 namespace VadonDemo::Model
 {
 	struct LevelRootTag {};
@@ -22,7 +25,7 @@ namespace VadonDemo::Model
 
 		bool teleported = false;
 
-		static void register_component();
+		static void register_component(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry);
 	};
 
 	struct Velocity2D
@@ -36,7 +39,7 @@ namespace VadonDemo::Model
 		float acceleration = 0.0f;
 		Vadon::Math::Vector2 velocity = Vadon::Math::Vector2_Zero;
 
-		static void register_component();
+		static void register_component(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry);
 	};
 
 	struct Health
@@ -46,7 +49,7 @@ namespace VadonDemo::Model
 		float max_health = 0.0f;
 		float current_health = 0.0f;
 
-		static void register_component();
+		static void register_component(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry);
 	};
 
 	struct PlayerInput
@@ -69,7 +72,7 @@ namespace VadonDemo::Model
 
 		float damage_timer = 0.0f;
 
-		static void register_component();
+		static void register_component(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry);
 	};
 
 	struct Map
@@ -81,7 +84,7 @@ namespace VadonDemo::Model
 		Vadon::Math::Vector2 dimensions = Vadon::Math::Vector2_Zero;
 		// TODO: limit on spawned enemies (could do with some kind of "value" system where it limits number based on how much they add up to?)
 
-		static void register_component();
+		static void register_component(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry);
 	};
 }
 

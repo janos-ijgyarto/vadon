@@ -37,11 +37,15 @@ struct ::Vadon::Utilities::TypeRegistryTrait<_type>\
 	}\
 }\
 
+#define VADON_GET_UUID_BASE64_STRING(_uuid) ::Vadon::Utilities::uuid_to_base64_string(_uuid).c_str()
+
 #define VADON_GET_TYPE_UUID(_type) ::Vadon::Utilities::TypeRegistryTrait<_type>::get_type_uuid()
+#define VADON_GET_TYPE_UUID_BASE64_STRING(_type) VADON_GET_UUID_BASE64_STRING(VADON_GET_TYPE_UUID(_type))
 
 #define VADON_MEMBER_UUID_BASE(_name) c_##_name##_member_id
 #define VADON_DECLARE_MEMBER_UUID(_name, _uuid_str) static constexpr auto VADON_MEMBER_UUID_BASE(_name) = Vadon::Utilities::UUIDLiteral(_uuid_str).result
 #define VADON_GET_MEMBER_UUID(_type, _name) _type##::VADON_MEMBER_UUID_BASE(_name)
+#define VADON_GET_MEMBER_UUID_BASE64_STRING(_type, _name) VADON_GET_UUID_BASE64_STRING(VADON_GET_MEMBER_UUID(_type, _name))
 
 #define VADON_DECLARE_BASE_DATA_TYPE(_type) template<> struct BaseDataTypeTrait<_type> : public ::std::true_type {}
 

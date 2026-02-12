@@ -1,9 +1,0 @@
-target_sources(${VADONEDITOR_APPLICATION}
-    PRIVATE
-    LauncherDialog.hpp
-    LauncherDialog.cpp
-    NewProjectDialog.hpp
-    NewProjectDialog.cpp
-    ProjectSettingsDialog.hpp
-    ProjectSettingsDialog.cpp
-)

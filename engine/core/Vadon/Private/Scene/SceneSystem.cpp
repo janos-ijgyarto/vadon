@@ -619,6 +619,9 @@ namespace Vadon::Private::Scene
 
 	void SceneSystem::register_type_metadata(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry)
 	{
+		Vadon::Utilities::TypeMetadata scene_metadata(metadata_registry, VADON_GET_TYPE_UUID(Vadon::Scene::Scene));
+		scene_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "Vadon::Scene::Scene");
+
 		AnimationSystem::register_type_metadata(metadata_registry);
 	}
 

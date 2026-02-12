@@ -172,6 +172,7 @@
      <addaction name="actionGenerate_Data_Schema"/>
     </widget>
     <addaction name="actionProjectSettings"/>
+    <addaction name="actionProject_Data_Schema"/>
     <addaction name="menuProject_Plugin"/>
    </widget>
    <widget class="QMenu" name="menuUtilities">
@@ -237,6 +238,11 @@
   <action name="actionGenerate_Data_Schema">
    <property name="text">
     <string>Generate Data Schema</string>
+   </property>
+  </action>
+  <action name="actionProject_Data_Schema">
+   <property name="text">
+    <string>Project Data Schema</string>
    </property>
   </action>
  </widget>
@@ -368,6 +374,22 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>actionProject_Data_Schema</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>project_data_schema_triggered()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>511</x>
+     <y>383</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>schema_editor_triggered()</slot>
@@ -378,5 +400,6 @@
   <slot>run_plugin_triggered()</slot>
   <slot>shutdown_plugin_triggered()</slot>
   <slot>generate_data_schema_triggered()</slot>
+  <slot>project_data_schema_triggered()</slot>
  </slots>
 </ui>

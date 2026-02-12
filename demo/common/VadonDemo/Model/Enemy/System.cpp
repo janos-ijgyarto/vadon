@@ -23,21 +23,21 @@ namespace VadonDemo::Model
 
 	}
 
-	void EnemySystem::register_types()
+	void EnemySystem::register_types(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry)
 	{
-		EnemyDefinition::register_resource();
-		EnemyMovementDefinition::register_resource();
-		EnemyMovementLookahead::register_resource();
-		EnemyMovementWeaving::register_resource();
-		EnemyWeaponAttackDefinition::register_resource();
-		EnemyContactDamageDefinition::register_resource();
+		EnemyDefinition::register_resource(metadata_registry);
+		EnemyMovementDefinition::register_resource(metadata_registry);
+		EnemyMovementLookahead::register_resource(metadata_registry);
+		EnemyMovementWeaving::register_resource(metadata_registry);
+		EnemyWeaponAttackDefinition::register_resource(metadata_registry);
+		EnemyContactDamageDefinition::register_resource(metadata_registry);
 
-		EnemyBase::register_component();
-		EnemyMovement::register_component();
-		EnemyWeapon::register_component();
-		EnemyContactDamage::register_component();
+		EnemyBase::register_component(metadata_registry);
+		EnemyMovement::register_component(metadata_registry);
+		EnemyWeapon::register_component(metadata_registry);
+		EnemyContactDamage::register_component(metadata_registry);
 		
-		Spawner::register_component();
+		Spawner::register_component(metadata_registry);
 	}
 
 	bool EnemySystem::init_collisions(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle entity)

@@ -10,6 +10,8 @@
 #include <Vadon/Utilities/TypeInfo/Reflection/PropertySerialization.hpp>
 #include <Vadon/Utilities/TypeInfo/TypeErasure.hpp>
 
+#include <Vadon/Utilities/TypeInfo/Metadata.hpp>
+
 namespace
 {
 	bool serialize_animation_channel(Vadon::Utilities::Serializer& serializer, Vadon::Scene::AnimationData& animation_data, size_t channel_index)
@@ -244,9 +246,10 @@ namespace Vadon::Private::Scene
 		Vadon::Scene::Animation::register_type_info();
 	}
 
-	void AnimationSystem::register_type_metadata(::Vadon::Foundation::TypeMetadataRegistry& /*metadata_registry*/)
+	void AnimationSystem::register_type_metadata(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry)
 	{
-
+		Vadon::Utilities::TypeMetadata animation_metadata(metadata_registry, VADON_GET_TYPE_UUID(Vadon::Scene::Animation));
+		animation_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "Vadon::Scene::Animation");
 	}
 
 	bool AnimationSystem::initialize()

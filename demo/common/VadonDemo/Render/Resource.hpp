@@ -4,6 +4,10 @@
 #include <Vadon/Render/GraphicsAPI/Shader/Shader.hpp>
 #include <Vadon/Render/GraphicsAPI/Texture/Texture.hpp>
 #include <Vadon/Scene/Resource/File.hpp>
+namespace Vadon::Foundation
+{
+	class TypeMetadataRegistry;
+}
 namespace VadonDemo::Render
 {
 	struct CanvasLayerDefinition : public Vadon::Scene::Resource
@@ -14,7 +18,7 @@ namespace VadonDemo::Render
 		int priority = 0;
 		bool view_agnostic = false;
 
-		static void register_resource();
+		static void register_resource(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry);
 	};
 	
 	VADON_SCENE_DECLARE_TYPED_RESOURCE_ID(CanvasLayerDefinition, CanvasLayerDefID);
@@ -32,7 +36,7 @@ namespace VadonDemo::Render
 		Vadon::Render::TextureHandle texture;
 		Vadon::Render::SRVHandle texture_srv;
 
-		static void register_resource();
+		static void register_resource(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry);
 	};
 
 	VADON_SCENE_DECLARE_TYPED_RESOURCE_ID(TextureResource, TextureResourceID);
@@ -47,7 +51,7 @@ namespace VadonDemo::Render
 
 		Vadon::Render::ShaderHandle pixel_shader;
 
-		static void register_resource();
+		static void register_resource(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry);
 	};
 
 	VADON_SCENE_DECLARE_TYPED_RESOURCE_ID(ShaderResource, ShaderResourceID);

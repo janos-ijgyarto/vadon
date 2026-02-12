@@ -3,6 +3,10 @@
 #include <Vadon/ECS/Component/Component.hpp>
 #include <Vadon/Math/Vector.hpp>
 #include <random>
+namespace Vadon::Foundation
+{
+	class TypeMetadataRegistry;
+}
 namespace Vadon::ECS
 {
 	class World;
@@ -20,7 +24,7 @@ namespace VadonDemo::Model
 	private:
 		EnemySystem(Core::Core& core);
 
-		static void register_types();
+		static void register_types(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry);
 
 		bool init_collisions(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle entity);
 		static void enemy_collision_callback(VadonDemo::Core::Core& core, Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle enemy, Vadon::ECS::EntityHandle collider);

@@ -31,16 +31,16 @@ namespace VadonDemo::Model
 
 	}
 
-	void WeaponSystem::register_types()
+	void WeaponSystem::register_types(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry)
 	{
-		WeaponDefinition::register_resource();
+		WeaponDefinition::register_resource(metadata_registry);
 
-		WeaponComponent::register_component();
-		WeaponVolleyComponent::register_component();
+		WeaponComponent::register_component(metadata_registry);
+		WeaponVolleyComponent::register_component(metadata_registry);
 
-		ProjectileComponent::register_component();
-		ProjectileHomingComponent::register_component();
-		ProjectileAOEComponent::register_component();
+		ProjectileComponent::register_component(metadata_registry);
+		ProjectileHomingComponent::register_component(metadata_registry);
+		ProjectileAOEComponent::register_component(metadata_registry);
 
 		Vadon::ECS::ComponentRegistry::register_tag_type<ProjectileExplosionTag>();
 	}

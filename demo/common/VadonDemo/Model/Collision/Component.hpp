@@ -2,6 +2,10 @@
 #define VADONDEMO_MODEL_COLLISION_COMPONENT_HPP
 #include <Vadon/ECS/Entity/Entity.hpp>
 #include <Vadon/Utilities/TypeInfo/TypeInfo.hpp>
+namespace Vadon::Foundation
+{
+	class TypeMetadataRegistry;
+}
 namespace Vadon::ECS
 {
 	class World;
@@ -31,7 +35,7 @@ namespace VadonDemo::Model
 		uint8_t mask = 0;
 		CollisionCallback callback = nullptr;
 
-		static void register_component();
+		static void register_component(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry);
 	};
 }
 

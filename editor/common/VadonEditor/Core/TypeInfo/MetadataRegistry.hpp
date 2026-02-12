@@ -46,6 +46,7 @@ namespace VadonEditor::Core
 		const char* get_type_metadata(const ::Vadon::Foundation::UUID& type_uuid, const char* key) const override;
 
 		void register_property(const ::Vadon::Foundation::UUID& type_uuid, const ::Vadon::Foundation::Property& property) override;
+		::Vadon::Foundation::Property get_property_info(const ::Vadon::Foundation::UUID& type_uuid, const ::Vadon::Foundation::UUID& property_uuid) const override;
 
 		void set_property_metadata(const ::Vadon::Foundation::UUID& type_uuid, const ::Vadon::Foundation::UUID& property_uuid, const char* key, const char* value) override;
 		const char* get_property_metadata(const ::Vadon::Foundation::UUID& type_uuid, const ::Vadon::Foundation::UUID& property_uuid, const char* key) const override;

@@ -198,7 +198,7 @@ namespace VadonEditor::Core
 			}
 
 			// Plugin is loaded, pass in the schema to gather all the types
-			export_data_schema_ptr(&m_loaded_project_schema);
+			export_data_schema_ptr(&m_loaded_project_schema.get_registry());
 
 			// Data is exported, we can unload the plugin
 			plugin_manager.unload_plugin(plugin_handle);
@@ -539,7 +539,11 @@ namespace VadonEditor::Core
 
 		project_info.root_path = project_file_info.absolutePath();
 
-		// TODO: load project data schema!
+		// NOTE: only load data schema in Editor mode
+		if (m_application.get_configuration().mode == ApplicationMode::EDITOR)
+		{
+			load_project_data_schema();
+		}
 
 		auto cached_project_it = m_project_cache.find(project_info.root_path);
 		if (cached_project_it != m_project_cache.end())

@@ -3,6 +3,10 @@
 #include <VadonDemo/View/Resource.hpp>
 #include <Vadon/Scene/Scene.hpp>
 #include <Vadon/Scene/Animation/AnimationPlayer.hpp>
+namespace Vadon::Foundation
+{
+	class TypeMetadataRegistry;
+}
 namespace VadonDemo::View
 {
 	// Tag to ensure View data is updated once properties change
@@ -20,7 +24,7 @@ namespace VadonDemo::View
 		float rotation = 0;
 		float scale = 1.0f;
 
-		static void register_component();
+		static void register_component(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry);
 	};
 
 	// Interpolates model transform (if present)
@@ -29,7 +33,7 @@ namespace VadonDemo::View
 		Vadon::Render::Canvas::Transform prev_transform;
 		Vadon::Render::Canvas::Transform current_transform;
 
-		static void register_component();
+		static void register_component(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry);
 	};
 
 	struct RenderComponent
@@ -41,7 +45,7 @@ namespace VadonDemo::View
 		RenderResourceID resource;
 		Vadon::Math::ColorRGBA color = Vadon::Math::Color_White;
 
-		static void register_component();
+		static void register_component(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry);
 	};
 
 	struct AnimationComponent
@@ -54,7 +58,7 @@ namespace VadonDemo::View
 
 		Vadon::Scene::AnimationPlayer animation_player;
 
-		static void register_component();
+		static void register_component(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry);
 	};
 
 	// Visualizes when the entity takes damage
@@ -65,7 +69,7 @@ namespace VadonDemo::View
 		Vadon::Scene::AnimationID animation;
 		float duration = 1.0f;
 
-		static void register_component();
+		static void register_component(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry);
 	};
 
 	// TODO: create specific VFX components for specific contexts
@@ -80,14 +84,14 @@ namespace VadonDemo::View
 		Vadon::Scene::AnimationID animation;
 		float lifetime = 1.0f;
 
-		static void register_component();
+		static void register_component(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry);
 	};
 
 	struct VFXTimerComponent
 	{
 		float remaining_lifetime = 1.0f;
 
-		static void register_component();
+		static void register_component(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry);
 	};
 }
 

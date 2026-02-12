@@ -4,6 +4,10 @@
 
 #include <Vadon/ECS/Entity/Entity.hpp>
 #include <Vadon/Math/Vector.hpp>
+namespace Vadon::Foundation
+{
+	class TypeMetadataRegistry;
+}
 namespace VadonDemo::Model
 {
 	struct WeaponComponent
@@ -13,7 +17,7 @@ namespace VadonDemo::Model
 
 		float firing_timer = 0.0f;
 
-		static void register_component();
+		static void register_component(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry);
 	};
 
 	struct WeaponVolleyComponent
@@ -21,7 +25,7 @@ namespace VadonDemo::Model
 		VADON_DECLARE_MEMBER_UUID(fire_count, "fbbcdbe6-921f-4a1b-a465-dd25d5332e3b");
 		uint32_t fire_count = 0;
 
-		static void register_component();
+		static void register_component(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry);
 	};
 
 	struct ProjectileComponent
@@ -37,7 +41,7 @@ namespace VadonDemo::Model
 		float remaining_lifetime = 0.0f;
 		bool enemy = false; // TODO: hack to get it working, need to improve this!
 
-		static void register_component();
+		static void register_component(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry);
 	};
 
 	struct ProjectileHomingComponent
@@ -52,7 +56,7 @@ namespace VadonDemo::Model
 
 		Vadon::ECS::EntityHandle target_entity;
 
-		static void register_component();
+		static void register_component(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry);
 	};
 
 	struct ProjectileAOEComponent
@@ -61,7 +65,7 @@ namespace VadonDemo::Model
 
 		float radius = 0.0f;
 
-		static void register_component();
+		static void register_component(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry);
 	};
 
 	struct ProjectileExplosionTag {};
