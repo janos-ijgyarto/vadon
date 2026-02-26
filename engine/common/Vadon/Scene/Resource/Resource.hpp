@@ -1,5 +1,6 @@
 #ifndef VADON_SCENE_RESOURCE_RESOURCE_HPP
 #define VADON_SCENE_RESOURCE_RESOURCE_HPP
+#include <Vadon/Foundation/Model/Resource/Resource.hpp>
 #include <Vadon/Utilities/Container/ObjectPool/Handle.hpp>
 #include <Vadon/Utilities/System/UUID/UUID.hpp>
 #include <Vadon/Utilities/TypeInfo/Registry.hpp>
@@ -71,7 +72,7 @@ namespace Vadon::Utilities
 	}
 }
 
-VADON_REGISTER_TYPE_UUID(Vadon::Scene::Resource, "2cb091c4-53e5-4481-9454-72b68424690b");
+VADON_REGISTER_TYPE_UUID(Vadon::Scene::Resource, ::Vadon::Foundation::ResourceSchema::c_type_uuid.string);
 
 #define VADON_SCENE_DECLARE_TYPED_RESOURCE_ID(_resource, _name) using _name = Vadon::Scene::TypedResourceID<_resource>
 #define VADON_SCENE_DECLARE_TYPED_RESOURCE_HANDLE(_resource, _name) using _name = Vadon::Scene::TypedResourceHandle<_resource>

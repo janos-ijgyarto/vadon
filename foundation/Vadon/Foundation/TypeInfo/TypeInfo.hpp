@@ -35,7 +35,7 @@ namespace Vadon
 			unsigned int property_count;
 		};
 
-		constexpr const char c_base_type_uuids[][37] = {
+		constexpr UUIDString c_base_type_uuids[] = {
 			"INVALID",
 			"9b2d1939-5e7e-4853-907c-de197c53289f",
 			"b3e7681a-6ed6-4ea2-8214-95fd11fe1d51",
@@ -49,8 +49,14 @@ namespace Vadon
 			"01a872bd-dc48-4fb4-ac5a-8e96e53ed949",
 			"b40352b7-a861-482e-b614-af090e88db70",
 			"007d2133-22db-4e0a-aca8-300314fb87da",
-			"295c9fea-3d4b-4571-80e1-a04ac588bf7e"
+			"295c9fea-3d4b-4571-80e1-a04ac588bf7e",
+			"5ef32604-3246-4a76-a96f-5bb0eb2ba0cc"
 		};
+
+		constexpr UUIDString get_base_type_uuid_string(BaseType base_type)
+		{
+			return c_base_type_uuids[static_cast<uint32>(base_type)];
+		}
 	}
 }
 #endif

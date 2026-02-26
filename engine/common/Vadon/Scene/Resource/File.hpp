@@ -1,5 +1,6 @@
 #ifndef VADON_SCENE_RESOURCE_FILE_HPP
 #define VADON_SCENE_RESOURCE_FILE_HPP
+#include <Vadon/Foundation/Model/Resource/File.hpp>
 #include <Vadon/Scene/Resource/Resource.hpp>
 namespace Vadon::Scene
 {
@@ -16,5 +17,5 @@ namespace Vadon::Scene
 	VADON_SCENE_DECLARE_TYPED_RESOURCE_HANDLE(FileResource, FileResourceHandle);
 }
 
-VADON_REGISTER_TYPE_UUID(Vadon::Scene::FileResource, "af09a2a9-b4eb-4a64-b654-0f7b8a1c0ffb");
+VADON_REGISTER_TYPE_UUID(Vadon::Scene::FileResource, ::Vadon::Foundation::FileResourceSchema::c_type_uuid.string);
 #endif

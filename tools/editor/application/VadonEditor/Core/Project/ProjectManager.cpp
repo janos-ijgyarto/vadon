@@ -221,14 +221,12 @@ namespace VadonEditor::Core
 		const Core::ProjectInfo& project_info = get_project_info();
 
 		// NOTE: load into temporary object, only replace the one in system if the load was successful
-		DataSchema loaded_schema;
-		if (loaded_schema.load_schema(get_project_data_schema_path(project_info)) == false)
+		if (m_loaded_project_schema.load_schema(get_project_data_schema_path(project_info)) == false)
 		{
 			qCritical() << "Failed to load data schema!";
 			return false;
 		}
 
-		m_loaded_project_schema = loaded_schema;
 		return true;
 	}
 

@@ -2,9 +2,13 @@
 
 #include <VadonEditor/Core/CommandLine.hpp>
 #include <VadonEditor/Core/Configuration.hpp>
+
+#include <VadonEditor/Core/Asset/AssetManager.hpp>
 #include <VadonEditor/Core/Logger.hpp>
 #include <VadonEditor/Core/Plugin/PluginManager.hpp>
 #include <VadonEditor/Core/Project/ProjectManager.hpp>
+
+#include <VadonEditor/Model/ModelSystem.hpp>
 
 #include <VadonEditor/Network/NetworkSystem.hpp>
 
@@ -96,10 +100,13 @@ namespace VadonEditor::Core
 		QScopedPointer<QCoreApplication> m_qt_application;
 		Configuration m_configuration;
 
+		AssetManager m_asset_manager;
 		PluginManager m_plugin_manager;
 		ProjectManager m_project_manager;
 
 		Core::Logger m_logger;
+
+		Model::ModelSystem m_model_system;
 
 		Network::NetworkSystem m_network_system;
 
@@ -115,7 +122,9 @@ namespace VadonEditor::Core
 		Internal(Application& application, QCoreApplication* qt_application, const Configuration& configuration)
 			: m_qt_application(qt_application)
 			, m_configuration(configuration)
+			, m_asset_manager(application)
 			, m_project_manager(application)
+			, m_model_system(application)
 			, m_network_system(application)
 			, m_plugin_manager(application)
 			, m_simulator(application)
@@ -187,6 +196,16 @@ namespace VadonEditor::Core
 			}
 
 			if (m_project_manager.initialize() == false)
+			{
+				return false;
+			}
+
+			if (m_asset_manager.initialize() == false)
+			{
+				return false;
+			}
+
+			if (m_model_system.initialize() == false)
 			{
 				return false;
 			}
@@ -283,6 +302,11 @@ namespace VadonEditor::Core
 
 			// Start network to allow communicating with plugins and other tools
 			m_network_system.run_network();
+
+			if (m_asset_manager.project_loaded() == false)
+			{
+				// TODO: error?
+			}
 		}
 
 		void received_message(const QByteArray& data)
@@ -359,6 +383,11 @@ namespace VadonEditor::Core
 		return m_internal->m_configuration;
 	}
 
+	AssetManager& Application::get_asset_manager()
+	{
+		return m_internal->m_asset_manager;
+	}
+
 	Logger& Application::get_logger()
 	{
 		return m_internal->m_logger;
@@ -372,6 +401,11 @@ namespace VadonEditor::Core
 	ProjectManager& Application::get_project_manager()
 	{
 		return m_internal->m_project_manager;
+	}
+
+	Model::ModelSystem& Application::get_model_system()
+	{
+		return m_internal->m_model_system;
 	}
 
 	Network::NetworkSystem& Application::get_network_system()

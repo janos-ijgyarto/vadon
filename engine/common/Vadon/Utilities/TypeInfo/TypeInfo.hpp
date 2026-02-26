@@ -51,40 +51,40 @@ struct ::Vadon::Utilities::TypeRegistryTrait<_type>\
 
 namespace Vadon::Utilities
 {
-	VADON_REGISTER_TYPE_UUID(int, ::Vadon::Foundation::c_base_type_uuids[static_cast<uint32_t>(::Vadon::Foundation::BaseType::INT32)]);
+	VADON_REGISTER_TYPE_UUID(int, ::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::INT32).string);
 	VADON_DECLARE_BASE_DATA_TYPE(int);
 
-	VADON_REGISTER_TYPE_UUID(uint32_t, ::Vadon::Foundation::c_base_type_uuids[static_cast<uint32_t>(::Vadon::Foundation::BaseType::UINT32)]);
+	VADON_REGISTER_TYPE_UUID(uint32_t, ::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::UINT32).string);
 	VADON_DECLARE_BASE_DATA_TYPE(uint32_t);
 
-	VADON_REGISTER_TYPE_UUID(float, ::Vadon::Foundation::c_base_type_uuids[static_cast<uint32_t>(::Vadon::Foundation::BaseType::FLOAT)]);
+	VADON_REGISTER_TYPE_UUID(float, ::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::FLOAT).string);
 	VADON_DECLARE_BASE_DATA_TYPE(float);
 
-	VADON_REGISTER_TYPE_UUID(bool, ::Vadon::Foundation::c_base_type_uuids[static_cast<uint32_t>(::Vadon::Foundation::BaseType::BOOL)]);
+	VADON_REGISTER_TYPE_UUID(bool, ::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::BOOL).string);
 	VADON_DECLARE_BASE_DATA_TYPE(bool);
 
-	VADON_REGISTER_TYPE_UUID(std::string, ::Vadon::Foundation::c_base_type_uuids[static_cast<uint32_t>(::Vadon::Foundation::BaseType::STRING)]);
+	VADON_REGISTER_TYPE_UUID(std::string, ::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::STRING).string);
 	VADON_DECLARE_BASE_DATA_TYPE(std::string);
 
-	VADON_REGISTER_TYPE_UUID(Vadon::Math::Vector2, ::Vadon::Foundation::c_base_type_uuids[static_cast<uint32_t>(::Vadon::Foundation::BaseType::VECTOR2)]);
+	VADON_REGISTER_TYPE_UUID(Vadon::Math::Vector2, ::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::VECTOR2).string);
 	VADON_DECLARE_BASE_DATA_TYPE(Vadon::Math::Vector2);
 
-	VADON_REGISTER_TYPE_UUID(Vadon::Math::Vector2i, ::Vadon::Foundation::c_base_type_uuids[static_cast<uint32_t>(::Vadon::Foundation::BaseType::VECTOR2I)]);
+	VADON_REGISTER_TYPE_UUID(Vadon::Math::Vector2i, ::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::VECTOR2I).string);
 	VADON_DECLARE_BASE_DATA_TYPE(Vadon::Math::Vector2i);
 
-	VADON_REGISTER_TYPE_UUID(Vadon::Math::Vector3, ::Vadon::Foundation::c_base_type_uuids[static_cast<uint32_t>(::Vadon::Foundation::BaseType::VECTOR3)]);
+	VADON_REGISTER_TYPE_UUID(Vadon::Math::Vector3, ::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::VECTOR3).string);
 	VADON_DECLARE_BASE_DATA_TYPE(Vadon::Math::Vector3);
 
-	VADON_REGISTER_TYPE_UUID(Vadon::Math::Vector3i, ::Vadon::Foundation::c_base_type_uuids[static_cast<uint32_t>(::Vadon::Foundation::BaseType::VECTOR3I)]);
+	VADON_REGISTER_TYPE_UUID(Vadon::Math::Vector3i, ::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::VECTOR3I).string);
 	VADON_DECLARE_BASE_DATA_TYPE(Vadon::Math::Vector3i);
 
-	VADON_REGISTER_TYPE_UUID(Vadon::Math::Vector4, ::Vadon::Foundation::c_base_type_uuids[static_cast<uint32_t>(::Vadon::Foundation::BaseType::VECTOR4)]);
+	VADON_REGISTER_TYPE_UUID(Vadon::Math::Vector4, ::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::VECTOR4).string);
 	VADON_DECLARE_BASE_DATA_TYPE(Vadon::Math::Vector4);
 
-	VADON_REGISTER_TYPE_UUID(Vadon::Math::ColorRGBA, ::Vadon::Foundation::c_base_type_uuids[static_cast<uint32_t>(::Vadon::Foundation::BaseType::COLORRGBA)]);
+	VADON_REGISTER_TYPE_UUID(Vadon::Math::ColorRGBA, ::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::COLORRGBA).string);
 	VADON_DECLARE_BASE_DATA_TYPE(Vadon::Math::ColorRGBA);
 
-	VADON_REGISTER_TYPE_UUID(Vadon::Foundation::UUID, ::Vadon::Foundation::c_base_type_uuids[static_cast<uint32_t>(::Vadon::Foundation::BaseType::UUID)]);
+	VADON_REGISTER_TYPE_UUID(Vadon::Foundation::UUID, ::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::UUID).string);
 	VADON_DECLARE_BASE_DATA_TYPE(Vadon::Foundation::UUID);
 }
 

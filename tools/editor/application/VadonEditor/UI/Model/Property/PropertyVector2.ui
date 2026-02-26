@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>PropertyVector2</class>
+ <widget class="QWidget" name="PropertyVector2">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>400</width>
+    <height>73</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>PropertyVector2</string>
+  </property>
+  <layout class="QGridLayout" name="mainLayout" columnstretch="0,1">
+   <item row="1" column="0">
+    <widget class="QLabel" name="yLabel">
+     <property name="text">
+      <string>Y</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="0">
+    <widget class="QLabel" name="xLabel">
+     <property name="text">
+      <string>X</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="1">
+    <widget class="QDoubleSpinBox" name="xSpinBox"/>
+   </item>
+   <item row="1" column="1">
+    <widget class="QDoubleSpinBox" name="ySpinBox"/>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>xSpinBox</sender>
+   <signal>valueChanged(double)</signal>
+   <receiver>PropertyVector2</receiver>
+   <slot>value_changed_x(double)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>206</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>199</x>
+     <y>36</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>ySpinBox</sender>
+   <signal>valueChanged(double)</signal>
+   <receiver>PropertyVector2</receiver>
+   <slot>value_changed_y(double)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>206</x>
+     <y>50</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>199</x>
+     <y>36</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+ <slots>
+  <slot>value_changed_x(double)</slot>
+  <slot>value_changed_y(double)</slot>
+ </slots>
+</ui>

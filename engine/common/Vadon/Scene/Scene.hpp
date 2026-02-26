@@ -1,5 +1,6 @@
 #ifndef VADON_SCENE_SCENE_HPP
 #define VADON_SCENE_SCENE_HPP
+#include <Vadon/Foundation/Model/Scene/Scene.hpp>
 #include <Vadon/Scene/Resource/Resource.hpp>
 namespace Vadon::Scene
 {
@@ -18,6 +19,6 @@ namespace Vadon::Scene
 	};
 }
 
-VADON_REGISTER_TYPE_UUID(Vadon::Scene::Scene, "e9918681-2828-4d0c-8037-f8a44ca29eac");
+VADON_REGISTER_TYPE_UUID(Vadon::Scene::Scene, ::Vadon::Foundation::SceneSchema::c_type_uuid.string );
 VADON_REGISTER_TYPE_UUID(Vadon::Scene::SceneComponent, "348aa1b3-3bce-4002-a5f2-440473dd0228");
 #endif

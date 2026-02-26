@@ -20,15 +20,31 @@ namespace VadonEditor::Utilities
 		return vadon_uuid;
 	}
 
-	
-	inline ::Vadon::Foundation::UUID base64_string_to_uuid(const QString& string)
+	inline QUuid base64_string_to_uuid(const QString& string)
 	{
 		if (string.isEmpty())
 		{
-			return ::Vadon::Foundation::UUID();
+			return QUuid();
 		}
 		QByteArray uuid_arr = QByteArray::fromBase64(string.toUtf8());
-		return qt_uuid_to_vadon_uuid(QUuid::fromBytes(uuid_arr));
+		return QUuid::fromBytes(uuid_arr);
+	}
+		
+	inline ::Vadon::Foundation::UUID base64_string_to_vadon_uuid(const QString& string)
+	{
+		return qt_uuid_to_vadon_uuid(base64_string_to_uuid(string));
+	}
+
+	inline QString uuid_to_base64_string(const QUuid& uuid)
+	{
+		const QUuid::Id128Bytes uuid_bytes = uuid.toBytes();
+		return QString(QByteArray(QByteArrayView(uuid_bytes)).toBase64());
+	}
+
+	inline QString uuid_string_to_base64_string(const char* string)
+	{
+		const QUuid uuid = QUuid::fromString(string);
+		return uuid_to_base64_string(uuid);
 	}
 }
 #endif

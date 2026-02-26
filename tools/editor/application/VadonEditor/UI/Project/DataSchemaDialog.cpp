@@ -7,6 +7,7 @@
 
 #include <Vadon/Foundation/TypeInfo/Metadata.hpp>
 
+#include <QGroupBox>
 #include <QLabel>
 
 namespace
@@ -32,7 +33,7 @@ namespace VadonEditor::UI
 	{
 	}
 
-	void DataSchemaDialog::type_selection_changed()
+	void DataSchemaDialog::tree_item_selected(const QModelIndex& index)
 	{
 		// Clear all previous widgets
 		{
@@ -47,14 +48,12 @@ namespace VadonEditor::UI
 			}
 		}
 
-		QList<QTreeWidgetItem*> selected_items = m_ui.schemaTree->selectedItems();
-		if (selected_items.isEmpty() == true)
+		if (index.isValid() == false)
 		{
 			return;
 		}
 
-		QTreeWidgetItem* selected_type_item = selected_items.front();
-		QVariant item_data = selected_type_item->data(0, c_tree_uuid_role);
+		QVariant item_data = m_type_tree_model.data(index, static_cast<int>(Core::TypeTreeDataRole::TYPE_UUID));
 		if (item_data.isValid() == false)
 		{
 			return;
@@ -106,112 +105,10 @@ namespace VadonEditor::UI
 		Core::ProjectManager& project_manager = m_application.get_project_manager();
 		const Core::DataSchema& project_data_schema = project_manager.get_project_data_schema();
 
-		QHash<QUuid, QTreeWidgetItem*> type_tree_item_lookup;
-		QTreeWidgetItem* base_types_root = new QTreeWidgetItem(m_ui.schemaTree);
-		base_types_root->setText(0, "Base Types");
+		// FIXME: this is a bit ugly
+		m_type_tree_model.setSourceModel(const_cast<QStandardItemModel*>(&project_data_schema.get_qt_model()));
 
-		const VadonEditor::Core::DataSchema::TypeMetadataRegistry& registry = project_data_schema.get_registry();
-		for (size_t type_index = 0; type_index < registry.get_registered_type_count(); ++type_index)
-		{
-			const ::Vadon::Foundation::UUID type_uuid = registry.get_type_uuid(type_index);
-			const QUuid type_qt_uuid = VadonEditor::Utilities::vadon_uuid_to_qt_uuid(type_uuid);
-
-			if (type_tree_item_lookup.find(type_qt_uuid) != type_tree_item_lookup.end())
-			{
-				// Node already added
-				continue;
-			}
-
-			const VadonEditor::Core::TypeData* type_data = project_data_schema.find_type_data(type_uuid);
-
-			if (VadonEditor::Core::DataSchema::get_base_type(type_uuid) != ::Vadon::Foundation::BaseType::INVALID)
-			{
-				QTreeWidgetItem* base_type_node = new QTreeWidgetItem(base_types_root);
-				base_type_node->setText(0, type_data->get_name());
-				base_type_node->setData(0, c_tree_uuid_role, type_qt_uuid);
-				continue;
-			}
-
-			QTreeWidgetItem* new_type_node;
-
-			if (type_data->info.base_id.is_valid() == true)
-			{
-				// Has parent type, find or create node and add to it
-				const QUuid base_qt_uuid = VadonEditor::Utilities::vadon_uuid_to_qt_uuid(type_data->info.base_id);
-				auto tree_item_it = type_tree_item_lookup.find(base_qt_uuid);
-				if (tree_item_it != type_tree_item_lookup.end())
-				{
-					new_type_node = new QTreeWidgetItem(tree_item_it.value());
-				}
-				else
-				{
-					// Parent type was not added yet, need to recursively add parent nodes
-					QList<::Vadon::Foundation::UUID> parent_types;
-					::Vadon::Foundation::UUID parent_id = type_data->info.base_id;
-					while (true)
-					{
-						parent_types.push_back(parent_id);
-
-						const VadonEditor::Core::TypeData* parent_type_data = project_data_schema.find_type_data(parent_id);
-						if (parent_type_data->info.base_id.is_valid() == false)
-						{
-							// No more ancestors, add to root
-							break;
-						}
-						else if (type_tree_item_lookup.find(VadonEditor::Utilities::vadon_uuid_to_qt_uuid(parent_type_data->info.base_id)) != type_tree_item_lookup.end())
-						{
-							// Ancestor already added
-							break;
-						}
-						else
-						{
-							// Ancestor also needs to be added
-							parent_id = parent_type_data->info.base_id;
-						}
-					}
-
-					// For each ancestor, add to root or parent
-					while (parent_types.isEmpty() == false)
-					{
-						const ::Vadon::Foundation::UUID ancestor_id = parent_types.back();
-						const VadonEditor::Core::TypeData* ancestor_type_data = project_data_schema.find_type_data(ancestor_id);
-
-						QTreeWidgetItem* ancestor_node;
-						const QUuid ancestor_qt_uuid = VadonEditor::Utilities::vadon_uuid_to_qt_uuid(ancestor_id);
-						if (ancestor_type_data->info.base_id.is_valid() == true)
-						{
-							auto ancestor_parent_it = type_tree_item_lookup.find(VadonEditor::Utilities::vadon_uuid_to_qt_uuid(ancestor_type_data->info.base_id));
-							ancestor_node = new QTreeWidgetItem(ancestor_parent_it.value());
-						}
-						else
-						{
-							ancestor_node = new QTreeWidgetItem(m_ui.schemaTree);
-						}
-						ancestor_node->setText(0, ancestor_type_data->get_name());
-						ancestor_node->setData(0, c_tree_uuid_role, ancestor_qt_uuid);
-						type_tree_item_lookup.insert(ancestor_qt_uuid, ancestor_node);
-
-						parent_types.pop_back();
-					}
-
-					// Finally add the node itself
-					tree_item_it = type_tree_item_lookup.find(base_qt_uuid);
-					Q_ASSERT_X(tree_item_it != type_tree_item_lookup.end(), "VadonEditor::UI::DataSchemaDialog::initialize", "Cannot find parent!");
-					new_type_node = new QTreeWidgetItem(tree_item_it.value());
-				}
-			}
-			else
-			{
-				// No base type, add as root node
-				new_type_node = new QTreeWidgetItem(m_ui.schemaTree);
-			}
-
-			new_type_node->setText(0, type_data->get_name());
-			new_type_node->setData(0, c_tree_uuid_role, type_qt_uuid);
-			type_tree_item_lookup.insert(type_qt_uuid, new_type_node);
-		}
-
-		m_ui.schemaTree->setSortingEnabled(true);
-		m_ui.schemaTree->sortByColumn(0, Qt::SortOrder::AscendingOrder);
+		m_ui.typeTreeView->setModel(&m_type_tree_model);
+		m_ui.typeTreeView->sortByColumn(0, Qt::SortOrder::AscendingOrder);
 	}
 }

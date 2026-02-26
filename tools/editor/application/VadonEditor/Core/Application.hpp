@@ -1,6 +1,10 @@
 #ifndef VADONEDITOR_CORE_APPLICATION_HPP
 #define VADONEDITOR_CORE_APPLICATION_HPP
 #include <memory>
+namespace VadonEditor::Model
+{
+	class ModelSystem;
+}
 namespace VadonEditor::Network
 {
 	class NetworkSystem;
@@ -20,6 +24,7 @@ namespace VadonEditor::Core
 {
 	struct Configuration;
 
+	class AssetManager;
 	class Logger;
 	class PluginManager;
 	class ProjectManager;
@@ -37,9 +42,12 @@ namespace VadonEditor::Core
 
 		const Configuration& get_configuration() const;
 
+		AssetManager& get_asset_manager();
 		Logger& get_logger();
 		PluginManager& get_plugin_manager();
 		ProjectManager& get_project_manager();
+
+		Model::ModelSystem& get_model_system();
 
 		Network::NetworkSystem& get_network_system();
 

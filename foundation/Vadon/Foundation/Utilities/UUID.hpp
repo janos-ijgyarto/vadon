@@ -28,6 +28,12 @@ namespace Vadon
 
 			void invalidate() { memset(data, 0, c_uuid_width); }
 		};
+
+		struct UUIDString
+		{
+			static constexpr size_t c_uuid_string_length = 37;
+			char string[c_uuid_string_length];
+		};
 	}
 }
 

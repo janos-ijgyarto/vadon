@@ -7,7 +7,9 @@
 
 #include <QByteArray>
 #include <QHash>
+#include <QStandardItemModel>
 #include <QUuid>
+
 namespace VadonEditor::Core
 {
 	enum class PropertyCategory
@@ -46,6 +48,11 @@ namespace VadonEditor::Core
 		QString get_name() const;
 	};
 
+	enum class TypeTreeDataRole
+	{
+		TYPE_UUID = Qt::ItemDataRole::UserRole + 1
+	};
+
 	class DataSchema
 	{
 	public:
@@ -68,6 +75,8 @@ namespace VadonEditor::Core
 
 			void set_property_metadata(const ::Vadon::Foundation::UUID& type_uuid, const ::Vadon::Foundation::UUID& property_uuid, const char* key, const char* value) override;
 			const char* get_property_metadata(const ::Vadon::Foundation::UUID& type_uuid, const ::Vadon::Foundation::UUID& property_uuid, const char* key) const override;
+
+			bool is_base_of(const ::Vadon::Foundation::UUID& base_uuid, const ::Vadon::Foundation::UUID& derived_uuid) const;
 		private:
 			QHash<QUuid, TypeData> m_types;
 			QList<::Vadon::Foundation::UUID> m_type_list; // NOTE: this is used for queries
@@ -87,8 +96,15 @@ namespace VadonEditor::Core
 
 		static ::Vadon::Foundation::UUID get_base_type_uuid(::Vadon::Foundation::BaseType type);
 		static ::Vadon::Foundation::BaseType get_base_type(const ::Vadon::Foundation::UUID& type_uuid);
+
+		const QStandardItemModel& get_qt_model() const { return m_qt_model; }
+
+		bool is_base_of(const ::Vadon::Foundation::UUID& base_uuid, const ::Vadon::Foundation::UUID& derived_uuid) const { return m_registry.is_base_of(base_uuid, derived_uuid); }
 	private:
+		void generate_qt_model();
+
 		TypeMetadataRegistry m_registry;
+		QStandardItemModel m_qt_model;
 	};
 }
 #endif

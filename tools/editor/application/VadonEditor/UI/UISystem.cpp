@@ -3,6 +3,7 @@
 #include <VadonEditor/Core/Application.hpp>
 #include <VadonEditor/Core/Configuration.hpp>
 
+#include <VadonEditor/Core/Asset/AssetManager.hpp>
 #include <VadonEditor/Core/Project/ProjectManager.hpp>
 
 #include <VadonEditor/Network/NetworkSystem.hpp>
@@ -106,6 +107,8 @@ namespace VadonEditor::UI
 		{
 			QMessageBox::warning(m_main_window, "Project Manager", QObject::tr("Project does not have valid data schema!"));
 		}
+
+		m_main_window->m_ui.assetBrowser->setModel(&m_application.get_asset_manager().get_model());
 	}
 
 	void UISystem::request_close()

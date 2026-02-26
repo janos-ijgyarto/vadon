@@ -24,6 +24,11 @@ namespace Vadon::Utilities
 	};
 
 	using PropertyList = std::vector<Property>;
+
+	constexpr ::Vadon::Foundation::UUID property_schema_to_uuid(const ::Vadon::Foundation::PropertySchema& schema)
+	{
+		return string_to_uuid(schema.id);
+	}
 }
 
 #endif

@@ -1,0 +1,7 @@
+#ifndef VADONEDITOR_UI_MODEL_PROPERTY_VECTOR_HPP
+#define VADONEDITOR_UI_MODEL_PROPERTY_VECTOR_HPP
+namespace VadonEditor::UI
+{
+
+}
+#endif

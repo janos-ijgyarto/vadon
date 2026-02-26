@@ -63,10 +63,23 @@ namespace Vadon.Tools.Editor
                 conf.Output = Configuration.OutputType.Dll;
                 conf.Defines.Add("VADON_LINK_DYNAMIC");
                 conf.Defines.Add("VADONEDITORCOMMON_EXPORTS");
+
+                // Use Release options by default, except in Debug
+                if(target.Optimization != Optimization.Debug)
+                {
+                    conf.DefaultOption = Options.DefaultTarget.Release;
+                }
+                else
+                {
+                    conf.DefaultOption = Options.DefaultTarget.Debug;
+                }
             }
             else
             {                
                 conf.Output = Configuration.OutputType.Lib;
+                
+                // Use Release options by default
+                conf.DefaultOption = Options.DefaultTarget.Release;
             }
 
             conf.AddPublicDependency<Foundation>(target, DependencySetting.DefaultWithoutLinking);

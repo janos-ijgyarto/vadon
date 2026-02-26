@@ -12,6 +12,7 @@
 #include <Vadon/Utilities/TypeInfo/Reflection/MemberBind.hpp>
 #include <Vadon/Utilities/TypeInfo/Reflection/PropertySerialization.hpp>
 
+#include <Vadon/Foundation/Model/Resource/Resource.hpp>
 #include <Vadon/Foundation/TypeInfo/Metadata.hpp>
 
 #include <format>
@@ -103,30 +104,6 @@ namespace
 		}
 		
 		return successful;
-	}
-
-	enum class ResourceProperty
-	{
-		ID,
-		TYPE,
-		PROPERTIES,
-		DATA,
-		EMBEDDED,
-		PROPERTY_COUNT
-	};
-
-	constexpr ::Vadon::Foundation::UUID get_resource_property_uuid(ResourceProperty property)
-	{
-		using Vadon::Utilities::operator""_uuid;
-		constexpr ::Vadon::Foundation::UUID c_property_uuids[static_cast<size_t>(ResourceProperty::PROPERTY_COUNT)] = {
-			"18a7cd11-1901-42cc-8b9a-f9afec9fcb61"_uuid,
-			"d605c124-d567-4f51-838f-1bac0346235c"_uuid,
-			"a6ed29e6-ba63-42c1-8483-be17e56a09ef"_uuid,
-			"58cd51ca-f640-4a63-ad57-f219d94227af"_uuid,
-			"0b90d97c-4c19-4920-adb4-c548eef3c63d"_uuid
-		};
-
-		return c_property_uuids[static_cast<size_t>(property)];
 	}
 }
 
@@ -251,14 +228,14 @@ namespace Vadon::Private::Scene
 		}
 
 		ResourceID resource_id;
-		if (serializer.serialize(get_resource_property_uuid(ResourceProperty::ID), resource_info.id) != SerializerResult::SUCCESSFUL)
+		if (serializer.serialize(Vadon::Utilities::property_schema_to_uuid(::Vadon::Foundation::ResourceSchema::c_id_property), resource_info.id) != SerializerResult::SUCCESSFUL)
 		{
 			resource_info_failed_to_serialize();
 			return false;
 		}
 
 		::Vadon::Foundation::UUID resource_type_uuid;
-		if (serializer.serialize(get_resource_property_uuid(ResourceProperty::TYPE), resource_type_uuid) != SerializerResult::SUCCESSFUL)
+		if (serializer.serialize(Vadon::Utilities::property_schema_to_uuid(::Vadon::Foundation::ResourceSchema::c_type_property), resource_type_uuid) != SerializerResult::SUCCESSFUL)
 		{
 			resource_info_failed_to_serialize();
 			return false;
@@ -314,7 +291,7 @@ namespace Vadon::Private::Scene
 
 		ResourceData& resource_data = m_resource_pool.get(resource_handle);
 
-		if (serializer.serialize(get_resource_property_uuid(ResourceProperty::ID), resource_data.info.id) != SerializerResult::SUCCESSFUL)
+		if (serializer.serialize(Vadon::Utilities::property_schema_to_uuid(::Vadon::Foundation::ResourceSchema::c_id_property), resource_data.info.id) != SerializerResult::SUCCESSFUL)
 		{
 			resource_info_failed_to_serialize();
 			return false;
@@ -322,14 +299,14 @@ namespace Vadon::Private::Scene
 
 		// Get type
 		::Vadon::Foundation::UUID resource_type_uuid = Vadon::Utilities::TypeRegistry::get_type_info(resource_data.info.type_id).id;
-		if (serializer.serialize(get_resource_property_uuid(ResourceProperty::TYPE), resource_type_uuid) != SerializerResult::SUCCESSFUL)
+		if (serializer.serialize(Vadon::Utilities::property_schema_to_uuid(::Vadon::Foundation::ResourceSchema::c_type_property), resource_type_uuid) != SerializerResult::SUCCESSFUL)
 		{
 			resource_info_failed_to_serialize();
 			return false;
 		}
 
 		// Serialize properties
-		if (serializer.open_object(get_resource_property_uuid(ResourceProperty::PROPERTIES)) != SerializerResult::SUCCESSFUL)
+		if (serializer.open_object(Vadon::Utilities::property_schema_to_uuid(::Vadon::Foundation::ResourceSchema::c_properties_property)) != SerializerResult::SUCCESSFUL)
 		{
 			resource_data_failed_to_serialize();
 			return false;
@@ -385,7 +362,7 @@ namespace Vadon::Private::Scene
 		Vadon::Scene::ResourceRegistry::SerializerFunction resource_serializer = Vadon::Scene::ResourceRegistry::get_resource_serializer(resource_data.info.type_id);
 		if (resource_serializer != nullptr)
 		{
-			if (serializer.open_object(get_resource_property_uuid(ResourceProperty::DATA)) != SerializerResult::SUCCESSFUL)
+			if (serializer.open_object(Vadon::Utilities::property_schema_to_uuid(::Vadon::Foundation::ResourceSchema::c_data_property)) != SerializerResult::SUCCESSFUL)
 			{
 				resource_custom_data_failed_to_serialize();
 				return false;
@@ -404,7 +381,7 @@ namespace Vadon::Private::Scene
 
 		if (resource_data.embedded_resources.empty() == false)
 		{
-			if (serializer.open_array(get_resource_property_uuid(ResourceProperty::EMBEDDED)) != SerializerResult::SUCCESSFUL)
+			if (serializer.open_array(Vadon::Utilities::property_schema_to_uuid(::Vadon::Foundation::ResourceSchema::c_embedded_property)) != SerializerResult::SUCCESSFUL)
 			{
 				resource_data_failed_to_serialize();
 				return false;
@@ -605,7 +582,7 @@ namespace Vadon::Private::Scene
 		}
 
 		// Deserialize resource data
-		if (serializer.open_object(get_resource_property_uuid(ResourceProperty::PROPERTIES)) != SerializerResult::SUCCESSFUL)
+		if (serializer.open_object(Vadon::Utilities::property_schema_to_uuid(::Vadon::Foundation::ResourceSchema::c_properties_property)) != SerializerResult::SUCCESSFUL)
 		{
 			resource_data_failed_to_serialize();
 			return nullptr;
@@ -679,7 +656,7 @@ namespace Vadon::Private::Scene
 		Vadon::Scene::ResourceRegistry::SerializerFunction resource_serializer = Vadon::Scene::ResourceRegistry::get_resource_serializer(info.type_id);
 		if (resource_serializer != nullptr)
 		{
-			if (serializer.open_object(get_resource_property_uuid(ResourceProperty::DATA)) != SerializerResult::SUCCESSFUL)
+			if (serializer.open_object(Vadon::Utilities::property_schema_to_uuid(::Vadon::Foundation::ResourceSchema::c_data_property)) != SerializerResult::SUCCESSFUL)
 			{
 				resource_custom_data_failed_to_serialize();
 				return nullptr;
@@ -696,9 +673,10 @@ namespace Vadon::Private::Scene
 			}
 		}
 
-		if (serializer.has_key(get_resource_property_uuid(ResourceProperty::EMBEDDED)) == true)
+		constexpr auto c_embedded_property_uuid = Vadon::Utilities::property_schema_to_uuid(::Vadon::Foundation::ResourceSchema::c_embedded_property);
+		if (serializer.has_key(c_embedded_property_uuid) == true)
 		{
-			if (serializer.open_array(get_resource_property_uuid(ResourceProperty::EMBEDDED)) != SerializerResult::SUCCESSFUL)
+			if (serializer.open_array(c_embedded_property_uuid) != SerializerResult::SUCCESSFUL)
 			{
 				resource_custom_data_failed_to_serialize();
 				return nullptr;

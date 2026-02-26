@@ -61,5 +61,10 @@ namespace Vadon::Utilities
 	{
 		return U.result;
 	}
+
+	constexpr ::Vadon::Foundation::UUID string_to_uuid(const ::Vadon::Foundation::UUIDString& string)
+	{
+		return UUIDLiteral(string.string).result;
+	}
 }
 #endif

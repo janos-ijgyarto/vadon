@@ -17,12 +17,10 @@
    <item>
     <layout class="QHBoxLayout" name="mainHBox">
      <item>
-      <widget class="QTreeWidget" name="schemaTree">
-       <column>
-        <property name="text">
-         <string notr="true">Type Name</string>
-        </property>
-       </column>
+      <widget class="QTreeView" name="typeTreeView">
+       <property name="sortingEnabled">
+        <bool>true</bool>
+       </property>
       </widget>
      </item>
      <item>
@@ -110,10 +108,10 @@
    </hints>
   </connection>
   <connection>
-   <sender>schemaTree</sender>
-   <signal>itemSelectionChanged()</signal>
+   <sender>typeTreeView</sender>
+   <signal>clicked(QModelIndex)</signal>
    <receiver>DataSchemaDialog</receiver>
-   <slot>type_selection_changed()</slot>
+   <slot>tree_item_selected(QModelIndex)</slot>
    <hints>
     <hint type="sourcelabel">
      <x>203</x>
@@ -127,6 +125,6 @@
   </connection>
  </connections>
  <slots>
-  <slot>type_selection_changed()</slot>
+  <slot>tree_item_selected(QModelIndex)</slot>
  </slots>
 </ui>

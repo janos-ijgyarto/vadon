@@ -38,7 +38,7 @@ namespace VadonEditor::UI
         Core::Application& m_application;
         Ui::MainWindow m_ui;
 
-        friend class Application;
+        friend class UISystem;
     };
 }
 #endif

@@ -78,9 +78,11 @@ namespace Vadon.Engine
             {
                 case Optimization.Debug:
                     conf.Options.Add(Sharpmake.Options.Vc.Compiler.RuntimeLibrary.MultiThreadedDebugDLL);
+                    conf.DefaultOption = Options.DefaultTarget.Debug;
                     break;
                 default:
                     conf.Options.Add(Sharpmake.Options.Vc.Compiler.RuntimeLibrary.MultiThreadedDLL);
+                    conf.DefaultOption = Options.DefaultTarget.Release;
                     break;
             }
         }

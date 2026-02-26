@@ -3,6 +3,11 @@
 #include <Vadon/Utilities/TypeInfo/Registry.hpp>
 namespace Vadon::Utilities
 {
+	// FIXME: find a way for properties to register type metadata!
+	// Most important is the underlying type, but the type registry
+	// should also have metadata to perform higher-level validation
+	// (e.g resource ID property should validate the UUID)
+
 	// Utility function to ensure the type is Variant-compatible
 	template<typename T>
 	static constexpr TypeID get_erased_data_type_id()

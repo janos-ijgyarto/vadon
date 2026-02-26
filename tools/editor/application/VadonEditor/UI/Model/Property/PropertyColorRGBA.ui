@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>PropertyColorRGBA</class>
+ <widget class="QWidget" name="PropertyColorRGBA">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>400</width>
+    <height>42</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>PropertyColorRGBA</string>
+  </property>
+  <layout class="QHBoxLayout" name="mainLayout" stretch="0,1">
+   <item>
+    <widget class="QLabel" name="colorHexLabel">
+     <property name="text">
+      <string>0xFFFFFFFF</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QPushButton" name="colorPickerButton">
+     <property name="styleSheet">
+      <string notr="true">background: rgb(255, 255, 255)</string>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>colorPickerButton</sender>
+   <signal>clicked()</signal>
+   <receiver>PropertyColorRGBA</receiver>
+   <slot>color_picker_button_clicked()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>152</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>119</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+ <slots>
+  <slot>color_picker_button_clicked()</slot>
+ </slots>
+</ui>

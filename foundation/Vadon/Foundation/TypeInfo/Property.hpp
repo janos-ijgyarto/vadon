@@ -13,6 +13,12 @@ namespace Vadon
 
 			bool is_valid() const { return (id.is_valid() == true) && (type.is_valid() == true); }
 		};
+
+		struct PropertySchema
+		{
+			UUIDString id;
+			UUIDString type;
+		};
 	}
 }
 #endif
