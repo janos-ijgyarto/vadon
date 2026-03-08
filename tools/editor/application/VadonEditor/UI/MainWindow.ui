@@ -46,12 +46,16 @@
           </widget>
          </item>
          <item>
-          <widget class="QTreeView" name="sceneTree"/>
+          <widget class="QTreeView" name="sceneTree">
+           <property name="contextMenuPolicy">
+            <enum>Qt::ContextMenuPolicy::CustomContextMenu</enum>
+           </property>
+          </widget>
          </item>
         </layout>
        </widget>
        <widget class="QWidget" name="verticalLayoutWidget_2">
-        <layout class="QVBoxLayout" name="assetBrowserVBox">
+        <layout class="QVBoxLayout" name="assetBrowserVBox" stretch="0,1">
          <item>
           <widget class="QLabel" name="assetBrowserLabel">
            <property name="text">
@@ -60,7 +64,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QTreeView" name="assetBrowser"/>
+          <widget class="VadonEditor::UI::AssetBrowser" name="assetBrowser" native="true"/>
          </item>
         </layout>
        </widget>
@@ -145,7 +149,7 @@
      <x>0</x>
      <y>0</y>
      <width>1024</width>
-     <height>21</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -257,6 +261,12 @@
    <class>VadonEditor::UI::RenderWidget</class>
    <extends>QWidget</extends>
    <header>VadonEditor/UI/Render/RenderWidget.hpp</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>VadonEditor::UI::AssetBrowser</class>
+   <extends>QWidget</extends>
+   <header>VadonEditor/UI/Project/Asset/AssetBrowser.hpp</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

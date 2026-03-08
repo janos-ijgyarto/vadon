@@ -8,7 +8,7 @@ namespace Vadon
 	{
 		struct SceneSchema
 		{
-			static constexpr UUIDString c_type_uuid{ "e9918681-2828-4d0c-8037-f8a44ca29eac" };
+			static constexpr UUIDString c_type_uuid{ "c432094b-d5f2-4e80-9c95-2cd669a8ed1e" };
 
 			static constexpr PropertySchema c_entities_property{
 				UUIDString{"b91e01e7-49b9-441a-9092-bbda48fafce1"},

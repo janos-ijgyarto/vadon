@@ -328,7 +328,7 @@ namespace VadonEditor::Core
 
 		// Add to project cache
 		CachedProjectInfo cached_info;
-		cached_info.name = m_loaded_project_info.name;
+		cached_info.name = project_info.name;
 		cached_info.path = project_file_path;
 
 		if(add_project_to_cache(project_file_info.absolutePath(), cached_info) == false)

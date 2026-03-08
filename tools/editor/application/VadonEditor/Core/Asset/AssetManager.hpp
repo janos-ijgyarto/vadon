@@ -20,10 +20,12 @@ namespace VadonEditor::Core
 		void add_asset(const QString& path, const InternalAssetInfo& info);
 		void remove_asset(const QString& path);
 
-		InternalAssetInfo get_asset_info(const QModelIndex& index) const;
+		InternalAssetInfo get_internal_asset_info(const QModelIndex& index) const;
+		AssetInfo get_asset_info(const QModelIndex& index) const;
 
 		QString find_asset_file(const QUuid& file_id) const;
 	protected:
+		// TODO: custom icons for scenes/resources/etc.
 		bool filterAcceptsRow(int sourceRow, const QModelIndex& sourceParent) const override;
 	private:
 		AssetFilterModel();

@@ -59,7 +59,7 @@ namespace Vadon.Utilities
         }
 
         [CommandLine.Option("thirdPartyInstallPath",
-        @"Path where vcpkg can install dependencies: ex: /vcpkgPath(""path/to/third/party/install"")")]
+        @"Path where vcpkg can install dependencies: ex: /thirdPartyInstallPath(""path/to/third/party/install"")")]
         public static void CommandLineThirdPartyInstallPath(string path)
         {
             ThirdPartyInstallPath = path;
@@ -83,36 +83,43 @@ namespace Vadon.Utilities
             {
                 throw new Sharpmake.Error("Must set valid generator output path!");
             }
+            System.IO.Directory.CreateDirectory(GeneratorOutputPath);
 
-            if(string.IsNullOrEmpty(BuildPath))
+            if (string.IsNullOrEmpty(BuildPath))
             {
                 throw new Sharpmake.Error("Must set valid build path!");
             }
+            System.IO.Directory.CreateDirectory(BuildPath);
 
-            if(string.IsNullOrEmpty(InstallPath))
+            if (string.IsNullOrEmpty(InstallPath))
             {
                 throw new Sharpmake.Error("Must set valid install path!");
             }
+            System.IO.Directory.CreateDirectory(InstallPath);
 
-            if(string.IsNullOrEmpty(FastBuildPath))
+            if (string.IsNullOrEmpty(FastBuildPath))
             {
                 throw new Sharpmake.Error("Must set valid FastBuild path!");
             }
+            // TODO: confirm that FASTBuild is at the path
 
             if(string.IsNullOrEmpty(VcpkgPath))
             {
                 throw new Sharpmake.Error("Must set valid vcpkg path!");
             }
+            // TODO: confirm that vcpkg is at the path
 
-            if(string.IsNullOrEmpty(ThirdPartyInstallPath))
+            if (string.IsNullOrEmpty(ThirdPartyInstallPath))
             {
                 throw new Sharpmake.Error("Must set valid third party install path!");
             }
+            System.IO.Directory.CreateDirectory(ThirdPartyInstallPath);
 
-            if(string.IsNullOrEmpty(QtPath))
+            if (string.IsNullOrEmpty(QtPath))
             {
                 throw new Sharpmake.Error("Must set valid Qt path!");
             }
+            // TODO: confirm that Qt is installed at the path
         }
     }
 }

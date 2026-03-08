@@ -71,6 +71,8 @@ namespace Vadon.Engine
             {
                 case Platform.win64:
                     conf.Defines.Add("VADON_PLATFORM_WIN32");
+                    conf.Options.Add(Options.Vc.General.PlatformToolset.v143);
+                    conf.Options.Add(Options.Vc.General.WindowsTargetPlatformVersion.v10_0_26100_0);
                     break;
             }
 

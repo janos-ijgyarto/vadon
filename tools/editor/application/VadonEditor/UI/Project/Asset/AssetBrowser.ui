@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>AssetBrowser</class>
+ <widget class="QWidget" name="AssetBrowser">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>400</width>
+    <height>300</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Asset Browser</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="QTreeView" name="assetTree">
+     <property name="contextMenuPolicy">
+      <enum>Qt::ContextMenuPolicy::CustomContextMenu</enum>
+     </property>
+    </widget>
+   </item>
+  </layout>
+  <action name="actionCreateResource">
+   <property name="text">
+    <string>Resource</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::MenuRole::TextHeuristicRole</enum>
+   </property>
+  </action>
+ </widget>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>assetTree</sender>
+   <signal>customContextMenuRequested(QPoint)</signal>
+   <receiver>AssetBrowser</receiver>
+   <slot>asset_tree_context_menu_requested(QPoint)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>199</x>
+     <y>149</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>199</x>
+     <y>149</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>assetTree</sender>
+   <signal>clicked(QModelIndex)</signal>
+   <receiver>AssetBrowser</receiver>
+   <slot>asset_clicked(QModelIndex)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>199</x>
+     <y>149</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>199</x>
+     <y>149</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>assetTree</sender>
+   <signal>doubleClicked(QModelIndex)</signal>
+   <receiver>AssetBrowser</receiver>
+   <slot>asset_double_clicked(QModelIndex)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>199</x>
+     <y>149</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>199</x>
+     <y>149</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionCreateResource</sender>
+   <signal>triggered()</signal>
+   <receiver>AssetBrowser</receiver>
+   <slot>new_resource_triggered()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>199</x>
+     <y>149</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+ <slots>
+  <slot>asset_tree_context_menu_requested(QPoint)</slot>
+  <slot>asset_clicked(QModelIndex)</slot>
+  <slot>asset_double_clicked(QModelIndex)</slot>
+  <slot>new_resource_triggered()</slot>
+ </slots>
+</ui>

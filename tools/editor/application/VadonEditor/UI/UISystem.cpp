@@ -108,7 +108,7 @@ namespace VadonEditor::UI
 			QMessageBox::warning(m_main_window, "Project Manager", QObject::tr("Project does not have valid data schema!"));
 		}
 
-		m_main_window->m_ui.assetBrowser->setModel(&m_application.get_asset_manager().get_model());
+		m_main_window->m_ui.assetBrowser->initialize(m_application);
 	}
 
 	void UISystem::request_close()

@@ -25,8 +25,7 @@ namespace
 
 	QString get_asset_full_path(const VadonEditor::Core::AssetInfo& asset_info)
 	{
-		// TODO: combine the parts into a full path
-		return QString();
+		return asset_info.path + QDir::separator() + asset_info.name;
 	}
 }
 
@@ -34,9 +33,12 @@ namespace VadonEditor::Core
 {
 	void AssetFilterModel::add_asset(const QString& path, const InternalAssetInfo& info)
 	{
-		// TODO: check whether asset was already added!
+		Q_ASSERT_X(m_asset_lookup.find(path) == m_asset_lookup.end(), "VadonEditor::Core::AssetFilterModel::add_asset", "Asset already added at path!");
 		m_asset_lookup.insert(path, info);
-		m_file_lookup.insert(info.file_id, path);
+		if (info.type != AssetType::FOLDER)
+		{
+			m_file_lookup.insert(info.file_id, path);
+		}
 		invalidate();
 	}
 
@@ -47,7 +49,7 @@ namespace VadonEditor::Core
 		invalidate();
 	}
 
-	AssetFilterModel::InternalAssetInfo AssetFilterModel::get_asset_info(const QModelIndex& index) const
+	AssetFilterModel::InternalAssetInfo AssetFilterModel::get_internal_asset_info(const QModelIndex& index) const
 	{
 		const QString file_path = sourceModel()->data(index, QFileSystemModel::Roles::FilePathRole).toString();
 		
@@ -58,6 +60,29 @@ namespace VadonEditor::Core
 		}
 
 		return asset_it.value();
+	}
+
+	AssetInfo AssetFilterModel::get_asset_info(const QModelIndex& index) const
+	{
+		const QString file_path = sourceModel()->data(index, QFileSystemModel::Roles::FilePathRole).toString();
+
+		auto asset_it = m_asset_lookup.find(file_path);
+		if (asset_it == m_asset_lookup.end())
+		{
+			return AssetInfo{};
+		}
+
+		const InternalAssetInfo& internal_info = asset_it.value();
+		QFileInfo file_info(file_path);
+
+		AssetInfo asset_info;
+		asset_info.name = file_info.baseName();
+		asset_info.path = file_info.absolutePath();
+
+		asset_info.file_id = internal_info.file_id;
+		asset_info.type = internal_info.type;
+
+		return asset_info;
 	}
 
 	QString AssetFilterModel::find_asset_file(const QUuid& file_id) const
@@ -101,8 +126,11 @@ namespace VadonEditor::Core
 			return false;
 		}
 
-		// TODO: if checks pass, add to lookup
-		m_asset_filter_model;
+		AssetFilterModel::InternalAssetInfo internal_asset_info;
+		internal_asset_info.file_id = info.file_id;
+		internal_asset_info.type = info.type;
+
+		m_asset_filter_model.add_asset(file_info.absoluteFilePath(), internal_asset_info);
 		
 		return true;
 	}
@@ -116,13 +144,7 @@ namespace VadonEditor::Core
 			return asset_info;
 		}
 
-		const AssetFilterModel::InternalAssetInfo internal_info = m_asset_filter_model.get_asset_info(index);
-
-		// TODO: convert to public asset info object
-		asset_info.file_id = internal_info.file_id;
-		asset_info.name;
-
-		return asset_info;
+		return m_asset_filter_model.get_asset_info(index);
 	}
 
 	bool AssetManager::save_asset_data(const QUuid& asset_id, QByteArrayView data)

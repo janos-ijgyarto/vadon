@@ -32,6 +32,8 @@ namespace Vadon
 			ConfigureAutoCleanup();
 
             FastBuildSettings.FastBuildMakeCommand = Utilities.ConfigurationParameters.FastBuildPath;
+			// FIXME: this needs to be added because otherwise the generated BFFs
+			// will not have the WinSDK path
 			KitsRootPaths.SetUseKitsRootForDevEnv(DevEnv.vs2022, KitsRootEnum.KitsRoot10, Options.Vc.General.WindowsTargetPlatformVersion.v10_0_26100_0);
 
 			arguments.Generate<Engine.Solution>();
