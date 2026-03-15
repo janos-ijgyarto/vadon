@@ -35,8 +35,6 @@ namespace VadonEditor::Model
 
 		QVariant get_data(const QUuid& data_id) const;
 		void set_data(const QUuid& data_id, const QVariant& value);
-
-		bool is_modified() const { return m_modified; }
 	private:
 		Resource(Core::Application& application);
 
@@ -45,8 +43,6 @@ namespace VadonEditor::Model
 		bool internal_save(QJsonObject& root_obj) const;
 		bool internal_load(const QJsonObject& root_obj);
 
-		void notify_modified() { m_modified = true; }
-
 		Core::Application& m_application;
 
 		ResourceInfo m_info;
@@ -54,7 +50,6 @@ namespace VadonEditor::Model
 		// FIXME: could use an array and get the offsets from a "schema"
 		QHash<PropertyID, QVariant> m_properties;
 		QHash<QUuid, QVariant> m_data;
-		bool m_modified;
 
 		Resource* m_owner; // NOTE: used by embedded resources
 		QHash<ResourceID, Resource*> m_embedded_resources;

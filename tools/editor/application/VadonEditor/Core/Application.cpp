@@ -302,11 +302,7 @@ namespace VadonEditor::Core
 
 			// Start network to allow communicating with plugins and other tools
 			m_network_system.run_network();
-
-			if (m_asset_manager.project_loaded() == false)
-			{
-				// TODO: error?
-			}
+			m_asset_manager.project_loaded();
 		}
 
 		void received_message(const QByteArray& data)

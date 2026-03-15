@@ -13,20 +13,49 @@ namespace VadonEditor::UI
 	{
 		Q_OBJECT
 	public:
-		NewResourceDialog(Core::Application& application, QWidget* parent);
+		NewResourceDialog(Core::Application& application, QWidget* parent = nullptr);
 
-		QUuid get_selected_resource_type() const { return m_selected_type; }
+
+	signals:
+		void resource_type_selected(const QUuid& type_uuid);
 	private slots:
-		void type_selected(const QModelIndex& index);
 		void type_double_clicked(const QModelIndex& index);
+
+		void selection_changed(const QItemSelection& selected, const QItemSelection& deselected);
+		void selection_accepted();
 	private:
-		void validate_state();
-		void internal_type_selected(const QModelIndex& index);
+		void update_controls();
+
+		QModelIndex get_current_selection() const;
+		QUuid get_selected_type(const QModelIndex& index) const;
+
+		void finalize_selection(const QUuid& type_uuid);
 
 		Ui::NewResourceDialog m_ui;
 
 		Core::TypeFilterModel m_type_filter_model;
-		QUuid m_selected_type;
+	};
+
+	// NOTE: this is a utility object for NewResourceDialog which encapsulates
+	// the logic of creating the new resource asset based on the user's selection
+	// This helps keep the implementation of the UI objects (including the dialog) simpler
+	class NewResourceDialogBackend : public QObject
+	{
+		Q_OBJECT
+	public:
+		NewResourceDialogBackend(Core::Application& application, QWidget* dialog_parent, const QString& init_path = "");
+	private slots:
+		void resource_type_selected(const QUuid& type_uuid);
+		void file_path_selected(const QString& asset_path);
+
+		void end_workflow();
+	private:
+		void create_resource_asset(const QString& asset_path);
+
+		Core::Application& m_application;
+
+		QWidget* m_dialog_parent;
+		QUuid m_new_resource_type;
 	};
 }
 #endif

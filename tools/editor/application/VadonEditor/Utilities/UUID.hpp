@@ -46,5 +46,27 @@ namespace VadonEditor::Utilities
 		const QUuid uuid = QUuid::fromString(string);
 		return uuid_to_base64_string(uuid);
 	}
+
+	inline QUuid vadon_uuid_string_to_qt_uuid(const ::Vadon::Foundation::UUIDString& uuid_string)
+	{
+		return QUuid::fromString(uuid_string.string);
+	}
+
+	inline QString serialize_labeled_uuid(const QString& label, const QUuid& uuid)
+	{
+		return QString("%1|%2").arg(label.toLower().replace(' ', '_')).arg(uuid_to_base64_string(uuid));
+	}
+
+	inline QUuid parse_labeled_uuid(const QString& uuid_string)
+	{
+		const qsizetype separator_index = uuid_string.indexOf('|');
+		if (separator_index != -1)
+		{
+			return base64_string_to_uuid(uuid_string.sliced(separator_index + 1));
+		}
+
+		// Assume it's a regular UUID string
+		return base64_string_to_uuid(uuid_string);
+	}
 }
 #endif

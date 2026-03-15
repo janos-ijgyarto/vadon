@@ -15,10 +15,11 @@ namespace VadonEditor::Core
 
 	struct AssetInfo
 	{
-		QString name;
-		QString path;
+		QString path; // NOTE: all assets use *RELATIVE* paths w.r.t the project root
 		AssetType type = AssetType::NONE;
 		QUuid file_id;
+
+		bool is_valid() const { return type != AssetType::NONE; }
 
 		bool operator==(const AssetInfo& other) const
 		{

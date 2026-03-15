@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>AssetBrowser</class>
- <widget class="QWidget" name="AssetBrowser">
+ <class>AssetBrowserTree</class>
+ <widget class="QWidget" name="AssetBrowserTree">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -11,14 +11,20 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Asset Browser</string>
+   <string>Asset Browser Tree</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout">
+  <layout class="QVBoxLayout" name="mainLayout">
    <item>
     <widget class="QTreeView" name="assetTree">
      <property name="contextMenuPolicy">
       <enum>Qt::ContextMenuPolicy::CustomContextMenu</enum>
      </property>
+     <property name="editTriggers">
+      <set>QAbstractItemView::EditTrigger::NoEditTriggers</set>
+     </property>
+     <attribute name="headerVisible">
+      <bool>false</bool>
+     </attribute>
     </widget>
    </item>
   </layout>
@@ -36,7 +42,7 @@
   <connection>
    <sender>assetTree</sender>
    <signal>customContextMenuRequested(QPoint)</signal>
-   <receiver>AssetBrowser</receiver>
+   <receiver>AssetBrowserTree</receiver>
    <slot>asset_tree_context_menu_requested(QPoint)</slot>
    <hints>
     <hint type="sourcelabel">
@@ -51,24 +57,8 @@
   </connection>
   <connection>
    <sender>assetTree</sender>
-   <signal>clicked(QModelIndex)</signal>
-   <receiver>AssetBrowser</receiver>
-   <slot>asset_clicked(QModelIndex)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>199</x>
-     <y>149</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>199</x>
-     <y>149</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>assetTree</sender>
    <signal>doubleClicked(QModelIndex)</signal>
-   <receiver>AssetBrowser</receiver>
+   <receiver>AssetBrowserTree</receiver>
    <slot>asset_double_clicked(QModelIndex)</slot>
    <hints>
     <hint type="sourcelabel">
@@ -84,7 +74,7 @@
   <connection>
    <sender>actionCreateResource</sender>
    <signal>triggered()</signal>
-   <receiver>AssetBrowser</receiver>
+   <receiver>AssetBrowserTree</receiver>
    <slot>new_resource_triggered()</slot>
    <hints>
     <hint type="sourcelabel">
@@ -100,7 +90,6 @@
  </connections>
  <slots>
   <slot>asset_tree_context_menu_requested(QPoint)</slot>
-  <slot>asset_clicked(QModelIndex)</slot>
   <slot>asset_double_clicked(QModelIndex)</slot>
   <slot>new_resource_triggered()</slot>
  </slots>

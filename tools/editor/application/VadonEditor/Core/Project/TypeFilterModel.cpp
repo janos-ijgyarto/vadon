@@ -12,6 +12,7 @@ namespace VadonEditor::Core
         : QSortFilterProxyModel(parent)
         , m_application(application)
     {
+        setSourceModel(const_cast<QStandardItemModel*>(&application.get_project_manager().get_project_data_schema().get_qt_model()));
     }
 
     void TypeFilterModel::set_root_type(const QUuid& type_uuid)
@@ -29,6 +30,11 @@ namespace VadonEditor::Core
 
         const QModelIndex row_index = sourceModel()->index(sourceRow, 0, sourceParent);
         const QUuid type_uuid = sourceModel()->data(row_index, static_cast<Qt::ItemDataRole>(TypeTreeDataRole::TYPE_UUID)).toUuid();
+
+        if (type_uuid.isNull())
+        {
+            return false;
+        }
         
         if (m_root_type == type_uuid)
         {

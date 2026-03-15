@@ -10,11 +10,10 @@ namespace VadonEditor::UI
 	class LauncherDialog;
 	class MainWindow;
 
-	class RenderWidget;
-
 	class UISystem
 	{
 	public:
+		MainWindow* get_main_window() const { return m_main_window; }
 	private:
 		UISystem(Core::Application& application);
 

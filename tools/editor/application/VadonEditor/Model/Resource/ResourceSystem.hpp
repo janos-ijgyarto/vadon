@@ -17,7 +17,10 @@ namespace VadonEditor::Model
 
 		ResourceInfo parse_resource_info(const QByteArray& file_data) const;
 
+		Resource* create_resource(const QUuid& type_id);
 		Resource* get_resource(const ResourceID& resource_id);
+
+		bool save_resource(Resource* resource);
 
 		static QString get_imported_file_path(const QFileInfo& resource_file_info);
 	private:
@@ -25,6 +28,7 @@ namespace VadonEditor::Model
 
 		bool initialize();
 
+		Resource* internal_create_new_resource(const ResourceInfo& info);
 		bool internal_parse_resource_info(ResourceInfo& info, const QJsonObject& root_object) const;
 
 		Core::Application& m_application;

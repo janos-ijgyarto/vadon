@@ -64,7 +64,7 @@
           </widget>
          </item>
          <item>
-          <widget class="VadonEditor::UI::AssetBrowser" name="assetBrowser" native="true"/>
+          <widget class="VadonEditor::UI::AssetBrowserTree" name="assetBrowser" native="true"/>
          </item>
         </layout>
        </widget>
@@ -149,7 +149,7 @@
      <x>0</x>
      <y>0</y>
      <width>1024</width>
-     <height>22</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -264,7 +264,7 @@
    <container>1</container>
   </customwidget>
   <customwidget>
-   <class>VadonEditor::UI::AssetBrowser</class>
+   <class>VadonEditor::UI::AssetBrowserTree</class>
    <extends>QWidget</extends>
    <header>VadonEditor/UI/Project/Asset/AssetBrowser.hpp</header>
    <container>1</container>

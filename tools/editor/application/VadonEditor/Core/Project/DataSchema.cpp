@@ -39,20 +39,20 @@ namespace
 
 	QUuid s_base_type_uuids[] = {
 		QUuid(),
-		QUuid::fromString(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::INT32).string),
-		QUuid::fromString(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::UINT32).string),
-		QUuid::fromString(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::FLOAT).string),
-		QUuid::fromString(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::BOOL).string),
-		QUuid::fromString(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::STRING).string),
-		QUuid::fromString(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::VECTOR2).string),
-		QUuid::fromString(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::VECTOR2I).string),
-		QUuid::fromString(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::VECTOR3).string),
-		QUuid::fromString(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::VECTOR3I).string),
-		QUuid::fromString(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::VECTOR4).string),
-		QUuid::fromString(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::COLORRGBA).string),
-		QUuid::fromString(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::UUID).string),
-		QUuid::fromString(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::ARRAY).string),
-		QUuid::fromString(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::DICTIONARY).string)
+		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::INT32)),
+		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::UINT32)),
+		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::FLOAT)),
+		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::BOOL)),
+		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::STRING)),
+		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::VECTOR2)),
+		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::VECTOR2I)),
+		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::VECTOR3)),
+		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::VECTOR3I)),
+		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::VECTOR4)),
+		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::COLORRGBA)),
+		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::UUID)),
+		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::ARRAY)),
+		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::DICTIONARY))
 	};
 
 	QStandardItem* create_type_tree_standard_item(const QString& label)
@@ -406,12 +406,13 @@ namespace VadonEditor::Core
 			auto type_it = m_types.find(qt_uuid);
 			Q_ASSERT_X(type_it != m_types.end(), "VadonEditor::Core::DataSchema::is_base_of", "Type not in schema!");
 
-			if (type_it->info.base_id == base_uuid)
+			const TypeData& type_data = type_it.value();
+			if (type_data.info.base_id == base_uuid)
 			{
 				return true;
 			}
 
-			qt_uuid = Utilities::vadon_uuid_to_qt_uuid(type_it->info.base_id);
+			qt_uuid = Utilities::vadon_uuid_to_qt_uuid(type_data.info.base_id);
 		}
 
 		return false;
