@@ -117,4 +117,34 @@ namespace VadonEditor::UI
 		QPushButton* save_button = m_ui.buttonBox->button(QDialogButtonBox::StandardButton::Save);
 		save_button->setEnabled(m_ui.assetBrowser->get_file_name().isEmpty() == false);
 	}
+
+	OpenAssetDialog::OpenAssetDialog(Core::Application& application, QWidget* parent)
+		: QDialog(parent)
+	{
+		m_ui.setupUi(this);
+		setAttribute(Qt::WidgetAttribute::WA_DeleteOnClose, true);
+
+		m_ui.assetBrowser->initialize(application);
+	}
+
+	void OpenAssetDialog::asset_name_changed(const QString& text)
+	{
+		Q_UNUSED(text);
+		update_controls();
+	}
+
+	void OpenAssetDialog::finalize_asset_open()
+	{
+		const QString root_path = m_ui.assetBrowser->get_current_root_path();
+		QString asset_path = root_path.isEmpty() ? m_ui.assetBrowser->get_file_name() : QString("%1/%2").arg(root_path).arg(m_ui.assetBrowser->get_file_name());
+		emit(asset_opened(asset_path));
+
+		accept();
+	}
+
+	void OpenAssetDialog::update_controls()
+	{
+		QPushButton* open_button = m_ui.buttonBox->button(QDialogButtonBox::StandardButton::Open);
+		open_button->setEnabled(m_ui.assetBrowser->get_file_name().isEmpty() == false);
+	}
 }

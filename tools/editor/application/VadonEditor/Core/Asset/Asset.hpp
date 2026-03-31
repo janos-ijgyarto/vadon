@@ -15,15 +15,17 @@ namespace VadonEditor::Core
 
 	struct AssetInfo
 	{
+		static constexpr int c_invalid_file_id = 0;
+
+		int id = c_invalid_file_id;
 		QString path; // NOTE: all assets use *RELATIVE* paths w.r.t the project root
 		AssetType type = AssetType::NONE;
-		QUuid file_id;
 
 		bool is_valid() const { return type != AssetType::NONE; }
 
 		bool operator==(const AssetInfo& other) const
 		{
-			return (path == other.path) && (type == other.type) && (file_id == other.file_id);
+			return (path == other.path) && (type == other.type) && (id == other.id);
 		}
 
 		// FIXME: make this more modular!
@@ -40,6 +42,12 @@ namespace VadonEditor::Core
 			}
 
 			return "";
+		}
+
+		// NOTE: assumes path will not end in a file suffix, and can simply attach the suffix
+		static QString get_file_path(const QString& path, AssetType type)
+		{
+			return path + "." + Core::AssetInfo::get_file_suffix(type);
 		}
 	};
 }

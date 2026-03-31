@@ -13,9 +13,7 @@ namespace VadonEditor::UI
 	{
 		Q_OBJECT
 	public:
-		NewResourceDialog(Core::Application& application, QWidget* parent = nullptr);
-
-
+		NewResourceDialog(Core::Application& application, const QUuid& base_type, QWidget* parent = nullptr);
 	signals:
 		void resource_type_selected(const QUuid& type_uuid);
 	private slots:

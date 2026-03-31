@@ -1,4 +1,4 @@
-#include <VadonEditor/Core/Project/DataSchema.hpp>
+#include <VadonEditor/Core/Data/Schema.hpp>
 
 #include <VadonEditor/Core/Project/Project.hpp>
 
@@ -37,24 +37,6 @@ namespace
 		return QString(QByteArray(QByteArrayView(uuid_bytes)).toBase64());
 	}
 
-	QUuid s_base_type_uuids[] = {
-		QUuid(),
-		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::INT32)),
-		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::UINT32)),
-		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::FLOAT)),
-		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::BOOL)),
-		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::STRING)),
-		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::VECTOR2)),
-		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::VECTOR2I)),
-		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::VECTOR3)),
-		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::VECTOR3I)),
-		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::VECTOR4)),
-		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::COLORRGBA)),
-		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::UUID)),
-		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::ARRAY)),
-		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::DICTIONARY))
-	};
-
 	QStandardItem* create_type_tree_standard_item(const QString& label)
 	{
 		QStandardItem* new_item = new QStandardItem(label);
@@ -68,113 +50,6 @@ namespace
 
 namespace VadonEditor::Core
 {
-	QString PropertyData::find_metadata(const char* key) const
-	{
-		auto metadata_it = metadata.find(key);
-		if(metadata_it == metadata.end())
-		{
-			return QString();
-		}
-
-		return metadata_it->constData();
-	}
-
-	PropertyCategory PropertyData::get_category() const
-	{
-		const ::Vadon::Foundation::BaseType base_type = DataSchema::get_base_type(info.type);
-		switch (base_type)
-		{
-		case ::Vadon::Foundation::BaseType::UUID:
-		{
-			// Resource type only if it has valid metadata
-			if (find_metadata(::Vadon::Foundation::CommonPropertyMetadata::RESOURCE_TYPE).isEmpty() == false)
-			{
-				return PropertyCategory::RESOURCE;
-			}
-		}
-		break;
-		case ::Vadon::Foundation::BaseType::ARRAY:
-			return PropertyCategory::ARRAY;
-		}
-
-		// Fall back on trivial
-		return PropertyCategory::TRIVIAL;
-	}
-
-	QString PropertyData::get_name() const
-	{
-		QString name = find_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME);
-		if (name.isEmpty() == true)
-		{
-			name = QString("Property_%1").arg(Utilities::vadon_uuid_to_qt_uuid(info.id).toString(QUuid::StringFormat::WithoutBraces));
-		}
-
-		return name;
-	}
-
-	::Vadon::Foundation::UUID PropertyData::get_data_type() const
-	{
-		switch (get_category())
-		{
-		case PropertyCategory::RESOURCE:
-		{
-			// FIXME: we should also make sure the resource type is registered!
-			const QString uuid_string = find_metadata(::Vadon::Foundation::CommonPropertyMetadata::RESOURCE_TYPE);
-			const ::Vadon::Foundation::UUID resource_type_uuid = Utilities::qt_uuid_to_vadon_uuid(Utilities::base64_string_to_uuid(uuid_string));
-			Q_ASSERT_X(resource_type_uuid.is_valid() == true, "VadonEditor::Core::PropertyData", "Invalid resource type!");
-			return resource_type_uuid;
-		}
-		case PropertyCategory::ARRAY:
-		{
-			const QString uuid_string = find_metadata(::Vadon::Foundation::CommonPropertyMetadata::ARRAY_TYPE);
-			Q_ASSERT_X(uuid_string.isEmpty() == false, "VadonEditor::Core::PropertyData", "Invalid array type!");
-
-			const ::Vadon::Foundation::UUID array_type_uuid = Utilities::qt_uuid_to_vadon_uuid(Utilities::base64_string_to_uuid(uuid_string));
-			Q_ASSERT_X(array_type_uuid.is_valid() == true, "VadonEditor::Core::PropertyData", "Invalid array type!");
-			return array_type_uuid;
-		}
-		}
-
-		// Fallback is the actual data type
-		return info.type;
-	}
-
-	const PropertyData* TypeData::find_property_data(const ::Vadon::Foundation::UUID& property_uuid) const
-	{
-		const QUuid qt_property_uuid = Utilities::vadon_uuid_to_qt_uuid(property_uuid);
-		auto property_it = properties.find(qt_property_uuid);
-
-		if(property_it == properties.end())
-		{
-			// TODO: warning?
-			return nullptr;
-		}
-
-		return &property_it.value();
-	}
-
-	QString TypeData::find_metadata(const char* key) const
-	{
-		auto metadata_it = metadata.find(key);
-		if (metadata_it == metadata.end())
-		{
-			return QString();
-		}
-
-		return metadata_it->constData();
-	}
-
-	QString TypeData::get_name() const
-	{
-		QString name = find_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME);
-		if (name.isEmpty() == true)
-		{
-			name = QString("Type_%1").arg(Utilities::vadon_uuid_to_qt_uuid(info.id).toString(QUuid::StringFormat::WithoutBraces));
-		}
-
-		return name;
-	}
-
 	void DataSchema::TypeMetadataRegistry::register_type(const::Vadon::Foundation::TypeInfo& type_info)
 	{
 		Q_ASSERT_X(type_info.id.is_valid() == true, "VadonEditor::Core::DataSchema::register_type", "Type not registered!");
@@ -661,30 +536,6 @@ namespace VadonEditor::Core
 		return true;
 	}
 
-	::Vadon::Foundation::UUID DataSchema::get_base_type_uuid(::Vadon::Foundation::BaseType type)
-	{
-		return Utilities::qt_uuid_to_vadon_uuid(s_base_type_uuids[static_cast<size_t>(type)]);
-	}
-
-	::Vadon::Foundation::BaseType DataSchema::get_base_type(const::Vadon::Foundation::UUID& type_uuid)
-	{
-		if (type_uuid.is_valid() == false)
-		{
-			return ::Vadon::Foundation::BaseType::INVALID;
-		}
-
-		const QUuid qt_uuid = Utilities::vadon_uuid_to_qt_uuid(type_uuid);
-		for (int type_index = 0; type_index < static_cast<int>(::Vadon::Foundation::BaseType::TYPE_COUNT); ++type_index)
-		{
-			if (qt_uuid == s_base_type_uuids[type_index])
-			{
-				return static_cast<::Vadon::Foundation::BaseType>(type_index);
-			}
-		}
-
-		return ::Vadon::Foundation::BaseType::INVALID;
-	}
-
 	void DataSchema::generate_qt_model()
 	{
 		// Clear all prior contents of the model
@@ -715,7 +566,7 @@ namespace VadonEditor::Core
 			QStandardItem* new_type_node = create_type_tree_standard_item(type_data->get_name());
 			new_type_node->setData(type_qt_uuid, static_cast<int>(TypeTreeDataRole::TYPE_UUID));
 
-			if (VadonEditor::Core::DataSchema::get_base_type(type_uuid) != ::Vadon::Foundation::BaseType::INVALID)
+			if (VadonEditor::Core::TypeData::get_base_type(type_uuid) != ::Vadon::Foundation::BaseType::INVALID)
 			{
 				base_types_root->appendRow(new_type_node);
 				continue;

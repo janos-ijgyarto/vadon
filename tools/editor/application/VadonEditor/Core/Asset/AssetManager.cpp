@@ -6,15 +6,6 @@
 
 #include <VadonEditor/Core/Project/ProjectManager.hpp>
 
-#include <VadonEditor/Model/ModelSystem.hpp>
-#include <VadonEditor/Model/Resource/ResourceSystem.hpp>
-#include <VadonEditor/Model/Scene/SceneSystem.hpp>
-
-#include <VadonEditor/Utilities/UUID.hpp>
-
-#include <Vadon/Foundation/Model/Resource/File.hpp>
-#include <Vadon/Foundation/Model/Scene/Scene.hpp>
-
 #include <QDirIterator>
 
 namespace
@@ -24,8 +15,7 @@ namespace
 	enum class AssetDataRole
 	{
 		ID = Qt::ItemDataRole::UserRole + 1, 
-		TYPE,
-		
+		TYPE,		
 	};
 
 	bool is_excluded_asset_directory(const QFileInfo& dir_info)
@@ -40,12 +30,12 @@ namespace
 		return false;
 	}
 
-	QStandardItem* find_asset_by_id_recursive(const QStandardItem* parent, const QUuid& id)
+	QStandardItem* find_asset_by_id_recursive(const QStandardItem* parent, int id)
 	{
 		for (int child_index = 0; child_index < parent->rowCount(); ++child_index)
 		{
 			QStandardItem* current_child = parent->child(child_index);
-			if (current_child->data(static_cast<int>(AssetDataRole::ID)).toUuid() == id)
+			if (current_child->data(static_cast<int>(AssetDataRole::ID)).toInt() == id)
 			{
 				return current_child;
 			}
@@ -69,13 +59,20 @@ namespace
 
 		return new_item;
 	}
+
+	QString get_imported_file_path(const QFileInfo& resource_file_info)
+	{
+		// Assume file info is for the .vdimport file
+		// The file should be the same path but with the final suffix removed
+		return QString("%1/%2").arg(resource_file_info.absolutePath()).arg(resource_file_info.completeBaseName());
+	}
 }
 
 namespace VadonEditor::Core
 {
 	QModelIndex AssetManager::create_asset(const AssetInfo& info)
 	{
-		if (find_asset_by_id(info.file_id) != nullptr)
+		if (find_asset_by_id(info.id) != nullptr)
 		{
 			qCritical() << "Asset already exists!";
 			return QModelIndex();
@@ -89,7 +86,6 @@ namespace VadonEditor::Core
 		}
 
 		InternalAssetInfo internal_asset_info;
-		internal_asset_info.file_id = info.file_id;
 		internal_asset_info.type = info.type;
 
 		QStandardItem* new_asset_item = add_asset(info.path, internal_asset_info);
@@ -118,13 +114,13 @@ namespace VadonEditor::Core
 		}
 
 		asset_info.path = get_asset_path(asset_item);
-		asset_info.file_id = asset_item->data(static_cast<int>(AssetDataRole::ID)).toUuid();
+		asset_info.id = asset_item->data(static_cast<int>(AssetDataRole::ID)).toInt();
 		asset_info.type = static_cast<AssetType>(asset_item->data(static_cast<int>(AssetDataRole::TYPE)).toInt());
 
 		return asset_info;
 	}
 
-	bool AssetManager::save_asset_data(const QUuid& asset_id, QByteArrayView data)
+	bool AssetManager::save_asset_data(int asset_id, QByteArrayView data)
 	{
 		QStandardItem* asset_item = find_asset_by_id(asset_id);
 		if (asset_item == nullptr)
@@ -162,7 +158,7 @@ namespace VadonEditor::Core
 		return true;
 	}
 
-	bool AssetManager::load_asset_data(const QUuid& asset_id, QByteArray& data) const
+	bool AssetManager::load_asset_data(int asset_id, QByteArray& data) const
 	{
 		QStandardItem* asset_item = find_asset_by_id(asset_id);
 
@@ -183,6 +179,17 @@ namespace VadonEditor::Core
 
 		data = asset_file.readAll();
 		return true;
+	}
+
+	QModelIndex AssetManager::find_asset_index(int asset_id) const
+	{
+		QStandardItem* asset_item = find_asset_by_id(asset_id);
+		if ((asset_item != nullptr) && (asset_item != m_asset_model.invisibleRootItem()))
+		{
+			return asset_item->index();
+		}
+
+		return QModelIndex();
 	}
 
 	QModelIndex AssetManager::find_asset_index_by_path(const QString& path) const
@@ -208,6 +215,7 @@ namespace VadonEditor::Core
 
 	AssetManager::AssetManager(Application& application)
 		: m_application(application)
+		, m_id_counter(0)
 	{
 	}
 
@@ -285,7 +293,7 @@ namespace VadonEditor::Core
 					{
 						// Make sure the imported file also exists
 						// Get path to the imported file by removing the import suffix
-						const QString imported_file_path = Model::ResourceSystem::get_imported_file_path(file_info);
+						const QString imported_file_path = get_imported_file_path(file_info);
 						if (QFileInfo(imported_file_path).exists() == false)
 						{
 							qWarning() << "Found import file at" << file_info.absoluteFilePath() << "but no corresponding asset file!";
@@ -293,49 +301,9 @@ namespace VadonEditor::Core
 						}
 					}
 
-					// FIXME: use a cache so we don't need to load the files every time
-					QFile resource_file(file_info.absoluteFilePath());
-					if (resource_file.open(QIODevice::ReadOnly) == false)
-					{
-						qCritical() << "Failed to open resource file!";
-						return;
-					}
-
-					QByteArray resource_file_data = resource_file.readAll();
-
-					const Model::ResourceInfo resource_info = m_application.get_model_system().get_resource_system().parse_resource_info(resource_file_data);
-					asset_info.file_id = resource_info.id;
-
-					if (asset_info.file_id.isNull() == false)
-					{
-						switch (asset_type)
-						{
-						case AssetType::SCENE:
-						{
-							if (resource_info.type != Utilities::base64_string_to_uuid(::Vadon::Foundation::SceneSchema::c_type_uuid.string))
-							{
-								qCritical() << "Scene file" << file_info.absoluteFilePath() << "does not contain scene type!";
-								return;
-							}
-						}
-						break;
-						case AssetType::IMPORTED_FILE:
-						{
-							if (resource_info.type != Utilities::base64_string_to_uuid(::Vadon::Foundation::FileResourceSchema::c_type_uuid.string))
-							{
-								qCritical() << "Imported file" << file_info.absoluteFilePath() << "does not contain imported file resource type!";
-								return;
-							}
-						}
-						break;
-						}
-
-						add_asset(get_asset_relative_path(file_info.absoluteFilePath()), asset_info);
-					}
-					else
-					{
-						qCritical() << "Invalid asset file data in" << file_info.absoluteFilePath();
-					}
+					// Add asset, delegate validation to other systems
+					asset_info.id = generate_new_asset_id();
+					add_asset(get_asset_relative_path(file_info.absoluteFilePath()), asset_info);
 				}
 				break;
 				// TODO: other asset types?
@@ -358,7 +326,7 @@ namespace VadonEditor::Core
 		Q_ASSERT_X(parent_item != nullptr, "VadonEditor::Core::AssetManager::add_asset", "Parent not added");
 
 		QStandardItem* new_asset_item = create_asset_tree_item(file_info.fileName());
-		new_asset_item->setData(info.file_id, static_cast<int>(AssetDataRole::ID));
+		new_asset_item->setData(generate_new_asset_id(), static_cast<int>(AssetDataRole::ID));
 		new_asset_item->setData(static_cast<int>(info.type), static_cast<int>(AssetDataRole::TYPE));
 
 		parent_item->appendRow(new_asset_item);
@@ -400,9 +368,9 @@ namespace VadonEditor::Core
 		return current_parent;
 	}
 
-	QStandardItem* AssetManager::find_asset_by_id(const QUuid& id) const
+	QStandardItem* AssetManager::find_asset_by_id(int id) const
 	{
-		if (id.isNull() == true)
+		if (id == AssetInfo::c_invalid_file_id)
 		{
 			return nullptr;
 		}
@@ -434,5 +402,13 @@ namespace VadonEditor::Core
 		const ProjectInfo& project_info = m_application.get_project_manager().get_project_info();
 		QDir project_root_dir(project_info.root_path);
 		return QDir::cleanPath(project_root_dir.relativeFilePath(asset_path));
+	}
+
+	int AssetManager::generate_new_asset_id()
+	{
+		const int new_asset_id = (m_id_counter + 1);
+		++m_id_counter;
+
+		return new_asset_id;
 	}
 }

@@ -1,5 +1,6 @@
 #ifndef VADONEDITOR_UI_UISYSTEM_HPP
 #define VADONEDITOR_UI_UISYSTEM_HPP
+#include <VadonEditor/UI/Model/Resource/ResourceManager.hpp>
 class QByteArray;
 namespace VadonEditor::Core
 {
@@ -34,6 +35,8 @@ namespace VadonEditor::UI
 
 		LauncherDialog* m_launcher_dialog;
 		MainWindow* m_main_window;
+
+		ResourceManager m_resource_manager;
 
 		friend Core::Application;
 	};

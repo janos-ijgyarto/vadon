@@ -21,6 +21,8 @@ namespace VadonEditor::Model
 		QUuid type;
 
 		bool load(const QJsonObject& root_obj);
+
+		bool is_valid() const { return (id.isNull() == false) && (type.isNull() == false); }
 	};
 
 	class Resource
@@ -28,6 +30,7 @@ namespace VadonEditor::Model
 	public:
 		~Resource();
 
+		Core::Application& get_application() { return m_application; }
 		const ResourceInfo& get_info() const { return m_info; }
 
 		QVariant get_property(const PropertyID& property_id) const;
@@ -35,6 +38,13 @@ namespace VadonEditor::Model
 
 		QVariant get_data(const QUuid& data_id) const;
 		void set_data(const QUuid& data_id, const QVariant& value);
+
+		const Resource* get_owner() const { return m_owner; }
+
+		Resource* create_embedded_resource(const QUuid& type);
+
+		static bool is_resource_base_of_type(VadonEditor::Core::Application& application, const QUuid& type_id);
+		static QUuid get_base_resource_type();
 	private:
 		Resource(Core::Application& application);
 
@@ -53,6 +63,8 @@ namespace VadonEditor::Model
 
 		Resource* m_owner; // NOTE: used by embedded resources
 		QHash<ResourceID, Resource*> m_embedded_resources;
+
+		bool m_pending_remove; // FIXME: nicer way to do this?
 
 		friend class ResourceSystem;
 	};

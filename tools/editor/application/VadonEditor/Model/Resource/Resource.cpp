@@ -14,6 +14,66 @@
 #include <QJsonArray>
 #include <QJsonObject>
 
+namespace
+{
+	// FIXME: move this to shared utility function
+	QVariant get_property_data_from_json(int property_type_id, const QJsonValueConstRef& json_value)
+	{
+		switch (property_type_id)
+		{
+		case QMetaType::Type::Int:
+		case QMetaType::Type::UInt:
+		case QMetaType::Type::Float:
+		case QMetaType::Type::Double:
+		{
+			Q_ASSERT_X(json_value.type() == QJsonValue::Type::Double, "get_property_data_from_json", "Invalid type");
+			switch (property_type_id)
+			{
+			case QMetaType::Type::Int:
+				return QVariant(json_value.toInt());
+			case QMetaType::Type::UInt:
+				return QVariant(static_cast<unsigned int>(json_value.toInt()));
+			case QMetaType::Type::Float:
+				return QVariant(static_cast<float>(json_value.toDouble()));
+			case QMetaType::Type::Double:
+				return json_value.toDouble();
+			default:
+				Q_UNREACHABLE();
+			}
+		}
+		break;
+		case QMetaType::Type::QUuid:
+		{
+			Q_ASSERT_X(json_value.type() == QJsonValue::Type::String, "get_property_data_from_json", "Invalid type");
+			return VadonEditor::Utilities::base64_string_to_uuid(json_value.toString());
+		}
+		case QMetaType::Type::QString:
+		{
+			Q_ASSERT_X(json_value.type() == QJsonValue::Type::String, "get_property_data_from_json", "Invalid type");
+			return json_value.toString();
+		}
+		}
+
+		Q_UNREACHABLE_RETURN(QVariant());
+	}
+
+	QJsonValue save_property_value_to_json(const QVariant& value)
+	{
+		// TODO: other types?
+		switch (value.typeId())
+		{
+		case QMetaType::Type::QUuid:
+		{
+			// UUIDs need to be saved as Base64 strings
+			const QUuid uuid_value = value.toUuid();
+			return VadonEditor::Utilities::uuid_to_base64_string(uuid_value);
+		}
+		default:
+			return QJsonValue::fromVariant(value);
+		}
+	}
+}
+
 namespace VadonEditor::Model
 {
 	bool ResourceInfo::load(const QJsonObject& root_obj)
@@ -55,13 +115,42 @@ namespace VadonEditor::Model
 
 	Resource::~Resource()
 	{
+		if (m_pending_remove == true)
+		{
+			// Special case: Resource System is cleaning up, so we can early out
+			return;
+		}
+
+		if (m_owner != nullptr)
+		{
+			// Remove from owner
+			auto embedded_it = m_owner->m_embedded_resources.find(get_info().id);
+			if (embedded_it != m_embedded_resources.end())
+			{
+				m_owner->m_embedded_resources.erase(embedded_it);
+			}
+			else
+			{
+				Q_ASSERT_X(false, "VadonEditor::Model::Resource::~Resource", "Embedded resource not found in owner!");
+			}
+			m_owner = nullptr;
+		}
+
 		// Delete all embedded resources
 		for (auto embedded_resource_it = m_embedded_resources.begin(); embedded_resource_it != m_embedded_resources.end(); ++embedded_resource_it)
 		{
-			delete embedded_resource_it.value();
+			Resource* current_embedded_resource = embedded_resource_it.value();
+			current_embedded_resource->m_owner = nullptr; // Remove owner to skip callback
+
+			delete current_embedded_resource;
 		}
 
 		m_embedded_resources.clear();
+
+		m_pending_remove = true; // Set internal flag so ResourceSystem accepts the removal
+
+		// Unregister from ResourceSystem
+		m_application.get_model_system().get_resource_system().remove_resource(this);
 	}
 
 	QVariant Resource::get_property(const PropertyID& property_id) const
@@ -98,9 +187,43 @@ namespace VadonEditor::Model
 		data_it.value() = value;
 	}
 
+	Resource* Resource::create_embedded_resource(const QUuid& type)
+	{
+		Resource* embedded_resource = m_application.get_model_system().get_resource_system().create_resource(type);
+		if (embedded_resource == nullptr)
+		{
+			Q_ASSERT_X(false, "VadonEditor::Model::Resource::create_embedded_resource", "Failed to create embedded resource!");
+			return nullptr;
+		}
+
+		auto embedded_it = m_embedded_resources.find(embedded_resource->get_info().id);
+		if (embedded_it != m_embedded_resources.end())
+		{
+			Q_ASSERT_X(false, "VadonEditor::Model::Resource::create_embedded_resource", "Failed to create embedded resource!");
+			delete embedded_resource;
+			return nullptr;
+		}
+
+		m_embedded_resources.insert(embedded_resource->get_info().id, embedded_resource);
+		embedded_resource->m_owner = this;
+
+		return embedded_resource;
+	}
+
+	bool Resource::is_resource_base_of_type(VadonEditor::Core::Application& application, const QUuid& type_id)
+	{
+		return application.get_project_manager().get_project_data_schema().is_base_of(VadonEditor::Utilities::qt_uuid_to_vadon_uuid(get_base_resource_type()), VadonEditor::Utilities::qt_uuid_to_vadon_uuid(type_id));
+	}
+
+	QUuid Resource::get_base_resource_type()
+	{
+		return VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::ResourceSchema::c_type_uuid);
+	}
+
 	Resource::Resource(Core::Application& application)
 		: m_application(application)
 		, m_owner(nullptr)
+		, m_pending_remove(false)
 	{
 	}
 
@@ -119,7 +242,7 @@ namespace VadonEditor::Model
 
 			for (auto property_it = type_data->properties.begin(); property_it != type_data->properties.end(); ++property_it)
 			{
-				const ::Vadon::Foundation::BaseType base_type = Core::DataSchema::get_base_type(property_it->info.type);
+				const ::Vadon::Foundation::BaseType base_type = Core::TypeData::get_base_type(property_it->info.type);
 				m_properties[property_it.key()] = Utilities::get_base_type_default_value(base_type);
 			}
 
@@ -174,8 +297,7 @@ namespace VadonEditor::Model
 						key_string = Utilities::uuid_to_base64_string(property_it.key());
 					}
 
-					// NOTE: by this stage, the property contents should be something that can be directly serialized!
-					properties_object[key_string] = QJsonValue::fromVariant(property_value_it.value());
+					properties_object[key_string] = save_property_value_to_json(property_value_it.value());
 				}
 
 				current_type_uuid = type_data->info.base_id;
@@ -239,6 +361,8 @@ namespace VadonEditor::Model
 			return false;
 		}
 
+		// NOTE: for the root keys, we have to do this suboptimal linear search
+		// to be able to use labeled UUID keys
 		const QUuid id_property_uuid = Utilities::vadon_uuid_string_to_qt_uuid(Vadon::Foundation::ResourceSchema::c_id_property.id);
 		const QUuid type_property_uuid = Utilities::vadon_uuid_string_to_qt_uuid(Vadon::Foundation::ResourceSchema::c_type_property.id);
 		const QUuid properties_property_uuid = Utilities::vadon_uuid_string_to_qt_uuid(Vadon::Foundation::ResourceSchema::c_properties_property.id);
@@ -259,6 +383,7 @@ namespace VadonEditor::Model
 			{
 				if (const QJsonValueConstRef properties_value = root_obj_it.value(); properties_value.isObject())
 				{
+					// NOTE: with the actual properties, we can 
 					const QJsonObject properties_object = properties_value.toObject();
 					for (auto property_it = properties_object.begin(); property_it != properties_object.end(); ++property_it)
 					{
@@ -266,14 +391,16 @@ namespace VadonEditor::Model
 						auto property_data_it = m_properties.find(current_property_id);
 						if (property_data_it != m_properties.end())
 						{
-							const QVariant property_value_variant = property_it.value().toVariant();
-							if (property_value_variant.typeId() != property_data_it.value().typeId())
+							const int property_data_type_id = property_data_it.value().typeId();
+
+							const QVariant json_value_variant = get_property_data_from_json(property_data_type_id, property_it.value());
+							if (json_value_variant.isValid() == false)
 							{
 								// NOTE: assume property data type changed, in which case it should have gotten a new UUID!
-								qCritical() << "Mismatch in Resource data type!";
+								qCritical() << "Invalid data loaded for property" << current_property_id.toString();
 								return false;
 							}
-							property_data_it.value() = property_value_variant;
+							property_data_it.value() = json_value_variant;
 						}
 						else
 						{
@@ -287,12 +414,26 @@ namespace VadonEditor::Model
 			{
 				if (const QJsonValueConstRef data_value = root_obj_it.value(); data_value.isObject())
 				{
-					m_data.clear();
+					// Reset all data entries
+					for (auto data_it = m_data.begin(); data_it != m_data.end(); ++data_it)
+					{
+						data_it.value() = QVariantMap();
+					}
 
 					const QJsonObject data_obj = data_value.toObject();
-					for (auto data_it = data_obj.begin(); data_it != data_obj.end(); ++data_it)
+					for (auto loaded_data_it = data_obj.begin(); loaded_data_it != data_obj.end(); ++loaded_data_it)
 					{
-						m_data.insert(Utilities::parse_labeled_uuid(data_it.key()), data_it.value().toVariant());
+						const QUuid data_uuid = Utilities::parse_labeled_uuid(loaded_data_it.key());
+						auto resource_data_it = m_data.find(data_uuid);
+						if (resource_data_it != m_data.end())
+						{
+							resource_data_it.value() = loaded_data_it.value().toVariant();
+						}
+						else
+						{
+							// NOTE: assume data was deprecated, ignore
+							qWarning() << "Data not found in Resource!";
+						}
 					}
 				}
 			}

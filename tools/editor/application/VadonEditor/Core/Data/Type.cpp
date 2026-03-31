@@ -1,0 +1,73 @@
+#include <VadonEditor/Core/Data/Type.hpp>
+
+#include <VadonEditor/Utilities/UUID.hpp>
+
+namespace
+{
+	QUuid s_base_type_uuids[] = {
+		QUuid(),
+		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::INT32)),
+		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::UINT32)),
+		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::FLOAT)),
+		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::BOOL)),
+		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::STRING)),
+		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::VECTOR2)),
+		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::VECTOR2I)),
+		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::VECTOR3)),
+		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::VECTOR3I)),
+		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::VECTOR4)),
+		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::COLORRGBA)),
+		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::UUID)),
+		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::ARRAY)),
+		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::DICTIONARY))
+	};
+}
+
+namespace VadonEditor::Core
+{
+	QString TypeData::find_metadata(const char* key) const
+	{
+		auto metadata_it = metadata.find(key);
+		if (metadata_it == metadata.end())
+		{
+			return QString();
+		}
+
+		return metadata_it->constData();
+	}
+
+	QString TypeData::get_name() const
+	{
+		QString name = find_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME);
+		if (name.isEmpty() == true)
+		{
+			name = QString("Type_%1").arg(Utilities::vadon_uuid_to_qt_uuid(info.id).toString(QUuid::StringFormat::WithoutBraces));
+		}
+
+		return name;
+	}
+
+	::Vadon::Foundation::UUID TypeData::get_base_type_uuid(::Vadon::Foundation::BaseType type)
+	{
+		return Utilities::qt_uuid_to_vadon_uuid(s_base_type_uuids[static_cast<size_t>(type)]);
+	}
+
+	::Vadon::Foundation::BaseType TypeData::get_base_type(const::Vadon::Foundation::UUID& type_uuid)
+	{
+		if (type_uuid.is_valid() == false)
+		{
+			return ::Vadon::Foundation::BaseType::INVALID;
+		}
+
+		const QUuid qt_uuid = Utilities::vadon_uuid_to_qt_uuid(type_uuid);
+		for (int type_index = 0; type_index < static_cast<int>(::Vadon::Foundation::BaseType::TYPE_COUNT); ++type_index)
+		{
+			if (qt_uuid == s_base_type_uuids[type_index])
+			{
+				return static_cast<::Vadon::Foundation::BaseType>(type_index);
+			}
+		}
+
+		return ::Vadon::Foundation::BaseType::INVALID;
+	}
+}

@@ -3,7 +3,6 @@
 #include <VadonEditor/Core/Application.hpp>
 #include <VadonEditor/Core/Configuration.hpp>
 
-#include <VadonEditor/Core/Asset/AssetManager.hpp>
 #include <VadonEditor/Core/Project/ProjectManager.hpp>
 
 #include <VadonEditor/Network/NetworkSystem.hpp>
@@ -23,6 +22,7 @@ namespace VadonEditor::UI
 {
 	UISystem::UISystem(Core::Application& application)
 		: m_application(application)
+		, m_resource_manager(application)
 		, m_launcher_dialog(nullptr)
 		, m_main_window(nullptr)
 	{
@@ -73,11 +73,18 @@ namespace VadonEditor::UI
 			show_main_window();
 		}
 
+		if (m_resource_manager.initialize() == false)
+		{
+			return false;
+		}
+
 		return true;
 	}
 
 	void UISystem::shutdown()
 	{
+		m_resource_manager.shutdown();
+
 		if (m_launcher_dialog != nullptr)
 		{
 			m_launcher_dialog->deleteLater();

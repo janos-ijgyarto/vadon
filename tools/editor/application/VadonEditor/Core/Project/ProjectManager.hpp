@@ -1,7 +1,7 @@
 #ifndef VADONEDITOR_CORE_PROJECT_PROJECTMANAGER_HPP
 #define VADONEDITOR_CORE_PROJECT_PROJECTMANAGER_HPP
 #include <VadonEditor/Core/Project/Project.hpp>
-#include <VadonEditor/Core/Project/DataSchema.hpp>
+#include <VadonEditor/Core/Data/Schema.hpp>
 #include <QObject>
 #include <QHash>
 class QFileInfo;

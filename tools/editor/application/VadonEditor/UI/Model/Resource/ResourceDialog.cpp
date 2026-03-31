@@ -2,7 +2,8 @@
 
 #include <VadonEditor/Core/Application.hpp>
 #include <VadonEditor/Core/Asset/AssetManager.hpp>
-#include <VadonEditor/Core/Project/DataSchema.hpp>
+#include <VadonEditor/Core/Project/ProjectManager.hpp>
+#include <VadonEditor/Core/Data/Schema.hpp>
 
 #include <VadonEditor/Model/ModelSystem.hpp>
 #include <VadonEditor/Model/Resource/ResourceSystem.hpp>
@@ -40,7 +41,7 @@ namespace
 
 namespace VadonEditor::UI
 {
-	NewResourceDialog::NewResourceDialog(Core::Application& application, QWidget* parent)
+	NewResourceDialog::NewResourceDialog(Core::Application& application, const QUuid& base_type, QWidget* parent)
 		: QDialog(parent)
 		, m_type_filter_model(application)
 	{
@@ -48,7 +49,15 @@ namespace VadonEditor::UI
 
 		m_ui.setupUi(this);
 
-		m_type_filter_model.set_root_type(Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::ResourceSchema::c_type_uuid));
+		QUuid validated_base_type = base_type;
+		if (Model::Resource::is_resource_base_of_type(application, validated_base_type) == false)
+		{
+			Q_ASSERT_X(false, "VadonEditor::UI::NewResourceDialog::NewResourceDialog", "Base type must be subclass of Resource!");
+			const QUuid resource_base_type = Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::ResourceSchema::c_type_uuid);
+			validated_base_type = resource_base_type;
+		}
+
+		m_type_filter_model.set_root_type(validated_base_type);
 		m_ui.typeTreeView->setModel(&m_type_filter_model);
 
 		connect(m_ui.typeTreeView->selectionModel(), &QItemSelectionModel::selectionChanged, this, &NewResourceDialog::selection_changed);
@@ -134,7 +143,8 @@ namespace VadonEditor::UI
 			m_dialog_parent = m_application.get_ui_system().get_main_window();
 		}
 
-		NewResourceDialog* dialog = new NewResourceDialog(application, m_dialog_parent);
+		const QUuid resource_base_type = Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::ResourceSchema::c_type_uuid);
+		NewResourceDialog* dialog = new NewResourceDialog(application, resource_base_type, m_dialog_parent);
 		connect(dialog, &NewResourceDialog::resource_type_selected, this, &NewResourceDialogBackend::resource_type_selected);
 		
 		// Make sure when the dialog is rejected, this object is also cleaned up
@@ -179,9 +189,8 @@ namespace VadonEditor::UI
 		Q_ASSERT_X(m_new_resource_type.isNull() == false, "VadonEditor::UI::NewResourceDialogBackend::create_resource_asset", "Resource type not set");
 
 		// First verify that the asset doesn't already exist
-		QString resource_full_path = asset_path + "." + Core::AssetInfo::get_file_suffix(Core::AssetType::RESOURCE);
 		Core::AssetManager& asset_manager = m_application.get_asset_manager();
-		if (asset_manager.find_asset_index_by_path(resource_full_path).isValid() == true)
+		if (asset_manager.find_asset_index_by_path(Core::AssetInfo::get_file_path(asset_path, Core::AssetType::RESOURCE)).isValid() == true)
 		{
 			QMessageBox::critical(m_dialog_parent, "Asset Manager Error", "Asset file already exists!");
 			return;
@@ -197,28 +206,16 @@ namespace VadonEditor::UI
 			return;
 		}
 
-		Core::AssetInfo resource_asset_info;
-		resource_asset_info.path = resource_full_path;
-		resource_asset_info.file_id = new_resource->get_info().id;
-		resource_asset_info.type = Core::AssetType::RESOURCE;
-
-		QModelIndex asset_index = asset_manager.create_asset(resource_asset_info);
-		if (asset_index.isValid() == false)
+		// Create asset
+		const int asset_id = resource_system.create_resource_asset(new_resource->get_info().id, asset_path);
+		if (asset_id == Core::AssetInfo::c_invalid_file_id)
 		{
-			QMessageBox::critical(m_dialog_parent, "Asset Manager Error", "Failed to create asset!");
-			// TODO: clean up resource!
-			return;
-		}
-
-		// Save resource for the first time
-		if (resource_system.save_resource(new_resource) == false)
-		{
-			QMessageBox::critical(m_dialog_parent, "Resource System Error", "Failed to save resource to file!");
-			// TODO: clean up resource!
+			QMessageBox::critical(m_dialog_parent, "Resource System Error", "Failed to create resource asset!");
 			return;
 		}
 
 		// TODO: also print type!
-		qDebug() << "Resource created at" << resource_full_path;
+		const QModelIndex asset_index = asset_manager.find_asset_index(asset_id);
+		qDebug() << "Resource created at" << asset_manager.get_asset_info(asset_index).path;
 	}
 }

@@ -31,6 +31,12 @@ namespace VadonEditor::Model
 
 			return true;
 		}
+
+		void project_loaded()
+		{
+			m_resource_system.project_loaded();
+			m_scene_system.project_loaded();
+		}
 	};
 
 	ModelSystem::~ModelSystem() = default;
@@ -54,5 +60,10 @@ namespace VadonEditor::Model
 	bool ModelSystem::initialize()
 	{
 		return m_internal->initialize();
+	}
+
+	void ModelSystem::project_loaded()
+	{
+		m_internal->project_loaded();
 	}
 }

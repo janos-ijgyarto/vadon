@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Property Name</string>
+   <string>Resource Name</string>
   </property>
   <layout class="QVBoxLayout" name="mainLayout">
    <item>

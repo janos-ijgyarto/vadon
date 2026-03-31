@@ -15,6 +15,7 @@ namespace VadonEditor::Model
 		SceneSystem(Core::Application& application);
 
 		bool initialize();
+		void project_loaded();
 
 		Core::Application& m_application;
 		QHash<SceneID, Scene> m_scene_lookup;

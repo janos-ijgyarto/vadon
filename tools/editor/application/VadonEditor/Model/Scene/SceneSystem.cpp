@@ -12,4 +12,9 @@ namespace VadonEditor::Model
 	{
 		return true;
 	}
+
+	void SceneSystem::project_loaded()
+	{
+		// TODO
+	}
 }

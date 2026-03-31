@@ -1,6 +1,7 @@
 #ifndef VADONEDITOR_UTILITIES_UUID_HPP
 #define VADONEDITOR_UTILITIES_UUID_HPP
 #include <Vadon/Foundation/Utilities/UUID.hpp>
+#include <QRegularExpression>
 #include <QUuid>
 namespace VadonEditor::Utilities
 {
@@ -54,7 +55,8 @@ namespace VadonEditor::Utilities
 
 	inline QString serialize_labeled_uuid(const QString& label, const QUuid& uuid)
 	{
-		return QString("%1|%2").arg(label.toLower().replace(' ', '_')).arg(uuid_to_base64_string(uuid));
+		const QString sanitized_label = label.toLower().replace(QRegularExpression("[^a-zA-Z0-9]"), "_");
+		return QString("%1|%2").arg(sanitized_label).arg(uuid_to_base64_string(uuid));
 	}
 
 	inline QUuid parse_labeled_uuid(const QString& uuid_string)
