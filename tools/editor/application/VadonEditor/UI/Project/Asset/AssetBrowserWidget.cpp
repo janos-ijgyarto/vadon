@@ -79,7 +79,7 @@ namespace VadonEditor::UI
 		if (asset_info.is_valid() == true)
 		{
 			QFileInfo file_info(asset_info.path);
-			m_ui.fileNameLineEdit->setText(file_info.baseName());
+			m_ui.fileNameLineEdit->setText(file_info.fileName());
 		}
 		else
 		{

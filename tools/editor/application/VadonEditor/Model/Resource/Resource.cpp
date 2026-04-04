@@ -10,6 +10,7 @@
 #include <VadonEditor/Utilities/Data/Variant.hpp>
 
 #include <Vadon/Foundation/Model/Resource/Resource.hpp>
+#include <Vadon/Foundation/Model/Resource/File.hpp>
 
 #include <QJsonArray>
 #include <QJsonObject>
@@ -210,14 +211,19 @@ namespace VadonEditor::Model
 		return embedded_resource;
 	}
 
-	bool Resource::is_resource_base_of_type(VadonEditor::Core::Application& application, const QUuid& type_id)
+	bool Resource::is_resource_base_of_type(Core::Application& application, const QUuid& type_id)
 	{
-		return application.get_project_manager().get_project_data_schema().is_base_of(VadonEditor::Utilities::qt_uuid_to_vadon_uuid(get_base_resource_type()), VadonEditor::Utilities::qt_uuid_to_vadon_uuid(type_id));
+		return application.get_project_manager().get_project_data_schema().is_base_of(get_base_resource_type(), type_id);
+	}
+
+	bool Resource::is_imported_file_base_of_type(Core::Application& application, const QUuid& type_id)
+	{
+		return application.get_project_manager().get_project_data_schema().is_base_of(Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::FileResourceSchema::c_type_uuid), type_id);
 	}
 
 	QUuid Resource::get_base_resource_type()
 	{
-		return VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::ResourceSchema::c_type_uuid);
+		return Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::ResourceSchema::c_type_uuid);
 	}
 
 	Resource::Resource(Core::Application& application)
@@ -235,8 +241,8 @@ namespace VadonEditor::Model
 		// Load default values into Resource
 		const Core::DataSchema& data_schema = m_application.get_project_manager().get_project_data_schema();
 
-		::Vadon::Foundation::UUID current_type_uuid = Utilities::qt_uuid_to_vadon_uuid(m_info.type);
-		while (current_type_uuid.is_valid() == true)
+		QUuid current_type_uuid = m_info.type;
+		while (current_type_uuid.isNull() == false)
 		{
 			const Core::TypeData* type_data = data_schema.find_type_data(current_type_uuid);
 
@@ -246,7 +252,7 @@ namespace VadonEditor::Model
 				m_properties[property_it.key()] = Utilities::get_base_type_default_value(base_type);
 			}
 
-			current_type_uuid = type_data->info.base_id;
+			current_type_uuid = Utilities::vadon_uuid_to_qt_uuid(type_data->info.base_id);
 		}
 
 		const QUuid resource_init_data = m_application.get_model_system().get_resource_system().get_resource_init_data(m_info.type);
@@ -273,8 +279,8 @@ namespace VadonEditor::Model
 		{
 			QJsonObject properties_object;
 
-			::Vadon::Foundation::UUID current_type_uuid = Utilities::qt_uuid_to_vadon_uuid(m_info.type);
-			while (current_type_uuid.is_valid() == true)
+			QUuid current_type_uuid = m_info.type;
+			while (current_type_uuid.isNull() == false)
 			{
 				const Core::TypeData* type_data = data_schema.find_type_data(current_type_uuid);
 
@@ -300,7 +306,7 @@ namespace VadonEditor::Model
 					properties_object[key_string] = save_property_value_to_json(property_value_it.value());
 				}
 
-				current_type_uuid = type_data->info.base_id;
+				current_type_uuid = Utilities::vadon_uuid_to_qt_uuid(type_data->info.base_id);
 			}
 
 			const QUuid properties_property_uuid = Utilities::vadon_uuid_string_to_qt_uuid(Vadon::Foundation::ResourceSchema::c_properties_property.id);

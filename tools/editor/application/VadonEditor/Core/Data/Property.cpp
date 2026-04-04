@@ -50,7 +50,7 @@ namespace VadonEditor::Core
 		return name;
 	}
 
-	::Vadon::Foundation::UUID PropertyData::get_data_type() const
+	QUuid PropertyData::get_data_type() const
 	{
 		switch (get_category())
 		{
@@ -60,7 +60,7 @@ namespace VadonEditor::Core
 			const QString uuid_string = find_metadata(::Vadon::Foundation::CommonPropertyMetadata::RESOURCE_TYPE);
 			const ::Vadon::Foundation::UUID resource_type_uuid = Utilities::qt_uuid_to_vadon_uuid(Utilities::base64_string_to_uuid(uuid_string));
 			Q_ASSERT_X(resource_type_uuid.is_valid() == true, "VadonEditor::Core::PropertyData", "Invalid resource type!");
-			return resource_type_uuid;
+			return Utilities::vadon_uuid_to_qt_uuid(resource_type_uuid);
 		}
 		case PropertyCategory::ARRAY:
 		{
@@ -69,12 +69,12 @@ namespace VadonEditor::Core
 
 			const ::Vadon::Foundation::UUID array_type_uuid = Utilities::qt_uuid_to_vadon_uuid(Utilities::base64_string_to_uuid(uuid_string));
 			Q_ASSERT_X(array_type_uuid.is_valid() == true, "VadonEditor::Core::PropertyData", "Invalid array type!");
-			return array_type_uuid;
+			return Utilities::vadon_uuid_to_qt_uuid(array_type_uuid);
 		}
 		}
 
 		// Fallback is the actual data type
-		return info.type;
+		return Utilities::vadon_uuid_to_qt_uuid(info.type);
 	}
 
 	const PropertyData* TypeData::find_property_data(const ::Vadon::Foundation::UUID& property_uuid) const

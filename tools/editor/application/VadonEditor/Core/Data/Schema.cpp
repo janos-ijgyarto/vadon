@@ -46,6 +46,29 @@ namespace
 
 		return new_item;
 	}
+
+	QStandardItem* find_type_tree_standard_item(QStandardItem* root, const QUuid& type_uuid)
+	{
+		for (int current_row = 0; current_row < root->rowCount(); ++current_row)
+		{
+			QStandardItem* current_child = root->child(current_row);
+			const QUuid current_child_type_uuid = current_child->data(static_cast<int>(VadonEditor::Core::TypeTreeDataRole::TYPE_UUID)).toUuid();
+			if (current_child_type_uuid == type_uuid)
+			{
+				return current_child;
+			}
+			else
+			{
+				QStandardItem* found_item = find_type_tree_standard_item(current_child, type_uuid);
+				if (found_item != nullptr)
+				{
+					return found_item;
+				}
+			}
+		}
+
+		return nullptr;
+	}
 }
 
 namespace VadonEditor::Core
@@ -264,40 +287,39 @@ namespace VadonEditor::Core
 		return metadata_it->constData();
 	}
 
-	bool DataSchema::TypeMetadataRegistry::is_base_of(const ::Vadon::Foundation::UUID& base_uuid, const ::Vadon::Foundation::UUID& derived_uuid) const
+	bool DataSchema::TypeMetadataRegistry::is_base_of(const QUuid& base_uuid, const QUuid& derived_uuid) const
 	{
-		Q_ASSERT_X(base_uuid.is_valid() == true, "VadonEditor::Core::DataSchema::is_base_of", "Invalid type UUID!");
-		Q_ASSERT_X(derived_uuid.is_valid() == true, "VadonEditor::Core::DataSchema::is_base_of", "Invalid type UUID!");
+		Q_ASSERT_X(base_uuid.isNull() == false, "VadonEditor::Core::DataSchema::is_base_of", "Invalid type UUID!");
+		Q_ASSERT_X(derived_uuid.isNull() == false, "VadonEditor::Core::DataSchema::is_base_of", "Invalid type UUID!");
 		
 		if (base_uuid == derived_uuid)
 		{
 			return true;
 		}
 
-		QUuid qt_uuid = Utilities::vadon_uuid_to_qt_uuid(derived_uuid);
+		const ::Vadon::Foundation::UUID base_vadon_uuid = Utilities::qt_uuid_to_vadon_uuid(base_uuid);
+		QUuid current_type_uuid = derived_uuid;
 
-		while (qt_uuid.isNull() == false)
+		while (current_type_uuid.isNull() == false)
 		{
-			auto type_it = m_types.find(qt_uuid);
+			auto type_it = m_types.find(current_type_uuid);
 			Q_ASSERT_X(type_it != m_types.end(), "VadonEditor::Core::DataSchema::is_base_of", "Type not in schema!");
 
 			const TypeData& type_data = type_it.value();
-			if (type_data.info.base_id == base_uuid)
+			if (type_data.info.base_id == base_vadon_uuid)
 			{
 				return true;
 			}
 
-			qt_uuid = Utilities::vadon_uuid_to_qt_uuid(type_data.info.base_id);
+			current_type_uuid = Utilities::vadon_uuid_to_qt_uuid(type_data.info.base_id);
 		}
 
 		return false;
 	}
 
-	const TypeData* DataSchema::find_type_data(const::Vadon::Foundation::UUID& type_uuid) const
+	const TypeData* DataSchema::find_type_data(const QUuid& type_uuid) const
 	{
-		const QUuid qt_type_uuid = Utilities::vadon_uuid_to_qt_uuid(type_uuid);
-		auto type_it = m_registry.m_types.find(qt_type_uuid);
-
+		auto type_it = m_registry.m_types.find(type_uuid);
 		if (type_it == m_registry.m_types.end())
 		{
 			// TODO: warning?
@@ -536,6 +558,17 @@ namespace VadonEditor::Core
 		return true;
 	}
 
+	QModelIndex DataSchema::find_type_index(const QUuid& type_uuid) const
+	{
+		const QStandardItem* found_item = find_type_tree_standard_item(m_qt_model.invisibleRootItem(), type_uuid);
+		if (found_item != nullptr)
+		{
+			return found_item->index();
+		}
+
+		return QModelIndex();
+	}
+
 	void DataSchema::generate_qt_model()
 	{
 		// Clear all prior contents of the model
@@ -561,7 +594,7 @@ namespace VadonEditor::Core
 				continue;
 			}
 
-			const VadonEditor::Core::TypeData* type_data = find_type_data(type_uuid);
+			const VadonEditor::Core::TypeData* type_data = find_type_data(type_qt_uuid);
 
 			QStandardItem* new_type_node = create_type_tree_standard_item(type_data->get_name());
 			new_type_node->setData(type_qt_uuid, static_cast<int>(TypeTreeDataRole::TYPE_UUID));
@@ -577,7 +610,7 @@ namespace VadonEditor::Core
 			if (type_data->info.base_id.is_valid() == true)
 			{
 				// Has parent type, find or create node and add to it
-				const QUuid base_qt_uuid = VadonEditor::Utilities::vadon_uuid_to_qt_uuid(type_data->info.base_id);
+				const QUuid base_qt_uuid = Utilities::vadon_uuid_to_qt_uuid(type_data->info.base_id);
 				auto tree_item_it = type_tree_item_lookup.find(base_qt_uuid);
 				if (tree_item_it != type_tree_item_lookup.end())
 				{
@@ -592,7 +625,7 @@ namespace VadonEditor::Core
 					{
 						parent_types.push_back(parent_id);
 
-						const VadonEditor::Core::TypeData* parent_type_data = find_type_data(parent_id);
+						const VadonEditor::Core::TypeData* parent_type_data = find_type_data(Utilities::vadon_uuid_to_qt_uuid(parent_id));
 						if (parent_type_data->info.base_id.is_valid() == false)
 						{
 							// No more ancestors, add to root
@@ -614,7 +647,7 @@ namespace VadonEditor::Core
 					while (parent_types.isEmpty() == false)
 					{
 						const ::Vadon::Foundation::UUID ancestor_id = parent_types.back();
-						const VadonEditor::Core::TypeData* ancestor_type_data = find_type_data(ancestor_id);
+						const VadonEditor::Core::TypeData* ancestor_type_data = find_type_data(Utilities::vadon_uuid_to_qt_uuid(ancestor_id));
 
 						QStandardItem* ancestor_node = create_type_tree_standard_item(ancestor_type_data->get_name());
 

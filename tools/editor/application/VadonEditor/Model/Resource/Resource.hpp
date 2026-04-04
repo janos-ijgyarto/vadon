@@ -43,7 +43,8 @@ namespace VadonEditor::Model
 
 		Resource* create_embedded_resource(const QUuid& type);
 
-		static bool is_resource_base_of_type(VadonEditor::Core::Application& application, const QUuid& type_id);
+		static bool is_resource_base_of_type(Core::Application& application, const QUuid& type_id);
+		static bool is_imported_file_base_of_type(Core::Application& application, const QUuid& type_id);
 		static QUuid get_base_resource_type();
 	private:
 		Resource(Core::Application& application);

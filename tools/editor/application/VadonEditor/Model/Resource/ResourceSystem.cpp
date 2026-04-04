@@ -5,6 +5,8 @@
 #include <VadonEditor/Core/Asset/AssetManager.hpp>
 #include <VadonEditor/Core/Project/ProjectManager.hpp>
 
+#include <VadonEditor/Model/Scene/Scene.hpp>
+
 #include <VadonEditor/Utilities/UUID.hpp>
 
 #include <Vadon/Foundation/Model/Resource/File.hpp>
@@ -221,6 +223,12 @@ namespace VadonEditor::Model
 		}
 
 		asset_id = asset_manager.get_asset_info(asset_index).id;
+		
+		if (internal_add_resource_asset(resource->get_info(), asset_id) == false)
+		{
+			Q_ASSERT_X(false, "VadonEditor::Model::ResourceSystem::create_resource_asset", "Failed to register resource asset!");
+			return Core::AssetInfo::c_invalid_file_id;
+		}
 
 		// Save the resource for the first time
 		if (save_resource(resource) == false)
@@ -259,6 +267,26 @@ namespace VadonEditor::Model
 		}
 
 		return true;
+	}
+
+	Core::AssetType ResourceSystem::get_asset_type_for_resource_type(const QUuid& type_id) const
+	{
+		if (Scene::is_scene_base_of_type(m_application, type_id) == true)
+		{
+			return Core::AssetType::SCENE;
+		}
+
+		if (Resource::is_imported_file_base_of_type(m_application, type_id) == true)
+		{
+			return Core::AssetType::IMPORTED_FILE;
+		}
+
+		if (Resource::is_resource_base_of_type(m_application, type_id) == true)
+		{
+			return Core::AssetType::RESOURCE;
+		}
+
+		return Core::AssetType::NONE;
 	}
 
 	ResourceSystem::ResourceSystem(Core::Application& application)
@@ -397,6 +425,28 @@ namespace VadonEditor::Model
 			qCritical("Content type is not a subclass of Resource!");
 			return false;
 		}
+
+		return true;
+	}
+
+	bool ResourceSystem::internal_add_resource_asset(const ResourceInfo& info, int asset_id)
+	{
+		const int prev_asset_id = find_resource_asset_id(info.id);
+		if (prev_asset_id != Core::AssetInfo::c_invalid_file_id)
+		{
+			Q_ASSERT_X(false, "VadonEditor::Model::ResourceSystem::internal_add_resource_asset", "Resource asset already added");
+			return false;
+		}
+
+		const ResourceInfo prev_info = resource_info_by_asset_id(asset_id);
+		if (prev_info.is_valid() == true)
+		{
+			Q_ASSERT_X(false, "VadonEditor::Model::ResourceSystem::internal_add_resource_asset", "Resource asset already added");
+			return false;
+		}
+
+		m_resource_asset_lookup.insert(info.id, asset_id);
+		m_resource_asset_reverse_lookup.insert(asset_id, info);
 
 		return true;
 	}

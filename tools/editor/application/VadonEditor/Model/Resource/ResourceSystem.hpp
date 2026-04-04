@@ -1,5 +1,6 @@
 #ifndef VADONEDITOR_MODEL_RESOURCE_RESOURCESYSTEM_HPP
 #define VADONEDITOR_MODEL_RESOURCE_RESOURCESYSTEM_HPP
+#include <VadonEditor/Core/Asset/Asset.hpp>
 #include <VadonEditor/Model/Resource/Resource.hpp>
 #include <QHash>
 class QFileInfo;
@@ -31,6 +32,8 @@ namespace VadonEditor::Model
 
 		int create_resource_asset(const ResourceID& resource_id, const QString& path);
 		bool save_resource(const Resource* resource);
+
+		Core::AssetType get_asset_type_for_resource_type(const QUuid& type_id) const;
 	private:
 		ResourceSystem(Core::Application& application);
 
@@ -39,6 +42,7 @@ namespace VadonEditor::Model
 
 		Resource* internal_create_new_resource(const ResourceInfo& info);
 		bool internal_parse_resource_info(ResourceInfo& info, const QJsonObject& root_object) const;
+		bool internal_add_resource_asset(const ResourceInfo& info, int asset_id);
 
 		Core::Application& m_application;
 		QHash<ResourceID, Resource*> m_resource_lookup;

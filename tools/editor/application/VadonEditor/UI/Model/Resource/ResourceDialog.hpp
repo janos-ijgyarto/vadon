@@ -1,8 +1,8 @@
 #ifndef VADONEDITOR_UI_MODEL_RESOURCE_RESOURCEDIALOG_HPP
 #define VADONEDITOR_UI_MODEL_RESOURCE_RESOURCEDIALOG_HPP
-#include <VadonEditor/Core/Project/TypeFilterModel.hpp>
 #include <VadonEditor/UI/Model/Resource/ui_NewResourceDialog.h>
 #include <QDialog>
+#include <QUuid>
 namespace VadonEditor::Core
 {
 	class Application;
@@ -30,8 +30,6 @@ namespace VadonEditor::UI
 		void finalize_selection(const QUuid& type_uuid);
 
 		Ui::NewResourceDialog m_ui;
-
-		Core::TypeFilterModel m_type_filter_model;
 	};
 
 	// NOTE: this is a utility object for NewResourceDialog which encapsulates

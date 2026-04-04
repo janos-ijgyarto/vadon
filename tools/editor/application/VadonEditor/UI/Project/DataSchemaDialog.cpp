@@ -60,14 +60,13 @@ namespace VadonEditor::UI
 		}
 
 		const QUuid type_qt_uuid = item_data.toUuid();
-		const Vadon::Foundation::UUID type_uuid = VadonEditor::Utilities::qt_uuid_to_vadon_uuid(type_qt_uuid);
 
 		Core::ProjectManager& project_manager = m_application.get_project_manager();
 		const Core::DataSchema& project_data_schema = project_manager.get_project_data_schema();
 
-		const VadonEditor::Core::TypeData* type_data = project_data_schema.find_type_data(type_uuid);
-		Vadon::Foundation::UUID parent_type_uuid = type_data->info.id;
-		while (parent_type_uuid.is_valid() == true)
+		const VadonEditor::Core::TypeData* type_data = project_data_schema.find_type_data(type_qt_uuid);
+		QUuid parent_type_uuid = Utilities::vadon_uuid_to_qt_uuid(type_data->info.id);
+		while (parent_type_uuid.isNull() == false)
 		{
 			QGroupBox* property_group_box = new QGroupBox();
 			const VadonEditor::Core::TypeData* parent_type_data = project_data_schema.find_type_data(parent_type_uuid);
@@ -96,7 +95,7 @@ namespace VadonEditor::UI
 			property_group_box->setLayout(property_grid);
 			
 			m_ui.propertiesMainVBox->insertWidget(m_ui.propertiesMainVBox->count() - 1, property_group_box);
-			parent_type_uuid = parent_type_data->info.base_id;
+			parent_type_uuid = Utilities::vadon_uuid_to_qt_uuid(parent_type_data->info.base_id);
 		}
 	}
 

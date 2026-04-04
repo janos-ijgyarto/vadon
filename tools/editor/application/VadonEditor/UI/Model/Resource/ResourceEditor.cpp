@@ -39,10 +39,7 @@ namespace VadonEditor::UI
 		Core::Application& application = m_resource->get_application();
 
 		const Core::DataSchema& data_schema = application.get_project_manager().get_project_data_schema();
-
-		const ::Vadon::Foundation::UUID type_uuid = Utilities::qt_uuid_to_vadon_uuid(resource_info.type);
-
-		const Core::TypeData* type_data = data_schema.find_type_data(type_uuid);
+		const Core::TypeData* type_data = data_schema.find_type_data(resource_info.type);
 
 		QList<const Core::TypeData*> type_parent_list;
 		{
@@ -50,7 +47,7 @@ namespace VadonEditor::UI
 			while (parent_type != nullptr)
 			{
 				type_parent_list.push_back(parent_type);
-				parent_type = data_schema.find_type_data(parent_type->info.base_id);
+				parent_type = data_schema.find_type_data(Utilities::vadon_uuid_to_qt_uuid(parent_type->info.base_id));
 			}
 		}
 
@@ -79,7 +76,7 @@ namespace VadonEditor::UI
 				PropertyWidgetInfo widget_info;
 				widget_info.property_id = Utilities::vadon_uuid_to_qt_uuid(property_uuid);
 				widget_info.category = property_data->get_category();
-				widget_info.data_type = Utilities::vadon_uuid_to_qt_uuid(property_data->info.type);
+				widget_info.data_type = property_data->get_data_type();
 				widget_info.init_value = m_resource->get_property(widget_info.property_id);
 
 				PropertyWidget* property_widget = PropertyWidget::create_widget(widget_info, this, m_resource);
@@ -154,10 +151,7 @@ namespace VadonEditor::UI
 		}
 
 		const Core::DataSchema& data_schema = application.get_project_manager().get_project_data_schema();
-
-		const ::Vadon::Foundation::UUID type_uuid = Utilities::qt_uuid_to_vadon_uuid(resource_info.type);
-
-		const Core::TypeData* type_data = data_schema.find_type_data(type_uuid);
+		const Core::TypeData* type_data = data_schema.find_type_data(resource_info.type);
 
 		QString type_name = type_data->find_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME);
 

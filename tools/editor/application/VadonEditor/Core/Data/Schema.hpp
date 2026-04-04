@@ -36,7 +36,7 @@ namespace VadonEditor::Core
 			void set_property_metadata(const ::Vadon::Foundation::UUID& type_uuid, const ::Vadon::Foundation::UUID& property_uuid, const char* key, const char* value) override;
 			const char* get_property_metadata(const ::Vadon::Foundation::UUID& type_uuid, const ::Vadon::Foundation::UUID& property_uuid, const char* key) const override;
 
-			bool is_base_of(const ::Vadon::Foundation::UUID& base_uuid, const ::Vadon::Foundation::UUID& derived_uuid) const;
+			bool is_base_of(const QUuid& base_uuid, const QUuid& derived_uuid) const;
 		private:
 			QHash<QUuid, TypeData> m_types;
 			QList<::Vadon::Foundation::UUID> m_type_list; // NOTE: this is used for queries
@@ -49,14 +49,15 @@ namespace VadonEditor::Core
 		TypeMetadataRegistry& get_registry() { return m_registry; }
 		const TypeMetadataRegistry& get_registry() const { return m_registry; }
 
-		const TypeData* find_type_data(const ::Vadon::Foundation::UUID& type_uuid) const;
+		const TypeData* find_type_data(const QUuid& type_uuid) const;
 
 		bool save_schema(const QString& schema_file_path);
 		bool load_schema(const QString& schema_file_path);
 
 		const QStandardItemModel& get_qt_model() const { return m_qt_model; }
+		QModelIndex find_type_index(const QUuid& type_uuid) const;
 
-		bool is_base_of(const ::Vadon::Foundation::UUID& base_uuid, const ::Vadon::Foundation::UUID& derived_uuid) const { return m_registry.is_base_of(base_uuid, derived_uuid); }
+		bool is_base_of(const QUuid& base_uuid, const QUuid& derived_uuid) const { return m_registry.is_base_of(base_uuid, derived_uuid); }
 	private:
 		void generate_qt_model();
 

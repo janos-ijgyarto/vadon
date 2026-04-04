@@ -3,6 +3,7 @@
 #include <Vadon/Foundation/TypeInfo/Metadata.hpp>
 #include <Vadon/Foundation/TypeInfo/Property.hpp>
 #include <QHash>
+#include <QUuid>
 namespace VadonEditor::Core
 {
 	enum class PropertyCategory
@@ -23,7 +24,7 @@ namespace VadonEditor::Core
 		PropertyCategory get_category() const;
 
 		QString get_name() const;
-		::Vadon::Foundation::UUID get_data_type() const;
+		QUuid get_data_type() const;
 	};
 }
 #endif

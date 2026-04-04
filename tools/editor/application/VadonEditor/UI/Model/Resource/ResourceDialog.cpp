@@ -43,7 +43,6 @@ namespace VadonEditor::UI
 {
 	NewResourceDialog::NewResourceDialog(Core::Application& application, const QUuid& base_type, QWidget* parent)
 		: QDialog(parent)
-		, m_type_filter_model(application)
 	{
 		setAttribute(Qt::WA_DeleteOnClose, true);
 
@@ -57,8 +56,24 @@ namespace VadonEditor::UI
 			validated_base_type = resource_base_type;
 		}
 
-		m_type_filter_model.set_root_type(validated_base_type);
-		m_ui.typeTreeView->setModel(&m_type_filter_model);
+		const Core::DataSchema& data_schema = application.get_project_manager().get_project_data_schema();
+		m_ui.typeTreeView->setModel(const_cast<QStandardItemModel*>(&data_schema.get_qt_model()));
+
+		const QModelIndex root_type_index = data_schema.find_type_index(validated_base_type);
+		if (root_type_index.isValid() == true)
+		{
+			const QModelIndex parent_index = root_type_index.parent();
+			m_ui.typeTreeView->setRootIndex(parent_index);
+		
+			const int row_count = m_ui.typeTreeView->model()->rowCount(parent_index);
+			for (int current_row = 0; current_row < row_count; ++current_row)
+			{
+				if (root_type_index.row() != current_row)
+				{
+					m_ui.typeTreeView->setRowHidden(current_row, parent_index, true);
+				}
+			}
+		}
 
 		connect(m_ui.typeTreeView->selectionModel(), &QItemSelectionModel::selectionChanged, this, &NewResourceDialog::selection_changed);
 
@@ -114,7 +129,7 @@ namespace VadonEditor::UI
 	{
 		if (index.isValid() == true)
 		{
-			return m_type_filter_model.data(index, static_cast<Qt::ItemDataRole>(Core::TypeTreeDataRole::TYPE_UUID)).toUuid();
+			return m_ui.typeTreeView->model()->data(index, static_cast<Qt::ItemDataRole>(Core::TypeTreeDataRole::TYPE_UUID)).toUuid();
 		}
 		else
 		{
