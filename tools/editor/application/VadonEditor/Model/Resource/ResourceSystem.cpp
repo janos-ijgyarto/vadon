@@ -22,16 +22,7 @@ namespace VadonEditor::Model
 {
 	ResourceSystem::~ResourceSystem()
 	{
-		// Clean up any leftover resources
-		for (auto resource_it = m_resource_lookup.begin(); resource_it != m_resource_lookup.end(); ++resource_it)
-		{
-			Resource* current_resource = resource_it.value();
-
-			// Set flag to skip internal management, everything will be removed
-			current_resource->m_pending_remove = true;
-
-			delete current_resource;
-		}
+		Q_ASSERT_X(m_resource_lookup.empty() == true, "VadonEditor::Model::ResourceSystem::~ResourceSystem", "System was not shut down properly");
 	}
 
 	void ResourceSystem::register_resource_init_data(const QUuid& type_id, const QUuid& data_id)
@@ -238,6 +229,11 @@ namespace VadonEditor::Model
 
 		return asset_id;
 	}
+	
+	QList<int> ResourceSystem::get_resource_asset_list() const
+	{
+		return m_resource_asset_reverse_lookup.keys();
+	}
 
 	bool ResourceSystem::save_resource(const Resource* resource)
 	{
@@ -391,6 +387,25 @@ namespace VadonEditor::Model
 		};
 
 		process_assets_recursive(root_item);
+	}
+
+	void ResourceSystem::shutdown()
+	{
+		// Clean up any leftover resources
+		for (auto resource_it = m_resource_lookup.begin(); resource_it != m_resource_lookup.end(); ++resource_it)
+		{
+			Resource* current_resource = resource_it.value();
+
+			// Set flag to skip internal management, everything will be removed
+			current_resource->m_pending_remove = true;
+
+			delete current_resource;
+		}
+
+		m_resource_lookup.clear();
+		m_resource_asset_lookup.clear();
+		m_resource_asset_reverse_lookup.clear();
+		m_resource_init_data_lookup.clear();
 	}
 
 	Resource* ResourceSystem::internal_create_new_resource(const ResourceInfo& info)

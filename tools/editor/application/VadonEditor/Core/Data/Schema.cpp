@@ -599,7 +599,7 @@ namespace VadonEditor::Core
 			QStandardItem* new_type_node = create_type_tree_standard_item(type_data->get_name());
 			new_type_node->setData(type_qt_uuid, static_cast<int>(TypeTreeDataRole::TYPE_UUID));
 
-			if (VadonEditor::Core::TypeData::get_base_type(type_uuid) != ::Vadon::Foundation::BaseType::INVALID)
+			if (VadonEditor::Core::TypeData::get_base_type(Utilities::vadon_uuid_to_qt_uuid(type_uuid)) != ::Vadon::Foundation::BaseType::INVALID)
 			{
 				base_types_root->appendRow(new_type_node);
 				continue;

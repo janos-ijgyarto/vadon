@@ -71,7 +71,7 @@ namespace VadonEditor::UI
 
 			for (const ::Vadon::Foundation::UUID& property_uuid : current_type->property_list)
 			{
-				const Core::PropertyData* property_data = current_type->find_property_data(property_uuid);
+				const Core::PropertyData* property_data = current_type->find_property_data(Utilities::vadon_uuid_to_qt_uuid(property_uuid));
 
 				PropertyWidgetInfo widget_info;
 				widget_info.property_id = Utilities::vadon_uuid_to_qt_uuid(property_uuid);

@@ -12,15 +12,15 @@ namespace VadonEditor::Core
 		QList<::Vadon::Foundation::UUID> property_list;
 		::Vadon::Foundation::TypeInfo info;
 
-		const PropertyData* find_property_data(const ::Vadon::Foundation::UUID& property_uuid) const;
+		const PropertyData* find_property_data(const QUuid& property_uuid) const;
 
 		QString find_metadata(const char* key) const;
 		QString find_metadata(::Vadon::Foundation::CommonTypeMetadata::Key key) const { return find_metadata(::Vadon::Foundation::CommonTypeMetadata::key_string(key)); }
 
 		QString get_name() const;
 
-		static ::Vadon::Foundation::UUID get_base_type_uuid(::Vadon::Foundation::BaseType type);
-		static ::Vadon::Foundation::BaseType get_base_type(const ::Vadon::Foundation::UUID& type_uuid);
+		static QUuid get_base_type_uuid(::Vadon::Foundation::BaseType type);
+		static ::Vadon::Foundation::BaseType get_base_type(const QUuid& type_uuid);
 	};
 }
 #endif

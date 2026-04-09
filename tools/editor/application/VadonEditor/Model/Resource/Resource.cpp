@@ -248,7 +248,7 @@ namespace VadonEditor::Model
 
 			for (auto property_it = type_data->properties.begin(); property_it != type_data->properties.end(); ++property_it)
 			{
-				const ::Vadon::Foundation::BaseType base_type = Core::TypeData::get_base_type(property_it->info.type);
+				const ::Vadon::Foundation::BaseType base_type = Core::TypeData::get_base_type(Utilities::vadon_uuid_to_qt_uuid(property_it->info.type));
 				m_properties[property_it.key()] = Utilities::get_base_type_default_value(base_type);
 			}
 
@@ -286,7 +286,7 @@ namespace VadonEditor::Model
 
 				for (auto property_it = type_data->properties.begin(); property_it != type_data->properties.end(); ++property_it)
 				{
-					const Core::PropertyData* type_property_data = type_data->find_property_data(Utilities::qt_uuid_to_vadon_uuid(property_it.key()));
+					const Core::PropertyData* type_property_data = type_data->find_property_data(property_it.key());
 
 					auto property_value_it = m_properties.find(property_it.key());
 					Q_ASSERT_X(property_value_it != m_properties.end(), "VadonEditor::Model::Resource::internal_save", "Cannot find property value");

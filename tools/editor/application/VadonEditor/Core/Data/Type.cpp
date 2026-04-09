@@ -25,6 +25,19 @@ namespace
 
 namespace VadonEditor::Core
 {
+	const PropertyData* TypeData::find_property_data(const QUuid& property_uuid) const
+	{
+		auto property_it = properties.find(property_uuid);
+
+		if (property_it == properties.end())
+		{
+			// TODO: warning?
+			return nullptr;
+		}
+
+		return &property_it.value();
+	}
+
 	QString TypeData::find_metadata(const char* key) const
 	{
 		auto metadata_it = metadata.find(key);
@@ -47,22 +60,21 @@ namespace VadonEditor::Core
 		return name;
 	}
 
-	::Vadon::Foundation::UUID TypeData::get_base_type_uuid(::Vadon::Foundation::BaseType type)
+	QUuid TypeData::get_base_type_uuid(::Vadon::Foundation::BaseType type)
 	{
-		return Utilities::qt_uuid_to_vadon_uuid(s_base_type_uuids[static_cast<size_t>(type)]);
+		return s_base_type_uuids[static_cast<size_t>(type)];
 	}
 
-	::Vadon::Foundation::BaseType TypeData::get_base_type(const::Vadon::Foundation::UUID& type_uuid)
+	::Vadon::Foundation::BaseType TypeData::get_base_type(const QUuid& type_uuid)
 	{
-		if (type_uuid.is_valid() == false)
+		if (type_uuid.isNull() == true)
 		{
 			return ::Vadon::Foundation::BaseType::INVALID;
 		}
 
-		const QUuid qt_uuid = Utilities::vadon_uuid_to_qt_uuid(type_uuid);
 		for (int type_index = 0; type_index < static_cast<int>(::Vadon::Foundation::BaseType::TYPE_COUNT); ++type_index)
 		{
-			if (qt_uuid == s_base_type_uuids[type_index])
+			if (type_uuid == s_base_type_uuids[type_index])
 			{
 				return static_cast<::Vadon::Foundation::BaseType>(type_index);
 			}

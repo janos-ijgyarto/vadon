@@ -37,6 +37,12 @@ namespace VadonEditor::Model
 			m_resource_system.project_loaded();
 			m_scene_system.project_loaded();
 		}
+
+		void shutdown()
+		{
+			m_scene_system.shutdown();
+			m_resource_system.shutdown();
+		}
 	};
 
 	ModelSystem::~ModelSystem() = default;
@@ -65,5 +71,10 @@ namespace VadonEditor::Model
 	void ModelSystem::project_loaded()
 	{
 		m_internal->project_loaded();
+	}
+
+	void ModelSystem::shutdown()
+	{
+		m_internal->shutdown();
 	}
 }

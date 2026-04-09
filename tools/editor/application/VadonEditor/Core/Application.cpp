@@ -259,6 +259,7 @@ namespace VadonEditor::Core
 
 		void cleanup()
 		{
+			m_model_system.shutdown();
 			m_simulator.shutdown();
 			m_network_system.shutdown();
 			m_project_manager.shutdown();

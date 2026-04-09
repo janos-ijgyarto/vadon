@@ -17,6 +17,7 @@ namespace VadonEditor::UI
 		const Core::AssetInfo asset_info = m_application.get_asset_manager().get_asset_info(index);
 		if (asset_info.type != Core::AssetType::RESOURCE)
 		{
+			// Make sure we only try to open Resource assets
 			return;
 		}
 

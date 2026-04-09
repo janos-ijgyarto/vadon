@@ -78,7 +78,7 @@ namespace VadonEditor::UI
 			int current_row = 0;
 			for (const ::Vadon::Foundation::UUID& property_uuid : parent_type_data->property_list)
 			{
-				const VadonEditor::Core::PropertyData* property_data = parent_type_data->find_property_data(property_uuid);
+				const VadonEditor::Core::PropertyData* property_data = parent_type_data->find_property_data(Utilities::vadon_uuid_to_qt_uuid(property_uuid));
 				property_grid->addWidget(new QLabel(property_data->get_name()), current_row, 0);
 
 				const VadonEditor::Core::TypeData* property_type_data = project_data_schema.find_type_data(property_data->get_data_type());

@@ -19,12 +19,11 @@ namespace VadonEditor::UI
 {
 	PropertyWidget* PropertyWidget::create_widget(const PropertyWidgetInfo& info, QWidget* parent_widget, Model::Resource* owner_resource)
 	{
-		const ::Vadon::Foundation::UUID data_type_uuid = Utilities::qt_uuid_to_vadon_uuid(info.data_type);
 		switch (info.category)
 		{
 		case Core::PropertyCategory::TRIVIAL:
 		{
-			const ::Vadon::Foundation::BaseType base_type = Core::TypeData::get_base_type(data_type_uuid);
+			const ::Vadon::Foundation::BaseType base_type = Core::TypeData::get_base_type(info.data_type);
 			switch (base_type)
 			{
 			case ::Vadon::Foundation::BaseType::INT32:

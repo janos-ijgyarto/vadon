@@ -32,6 +32,7 @@ namespace VadonEditor::Model
 
 		Core::Application& get_application() { return m_application; }
 		const ResourceInfo& get_info() const { return m_info; }
+		bool is_pending_remove() const { return m_pending_remove; }
 
 		QVariant get_property(const PropertyID& property_id) const;
 		void set_property(const PropertyID& property_id, const QVariant& value);

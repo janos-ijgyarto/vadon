@@ -23,6 +23,7 @@ namespace VadonEditor::UI
 	UISystem::UISystem(Core::Application& application)
 		: m_application(application)
 		, m_resource_manager(application)
+		, m_scene_manager(application)
 		, m_launcher_dialog(nullptr)
 		, m_main_window(nullptr)
 	{
@@ -74,6 +75,11 @@ namespace VadonEditor::UI
 		}
 
 		if (m_resource_manager.initialize() == false)
+		{
+			return false;
+		}
+
+		if (m_scene_manager.initialize() == false)
 		{
 			return false;
 		}

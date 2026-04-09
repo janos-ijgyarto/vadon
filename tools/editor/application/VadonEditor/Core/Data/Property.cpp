@@ -19,7 +19,7 @@ namespace VadonEditor::Core
 
 	PropertyCategory PropertyData::get_category() const
 	{
-		const ::Vadon::Foundation::BaseType base_type = TypeData::get_base_type(info.type);
+		const ::Vadon::Foundation::BaseType base_type = TypeData::get_base_type(Utilities::vadon_uuid_to_qt_uuid(info.type));
 		switch (base_type)
 		{
 		case ::Vadon::Foundation::BaseType::UUID:
@@ -76,19 +76,4 @@ namespace VadonEditor::Core
 		// Fallback is the actual data type
 		return Utilities::vadon_uuid_to_qt_uuid(info.type);
 	}
-
-	const PropertyData* TypeData::find_property_data(const ::Vadon::Foundation::UUID& property_uuid) const
-	{
-		const QUuid qt_property_uuid = Utilities::vadon_uuid_to_qt_uuid(property_uuid);
-		auto property_it = properties.find(qt_property_uuid);
-
-		if (property_it == properties.end())
-		{
-			// TODO: warning?
-			return nullptr;
-		}
-
-		return &property_it.value();
-	}
-
 }
