@@ -2,7 +2,10 @@
 
 #include <VadonEditor/Core/Project/Project.hpp>
 
+#include <VadonEditor/Model/Resource/Resource.hpp>
+
 #include <VadonEditor/Utilities/UUID.hpp>
+#include <VadonEditor/Utilities/Data/Variant.hpp>
 
 #include <QDir>
 #include <QFile>
@@ -329,6 +332,37 @@ namespace VadonEditor::Core
 		return &type_it.value();
 	}
 
+	const PropertyData* DataSchema::find_type_property_data(const QUuid& type_uuid, const QUuid& property_uuid) const
+	{
+		const TypeData* type_data = find_type_data(type_uuid);
+		if (type_data == nullptr)
+		{
+			// TODO: warning?
+			return nullptr;
+		}
+
+		while (type_data != nullptr)
+		{
+			const PropertyData* property_data = type_data->find_property_data(property_uuid);
+			if (property_data != nullptr)
+			{
+				return property_data;
+			}
+
+			// If not found in this type, recursively try base type
+			if (type_data->info.base_id.is_valid() == true)
+			{
+				type_data = find_type_data(Utilities::vadon_uuid_to_qt_uuid(type_data->info.base_id));
+			}
+			else
+			{
+				type_data = nullptr;
+			}
+		}
+
+		return nullptr;
+	}
+
 	bool DataSchema::save_schema(const QString& schema_file_path)
 	{
 		QJsonObject data_schema_root;
@@ -567,6 +601,86 @@ namespace VadonEditor::Core
 		}
 
 		return QModelIndex();
+	}
+
+	QVariant DataSchema::serialize_property_data(const PropertyData& property_data, const QVariant& data) const
+	{
+		const QUuid data_type = property_data.get_data_type();
+		switch (property_data.get_category())
+		{
+		case Core::PropertyCategory::TRIVIAL:
+			return TypeData::serialize_base_type(TypeData::get_base_type(data_type), data);
+		case Core::PropertyCategory::RESOURCE:
+		{
+			// TODO: serialize with metadata (resource type name, resource instance name, etc.)
+			return TypeData::serialize_base_type(::Vadon::Foundation::BaseType::UUID, data);
+		}
+		case Core::PropertyCategory::ARRAY:
+		{
+			const QVariantList source_list = data.toList();
+			QVariantList result_list;
+
+			const ::Vadon::Foundation::BaseType underlying_type = get_underlying_base_type(data_type);
+			Q_ASSERT_X(underlying_type != ::Vadon::Foundation::BaseType::INVALID, "VadonEditor::Core::DataSchema::serialize_property_data", "Invalid underlying type!");
+			
+			for (const QVariant current_element : source_list)
+			{
+				result_list.push_back(TypeData::serialize_base_type(underlying_type, current_element));
+			}
+
+			return result_list;
+		}
+		}
+
+		Q_UNREACHABLE_RETURN(QVariant());
+	}
+
+	QVariant DataSchema::deserialize_property_data(const PropertyData& property_data, const QVariant& data) const
+	{
+		const QUuid data_type = property_data.get_data_type();
+		switch (property_data.get_category())
+		{
+		case Core::PropertyCategory::TRIVIAL:
+			return TypeData::deserialize_base_type(TypeData::get_base_type(data_type), data);
+		case Core::PropertyCategory::RESOURCE:
+		{
+			// TODO: extract the UUID from metadata
+			return TypeData::deserialize_base_type(::Vadon::Foundation::BaseType::UUID, data);
+		}
+		case Core::PropertyCategory::ARRAY:
+		{
+			const QVariantList source_list = data.toList();
+			QVariantList result_list;
+
+			const ::Vadon::Foundation::BaseType underlying_type = get_underlying_base_type(data_type);
+			Q_ASSERT_X(underlying_type != ::Vadon::Foundation::BaseType::INVALID, "VadonEditor::Core::DataSchema::serialize_property_data", "Invalid underlying type!");
+
+			for (const QVariant current_element : source_list)
+			{
+				result_list.push_back(TypeData::deserialize_base_type(underlying_type, current_element));
+			}
+
+			return result_list;
+		}
+		}
+
+		Q_UNREACHABLE_RETURN(QVariant());
+	}
+
+	::Vadon::Foundation::BaseType DataSchema::get_underlying_base_type(const QUuid& type_uuid) const
+	{
+		const ::Vadon::Foundation::BaseType base_type = TypeData::get_base_type(type_uuid);
+		if (base_type != ::Vadon::Foundation::BaseType::INVALID)
+		{
+			return base_type;
+		}
+
+		if (is_base_of(Model::Resource::get_base_resource_type(), type_uuid) == true)
+		{
+			return ::Vadon::Foundation::BaseType::UUID;
+		}
+
+		return ::Vadon::Foundation::BaseType::INVALID;
 	}
 
 	void DataSchema::generate_qt_model()

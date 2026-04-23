@@ -22,6 +22,8 @@ namespace VadonEditor::UI
 		void asset_tree_context_menu_requested(const QPoint& position);
 
 		void new_resource_triggered();
+		void new_scene_triggered();
+		void new_scene_path_selected(const QString& scene_path);
 
 		void selection_changed(const QItemSelection& selected, const QItemSelection& deselected);
 		void asset_double_clicked(const QModelIndex& index);

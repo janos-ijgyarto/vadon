@@ -15,6 +15,7 @@ namespace VadonEditor::Model
 	public:
 		~Scene();
 
+		Core::Application& get_application() { return m_application; }
 		const Resource* get_resource() const { return m_resource; }
 
 		EntityModel& get_entity_model() { return m_entity_model; }
@@ -22,6 +23,7 @@ namespace VadonEditor::Model
 		static bool is_scene_base_of_type(VadonEditor::Core::Application& application, const QUuid& type_id);
 		static QUuid get_scene_type_uuid();
 		static QUuid get_scene_entities_uuid();
+		static QUuid get_scene_resource_data_uuid();
 
 		bool save_scene() const;
 		bool load_scene();
@@ -29,6 +31,7 @@ namespace VadonEditor::Model
 		Scene(Core::Application& application, Resource* resource);
 
 		bool initialize();
+		bool store_scene_data() const;
 
 		Core::Application& m_application;
 

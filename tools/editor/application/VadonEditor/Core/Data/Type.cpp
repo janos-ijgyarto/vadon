@@ -82,4 +82,38 @@ namespace VadonEditor::Core
 
 		return ::Vadon::Foundation::BaseType::INVALID;
 	}
+
+	QVariant TypeData::serialize_base_type(::Vadon::Foundation::BaseType type, const QVariant& value)
+	{
+		switch (type)
+		{
+		case ::Vadon::Foundation::BaseType::INVALID:
+		{
+			Q_ASSERT_X(false, "VadonEditor::Core::TypeData::serialize_base_type", "Invalid data type!");
+			return QVariant();
+		}
+		case ::Vadon::Foundation::BaseType::UUID:
+			// UUIDs are stored as base64 strings
+			return VadonEditor::Utilities::uuid_to_base64_string(value.toUuid());
+		default:
+			return value;
+		}
+	}
+
+	QVariant TypeData::deserialize_base_type(::Vadon::Foundation::BaseType type, const QVariant& value)
+	{
+		switch (type)
+		{
+		case ::Vadon::Foundation::BaseType::INVALID:
+		{
+			Q_ASSERT_X(false, "VadonEditor::Core::TypeData::deserialize_base_type", "Invalid data type!");
+			return QVariant();
+		}
+		case ::Vadon::Foundation::BaseType::UUID:
+			// UUIDs are stored as base64 strings
+			return VadonEditor::Utilities::base64_string_to_uuid(value.toString());
+		default:
+			return value;
+		}
+	}
 }

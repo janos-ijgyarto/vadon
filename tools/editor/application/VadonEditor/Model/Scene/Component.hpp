@@ -11,10 +11,12 @@ namespace VadonEditor::Model
 	using ComponentID = QUuid;
 	struct Component
 	{
+		QUuid type_id;
 		QHash<QUuid, QVariant> properties;
 
-		bool save_data(Core::Application& application, const QUuid& type_id, QVariant& data) const;
-		QUuid load_data(Core::Application& application, const QVariant& data);
+		bool initialize(Core::Application& application);
+		bool save_data(Core::Application& application, QVariant& data) const;
+		bool load_data(Core::Application& application, const QVariant& data);
 	};
 }
 #endif

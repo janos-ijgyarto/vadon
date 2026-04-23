@@ -58,18 +58,18 @@ namespace VadonEditor::Core
 		{
 			// FIXME: we should also make sure the resource type is registered!
 			const QString uuid_string = find_metadata(::Vadon::Foundation::CommonPropertyMetadata::RESOURCE_TYPE);
-			const ::Vadon::Foundation::UUID resource_type_uuid = Utilities::qt_uuid_to_vadon_uuid(Utilities::base64_string_to_uuid(uuid_string));
-			Q_ASSERT_X(resource_type_uuid.is_valid() == true, "VadonEditor::Core::PropertyData", "Invalid resource type!");
-			return Utilities::vadon_uuid_to_qt_uuid(resource_type_uuid);
+			const QUuid resource_type_uuid = Utilities::base64_string_to_uuid(uuid_string);
+			Q_ASSERT_X(resource_type_uuid.isNull() == false, "VadonEditor::Core::PropertyData", "Invalid resource type!");
+			return resource_type_uuid;
 		}
 		case PropertyCategory::ARRAY:
 		{
 			const QString uuid_string = find_metadata(::Vadon::Foundation::CommonPropertyMetadata::ARRAY_TYPE);
 			Q_ASSERT_X(uuid_string.isEmpty() == false, "VadonEditor::Core::PropertyData", "Invalid array type!");
 
-			const ::Vadon::Foundation::UUID array_type_uuid = Utilities::qt_uuid_to_vadon_uuid(Utilities::base64_string_to_uuid(uuid_string));
-			Q_ASSERT_X(array_type_uuid.is_valid() == true, "VadonEditor::Core::PropertyData", "Invalid array type!");
-			return Utilities::vadon_uuid_to_qt_uuid(array_type_uuid);
+			const QUuid array_type_uuid = Utilities::base64_string_to_uuid(uuid_string);
+			Q_ASSERT_X(array_type_uuid.isNull() == false, "VadonEditor::Core::PropertyData", "Invalid array type!");
+			return array_type_uuid;
 		}
 		}
 

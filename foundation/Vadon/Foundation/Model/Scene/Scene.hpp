@@ -10,6 +10,8 @@ namespace Vadon
 		{
 			static constexpr UUIDString c_type_uuid{ "c432094b-d5f2-4e80-9c95-2cd669a8ed1e" };
 
+			static constexpr UUIDString c_scene_resource_data_uuid{ "4f153b3b-74a9-4ae6-978f-17afd3896fb9" };
+
 			static constexpr PropertySchema c_entities_property{
 				UUIDString{"b91e01e7-49b9-441a-9092-bbda48fafce1"},
 				get_base_type_uuid_string(BaseType::ARRAY)

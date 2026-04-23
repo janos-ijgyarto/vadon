@@ -50,6 +50,7 @@ namespace VadonEditor::Core
 		const TypeMetadataRegistry& get_registry() const { return m_registry; }
 
 		const TypeData* find_type_data(const QUuid& type_uuid) const;
+		const PropertyData* find_type_property_data(const QUuid& type_uuid, const QUuid& property_uuid) const;
 
 		bool save_schema(const QString& schema_file_path);
 		bool load_schema(const QString& schema_file_path);
@@ -58,6 +59,11 @@ namespace VadonEditor::Core
 		QModelIndex find_type_index(const QUuid& type_uuid) const;
 
 		bool is_base_of(const QUuid& base_uuid, const QUuid& derived_uuid) const { return m_registry.is_base_of(base_uuid, derived_uuid); }
+
+		QVariant serialize_property_data(const PropertyData& property_data, const QVariant& data) const;
+		QVariant deserialize_property_data(const PropertyData& property_data, const QVariant& data) const;
+
+		::Vadon::Foundation::BaseType get_underlying_base_type(const QUuid& type_uuid) const;
 	private:
 		void generate_qt_model();
 

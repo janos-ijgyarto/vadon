@@ -14,12 +14,12 @@ namespace VadonEditor::Model
 		Entity* parent;
 		QList<Entity*> children;
 		QHash<ComponentID, Component> components;
-		Scene* owner_scene;
+		Scene& owner_scene;
 		SceneID sub_scene_id;
 
-		Entity()
-			: parent(nullptr)
-			, owner_scene(nullptr)
+		Entity(Scene& scene, Entity* parent_entity = nullptr)
+			: parent(parent_entity)
+			, owner_scene(scene)
 		{ }
 
 		~Entity();
@@ -36,13 +36,18 @@ namespace VadonEditor::Model
 	class EntityModel
 	{
 	public:
+		EntityModel(Scene& owner_scene);
+
 		QStandardItemModel& get_qt_model() { return m_qt_model; }
 		Entity* get_root_entity() const { return m_root_entity; }
 
 		bool save_model(Core::Application& application, QVariantList& data) const;
 		bool load_model(Core::Application& application, const QVariantList& data);
 	private:
+		void rebuild_qt_model();
+
 		QStandardItemModel m_qt_model;
+		Scene& m_owner_scene;
 		Entity* m_root_entity;
 	};
 }

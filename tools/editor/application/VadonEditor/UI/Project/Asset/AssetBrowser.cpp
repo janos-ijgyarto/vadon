@@ -4,9 +4,14 @@
 #include <VadonEditor/Core/Asset/AssetManager.hpp>
 #include <VadonEditor/Core/Project/ProjectManager.hpp>
 
+#include <VadonEditor/Model/ModelSystem.hpp>
+#include <VadonEditor/Model/Resource/Resource.hpp>
+#include <VadonEditor/Model/Scene/SceneSystem.hpp>
+
 #include <VadonEditor/UI/Model/Resource/ResourceDialog.hpp>
 
 #include <QMenu>
+#include <QMessageBox>
 #include <QPushButton>
 
 namespace VadonEditor::UI
@@ -35,6 +40,7 @@ namespace VadonEditor::UI
 
 		QMenu* create_asset_menu = menu.addMenu(tr("Create New Asset"));
 		create_asset_menu->addAction(m_ui.actionCreateResource);
+		create_asset_menu->addAction(m_ui.actionCreateScene);
 
 		// TODO: add elements if right-click was on existing asset
 
@@ -48,6 +54,50 @@ namespace VadonEditor::UI
 	{
 		// NOTE: we can fire-and-forget this object, it will clean itself up when the dialog closes
 		new NewResourceDialogBackend(*m_application, this); // TODO: use initial path!
+	}
+
+	void AssetBrowserTree::new_scene_triggered()
+	{
+		SaveAssetDialog* save_dialog = new SaveAssetDialog(*m_application, this);
+		connect(save_dialog, &SaveAssetDialog::asset_saved, this, &AssetBrowserTree::new_scene_path_selected);
+
+		save_dialog->open();
+	}
+
+	void AssetBrowserTree::new_scene_path_selected(const QString& scene_path)
+	{
+		// FIXME: move all of this to a backend object as well?
+		Q_ASSERT_X(scene_path.isEmpty() == false, "VadonEditor::UI::AssetBrowserTree::new_scene_path_selected", "Invalid path");
+
+		// First verify that the asset doesn't already exist
+		Core::AssetManager& asset_manager = m_application->get_asset_manager();
+		if (asset_manager.find_asset_index_by_path(Core::AssetInfo::get_file_path(scene_path, Core::AssetType::SCENE)).isValid() == true)
+		{
+			QMessageBox::critical(this, "Asset Manager Error", "Asset file already exists!");
+			return;
+		}
+
+		// Next try to create the resource
+		Model::SceneSystem& scene_system = m_application->get_model_system().get_scene_system();
+		Model::Scene* new_scene = scene_system.create_scene();
+
+		if (new_scene == nullptr)
+		{
+			QMessageBox::critical(this, "Scene System Error", "Failed to create scene!");
+			return;
+		}
+
+		// Create asset
+		const int asset_id = scene_system.create_scene_asset(new_scene->get_resource()->get_info().id, scene_path);
+		if (asset_id == Core::AssetInfo::c_invalid_file_id)
+		{
+			QMessageBox::critical(this, "Scene System Error", "Failed to create scene asset!");
+			return;
+		}
+
+		// TODO: also print type!
+		const QModelIndex asset_index = asset_manager.find_asset_index(asset_id);
+		qDebug() << "Scene created at" << asset_manager.get_asset_info(asset_index).path;
 	}
 
 	void AssetBrowserTree::selection_changed(const QItemSelection& selected, const QItemSelection& deselected)

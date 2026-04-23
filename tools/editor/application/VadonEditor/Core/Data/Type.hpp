@@ -21,6 +21,9 @@ namespace VadonEditor::Core
 
 		static QUuid get_base_type_uuid(::Vadon::Foundation::BaseType type);
 		static ::Vadon::Foundation::BaseType get_base_type(const QUuid& type_uuid);
+
+		static QVariant serialize_base_type(::Vadon::Foundation::BaseType type, const QVariant& value);
+		static QVariant deserialize_base_type(::Vadon::Foundation::BaseType type, const QVariant& value);
 	};
 }
 #endif

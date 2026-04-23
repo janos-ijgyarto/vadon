@@ -15,66 +15,6 @@
 #include <QJsonArray>
 #include <QJsonObject>
 
-namespace
-{
-	// FIXME: move this to shared utility function
-	QVariant get_property_data_from_json(int property_type_id, const QJsonValueConstRef& json_value)
-	{
-		switch (property_type_id)
-		{
-		case QMetaType::Type::Int:
-		case QMetaType::Type::UInt:
-		case QMetaType::Type::Float:
-		case QMetaType::Type::Double:
-		{
-			Q_ASSERT_X(json_value.type() == QJsonValue::Type::Double, "get_property_data_from_json", "Invalid type");
-			switch (property_type_id)
-			{
-			case QMetaType::Type::Int:
-				return QVariant(json_value.toInt());
-			case QMetaType::Type::UInt:
-				return QVariant(static_cast<unsigned int>(json_value.toInt()));
-			case QMetaType::Type::Float:
-				return QVariant(static_cast<float>(json_value.toDouble()));
-			case QMetaType::Type::Double:
-				return json_value.toDouble();
-			default:
-				Q_UNREACHABLE();
-			}
-		}
-		break;
-		case QMetaType::Type::QUuid:
-		{
-			Q_ASSERT_X(json_value.type() == QJsonValue::Type::String, "get_property_data_from_json", "Invalid type");
-			return VadonEditor::Utilities::base64_string_to_uuid(json_value.toString());
-		}
-		case QMetaType::Type::QString:
-		{
-			Q_ASSERT_X(json_value.type() == QJsonValue::Type::String, "get_property_data_from_json", "Invalid type");
-			return json_value.toString();
-		}
-		}
-
-		Q_UNREACHABLE_RETURN(QVariant());
-	}
-
-	QJsonValue save_property_value_to_json(const QVariant& value)
-	{
-		// TODO: other types?
-		switch (value.typeId())
-		{
-		case QMetaType::Type::QUuid:
-		{
-			// UUIDs need to be saved as Base64 strings
-			const QUuid uuid_value = value.toUuid();
-			return VadonEditor::Utilities::uuid_to_base64_string(uuid_value);
-		}
-		default:
-			return QJsonValue::fromVariant(value);
-		}
-	}
-}
-
 namespace VadonEditor::Model
 {
 	bool ResourceInfo::load(const QJsonObject& root_obj)
@@ -165,7 +105,7 @@ namespace VadonEditor::Model
 	void Resource::set_property(const PropertyID& property_id, const QVariant& value)
 	{
 		auto property_it = m_properties.find(property_id);
-		Q_ASSERT_X(property_it != m_properties.end(), "VadonEditor::Model::Resource::set_property", "Cannot find property");		
+		Q_ASSERT_X(property_it != m_properties.end(), "VadonEditor::Model::Resource::set_property", "Cannot find property");
 		Q_ASSERT_X(property_it.value().typeId() == value.typeId(), "VadonEditor::Model::Resource::set_property", "Property value type mismatch");
 
 		property_it.value() = value;
@@ -224,6 +164,11 @@ namespace VadonEditor::Model
 	QUuid Resource::get_base_resource_type()
 	{
 		return Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::ResourceSchema::c_type_uuid);
+	}
+
+	QUuid Resource::get_imported_file_resource_type()
+	{
+		return Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::FileResourceSchema::c_type_uuid);
 	}
 
 	Resource::Resource(Core::Application& application)
@@ -303,7 +248,7 @@ namespace VadonEditor::Model
 						key_string = Utilities::uuid_to_base64_string(property_it.key());
 					}
 
-					properties_object[key_string] = save_property_value_to_json(property_value_it.value());
+					properties_object[key_string] = Utilities::save_variant_to_json(property_value_it.value());
 				}
 
 				current_type_uuid = Utilities::vadon_uuid_to_qt_uuid(type_data->info.base_id);
@@ -313,11 +258,12 @@ namespace VadonEditor::Model
 			root_obj[Utilities::serialize_labeled_uuid("properties", properties_property_uuid)] = properties_object;
 		}
 
-		if(m_data.isEmpty() == false)
+		if (m_data.isEmpty() == false)
 		{
 			QJsonObject data_object;
 			for (auto data_it = m_data.begin(); data_it != m_data.end(); ++data_it)
 			{
+				// NOTE: this assumes the data is already in a format that can be directly converted to JSON!
 				// FIXME: find a way to label the data entries?
 				data_object[Utilities::uuid_to_base64_string(data_it.key())] = QJsonValue::fromVariant(data_it.value());
 			}
@@ -389,7 +335,6 @@ namespace VadonEditor::Model
 			{
 				if (const QJsonValueConstRef properties_value = root_obj_it.value(); properties_value.isObject())
 				{
-					// NOTE: with the actual properties, we can 
 					const QJsonObject properties_object = properties_value.toObject();
 					for (auto property_it = properties_object.begin(); property_it != properties_object.end(); ++property_it)
 					{
@@ -399,7 +344,7 @@ namespace VadonEditor::Model
 						{
 							const int property_data_type_id = property_data_it.value().typeId();
 
-							const QVariant json_value_variant = get_property_data_from_json(property_data_type_id, property_it.value());
+							const QVariant json_value_variant = Utilities::get_variant_from_json(property_data_type_id, property_it.value());
 							if (json_value_variant.isValid() == false)
 							{
 								// NOTE: assume property data type changed, in which case it should have gotten a new UUID!
@@ -433,6 +378,7 @@ namespace VadonEditor::Model
 						auto resource_data_it = m_data.find(data_uuid);
 						if (resource_data_it != m_data.end())
 						{
+							// NOTE: this assumes the dependent objects will know to parse from a JSON format!
 							resource_data_it.value() = loaded_data_it.value().toVariant();
 						}
 						else

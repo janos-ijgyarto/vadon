@@ -17,6 +17,7 @@ namespace VadonEditor::UI
 
         ~MainWindow();
 
+        QTabWidget* get_scene_tab_widget() const { return m_ui.sceneTabWidget; }
         RenderWidget* get_viewport() const { return m_ui.viewport; }
     signals:
         void run_simulator_requested();

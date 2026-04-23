@@ -202,9 +202,11 @@ namespace VadonEditor::Model
 
 		Core::AssetManager& asset_manager = m_application.get_asset_manager();
 
+		const Core::AssetType asset_type = get_asset_type_for_resource_type(resource->get_info().type);
+
 		Core::AssetInfo resource_asset_info;
-		resource_asset_info.path = Core::AssetInfo::get_file_path(path, Core::AssetType::RESOURCE);
-		resource_asset_info.type = Core::AssetType::RESOURCE;
+		resource_asset_info.path = Core::AssetInfo::get_file_path(path, asset_type);
+		resource_asset_info.type = asset_type;
 
 		QModelIndex asset_index = asset_manager.create_asset(resource_asset_info);
 		if (asset_index.isValid() == false)
@@ -341,7 +343,7 @@ namespace VadonEditor::Model
 						{
 						case Core::AssetType::SCENE:
 						{
-							if (resource_info.type != Utilities::base64_string_to_uuid(::Vadon::Foundation::SceneSchema::c_type_uuid.string))
+							if (resource_info.type != Scene::get_scene_type_uuid())
 							{
 								qCritical() << "Scene asset does not contain scene type!";
 								return;
@@ -350,7 +352,7 @@ namespace VadonEditor::Model
 						break;
 						case Core::AssetType::IMPORTED_FILE:
 						{
-							if (resource_info.type != Utilities::base64_string_to_uuid(::Vadon::Foundation::FileResourceSchema::c_type_uuid.string))
+							if (resource_info.type != Resource::get_imported_file_resource_type())
 							{
 								qCritical() << "Imported file does not contain imported file resource type!";
 								return;

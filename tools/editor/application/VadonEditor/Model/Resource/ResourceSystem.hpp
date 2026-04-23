@@ -3,7 +3,6 @@
 #include <VadonEditor/Core/Asset/Asset.hpp>
 #include <VadonEditor/Model/Resource/Resource.hpp>
 #include <QHash>
-class QFileInfo;
 namespace VadonEditor::Core
 {
 	class Application;

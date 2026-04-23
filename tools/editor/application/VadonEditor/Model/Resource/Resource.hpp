@@ -46,7 +46,9 @@ namespace VadonEditor::Model
 
 		static bool is_resource_base_of_type(Core::Application& application, const QUuid& type_id);
 		static bool is_imported_file_base_of_type(Core::Application& application, const QUuid& type_id);
+
 		static QUuid get_base_resource_type();
+		static QUuid get_imported_file_resource_type();
 	private:
 		Resource(Core::Application& application);
 

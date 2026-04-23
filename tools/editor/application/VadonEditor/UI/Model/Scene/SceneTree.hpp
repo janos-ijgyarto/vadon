@@ -5,19 +5,21 @@ namespace VadonEditor::Core
 {
 	class Application;
 }
+namespace VadonEditor::Model
+{
+	class Scene;
+}
 namespace VadonEditor::UI
 {
 	class SceneTree : public QWidget
 	{
 		Q_OBJECT
 	public:
-		SceneTree(QWidget* parent = nullptr);
+		SceneTree(Model::Scene* scene, QWidget* parent = nullptr);
 	private:
-		bool initialize(Core::Application& application);
-
 		Ui::SceneTree m_ui;
 
-		Core::Application* m_application;
+		Model::Scene* m_scene;
 
 		friend class UISystem;
 	};

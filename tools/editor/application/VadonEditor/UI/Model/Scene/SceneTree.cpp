@@ -1,17 +1,15 @@
 #include <VadonEditor/UI/Model/Scene/SceneTree.hpp>
 
+#include <VadonEditor/Model/Scene/Scene.hpp>
+
 namespace VadonEditor::UI
 {
-	SceneTree::SceneTree(QWidget* parent)
+	SceneTree::SceneTree(Model::Scene* scene, QWidget* parent)
 		: QWidget(parent)
-		, m_application(nullptr)
+		, m_scene(scene)
 	{
 		m_ui.setupUi(this);
-	}
 
-	bool SceneTree::initialize(Core::Application& application)
-	{
-		m_application = &application;
-		return true;
+		m_ui.treeView->setModel(&scene->get_entity_model().get_qt_model());
 	}
 }

@@ -26,18 +26,18 @@
    <property name="focusPolicy">
     <enum>Qt::FocusPolicy::StrongFocus</enum>
    </property>
-   <layout class="QVBoxLayout" name="verticalLayout_2">
+   <layout class="QVBoxLayout" name="mainLayout">
     <item>
-     <widget class="QSplitter" name="mainSplitter">
+     <widget class="QSplitter" name="main_splitter">
       <property name="orientation">
        <enum>Qt::Orientation::Horizontal</enum>
       </property>
-      <widget class="QSplitter" name="leftPanelSplitter">
+      <widget class="QSplitter" name="assetSplitter">
        <property name="orientation">
         <enum>Qt::Orientation::Vertical</enum>
        </property>
        <widget class="QWidget" name="verticalLayoutWidget_3">
-        <layout class="QVBoxLayout" name="sceneTreeVBox" stretch="0,1">
+        <layout class="QVBoxLayout" name="sceneTreeVBox" stretch="0,0">
          <item>
           <widget class="QLabel" name="sceneTreeLabel">
            <property name="text">
@@ -46,7 +46,11 @@
           </widget>
          </item>
          <item>
-          <widget class="VadonEditor::UI::SceneTree" name="sceneTree" native="true"/>
+          <widget class="QTabWidget" name="sceneTabWidget">
+           <property name="currentIndex">
+            <number>-1</number>
+           </property>
+          </widget>
          </item>
         </layout>
        </widget>
@@ -65,26 +69,11 @@
         </layout>
        </widget>
       </widget>
-      <widget class="QSplitter" name="centralSplitter">
+      <widget class="QSplitter" name="viewportSplitter">
        <property name="orientation">
         <enum>Qt::Orientation::Vertical</enum>
        </property>
-       <widget class="QWidget" name="verticalLayoutWidget_5">
-        <layout class="QVBoxLayout" name="centralVBox" stretch="0,0">
-         <item>
-          <widget class="QTabBar" name="sceneTabBar" native="true">
-           <layout class="QVBoxLayout" name="verticalLayout">
-            <item>
-             <widget class="QWidget" name="sceneTabBarFiller" native="true"/>
-            </item>
-           </layout>
-          </widget>
-         </item>
-         <item>
-          <widget class="VadonEditor::UI::RenderWidget" name="viewport" native="true"/>
-         </item>
-        </layout>
-       </widget>
+       <widget class="VadonEditor::UI::RenderWidget" name="viewport" native="true"/>
        <widget class="QWidget" name="verticalLayoutWidget">
         <layout class="QVBoxLayout" name="consoleVBox">
          <item>
@@ -106,34 +95,6 @@
          </item>
         </layout>
        </widget>
-      </widget>
-      <widget class="QWidget" name="verticalLayoutWidget_4">
-       <layout class="QVBoxLayout" name="inspectorVBox">
-        <item>
-         <widget class="QLabel" name="inspectorLabel">
-          <property name="text">
-           <string>Inspector</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="Line" name="inspectorSeparator">
-          <property name="orientation">
-           <enum>Qt::Orientation::Horizontal</enum>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QLabel" name="propertyListLabel">
-          <property name="text">
-           <string>Properties</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QListWidget" name="propertyList"/>
-        </item>
-       </layout>
       </widget>
      </widget>
     </item>
@@ -248,12 +209,6 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>QTabBar</class>
-   <extends>QWidget</extends>
-   <header location="global">QTabBar</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
    <class>VadonEditor::UI::RenderWidget</class>
    <extends>QWidget</extends>
    <header>VadonEditor/UI/Render/RenderWidget.hpp</header>
@@ -263,12 +218,6 @@
    <class>VadonEditor::UI::AssetBrowserTree</class>
    <extends>QWidget</extends>
    <header>VadonEditor/UI/Project/Asset/AssetBrowser.hpp</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>VadonEditor::UI::SceneTree</class>
-   <extends>QWidget</extends>
-   <header>VadonEditor/UI/Model/Scene/SceneTree.hpp</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

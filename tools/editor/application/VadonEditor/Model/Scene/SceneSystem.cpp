@@ -23,7 +23,15 @@ namespace VadonEditor::Model
 			return nullptr;
 		}
 
-		return internal_add_new_scene(scene_resource);
+		// NOTE: save the contents of the empty scene into the Resource
+		Model::Scene* new_scene = internal_add_new_scene(scene_resource);
+		if (new_scene->store_scene_data() == false)
+		{
+			Q_ASSERT_X(false, "VadonEditor::Model::SceneSystem::create_scene", "Failed to store scene data");
+			return nullptr;
+		}
+
+		return new_scene;
 	}
 
 	Scene* SceneSystem::get_scene(const SceneID& scene_id)
@@ -44,7 +52,14 @@ namespace VadonEditor::Model
 			return nullptr;
 		}
 
-		return internal_add_new_scene(scene_resource);
+		Model::Scene* new_scene = internal_add_new_scene(scene_resource);
+		if (new_scene->load_scene() == false)
+		{
+			Q_ASSERT_X(false, "VadonEditor::Model::SceneSystem::get_scene", "Failed to load scene data");
+			return nullptr;
+		}
+
+		return new_scene;
 	}
 
 	void SceneSystem::remove_scene(Scene* scene)
@@ -65,6 +80,11 @@ namespace VadonEditor::Model
 		m_scene_lookup.erase(scene_it);
 	}
 
+	int SceneSystem::create_scene_asset(const SceneID& scene_id, const QString& path)
+	{
+		return m_application.get_model_system().get_resource_system().create_resource_asset(scene_id, path);
+	}
+
 	SceneSystem::SceneSystem(Core::Application& application)
 		: m_application(application)
 	{
@@ -73,7 +93,7 @@ namespace VadonEditor::Model
 	bool SceneSystem::initialize()
 	{
 		Model::ResourceSystem& resource_system = m_application.get_model_system().get_resource_system();
-		resource_system.register_resource_init_data(Scene::get_scene_type_uuid(), Scene::get_scene_entities_uuid());
+		resource_system.register_resource_init_data(Scene::get_scene_type_uuid(), Scene::get_scene_resource_data_uuid());
 
 		return true;
 	}
@@ -115,7 +135,7 @@ namespace VadonEditor::Model
 		}
 
 		Scene* new_scene = new Scene(m_application, scene_resource);
-		if (new_scene->initialize() == true)
+		if (new_scene->initialize() == false)
 		{
 			Q_ASSERT_X(false, "VadonEditor::Model::SceneSystem::internal_add_new_scene", "Failed to initialize scene");
 			delete new_scene;
