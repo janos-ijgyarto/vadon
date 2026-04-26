@@ -25,7 +25,7 @@ namespace VadonEditor::UI
 	{
 		if (m_resource == nullptr)
 		{
-			Q_ASSERT_X(false, "VadonEditor::UI::ResourceEditor::ResourceEditor", "Resource must not be null!");
+			Q_ASSERT_X(false, "VadonEditor::UI::ResourceEditor::initialize", "Resource must not be null!");
 			return false;
 		}
 

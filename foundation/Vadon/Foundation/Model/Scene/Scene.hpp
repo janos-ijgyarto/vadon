@@ -20,6 +20,10 @@ namespace Vadon
 
 		struct SceneEntitySchema
 		{
+			static constexpr PropertySchema c_id_property{
+				UUIDString{ "c3560d83-ea76-48e3-8d8a-e2298bb65bcd" },
+				get_base_type_uuid_string(BaseType::UUID)
+			};
 			static constexpr PropertySchema c_components_property{
 				UUIDString{ "f5c4290e-dbcd-411d-93b8-ddf662be3e8a" },
 				get_base_type_uuid_string(BaseType::ARRAY)

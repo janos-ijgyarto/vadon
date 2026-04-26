@@ -21,6 +21,7 @@ namespace VadonEditor::Model
 		void remove_scene(Scene* scene);
 
 		int create_scene_asset(const SceneID& scene_id, const QString& path);
+		int find_scene_asset(const SceneID& scene_id) const;
 	private:
 		SceneSystem(Core::Application& application);
 

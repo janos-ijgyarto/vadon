@@ -41,16 +41,53 @@ namespace VadonEditor::UI
 			const QUuid tab_scene_uuid = scene_tab_bar->tabData(tab_index).toUuid();
 			if (tab_scene_uuid == resource_info.id)
 			{
-				// TODO: switch to tab
+				scene_tab_widget->setCurrentIndex(tab_index);
 				return;
 			}
 		}
 
 		// Scene does not have tab yet, create one
 		SceneTree* new_scene_tree = new SceneTree(opened_scene);
+		connect(new_scene_tree, &SceneTree::entity_opened, this, &SceneManager::entity_opened);
 
 		const int new_tab_index = scene_tab_widget->addTab(new_scene_tree, asset_info.path);
 		scene_tab_bar->setTabData(new_tab_index, resource_info.id);
+	}
+
+	void SceneManager::entity_opened(const QUuid& scene_id, const QModelIndex& index)
+	{
+		Model::SceneSystem& scene_system = m_application.get_model_system().get_scene_system();
+		Model::Scene* entity_scene = scene_system.get_scene(scene_id);
+
+		Model::EntityModel& entity_model = entity_scene->get_entity_model();
+		Model::Entity* opened_entity = entity_model.get_entity_by_model_index(index);
+		Q_ASSERT_X(opened_entity != nullptr, "VadonEditor::UI::SceneManager::entity_opened", "Cannot find entity");
+
+		auto entity_widget_it = m_entity_widgets.find(opened_entity);
+		if (entity_widget_it != m_entity_widgets.end())
+		{
+			QWidget* editor_widget = entity_widget_it.value();
+			editor_widget->setWindowState((editor_widget->windowState() & ~Qt::WindowState::WindowMinimized) | Qt::WindowState::WindowActive);
+			editor_widget->raise();
+			editor_widget->activateWindow();
+		}
+		else
+		{
+			EntityEditor* new_entity_editor = new EntityEditor(opened_entity);
+			if (new_entity_editor->initialize() == false)
+			{
+				Q_ASSERT_X(false, "VadonEditor::UI::SceneManager::entity_opened", "Failed to initialize Entity editor!");
+				delete new_entity_editor;
+				return;
+			}
+
+			m_entity_widgets.insert(opened_entity, new_entity_editor);
+			m_widget_reverse_lookup.insert(new_entity_editor, opened_entity);
+
+			connect(new_entity_editor, &QObject::destroyed, this, &SceneManager::entity_widget_removed);
+
+			new_entity_editor->show();
+		}
 	}
 
 	void SceneManager::entity_widget_removed(QObject* widget_obj)
@@ -74,10 +111,5 @@ namespace VadonEditor::UI
 	{
 		connect(&m_application.get_asset_manager(), &Core::AssetManager::asset_opened, this, &SceneManager::asset_opened);
 		return true;
-	}
-
-	void SceneManager::entity_opened()
-	{
-		// TODO: open window to edit Entity!
 	}
 }

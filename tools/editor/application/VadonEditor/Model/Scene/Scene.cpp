@@ -63,7 +63,7 @@ namespace VadonEditor::Model
 		QVariantMap entity_data_map;
 		QVariantList entity_list;
 
-		if (m_entity_model.save_model(m_resource->get_application(), entity_list) == false)
+		if (m_entity_model.save_model(entity_list) == false)
 		{
 			Q_ASSERT_X(false, "VadonEditor::Model::Scene::store_scene_data", "Failed to save scene data");
 			return false;
@@ -97,7 +97,7 @@ namespace VadonEditor::Model
 			if (entry_uuid == get_scene_entities_uuid())
 			{
 				const QVariantList entity_list = entity_data_it.value().toList();
-				if (m_entity_model.load_model(m_resource->get_application(), entity_list) == false)
+				if (m_entity_model.load_model(entity_list) == false)
 				{
 					Q_ASSERT_X(false, "VadonEditor::Model::Scene::load_scene", "Failed to load scene entity data");
 					return false;

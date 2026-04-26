@@ -16,6 +16,10 @@ namespace VadonEditor::UI
 		Q_OBJECT
 	public:
 		SceneTree(Model::Scene* scene, QWidget* parent = nullptr);
+	signals:
+		void entity_opened(const QUuid& scene_id, const QModelIndex& index);
+	private slots:
+		void entity_double_clicked(const QModelIndex& index);
 	private:
 		Ui::SceneTree m_ui;
 

@@ -85,6 +85,11 @@ namespace VadonEditor::Model
 		return m_application.get_model_system().get_resource_system().create_resource_asset(scene_id, path);
 	}
 
+	int SceneSystem::find_scene_asset(const SceneID& scene_id) const
+	{
+		return m_application.get_model_system().get_resource_system().find_resource_asset_id(scene_id);
+	}
+
 	SceneSystem::SceneSystem(Core::Application& application)
 		: m_application(application)
 	{
@@ -142,6 +147,7 @@ namespace VadonEditor::Model
 			return nullptr;
 		}
 
+		m_scene_lookup.insert(scene_resource->get_info().id, new_scene);
 		return new_scene;
 	}
 }

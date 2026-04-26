@@ -8,7 +8,7 @@ namespace VadonEditor::Core
 }
 namespace VadonEditor::Model
 {
-	struct Entity;
+	class Entity;
 }
 namespace VadonEditor::UI
 {
@@ -18,13 +18,12 @@ namespace VadonEditor::UI
 	public:
 	private slots:
 		void asset_opened(const QModelIndex& index);
+		void entity_opened(const QUuid& scene_id, const QModelIndex& index);
 		void entity_widget_removed(QObject* widget_obj);
 	private:
 		SceneManager(Core::Application& application);
 
 		bool initialize();
-
-		void entity_opened();
 
 		Core::Application& m_application;
 
