@@ -21,6 +21,9 @@ namespace VadonEditor::Model
 		QString get_label() const;
 
 		Scene& get_owner_scene() { return m_owner_scene; }
+		const SceneID& get_sub_scene_id() const { return m_sub_scene_id; }
+
+		QHash<ComponentID, Component>& get_components() { return m_components; }
 
 		QStandardItem* get_model_item() const;
 	private:

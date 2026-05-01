@@ -17,6 +17,9 @@ namespace VadonEditor::Model
 		bool initialize(Core::Application& application);
 		bool save_data(Core::Application& application, QVariant& data) const;
 		bool load_data(Core::Application& application, const QVariant& data);
+
+		QVariant get_property(const QUuid& property_id) const;
+		void set_property(const QUuid& property_id, const QVariant& value);
 	};
 }
 #endif

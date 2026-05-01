@@ -16,6 +16,7 @@ namespace VadonDemo::Model
 
 		Vadon::Utilities::TypeMetadata transform_metadata(metadata_registry, VADON_GET_TYPE_UUID(Transform2D));
 		transform_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "VadonDemo::Model::Transform2D");
+		transform_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::COMPONENT, "VadonDemo/Model");
 
 		transform_metadata.add_property(VADON_GET_MEMBER_UUID(Transform2D, position))
 			.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Position");
@@ -36,6 +37,7 @@ namespace VadonDemo::Model
 
 		Vadon::Utilities::TypeMetadata velocity_metadata(metadata_registry, VADON_GET_TYPE_UUID(Velocity2D));
 		velocity_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "VadonDemo::Model::Velocity2D");
+		velocity_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::COMPONENT, "VadonDemo/Model");
 
 		{
 			Vadon::Utilities::TypePropertyMetadata top_speed_property(velocity_metadata, VADON_GET_MEMBER_UUID(Velocity2D, top_speed));
@@ -56,6 +58,7 @@ namespace VadonDemo::Model
 
 		Vadon::Utilities::TypeMetadata health_metadata(metadata_registry, VADON_GET_TYPE_UUID(Health));
 		health_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "VadonDemo::Model::Health");
+		health_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::COMPONENT, "VadonDemo/Model");
 
 		{
 			Vadon::Utilities::TypePropertyMetadata max_health_property(health_metadata, VADON_GET_MEMBER_UUID(Health, max_health));
@@ -94,6 +97,7 @@ namespace VadonDemo::Model
 
 		Vadon::Utilities::TypeMetadata map_metadata(metadata_registry, VADON_GET_TYPE_UUID(Map));
 		map_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "VadonDemo::Model::Map");
+		map_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::COMPONENT, "VadonDemo/Model");
 
 		{
 			Vadon::Utilities::TypePropertyMetadata display_name_property(map_metadata, VADON_GET_MEMBER_UUID(Map, display_name));

@@ -16,6 +16,7 @@ namespace VadonDemo::UI
 
 		Vadon::Utilities::TypeMetadata(metadata_registry, VADON_GET_TYPE_UUID(Base))
 			.add_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "VadonDemo::UI::Base")
+			.add_metadata(::Vadon::Foundation::CommonTypeMetadata::COMPONENT, "VadonDemo/UI")
 			.add_property(VADON_GET_MEMBER_UUID(Base, enabled))
 				.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Enabled")
 				.commit_property()
@@ -38,6 +39,7 @@ namespace VadonDemo::UI
 
 		Vadon::Utilities::TypeMetadata(metadata_registry, VADON_GET_TYPE_UUID(Frame))
 			.add_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "VadonDemo::UI::Frame")
+			.add_metadata(::Vadon::Foundation::CommonTypeMetadata::COMPONENT, "VadonDemo/UI")
 			.add_property(VADON_GET_MEMBER_UUID(Frame, outline_color))
 				.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Outline Color")
 				.commit_property()
@@ -62,6 +64,7 @@ namespace VadonDemo::UI
 
 		Vadon::Utilities::TypeMetadata(metadata_registry, VADON_GET_TYPE_UUID(Text))
 			.add_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "VadonDemo::UI::Text")
+			.add_metadata(::Vadon::Foundation::CommonTypeMetadata::COMPONENT, "VadonDemo/UI")
 			.add_property(VADON_GET_MEMBER_UUID(Text, text))
 				.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Text")
 				.commit_property()
@@ -81,6 +84,7 @@ namespace VadonDemo::UI
 
 		Vadon::Utilities::TypeMetadata(metadata_registry, VADON_GET_TYPE_UUID(Selectable))
 			.add_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "VadonDemo::UI::Selectable")
+			.add_metadata(::Vadon::Foundation::CommonTypeMetadata::COMPONENT, "VadonDemo/UI")
 			.add_property(VADON_GET_MEMBER_UUID(Selectable, clicked_key))
 				.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Clicked Key")
 				.commit_property();

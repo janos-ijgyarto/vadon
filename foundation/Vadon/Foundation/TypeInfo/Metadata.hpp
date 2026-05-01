@@ -9,6 +9,7 @@ namespace Vadon
 			enum Key
 			{
 				NAME,
+				COMPONENT
 				// TODO: other metadata?
 			};
 
@@ -18,6 +19,8 @@ namespace Vadon
 				{
 				case NAME:
 					return "name";
+				case COMPONENT:
+					return "component";
 				}
 
 				return nullptr;

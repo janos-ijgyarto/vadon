@@ -15,6 +15,7 @@ namespace VadonDemo::Model
 
 		Vadon::Utilities::TypeMetadata(metadata_registry, VADON_GET_TYPE_UUID(Collision))
 			.add_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "VadonDemo::Model::Collision")
+			.add_metadata(::Vadon::Foundation::CommonTypeMetadata::COMPONENT, "VadonDemo/Model")
 			.add_property(VADON_GET_MEMBER_UUID(Collision, radius))
 				.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Radius")
 				.commit_property();

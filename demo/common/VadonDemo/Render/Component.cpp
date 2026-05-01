@@ -18,6 +18,7 @@ namespace VadonDemo::Render
 
 		Vadon::Utilities::TypeMetadata canvas_component_metadata(metadata_registry, VADON_GET_TYPE_UUID(CanvasComponent));
 		canvas_component_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "VadonDemo::Render::CanvasComponent");
+		canvas_component_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::COMPONENT, "VadonDemo/Render");
 
 		{
 			Vadon::Utilities::TypePropertyMetadata visible_property(canvas_component_metadata, VADON_GET_MEMBER_UUID(CanvasComponent, visible));
@@ -49,6 +50,7 @@ namespace VadonDemo::Render
 
 		Vadon::Utilities::TypeMetadata sprite_tiling_metadata(metadata_registry, VADON_GET_TYPE_UUID(SpriteTilingComponent));
 		sprite_tiling_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "VadonDemo::Render::SpriteTilingComponent");
+		sprite_tiling_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::COMPONENT, "VadonDemo/Render");
 
 		{
 			Vadon::Utilities::TypePropertyMetadata texture_property(sprite_tiling_metadata, VADON_GET_MEMBER_UUID(SpriteTilingComponent, texture));
@@ -83,6 +85,7 @@ namespace VadonDemo::Render
 
 		Vadon::Utilities::TypeMetadata fullscreen_effect_metadata(metadata_registry, VADON_GET_TYPE_UUID(FullscreenEffectComponent));
 		fullscreen_effect_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "VadonDemo::Render::FullscreenEffectComponent");
+		fullscreen_effect_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::COMPONENT, "VadonDemo/Render");
 
 		{
 			Vadon::Utilities::TypePropertyMetadata shader_property(fullscreen_effect_metadata, VADON_GET_MEMBER_UUID(FullscreenEffectComponent, shader));

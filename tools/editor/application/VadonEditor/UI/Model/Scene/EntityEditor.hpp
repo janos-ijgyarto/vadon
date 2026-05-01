@@ -14,6 +14,7 @@ namespace VadonEditor::UI
 	private slots:
 		void name_changed(const QString& text);
 		void add_component_clicked();
+		void new_component_selected(const QUuid& component_type);
 	private:
 		EntityEditor(Model::Entity* entity, QWidget* parent = nullptr);
 

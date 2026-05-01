@@ -157,4 +157,21 @@ namespace VadonEditor::Model
 
 		return true;
 	}
+
+	QVariant Component::get_property(const QUuid& property_id) const
+	{
+		auto property_it = properties.find(property_id);
+		Q_ASSERT_X(property_it != properties.end(), "VadonEditor::Model::Component::get_property", "Cannot find property");
+
+		return property_it.value();
+	}
+
+	void Component::set_property(const QUuid& property_id, const QVariant& value)
+	{
+		auto property_it = properties.find(property_id);
+		Q_ASSERT_X(property_it != properties.end(), "VadonEditor::Model::Component::set_property", "Cannot find property");
+		Q_ASSERT_X(property_it.value().typeId() == value.typeId(), "VadonEditor::Model::Component::set_property", "Property value type mismatch");
+
+		property_it.value() = value;
+	}
 }

@@ -18,6 +18,7 @@ namespace VadonDemo::View
 
 		Vadon::Utilities::TypeMetadata transform_metadata(metadata_registry, VADON_GET_TYPE_UUID(TransformComponent));
 		transform_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "VadonDemo::View::TransformComponent");
+		transform_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::COMPONENT, "VadonDemo/View");
 
 		transform_metadata.add_property(VADON_GET_MEMBER_UUID(TransformComponent, position))
 			.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Position");
@@ -35,6 +36,7 @@ namespace VadonDemo::View
 
 		Vadon::Utilities::TypeMetadata transform_metadata(metadata_registry, VADON_GET_TYPE_UUID(ModelTransformComponent));
 		transform_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "VadonDemo::View::ModelTransformComponent");
+		transform_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::COMPONENT, "VadonDemo/View");
 	}
 
 	void RenderComponent::register_component(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry)
@@ -48,6 +50,7 @@ namespace VadonDemo::View
 
 		Vadon::Utilities::TypeMetadata render_metadata(metadata_registry, VADON_GET_TYPE_UUID(RenderComponent));
 		render_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "VadonDemo::View::RenderComponent");
+		render_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::COMPONENT, "VadonDemo/View");
 
 		render_metadata.add_property(VADON_GET_MEMBER_UUID(RenderComponent, resource))
 			.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Resource")
@@ -68,6 +71,7 @@ namespace VadonDemo::View
 
 		Vadon::Utilities::TypeMetadata animation_metadata(metadata_registry, VADON_GET_TYPE_UUID(AnimationComponent));
 		animation_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "VadonDemo::View::AnimationComponent");
+		animation_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::COMPONENT, "VadonDemo/View");
 
 		animation_metadata.add_property(VADON_GET_MEMBER_UUID(AnimationComponent, time_scale))
 			.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Time Scale");
@@ -86,6 +90,7 @@ namespace VadonDemo::View
 
 		Vadon::Utilities::TypeMetadata damage_metadata(metadata_registry, VADON_GET_TYPE_UUID(DamageComponent));
 		damage_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "VadonDemo::View::DamageComponent");
+		damage_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::COMPONENT, "VadonDemo/View");
 
 		damage_metadata.add_property(VADON_GET_MEMBER_UUID(DamageComponent, animation))
 			.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Animation")
@@ -104,6 +109,7 @@ namespace VadonDemo::View
 
 		Vadon::Utilities::TypeMetadata vfx_metadata(metadata_registry, VADON_GET_TYPE_UUID(VFXComponent));
 		vfx_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "VadonDemo::View::VFXComponent");
+		vfx_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::COMPONENT, "VadonDemo/View");
 
 		vfx_metadata.add_property(VADON_GET_MEMBER_UUID(VFXComponent, vfx_prefab))
 			.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "VFX Prefab")
@@ -124,6 +130,7 @@ namespace VadonDemo::View
 		Vadon::ECS::ComponentRegistry::register_component_type<VFXTimerComponent>();
 
 		Vadon::Utilities::TypeMetadata(metadata_registry, VADON_GET_TYPE_UUID(VFXTimerComponent))
-			.add_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "VadonDemo::View::VFXTimerComponent");
+			.add_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "VadonDemo::View::VFXTimerComponent")
+			.add_metadata(::Vadon::Foundation::CommonTypeMetadata::COMPONENT, "VadonDemo/View");
 	}
 }

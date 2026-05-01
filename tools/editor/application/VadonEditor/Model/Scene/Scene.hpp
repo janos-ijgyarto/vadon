@@ -16,6 +16,8 @@ namespace VadonEditor::Model
 		~Scene();
 
 		Core::Application& get_application() { return m_application; }
+
+		Resource* get_resource() { return m_resource; }
 		const Resource* get_resource() const { return m_resource; }
 
 		EntityModel& get_entity_model() { return m_entity_model; }
