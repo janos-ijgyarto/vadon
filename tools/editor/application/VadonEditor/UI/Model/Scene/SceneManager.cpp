@@ -112,4 +112,60 @@ namespace VadonEditor::UI
 		connect(&m_application.get_asset_manager(), &Core::AssetManager::asset_opened, this, &SceneManager::asset_opened);
 		return true;
 	}
+
+	void SceneManager::shutdown()
+	{
+		// TODO: check that all widgets have been closed!
+	}
+
+	bool SceneManager::close_requested()
+	{
+		QTabWidget* scene_tab_widget = m_application.get_ui_system().get_main_window()->get_scene_tab_widget();
+		QTabBar* scene_tab_bar = scene_tab_widget->tabBar();
+		for (int tab_index = 0; tab_index < scene_tab_bar->count(); ++tab_index)
+		{
+			QWidget* current_tab_widget = scene_tab_widget->widget(tab_index);
+			SceneTree* current_scene_tree = qobject_cast<SceneTree*>(current_tab_widget);
+			if (current_scene_tree == nullptr)
+			{
+				Q_ASSERT_X(false, "VadonEditor::UI::SceneManager::close_requested", "Invalid widget in tabs");
+				continue;
+			}
+
+			if (current_scene_tree->close_requested() == false)
+			{
+				return false;
+			}
+		}
+
+		for (auto entity_widget_it = m_entity_widgets.begin(); entity_widget_it != m_entity_widgets.end(); ++entity_widget_it)
+		{
+			EntityEditor* entity_widget = qobject_cast<EntityEditor*>(m_entity_widgets.begin().value());
+			if (entity_widget == nullptr)
+			{
+				Q_ASSERT_X(false, "VadonEditor::UI::SceneManager::close_requested", "Invalid widget in lookup");
+				continue;
+			}
+
+			if (entity_widget->request_close() == false)
+			{
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	void SceneManager::force_close()
+	{
+		// Clear reverse lookup so we can ignore the signal from when the widgets are destroyed on close
+		m_widget_reverse_lookup.clear();
+
+		for (auto entity_widget_it = m_entity_widgets.begin(); entity_widget_it != m_entity_widgets.end(); ++entity_widget_it)
+		{
+			entity_widget_it.value()->close();
+		}
+
+		m_entity_widgets.clear();
+	}
 }

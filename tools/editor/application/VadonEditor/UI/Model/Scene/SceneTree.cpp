@@ -18,4 +18,10 @@ namespace VadonEditor::UI
 	{
 		emit(entity_opened(m_scene->get_resource()->get_info().id, index));
 	}
+
+	bool SceneTree::close_requested()
+	{
+		// TODO: popup if scene has unsaved changes
+		return true;
+	}
 }

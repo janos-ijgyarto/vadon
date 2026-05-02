@@ -92,6 +92,51 @@ namespace VadonEditor::Model
 		return nullptr;
 	}
 
+	Component* Entity::add_component(const QUuid& type_id)
+	{
+		auto component_it = m_components.find(type_id);
+		if (component_it != m_components.end())
+		{
+			Q_ASSERT_X(false, "VadonEditor::Model::Entity::add_component", "Component already added!");
+			return &component_it.value();
+		}
+		
+		Component new_component;
+		new_component.type_id = type_id;
+
+		if (new_component.initialize(m_owner_scene.get_application()) == false)
+		{
+			Q_ASSERT_X(false, "VadonEditor::Model::Entity::add_component", "Failed to initialize component");
+			return nullptr;
+		}
+
+		component_it = m_components.insert(type_id, new_component);
+		return &component_it.value();
+	}
+
+	Component* Entity::find_component(const QUuid& type_id)
+	{
+		auto component_it = m_components.find(type_id);
+		if (component_it != m_components.end())
+		{
+			return &component_it.value();
+		}
+
+		return nullptr;
+	}
+
+	void Entity::remove_component(const QUuid& type_id)
+	{
+		auto component_it = m_components.find(type_id);
+		if (component_it == m_components.end())
+		{
+			Q_ASSERT_X(false, "VadonEditor::Model::Entity::remove_component", "Component not found");
+			return;
+		}
+
+		m_components.erase(component_it);
+	}
+
 	bool Entity::save_data(QVariant& data, const QList<Entity*>& entity_queue) const
 	{
 		QVariantMap entity_variant_map;

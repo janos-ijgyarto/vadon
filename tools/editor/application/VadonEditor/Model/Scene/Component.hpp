@@ -20,6 +20,8 @@ namespace VadonEditor::Model
 
 		QVariant get_property(const QUuid& property_id) const;
 		void set_property(const QUuid& property_id, const QVariant& value);
+
+		static bool is_type_component(Core::Application& application, const QUuid& type_id);
 	};
 }
 #endif

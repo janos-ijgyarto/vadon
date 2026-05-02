@@ -22,6 +22,7 @@ namespace VadonEditor::UI
     signals:
         void run_simulator_requested();
         void stop_simulator_requested();
+        void close_requested();
     private slots:
         void message_logged(const QString& message);
 
@@ -35,6 +36,8 @@ namespace VadonEditor::UI
 
         void project_data_schema_triggered();
         void generate_data_schema_triggered();
+    protected:
+        void closeEvent(QCloseEvent* event) override;
     private:
         Core::Application& m_application;
         Ui::MainWindow m_ui;

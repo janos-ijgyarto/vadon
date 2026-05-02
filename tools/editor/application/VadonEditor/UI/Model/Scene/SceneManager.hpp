@@ -24,6 +24,10 @@ namespace VadonEditor::UI
 		SceneManager(Core::Application& application);
 
 		bool initialize();
+		void shutdown();
+
+		bool close_requested();
+		void force_close();
 
 		Core::Application& m_application;
 

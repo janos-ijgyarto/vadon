@@ -22,6 +22,9 @@ namespace VadonEditor::UI
 		bool initialize();
 		void shutdown();
 
+		bool close_requested();
+		void force_close();
+
 		Core::Application& m_application;
 		QHash<QUuid, QWidget*> m_resource_widgets;
 		QHash<QWidget*, QUuid> m_widget_reverse_lookup;

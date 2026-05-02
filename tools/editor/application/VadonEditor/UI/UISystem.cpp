@@ -26,6 +26,7 @@ namespace VadonEditor::UI
 		, m_scene_manager(application)
 		, m_launcher_dialog(nullptr)
 		, m_main_window(nullptr)
+		, m_shutting_down(false)
 	{
 
 	}
@@ -55,6 +56,7 @@ namespace VadonEditor::UI
 
 		QObject::connect(m_main_window, &MainWindow::run_simulator_requested, [this]() { run_simulator(); });
 		QObject::connect(m_main_window, &MainWindow::stop_simulator_requested, [this]() { stop_simulator(); });
+		QObject::connect(m_main_window, &MainWindow::close_requested, [this]() { close_requested(); });
 
 		if (configuration.startup_project_path.isEmpty() == true)
 		{
@@ -90,6 +92,7 @@ namespace VadonEditor::UI
 	void UISystem::shutdown()
 	{
 		m_resource_manager.shutdown();
+		m_scene_manager.shutdown();
 
 		if (m_launcher_dialog != nullptr)
 		{
@@ -122,13 +125,6 @@ namespace VadonEditor::UI
 		}
 
 		m_main_window->m_ui.assetBrowser->initialize(m_application);
-	}
-
-	void UISystem::request_close()
-	{
-		// TODO: go through all windows and initiate a closeEvent
-		// Windows can check whether we need to prompt the user for confirmation
-		// We rely on QApplication to shut down once all top-level windows are closed
 	}
 
 	void UISystem::received_message(const QByteArray& data)
@@ -186,5 +182,27 @@ namespace VadonEditor::UI
 	void UISystem::stop_simulator()
 	{
 		m_application.get_simulator().stop_simulator();
+	}
+
+	void UISystem::close_requested()
+	{
+		if (m_resource_manager.close_requested() == false)
+		{
+			return;
+		}
+
+		if (m_scene_manager.close_requested() == false)
+		{
+			return;
+		}
+
+		// Set flag so all UI subsystems know that we are ready to shut down
+		m_shutting_down = true;
+
+		// User did not interrupt close, clean up all widgets
+		m_resource_manager.force_close();
+		m_scene_manager.force_close();
+
+		m_main_window->close();
 	}
 }

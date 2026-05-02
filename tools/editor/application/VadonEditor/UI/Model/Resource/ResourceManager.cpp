@@ -79,6 +79,39 @@ namespace VadonEditor::UI
 
 	void ResourceManager::shutdown()
 	{
+		// TODO: check that all widgets have been closed!
+	}
 
+	bool ResourceManager::close_requested()
+	{
+		for (auto resource_widget_it = m_resource_widgets.begin(); resource_widget_it != m_resource_widgets.end(); ++resource_widget_it)
+		{
+			ResourceEditor* resource_widget = qobject_cast<ResourceEditor*>(resource_widget_it.value());
+			if (resource_widget == nullptr)
+			{
+				Q_ASSERT_X(false, "VadonEditor::UI::ResourceManager::close_requested", "Invalid widget in lookup");
+				continue;
+			}
+
+			if (resource_widget->request_close() == false)
+			{
+				return false;
+			}
+		}
+
+		return true;
+	}
+	
+	void ResourceManager::force_close()
+	{
+		// Clear reverse lookup so we can ignore the signal from when the widgets are destroyed on close
+		m_widget_reverse_lookup.clear();
+
+		for (auto resource_widget_it = m_resource_widgets.begin(); resource_widget_it != m_resource_widgets.end(); ++resource_widget_it)
+		{
+			resource_widget_it.value()->close();
+		}
+
+		m_resource_widgets.clear();
 	}
 }

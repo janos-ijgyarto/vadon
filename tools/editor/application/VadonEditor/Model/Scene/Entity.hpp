@@ -26,6 +26,10 @@ namespace VadonEditor::Model
 		QHash<ComponentID, Component>& get_components() { return m_components; }
 
 		QStandardItem* get_model_item() const;
+
+		Component* add_component(const QUuid& type_id);
+		Component* find_component(const QUuid& type_id);
+		void remove_component(const QUuid& type_id);
 	private:
 		Entity(Scene& scene)
 			: m_owner_scene(scene)

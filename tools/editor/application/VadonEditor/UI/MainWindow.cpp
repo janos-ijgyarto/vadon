@@ -7,6 +7,8 @@
 
 #include <VadonEditor/Network/NetworkSystem.hpp>
 
+#include <VadonEditor/UI/UISystem.hpp>
+
 #include <VadonEditor/UI/Project/DataSchemaDialog.hpp>
 #include <VadonEditor/UI/Project/ProjectSettingsDialog.hpp>
 
@@ -93,5 +95,20 @@ namespace VadonEditor::UI
 		{
 			QMessageBox::critical(this, "Project manager error", "Failed to load project data schema!");
 		}
+	}
+
+	void MainWindow::closeEvent(QCloseEvent* event)
+	{
+		if (m_application.get_ui_system().is_shutting_down() == false)
+		{
+			// Emit signal so UI system decides if we are ready to shut down
+			emit(close_requested());
+
+			// Ignore event so we don't actually close
+			event->ignore();
+			return;
+		}
+
+		event->accept();
 	}
 }

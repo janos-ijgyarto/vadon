@@ -175,4 +175,10 @@ namespace VadonEditor::UI
 			}
 		}
 	}
+
+	bool ResourceEditor::request_close()
+	{
+		// TODO: popup in case we have unsaved changes
+		return true;
+	}
 }

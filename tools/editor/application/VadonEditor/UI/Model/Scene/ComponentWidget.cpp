@@ -11,6 +11,8 @@
 
 #include <VadonEditor/Utilities/UUID.hpp>
 
+#include <QMessageBox>
+
 namespace VadonEditor::UI
 {
 	ComponentWidget::ComponentWidget(Model::Entity* entity, Model::Component* component, QWidget* parent)
@@ -27,6 +29,12 @@ namespace VadonEditor::UI
 		const Core::DataSchema& data_schema = application.get_project_manager().get_project_data_schema();
 		const Core::TypeData* type_data = data_schema.find_type_data(m_component->type_id);
 
+		if (type_data == nullptr)
+		{
+			Q_ASSERT_X(false, "VadonEditor::UI::ComponentWidget::initialize", "Cannot find type data!");
+			return false;
+		}
+
 		QList<const Core::TypeData*> type_parent_list;
 		{
 			const Core::TypeData* parent_type = type_data;
@@ -37,11 +45,23 @@ namespace VadonEditor::UI
 			}
 		}
 
+		{
+			// Add a label for the property section
+			QString component_type_name = type_data->find_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME);
+			if (component_type_name.isEmpty())
+			{
+				component_type_name = QString("Component type %1").arg(Utilities::vadon_uuid_to_qt_uuid(type_data->info.id).toString());
+			}
+
+			m_ui.componentNameLabel->setText(component_type_name);
+		}
+
 		// NOTE: this will create the widgets from the derived type first, going from top-to-bottom toward the parent type
 		for (const Core::TypeData* current_type : type_parent_list)
 		{
-			// Add a label for the property section
+			if(type_parent_list.size() > 1)
 			{
+				// Add a label for the property section
 				QString current_type_name = current_type->find_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME);
 				if (current_type_name.isEmpty())
 				{
@@ -71,6 +91,8 @@ namespace VadonEditor::UI
 					continue;
 				}
 
+				connect(property_widget, &PropertyWidget::value_changed, this, &ComponentWidget::internal_property_edited);
+
 				const QUuid property_qt_uuid = Utilities::vadon_uuid_to_qt_uuid(property_uuid);
 
 				QString property_name = property_data->find_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME);
@@ -90,5 +112,19 @@ namespace VadonEditor::UI
 		// TODO2: make sure we refcount so they dont get deleted while they are referenced!
 
 		return true;
+	}
+
+	void ComponentWidget::internal_property_edited(const QUuid& property_id)
+	{
+		emit(property_edited(m_component->type_id, property_id));
+	}
+
+	void ComponentWidget::remove_clicked()
+	{
+		const QMessageBox::StandardButton user_response = QMessageBox::question(this, "Remove Component", QString("Are you sure you want to remove %1").arg(m_ui.componentNameLabel->text()));
+		if (user_response == QMessageBox::StandardButton::Yes)
+		{
+			emit(remove_requested(m_component->type_id));
+		}
 	}
 }

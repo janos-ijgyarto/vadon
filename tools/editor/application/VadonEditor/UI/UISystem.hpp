@@ -16,6 +16,8 @@ namespace VadonEditor::UI
 	{
 	public:
 		MainWindow* get_main_window() const { return m_main_window; }
+
+		bool is_shutting_down() const { return m_shutting_down; }
 	private:
 		UISystem(Core::Application& application);
 
@@ -25,12 +27,12 @@ namespace VadonEditor::UI
 		void launcher_accepted();
 
 		void show_main_window();
-		void request_close();
 
 		void received_message(const QByteArray& data);
 
 		void run_simulator();
 		void stop_simulator();
+		void close_requested();
 
 		Core::Application& m_application;
 
@@ -39,6 +41,8 @@ namespace VadonEditor::UI
 
 		ResourceManager m_resource_manager;
 		SceneManager m_scene_manager;
+
+		bool m_shutting_down;
 
 		friend Core::Application;
 	};

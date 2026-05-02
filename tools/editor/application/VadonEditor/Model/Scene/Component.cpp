@@ -122,6 +122,12 @@ namespace VadonEditor::Model
 			}
 		}
 
+		if (type_id.isNull() == true)
+		{
+			Q_ASSERT_X(false, "VadonEditor::Model::Component::load_data", "Failed to load component type ID");
+			return false;
+		}
+
 		if (initialize(application) == false)
 		{
 			Q_ASSERT_X(false, "VadonEditor::Model::Component::load_data", "Failed to initialize component");
@@ -131,27 +137,24 @@ namespace VadonEditor::Model
 		const Core::DataSchema& data_schema = application.get_project_manager().get_project_data_schema();
 		const Core::TypeData* component_type_data = data_schema.find_type_data(type_id);
 
-		if (type_id.isNull() == false)
+		for (auto property_it = component_properties.begin(); property_it != component_properties.end(); ++property_it)
 		{
-			for (auto property_it = component_properties.begin(); property_it != component_properties.end(); ++property_it)
+			// TODO: check whether the current value is different from the default!
+			const QUuid property_uuid = Utilities::parse_labeled_uuid(property_it.key());
+			auto property_data_it = properties.find(property_uuid);
+			if (property_data_it != properties.end())
 			{
-				// TODO: check whether the current value is different from the default!
-				const QUuid property_uuid = Utilities::parse_labeled_uuid(property_it.key());
-				auto property_data_it = properties.find(property_uuid);
-				if (property_data_it != properties.end())
-				{
-					const Core::PropertyData* type_property_data = component_type_data->find_property_data(property_uuid);
-					Q_ASSERT_X(type_property_data != nullptr, "VadonEditor::Model::Component::load_data", "Cannot find property data");
+				const Core::PropertyData* type_property_data = component_type_data->find_property_data(property_uuid);
+				Q_ASSERT_X(type_property_data != nullptr, "VadonEditor::Model::Component::load_data", "Cannot find property data");
 
-					const ::Vadon::Foundation::BaseType base_type = Core::TypeData::get_base_type(Utilities::vadon_uuid_to_qt_uuid(type_property_data->info.type));
-					const QVariant property_variant = Utilities::get_variant_from_json_variant(Utilities::get_qt_typeid_from_base_type(base_type), property_it.value());
+				const ::Vadon::Foundation::BaseType base_type = Core::TypeData::get_base_type(Utilities::vadon_uuid_to_qt_uuid(type_property_data->info.type));
+				const QVariant property_variant = Utilities::get_variant_from_json_variant(Utilities::get_qt_typeid_from_base_type(base_type), property_it.value());
 
-					property_data_it.value() = data_schema.deserialize_property_data(*type_property_data, property_variant);
-				}
-				else
-				{
-					// TODO: warn about obsolete data?
-				}
+				property_data_it.value() = data_schema.deserialize_property_data(*type_property_data, property_variant);
+			}
+			else
+			{
+				// TODO: warn about obsolete data?
 			}
 		}
 
@@ -173,5 +176,20 @@ namespace VadonEditor::Model
 		Q_ASSERT_X(property_it.value().typeId() == value.typeId(), "VadonEditor::Model::Component::set_property", "Property value type mismatch");
 
 		property_it.value() = value;
+	}
+
+	bool Component::is_type_component(Core::Application& application, const QUuid& type_id)
+	{
+		const Core::DataSchema& data_schema = application.get_project_manager().get_project_data_schema();
+		const Core::TypeData* type_data = data_schema.find_type_data(type_id);
+		
+		if (type_data == nullptr)
+		{
+			Q_ASSERT_X(false, "VadonEditor::Model::Component::is_type_component", "Cannot find type data");
+			return false;
+		}
+
+		const QString component_metadata = type_data->find_metadata(::Vadon::Foundation::CommonTypeMetadata::COMPONENT);
+		return component_metadata.isEmpty() == false;
 	}
 }

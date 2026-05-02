@@ -21,11 +21,13 @@ namespace VadonEditor::UI
 	private slots:
 		void entity_double_clicked(const QModelIndex& index);
 	private:
+		bool close_requested();
+
 		Ui::SceneTree m_ui;
 
 		Model::Scene* m_scene;
 
-		friend class UISystem;
+		friend class SceneManager;
 	};
 }
 #endif
