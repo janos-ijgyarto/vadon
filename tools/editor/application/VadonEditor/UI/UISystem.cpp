@@ -186,12 +186,12 @@ namespace VadonEditor::UI
 
 	void UISystem::close_requested()
 	{
-		if (m_resource_manager.close_requested() == false)
+		if (m_resource_manager.request_close() == false)
 		{
 			return;
 		}
 
-		if (m_scene_manager.close_requested() == false)
+		if (m_scene_manager.request_close() == false)
 		{
 			return;
 		}

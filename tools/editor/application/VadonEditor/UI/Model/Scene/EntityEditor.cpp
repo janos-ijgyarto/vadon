@@ -6,7 +6,6 @@
 #include <VadonEditor/Core/Project/ProjectManager.hpp>
 
 #include <VadonEditor/Model/ModelSystem.hpp>
-#include <VadonEditor/Model/Resource/Resource.hpp>
 #include <VadonEditor/Model/Scene/SceneSystem.hpp>
 
 #include <VadonEditor/UI/Model/Scene/AddComponentDialog.hpp>
@@ -16,17 +15,9 @@
 
 namespace VadonEditor::UI
 {
-	EntityEditor::EntityEditor(Model::Entity* entity, QWidget* parent)
-		: QWidget(parent)
-		, m_entity(entity)
+	void EntityEditor::internal_name_changed(const QString& text)
 	{
-		m_ui.setupUi(this);
-		setAttribute(Qt::WidgetAttribute::WA_DeleteOnClose, true);
-	}
-
-	void EntityEditor::name_changed(const QString& text)
-	{
-		m_entity->set_name(text);
+		emit(entity_name_changed(m_entity->get_id(), text));
 		update_title();
 	}
 
@@ -52,6 +43,8 @@ namespace VadonEditor::UI
 			Q_ASSERT_X(false, "VadonEditor::UI::EntityEditor::new_component_selected", "Failed to add component!");
 			return;
 		}
+
+		emit(component_added(m_entity->get_id(), component_type));
 
 		if (internal_add_component_widget(added_component) == false)
 		{
@@ -85,10 +78,19 @@ namespace VadonEditor::UI
 					delete layout_item;
 
 					m_entity->remove_component(component_id);
+					emit(component_removed(m_entity->get_id(), component_id));
 					return;
 				}
 			}
 		}
+	}
+
+	EntityEditor::EntityEditor(Model::Entity* entity, QWidget* parent, Qt::WindowType type)
+		: QWidget(parent, type)
+		, m_entity(entity)
+	{
+		m_ui.setupUi(this);
+		setAttribute(Qt::WidgetAttribute::WA_DeleteOnClose, true);
 	}
 
 	bool EntityEditor::initialize()
@@ -149,7 +151,7 @@ namespace VadonEditor::UI
 
 	bool EntityEditor::update_title()
 	{
-		if (parentWidget() != nullptr)
+		if (windowType() != Qt::WindowType::Window)
 		{
 			// Widget is embedded in parent, so we don't set a title
 			return true;
@@ -161,7 +163,7 @@ namespace VadonEditor::UI
 		Model::SceneSystem& scene_system = application.get_model_system().get_scene_system();
 
 		// No parent, opened as separate window, so we should set a title
-		const int scene_asset_id = scene_system.find_scene_asset(entity_scene.get_resource()->get_info().id);
+		const int scene_asset_id = scene_system.find_scene_asset(entity_scene.get_id());
 
 		Core::AssetManager& asset_manager = application.get_asset_manager();
 		const QModelIndex asset_index = asset_manager.find_asset_index(scene_asset_id);
@@ -193,12 +195,6 @@ namespace VadonEditor::UI
 		const int spacer_index = m_ui.componentListVBox->indexOf(m_ui.componentListSpacer);
 		m_ui.componentListVBox->insertWidget(spacer_index, component_widget);
 
-		return true;
-	}
-
-	bool EntityEditor::request_close()
-	{
-		// TODO: check for unsaved changes
 		return true;
 	}
 }

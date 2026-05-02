@@ -11,11 +11,14 @@
 
 #include <VadonEditor/Utilities/UUID.hpp>
 
+#include <QMessageBox>
+
 namespace VadonEditor::UI
 {
-	ResourceEditor::ResourceEditor(Model::Resource* resource, QWidget* parent)
-		: QWidget(parent)
+	ResourceEditor::ResourceEditor(Model::Resource* resource, QWidget* parent, Qt::WindowType type)
+		: QWidget(parent, type)
 		, m_resource(resource)
+		, m_modified(false)
 	{
 		m_ui.setupUi(this);
 		setAttribute(Qt::WidgetAttribute::WA_DeleteOnClose, true);
@@ -29,11 +32,7 @@ namespace VadonEditor::UI
 			return false;
 		}
 
-		if (parentWidget() == nullptr)
-		{
-			// No parent, opened as separate window, so we should set a title
-			setWindowTitle(QString("Resource Editor - %1").arg(get_label()));
-		}
+		update_title();
 
 		const VadonEditor::Model::ResourceInfo resource_info = m_resource->get_info();
 		Core::Application& application = m_resource->get_application();
@@ -84,6 +83,8 @@ namespace VadonEditor::UI
 				{
 					continue;
 				}
+
+				connect(property_widget, &PropertyWidget::value_changed, this, &ResourceEditor::internal_property_edited);
 
 				const QUuid property_qt_uuid = Utilities::vadon_uuid_to_qt_uuid(property_uuid);
 
@@ -147,7 +148,7 @@ namespace VadonEditor::UI
 
 			const Core::AssetInfo resource_asset_info = asset_manager.get_asset_info(asset_index);
 
-			resource_path = asset_path.isEmpty() ? QString("%1/%2").arg(resource_asset_info.path).arg(asset_path) : resource_asset_info.path;
+			resource_path = asset_path.isEmpty() == false ? QString("%1/%2").arg(resource_asset_info.path).arg(asset_path) : resource_asset_info.path;
 		}
 
 		const Core::DataSchema& data_schema = application.get_project_manager().get_project_data_schema();
@@ -178,7 +179,46 @@ namespace VadonEditor::UI
 
 	bool ResourceEditor::request_close()
 	{
-		// TODO: popup in case we have unsaved changes
+		if (m_modified)
+		{
+			QMessageBox message_box(this);
+			message_box.setWindowTitle("Unsaved changes in Resource");
+			message_box.setText(QString("Save changes to \"%1?\"").arg(get_label()));
+			message_box.setStandardButtons(QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel);
+			message_box.setDefaultButton(QMessageBox::Yes);
+			message_box.setIcon(QMessageBox::Icon::Question);
+			
+			const int user_response = message_box.exec();
+			switch(user_response)
+			{
+			case QMessageBox::StandardButton::Yes:
+				// TODO: save changes
+				break;
+			case QMessageBox::StandardButton::Cancel:
+				return false;
+			}
+		}
+
 		return true;
+	}
+
+	void ResourceEditor::internal_property_edited(const QUuid& property_id)
+	{
+		Q_UNUSED(property_id);
+		set_modified();
+	}
+
+	void ResourceEditor::update_title()
+	{
+		if (windowType() == Qt::WindowType::Window)
+		{
+			// Opened as separate window, so we should set a title
+			QString title_text = QString("Resource Editor - %1").arg(get_label());
+			if (m_modified == true)
+			{
+				title_text += " (*)";
+			}
+			setWindowTitle(title_text);
+		}
 	}
 }

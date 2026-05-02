@@ -1,38 +1,32 @@
 #ifndef VADONEDITOR_UI_MODEL_SCENE_SCENEMANAGER_HPP
 #define VADONEDITOR_UI_MODEL_SCENE_SCENEMANAGER_HPP
-#include <QHash>
 #include <QObject>
 namespace VadonEditor::Core
 {
 	class Application;
 }
-namespace VadonEditor::Model
-{
-	class Entity;
-}
 namespace VadonEditor::UI
 {
+	class SceneTree;
 	class SceneManager : public QObject
 	{
 		Q_OBJECT
 	public:
 	private slots:
 		void asset_opened(const QModelIndex& index);
-		void entity_opened(const QUuid& scene_id, const QModelIndex& index);
-		void entity_widget_removed(QObject* widget_obj);
+		void scene_modified(const QUuid& scene_id);
 	private:
 		SceneManager(Core::Application& application);
 
 		bool initialize();
 		void shutdown();
 
-		bool close_requested();
+		bool request_close();
 		void force_close();
 
-		Core::Application& m_application;
+		SceneTree* find_scene_tab(const QUuid& scene_id) const;
 
-		QHash<Model::Entity*, QWidget*> m_entity_widgets;
-		QHash<QWidget*, Model::Entity*> m_widget_reverse_lookup;
+		Core::Application& m_application;
 
 		friend class UISystem;
 	};

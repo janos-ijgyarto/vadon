@@ -15,7 +15,7 @@ namespace VadonEditor::UI
 	{
 		Q_OBJECT
 	public:
-		AddComponentDialog(Core::Application& application, Model::Entity* entity, QWidget* parent);
+		AddComponentDialog(Core::Application& application, Model::Entity* entity, QWidget* parent = nullptr);
 	signals:
 		void component_type_selected(const QUuid& component_type_id);
 	private slots:

@@ -16,7 +16,7 @@ namespace VadonEditor::UI
 	{
 		Q_OBJECT
 	public:
-		ResourceEditor(Model::Resource* resource, QWidget* parent = nullptr);
+		ResourceEditor(Model::Resource* resource, QWidget* parent = nullptr, Qt::WindowType type = Qt::WindowType::Widget);
 		bool initialize();
 
 		const Model::Resource* get_resource() const { return m_resource; }
@@ -28,8 +28,16 @@ namespace VadonEditor::UI
 		bool request_close();
 	signals:
 		void resource_property_edited(const QUuid& property_id);
+	private slots:
+		void internal_property_edited(const QUuid& property_id);
 	private:
+		void set_modified() { m_modified = true; update_title(); }
+		void clear_modified() { m_modified = false; update_title(); }
+
+		void update_title();
+		
 		Model::Resource* m_resource;
+		bool m_modified; // TODO: create more advanced system of "versioning" for changes (undo/redo, etc.)
 
 		Ui::ResourceEditor m_ui;
 	};

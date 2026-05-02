@@ -29,7 +29,7 @@ namespace VadonEditor::UI
 		if (editor_it == m_resource_widgets.end())
 		{
 			Model::Resource* resource = resource_system.get_resource(resource_info.id);
-			ResourceEditor* new_editor = new ResourceEditor(resource);
+			ResourceEditor* new_editor = new ResourceEditor(resource, m_application.get_ui_system().get_main_window(), Qt::WindowType::Window);
 			if (new_editor->initialize() == false)
 			{
 				Q_ASSERT_X(false, "VadonEditor::UI::ResourceManager::asset_opened", "Failed to initialize Resource editor!");
@@ -82,14 +82,14 @@ namespace VadonEditor::UI
 		// TODO: check that all widgets have been closed!
 	}
 
-	bool ResourceManager::close_requested()
+	bool ResourceManager::request_close()
 	{
 		for (auto resource_widget_it = m_resource_widgets.begin(); resource_widget_it != m_resource_widgets.end(); ++resource_widget_it)
 		{
 			ResourceEditor* resource_widget = qobject_cast<ResourceEditor*>(resource_widget_it.value());
 			if (resource_widget == nullptr)
 			{
-				Q_ASSERT_X(false, "VadonEditor::UI::ResourceManager::close_requested", "Invalid widget in lookup");
+				Q_ASSERT_X(false, "VadonEditor::UI::ResourceManager::request_close", "Invalid widget in lookup");
 				continue;
 			}
 

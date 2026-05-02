@@ -93,7 +93,7 @@
    <sender>nameLineEdit</sender>
    <signal>textChanged(QString)</signal>
    <receiver>EntityEditor</receiver>
-   <slot>name_changed(QString)</slot>
+   <slot>internal_name_changed(QString)</slot>
    <hints>
     <hint type="sourcelabel">
      <x>231</x>
@@ -123,7 +123,7 @@
   </connection>
  </connections>
  <slots>
-  <slot>name_changed(QString)</slot>
+  <slot>internal_name_changed(QString)</slot>
   <slot>add_component_clicked()</slot>
  </slots>
 </ui>

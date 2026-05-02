@@ -17,6 +17,8 @@ namespace VadonEditor::Model
 
 		Core::Application& get_application() { return m_application; }
 
+		const SceneID& get_id() const { return m_id; }
+
 		Resource* get_resource() { return m_resource; }
 		const Resource* get_resource() const { return m_resource; }
 

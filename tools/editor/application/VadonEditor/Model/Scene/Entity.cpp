@@ -64,7 +64,7 @@ namespace VadonEditor::Model
 	void Entity::set_name(const QString& name)
 	{
 		m_name = name;
-		get_model_item()->setText(m_name);
+		get_model_item()->setText(get_label());
 	}
 
 	QString Entity::get_label() const

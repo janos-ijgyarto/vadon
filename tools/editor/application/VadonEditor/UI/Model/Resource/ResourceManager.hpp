@@ -22,7 +22,7 @@ namespace VadonEditor::UI
 		bool initialize();
 		void shutdown();
 
-		bool close_requested();
+		bool request_close();
 		void force_close();
 
 		Core::Application& m_application;
