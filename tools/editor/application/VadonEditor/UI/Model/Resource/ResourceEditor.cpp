@@ -11,14 +11,15 @@
 
 #include <VadonEditor/Utilities/UUID.hpp>
 
+#include <QCloseEvent>
 #include <QMessageBox>
+#include <QToolBar>
 
 namespace VadonEditor::UI
 {
 	ResourceEditor::ResourceEditor(Model::Resource* resource, QWidget* parent, Qt::WindowType type)
 		: QWidget(parent, type)
 		, m_resource(resource)
-		, m_modified(false)
 	{
 		m_ui.setupUi(this);
 		setAttribute(Qt::WidgetAttribute::WA_DeleteOnClose, true);
@@ -33,6 +34,15 @@ namespace VadonEditor::UI
 		}
 
 		update_title();
+
+		if (windowType() == Qt::WindowType::Window)
+		{
+			// No parent, can add toolbar
+			QToolBar* toolbar = new QToolBar();
+			toolbar->addAction(m_ui.actionSave);
+
+			m_ui.mainLayout->setMenuBar(toolbar);
+		}
 
 		const VadonEditor::Model::ResourceInfo resource_info = m_resource->get_info();
 		Core::Application& application = m_resource->get_application();
@@ -169,9 +179,11 @@ namespace VadonEditor::UI
 		for (int item_index = 0; item_index < m_ui.propertyListVBox->count(); ++item_index)
 		{
 			QWidget* current_widget = m_ui.propertyListVBox->itemAt(item_index)->widget();
-			PropertyWidget* property_widget = qobject_cast<PropertyWidget*>(current_widget);
-			if (property_widget != nullptr)
+			PropertyListEntry* list_entry = qobject_cast<PropertyListEntry*>(current_widget);
+			if (list_entry != nullptr)
 			{
+				PropertyWidget* property_widget = list_entry->get_property_widget();
+				Q_ASSERT_X(property_widget != nullptr, "VadonEditor::UI::ResourceEditor::set_read_only", "Cannot find property widget");
 				property_widget->set_read_only(read_only);
 			}
 		}
@@ -179,7 +191,7 @@ namespace VadonEditor::UI
 
 	bool ResourceEditor::request_close()
 	{
-		if (m_modified)
+		if (m_resource->is_modified() == true)
 		{
 			QMessageBox message_box(this);
 			message_box.setWindowTitle("Unsaved changes in Resource");
@@ -192,7 +204,10 @@ namespace VadonEditor::UI
 			switch(user_response)
 			{
 			case QMessageBox::StandardButton::Yes:
-				// TODO: save changes
+				save_triggered();
+				break;
+			case QMessageBox::StandardButton::No:
+				reload_triggered();
 				break;
 			case QMessageBox::StandardButton::Cancel:
 				return false;
@@ -202,10 +217,60 @@ namespace VadonEditor::UI
 		return true;
 	}
 
+	void ResourceEditor::closeEvent(QCloseEvent* event)
+	{
+		if (windowType() == Qt::WindowType::Window)
+		{
+			if (request_close() == false)
+			{
+				event->ignore();
+				return;
+			}
+		}
+
+		QWidget::closeEvent(event);
+	}
+
 	void ResourceEditor::internal_property_edited(const QUuid& property_id)
 	{
-		Q_UNUSED(property_id);
-		set_modified();
+		PropertyWidget* property_widget = find_property_widget(property_id);
+		Q_ASSERT_X(property_widget != nullptr, "VadonEditor::UI::ResourceEditor::internal_property_edited", "Cannot find property widget");
+
+		m_resource->set_property(property_id, property_widget->get_value());
+
+		update_title();
+	}
+
+	void ResourceEditor::save_triggered()
+	{
+		if (m_resource->is_modified() == false)
+		{
+			// Nothing to save
+			return;
+		}
+
+		Core::Application& application = m_resource->get_application();
+		Model::ResourceSystem& resource_system = application.get_model_system().get_resource_system();
+		if (resource_system.save_resource(m_resource) == false)
+		{
+			Q_ASSERT_X(false, "VadonEditor::UI::ResourceEditor::save_triggered", "Failed to save resource");
+			return;
+		}
+
+		update_title();
+	}
+
+	void ResourceEditor::reload_triggered()
+	{
+		Core::Application& application = m_resource->get_application();
+		Model::ResourceSystem& resource_system = application.get_model_system().get_resource_system();
+		if (resource_system.reload_resource(m_resource) == false)
+		{
+			Q_ASSERT_X(false, "VadonEditor::UI::ResourceEditor::reload_triggered", "Failed to reload resource");
+			return;
+		}
+
+		update_title();
 	}
 
 	void ResourceEditor::update_title()
@@ -214,11 +279,31 @@ namespace VadonEditor::UI
 		{
 			// Opened as separate window, so we should set a title
 			QString title_text = QString("Resource Editor - %1").arg(get_label());
-			if (m_modified == true)
+			if (m_resource->is_modified() == true)
 			{
 				title_text += " (*)";
 			}
 			setWindowTitle(title_text);
 		}
+	}
+
+	PropertyWidget* ResourceEditor::find_property_widget(const QUuid& property_id) const
+	{
+		for (int item_index = 0; item_index < m_ui.propertyListVBox->count(); ++item_index)
+		{
+			QWidget* current_widget = m_ui.propertyListVBox->itemAt(item_index)->widget();
+			PropertyListEntry* list_entry = qobject_cast<PropertyListEntry*>(current_widget);
+			if (list_entry != nullptr)
+			{
+				PropertyWidget* property_widget = list_entry->get_property_widget();
+				Q_ASSERT_X(property_widget != nullptr, "VadonEditor::UI::ResourceEditor::find_property_widget", "Cannot find property widget");
+				if (property_widget->get_id() == property_id)
+				{
+					return property_widget;
+				}
+			}
+		}
+
+		return nullptr;
 	}
 }

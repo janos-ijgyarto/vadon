@@ -109,6 +109,8 @@ namespace VadonEditor::Model
 		Q_ASSERT_X(property_it.value().typeId() == value.typeId(), "VadonEditor::Model::Resource::set_property", "Property value type mismatch");
 
 		property_it.value() = value;
+
+		notify_modifed();
 	}
 
 	QVariant Resource::get_data(const QUuid& data_id) const
@@ -126,6 +128,8 @@ namespace VadonEditor::Model
 		Q_ASSERT_X(data_it.value().typeId() == value.typeId(), "VadonEditor::Model::Resource::set_data", "Data value type mismatch");
 
 		data_it.value() = value;
+
+		notify_modifed();
 	}
 
 	Resource* Resource::create_embedded_resource(const QUuid& type)
@@ -175,6 +179,7 @@ namespace VadonEditor::Model
 		: m_application(application)
 		, m_owner(nullptr)
 		, m_pending_remove(false)
+		, m_modified(false)
 	{
 	}
 
@@ -182,6 +187,18 @@ namespace VadonEditor::Model
 	{
 		Q_ASSERT_X(m_info.id.isNull() == false, "VadonEditor::Model::Resource::initialize", "Invalid resource ID!");
 		Q_ASSERT_X(m_info.type.isNull() == false, "VadonEditor::Model::Resource::initialize", "Invalid resource type!");
+
+		m_properties.clear();
+		m_data.clear();
+
+		for (auto embedded_resource_it = m_embedded_resources.begin(); embedded_resource_it != m_embedded_resources.end(); ++embedded_resource_it)
+		{
+			Resource* current_embedded_resource = embedded_resource_it.value();
+			if (current_embedded_resource->initialize() == false)
+			{
+				return false;
+			}
+		}
 
 		// Load default values into Resource
 		const Core::DataSchema& data_schema = m_application.get_project_manager().get_project_data_schema();
@@ -421,7 +438,7 @@ namespace VadonEditor::Model
 								return false;
 							}
 
-							m_embedded_resources.insert(embedded_info.id, embedded_resource);
+							embedded_resource_it = m_embedded_resources.insert(embedded_info.id, embedded_resource);
 						}
 						if (embedded_resource_it.value()->internal_load(embedded_resource_object) == false)
 						{

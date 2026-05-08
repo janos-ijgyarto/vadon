@@ -78,7 +78,13 @@ namespace VadonEditor::Model
 		new_resource_info.id = QUuid::createUuid();
 		new_resource_info.type = type_id;
 
-		return internal_create_new_resource(new_resource_info);
+		Resource* new_resource = internal_create_new_resource(new_resource_info);
+		if (new_resource != nullptr)
+		{
+			internal_add_new_resource(new_resource);
+		}
+
+		return new_resource;
 	}
 
 	Resource* ResourceSystem::find_resource(const ResourceID& resource_id) const
@@ -130,39 +136,24 @@ namespace VadonEditor::Model
 			return nullptr;
 		}
 
-		QByteArray resource_file_data;
-		if (m_application.get_asset_manager().load_asset_data(resource_asset_id, resource_file_data) == false)
+		auto cached_info_it = m_resource_asset_reverse_lookup.find(resource_asset_id);
+		if (cached_info_it == m_resource_asset_reverse_lookup.end())
 		{
-			Q_ASSERT_X(false, "VadonEditor::Model::ResourceSystem::get_resource", "Unable to load resource file data!");
+			Q_ASSERT_X(false, "VadonEditor::Model::ResourceSystem::get_resource", "Cannot find cached resource info!");
 			return nullptr;
 		}
 
-		// TODO: check error 
-		QJsonDocument json_document = QJsonDocument::fromJson(resource_file_data);
-		if (json_document.isNull() == true)
-		{
-			Q_ASSERT_X(false, "VadonEditor::Model::ResourceSystem::get_resource", "Resource file is not valid JSON!");
-			return nullptr;
-		}
-
-		// Parse resource info
-		// FIXME: have a LUT of imported resources so we don't have to do this more than once!
-		const QJsonObject& root_object = json_document.object();
-
-		ResourceInfo resource_info;
-		if (internal_parse_resource_info(resource_info, root_object) == false)
-		{
-			Q_ASSERT_X(false, "VadonEditor::Model::ResourceSystem::get_resource", "Invalid resource info!");
-			return nullptr;
-		}
-
+		const ResourceInfo& resource_info = cached_info_it.value();
 		Resource* new_resource = internal_create_new_resource(resource_info);
-		if (new_resource->internal_load(root_object) == false)
+
+		if (internal_load_resource(new_resource, resource_asset_id) == false)
 		{
 			Q_ASSERT_X(false, "VadonEditor::Model::ResourceSystem::get_resource", "Failed to load resource data!");
+			delete new_resource;
 			return nullptr;
 		}
 
+		internal_add_new_resource(new_resource);
 		return new_resource;
 	}
 
@@ -264,6 +255,37 @@ namespace VadonEditor::Model
 			return false;
 		}
 
+		// Clear the modified flag
+		// FIXME: this is a bit hacky, we re-query the resource to get a non-const pointer
+		find_resource(resource->get_info().id)->clear_modified();
+		return true;
+	}
+
+	bool ResourceSystem::reload_resource(Resource* resource)
+	{
+		// First find the asset ID
+		const int asset_id = find_resource_asset_id(resource->get_info().id);
+		if (asset_id == Core::AssetInfo::c_invalid_file_id)
+		{
+			Q_ASSERT_X(false, "VadonEditor::Model::ResourceSystem::reload_resource", "Cannot find resource asset");
+			return false;
+		}
+
+		// Initialize to clear any changes
+		if (resource->initialize() == false)
+		{
+			Q_ASSERT_X(false, "VadonEditor::Model::ResourceSystem::reload_resource", "Failed to initialize resource!");
+			return false;
+		}
+
+		// Finally reload from asset
+		if (internal_load_resource(resource, asset_id) == false)
+		{
+			Q_ASSERT_X(false, "VadonEditor::Model::ResourceSystem::reload_resource", "Failed to load resource!");
+			return false;
+		}
+
+		resource->clear_modified();
 		return true;
 	}
 
@@ -424,9 +446,16 @@ namespace VadonEditor::Model
 			return nullptr;
 		}
 
-		// Add to lookup
-		m_resource_lookup.insert(info.id, new_resource);
 		return new_resource;
+	}
+
+	void ResourceSystem::internal_add_new_resource(Resource* resource)
+	{
+		Q_ASSERT_X(resource != nullptr, "VadonEditor::Model::ResourceSystem::internal_add_new_resource", "Resource must not be null!");
+		Q_ASSERT_X(resource->get_info().is_valid() == true, "VadonEditor::Model::ResourceSystem::internal_add_new_resource", "Resource must be valid!");
+		Q_ASSERT_X(m_resource_lookup.find(resource->get_info().id) == m_resource_lookup.end(), "VadonEditor::Model::ResourceSystem::internal_add_new_resource", "Resource already added!");
+
+		m_resource_lookup.insert(resource->get_info().id, resource);
 	}
 	
 	bool ResourceSystem::internal_parse_resource_info(ResourceInfo& info, const QJsonObject& root_object) const
@@ -464,6 +493,35 @@ namespace VadonEditor::Model
 
 		m_resource_asset_lookup.insert(info.id, asset_id);
 		m_resource_asset_reverse_lookup.insert(asset_id, info);
+
+		return true;
+	}
+
+	bool ResourceSystem::internal_load_resource(Resource* resource, int asset_id)
+	{
+		QByteArray resource_file_data;
+		if (m_application.get_asset_manager().load_asset_data(asset_id, resource_file_data) == false)
+		{
+			Q_ASSERT_X(false, "VadonEditor::Model::ResourceSystem::internal_load_resource", "Unable to load resource file data!");
+			return false;
+		}
+
+		// TODO: check error 
+		QJsonDocument json_document = QJsonDocument::fromJson(resource_file_data);
+		if (json_document.isNull() == true)
+		{
+			Q_ASSERT_X(false, "VadonEditor::Model::ResourceSystem::internal_load_resource", "Resource file is not valid JSON!");
+			return false;
+		}
+
+		// Parse resource info
+		// FIXME: have a LUT of imported resources so we don't have to do this more than once!
+		const QJsonObject& root_object = json_document.object();
+		if (resource->internal_load(root_object) == false)
+		{
+			Q_ASSERT_X(false, "VadonEditor::Model::ResourceSystem::internal_load_resource", "Failed to load resource data!");
+			return false;
+		}
 
 		return true;
 	}

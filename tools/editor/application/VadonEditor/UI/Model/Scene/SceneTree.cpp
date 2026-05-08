@@ -19,7 +19,6 @@ namespace VadonEditor::UI
 	SceneTree::SceneTree(Model::Scene* scene, QWidget* parent)
 		: QWidget(parent)
 		, m_scene(scene)
-		, m_modified(false)
 	{
 		m_ui.setupUi(this);
 
@@ -67,9 +66,7 @@ namespace VadonEditor::UI
 	void SceneTree::entity_name_changed(const QUuid& entity_id, const QString& text)
 	{
 		Model::EntityModel& entity_model = m_scene->get_entity_model();
-
-		const QModelIndex entity_index = entity_model.find_entity_item_by_id(entity_id);
-		Model::Entity* entity = entity_model.get_entity_by_model_index(entity_index);
+		Model::Entity* entity = entity_model.find_entity_by_id(entity_id);
 
 		entity->set_name(text);
 
@@ -97,6 +94,11 @@ namespace VadonEditor::UI
 		Q_UNUSED(component_id);
 		Q_UNUSED(property_id);
 		set_modified();
+	}
+
+	void SceneTree::save_triggered()
+	{
+		// TODO: save scene data!
 	}
 
 	void SceneTree::entity_opened(Model::Entity* entity)
@@ -136,7 +138,7 @@ namespace VadonEditor::UI
 
 	bool SceneTree::request_close()
 	{
-		if (m_modified)
+		if (m_scene->is_modified())
 		{
 			QMessageBox message_box(this);
 			message_box.setWindowTitle("Unsaved changes in Scene");
@@ -174,13 +176,7 @@ namespace VadonEditor::UI
 
 	void SceneTree::set_modified()
 	{ 
-		m_modified = true;
-		emit(scene_modified(m_scene->get_resource()->get_info().id));
-	}
-
-	void SceneTree::clear_modified()
-	{ 
-		m_modified = false;
+		m_scene->notify_modified();
 		emit(scene_modified(m_scene->get_resource()->get_info().id));
 	}
 }

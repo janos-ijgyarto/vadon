@@ -116,6 +116,9 @@ namespace VadonEditor::UI
 
 	void ComponentWidget::internal_property_edited(const QUuid& property_id)
 	{
+		PropertyWidget* property_widget = find_property_widget(property_id);
+
+		m_component->set_property(property_id, property_widget->get_value());
 		emit(property_edited(m_component->type_id, property_id));
 	}
 
@@ -126,5 +129,25 @@ namespace VadonEditor::UI
 		{
 			emit(remove_requested(m_component->type_id));
 		}
+	}
+
+	PropertyWidget* ComponentWidget::find_property_widget(const QUuid& property_id) const
+	{
+		for (int item_index = 0; item_index < m_ui.propertiesVBox->count(); ++item_index)
+		{
+			QWidget* current_widget = m_ui.propertiesVBox->itemAt(item_index)->widget();
+			PropertyListEntry* list_entry = qobject_cast<PropertyListEntry*>(current_widget);
+			if (list_entry != nullptr)
+			{
+				PropertyWidget* property_widget = list_entry->get_property_widget();
+				Q_ASSERT_X(property_widget != nullptr, "VadonEditor::UI::ComponentWidget::find_property_widget", "Cannot find property widget");
+				if (property_widget->get_id() == property_id)
+				{
+					return property_widget;
+				}
+			}
+		}
+
+		return nullptr;
 	}
 }

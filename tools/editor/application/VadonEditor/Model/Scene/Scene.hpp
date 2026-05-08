@@ -24,6 +24,9 @@ namespace VadonEditor::Model
 
 		EntityModel& get_entity_model() { return m_entity_model; }
 
+		bool is_modified() const;
+		void notify_modified();
+
 		static bool is_scene_base_of_type(VadonEditor::Core::Application& application, const QUuid& type_id);
 		static QUuid get_scene_type_uuid();
 		static QUuid get_scene_entities_uuid();

@@ -70,8 +70,6 @@ namespace VadonEditor::UI
 		const Core::DataSchema& data_schema = m_application.get_project_manager().get_project_data_schema();
 		const Core::DataSchema::TypeMetadataRegistry& type_registry = data_schema.get_registry();
 
-		const auto& entity_component_lookup = m_entity->get_components();
-
 		const size_t type_count = type_registry.get_registered_type_count();
 		for (size_t type_index = 0; type_index < type_count; ++type_index)
 		{
@@ -82,18 +80,21 @@ namespace VadonEditor::UI
 			const QString component_metadata = type_data->find_metadata(::Vadon::Foundation::CommonTypeMetadata::COMPONENT);
 			if (component_metadata.isEmpty() == false)
 			{
-				if (entity_component_lookup.find(type_qt_uuid) == entity_component_lookup.end())
+				if (m_entity->find_component(type_qt_uuid) != nullptr)
 				{
-					// Component not present in entity, so we can add it to the list
-					QString component_name = type_data->find_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME);
-					if (component_name.isEmpty() == true)
-					{
-						component_name = QString("Component %1").arg(Utilities::uuid_to_base64_string(type_qt_uuid));
-					}
-
-					QListWidgetItem* component_item = new QListWidgetItem(component_name, m_ui.componentList);
-					component_item->setData(c_component_type_role, type_qt_uuid);
+					// Component already added to entity
+					continue;
 				}
+
+				// Component not present in entity, so we can add it to the list
+				QString component_name = type_data->find_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME);
+				if (component_name.isEmpty() == true)
+				{
+					component_name = QString("Component %1").arg(Utilities::uuid_to_base64_string(type_qt_uuid));
+				}
+
+				QListWidgetItem* component_item = new QListWidgetItem(component_name, m_ui.componentList);
+				component_item->setData(c_component_type_role, type_qt_uuid);
 			}
 		}
 

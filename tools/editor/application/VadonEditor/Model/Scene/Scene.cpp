@@ -31,6 +31,16 @@ namespace VadonEditor::Model
 		// TODO: decrement refcount instead!
 		delete resource;
 	}
+	
+	bool Scene::is_modified() const
+	{
+		return m_resource->is_modified();
+	}
+
+	void Scene::notify_modified()
+	{
+		m_resource->notify_modifed();
+	}
 
 	bool Scene::is_scene_base_of_type(Core::Application& application, const QUuid& type_id)
 	{

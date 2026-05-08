@@ -292,7 +292,12 @@ namespace VadonEditor::Model
 		QStandardItem* entity_item = m_qt_model.itemFromIndex(index);
 		const QUuid entity_uuid = get_entity_item_data(entity_item, EntityDataRole::ID).toUuid();
 
-		auto entity_it = m_entity_lookup.find(entity_uuid);
+		return find_entity_by_id(entity_uuid);
+	}
+
+	Entity* EntityModel::find_entity_by_id(const QUuid& id) const
+	{
+		auto entity_it = m_entity_lookup.find(id);
 		if (entity_it != m_entity_lookup.end())
 		{
 			return entity_it.value();

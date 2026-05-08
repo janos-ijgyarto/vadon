@@ -12,6 +12,7 @@ namespace VadonEditor::Model
 }
 namespace VadonEditor::UI
 {
+	class PropertyWidget;
 	class ComponentWidget : public QWidget
 	{
 		Q_OBJECT
@@ -28,6 +29,8 @@ namespace VadonEditor::UI
 		void internal_property_edited(const QUuid& property_id);
 		void remove_clicked();
 	private:
+		PropertyWidget* find_property_widget(const QUuid& property_id) const;
+
 		Ui::ComponentWidget m_ui;
 
 		Model::Entity* m_entity;

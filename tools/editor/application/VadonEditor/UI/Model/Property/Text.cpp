@@ -23,6 +23,11 @@ namespace VadonEditor::UI
 		: PropertyWidget(id, value, parent)
 	{
 		m_ui.setupUi(this);
+
+		// Temporarily block signals while we set the value
+		m_ui.plainTextEdit->blockSignals(true);
+		m_ui.plainTextEdit->setPlainText(value);
+		m_ui.plainTextEdit->blockSignals(false);
 	}
 
 	void PropertyPlainTextEdit::set_read_only(bool read_only)

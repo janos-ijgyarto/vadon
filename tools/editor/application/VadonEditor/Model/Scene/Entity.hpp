@@ -23,7 +23,7 @@ namespace VadonEditor::Model
 		Scene& get_owner_scene() { return m_owner_scene; }
 		const SceneID& get_sub_scene_id() const { return m_sub_scene_id; }
 
-		QHash<ComponentID, Component>& get_components() { return m_components; }
+		QList<QUuid> get_component_list() const { return m_components.keys(); }
 
 		QStandardItem* get_model_item() const;
 
@@ -47,6 +47,8 @@ namespace VadonEditor::Model
 		QHash<ComponentID, Component> m_components;
 		SceneID m_sub_scene_id;
 
+		bool m_modified = false;
+
 		friend class EntityModel;
 	};
 
@@ -65,6 +67,7 @@ namespace VadonEditor::Model
 		Entity* get_root_entity() const { return m_root_entity; }
 
 		Entity* get_entity_by_model_index(const QModelIndex& index) const;
+		Entity* find_entity_by_id(const QUuid& id) const;
 		QModelIndex find_entity_item_by_id(const QUuid& id) const;
 
 		bool save_model(QVariantList& data) const;

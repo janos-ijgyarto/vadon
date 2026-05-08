@@ -32,6 +32,7 @@ namespace VadonEditor::Model
 		int create_resource_asset(const ResourceID& resource_id, const QString& path);
 		QList<int> get_resource_asset_list() const;
 		bool save_resource(const Resource* resource);
+		bool reload_resource(Resource* resource);
 
 		Core::AssetType get_asset_type_for_resource_type(const QUuid& type_id) const;
 	private:
@@ -42,8 +43,12 @@ namespace VadonEditor::Model
 		void shutdown();
 
 		Resource* internal_create_new_resource(const ResourceInfo& info);
+		void internal_add_new_resource(Resource* resource);
+
 		bool internal_parse_resource_info(ResourceInfo& info, const QJsonObject& root_object) const;
 		bool internal_add_resource_asset(const ResourceInfo& info, int asset_id);
+
+		bool internal_load_resource(Resource* resource, int asset_id);
 
 		Core::Application& m_application;
 		QHash<ResourceID, Resource*> m_resource_lookup;

@@ -61,7 +61,7 @@ namespace VadonEditor::UI
 		}
 
 		QString scene_tab_label = scene_tree->get_label();
-		if (scene_tree->is_modified() == true)
+		if (scene_tree->get_scene()->is_modified() == true)
 		{
 			scene_tab_label += " (*)";
 		}

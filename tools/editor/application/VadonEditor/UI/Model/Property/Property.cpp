@@ -91,4 +91,9 @@ namespace VadonEditor::UI
 
 		m_ui.frame->setLayout(hbox_layout);
 	}
+
+	PropertyWidget* PropertyListEntry::get_property_widget() const
+	{
+		return qobject_cast<PropertyWidget*>(m_ui.frame->layout()->itemAt(0)->widget());
+	}
 }

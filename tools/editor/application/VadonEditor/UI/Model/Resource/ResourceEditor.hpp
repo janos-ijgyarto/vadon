@@ -12,6 +12,7 @@ namespace VadonEditor::Model
 }
 namespace VadonEditor::UI
 {
+	class PropertyWidget;
 	class ResourceEditor : public QWidget
 	{
 		Q_OBJECT
@@ -28,16 +29,18 @@ namespace VadonEditor::UI
 		bool request_close();
 	signals:
 		void resource_property_edited(const QUuid& property_id);
+	protected:
+		void closeEvent(QCloseEvent* event) override;
 	private slots:
 		void internal_property_edited(const QUuid& property_id);
+		void save_triggered();
+		void reload_triggered();
 	private:
-		void set_modified() { m_modified = true; update_title(); }
-		void clear_modified() { m_modified = false; update_title(); }
-
 		void update_title();
+
+		PropertyWidget* find_property_widget(const QUuid& property_id) const;
 		
 		Model::Resource* m_resource;
-		bool m_modified; // TODO: create more advanced system of "versioning" for changes (undo/redo, etc.)
 
 		Ui::ResourceEditor m_ui;
 	};

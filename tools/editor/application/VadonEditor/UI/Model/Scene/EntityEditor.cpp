@@ -137,9 +137,12 @@ namespace VadonEditor::UI
 		}
 
 		// TODO: sort component widgets by name?
-		for (auto component_it = m_entity->get_components().begin(); component_it != m_entity->get_components().end(); ++component_it)
+		const QList<QUuid> component_id_list = m_entity->get_component_list();
+		for (const QUuid& current_component_id : component_id_list)
 		{
-			if (internal_add_component_widget(&component_it.value()) == false)
+			Model::Component* current_component = m_entity->find_component(current_component_id);
+			Q_ASSERT_X(current_component != nullptr, "VadonEditor::UI::EntityEditor::initialize", "Cannot find component");
+			if (internal_add_component_widget(current_component) == false)
 			{
 				Q_ASSERT_X(false, "VadonEditor::UI::EntityEditor::initialize", "Failed to add component widget");
 				return false;

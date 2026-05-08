@@ -33,6 +33,9 @@ namespace VadonEditor::Model
 		Core::Application& get_application() { return m_application; }
 		const ResourceInfo& get_info() const { return m_info; }
 		bool is_pending_remove() const { return m_pending_remove; }
+		bool is_modified() const { return m_modified; }
+
+		void notify_modifed() { m_modified = true; }
 
 		QVariant get_property(const PropertyID& property_id) const;
 		void set_property(const PropertyID& property_id, const QVariant& value);
@@ -57,6 +60,8 @@ namespace VadonEditor::Model
 		bool internal_save(QJsonObject& root_obj) const;
 		bool internal_load(const QJsonObject& root_obj);
 
+		void clear_modified() { m_modified = false; }
+
 		Core::Application& m_application;
 
 		ResourceInfo m_info;
@@ -69,6 +74,7 @@ namespace VadonEditor::Model
 		QHash<ResourceID, Resource*> m_embedded_resources;
 
 		bool m_pending_remove; // FIXME: nicer way to do this?
+		bool m_modified; // TODO: create more advanced system of "versioning" for changes (undo/redo, etc.)
 
 		friend class ResourceSystem;
 	};

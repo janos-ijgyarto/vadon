@@ -21,6 +21,7 @@ namespace VadonEditor::UI
 	{
 		Q_OBJECT
 	public:
+		const QUuid& get_id() const { return m_id; }
 		const QVariant& get_value() const { return m_value; }
 
 		// TODO: add a "metadata" parameter
@@ -53,6 +54,8 @@ namespace VadonEditor::UI
 		Q_OBJECT
 	public:
 		PropertyListEntry(QWidget* parent, PropertyWidget* property_widget, const QString& label);
+
+		PropertyWidget* get_property_widget() const;
 	private:
 		Ui::PropertyListEntry m_ui;
 	};
