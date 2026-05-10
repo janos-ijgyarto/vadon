@@ -4,7 +4,7 @@
 #include <VadonDemo/Core/Editor.hpp>
 #include <VadonDemo/UI/Component.hpp>
 
-#include <VadonEditor/Scene/SceneSystem.hpp>
+#include <VadonEditor/Model/Scene/SceneSystem.hpp>
 
 #include <Vadon/ECS/World/World.hpp>
 
@@ -17,17 +17,17 @@ namespace VadonDemo::UI
 
 	bool EditorUI::initialize()
 	{
-        VadonEditor::Scene::SceneSystem& editor_scene_system = m_editor.get_common_editor().get_scene_system();
+        VadonEditor::Model::SceneSystem& editor_scene_system = m_editor.get_common_editor().get_scene_system();
 
         editor_scene_system.add_entity_event_callback(
-            [this](const VadonEditor::Scene::EntityEvent& entity_event)
+            [this](const VadonEditor::Model::EntityEvent& entity_event)
             {
                 switch (entity_event.type)
                 {
-                case VadonEditor::Scene::EntityEventType::ADDED:
+                case VadonEditor::Model::EntityEventType::ADDED:
                     init_entity(entity_event.entity);
                     break;
-                case VadonEditor::Scene::EntityEventType::REMOVED:
+                case VadonEditor::Model::EntityEventType::REMOVED:
                     remove_entity(entity_event.entity);
                     break;
                 }
@@ -35,19 +35,19 @@ namespace VadonDemo::UI
         );
 
         editor_scene_system.add_component_event_callback(
-            [this](const VadonEditor::Scene::ComponentEvent& component_event)
+            [this](const VadonEditor::Model::ComponentEvent& component_event)
             {
                 if (component_event.component_type == Vadon::Utilities::TypeRegistry::get_type_id<Base>())
                 {
                     switch (component_event.type)
                     {
-                    case VadonEditor::Scene::ComponentEventType::ADDED:
+                    case VadonEditor::Model::ComponentEventType::ADDED:
                         init_entity(component_event.owner);
                         break;
-                    case VadonEditor::Scene::ComponentEventType::EDITED:
+                    case VadonEditor::Model::ComponentEventType::EDITED:
                         update_entity(component_event.owner);
                         break;
-                    case VadonEditor::Scene::ComponentEventType::REMOVED:
+                    case VadonEditor::Model::ComponentEventType::REMOVED:
                         remove_entity(component_event.owner);
                         break;
                     }
@@ -62,7 +62,7 @@ namespace VadonDemo::UI
                     // TODO: could also make this event-driven
                     // EditorRender initializes CanvasComponent, fires event asking for it to be initialized
                     // Other subsystems can add listener and add draw data
-                    if (component_event.type == VadonEditor::Scene::ComponentEventType::ADDED)
+                    if (component_event.type == VadonEditor::Model::ComponentEventType::ADDED)
                     {
                         update_entity(component_event.owner);
                     }

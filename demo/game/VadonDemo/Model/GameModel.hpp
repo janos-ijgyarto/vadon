@@ -1,6 +1,6 @@
 #ifndef VADONDEMO_MODEL_GAMEMODEL_HPP
 #define VADONDEMO_MODEL_GAMEMODEL_HPP
-#include <Vadon/Scene/Scene.hpp>
+#include <Vadon/Model/Scene/Scene.hpp>
 namespace Vadon::Core
 {
 	class EngineEnvironment;
@@ -36,7 +36,7 @@ namespace VadonDemo::Model
 
 		struct LevelConfiguration
 		{
-			Vadon::Scene::SceneID scene_id;
+			Vadon::Model::SceneID scene_id;
 			// TODO: any other parameters?
 		};
 

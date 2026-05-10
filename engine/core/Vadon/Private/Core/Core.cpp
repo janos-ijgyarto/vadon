@@ -49,8 +49,8 @@ namespace Vadon::Private::Core
 
     void EngineCore::register_types()
     {
-        Vadon::Private::Scene::ResourceSystem::register_types();
-        Vadon::Private::Scene::SceneSystem::register_types();
+        Vadon::Private::Model::ResourceSystem::register_types();
+        Vadon::Private::Model::SceneSystem::register_types();
     }
 
     void EngineCore::register_type_metadata(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry)
@@ -119,8 +119,8 @@ namespace Vadon::Private::Core
             }
         }
 
-        Vadon::Private::Scene::ResourceSystem::register_type_metadata(metadata_registry);
-        Vadon::Private::Scene::SceneSystem::register_type_metadata(metadata_registry);
+        Vadon::Private::Model::ResourceSystem::register_type_metadata(metadata_registry);
+        Vadon::Private::Model::SceneSystem::register_type_metadata(metadata_registry);
     }
 
     bool EngineCore::initialize(const Vadon::Core::CoreConfiguration& config)

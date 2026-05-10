@@ -1,4 +1,0 @@
-add_subdirectory(Editor)
-add_subdirectory(Platform)
-add_subdirectory(TypeInfo)
-add_subdirectory(Utilities)

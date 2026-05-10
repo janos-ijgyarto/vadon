@@ -40,9 +40,6 @@ namespace VadonEditor::Model
 		QVariant get_property(const PropertyID& property_id) const;
 		void set_property(const PropertyID& property_id, const QVariant& value);
 
-		QVariant get_data(const QUuid& data_id) const;
-		void set_data(const QUuid& data_id, const QVariant& value);
-
 		const Resource* get_owner() const { return m_owner; }
 
 		Resource* create_embedded_resource(const QUuid& type);

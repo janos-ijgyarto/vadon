@@ -13,7 +13,7 @@
 #include <Vadon/Render/GraphicsAPI/Shader/ShaderSystem.hpp>
 #include <Vadon/Render/GraphicsAPI/Texture/TextureSystem.hpp>
 
-#include <Vadon/Scene/Resource/ResourceSystem.hpp>
+#include <Vadon/Model/Resource/ResourceSystem.hpp>
 
 #include <filesystem>
 
@@ -113,7 +113,7 @@ namespace VadonDemo::Render
 	void Render::update_layer_definition(CanvasLayerDefHandle layer_def_handle)
 	{
 		Vadon::Core::EngineCoreInterface& engine_core = m_core.get_engine_core();
-		Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
+		Vadon::Model::ResourceSystem& resource_system = engine_core.get_system<Vadon::Model::ResourceSystem>();
 		const CanvasLayerDefinition* layer_definition = resource_system.get_resource(layer_def_handle);
 
 		Vadon::Render::Canvas::CanvasSystem& canvas_system = engine_core.get_system<Vadon::Render::Canvas::CanvasSystem>();
@@ -175,7 +175,7 @@ namespace VadonDemo::Render
 		Vadon::Render::Canvas::CommandBuffer& command_buffer = canvas_system.get_item_command_buffer(canvas_component->canvas_item);
 		command_buffer.clear();
 
-		Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
+		Vadon::Model::ResourceSystem& resource_system = engine_core.get_system<Vadon::Model::ResourceSystem>();
 
 		const TextureResourceHandle texture_handle = resource_system.load_resource(sprite_component->texture);
 		const TextureResource* sprite_texture = resource_system.get_resource(texture_handle);
@@ -257,7 +257,7 @@ namespace VadonDemo::Render
 	bool Render::init_texture_resource(TextureResourceID texture_id) const
 	{
 		Vadon::Core::EngineCoreInterface& engine_core = m_core.get_engine_core();
-		Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
+		Vadon::Model::ResourceSystem& resource_system = engine_core.get_system<Vadon::Model::ResourceSystem>();
 
 		const TextureResourceHandle texture_handle = resource_system.load_resource(texture_id);
 		TextureResource* texture_resource = resource_system.get_resource(texture_handle);
@@ -319,7 +319,7 @@ namespace VadonDemo::Render
 	void Render::unload_texture_resource(TextureResourceID texture_id) const
 	{
 		Vadon::Core::EngineCoreInterface& engine_core = m_core.get_engine_core();
-		Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
+		Vadon::Model::ResourceSystem& resource_system = engine_core.get_system<Vadon::Model::ResourceSystem>();
 
 		const TextureResourceHandle texture_handle = resource_system.load_resource(texture_id);
 		TextureResource* texture_resource = resource_system.get_resource(texture_handle);
@@ -341,7 +341,7 @@ namespace VadonDemo::Render
 	bool Render::init_shader_resource(ShaderResourceID shader_id) const
 	{
 		Vadon::Core::EngineCoreInterface& engine_core = m_core.get_engine_core();
-		Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
+		Vadon::Model::ResourceSystem& resource_system = engine_core.get_system<Vadon::Model::ResourceSystem>();
 
 		const ShaderResourceHandle shader_handle = resource_system.load_resource(shader_id);
 		ShaderResource* shader_resource = resource_system.get_resource(shader_handle);
@@ -386,7 +386,7 @@ namespace VadonDemo::Render
 	void Render::unload_shader_resource(ShaderResourceID shader_id) const
 	{
 		Vadon::Core::EngineCoreInterface& engine_core = m_core.get_engine_core();
-		Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
+		Vadon::Model::ResourceSystem& resource_system = engine_core.get_system<Vadon::Model::ResourceSystem>();
 
 		const ShaderResourceHandle shader_handle = resource_system.load_resource(shader_id);
 		ShaderResource* shader_resource = resource_system.get_resource<ShaderResource>(shader_handle);
@@ -427,7 +427,7 @@ namespace VadonDemo::Render
 		}
 
 		Vadon::Core::EngineCoreInterface& engine_core = m_core.get_engine_core();
-		Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
+		Vadon::Model::ResourceSystem& resource_system = engine_core.get_system<Vadon::Model::ResourceSystem>();
 		const CanvasLayerDefHandle layer_def_handle = resource_system.load_resource(layer_def_id);
 
 		CanvasContextData& context_data = m_context_pool.get(context_handle);
@@ -460,7 +460,7 @@ namespace VadonDemo::Render
 	void Render::sort_context_layers(CanvasContextData& context)
 	{
 		Vadon::Core::EngineCoreInterface& engine_core = m_core.get_engine_core();
-		Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
+		Vadon::Model::ResourceSystem& resource_system = engine_core.get_system<Vadon::Model::ResourceSystem>();
 		std::sort(context.render_context.layers.begin(), context.render_context.layers.end(),
 			[&context, &resource_system](const Vadon::Render::Canvas::LayerHandle& lhs, const Vadon::Render::Canvas::LayerHandle& rhs)
 			{

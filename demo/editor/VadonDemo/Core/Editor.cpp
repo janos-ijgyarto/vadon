@@ -6,12 +6,12 @@
 #include <VadonEditor/Core/Project/ProjectManager.hpp>
 #include <VadonEditor/Core/TypeInfo/MetadataRegistry.hpp>
 
-#include <VadonEditor/Scene/Resource/ResourceSystem.hpp>
+#include <VadonEditor/Model/Resource/ResourceSystem.hpp>
 
 #include <Vadon/Core/Core.hpp>
 #include <Vadon/Core/CoreConfiguration.hpp>
 #include <Vadon/Core/File/FileSystem.hpp>
-#include <Vadon/Scene/Resource/ResourceSystem.hpp>
+#include <Vadon/Model/Resource/ResourceSystem.hpp>
 
 #include <Vadon/Utilities/Serialization/Serializer.hpp>
 #include <Vadon/Utilities/System/CommandLine/Parser.hpp>
@@ -88,15 +88,15 @@ namespace VadonDemo::Core
         }
 
         // Add a callback for when the global config is modified
-        VadonEditor::Scene::ResourceSystem& editor_resource_system = m_common_editor.get_resource_system();
+        VadonEditor::Model::ResourceSystem& editor_resource_system = m_common_editor.get_resource_system();
         editor_resource_system.register_edit_callback(
-            [this](Vadon::Scene::ResourceID resource_id)
+            [this](Vadon::Model::ResourceID resource_id)
             {
-                Vadon::Scene::ResourceSystem& resource_system = get_engine_core().get_system<Vadon::Scene::ResourceSystem>();
-                Vadon::Scene::ResourceHandle resource_handle = resource_system.find_resource(resource_id);
+                Vadon::Model::ResourceSystem& resource_system = get_engine_core().get_system<Vadon::Model::ResourceSystem>();
+                Vadon::Model::ResourceHandle resource_handle = resource_system.find_resource(resource_id);
                 VADON_ASSERT(resource_handle.is_valid() == true, "Resource not found!");
 
-                const Vadon::Scene::ResourceInfo resource_info = resource_system.get_resource_info(resource_handle);
+                const Vadon::Model::ResourceInfo resource_info = resource_system.get_resource_info(resource_handle);
                 if (Vadon::Utilities::TypeRegistry::is_base_of(Vadon::Utilities::TypeRegistry::get_type_id<GlobalConfiguration>(), resource_info.type_id))
                 {
                     // Global config resource, check if it's the one in the current project config

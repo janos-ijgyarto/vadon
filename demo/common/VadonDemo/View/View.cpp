@@ -12,8 +12,8 @@
 #include <Vadon/Render/Canvas/CanvasSystem.hpp>
 #include <Vadon/Render/Canvas/CommandBuffer.hpp>
 
-#include <Vadon/Scene/Resource/ResourceSystem.hpp>
-#include <Vadon/Scene/SceneSystem.hpp>
+#include <Vadon/Model/Resource/ResourceSystem.hpp>
+#include <Vadon/Model/Scene/SceneSystem.hpp>
 
 namespace
 {
@@ -113,9 +113,9 @@ namespace VadonDemo::View
 
 				anim_component->animation_player.update(view_delta_time);
 
-				const Vadon::Scene::AnimationSample anim_sample = anim_component->animation_player.get_sample();
+				const Vadon::Model::AnimationSample anim_sample = anim_component->animation_player.get_sample();
 
-				for (const Vadon::Scene::AnimationChannelSample& current_channel : anim_sample.channels)
+				for (const Vadon::Model::AnimationChannelSample& current_channel : anim_sample.channels)
 				{
 					// FIXME: have a more appropriate way to link channels to the properties that need to be updated!
 					if (current_channel.tag == "radius")
@@ -277,7 +277,7 @@ namespace VadonDemo::View
 	RenderResourceHandle View::load_render_resource(RenderResourceID resource_id) const
 	{
 		Vadon::Core::EngineCoreInterface& engine_core = m_core.get_engine_core();
-		Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
+		Vadon::Model::ResourceSystem& resource_system = engine_core.get_system<Vadon::Model::ResourceSystem>();
 
 		return resource_system.load_resource(resource_id);
 	}
@@ -285,7 +285,7 @@ namespace VadonDemo::View
 	void View::load_resource_data(RenderResourceID resource_id)
 	{
 		Vadon::Core::EngineCoreInterface& engine_core = m_core.get_engine_core();
-		Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
+		Vadon::Model::ResourceSystem& resource_system = engine_core.get_system<Vadon::Model::ResourceSystem>();
 
 		const RenderResourceHandle resource_handle = load_render_resource(resource_id);
 		RenderResource* view_render_resource = resource_system.get_resource(resource_handle);
@@ -304,7 +304,7 @@ namespace VadonDemo::View
 			return;
 		}
 
-		const Vadon::Scene::ResourceInfo resource_info = resource_system.get_resource_info(resource_handle);
+		const Vadon::Model::ResourceInfo resource_info = resource_system.get_resource_info(resource_handle);
 		if (resource_info.type_id == Vadon::Utilities::TypeRegistry::get_type_id<Shape>())
 		{
 			load_shape_resource(static_cast<Shape*>(view_render_resource));
@@ -322,7 +322,7 @@ namespace VadonDemo::View
 	void View::reset_resource_data(RenderResourceID resource_id)
 	{
 		Vadon::Core::EngineCoreInterface& engine_core = m_core.get_engine_core();
-		Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
+		Vadon::Model::ResourceSystem& resource_system = engine_core.get_system<Vadon::Model::ResourceSystem>();
 
 		const RenderResourceHandle resource_handle = load_render_resource(resource_id);
 		RenderResource* view_render_resource = resource_system.get_resource(resource_handle);
@@ -457,7 +457,7 @@ namespace VadonDemo::View
 			return;
 		}
 
-		Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
+		Vadon::Model::ResourceSystem& resource_system = engine_core.get_system<Vadon::Model::ResourceSystem>();
 		VadonDemo::Render::TextureResourceHandle sprite_texture_handle = VadonDemo::Render::TextureResourceHandle::from_resource_handle(resource_system.load_resource(sprite->texture));
 		const VadonDemo::Render::TextureResource* sprite_texture = resource_system.get_resource(sprite_texture_handle);
 		if (sprite_texture->texture.is_valid() == false)
@@ -513,7 +513,7 @@ namespace VadonDemo::View
 			return;
 		}
 
-		Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
+		Vadon::Model::ResourceSystem& resource_system = engine_core.get_system<Vadon::Model::ResourceSystem>();
 		RenderResourceHandle view_render_resource_handle = RenderResourceHandle::from_resource_handle(resource_system.load_resource(view_render_component->resource));
 
 		if (view_render_component->color != Vadon::Math::Color_White)
@@ -543,11 +543,11 @@ namespace VadonDemo::View
 	void View::set_entity_custom_draw_data(Vadon::ECS::TypedComponentHandle<RenderComponent>& view_render_component, Vadon::ECS::TypedComponentHandle<Render::CanvasComponent>& canvas_component, RenderResourceHandle view_render_resource_handle)
 	{
 		Vadon::Core::EngineCoreInterface& engine_core = m_core.get_engine_core();
-		Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
+		Vadon::Model::ResourceSystem& resource_system = engine_core.get_system<Vadon::Model::ResourceSystem>();
 
 		const RenderResource* view_resource = resource_system.get_resource(view_render_resource_handle);
 
-		const Vadon::Scene::ResourceInfo resource_info = resource_system.get_resource_info(view_render_resource_handle);
+		const Vadon::Model::ResourceInfo resource_info = resource_system.get_resource_info(view_render_resource_handle);
 		if (resource_info.type_id == Vadon::Utilities::TypeRegistry::get_type_id<Shape>())
 		{
 			set_entity_shape_data(view_render_component, canvas_component, static_cast<const Shape*>(view_resource));
@@ -650,7 +650,7 @@ namespace VadonDemo::View
 			return;
 		}
 
-		Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
+		Vadon::Model::ResourceSystem& resource_system = engine_core.get_system<Vadon::Model::ResourceSystem>();
 		VadonDemo::Render::TextureResourceHandle sprite_texture_handle = VadonDemo::Render::TextureResourceHandle::from_resource_handle(resource_system.load_resource(sprite_resource->texture));
 		const VadonDemo::Render::TextureResource* sprite_texture = resource_system.get_resource(sprite_texture_handle);
 		if (sprite_texture->texture.is_valid() == false)

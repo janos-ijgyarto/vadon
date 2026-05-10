@@ -3,8 +3,8 @@
 #include <VadonEditor/Core/Project/ProjectManager.hpp>
 #include <VadonEditor/Core/TypeInfo/MetadataRegistry.hpp>
 
-#include <VadonEditor/Scene/SceneSystem.hpp>
-#include <VadonEditor/Scene/Resource/ResourceSystem.hpp>
+#include <VadonEditor/Model/Resource/ResourceSystem.hpp>
+#include <VadonEditor/Model/Scene/SceneSystem.hpp>
 
 #include <Vadon/Core/Environment.hpp>
 
@@ -19,8 +19,8 @@ namespace VadonEditor::Core
 		ProjectManager m_project_manager;
 		MetadataRegistry m_metadata_registry;
 
-		Scene::ResourceSystem m_resource_system;
-		Scene::SceneSystem m_scene_system;
+		Model::ResourceSystem m_resource_system;
+		Model::SceneSystem m_scene_system;
 	};
 
 	Editor::Editor()
@@ -54,7 +54,7 @@ namespace VadonEditor::Core
 
 	ProjectManager& Editor::get_project_manager() { return m_internal->m_project_manager; }
 
-	Scene::ResourceSystem& Editor::get_resource_system() { return m_internal->m_resource_system; }
+	Model::ResourceSystem& Editor::get_resource_system() { return m_internal->m_resource_system; }
 
-	Scene::SceneSystem& Editor::get_scene_system() { return m_internal->m_scene_system; }
+	Model::SceneSystem& Editor::get_scene_system() { return m_internal->m_scene_system; }
 }

@@ -85,7 +85,7 @@ namespace VadonDemo::Model
 
 		spawner_metadata.add_property(VADON_GET_MEMBER_UUID(Spawner, enemy_prefab))
 			.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Enemy Prefab")
-			.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::RESOURCE_TYPE, VADON_GET_TYPE_UUID_BASE64_STRING(Vadon::Scene::Scene));
+			.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::RESOURCE_TYPE, VADON_GET_TYPE_UUID_BASE64_STRING(Vadon::Model::Scene));
 
 		spawner_metadata.add_property(VADON_GET_MEMBER_UUID(Spawner, activation_delay))
 			.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Activation Delay");

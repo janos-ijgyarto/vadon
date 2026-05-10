@@ -9,7 +9,7 @@ namespace VadonDemo::Core
 {
 	class Editor;
 }
-namespace VadonEditor::Scene
+namespace VadonEditor::Model
 {
 	class Scene;
 }
@@ -22,7 +22,7 @@ namespace VadonDemo::Render
 	class EditorRender
 	{
 	public:
-		CanvasContextHandle get_scene_canvas_context(const VadonEditor::Scene::Scene* active_scene);
+		CanvasContextHandle get_scene_canvas_context(const VadonEditor::Model::Scene* active_scene);
 
 		// TODO: unload unused resources!
 		void init_entity(Vadon::ECS::EntityHandle entity);
@@ -58,7 +58,7 @@ namespace VadonDemo::Render
 		// TODO: more flexible system to allow multiple windows, etc.
 		Vadon::Render::WindowHandle m_render_window;
 		
-		std::unordered_map<const VadonEditor::Scene::Scene*, CanvasContextHandle> m_scene_canvas_contexts;
+		std::unordered_map<const VadonEditor::Model::Scene*, CanvasContextHandle> m_scene_canvas_contexts;
 
 		std::unordered_map<std::string, TextureResource> m_textures;
 

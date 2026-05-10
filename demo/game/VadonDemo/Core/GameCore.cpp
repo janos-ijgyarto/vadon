@@ -23,9 +23,9 @@
 
 #include <Vadon/ECS/World/World.hpp>
 
-#include <Vadon/Scene/SceneSystem.hpp>
-#include <Vadon/Scene/Resource/ResourceSystem.hpp>
-#include <Vadon/Scene/Resource/Database.hpp>
+#include <Vadon/Model/Resource/Database.hpp>
+#include <Vadon/Model/Resource/ResourceSystem.hpp>
+#include <Vadon/Model/Scene/SceneSystem.hpp>
 
 #include <Vadon/Utilities/Serialization/Serializer.hpp>
 
@@ -36,11 +36,11 @@
 namespace
 {
 	// FIXME: this is a very hacky solution, should instead use "manifests" to map between resource IDs and files
-	Vadon::Scene::ResourceID decode_resource_id_from_file(const std::filesystem::path& file_path)
+	Vadon::Model::ResourceID decode_resource_id_from_file(const std::filesystem::path& file_path)
 	{
 		// Decode resource ID from file name
 		const std::string file_stem = file_path.stem().generic_string();
-		Vadon::Scene::ResourceID resource_id;
+		Vadon::Model::ResourceID resource_id;
 		VADON_ASSERT(file_stem.length() == ::Vadon::Foundation::UUID::c_uuid_width * 2, "Invalid file name!");
 
 		char temp_chars[] = "00";
@@ -56,7 +56,7 @@ namespace
 		return resource_id;
 	}
 
-	class GameResourceDatabase : public Vadon::Scene::ResourceDatabase
+	class GameResourceDatabase : public Vadon::Model::ResourceDatabase
 	{
 	public:
 		GameResourceDatabase(VadonDemo::Core::GameCore& game_core)
@@ -152,9 +152,9 @@ namespace
 				return false;
 			}
 
-			Vadon::Scene::ResourceInfo imported_resource_info;
+			Vadon::Model::ResourceInfo imported_resource_info;
 
-			Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
+			Vadon::Model::ResourceSystem& resource_system = engine_core.get_system<Vadon::Model::ResourceSystem>();
 			if (resource_system.load_resource_info(*serializer_instance, imported_resource_info) == false)
 			{
 				Vadon::Core::Logger::log_error("Game resource database: failed to loading resource!\n");
@@ -179,7 +179,7 @@ namespace
 				return false;
 			}
 
-			if (Vadon::Utilities::TypeRegistry::is_base_of(Vadon::Utilities::TypeRegistry::get_type_id<Vadon::Scene::FileResource>(), imported_resource_info.type_id) == true)
+			if (Vadon::Utilities::TypeRegistry::is_base_of(Vadon::Utilities::TypeRegistry::get_type_id<Vadon::Model::FileResource>(), imported_resource_info.type_id) == true)
 			{
 				// Resource points to file, make sure we import that file as well
 				if (import_raw_asset_file(imported_resource_info.id) == false)
@@ -193,7 +193,7 @@ namespace
 			return true;
 		}
 
-		bool import_raw_asset_file(const Vadon::Scene::ResourceID& file_id)
+		bool import_raw_asset_file(const Vadon::Model::ResourceID& file_id)
 		{
 			// NOTE: this assumes the resource file has already been registered!
 			Vadon::Core::EngineCoreInterface& engine_core = m_game_core.get_engine_core();
@@ -247,7 +247,7 @@ namespace
 					const std::filesystem::path current_file_path = directory_entry.path();
 					if (current_file_path.extension().generic_string() == ".vdbin")
 					{
-						Vadon::Scene::ResourceID file_id = decode_resource_id_from_file(current_file_path);
+						Vadon::Model::ResourceID file_id = decode_resource_id_from_file(current_file_path);
 
 						Vadon::Core::FileInfo file_info;
 						file_info.path = current_file_path.filename().generic_string();
@@ -278,7 +278,7 @@ namespace
 					const std::filesystem::path current_file_path = directory_entry.path();
 					if (current_file_path.extension().generic_string() == ".vdbin")
 					{
-						Vadon::Scene::ResourceID file_id = decode_resource_id_from_file(current_file_path);
+						Vadon::Model::ResourceID file_id = decode_resource_id_from_file(current_file_path);
 
 						Vadon::Core::FileInfo file_info;
 						file_info.path = current_file_path.filename().generic_string();
@@ -295,13 +295,13 @@ namespace
 			return true;
 		}
 
-		bool save_resource(Vadon::Scene::ResourceSystem& /*resource_system*/, Vadon::Scene::ResourceHandle /*resource_handle*/) override
+		bool save_resource(Vadon::Model::ResourceSystem& /*resource_system*/, Vadon::Model::ResourceHandle /*resource_handle*/) override
 		{
 			// We won't be saving resources 
 			return false;
 		}
 
-		Vadon::Scene::ResourceHandle load_resource(Vadon::Scene::ResourceSystem& resource_system, Vadon::Scene::ResourceID resource_id) override
+		Vadon::Model::ResourceHandle load_resource(Vadon::Model::ResourceSystem& resource_system, Vadon::Model::ResourceID resource_id) override
 		{
 			Vadon::Core::EngineCoreInterface& engine_core = m_game_core.get_engine_app().get_engine_core();
 			Vadon::Core::FileSystem& file_system = engine_core.get_system<Vadon::Core::FileSystem>();
@@ -310,7 +310,7 @@ namespace
 			if (file_system.load_file(m_resource_file_db, resource_id, resource_file_buffer) == false)
 			{
 				resource_system.log_error("Game resource database: failed to load resource file!\n");
-				return Vadon::Scene::ResourceHandle();
+				return Vadon::Model::ResourceHandle();
 			}
 
 			// TODO: create separate DBs for binary and text-based resources
@@ -321,10 +321,10 @@ namespace
 			if (serializer_instance->initialize() == false)
 			{
 				resource_system.log_error("Game resource database: failed to initialize serializer while loading resource!\n");
-				return Vadon::Scene::ResourceHandle();
+				return Vadon::Model::ResourceHandle();
 			}
 
-			Vadon::Scene::ResourceHandle loaded_resource_handle = resource_system.load_resource(*serializer_instance);
+			Vadon::Model::ResourceHandle loaded_resource_handle = resource_system.load_resource(*serializer_instance);
 			if (loaded_resource_handle.is_valid() == false)
 			{
 				resource_system.log_error("Game resource database: failed to load resource data!\n");
@@ -339,7 +339,7 @@ namespace
 			return loaded_resource_handle;
 		}
 
-		Vadon::Core::FileInfo get_file_resource_info(Vadon::Scene::ResourceID resource_id) const override
+		Vadon::Core::FileInfo get_file_resource_info(Vadon::Model::ResourceID resource_id) const override
 		{
 			Vadon::Core::EngineCoreInterface& engine_core = m_game_core.get_engine_app().get_engine_core();
 			Vadon::Core::FileSystem& file_system = engine_core.get_system<Vadon::Core::FileSystem>();
@@ -347,7 +347,7 @@ namespace
 			return file_system.get_file_info(m_asset_file_db, resource_id);
 		}
 		
-		bool load_file_resource_data(Vadon::Scene::ResourceSystem& /*resource_system*/, Vadon::Scene::ResourceID resource_id, Vadon::Core::RawFileDataBuffer& file_data) override
+		bool load_file_resource_data(Vadon::Model::ResourceSystem& /*resource_system*/, Vadon::Model::ResourceID resource_id, Vadon::Core::RawFileDataBuffer& file_data) override
 		{
 			Vadon::Core::EngineCoreInterface& engine_core = m_game_core.get_engine_app().get_engine_core();
 			Vadon::Core::FileSystem& file_system = engine_core.get_system<Vadon::Core::FileSystem>();
@@ -626,7 +626,7 @@ namespace VadonDemo::Core
 			}
 
 			// Register the resource DB
-			engine_core.get_system<Vadon::Scene::ResourceSystem>().register_database(m_resource_db);
+			engine_core.get_system<Vadon::Model::ResourceSystem>().register_database(m_resource_db);
 
 			// Everything loaded successfully
 			return true;

@@ -60,7 +60,7 @@ namespace VadonDemo::Model
 		VADON_DECLARE_MEMBER_UUID(max_level, "7ea6af40-feea-4667-b191-c879af151d3c");
 
 		// TODO: implement a utility type which takes care of both the persistent resource ID and the loaded resource handle?
-		Vadon::Scene::SceneID enemy_prefab;
+		Vadon::Model::SceneID enemy_prefab;
 
 		float activation_delay = 60.0f;
 		float min_spawn_delay = 0.0f;

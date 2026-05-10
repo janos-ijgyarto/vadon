@@ -10,7 +10,7 @@ namespace Vadon::Utilities
 {
 	class CommandLineParser;
 }
-namespace VadonEditor::Scene
+namespace VadonEditor::Model
 {
 	class ResourceSystem;
 	class SceneSystem;
@@ -38,8 +38,8 @@ namespace VadonEditor::Core
 
 		VADONEDITOR_API ProjectManager& get_project_manager();
 
-		VADONEDITOR_API Scene::ResourceSystem& get_resource_system();
-		VADONEDITOR_API Scene::SceneSystem& get_scene_system();
+		VADONEDITOR_API Model::ResourceSystem& get_resource_system();
+		VADONEDITOR_API Model::SceneSystem& get_scene_system();
 	private:
 		struct Internal;
 		std::unique_ptr<Internal> m_internal;

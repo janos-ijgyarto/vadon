@@ -1,8 +1,8 @@
 #ifndef VADONDEMO_VIEW_COMPONENT_HPP
 #define VADONDEMO_VIEW_COMPONENT_HPP
 #include <VadonDemo/View/Resource.hpp>
-#include <Vadon/Scene/Scene.hpp>
-#include <Vadon/Scene/Animation/AnimationPlayer.hpp>
+#include <Vadon/Model/Animation/AnimationPlayer.hpp>
+#include <Vadon/Model/Scene/Scene.hpp>
 namespace Vadon::Foundation
 {
 	class TypeMetadataRegistry;
@@ -56,7 +56,7 @@ namespace VadonDemo::View
 		float time_scale = 1.0f;
 		bool looping = false;
 
-		Vadon::Scene::AnimationPlayer animation_player;
+		Vadon::Model::AnimationPlayer animation_player;
 
 		static void register_component(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry);
 	};
@@ -66,7 +66,7 @@ namespace VadonDemo::View
 	{
 		VADON_DECLARE_MEMBER_UUID(animation, "3834c3fa-6027-4c90-a1ea-65f50eaaca67");
 
-		Vadon::Scene::AnimationID animation;
+		Vadon::Model::AnimationID animation;
 		float duration = 1.0f;
 
 		static void register_component(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry);
@@ -80,8 +80,8 @@ namespace VadonDemo::View
 		VADON_DECLARE_MEMBER_UUID(animation, "475cc76f-307d-4ba4-b116-87933c7b7c9a");
 		VADON_DECLARE_MEMBER_UUID(lifetime, "d91706ae-4900-4e7d-9479-ceee4bceaa72");
 
-		Vadon::Scene::SceneID vfx_prefab;
-		Vadon::Scene::AnimationID animation;
+		Vadon::Model::SceneID vfx_prefab;
+		Vadon::Model::AnimationID animation;
 		float lifetime = 1.0f;
 
 		static void register_component(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry);

@@ -2,7 +2,7 @@
 #define VADONDEMO_VIEW_EDITORVIEW_HPP
 #include <VadonDemo/View/Resource.hpp>
 #include <Vadon/ECS/Entity/Entity.hpp>
-namespace VadonEditor::Scene
+namespace VadonEditor::Model
 {
 	class Scene;
 }
@@ -15,7 +15,7 @@ namespace VadonDemo::View
 	class EditorView
 	{
 	public:
-		VadonEditor::Scene::Scene* get_active_scene() const { return m_active_scene; }
+		VadonEditor::Model::Scene* get_active_scene() const { return m_active_scene; }
 	private:
 		EditorView(Core::Editor& editor);
 		bool initialize();
@@ -27,7 +27,7 @@ namespace VadonDemo::View
 		void update_entity(Vadon::ECS::EntityHandle entity);
 		void remove_entity(Vadon::ECS::EntityHandle entity);
 
-		void resource_edited(Vadon::Scene::ResourceID resource_id);
+		void resource_edited(Vadon::Model::ResourceID resource_id);
 		void render_resource_edited(RenderResourceID view_render_resource);
 		void texture_resource_edited(VadonDemo::Render::TextureResourceID texture_id);
 
@@ -36,7 +36,7 @@ namespace VadonDemo::View
 		void update_camera();
 
 		Core::Editor& m_editor;
-		VadonEditor::Scene::Scene* m_active_scene;
+		VadonEditor::Model::Scene* m_active_scene;
 
 		friend Core::Editor;
 	};

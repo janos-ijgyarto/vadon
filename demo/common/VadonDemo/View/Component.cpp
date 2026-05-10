@@ -94,7 +94,7 @@ namespace VadonDemo::View
 
 		damage_metadata.add_property(VADON_GET_MEMBER_UUID(DamageComponent, animation))
 			.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Animation")
-			.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::RESOURCE_TYPE, VADON_GET_TYPE_UUID_BASE64_STRING(Vadon::Scene::Animation));
+			.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::RESOURCE_TYPE, VADON_GET_TYPE_UUID_BASE64_STRING(Vadon::Model::Animation));
 	}
 
 	void VFXComponent::register_component(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry)
@@ -113,11 +113,11 @@ namespace VadonDemo::View
 
 		vfx_metadata.add_property(VADON_GET_MEMBER_UUID(VFXComponent, vfx_prefab))
 			.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "VFX Prefab")
-			.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::RESOURCE_TYPE, VADON_GET_TYPE_UUID_BASE64_STRING(Vadon::Scene::Scene));
+			.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::RESOURCE_TYPE, VADON_GET_TYPE_UUID_BASE64_STRING(Vadon::Model::Scene));
 
 		vfx_metadata.add_property(VADON_GET_MEMBER_UUID(VFXComponent, animation))
 			.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Animation")
-			.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::RESOURCE_TYPE, VADON_GET_TYPE_UUID_BASE64_STRING(Vadon::Scene::Animation));
+			.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::RESOURCE_TYPE, VADON_GET_TYPE_UUID_BASE64_STRING(Vadon::Model::Animation));
 
 		vfx_metadata.add_property(VADON_GET_MEMBER_UUID(VFXComponent, lifetime))
 			.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Lifetime");

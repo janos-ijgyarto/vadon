@@ -7,8 +7,8 @@
 #include <VadonDemo/Platform/EditorPlatform.hpp>
 #include <VadonDemo/View/Component.hpp>
 
-#include <VadonEditor/Scene/SceneSystem.hpp>
-#include <VadonEditor/Scene/Resource/ResourceSystem.hpp>
+#include <VadonEditor/Model/Resource/ResourceSystem.hpp>
+#include <VadonEditor/Model/Scene/SceneSystem.hpp>
 
 #include <Vadon/Core/CoreInterface.hpp>
 
@@ -16,7 +16,7 @@
 
 #include <Vadon/Render/GraphicsAPI/Resource/ResourceSystem.hpp>
 
-#include <Vadon/Scene/Resource/ResourceSystem.hpp>
+#include <Vadon/Model/Resource/ResourceSystem.hpp>
 
 namespace VadonDemo::View
 {
@@ -29,17 +29,17 @@ namespace VadonDemo::View
 
 	bool EditorView::initialize()
 	{
-        VadonEditor::Scene::SceneSystem& editor_scene_system = m_editor.get_common_editor().get_scene_system();
+        VadonEditor::Model::SceneSystem& editor_scene_system = m_editor.get_common_editor().get_scene_system();
 
         editor_scene_system.add_entity_event_callback(
-            [this](const VadonEditor::Scene::EntityEvent& entity_event)
+            [this](const VadonEditor::Model::EntityEvent& entity_event)
             {
                 switch (entity_event.type)
                 {
-                case VadonEditor::Scene::EntityEventType::ADDED:
+                case VadonEditor::Model::EntityEventType::ADDED:
                     init_entity(entity_event.entity);
                     break;
-                case VadonEditor::Scene::EntityEventType::REMOVED:
+                case VadonEditor::Model::EntityEventType::REMOVED:
                     remove_entity(entity_event.entity);
                     break;
                 }
@@ -47,19 +47,19 @@ namespace VadonDemo::View
         );
 
         editor_scene_system.add_component_event_callback(
-            [this](const VadonEditor::Scene::ComponentEvent& component_event)
+            [this](const VadonEditor::Model::ComponentEvent& component_event)
             {
                 if (component_event.component_type == Vadon::Utilities::TypeRegistry::get_type_id<RenderComponent>())
                 {
                     switch (component_event.type)
                     {
-                    case VadonEditor::Scene::ComponentEventType::ADDED:
+                    case VadonEditor::Model::ComponentEventType::ADDED:
                         init_entity(component_event.owner);
                         break;
-                    case VadonEditor::Scene::ComponentEventType::EDITED:
+                    case VadonEditor::Model::ComponentEventType::EDITED:
                         update_entity(component_event.owner);
                         break;
-                    case VadonEditor::Scene::ComponentEventType::REMOVED:
+                    case VadonEditor::Model::ComponentEventType::REMOVED:
                         remove_entity(component_event.owner);
                         break;
                     }
@@ -78,7 +78,7 @@ namespace VadonDemo::View
                     // TODO: could also make this event-driven
                     // EditorRender initializes CanvasComponent, fires event asking for it to be initialized
                     // Other subsystems can add listener and add draw data
-                    if (component_event.type == VadonEditor::Scene::ComponentEventType::ADDED)
+                    if (component_event.type == VadonEditor::Model::ComponentEventType::ADDED)
                     {
                         update_entity(component_event.owner);
                     }
@@ -86,9 +86,9 @@ namespace VadonDemo::View
             }
         );
 
-        VadonEditor::Scene::ResourceSystem& editor_resource_system = m_editor.get_common_editor().get_resource_system();
+        VadonEditor::Model::ResourceSystem& editor_resource_system = m_editor.get_common_editor().get_resource_system();
         editor_resource_system.register_edit_callback(
-            [this, &editor_resource_system](Vadon::Scene::ResourceID resource_id)
+            [this, &editor_resource_system](Vadon::Model::ResourceID resource_id)
             {
                 // TODO: implement a system for tracking resource references!
                 // When it's modified in the editor, we need to know what was previously referenced and de-reference it
@@ -174,13 +174,13 @@ namespace VadonDemo::View
         m_editor.get_core().get_view().remove_entity(ecs_world, entity);
     }
 
-    void EditorView::resource_edited(Vadon::Scene::ResourceID resource_id)
+    void EditorView::resource_edited(Vadon::Model::ResourceID resource_id)
     {   
-        Vadon::Scene::ResourceSystem& resource_system = m_editor.get_engine_core().get_system<Vadon::Scene::ResourceSystem>();
-        Vadon::Scene::ResourceHandle resource_handle = resource_system.find_resource(resource_id);
+        Vadon::Model::ResourceSystem& resource_system = m_editor.get_engine_core().get_system<Vadon::Model::ResourceSystem>();
+        Vadon::Model::ResourceHandle resource_handle = resource_system.find_resource(resource_id);
         VADON_ASSERT(resource_handle.is_valid() == true, "Resource not found!");
 
-        const Vadon::Scene::ResourceInfo resource_info = resource_system.get_resource_info(resource_handle);
+        const Vadon::Model::ResourceInfo resource_info = resource_system.get_resource_info(resource_handle);
 
         if (Vadon::Utilities::TypeRegistry::is_base_of(Vadon::Utilities::TypeRegistry::get_type_id<RenderResource>(), resource_info.type_id))
         {
@@ -222,7 +222,7 @@ namespace VadonDemo::View
         // Run a query to find all entities that use this texture
         // Tag as "dirty" so they get updated
         Vadon::Core::EngineCoreInterface& engine_core = m_editor.get_engine_core();
-        Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
+        Vadon::Model::ResourceSystem& resource_system = engine_core.get_system<Vadon::Model::ResourceSystem>();
 
         VadonDemo::View::View& common_view = m_editor.get_core().get_view();
 
@@ -268,12 +268,12 @@ namespace VadonDemo::View
         }
 
         Vadon::Core::EngineCoreInterface& engine_core = m_editor.get_engine_core();
-        Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
+        Vadon::Model::ResourceSystem& resource_system = engine_core.get_system<Vadon::Model::ResourceSystem>();
 
         VadonDemo::View::View& common_view = m_editor.get_core().get_view();
         const RenderResourceHandle view_render_resource_handle = common_view.load_render_resource(view_render_resource);
 
-        const Vadon::Scene::ResourceInfo resource_info = resource_system.get_resource_info(view_render_resource_handle);
+        const Vadon::Model::ResourceInfo resource_info = resource_system.get_resource_info(view_render_resource_handle);
         if (resource_info.type_id == Vadon::Utilities::TypeRegistry::get_type_id<Sprite>())
         {
             // Try to load the texture data for the sprite

@@ -1,6 +1,0 @@
-add_library(VadonFoundation INTERFACE)
-
-target_link_libraries(VadonFoundation INTERFACE VadonBuildOptions)
-target_include_directories(VadonFoundation INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
-
-add_subdirectory(Vadon)

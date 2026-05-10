@@ -1,6 +1,6 @@
 #include <VadonDemo/View/Resource.hpp>
 
-#include <Vadon/Scene/Resource/Registry.hpp>
+#include <Vadon/Model/Resource/Registry.hpp>
 
 #include <Vadon/Utilities/TypeInfo/Metadata.hpp>
 #include <Vadon/Utilities/TypeInfo/Reflection/MemberBind.hpp>
@@ -9,9 +9,9 @@ namespace VadonDemo::View
 {
 	void RenderResource::register_resource(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry)
 	{
-		using ResourceRegistry = Vadon::Scene::ResourceRegistry;
+		using ResourceRegistry = Vadon::Model::ResourceRegistry;
 
-		ResourceRegistry::register_resource_type<RenderResource, Vadon::Scene::Resource>();
+		ResourceRegistry::register_resource_type<RenderResource, Vadon::Model::Resource>();
 
 		Vadon::Utilities::TypeMetadata(metadata_registry, VADON_GET_TYPE_UUID(RenderResource))
 			.add_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "VadonDemo::View::RenderResource");
@@ -19,7 +19,7 @@ namespace VadonDemo::View
 
 	void Shape::register_resource(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry)
 	{
-		using ResourceRegistry = Vadon::Scene::ResourceRegistry;
+		using ResourceRegistry = Vadon::Model::ResourceRegistry;
 		using TypeRegistry = Vadon::Utilities::TypeRegistry;
 
 		ResourceRegistry::register_resource_type<Shape, RenderResource>();
@@ -43,7 +43,7 @@ namespace VadonDemo::View
 
 	void Sprite::register_resource(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry)
 	{
-		using ResourceRegistry = Vadon::Scene::ResourceRegistry;
+		using ResourceRegistry = Vadon::Model::ResourceRegistry;
 		using TypeRegistry = Vadon::Utilities::TypeRegistry;
 
 		ResourceRegistry::register_resource_type<Sprite, RenderResource>();

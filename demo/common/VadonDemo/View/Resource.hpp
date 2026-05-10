@@ -10,7 +10,7 @@ namespace Vadon::Foundation
 }
 namespace VadonDemo::View
 {
-	struct RenderResource : public Vadon::Scene::Resource
+	struct RenderResource : public Vadon::Model::Resource
 	{
 		Vadon::Render::Canvas::BatchHandle batch;
 		Vadon::Utilities::DataRange batch_range;
@@ -18,8 +18,8 @@ namespace VadonDemo::View
 		static void register_resource(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry);
 	};
 
-	VADON_SCENE_DECLARE_TYPED_RESOURCE_ID(RenderResource, RenderResourceID);
-	VADON_SCENE_DECLARE_TYPED_RESOURCE_HANDLE(RenderResource, RenderResourceHandle);
+	VADON_MODEL_DECLARE_TYPED_RESOURCE_ID(RenderResource, RenderResourceID);
+	VADON_MODEL_DECLARE_TYPED_RESOURCE_HANDLE(RenderResource, RenderResourceHandle);
 
 	enum class ShapeType : int
 	{
@@ -44,8 +44,8 @@ namespace VadonDemo::View
 		static void register_resource(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry);
 	};
 
-	VADON_SCENE_DECLARE_TYPED_RESOURCE_ID(Shape, ShapeResourceID);
-	VADON_SCENE_DECLARE_TYPED_RESOURCE_HANDLE(Shape, ShapeResourceHandle);
+	VADON_MODEL_DECLARE_TYPED_RESOURCE_ID(Shape, ShapeResourceID);
+	VADON_MODEL_DECLARE_TYPED_RESOURCE_HANDLE(Shape, ShapeResourceHandle);
 
 	struct Sprite : public RenderResource
 	{
@@ -59,8 +59,8 @@ namespace VadonDemo::View
 		static void register_resource(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry);
 	};
 
-	VADON_SCENE_DECLARE_TYPED_RESOURCE_ID(Sprite, SpriteResourceID);
-	VADON_SCENE_DECLARE_TYPED_RESOURCE_HANDLE(Sprite, SpriteResourceHandle);
+	VADON_MODEL_DECLARE_TYPED_RESOURCE_ID(Sprite, SpriteResourceID);
+	VADON_MODEL_DECLARE_TYPED_RESOURCE_HANDLE(Sprite, SpriteResourceHandle);
 }
 
 VADON_REGISTER_TYPE_UUID(VadonDemo::View::RenderResource, "8582958a-2b83-4d47-9e39-be1dda427e8c");
