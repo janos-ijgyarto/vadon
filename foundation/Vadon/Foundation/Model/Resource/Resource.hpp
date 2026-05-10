@@ -36,9 +36,6 @@ namespace Vadon
 				UUIDString{"512029ab-4cbc-4ae7-8996-1b520ebf8951"},
 				get_base_type_uuid_string(BaseType::ARRAY)
 			};
-
-			UUID id;
-			UUID type;
 		};
 	}
 }

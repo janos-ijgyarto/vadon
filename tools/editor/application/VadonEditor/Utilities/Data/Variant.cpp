@@ -130,7 +130,7 @@ namespace VadonEditor::Utilities
 		case QMetaType::Type::Float:
 		case QMetaType::Type::Double:
 		{
-			Q_ASSERT_X(json_value.type() == QJsonValue::Type::Double, "VadonEditor::Utilities::get_variant_from_json", "Invalid type");
+			Q_ASSERT_X(json_value.isDouble() == true, "VadonEditor::Utilities::get_variant_from_json", "Invalid type");
 			switch (type_id)
 			{
 			case QMetaType::Type::Int:
@@ -149,12 +149,12 @@ namespace VadonEditor::Utilities
 		case QMetaType::Type::QUuid:
 		{
 			// UUIDs are stored as base64 strings
-			Q_ASSERT_X(json_value.type() == QJsonValue::Type::String, "VadonEditor::Utilities::get_variant_from_json", "Invalid type");
+			Q_ASSERT_X(json_value.isString() == true, "VadonEditor::Utilities::get_variant_from_json", "Invalid type");
 			return Utilities::base64_string_to_uuid(json_value.toString());
 		}
 		case QMetaType::Type::QString:
 		{
-			Q_ASSERT_X(json_value.type() == QJsonValue::Type::String, "VadonEditor::Utilities::get_variant_from_json", "Invalid type");
+			Q_ASSERT_X(json_value.isString() == true, "VadonEditor::Utilities::get_variant_from_json", "Invalid type");
 			return json_value.toString();
 		}
 		// TODO: add deserialization for Vector2D, etc.?

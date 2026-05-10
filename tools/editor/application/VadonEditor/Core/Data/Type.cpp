@@ -83,6 +83,11 @@ namespace VadonEditor::Core
 		return ::Vadon::Foundation::BaseType::INVALID;
 	}
 
+	bool TypeData::is_base_type(const QUuid& type_uuid)
+	{
+		return get_base_type(type_uuid) != ::Vadon::Foundation::BaseType::INVALID;
+	}
+
 	QVariant TypeData::serialize_base_type(::Vadon::Foundation::BaseType type, const QVariant& value)
 	{
 		switch (type)

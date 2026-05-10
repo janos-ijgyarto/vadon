@@ -35,7 +35,7 @@ namespace Vadon
 			unsigned int property_count;
 		};
 
-		constexpr UUIDString c_base_type_uuids[] = {
+		constexpr UUIDString c_base_type_uuids[static_cast<uint32>(BaseType::TYPE_COUNT)] = {
 			"INVALID",
 			"9b2d1939-5e7e-4853-907c-de197c53289f",
 			"b3e7681a-6ed6-4ea2-8214-95fd11fe1d51",

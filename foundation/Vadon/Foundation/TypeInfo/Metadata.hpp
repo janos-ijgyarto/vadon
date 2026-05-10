@@ -33,7 +33,8 @@ namespace Vadon
 			{
 				NAME,
 				RESOURCE_TYPE, // If property is UUID, this indicates that it should be interpreted as a resource UUID and provides the resource type
-				ARRAY_TYPE // If property is array, this contains the type of the array
+				ARRAY_TYPE, // If property is array, this contains the type of the array
+				OBJECT_TYPE // If property is object, this contains the object type
 				// TODO: other metadata?
 			};
 
@@ -47,6 +48,8 @@ namespace Vadon
 					return "resource_type";
 				case ARRAY_TYPE:
 					return "array_type";
+				case OBJECT_TYPE:
+					return "object_type";
 				}
 
 				return nullptr;

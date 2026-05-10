@@ -10,7 +10,8 @@ namespace VadonEditor::Core
 	{
 		TRIVIAL,
 		RESOURCE,
-		ARRAY
+		ARRAY,
+		OBJECT
 	};
 
 	struct PropertyData

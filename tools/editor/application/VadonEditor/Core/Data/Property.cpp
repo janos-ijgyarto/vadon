@@ -33,6 +33,15 @@ namespace VadonEditor::Core
 		break;
 		case ::Vadon::Foundation::BaseType::ARRAY:
 			return PropertyCategory::ARRAY;
+		case ::Vadon::Foundation::BaseType::DICTIONARY:
+		{
+			// Object type only if it has valid metadata
+			if (find_metadata(::Vadon::Foundation::CommonPropertyMetadata::OBJECT_TYPE).isEmpty() == false)
+			{
+				return PropertyCategory::OBJECT;
+			}
+		}
+		break;
 		}
 
 		// Fall back on trivial
@@ -70,6 +79,15 @@ namespace VadonEditor::Core
 			const QUuid array_type_uuid = Utilities::base64_string_to_uuid(uuid_string);
 			Q_ASSERT_X(array_type_uuid.isNull() == false, "VadonEditor::Core::PropertyData", "Invalid array type!");
 			return array_type_uuid;
+		}
+		case PropertyCategory::OBJECT:
+		{
+			const QString uuid_string = find_metadata(::Vadon::Foundation::CommonPropertyMetadata::OBJECT_TYPE);
+			Q_ASSERT_X(uuid_string.isEmpty() == false, "VadonEditor::Core::PropertyData", "Invalid object type!");
+
+			const QUuid object_type_uuid = Utilities::base64_string_to_uuid(uuid_string);
+			Q_ASSERT_X(object_type_uuid.isNull() == false, "VadonEditor::Core::PropertyData", "Invalid object type!");
+			return object_type_uuid;
 		}
 		}
 
