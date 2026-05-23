@@ -13,14 +13,14 @@ namespace Vadon::Utilities
 		static Variant invoke_getter(void* object, TMember T::* member_ptr)
 		{
 			T* cast_object = static_cast<T*>(object);
-			return to_variant(cast_object->*member_ptr);
+			return VariantTypeTrait<_MemberType>::to_variant(cast_object->*member_ptr);
 		}
 
 		template <typename T, typename TMember>
 		static void invoke_setter(void* object, TMember T::* member_ptr, const Variant& value)
 		{
 			T* cast_object = static_cast<T*>(object);
-			cast_object->*member_ptr = from_variant<TMember>(value);
+			cast_object->*member_ptr = VariantTypeTrait<_MemberType>::from_variant(value);
 		}
 	};
 
@@ -56,7 +56,8 @@ namespace Vadon::Utilities
 		constexpr MemberVariableBind()
 		{
 			using MemberInfo = decltype(get_member_pointer_info(MemberPtr));
-			type = get_erased_data_type_id<MemberInfo::_MemberType>();
+			type = get_underlying_type_id<MemberInfo::_MemberType>();
+			data_type = get_erased_data_type_id<MemberInfo::_MemberType>();
 		}
 
 		MemberVariableBind& bind_member_getter()

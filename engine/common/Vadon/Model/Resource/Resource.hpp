@@ -66,9 +66,15 @@ namespace Vadon::Model
 namespace Vadon::Utilities
 {
 	template<Vadon::Model::is_resource_id T>
-	static constexpr Vadon::Utilities::TypeID get_erased_data_type_id()
+	static constexpr TypeID get_erased_data_type_id()
 	{
-		return Vadon::Utilities::TypeRegistry::get_type_id<Vadon::Model::ResourceID>();
+		return TypeRegistry::get_type_id<Vadon::Model::ResourceID>();
+	}
+
+	template<Vadon::Model::is_resource_id T>
+	static constexpr TypeID get_underlying_type_id()
+	{
+		return TypeRegistry::get_type_id<Vadon::Model::ResourceID>();
 	}
 }
 

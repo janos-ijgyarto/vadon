@@ -97,7 +97,7 @@ namespace Vadon::Private::Model
 				{
 					type_uuid = Vadon::Utilities::TypeRegistry::get_type_info(component_data.type_id).id;
 				}
-				constexpr auto c_type_uuid = Vadon::Utilities::property_schema_to_uuid(::Vadon::Foundation::SceneEntityComponentSchema::c_type_property);
+				constexpr auto c_type_uuid = Vadon::Utilities::Property::property_schema_to_uuid(::Vadon::Foundation::SceneEntityComponentSchema::c_type_property);
 				if (serializer.serialize(c_type_uuid, type_uuid) != SerializerResult::SUCCESSFUL)
 				{
 					log_property_serialization_error(c_type_uuid);
@@ -114,7 +114,7 @@ namespace Vadon::Private::Model
 				}
 			}
 
-			constexpr auto c_properties_uuid = Vadon::Utilities::property_schema_to_uuid(::Vadon::Foundation::SceneEntityComponentSchema::c_properties_property);
+			constexpr auto c_properties_uuid = Vadon::Utilities::Property::property_schema_to_uuid(::Vadon::Foundation::SceneEntityComponentSchema::c_properties_property);
 			if (serializer.open_object(c_properties_uuid) != SerializerResult::SUCCESSFUL)
 			{
 				log_property_serialization_error(c_properties_uuid);
@@ -257,14 +257,14 @@ namespace Vadon::Private::Model
 				Vadon::Core::Logger::log_error(c_entity_obj_error_message);
 				return false;
 			}
-			serializer.serialize(Vadon::Utilities::property_schema_to_uuid(::Vadon::Foundation::SceneEntitySchema::c_parent_property), entity_data.parent);
+			serializer.serialize(Vadon::Utilities::Property::property_schema_to_uuid(::Vadon::Foundation::SceneEntitySchema::c_parent_property), entity_data.parent);
 			// NOTE: scene needs to be handled separately because it may or may not be set
 			if ((serializer.is_reading() == true) || ((serializer.is_reading() == false) && (entity_data.scene.is_valid() == true)))
 			{
-				serializer.serialize(Vadon::Utilities::property_schema_to_uuid(::Vadon::Foundation::SceneEntitySchema::c_scene_property), entity_data.scene.as_resource_id());
+				serializer.serialize(Vadon::Utilities::Property::property_schema_to_uuid(::Vadon::Foundation::SceneEntitySchema::c_scene_property), entity_data.scene.as_resource_id());
 			}
 
-			if(serializer.open_array(Vadon::Utilities::property_schema_to_uuid(::Vadon::Foundation::SceneEntitySchema::c_components_property)) != SerializerResult::SUCCESSFUL)
+			if(serializer.open_array(Vadon::Utilities::Property::property_schema_to_uuid(::Vadon::Foundation::SceneEntitySchema::c_components_property)) != SerializerResult::SUCCESSFUL)
 			{
 				Vadon::Core::Logger::log_error(c_component_array_error_message);
 				return false;
@@ -316,7 +316,7 @@ namespace Vadon::Private::Model
 
 			Scene& scene = static_cast<Scene&>(resource);
 
-			if (serializer.open_array(Vadon::Utilities::property_schema_to_uuid(::Vadon::Foundation::SceneSchema::c_entities_property)) != SerializerResult::SUCCESSFUL)
+			if (serializer.open_array(Vadon::Utilities::Property::property_schema_to_uuid(::Vadon::Foundation::SceneSchema::c_entities_property)) != SerializerResult::SUCCESSFUL)
 			{
 				resource_system.log_error(c_entity_array_error_log);
 				return false;

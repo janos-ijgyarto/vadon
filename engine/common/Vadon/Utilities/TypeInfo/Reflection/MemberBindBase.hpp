@@ -9,6 +9,7 @@ namespace Vadon::Utilities
 	struct MemberVariableBindBase
 	{
 		TypeID type;
+		TypeID data_type;
 
 		ErasedMemberGetter member_getter = nullptr;
 		ErasedMemberFunction getter_function = nullptr;

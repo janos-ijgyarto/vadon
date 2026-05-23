@@ -17,6 +17,7 @@ namespace Vadon::Utilities
 		PropertyInfo make_property_info(const ::Vadon::Foundation::Property& property_info, const MemberVariableBindBase& property)
 		{
 			return PropertyInfo{ .base_info = property_info,
+				.data_type = property.data_type,
 				.has_getter = property.member_getter || property.getter_function,
 				.has_setter = property.member_setter || property.setter_function
 			};
@@ -134,6 +135,38 @@ namespace Vadon::Utilities
 		}
 
 		return false;
+	}
+
+	void* TypeRegistry::create_object(TypeID type_id)
+	{
+		TypeRegistry& instance = get_registry_instance();
+		auto type_data_it = instance.m_type_lookup.find(type_id);
+		if (type_data_it == instance.m_type_lookup.end())
+		{
+			type_not_found_error(type_id);
+			return nullptr;
+		}
+
+		const TypeData& type_data = type_data_it->second;
+		VADON_ASSERT(type_data.object_factory.factory_function != nullptr, "Invalid factory function!");
+
+		return type_data.object_factory.factory_function();
+	}
+
+	void TypeRegistry::destroy_object(TypeID type_id, const ObjectPointer object)
+	{
+		TypeRegistry& instance = get_registry_instance();
+		auto type_data_it = instance.m_type_lookup.find(type_id);
+		if (type_data_it == instance.m_type_lookup.end())
+		{
+			type_not_found_error(type_id);
+			return;
+		}
+
+		const TypeData& type_data = type_data_it->second;
+		VADON_ASSERT(type_data.object_factory.destructor_function != nullptr, "Invalid factory function!");
+
+		type_data.object_factory.destructor_function(object);
 	}
 
 	TypeID TypeRegistry::get_type_id(const TypeUUID& type_uuid)
@@ -340,6 +373,22 @@ namespace Vadon::Utilities
 		{
 			instance.register_type_with_base(new_type_id, new_type_data, base_type_id);
 		}
+	}
+
+	void TypeRegistry::internal_register_type_factory(TypeID type_id, ObjectFactory factory)
+	{
+		TypeRegistry& instance = get_registry_instance();
+
+		auto type_data_it = instance.m_type_lookup.find(type_id);
+		VADON_ASSERT(type_data_it != instance.m_type_lookup.end(), "Type not found!");
+		if (type_data_it == instance.m_type_lookup.end())
+		{
+			type_not_found_error(type_id);
+			return;
+		}
+
+		TypeData& type_data = type_data_it->second;
+		type_data.object_factory = factory;
 	}
 
 	bool TypeRegistry::internal_add_property(TypeID type_id, const PropertyUUID& property_uuid, MemberVariableBindBase property_bind)

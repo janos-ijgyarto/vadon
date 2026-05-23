@@ -41,6 +41,8 @@ namespace Vadon::Utilities
 			{
 			}
 
+			Type get_type() const override { return Type::BINARY; }
+
 			bool initialize() override
 			{
 				Object& root_object = m_object_stack.emplace_back();
@@ -143,6 +145,11 @@ namespace Vadon::Utilities
 				}
 			}
 
+			bool is_array() const override
+			{
+				return get_parent_ref().type == ReferenceType::ARRAY;
+			}
+
 			Result close_array() override 
 			{
 				if (get_parent_ref().type != ReferenceType::ARRAY)
@@ -207,6 +214,11 @@ namespace Vadon::Utilities
 				// Pop array from stack
 				m_array_stack.pop_back();
 				return Result::SUCCESSFUL;
+			}
+
+			bool is_object() const override
+			{
+				return get_parent_ref().type == ReferenceType::OBJECT;
 			}
 			
 			Result close_object() override 
@@ -292,6 +304,23 @@ namespace Vadon::Utilities
 			bool has_key(const ::Vadon::Foundation::UUID& key) const override
 			{
 				return has_key(uuid_to_base64_string(key));
+			}
+
+			KeyVector get_keys() const override
+			{
+				VADON_ASSERT(is_object(), "Invalid serializer state!");
+				KeyVector keys;
+
+				const ValueReference& parent_ref = get_parent_ref();
+				const Object& object = m_object_stack[parent_ref.stack_index];
+
+				for (auto obj_it = object.values.begin(); obj_it != object.values.end(); ++obj_it)
+				{
+					const std::string current_key_string(get_string(obj_it->first));
+					keys.push_back(current_key_string);
+				}
+				
+				return keys;
 			}
 		protected:
 			enum class ReferenceType
@@ -757,6 +786,8 @@ namespace Vadon::Utilities
 			{
 			}
 
+			Type get_type() const override { return Type::JSON; }
+
 			bool initialize() override
 			{
 				if (is_reading() == true)
@@ -797,6 +828,11 @@ namespace Vadon::Utilities
 				m_finalized = true;
 				return true;
 			}
+
+			bool is_array() const override
+			{
+				return get_current_value().is_array();
+			}
 			
 			Result close_array() override
 			{
@@ -811,6 +847,11 @@ namespace Vadon::Utilities
 					return Result::INVALID_CONTAINER;
 				}
 				return Result::SUCCESSFUL;
+			}
+
+			bool is_object() const override
+			{
+				return get_current_value().is_object();
 			}
 
 			Result close_object() override
@@ -831,6 +872,7 @@ namespace Vadon::Utilities
 			bool has_key(std::string_view key) const override
 			{
 				// Only allow if we were in an object to begin with
+				VADON_ASSERT(is_object() == true, "Invalid serializer state!");
 				const JSON& current_object = get_current_value();
 				if (current_object.is_object() == true)
 				{
@@ -843,6 +885,21 @@ namespace Vadon::Utilities
 			bool has_key(const ::Vadon::Foundation::UUID& key) const override
 			{
 				return has_key(uuid_to_base64_string(key));
+			}
+
+			KeyVector get_keys() const override
+			{
+				VADON_ASSERT(is_object() == true, "Invalid serializer state!");
+				KeyVector keys;
+				const JSON& current_object = get_current_value();
+				if (current_object.is_object() == true)
+				{
+					for (auto obj_it = current_object.begin(); obj_it != current_object.end(); ++obj_it)
+					{
+						keys.push_back(obj_it.key());
+					}
+				}
+				return keys;
 			}
 		protected:
 			Result set_value_reference(std::string_view key) override

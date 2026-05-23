@@ -228,14 +228,14 @@ namespace Vadon::Private::Model
 		}
 
 		ResourceID resource_id;
-		if (serializer.serialize(Vadon::Utilities::property_schema_to_uuid(::Vadon::Foundation::ResourceSchema::c_id_property), resource_info.id) != SerializerResult::SUCCESSFUL)
+		if (serializer.serialize(Vadon::Utilities::Property::property_schema_to_uuid(::Vadon::Foundation::ResourceSchema::c_id_property), resource_info.id) != SerializerResult::SUCCESSFUL)
 		{
 			resource_info_failed_to_serialize();
 			return false;
 		}
 
 		::Vadon::Foundation::UUID resource_type_uuid;
-		if (serializer.serialize(Vadon::Utilities::property_schema_to_uuid(::Vadon::Foundation::ResourceSchema::c_type_property), resource_type_uuid) != SerializerResult::SUCCESSFUL)
+		if (serializer.serialize(Vadon::Utilities::Property::property_schema_to_uuid(::Vadon::Foundation::ResourceSchema::c_type_property), resource_type_uuid) != SerializerResult::SUCCESSFUL)
 		{
 			resource_info_failed_to_serialize();
 			return false;
@@ -291,7 +291,7 @@ namespace Vadon::Private::Model
 
 		ResourceData& resource_data = m_resource_pool.get(resource_handle);
 
-		if (serializer.serialize(Vadon::Utilities::property_schema_to_uuid(::Vadon::Foundation::ResourceSchema::c_id_property), resource_data.info.id) != SerializerResult::SUCCESSFUL)
+		if (serializer.serialize(Vadon::Utilities::Property::property_schema_to_uuid(::Vadon::Foundation::ResourceSchema::c_id_property), resource_data.info.id) != SerializerResult::SUCCESSFUL)
 		{
 			resource_info_failed_to_serialize();
 			return false;
@@ -299,14 +299,14 @@ namespace Vadon::Private::Model
 
 		// Get type
 		::Vadon::Foundation::UUID resource_type_uuid = Vadon::Utilities::TypeRegistry::get_type_info(resource_data.info.type_id).id;
-		if (serializer.serialize(Vadon::Utilities::property_schema_to_uuid(::Vadon::Foundation::ResourceSchema::c_type_property), resource_type_uuid) != SerializerResult::SUCCESSFUL)
+		if (serializer.serialize(Vadon::Utilities::Property::property_schema_to_uuid(::Vadon::Foundation::ResourceSchema::c_type_property), resource_type_uuid) != SerializerResult::SUCCESSFUL)
 		{
 			resource_info_failed_to_serialize();
 			return false;
 		}
 
 		// Serialize properties
-		if (serializer.open_object(Vadon::Utilities::property_schema_to_uuid(::Vadon::Foundation::ResourceSchema::c_properties_property)) != SerializerResult::SUCCESSFUL)
+		if (serializer.open_object(Vadon::Utilities::Property::property_schema_to_uuid(::Vadon::Foundation::ResourceSchema::c_properties_property)) != SerializerResult::SUCCESSFUL)
 		{
 			resource_data_failed_to_serialize();
 			return false;
@@ -362,7 +362,7 @@ namespace Vadon::Private::Model
 		Vadon::Model::ResourceRegistry::SerializerFunction resource_serializer = nullptr;//Vadon::Model::ResourceRegistry::get_resource_serializer(resource_data.info.type_id);
 		if (resource_serializer != nullptr)
 		{
-			if (serializer.open_object(Vadon::Utilities::property_schema_to_uuid(::Vadon::Foundation::ResourceSchema::c_data_property)) != SerializerResult::SUCCESSFUL)
+			if (serializer.open_object(Vadon::Utilities::Property::property_schema_to_uuid(::Vadon::Foundation::ResourceSchema::c_data_property)) != SerializerResult::SUCCESSFUL)
 			{
 				resource_custom_data_failed_to_serialize();
 				return false;
@@ -381,7 +381,7 @@ namespace Vadon::Private::Model
 
 		if (resource_data.embedded_resources.empty() == false)
 		{
-			if (serializer.open_array(Vadon::Utilities::property_schema_to_uuid(::Vadon::Foundation::ResourceSchema::c_embedded_property)) != SerializerResult::SUCCESSFUL)
+			if (serializer.open_array(Vadon::Utilities::Property::property_schema_to_uuid(::Vadon::Foundation::ResourceSchema::c_embedded_property)) != SerializerResult::SUCCESSFUL)
 			{
 				resource_data_failed_to_serialize();
 				return false;
@@ -582,7 +582,7 @@ namespace Vadon::Private::Model
 		}
 
 		// Deserialize resource data
-		if (serializer.open_object(Vadon::Utilities::property_schema_to_uuid(::Vadon::Foundation::ResourceSchema::c_properties_property)) != SerializerResult::SUCCESSFUL)
+		if (serializer.open_object(Vadon::Utilities::Property::property_schema_to_uuid(::Vadon::Foundation::ResourceSchema::c_properties_property)) != SerializerResult::SUCCESSFUL)
 		{
 			resource_data_failed_to_serialize();
 			return nullptr;
@@ -656,7 +656,7 @@ namespace Vadon::Private::Model
 		Vadon::Model::ResourceRegistry::SerializerFunction resource_serializer = nullptr; //Vadon::Model::ResourceRegistry::get_resource_serializer(info.type_id);
 		if (resource_serializer != nullptr)
 		{
-			if (serializer.open_object(Vadon::Utilities::property_schema_to_uuid(::Vadon::Foundation::ResourceSchema::c_data_property)) != SerializerResult::SUCCESSFUL)
+			if (serializer.open_object(Vadon::Utilities::Property::property_schema_to_uuid(::Vadon::Foundation::ResourceSchema::c_data_property)) != SerializerResult::SUCCESSFUL)
 			{
 				resource_custom_data_failed_to_serialize();
 				return nullptr;
@@ -673,7 +673,7 @@ namespace Vadon::Private::Model
 			}
 		}
 
-		constexpr auto c_embedded_property_uuid = Vadon::Utilities::property_schema_to_uuid(::Vadon::Foundation::ResourceSchema::c_embedded_property);
+		constexpr auto c_embedded_property_uuid = Vadon::Utilities::Property::property_schema_to_uuid(::Vadon::Foundation::ResourceSchema::c_embedded_property);
 		if (serializer.has_key(c_embedded_property_uuid) == true)
 		{
 			if (serializer.open_array(c_embedded_property_uuid) != SerializerResult::SUCCESSFUL)

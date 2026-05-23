@@ -3,11 +3,6 @@
 #include <Vadon/Utilities/TypeInfo/Registry.hpp>
 namespace Vadon::Utilities
 {
-	// FIXME: find a way for properties to register type metadata!
-	// Most important is the underlying type, but the type registry
-	// should also have metadata to perform higher-level validation
-	// (e.g resource ID property should validate the UUID)
-
 	// Utility function to ensure the type is Variant-compatible
 	template<typename T>
 	static constexpr TypeID get_erased_data_type_id()
@@ -20,6 +15,24 @@ namespace Vadon::Utilities
 		{
 			static_assert(is_std_vector<typename T::value_type> == false, "Nested arrays are not supported!");
 			return TypeRegistry::get_type_id<BoxedVariantArray>();
+		}
+		else
+		{
+			static_assert(false, "Type not supported!");
+		}
+	}
+
+	template<typename T>
+	static constexpr TypeID get_underlying_type_id()
+	{
+		if constexpr (is_trivial_variant_type<T>)
+		{
+			return TypeRegistry::get_type_id<T>();
+		}
+		else if constexpr (is_std_vector<T>)
+		{
+			static_assert(is_std_vector<typename T::value_type> == false, "Nested arrays are not supported!");
+			return get_underlying_type_id<typename T::value_type>();
 		}
 		else
 		{

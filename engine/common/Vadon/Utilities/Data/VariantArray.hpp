@@ -59,28 +59,30 @@ namespace Vadon::Utilities
 	concept is_std_vector = std::same_as<T, as_std_vector<T>>;
 
 	template<is_std_vector T>
-	Variant to_variant(const T& vector)
+	struct VariantTypeTrait<T>
 	{
-		VariantArray array;
-		array.data_type = get_erased_data_type_id<typename T::value_type>();
-		for (const T::value_type& value : vector)
+		static Variant to_variant(const T& vector)
 		{
-			array.data.push_back(to_variant(value));
-		}
-		return Variant(Box(array));
-	}
-
-	template<is_std_vector T>
-	T from_variant(const Variant& variant)
-	{
-		T vector;
-		const VariantArray& variant_array = *std::get<Box<VariantArray>>(variant);
-		for (const Variant& value : variant_array.data)
-		{
-			vector.push_back(from_variant<typename T::value_type>(value));
+			VariantArray array;
+			array.data_type = get_erased_data_type_id<typename T::value_type>();
+			for (const T::value_type& value : vector)
+			{
+				array.data.push_back(VariantTypeTrait<typename T::value_type>::to_variant(value));
+			}
+			return Variant(Box(array));
 		}
 
-		return vector;
-	}
+		static T from_variant(const Variant& variant)
+		{
+			T vector;
+			const VariantArray& variant_array = *std::get<Box<VariantArray>>(variant);
+			for (const Variant& value : variant_array.data)
+			{
+				vector.push_back(VariantTypeTrait<typename T::value_type>::from_variant(value));
+			}
+
+			return vector;
+		}
+	};
 }
 #endif

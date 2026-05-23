@@ -2,6 +2,7 @@
 #define VADON_UTILITIES_TYPEINFO_TYPEINFO_HPP
 #include <Vadon/Math/Color.hpp>
 #include <Vadon/Math/Vector.hpp>
+#include <Vadon/Utilities/Data/Object.hpp>
 #include <Vadon/Utilities/System/UUID/UUID.hpp>
 #include <Vadon/Foundation/TypeInfo/TypeInfo.hpp>
 
@@ -86,6 +87,32 @@ namespace Vadon::Utilities
 
 	VADON_REGISTER_TYPE_UUID(Vadon::Foundation::UUID, ::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::UUID).string);
 	VADON_DECLARE_BASE_DATA_TYPE(Vadon::Foundation::UUID);
+
+	VADON_REGISTER_TYPE_UUID(ObjectPointer, "d98ee0ca-fce3-46b9-a028-becf6dc7b603");
+
+	constexpr ::Vadon::Foundation::UUID get_base_type_uuid(::Vadon::Foundation::BaseType base_type)
+	{
+		return UUIDLiteral(::Vadon::Foundation::get_base_type_uuid_string(base_type).string).result;
+	}
+
+	constexpr ::Vadon::Foundation::BaseType base_type_from_uuid(const ::Vadon::Foundation::UUID& type_uuid)
+	{
+		for (uint32_t base_type_index = 0; base_type_index < static_cast<uint32_t>(::Vadon::Foundation::BaseType::TYPE_COUNT); ++base_type_index)
+		{
+			const ::Vadon::Foundation::BaseType current_base_type = static_cast<::Vadon::Foundation::BaseType>(base_type_index);
+			if (type_uuid == get_base_type_uuid(current_base_type))
+			{
+				return current_base_type;
+			}
+		}
+
+		return ::Vadon::Foundation::BaseType::INVALID;
+	}
+
+	constexpr bool is_base_type(const ::Vadon::Foundation::UUID& type_uuid)
+	{
+		return base_type_from_uuid(type_uuid) != ::Vadon::Foundation::BaseType::INVALID;
+	}
 }
 
 #endif

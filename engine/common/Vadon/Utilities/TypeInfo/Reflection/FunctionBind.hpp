@@ -99,13 +99,13 @@ namespace Vadon::Utilities
 			size_t index = 0;
 			if constexpr (std::is_void_v<Ret>)
 			{
-				Invoker{ object, function, std::forward<Args>(from_variant<Args>(args[index++]))... };
+				Invoker{ object, function, std::forward<Args>(VariantTypeTrait<Args>::from_variant(args[index++]))... };
 				return NoReturnValue{};
 			}
 			else
 			{
-				const Invoker::_ReturnType mapped_return_value = Invoker{ object, function, std::forward<Args>(from_variant<Args>(args[index++]))... }.return_value;
-				return to_variant(mapped_return_value);
+				const Invoker::_ReturnType mapped_return_value = Invoker{ object, function, std::forward<Args>(VariantTypeTrait<Args>::from_variant(args[index++]))... }.return_value;
+				return VariantTypeTrait<Invoker::_ReturnType>::to_variant(mapped_return_value);
 			}
 		}
 
@@ -140,13 +140,13 @@ namespace Vadon::Utilities
 			size_t index = 0;
 			if constexpr (std::is_void_v<Ret>)
 			{
-				Invoker{ object, function, std::forward<Args>(from_variant<Args>(args[index++]))... };
+				Invoker{ object, function, std::forward<Args>(VariantTypeTrait<Args>::from_variant(args[index++]))... };
 				return NoReturnValue{};
 			}
 			else
 			{
-				const Invoker::_ReturnType mapped_return_value = Invoker{ object, function, std::forward<Args>(from_variant<Args>(args[index++]))... }.return_value;
-				return to_variant(mapped_return_value);
+				const Invoker::_ReturnType mapped_return_value = Invoker{ object, function, std::forward<Args>(VariantTypeTrait<Args>::from_variant(args[index++]))... }.return_value;
+				return VariantTypeTrait<Invoker::_ReturnType>::to_variant(mapped_return_value);
 			}
 		}
 	};

@@ -8,7 +8,6 @@ namespace Vadon
 		// FIXME: use actual type list instead of enum to create more explicit link?
 		enum class BaseType : uint32
 		{
-			INVALID,
 			INT32,
 			UINT32,
 			FLOAT,
@@ -23,7 +22,8 @@ namespace Vadon
 			UUID,
 			ARRAY, // TODO: add typed version!
 			DICTIONARY, // TODO: add typed version!
-			TYPE_COUNT
+			TYPE_COUNT,
+			INVALID = TYPE_COUNT
 		};
 
 		struct TypeInfo
@@ -36,7 +36,6 @@ namespace Vadon
 		};
 
 		constexpr UUIDString c_base_type_uuids[static_cast<uint32>(BaseType::TYPE_COUNT)] = {
-			"INVALID",
 			"9b2d1939-5e7e-4853-907c-de197c53289f",
 			"b3e7681a-6ed6-4ea2-8214-95fd11fe1d51",
 			"4ffacbf5-8dfc-4d83-9c95-f78b8e1ab220",

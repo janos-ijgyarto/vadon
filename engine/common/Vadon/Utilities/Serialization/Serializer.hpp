@@ -39,11 +39,13 @@ namespace Vadon::Utilities
 		};
 
 		using Instance = std::unique_ptr<Serializer>;
+		using KeyVector = std::vector<std::string>;
 
 		VADONCOMMON_API static Instance create_serializer(std::vector<std::byte>& buffer, Type type, Mode mode);
 
 		virtual ~Serializer() { VADON_ASSERT(m_finalized == true, "Serializer was not finalized!"); }
 
+		virtual Type get_type() const = 0;
 		bool is_reading() const { return m_mode == Mode::READ; }
 
 		virtual bool initialize() = 0;
@@ -95,16 +97,22 @@ namespace Vadon::Utilities
 		VADONCOMMON_API Result open_array(const ::Vadon::Foundation::UUID& key);
 		VADONCOMMON_API Result open_array(size_t index);
 
+		virtual bool is_array() const = 0;
+
 		virtual size_t get_array_size() const = 0;
 		virtual Result close_array() = 0;
 
 		virtual bool has_key(std::string_view key) const = 0;
 		virtual bool has_key(const ::Vadon::Foundation::UUID& key) const = 0;
-		// TODO: get list of keys from object?
+		virtual KeyVector get_keys() const = 0;
 
+		// TODO: implement an iterator for object elements
 		VADONCOMMON_API Result open_object(std::string_view key);
 		VADONCOMMON_API Result open_object(const ::Vadon::Foundation::UUID& key);
 		VADONCOMMON_API Result open_object(size_t index);
+
+		virtual bool is_object() const = 0;
+
 		virtual Result close_object() = 0;
 	protected:
 		Serializer(std::vector<std::byte>& buffer, Mode mode);

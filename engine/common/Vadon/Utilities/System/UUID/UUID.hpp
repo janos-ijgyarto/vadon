@@ -66,5 +66,48 @@ namespace Vadon::Utilities
 	{
 		return UUIDLiteral(string.string).result;
 	}
+
+	inline std::string sanitize_uuid_label(std::string_view input)
+	{
+		std::string output;
+		output.reserve(input.size());
+
+		for (char current_char : input)
+		{
+			if (std::isalpha(current_char) != 0)
+			{
+				output.push_back(static_cast<char>(std::tolower(current_char)));
+			}
+			else
+			{
+				output.push_back('_');
+			}
+		}
+
+		return output;
+	}
+
+	inline std::string serialize_labeled_uuid(std::string_view label, const ::Vadon::Foundation::UUID& uuid)
+	{
+		const std::string sanitized_label = sanitize_uuid_label(label);
+		return sanitized_label + "|" + uuid_to_base64_string(uuid);
+	}
+
+	inline ::Vadon::Foundation::UUID parse_labeled_uuid(std::string_view uuid_string)
+	{
+		const size_t separator_index = uuid_string.find('|');
+		::Vadon::Foundation::UUID output;
+		if (separator_index != std::string::npos)
+		{
+			uuid_from_base64_string(uuid_string.substr(separator_index + 1), output);
+		}
+		else
+		{
+			// Assume it's a regular UUID string
+			uuid_from_base64_string(uuid_string, output);
+		}
+
+		return output;
+	}
 }
 #endif

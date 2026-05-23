@@ -10,6 +10,35 @@ namespace Vadon::Utilities
 	class TypeRegistry
 	{
 	public:
+		using ObjectFactoryFunction = ObjectPointer(*)();
+		using ObjectDestructorFunction = void(*)(const ObjectPointer);
+
+		// TODO: use allocator API to ensure that we don't just naively heap-allocate!
+		struct ObjectFactory
+		{
+			ObjectFactoryFunction factory_function = nullptr;
+			ObjectDestructorFunction destructor_function = nullptr;
+
+			template<typename T>
+			static ObjectPointer default_factory_function()
+			{
+				return new T();
+			}
+
+			template<typename T>
+			static void default_destructor_function(const ObjectPointer object)
+			{
+				delete static_cast<const T*>(object);
+			}
+
+			template<typename T>
+			static ObjectFactory get_default_factory()
+			{
+				return ObjectFactory{ .factory_function = &ObjectFactory::default_factory_function<T>,
+					.destructor_function = &ObjectFactory::default_destructor_function<T> };
+			}
+		};
+
 		TypeRegistry();
 
 		bool initialize();
@@ -27,6 +56,15 @@ namespace Vadon::Utilities
 				internal_register_type(TypeRegistryTrait<T>::get_type_uuid(), sizeof(T), alignof(T), get_type_id<Base>());
 			}
 		}
+
+		template<typename T>
+		static void register_type_factory(ObjectFactory factory = ObjectFactory::get_default_factory())
+		{
+			internal_register_type_factory(get_type_id<T>(), factory);
+		}
+
+		VADONCOMMON_API static void* create_object(TypeID type_id);
+		VADONCOMMON_API static void destroy_object(TypeID type_id, const ObjectPointer object);
 
 		template<typename T>
 		static TypeID get_type_id()
@@ -114,6 +152,8 @@ namespace Vadon::Utilities
 			TypeID base_id;
 			bool base_type = false;
 
+			ObjectFactory object_factory;
+
 			std::unordered_map<MemberFunctionUUID, MemberFunctionBind> methods;
 			std::unordered_map<PropertyUUID, PropertyData> properties;
 
@@ -125,6 +165,8 @@ namespace Vadon::Utilities
 		};
 
 		static VADONCOMMON_API void internal_register_type(const TypeUUID& type_uuid, size_t size, size_t alignment, TypeID base_id = TypeID::INVALID);
+		static VADONCOMMON_API void internal_register_type_factory(TypeID type_id, ObjectFactory factory);
+
 		static VADONCOMMON_API bool internal_add_property(TypeID type_id, const PropertyUUID& property_uuid, MemberVariableBindBase property_bind);
 		static VADONCOMMON_API bool internal_bind_method(TypeID type_id, const MemberFunctionUUID& method_uuid, MemberFunctionBind method_bind);
 
