@@ -1,8 +1,6 @@
 #ifndef VADONEDITOR_MODEL_RESOURCE_RESOURCE_HPP
 #define VADONEDITOR_MODEL_RESOURCE_RESOURCE_HPP
-#include <QHash>
-#include <QUuid>
-#include <QVariant>
+#include <VadonEditor/Core/Data/Object.hpp>
 namespace VadonEditor::Core
 {
 	class Application;
@@ -37,7 +35,7 @@ namespace VadonEditor::Model
 
 		void notify_modifed() { m_modified = true; }
 
-		QVariant get_property(const PropertyID& property_id) const;
+		QVariant get_property(const PropertyID& property_id) const { return m_data.get_property(property_id); }
 		void set_property(const PropertyID& property_id, const QVariant& value);
 
 		const Resource* get_owner() const { return m_owner; }
@@ -63,9 +61,7 @@ namespace VadonEditor::Model
 
 		ResourceInfo m_info;
 
-		// FIXME: could use an array and get the offsets from a "schema"
-		QHash<PropertyID, QVariant> m_properties;
-		QHash<QUuid, QVariant> m_data;
+		Core::DataObject m_data;
 
 		Resource* m_owner; // NOTE: used by embedded resources
 		QHash<ResourceID, Resource*> m_embedded_resources;

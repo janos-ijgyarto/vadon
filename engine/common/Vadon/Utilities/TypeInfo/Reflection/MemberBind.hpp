@@ -56,8 +56,8 @@ namespace Vadon::Utilities
 		constexpr MemberVariableBind()
 		{
 			using MemberInfo = decltype(get_member_pointer_info(MemberPtr));
-			type = get_underlying_type_id<MemberInfo::_MemberType>();
-			data_type = get_erased_data_type_id<MemberInfo::_MemberType>();
+			type = TypeErasureTrait<MemberInfo::_MemberType>::get_underlying_type_id();
+			data_type = TypeErasureTrait<MemberInfo::_MemberType>::get_erased_type_id();
 		}
 
 		MemberVariableBind& bind_member_getter()

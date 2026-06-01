@@ -9,7 +9,7 @@ namespace Vadon::Utilities
 	{
 		return Property{
 			.name = std::string(name),
-			.data_type = Vadon::Utilities::get_erased_data_type_id<T>(),
+			.data_type = Vadon::Utilities::TypeErasureTrait<T>::get_erased_type_id(),
 			.value = value
 		};
 	}

@@ -10,8 +10,11 @@ namespace VadonEditor::Core
 	{
 		TRIVIAL,
 		RESOURCE,
-		ARRAY,
-		OBJECT
+		TRIVIAL_ARRAY,
+		GENERIC_OBJECT_ARRAY,
+		TYPED_OBJECT_ARRAY,
+		GENERIC_OBJECT,
+		TYPED_OBJECT
 	};
 
 	struct PropertyData

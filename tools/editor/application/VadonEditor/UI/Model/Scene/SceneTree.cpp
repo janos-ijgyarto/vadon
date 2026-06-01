@@ -68,7 +68,7 @@ namespace VadonEditor::UI
 		Model::EntityModel& entity_model = m_scene->get_entity_model();
 		Model::Entity* entity = entity_model.find_entity_by_id(entity_id);
 
-		entity->set_name(text);
+		entity_model.set_entity_name(entity, text);
 
 		set_modified();
 	}
@@ -103,8 +103,6 @@ namespace VadonEditor::UI
 
 	void SceneTree::entity_opened(Model::Entity* entity)
 	{
-		Q_ASSERT_X(&entity->get_owner_scene() == m_scene, "VadonEditor::UI::SceneTree::entity_opened", "Entity not from the correct scene");
-
 		auto entity_widget_it = m_entity_widgets.find(entity->get_id());
 		if (entity_widget_it != m_entity_widgets.end())
 		{
@@ -115,7 +113,7 @@ namespace VadonEditor::UI
 		}
 		else
 		{
-			EntityEditor* new_entity_editor = new EntityEditor(entity, m_scene->get_application().get_ui_system().get_main_window(), Qt::WindowType::Window);
+			EntityEditor* new_entity_editor = new EntityEditor(m_scene, entity, m_scene->get_application().get_ui_system().get_main_window(), Qt::WindowType::Window);
 			if (new_entity_editor->initialize() == false)
 			{
 				Q_ASSERT_X(false, "VadonEditor::UI::SceneTree::entity_opened", "Failed to initialize Entity editor!");

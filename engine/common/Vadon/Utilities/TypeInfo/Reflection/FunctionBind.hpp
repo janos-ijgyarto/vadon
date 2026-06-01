@@ -17,13 +17,13 @@ namespace Vadon::Utilities
 	template <typename T, typename Ret, typename... Args>
 	static constexpr std::vector<TypeID> make_argument_type_id_list(MemberFunction<T, Ret, Args...>)
 	{
-		return std::vector<TypeID> { get_erased_data_type_id<Args>()...};
+		return std::vector<TypeID> { TypeErasureTrait<Args>::get_erased_type_id()...};
 	}
 
 	template <typename T, typename Ret, typename... Args>
 	static constexpr std::vector<TypeID> make_argument_type_id_list(ConstMemberFunction<T, Ret, Args...>)
 	{
-		return std::vector<TypeID> { get_erased_data_type_id<Args>()...};
+		return std::vector<TypeID> { TypeErasureTrait<Args>::get_erased_type_id()...};
 	}
 
 	template <typename T, typename Ret, typename... Args>
@@ -31,11 +31,11 @@ namespace Vadon::Utilities
 	{
 		if constexpr (std::is_void_v<Ret>)
 		{
-			return get_erased_data_type_id<NoReturnValue>();
+			return TypeErasureTrait<NoReturnValue>::get_erased_type_id();
 		}
 		else
 		{
-			return get_erased_data_type_id<Ret>();
+			return TypeErasureTrait<Ret>::get_erased_type_id();
 		}
 	}
 
@@ -44,11 +44,11 @@ namespace Vadon::Utilities
 	{
 		if constexpr (std::is_void_v<Ret>)
 		{
-			return get_erased_data_type_id<NoReturnValue>();
+			return TypeErasureTrait<NoReturnValue>::get_erased_type_id();
 		}
 		else
 		{
-			return get_erased_data_type_id<Ret>();
+			return TypeErasureTrait<Ret>::get_erased_type_id();
 		}
 	}
 

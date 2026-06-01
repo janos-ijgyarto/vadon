@@ -4,8 +4,7 @@
 
 namespace
 {
-	QUuid s_base_type_uuids[] = {
-		QUuid(),
+	QUuid s_base_type_uuids[static_cast<::Vadon::Foundation::uint32>(::Vadon::Foundation::BaseType::TYPE_COUNT)] = {
 		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::INT32)),
 		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::UINT32)),
 		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::FLOAT)),

@@ -25,28 +25,6 @@ namespace VadonEditor::Model
 		Q_ASSERT_X(m_resource_lookup.empty() == true, "VadonEditor::Model::ResourceSystem::~ResourceSystem", "System was not shut down properly");
 	}
 
-	void ResourceSystem::register_resource_init_data(const QUuid& type_id, const QUuid& data_id)
-	{
-		if (m_resource_init_data_lookup.find(type_id) != m_resource_init_data_lookup.end())
-		{
-			Q_ASSERT_X(false, "VadonEditor::Model::ResourceSystem::register_resource_data", "Resource data already registered!");
-			return;
-		}
-
-		m_resource_init_data_lookup.insert(type_id, data_id);
-	}
-
-	QUuid ResourceSystem::get_resource_init_data(const QUuid& type_id) const
-	{
-		auto init_data_it = m_resource_init_data_lookup.find(type_id);
-		if (init_data_it == m_resource_init_data_lookup.end())
-		{
-			return QUuid();
-		}
-
-		return init_data_it.value();
-	}
-
 	ResourceInfo ResourceSystem::parse_resource_info(const QByteArray& file_data) const
 	{
 		// TODO: check error 

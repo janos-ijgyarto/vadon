@@ -8,15 +8,9 @@ namespace Vadon::Utilities
 	struct VariantArray
 	{
 		VariantVector data;
-		TypeID data_type;
 
 		bool operator==(const VariantArray& other) const
 		{
-			if (this->data_type != other.data_type)
-			{
-				return false;
-			}
-
 			if (this->data.size() == other.data.size())
 			{
 				for (size_t i = 0; i < this->data.size(); ++i)
@@ -35,11 +29,6 @@ namespace Vadon::Utilities
 
 		bool operator!=(const VariantArray& other) const
 		{
-			if (this->data.size() != other.data.size())
-			{
-				return true;
-			}
-
 			for (size_t i = 0; i < this->data.size(); ++i)
 			{
 				if (this->data[i] != other.data[i])
@@ -64,7 +53,6 @@ namespace Vadon::Utilities
 		static Variant to_variant(const T& vector)
 		{
 			VariantArray array;
-			array.data_type = get_erased_data_type_id<typename T::value_type>();
 			for (const T::value_type& value : vector)
 			{
 				array.data.push_back(VariantTypeTrait<typename T::value_type>::to_variant(value));

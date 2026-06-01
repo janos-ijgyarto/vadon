@@ -9,8 +9,12 @@ namespace Vadon::Utilities
 	enum class PropertyCategory
 	{
 		TRIVIAL,
-		ARRAY,
-		OBJECT
+		TRIVIAL_ARRAY,
+		GENERIC_OBJECT_ARRAY,
+		TYPED_OBJECT_ARRAY,
+		GENERIC_OBJECT,
+		TYPED_OBJECT,
+		INVALID
 	};
 
 	struct PropertyInfo

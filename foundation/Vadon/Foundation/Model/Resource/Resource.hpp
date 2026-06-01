@@ -27,11 +27,6 @@ namespace Vadon
 				get_base_type_uuid_string(BaseType::DICTIONARY)
 			};
 
-			static constexpr PropertySchema c_data_property{
-				UUIDString{"64cc12a2-b6b9-4e1a-ba85-acc8c4201483"},
-				get_base_type_uuid_string(BaseType::DICTIONARY)
-			};
-
 			static constexpr PropertySchema c_embedded_property{
 				UUIDString{"512029ab-4cbc-4ae7-8996-1b520ebf8951"},
 				get_base_type_uuid_string(BaseType::ARRAY)

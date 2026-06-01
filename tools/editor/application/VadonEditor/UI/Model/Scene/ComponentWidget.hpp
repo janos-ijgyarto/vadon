@@ -7,8 +7,8 @@ namespace VadonEditor::Core
 }
 namespace VadonEditor::Model
 {
-	class Entity;
-	struct Component;
+	class Scene;
+	class Component;
 }
 namespace VadonEditor::UI
 {
@@ -17,9 +17,9 @@ namespace VadonEditor::UI
 	{
 		Q_OBJECT
 	public:
-		ComponentWidget(Model::Entity* entity, Model::Component* component, QWidget* parent = nullptr);
+		ComponentWidget(Model::Component* component, QWidget* parent = nullptr);
 
-		bool initialize();
+		bool initialize(Model::Scene* scene);
 
 		const Model::Component* get_component() const { return m_component; }
 	signals:
@@ -33,7 +33,6 @@ namespace VadonEditor::UI
 
 		Ui::ComponentWidget m_ui;
 
-		Model::Entity* m_entity;
 		Model::Component* m_component;
 	};
 }

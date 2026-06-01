@@ -18,6 +18,8 @@ namespace VadonEditor::Core
 
 		bool initialize(const QUuid& type_id);
 
+		const QUuid& get_type_id() const { return m_type_id; }
+
 		QVariant get_property(const PropertyID& property_id) const;
 		void set_property(const PropertyID& property_id, const QVariant& value);
 
@@ -26,15 +28,22 @@ namespace VadonEditor::Core
 
 		bool serialize_properties(QJsonObject& properties_obj) const;
 		bool deserialize_properties(const QJsonObject& properties_obj);
+
+		const QVariantMap& get_property_map() const { return m_properties; }
+		void load_properties(const QVariantMap& properties);
+
+		static QUuid get_object_type_uuid();
+		static QUuid get_type_property_uuid();
+		static QUuid get_properties_property_uuid();
 	private:
 		bool internal_initialize();
 
-		bool serialize_object_to_json(const TypeData* type_data, const QVariant& object_data, QJsonObject& json_object) const;
-		bool serialize_array_to_json(const QUuid& array_data_type, const QVariant& array_data, QJsonArray& json_array) const;
+		bool serialize_generic_object_to_json(const QVariant& object_data, QJsonObject& json_object) const;
+		bool deserialize_generic_object_from_json(const QJsonObject& json_object, QVariant& object_data) const;
 
-		bool deserialize_object_from_json(const TypeData* type_data, const QJsonObject& json_object, QVariant& object_data) const;
-		bool deserialize_array_from_json(const QUuid& array_data_type, const QJsonArray& json_array, QVariant& array_data) const;
-
+		bool serialize_typed_object_to_json(const TypeData* type_data, const QVariant& object_data, QJsonObject& json_object) const;
+		bool deserialize_typed_object_from_json(const TypeData* type_data, const QJsonObject& json_object, QVariant& object_data) const;
+		
 		Application& m_application;
 
 		QUuid m_type_id;

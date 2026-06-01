@@ -15,19 +15,17 @@
 
 namespace VadonEditor::UI
 {
-	ComponentWidget::ComponentWidget(Model::Entity* entity, Model::Component* component, QWidget* parent)
+	ComponentWidget::ComponentWidget(Model::Component* component, QWidget* parent)
 		: QWidget(parent)
-		, m_entity(entity)
 		, m_component(component)
 	{
 		m_ui.setupUi(this);
 	}
 
-	bool ComponentWidget::initialize()
+	bool ComponentWidget::initialize(Model::Scene* scene)
 	{
-		Core::Application& application = m_entity->get_owner_scene().get_application();
-		const Core::DataSchema& data_schema = application.get_project_manager().get_project_data_schema();
-		const Core::TypeData* type_data = data_schema.find_type_data(m_component->type_id);
+		const Core::DataSchema& data_schema = m_component->get_application().get_project_manager().get_project_data_schema();
+		const Core::TypeData* type_data = data_schema.find_type_data(m_component->get_type_id());
 
 		if (type_data == nullptr)
 		{
@@ -85,7 +83,7 @@ namespace VadonEditor::UI
 				widget_info.data_type = property_data->get_data_type();
 				widget_info.init_value = m_component->get_property(widget_info.property_id);
 
-				PropertyWidget* property_widget = PropertyWidget::create_widget(widget_info, this, m_entity->get_owner_scene().get_resource());
+				PropertyWidget* property_widget = PropertyWidget::create_widget(widget_info, this, scene->get_resource());
 				if (property_widget == nullptr)
 				{
 					continue;
@@ -119,7 +117,7 @@ namespace VadonEditor::UI
 		PropertyWidget* property_widget = find_property_widget(property_id);
 
 		m_component->set_property(property_id, property_widget->get_value());
-		emit(property_edited(m_component->type_id, property_id));
+		emit(property_edited(m_component->get_type_id(), property_id));
 	}
 
 	void ComponentWidget::remove_clicked()
@@ -127,7 +125,7 @@ namespace VadonEditor::UI
 		const QMessageBox::StandardButton user_response = QMessageBox::question(this, "Remove Component", QString("Are you sure you want to remove %1").arg(m_ui.componentNameLabel->text()));
 		if (user_response == QMessageBox::StandardButton::Yes)
 		{
-			emit(remove_requested(m_component->type_id));
+			emit(remove_requested(m_component->get_type_id()));
 		}
 	}
 

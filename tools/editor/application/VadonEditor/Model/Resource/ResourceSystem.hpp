@@ -14,13 +14,10 @@ namespace VadonEditor::Model
 	public:
 		~ResourceSystem();
 
-		// TODO: create central UUID system to keep track of all UUIDs (to ensure uniqueness)
-		// Have it store metadata to make it easier to retrace where said UUID is used
-		void register_resource_init_data(const QUuid& type_id, const QUuid& data_id);
-		QUuid get_resource_init_data(const QUuid& type_id) const;
-
 		ResourceInfo parse_resource_info(const QByteArray& file_data) const;
 
+		// TODO: create central UUID system to keep track of all UUIDs (to ensure uniqueness)
+		// Have it store metadata to make it easier to retrace where said UUID is used
 		Resource* find_resource(const ResourceID& resource_id) const;
 		int find_resource_asset_id(const ResourceID& resource_id) const;
 		ResourceInfo resource_info_by_asset_id(int asset_id) const;

@@ -3,7 +3,7 @@
 #include <Vadon/Foundation/Model/Resource/Resource.hpp>
 #include <Vadon/Utilities/Container/ObjectPool/Handle.hpp>
 #include <Vadon/Utilities/System/UUID/UUID.hpp>
-#include <Vadon/Utilities/TypeInfo/Registry.hpp>
+#include <Vadon/Utilities/TypeInfo/TypeErasure.hpp>
 namespace Vadon::Model
 {
 	VADON_DECLARE_TYPED_POOL_HANDLE(ResourceBase, ResourceHandle);
@@ -66,16 +66,18 @@ namespace Vadon::Model
 namespace Vadon::Utilities
 {
 	template<Vadon::Model::is_resource_id T>
-	static constexpr TypeID get_erased_data_type_id()
+	struct TypeErasureTrait<T>
 	{
-		return TypeRegistry::get_type_id<Vadon::Model::ResourceID>();
-	}
+		static constexpr TypeID get_erased_type_id()
+		{
+			return TypeRegistry::get_type_id<Vadon::Model::ResourceID>();
+		}
 
-	template<Vadon::Model::is_resource_id T>
-	static constexpr TypeID get_underlying_type_id()
-	{
-		return TypeRegistry::get_type_id<Vadon::Model::ResourceID>();
-	}
+		static constexpr TypeID get_underlying_type_id()
+		{
+			return TypeRegistry::get_type_id<Vadon::Model::ResourceID>();
+		}
+	};
 }
 
 VADON_REGISTER_TYPE_UUID(Vadon::Model::Resource, ::Vadon::Foundation::ResourceSchema::c_type_uuid.string);

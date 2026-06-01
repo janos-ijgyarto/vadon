@@ -10,8 +10,8 @@ namespace Vadon::Utilities
 	class TypeRegistry
 	{
 	public:
-		using ObjectFactoryFunction = ObjectPointer(*)();
-		using ObjectDestructorFunction = void(*)(const ObjectPointer);
+		using ObjectFactoryFunction = void*(*)();
+		using ObjectDestructorFunction = void(*)(const void*);
 
 		// TODO: use allocator API to ensure that we don't just naively heap-allocate!
 		struct ObjectFactory
@@ -20,13 +20,13 @@ namespace Vadon::Utilities
 			ObjectDestructorFunction destructor_function = nullptr;
 
 			template<typename T>
-			static ObjectPointer default_factory_function()
+			static void* default_factory_function()
 			{
 				return new T();
 			}
 
 			template<typename T>
-			static void default_destructor_function(const ObjectPointer object)
+			static void default_destructor_function(const void* object)
 			{
 				delete static_cast<const T*>(object);
 			}
@@ -63,8 +63,8 @@ namespace Vadon::Utilities
 			internal_register_type_factory(get_type_id<T>(), factory);
 		}
 
-		VADONCOMMON_API static void* create_object(TypeID type_id);
-		VADONCOMMON_API static void destroy_object(TypeID type_id, const ObjectPointer object);
+		VADONCOMMON_API static ObjectPointer create_object(TypeID type_id);
+		VADONCOMMON_API static void destroy_object(const ObjectPointer& object_pointer);
 
 		template<typename T>
 		static TypeID get_type_id()

@@ -4,7 +4,8 @@
 namespace VadonEditor::Model
 {
 	class Entity;
-	struct Component;
+	class Component;
+	class Scene;
 }
 namespace VadonEditor::UI
 {
@@ -26,7 +27,7 @@ namespace VadonEditor::UI
 		void internal_component_property_edited(const QUuid& component_id, const QUuid& property_id);
 		void component_remove_requested(const QUuid& component_id);
 	private:
-		EntityEditor(Model::Entity* entity, QWidget* parent = nullptr, Qt::WindowType type = Qt::WindowType::Widget);
+		EntityEditor(Model::Scene* scene, Model::Entity* entity, QWidget* parent = nullptr, Qt::WindowType type = Qt::WindowType::Widget);
 
 		bool initialize();
 		bool update_title();
@@ -34,6 +35,7 @@ namespace VadonEditor::UI
 		bool internal_add_component_widget(Model::Component* component);
 
 		Ui::EntityEditor m_ui;
+		Model::Scene* m_scene;
 		Model::Entity* m_entity;
 
 		friend class SceneTree;

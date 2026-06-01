@@ -17,11 +17,6 @@ namespace Vadon::Model
 	public:
 		using FactoryFunction = Resource*(*)();
 
-		// We pass the resource system instance that called this
-		// FIXME: implement a way to retrieve "context" from the engine
-		// That way, if needed, endpoint can access engine from resource system, and from there access the relevant context
-		using SerializerFunction = bool(*)(ResourceSystem&, Vadon::Utilities::Serializer&, Resource&);
-
 		template<typename T, typename Base = T>
 		static void register_resource_type(FactoryFunction factory = nullptr)
 		{

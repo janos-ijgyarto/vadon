@@ -10,8 +10,6 @@ namespace Vadon
 		{
 			static constexpr UUIDString c_type_uuid{ "c432094b-d5f2-4e80-9c95-2cd669a8ed1e" };
 
-			static constexpr UUIDString c_scene_resource_data_uuid{ "4f153b3b-74a9-4ae6-978f-17afd3896fb9" };
-
 			static constexpr PropertySchema c_entities_property{
 				UUIDString{"b91e01e7-49b9-441a-9092-bbda48fafce1"},
 				get_base_type_uuid_string(BaseType::ARRAY)
@@ -20,6 +18,8 @@ namespace Vadon
 
 		struct SceneEntitySchema
 		{
+			static constexpr UUIDString c_type_uuid{ "6fb6cc0a-2a14-47e2-88bd-7b3322b51a58" };
+
 			static constexpr PropertySchema c_id_property{
 				UUIDString{ "c3560d83-ea76-48e3-8d8a-e2298bb65bcd" },
 				get_base_type_uuid_string(BaseType::UUID)
@@ -34,22 +34,10 @@ namespace Vadon
 			};
 			static constexpr PropertySchema c_parent_property{
 				UUIDString{ "2704e0c4-40e8-4f29-baa8-a6acf4369530" },
-				get_base_type_uuid_string(BaseType::INT32)
+				get_base_type_uuid_string(BaseType::UUID)
 			};
 			static constexpr PropertySchema c_scene_property{
 				UUIDString{ "7ae2b1c0-da76-46df-9f5f-722c9a4f0742" },
-				get_base_type_uuid_string(BaseType::UUID)
-			};
-		};
-
-		struct SceneEntityComponentSchema
-		{
-			static constexpr PropertySchema c_properties_property {
-				UUIDString{ "386de6f0-4a26-453d-a901-916ab9b5b46c" },
-				get_base_type_uuid_string(BaseType::DICTIONARY)
-			};
-			static constexpr PropertySchema c_type_property {
-				UUIDString{ "ad2187ce-346b-484c-a0b0-3e057a949c15" },
 				get_base_type_uuid_string(BaseType::UUID)
 			};
 		};

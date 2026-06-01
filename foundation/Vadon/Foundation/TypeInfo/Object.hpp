@@ -19,6 +19,8 @@ namespace Vadon
 				UUIDString{"bb8e2650-dca2-4700-b539-02c5d7a00bc7"},
 				get_base_type_uuid_string(BaseType::DICTIONARY)
 			};
+
+			static constexpr UUIDString c_type_uuid{ "0906819c-304e-4176-9613-dccce94ef50a" };
 		};
 	}
 }

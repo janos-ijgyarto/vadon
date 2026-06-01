@@ -69,11 +69,6 @@ namespace VadonEditor::UI
 
 			return new PropertyResource(info.property_id, resource, owner_resource, info.data_type, parent_widget);
 		}
-		case Core::PropertyCategory::ARRAY:
-		{
-			// TODO
-			break;
-		}
 		}
 
 		return nullptr;

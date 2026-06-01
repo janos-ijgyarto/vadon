@@ -23,7 +23,7 @@ namespace VadonEditor::UI
 
 	void EntityEditor::add_component_clicked()
 	{
-		AddComponentDialog* add_component_dialog = new AddComponentDialog(m_entity->get_owner_scene().get_application(), m_entity, this);
+		AddComponentDialog* add_component_dialog = new AddComponentDialog(m_entity->get_application(), m_entity, this);
 		connect(add_component_dialog, &AddComponentDialog::component_type_selected, this, &EntityEditor::new_component_selected);
 
 		add_component_dialog->open();
@@ -71,7 +71,7 @@ namespace VadonEditor::UI
 			ComponentWidget* component_widget = qobject_cast<ComponentWidget*>(current_widget);
 			if (component_widget != nullptr)
 			{
-				if (component_widget->get_component()->type_id == component_id)
+				if (component_widget->get_component()->get_type_id() == component_id)
 				{
 					QLayoutItem* layout_item = m_ui.componentListVBox->takeAt(item_index);
 					delete layout_item->widget();
@@ -85,8 +85,9 @@ namespace VadonEditor::UI
 		}
 	}
 
-	EntityEditor::EntityEditor(Model::Entity* entity, QWidget* parent, Qt::WindowType type)
+	EntityEditor::EntityEditor(Model::Scene* scene, Model::Entity* entity, QWidget* parent, Qt::WindowType type)
 		: QWidget(parent, type)
+		, m_scene(scene)
 		, m_entity(entity)
 	{
 		m_ui.setupUi(this);
@@ -111,9 +112,7 @@ namespace VadonEditor::UI
 
 		if (m_entity->get_sub_scene_id().isNull() == false)
 		{
-			Model::Scene& entity_scene = m_entity->get_owner_scene();
-
-			Core::Application& application = entity_scene.get_application();
+			Core::Application& application = m_entity->get_application();
 			Model::SceneSystem& scene_system = application.get_model_system().get_scene_system();
 
 			// No parent, opened as separate window, so we should set a title
@@ -160,13 +159,11 @@ namespace VadonEditor::UI
 			return true;
 		}
 
-		Model::Scene& entity_scene = m_entity->get_owner_scene();
-		Core::Application& application = entity_scene.get_application();
-
+		Core::Application& application = m_entity->get_application();
 		Model::SceneSystem& scene_system = application.get_model_system().get_scene_system();
 
 		// No parent, opened as separate window, so we should set a title
-		const int scene_asset_id = scene_system.find_scene_asset(entity_scene.get_id());
+		const int scene_asset_id = scene_system.find_scene_asset(m_scene->get_id());
 
 		Core::AssetManager& asset_manager = application.get_asset_manager();
 		const QModelIndex asset_index = asset_manager.find_asset_index(scene_asset_id);
@@ -184,8 +181,8 @@ namespace VadonEditor::UI
 
 	bool EntityEditor::internal_add_component_widget(Model::Component* component)
 	{
-		ComponentWidget* component_widget = new ComponentWidget(m_entity, component);
-		if (component_widget->initialize() == false)
+		ComponentWidget* component_widget = new ComponentWidget(component);
+		if (component_widget->initialize(m_scene) == false)
 		{
 			Q_ASSERT_X(false, "VadonEditor::UI::EntityEditor::internal_add_component_widget", "Failed to initialize component widget!");
 			delete component_widget;

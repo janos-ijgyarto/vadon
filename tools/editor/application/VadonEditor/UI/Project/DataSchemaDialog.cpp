@@ -1,6 +1,7 @@
 #include <VadonEditor/UI/Project/DataSchemaDialog.hpp>
 
 #include <VadonEditor/Core/Application.hpp>
+#include <VadonEditor/Core/Data/Object.hpp>
 #include <VadonEditor/Core/Project/ProjectManager.hpp>
 
 #include <VadonEditor/Utilities/UUID.hpp>
@@ -81,11 +82,31 @@ namespace VadonEditor::UI
 				const VadonEditor::Core::PropertyData* property_data = parent_type_data->find_property_data(Utilities::vadon_uuid_to_qt_uuid(property_uuid));
 				property_grid->addWidget(new QLabel(property_data->get_name()), current_row, 0);
 
-				const VadonEditor::Core::TypeData* property_type_data = project_data_schema.find_type_data(property_data->get_data_type());
-				QString property_label = property_type_data->get_name();
-				if (property_data->get_category() == Core::PropertyCategory::ARRAY)
+				const QUuid data_type = property_data->get_data_type();
+				QString property_label;
+				if (data_type != Core::DataObject::get_object_type_uuid())
 				{
-					property_label = QString("Array<%1>").arg(property_label);
+					const VadonEditor::Core::TypeData* property_type_data = project_data_schema.find_type_data(data_type);
+					property_label = property_type_data->get_name();
+					switch (property_data->get_category())
+					{
+					case Core::PropertyCategory::TRIVIAL_ARRAY:
+					case Core::PropertyCategory::TYPED_OBJECT_ARRAY:
+						property_label = QString("Array<%1>").arg(property_label);
+						break;
+					}
+				}
+				else
+				{
+					switch (property_data->get_category())
+					{
+					case Core::PropertyCategory::GENERIC_OBJECT_ARRAY:
+						property_label = "Array<Object>";
+						break;
+					default:
+						property_label = "Object";
+						break;
+					}
 				}
 				
 				property_grid->addWidget(new QLabel(property_label), current_row, 1);

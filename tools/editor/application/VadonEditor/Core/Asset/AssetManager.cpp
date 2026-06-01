@@ -227,7 +227,18 @@ namespace VadonEditor::Core
 
 	void AssetManager::project_loaded()
 	{
-		const ProjectInfo& project_info = m_application.get_project_manager().get_project_info();
+		const Core::ProjectManager& project_manager = m_application.get_project_manager();
+
+		if (project_manager.get_project_data_schema().is_valid() == false)
+		{
+			// FIXME: some way to load assets even without a data schema?
+			// This may need to be a bare minimum requirement, they don't need to run the
+			// engine plugin to work on assets, but they do need to at least generate the schema
+			qWarning() << "Asset Manager cannot load assets without valid data schema!";
+			return;
+		}
+
+		const ProjectInfo& project_info = project_manager.get_project_info();
 
 		QHash<QString, AssetType> asset_type_lookup;
 		for (int type_index = 0; type_index < static_cast<int>(AssetType::TYPE_COUNT); ++type_index)

@@ -2,7 +2,6 @@
 #define VADON_UTILITIES_TYPEINFO_TYPEINFO_HPP
 #include <Vadon/Math/Color.hpp>
 #include <Vadon/Math/Vector.hpp>
-#include <Vadon/Utilities/Data/Object.hpp>
 #include <Vadon/Utilities/System/UUID/UUID.hpp>
 #include <Vadon/Foundation/TypeInfo/TypeInfo.hpp>
 
@@ -27,6 +26,24 @@ namespace Vadon::Utilities
 
 	template<typename T>
 	struct BaseDataTypeTrait : public std::false_type {};
+
+	struct ObjectPointer
+	{
+		TypeID type = TypeID::INVALID;
+		void* data = nullptr;
+
+		bool is_valid() const { return (type != TypeID::INVALID) && (data != nullptr); }
+
+		bool operator==(const ObjectPointer& other) const 
+		{
+			return (type == other.type) && (data == other.data);
+		}
+
+		bool operator!=(const ObjectPointer& other) const
+		{
+			return (type != other.type) || (data != other.data);
+		}
+	};
 }
 
 #define VADON_REGISTER_TYPE_UUID(_type, _uuid_str) template<> \

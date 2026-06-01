@@ -3,6 +3,10 @@
 #include <VadonEditor/Model/Scene/Component.hpp>
 #include <QList>
 #include <QStandardItemModel>
+namespace VadonEditor::Core
+{
+	class Application;
+}
 namespace VadonEditor::Model
 {
 	class Scene;
@@ -11,41 +15,44 @@ namespace VadonEditor::Model
 	class Entity
 	{
 	public:
+		Entity(Core::Application& application)
+			: m_application(application)
+			, m_data(application)
+		{
+		}
+
 		~Entity();
 
-		const QUuid& get_id() const { return m_id; }
+		bool initialize();
 
-		const QString& get_name() const { return m_name; }
-		void set_name(const QString& name);
+		bool load_entity_data(const QVariant& data);
+		void store_entity_data();
+
+		Core::Application& get_application() { return m_application; }
+
+		QUuid get_id() const;
+		QUuid get_parent() const;
+		QString get_name() const;
 
 		QString get_label() const;
 
-		Scene& get_owner_scene() { return m_owner_scene; }
-		const SceneID& get_sub_scene_id() const { return m_sub_scene_id; }
+		SceneID get_sub_scene_id() const;
 
-		QList<QUuid> get_component_list() const { return m_components.keys(); }
-
-		QStandardItem* get_model_item() const;
+		QList<QUuid> get_component_list() const;
 
 		Component* add_component(const QUuid& type_id);
 		Component* find_component(const QUuid& type_id);
 		void remove_component(const QUuid& type_id);
 	private:
-		Entity(Scene& scene)
-			: m_owner_scene(scene)
-		{
-		}
+		void internal_set_name(const QString& name);
+		void set_id(const QUuid& id);
 
-		bool save_data(QVariant& data, const QList<Entity*>& entity_queue) const;
-		bool load_data(const QVariant& data, int& parent_index);
+		void clear_components();
 
-		QUuid m_id;
-		Scene& m_owner_scene;
+		Core::Application& m_application;
 
-		QString m_name;
-
-		QHash<ComponentID, Component> m_components;
-		SceneID m_sub_scene_id;
+		Core::DataObject m_data;
+		QHash<QUuid, Component*> m_components;
 
 		bool m_modified = false;
 
@@ -60,7 +67,7 @@ namespace VadonEditor::Model
 	class EntityModel
 	{
 	public:
-		EntityModel(Scene& owner_scene);
+		EntityModel(Core::Application& application);
 		~EntityModel();
 
 		QStandardItemModel& get_qt_model() { return m_qt_model; }
@@ -70,20 +77,27 @@ namespace VadonEditor::Model
 		Entity* find_entity_by_id(const QUuid& id) const;
 		QModelIndex find_entity_item_by_id(const QUuid& id) const;
 
-		bool save_model(QVariantList& data) const;
-		bool load_model(const QVariantList& data);
+		void set_entity_name(Entity* entity, const QString& name);
 
-		void remove_entity(Entity* entity);
+		void remove_entity(const QUuid& id);
+
+		bool save_data(QVariantList& entity_list) const;
+		bool load_data(const QVariantList& entity_list);
 	private:
+		Entity* internal_create_entity();
 		Entity* internal_create_entity(QHash<QUuid, Entity*>& entity_lookup);
 		static void internal_add_entity(Entity* entity, QHash<QUuid, Entity*>& entity_lookup);
 		static void clear_entity_lookup(QHash<QUuid, Entity*>& entity_lookup);
 
-		static void internal_delete_entity(Entity* entity);
+		QStandardItem* internal_find_entity_item(const QUuid& id) const;
+		bool save_entity_data_recursive(Entity* parent_entity, QVariantList& entity_list) const;
+
+		void internal_remove_entity(QStandardItem* entity_item, const QUuid& id);
+
+		Core::Application& m_application;
 
 		QHash<QUuid, Entity*> m_entity_lookup;
 		QStandardItemModel m_qt_model;
-		Scene& m_owner_scene;
 		Entity* m_root_entity;
 	};
 }

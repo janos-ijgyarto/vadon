@@ -57,11 +57,6 @@ namespace VadonEditor::Model
 		return Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::SceneSchema::c_entities_property.id);
 	}
 
-	QUuid Scene::get_scene_resource_data_uuid()
-	{
-		return Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::SceneSchema::c_scene_resource_data_uuid);
-	}
-
 	bool Scene::initialize()
 	{
 		// TODO: anything?
@@ -70,18 +65,14 @@ namespace VadonEditor::Model
 
 	bool Scene::store_scene_data() const
 	{
-		QVariantMap entity_data_map;
 		QVariantList entity_list;
-
-		if (m_entity_model.save_model(entity_list) == false)
+		if (m_entity_model.save_data(entity_list) == false)
 		{
-			Q_ASSERT_X(false, "VadonEditor::Model::Scene::store_scene_data", "Failed to save scene data");
 			return false;
 		}
 		
-		entity_data_map.insert(Utilities::serialize_labeled_uuid("entities", get_scene_entities_uuid()), entity_list);
-
-		m_resource->set_data(get_scene_resource_data_uuid(), entity_data_map);
+		const QUuid scene_entities_uuid = Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::SceneSchema::c_entities_property.id);
+		m_resource->set_property(scene_entities_uuid, entity_list);
 		return true;
 	}
 
@@ -98,36 +89,17 @@ namespace VadonEditor::Model
 
 	bool Scene::load_scene()
 	{
-		const QVariantMap entity_data_map = m_resource->get_data(get_scene_resource_data_uuid()).toMap();
+		const QUuid scene_entities_uuid = Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::SceneSchema::c_entities_property.id);
+		QVariant entity_list_variant = m_resource->get_property(scene_entities_uuid);
 
-		bool entity_data_found = false;
-		for (auto entity_data_it = entity_data_map.begin(); entity_data_it != entity_data_map.end(); ++entity_data_it)
-		{
-			const QUuid entry_uuid = Utilities::parse_labeled_uuid(entity_data_it.key());
-			if (entry_uuid == get_scene_entities_uuid())
-			{
-				const QVariantList entity_list = entity_data_it.value().toList();
-				if (m_entity_model.load_model(entity_list) == false)
-				{
-					Q_ASSERT_X(false, "VadonEditor::Model::Scene::load_scene", "Failed to load scene entity data");
-					return false;
-				}
-				entity_data_found = true;
-			}
-			else
-			{
-				// TODO: warn about unrecognized data?
-			}
-		}
-
-		return entity_data_found;
+		return m_entity_model.load_data(entity_list_variant.toList());
 	}
 
 	Scene::Scene(Core::Application& application, Resource* resource)
 		: m_application(application)
 		, m_id(resource->get_info().id)
 		, m_resource(resource)
-		, m_entity_model(*this)
+		, m_entity_model(application)
 	{
 
 	}

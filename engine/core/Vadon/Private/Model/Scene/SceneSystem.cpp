@@ -8,353 +8,40 @@
 #include <Vadon/Utilities/TypeInfo/Metadata.hpp>
 
 #include <Vadon/Utilities/TypeInfo/Reflection/PropertySerialization.hpp>
-#include <Vadon/Utilities/TypeInfo/TypeErasure.hpp>
+#include <Vadon/Utilities/TypeInfo/Reflection/MemberBind.hpp>
+
+#include <Vadon/Foundation/TypeInfo/Object.hpp>
 
 #include <format>
 
-namespace Vadon::Private::Model
+namespace 
 {
-	namespace
+	void clear_entity_data(Vadon::Private::Model::EntityData& entity)
 	{
-		void log_property_serialization_error(const Vadon::Utilities::PropertyUUID& property_uuid)
+		// We need to destroy each component in each entity, since they were heap-allocated
+		// FIXME: use refcounting and/or some kind of allocator strategy to make this more robust!
+		for (Vadon::Private::Model::ComponentData& current_component : entity.components)
 		{
-			// TODO: pair up UUIDs with debug strings!
-			Vadon::Core::Logger::log_error(std::format("Scene system: unable to serialize property \"{}\"!\n", Vadon::Utilities::uuid_to_string(property_uuid)));
+			Vadon::Utilities::TypeRegistry::destroy_object(current_component);
 		}
 
-		bool save_scene_array_data(Vadon::Utilities::Serializer& serializer, Vadon::Utilities::Variant& array_value)
+		entity.components.clear();
+	}
+}
+
+namespace Vadon::Model
+{
+	Scene::~Scene()
+	{
+		for (Vadon::Private::Model::EntityData& current_entity : entities)
 		{
-			using SerializerResult = Vadon::Utilities::Serializer::Result;
-
-			bool successful = true;
-			static constexpr auto c_process_trivial_property = +[](Vadon::Utilities::Serializer& serializer, size_t index, Vadon::Utilities::Variant& value, Vadon::Utilities::TypeID data_type)
-				{
-					const SerializerResult result = Vadon::Utilities::process_trivial_property(serializer, index, value, data_type);
-					if (result != SerializerResult::SUCCESSFUL)
-					{
-						return false;
-					}
-
-					return true;
-				};
-
-			Vadon::Utilities::VariantArray& array = *std::get<Vadon::Utilities::BoxedVariantArray>(array_value);
-			const Vadon::Utilities::TypeID erased_array_data_type = Vadon::Utilities::get_erased_data_type_id(array.data_type);
-			for (size_t index = 0; index < array.data.size(); ++index)
-			{
-				Vadon::Utilities::Variant& current_value = array.data[index];
-				successful &= c_process_trivial_property(serializer, index, current_value, erased_array_data_type);
-			}
-
-			return successful;
-		}
-
-		bool load_scene_array_data(Vadon::Utilities::Serializer& serializer, Vadon::Utilities::Variant& array_value)
-		{
-			using SerializerResult = Vadon::Utilities::Serializer::Result;
-
-			Vadon::Utilities::VariantArray& array = *std::get<Vadon::Utilities::BoxedVariantArray>(array_value);
-			array.data.clear();
-
-			bool successful = true;
-			static constexpr auto c_process_trivial_property = +[](Vadon::Utilities::Serializer& serializer, size_t index, Vadon::Utilities::Variant& value, Vadon::Utilities::TypeID data_type)
-				{
-					const SerializerResult result = Vadon::Utilities::process_trivial_property(serializer, index, value, data_type);
-					if (result != SerializerResult::SUCCESSFUL)
-					{
-						return false;
-					}
-
-					return true;
-				};
-
-			Vadon::Utilities::Variant current_value;
-			const size_t array_size = serializer.get_array_size();
-			const Vadon::Utilities::TypeID erased_array_data_type = Vadon::Utilities::get_erased_data_type_id(array.data_type);
-			for (size_t index = 0; index < array_size; ++index)
-			{
-				successful &= c_process_trivial_property(serializer, index, current_value, erased_array_data_type);
-				array.data.push_back(current_value);
-			}
-
-			return successful;
-		}
-
-		bool serialize_component(Vadon::Utilities::Serializer& serializer, size_t index, SceneData::ComponentData& component_data)
-		{
-			constexpr const char* c_component_obj_error_message = "Scene system: unable to serialize component object!\n";
-
-			using SerializerResult = Vadon::Utilities::Serializer::Result;
-			if (serializer.open_object(index) != SerializerResult::SUCCESSFUL)
-			{
-				Vadon::Core::Logger::log_error(c_component_obj_error_message);
-				return false;
-			}
-
-			{
-				Vadon::Utilities::TypeUUID type_uuid;
-				if (serializer.is_reading() == false)
-				{
-					type_uuid = Vadon::Utilities::TypeRegistry::get_type_info(component_data.type_id).id;
-				}
-				constexpr auto c_type_uuid = Vadon::Utilities::Property::property_schema_to_uuid(::Vadon::Foundation::SceneEntityComponentSchema::c_type_property);
-				if (serializer.serialize(c_type_uuid, type_uuid) != SerializerResult::SUCCESSFUL)
-				{
-					log_property_serialization_error(c_type_uuid);
-					return false;
-				}
-				if (serializer.is_reading() == true)
-				{
-					component_data.type_id = Vadon::Utilities::TypeRegistry::get_type_id(type_uuid);
-					if (component_data.type_id == Vadon::Utilities::TypeID::INVALID)
-					{
-						Vadon::Core::Logger::log_error(std::format("Scene system: loading component with unknown type \"{}\"!\n", Vadon::Utilities::uuid_to_string(type_uuid)));
-						return false;
-					}
-				}
-			}
-
-			constexpr auto c_properties_uuid = Vadon::Utilities::Property::property_schema_to_uuid(::Vadon::Foundation::SceneEntityComponentSchema::c_properties_property);
-			if (serializer.open_object(c_properties_uuid) != SerializerResult::SUCCESSFUL)
-			{
-				log_property_serialization_error(c_properties_uuid);
-				return false;
-			}
-
-			if (serializer.is_reading() == true)
-			{	
-				static constexpr auto c_process_trivial_property = +[](Vadon::Utilities::Serializer& serializer, SceneData::ComponentData& component_data, const ::Vadon::Foundation::Property& key, Vadon::Utilities::Property& property_data, Vadon::Utilities::TypeID data_type)
-					{
-						const SerializerResult result = Vadon::Utilities::process_trivial_property(serializer, key.id, property_data.value, data_type);
-						if (result == SerializerResult::SUCCESSFUL)
-						{
-							property_data.info = key;
-							component_data.properties.push_back(property_data);
-						}
-						else
-						{
-							// TODO: log error?
-						}
-					};
-
-				// FIXME: this forces us to iterate over all properties, instead of just reading the ones present in the object
-				// Need to iterate over the K/V pairs instead
-				// FIXME2: we also need to make sure we discard properties not present in the object (i.e if the properties changed)
-				const Vadon::Utilities::PropertyInfoList component_properties = Vadon::Utilities::TypeRegistry::get_type_properties(component_data.type_id);
-				Vadon::Utilities::Property property_data;
-				for (const Vadon::Utilities::PropertyInfo& current_property : component_properties)
-				{
-					// Check if key is present (if not, assume we should just use default value)
-					// FIXME: invert this to instead only process keys that are actually in the data?
-					if (serializer.has_key(current_property.base_info.id) == false)
-					{
-						continue;
-					}
-
-					const Vadon::Utilities::PropertyInfo property_info = Vadon::Utilities::TypeRegistry::get_property_info(component_data.type_id, current_property.base_info.id);
-					const Vadon::Utilities::TypeID property_type_id = Vadon::Utilities::TypeRegistry::get_type_id(property_info.base_info.type);
-
-					if (property_type_id == Vadon::Utilities::TypeRegistry::get_type_id<Vadon::Utilities::BoxedVariantArray>())
-					{
-						if (serializer.open_array(current_property.base_info.id) != SerializerResult::SUCCESSFUL)
-						{
-							log_property_serialization_error(current_property.base_info.id);
-							return false;
-						}
-
-						// First get default value from Component registry
-						property_data.value = Vadon::ECS::ComponentRegistry::get_component_property_default_value(component_data.type_id, current_property.base_info.id);
-
-						// Use default value to determine how to deserialize the data
-						if (load_scene_array_data(serializer, property_data.value) == true)
-						{
-							property_data.info = current_property.base_info;
-							component_data.properties.push_back(property_data);
-						}
-						else
-						{
-							// TODO: error?
-							log_property_serialization_error(current_property.base_info.id);
-						}
-
-						if (serializer.close_array() != SerializerResult::SUCCESSFUL)
-						{
-							log_property_serialization_error(current_property.base_info.id);
-							return false;
-						}
-					}
-					else
-					{
-						c_process_trivial_property(serializer, component_data, current_property.base_info, property_data, property_type_id);
-					}
-				}
-			}
-			else
-			{
-				static constexpr auto c_process_trivial_property = +[](Vadon::Utilities::Serializer& serializer, const Vadon::Utilities::PropertyUUID& key, Vadon::Utilities::Property& property_data, Vadon::Utilities::TypeID data_type)
-					{
-						const SerializerResult result = Vadon::Utilities::process_trivial_property(serializer, key, property_data.value, data_type);
-						if (result != SerializerResult::SUCCESSFUL)
-						{
-							// TODO: log error?
-						}
-					};
-
-				for (Vadon::Utilities::Property& current_property : component_data.properties)
-				{
-					const Vadon::Utilities::PropertyInfo property_info = Vadon::Utilities::TypeRegistry::get_property_info(component_data.type_id, current_property.info.id);
-					const Vadon::Utilities::TypeID property_type_id = Vadon::Utilities::TypeRegistry::get_type_id(property_info.base_info.type);
-
-					if (property_type_id == Vadon::Utilities::TypeRegistry::get_type_id<Vadon::Utilities::BoxedVariantArray>())
-					{
-						if (serializer.open_array(current_property.info.id) != SerializerResult::SUCCESSFUL)
-						{
-							log_property_serialization_error(current_property.info.id);
-							return false;
-						}
-
-						if (save_scene_array_data(serializer, current_property.value) == false)
-						{
-							// TODO: error?
-						}
-
-						if (serializer.close_array() != SerializerResult::SUCCESSFUL)
-						{
-							log_property_serialization_error(current_property.info.id);
-							return false;
-						}
-					}
-					else
-					{
-						c_process_trivial_property(serializer, current_property.info.id, current_property, property_type_id);
-					}
-				}
-			}
-
-			if (serializer.close_object() != SerializerResult::SUCCESSFUL)
-			{
-				log_property_serialization_error(c_properties_uuid);
-				return false;
-			}
-
-			if (serializer.close_object() != SerializerResult::SUCCESSFUL)
-			{
-				Vadon::Core::Logger::log_error(c_component_obj_error_message);
-				return false;
-			}
-
-			return true;
-		}
-
-		bool serialize_entity(Vadon::Utilities::Serializer& serializer, size_t index, SceneData::EntityData& entity_data)
-		{
-			constexpr const char* c_entity_obj_error_message = "Scene system: unable to serialize entity object!\n";
-			constexpr const char* c_component_array_error_message = "Scene system: unable to serialize component array!\n";
-
-			using SerializerResult = Vadon::Utilities::Serializer::Result;
-			if (serializer.open_object(index) != SerializerResult::SUCCESSFUL)
-			{
-				Vadon::Core::Logger::log_error(c_entity_obj_error_message);
-				return false;
-			}
-			serializer.serialize(Vadon::Utilities::Property::property_schema_to_uuid(::Vadon::Foundation::SceneEntitySchema::c_parent_property), entity_data.parent);
-			// NOTE: scene needs to be handled separately because it may or may not be set
-			if ((serializer.is_reading() == true) || ((serializer.is_reading() == false) && (entity_data.scene.is_valid() == true)))
-			{
-				serializer.serialize(Vadon::Utilities::Property::property_schema_to_uuid(::Vadon::Foundation::SceneEntitySchema::c_scene_property), entity_data.scene.as_resource_id());
-			}
-
-			if(serializer.open_array(Vadon::Utilities::Property::property_schema_to_uuid(::Vadon::Foundation::SceneEntitySchema::c_components_property)) != SerializerResult::SUCCESSFUL)
-			{
-				Vadon::Core::Logger::log_error(c_component_array_error_message);
-				return false;
-			}
-
-			const size_t component_count = serializer.is_reading() ? serializer.get_array_size() : entity_data.components.size();
-			for (size_t current_component_index = 0; current_component_index < component_count; ++current_component_index)
-			{
-				if (serializer.is_reading() == true)
-				{
-					SceneData::ComponentData current_component_data;
-					if (serialize_component(serializer, current_component_index, current_component_data) == true)
-					{
-						entity_data.components.push_back(current_component_data);
-					}
-					else
-					{
-						// TODO: have a "pedantic" mode where we early out if there are any errors?
-					}
-				}
-				else
-				{
-					SceneData::ComponentData& current_component_data = entity_data.components[current_component_index];
-					if (serialize_component(serializer, current_component_index, current_component_data) == false)
-					{
-						// TODO: have a "pedantic" mode where we early out if there are any errors?
-					}
-				}
-			}
-
-			if (serializer.close_array() != SerializerResult::SUCCESSFUL)
-			{
-				Vadon::Core::Logger::log_error(c_component_array_error_message);
-				return false;
-			}
-			if (serializer.close_object() != SerializerResult::SUCCESSFUL)
-			{
-				Vadon::Core::Logger::log_error(c_entity_obj_error_message);
-				return false;
-			}
-
-			return true;
-		}
-
-		bool serialize_scene(Vadon::Model::ResourceSystem& resource_system, Vadon::Utilities::Serializer& serializer, Resource& resource)
-		{
-			using SerializerResult = Vadon::Utilities::Serializer::Result;
-			constexpr const char* c_entity_array_error_log = "Scene system: unable to serialize component object!\n";
-
-			Scene& scene = static_cast<Scene&>(resource);
-
-			if (serializer.open_array(Vadon::Utilities::Property::property_schema_to_uuid(::Vadon::Foundation::SceneSchema::c_entities_property)) != SerializerResult::SUCCESSFUL)
-			{
-				resource_system.log_error(c_entity_array_error_log);
-				return false;
-			}
-
-			if (serializer.is_reading() == true)
-			{
-				const size_t entity_count = serializer.get_array_size();
-				for (size_t current_entity_index = 0; current_entity_index < entity_count; ++current_entity_index)
-				{
-					SceneData::EntityData& current_entity_data = scene.data.entities.emplace_back();
-					if (serialize_entity(serializer, current_entity_index, current_entity_data) == false)
-					{
-						return false;
-					}
-				}
-			}
-			else
-			{
-				for (size_t current_entity_index = 0; current_entity_index < scene.data.entities.size(); ++current_entity_index)
-				{
-					if (serialize_entity(serializer, current_entity_index, scene.data.entities[current_entity_index]) == false)
-					{
-						return false;
-					}
-				}
-			}
-
-			if (serializer.close_array() != SerializerResult::SUCCESSFUL)
-			{
-				resource_system.log_error(c_entity_array_error_log);
-				return false;
-			}
-
-			return true;
+			clear_entity_data(current_entity);
 		}
 	}
+}
 
+namespace Vadon::Private::Model
+{
 	SceneHandle SceneSystem::create_scene()
 	{
 		Vadon::Model::ResourceSystem& resource_system = m_engine_core.get_system<Vadon::Model::ResourceSystem>();
@@ -402,40 +89,26 @@ namespace Vadon::Private::Model
 		return SceneHandle::from_resource_handle(scene_resource_handle);
 	}
 
-	bool SceneSystem::package_scene_data(SceneHandle scene_handle, ECS::World& ecs_world, ECS::EntityHandle root_entity)
-	{
-		Vadon::Model::ResourceSystem& resource_system = m_engine_core.get_system<Vadon::Model::ResourceSystem>();
-		Scene* scene = resource_system.get_resource<Scene>(scene_handle);
-
-		// Use temp object that we can discard if something goes wrong
-		SceneData temp_scene_data;
-		{
-			// Track dependency stack (ensures we cannot save an invalid scene)
-			std::vector<SceneID> dependency_stack;
-			const SceneID scene_id = SceneID::from_resource_id(resource_system.get_resource_info(scene_handle).id);
-			dependency_stack.push_back(scene_id);
-
-			if (parse_scene_entity(ecs_world, root_entity, -1, temp_scene_data, dependency_stack) == false)
-			{
-				return false;
-			}
-		}
-
-		// Swap temp data into scene resource
-		scene->data.swap(temp_scene_data);
-		return true;
-	}
-
 	ECS::EntityHandle SceneSystem::instantiate_scene(SceneHandle scene_handle, ECS::World& ecs_world, bool is_sub_scene)
 	{
 		// TODO: circular dependency check?
 		const Scene* scene = get_scene(scene_handle);
-		std::vector<Vadon::ECS::EntityHandle> entity_lookup;
+		std::unordered_map<::Vadon::Foundation::UUID, Vadon::ECS::EntityHandle> entity_lookup;
 
 		Vadon::ECS::EntityManager& entity_manager = ecs_world.get_entity_manager();
 		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
 
-		for (const SceneData::EntityData& current_entity_data : scene->data.entities)
+		constexpr auto clean_up_scene = +[](ECS::World& world, const Scene* scene_ptr, std::unordered_map<::Vadon::Foundation::UUID, Vadon::ECS::EntityHandle>& lookup)
+			{
+				if (lookup.empty() == false)
+				{
+					// Clean up from root
+					const Vadon::ECS::EntityHandle root_entity = lookup[scene_ptr->entities.front().id];
+					world.remove_entity(root_entity);
+				}
+			};
+
+		for (const EntityData& current_entity_data : scene->entities)
 		{
 			Vadon::ECS::EntityHandle current_entity;
 			if (current_entity_data.scene.is_valid() == false)
@@ -450,34 +123,23 @@ namespace Vadon::Private::Model
 					// TODO: log scene ID!
 					// TODO2: should we abort, or just skip the entity that failed to load?
 					log_error("Scene system: failed to load sub-scene while instantiating!\n");
-					if (entity_lookup.empty() == false)
-					{
-						// Clean up from root
-						const Vadon::ECS::EntityHandle root_entity = entity_lookup.front();
-						ecs_world.remove_entity(root_entity);
-					}
 
+					clean_up_scene(ecs_world, scene, entity_lookup);
 					return Vadon::ECS::EntityHandle();
 				}
 				current_entity = instantiate_scene(sub_scene_handle, ecs_world, true);
 				if (current_entity.is_valid() == false)
 				{
-					if (entity_lookup.empty() == false)
-					{
-						// Clean up from root
-						const Vadon::ECS::EntityHandle root_entity = entity_lookup.front();
-						ecs_world.remove_entity(root_entity);
-					}
-
+					clean_up_scene(ecs_world, scene, entity_lookup);
 					return Vadon::ECS::EntityHandle();
 				}
 			}
 
-			for (const SceneData::ComponentData& current_component_data : current_entity_data.components)
+			for (const ComponentData& current_component_data : current_entity_data.components)
 			{
 				Vadon::ECS::ComponentHandle current_component = current_entity_data.scene.is_valid() == false
-					? component_manager.add_component(current_entity, current_component_data.type_id) 
-					: component_manager.get_component(current_entity, current_component_data.type_id);
+					? component_manager.add_component(current_entity, current_component_data.type)
+					: component_manager.get_component(current_entity, current_component_data.type);
 
 				if (current_component.is_valid() == false)
 				{
@@ -485,22 +147,26 @@ namespace Vadon::Private::Model
 					continue;
 				}
 
-				for (const Vadon::Utilities::Property& current_property_data : current_component_data.properties)
+				// FIXME: we're copying components per-propert
+				// We should instead pass the object as a whole and "clone" it
+				const Vadon::Utilities::PropertyList component_properties = Vadon::Utilities::TypeRegistry::get_properties(current_component_data.data, current_component_data.type);
+				for (const Vadon::Utilities::Property& current_property_data : component_properties)
 				{
-					Vadon::Utilities::TypeRegistry::set_property(current_component.get_raw(), current_component_data.type_id, current_property_data.info.id, current_property_data.value);
+					Vadon::Utilities::TypeRegistry::set_property(current_component.get_raw(), current_component_data.type, current_property_data.info.id, current_property_data.value);
 				}
 			}
 
-			entity_lookup.push_back(current_entity);
+			entity_lookup.insert(std::make_pair(current_entity_data.id, current_entity));
 
 			if (current_entity_data.has_parent() == true)
 			{
+				// TODO: set parent!
 				Vadon::ECS::EntityHandle parent_entity = entity_lookup[current_entity_data.parent];
 				entity_manager.add_child_entity(parent_entity, current_entity);
 			}
 		}
 
-		const Vadon::ECS::EntityHandle root_entity = entity_lookup.front();
+		const Vadon::ECS::EntityHandle root_entity = entity_lookup[scene->entities.front().id];
 		if (is_sub_scene == true)
 		{
 			// Add scene component
@@ -547,6 +213,15 @@ namespace Vadon::Private::Model
 	void SceneSystem::register_types()
 	{
 		Vadon::Model::ResourceRegistry::register_resource_type<Vadon::Model::Scene, Resource>();
+		Vadon::Utilities::TypeRegistry::register_type<EntityData>();
+
+		Vadon::Utilities::TypeRegistry::add_property<EntityData>(VADON_GET_MEMBER_UUID(EntityData, id), Vadon::Utilities::MemberVariableBind<&EntityData::id>().bind_member_getter().bind_member_setter());
+		Vadon::Utilities::TypeRegistry::add_property<EntityData>(VADON_GET_MEMBER_UUID(EntityData, parent), Vadon::Utilities::MemberVariableBind<&EntityData::parent>().bind_member_getter().bind_member_setter());
+		Vadon::Utilities::TypeRegistry::add_property<EntityData>(VADON_GET_MEMBER_UUID(EntityData, scene), Vadon::Utilities::MemberVariableBind<&EntityData::scene>().bind_member_getter().bind_member_setter());
+		Vadon::Utilities::TypeRegistry::add_property<EntityData>(VADON_GET_MEMBER_UUID(EntityData, components), Vadon::Utilities::MemberVariableBind<&EntityData::components>().bind_member_getter().bind_member_setter());
+		Vadon::Utilities::TypeRegistry::add_property<EntityData>(VADON_GET_MEMBER_UUID(EntityData, name), Vadon::Utilities::MemberVariableBind<&EntityData::name>().bind_member_getter().bind_member_setter());
+
+		Vadon::Utilities::TypeRegistry::add_property<Vadon::Model::Scene>(VADON_GET_MEMBER_UUID(Vadon::Model::Scene, entities), Vadon::Utilities::MemberVariableBind<&Vadon::Model::Scene::entities>().bind_member_getter().bind_member_setter());
 
 		Vadon::ECS::ComponentRegistry::register_component_type<SceneComponent>();
 
@@ -555,8 +230,33 @@ namespace Vadon::Private::Model
 
 	void SceneSystem::register_type_metadata(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry)
 	{
+		constexpr ::Vadon::Foundation::UUID c_data_object_uuid = Vadon::Utilities::string_to_uuid(::Vadon::Foundation::DataObjectSchema::c_type_uuid);
+
+		Vadon::Utilities::TypeMetadata entitydata_metadata(metadata_registry, VADON_GET_TYPE_UUID(EntityData));
+		entitydata_metadata.add_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "Vadon::Private::Scene::EntityData")
+			.add_property(EntityData::c_id_member_id)
+				.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "ID")
+				.commit_property()
+			.add_property(EntityData::c_parent_member_id)
+				.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Parent")
+				.commit_property()
+			.add_property(EntityData::c_scene_member_id)
+				.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Scene")
+				.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::RESOURCE_TYPE, VADON_GET_TYPE_UUID_BASE64_STRING(Vadon::Model::Scene))
+				.commit_property()
+			.add_property(EntityData::c_components_member_id)
+				.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Components")
+				.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::ARRAY_TYPE, Vadon::Utilities::uuid_to_base64_string(c_data_object_uuid).c_str())
+				.commit_property()
+			.add_property(EntityData::c_name_member_id)
+				.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Name");
+
 		Vadon::Utilities::TypeMetadata scene_metadata(metadata_registry, VADON_GET_TYPE_UUID(Vadon::Model::Scene));
-		scene_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "Vadon::Scene::Scene");
+		scene_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "Vadon::Model::Scene");
+
+		scene_metadata.add_property(Vadon::Utilities::Property::property_schema_to_uuid(::Vadon::Foundation::SceneSchema::c_entities_property))
+			.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Entities")
+			.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::ARRAY_TYPE, VADON_GET_TYPE_UUID_BASE64_STRING(EntityData));
 
 		AnimationSystem::register_type_metadata(metadata_registry);
 	}
@@ -581,158 +281,6 @@ namespace Vadon::Private::Model
 		log_message("Scene System shut down!\n");
 	}
 
-	bool SceneSystem::parse_scene_entity(ECS::World& ecs_world, ECS::EntityHandle entity, int32_t parent_index, SceneData& scene_data, std::vector<SceneID>& dependency_stack)
-	{
-		Vadon::ECS::EntityManager& entity_manager = ecs_world.get_entity_manager();
-		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
-		const auto scene_comp = component_manager.get_component<SceneComponent>(entity);
-		if (scene_comp.is_valid() == true)
-		{
-			if (scene_comp->parent_scene.is_valid() == true)
-			{
-				// Child is part of instantiated scene
-				return true;
-			}
-		}
-
-		const int32_t entity_index = static_cast<int32_t>(scene_data.entities.size());
-		SceneData::EntityData& entity_data = scene_data.entities.emplace_back();
-
-		entity_data.parent = parent_index;
-
-		Vadon::Model::ResourceSystem& resource_system = m_engine_core.get_system<Vadon::Model::ResourceSystem>();
-
-		const Vadon::ECS::ComponentIDList component_type_ids = component_manager.get_component_list(entity);
-		const Vadon::Utilities::TypeID scene_component_id = Vadon::Utilities::TypeRegistry::get_type_id<SceneComponent>();
-
-		if (scene_comp.is_valid() == true)
-		{
-			if (scene_comp->root_scene.is_valid() == false)
-			{
-				// FIXME: print entity metadata
-				log_error("Scene system: Entity has Scene Component but no valid metadata!\n");
-				return false;
-			}
-
-			// Make sure we don't have a circular dependency
-			// FIXME: use LUT to make sure we don't check more than once?
-			if (internal_is_scene_dependent(scene_comp->root_scene, dependency_stack) == true)
-			{
-				Vadon::Core::Logger::log_error("Scene system: parsed scene has circular dependency!\n");
-				return false;
-			}
-
-			entity_data.scene = scene_comp->root_scene;
-
-			const SceneHandle sub_scene_handle = load_scene(scene_comp->root_scene);
-			if (sub_scene_handle.is_valid() == false)
-			{
-				// TODO: log scene ID!
-				log_error("Scene system: failed to load sub-scene!\n");
-				return true;
-			}
-
-			// Compare against root entity
-			const Scene* sub_scene = resource_system.get_resource<Scene>(sub_scene_handle);
-			const SceneData::EntityData& sub_scene_root = sub_scene->data.entities.front();
-			std::vector<size_t> unique_property_indices;
-			for (Vadon::Utilities::TypeID current_component_type_id : component_type_ids)
-			{
-				if (current_component_type_id == scene_component_id)
-				{
-					continue;
-				}
-
-				Vadon::ECS::ComponentHandle component_handle = component_manager.get_component(entity, current_component_type_id);
-				const Vadon::Utilities::PropertyList component_properties = Vadon::Utilities::TypeRegistry::get_properties(component_handle.get_raw(), current_component_type_id);
-
-				bool found = false;
-				for (const SceneData::ComponentData& sub_scene_component : sub_scene_root.components)
-				{
-					if (sub_scene_component.type_id == current_component_type_id)
-					{
-						unique_property_indices.clear();
-						for (size_t property_index = 0; property_index < component_properties.size(); ++property_index)
-						{
-							const Vadon::Utilities::Property& current_property_data = component_properties[property_index];
-							for (const Vadon::Utilities::Property& sub_scene_property : sub_scene_component.properties)
-							{
-								if (current_property_data.info.id == sub_scene_property.info.id)
-								{
-									if (current_property_data.value != sub_scene_property.value)
-									{
-										unique_property_indices.push_back(property_index);
-									}
-									break;
-								}
-							}
-						}
-
-						if (unique_property_indices.empty() == false)
-						{
-							// Save the unique properties
-							SceneData::ComponentData& current_component_data = entity_data.components.emplace_back();
-							current_component_data.type_id = current_component_type_id;
-
-							for (size_t current_property_index : unique_property_indices)
-							{
-								const Vadon::Utilities::Property& component_property = component_properties[current_property_index];
-								current_component_data.properties.push_back(component_property);
-							}
-						}
-						found = true;
-						break;
-					}
-				}
-
-				if (found == false)
-				{
-					// Component was not in original, save entirely
-					SceneData::ComponentData& current_component_data = entity_data.components.emplace_back();
-					current_component_data.type_id = current_component_type_id;
-
-					// FIXME: filter to properties that are intended to be serialized?
-					for (const Vadon::Utilities::Property& current_component_property : component_properties)
-					{
-						current_component_data.properties.push_back(current_component_property);
-					}
-				}
-			}
-		}
-		else
-		{
-			for (Vadon::Utilities::TypeID current_component_type_id : component_type_ids)
-			{
-				if (current_component_type_id == scene_component_id)
-				{
-					continue;
-				}
-
-				Vadon::ECS::ComponentHandle current_component = component_manager.get_component(entity, current_component_type_id);
-				const Vadon::Utilities::PropertyList component_properties = Vadon::Utilities::TypeRegistry::get_properties(current_component.get_raw(), current_component_type_id);
-
-				SceneData::ComponentData& current_component_data = entity_data.components.emplace_back();
-				current_component_data.type_id = current_component_type_id;
-
-				// FIXME: filter to properties that are intended to be serialized?
-				for (const Vadon::Utilities::Property& current_component_property : component_properties)
-				{
-					current_component_data.properties.push_back(current_component_property);
-				}
-			}
-		}
-
-		for (Vadon::ECS::EntityHandle current_child : entity_manager.get_children(entity))
-		{
-			if (parse_scene_entity(ecs_world, current_child, entity_index, scene_data, dependency_stack) == false)
-			{
-				return false;
-			}
-		}
-
-		return true;
-	}
-
 	bool SceneSystem::internal_is_scene_dependent(SceneID scene_id, std::vector<SceneID>& dependency_stack)
 	{
 		if (std::find(dependency_stack.begin(), dependency_stack.end(), scene_id) != dependency_stack.end())
@@ -752,7 +300,7 @@ namespace Vadon::Private::Model
 		}
 
 		const Scene* scene = get_scene(scene_handle);
-		for (const SceneData::EntityData& current_entity_data : scene->data.entities)
+		for (const EntityData& current_entity_data : scene->entities)
 		{
 			if (current_entity_data.scene.is_valid() == true)
 			{

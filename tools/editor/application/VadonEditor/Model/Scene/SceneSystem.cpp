@@ -97,9 +97,6 @@ namespace VadonEditor::Model
 
 	bool SceneSystem::initialize()
 	{
-		Model::ResourceSystem& resource_system = m_application.get_model_system().get_resource_system();
-		resource_system.register_resource_init_data(Scene::get_scene_type_uuid(), Scene::get_scene_resource_data_uuid());
-
 		return true;
 	}
 

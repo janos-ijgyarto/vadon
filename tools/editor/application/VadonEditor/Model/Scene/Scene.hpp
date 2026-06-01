@@ -30,7 +30,6 @@ namespace VadonEditor::Model
 		static bool is_scene_base_of_type(VadonEditor::Core::Application& application, const QUuid& type_id);
 		static QUuid get_scene_type_uuid();
 		static QUuid get_scene_entities_uuid();
-		static QUuid get_scene_resource_data_uuid();
 
 		bool save_scene() const;
 		bool load_scene();

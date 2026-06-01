@@ -94,7 +94,7 @@ namespace Vadon::Utilities
 		return Vadon::Foundation::UUID();
 	}
 
-	bool DataObject::serialize_object(Serializer& serializer, const Vadon::Foundation::UUID& type_uuid, ObjectPointer object_ptr)
+	bool DataObject::serialize_object(Serializer& serializer, ObjectPointer& object)
 	{
 		constexpr Vadon::Foundation::UUID properties_property_uuid = Property::property_schema_to_uuid(Vadon::Foundation::DataObjectSchema::c_properties_property);
 		if (serializer.is_reading() == true)
@@ -110,7 +110,7 @@ namespace Vadon::Utilities
 						return false;
 					}
 
-					if (serialize_object_properties(serializer, type_uuid, object_ptr) == false)
+					if (serialize_object_properties(serializer, object) == false)
 					{
 						return false;
 					}
@@ -128,8 +128,8 @@ namespace Vadon::Utilities
 
 			// FIXME: should we serialize with a label?
 			{
-				::Vadon::Foundation::UUID type_temp_uuid = type_uuid;
-				if (serializer.serialize(type_property_uuid, type_temp_uuid) != Serializer::Result::SUCCESSFUL)
+				::Vadon::Foundation::UUID type_uuid = TypeRegistry::get_type_info(object.type).id;
+				if (serializer.serialize(type_property_uuid, type_uuid) != Serializer::Result::SUCCESSFUL)
 				{
 					return false;
 				}
@@ -140,7 +140,7 @@ namespace Vadon::Utilities
 				return false;
 			}
 
-			if (serialize_object_properties(serializer, type_uuid, object_ptr) == false)
+			if (serialize_object_properties(serializer, object) == false)
 			{
 				return false;
 			}
@@ -154,10 +154,8 @@ namespace Vadon::Utilities
 		return true;
 	}
 
-	bool DataObject::serialize_object_properties(Serializer& serializer, const Vadon::Foundation::UUID& type_uuid, ObjectPointer object_ptr)
+	bool DataObject::serialize_object_properties(Serializer& serializer, ObjectPointer& object)
 	{
-		const TypeID type_id = TypeRegistry::get_type_id(type_uuid);
-
 		if (serializer.is_reading() == true)
 		{
 			const Serializer::KeyVector keys = serializer.get_keys();
@@ -165,7 +163,12 @@ namespace Vadon::Utilities
 			{
 				const Vadon::Foundation::UUID current_property_id = Utilities::parse_labeled_uuid(current_key);
 
-				const PropertyInfo property_info = TypeRegistry::get_property_info(type_id, current_property_id);
+				const PropertyInfo property_info = TypeRegistry::get_property_info(object.type, current_property_id);
+				if (property_info.base_info.is_valid() == false)
+				{
+					// TODO: add warning?
+					continue;
+				}
 
 				switch (property_info.get_category())
 				{
@@ -176,106 +179,162 @@ namespace Vadon::Utilities
 					{
 						return false;
 					}
-					TypeRegistry::set_property(object_ptr, type_id, current_property_id, temp_value);
+					TypeRegistry::set_property(object.data, object.type, current_property_id, temp_value);
 				}
-					break;
-				case PropertyCategory::ARRAY:
+				break;
+				case PropertyCategory::TRIVIAL_ARRAY:
 				{
-					const ::Vadon::Foundation::BaseType base_type = base_type_from_uuid(property_info.base_info.type);
-					switch (base_type)
+					if (serializer.open_array(current_key) != Serializer::Result::SUCCESSFUL)
 					{
-					case ::Vadon::Foundation::BaseType::ARRAY:
-					case ::Vadon::Foundation::BaseType::DICTIONARY:
-						VADON_ERROR("Nested containers are not allowed!");
 						return false;
-					case ::Vadon::Foundation::BaseType::INVALID:
+					}
+
+					VariantArray data_array;
+					const ::Vadon::Foundation::BaseType base_type = base_type_from_uuid(property_info.base_info.type);
+
+					const size_t array_size = serializer.get_array_size();
+					for (size_t current_index = 0; current_index < array_size; ++current_index)
 					{
-						// Assume it's an array of objects
-						const TypeID array_obj_type_id = TypeRegistry::get_type_id(property_info.base_info.type);
-						if (serializer.open_array(current_key) != Serializer::Result::SUCCESSFUL)
+						Variant temp_value;
+						if (serialize_base_type(serializer, base_type, current_key, temp_value) == false)
 						{
 							return false;
 						}
-						VariantArray object_array;
-						object_array.data_type = TypeRegistry::get_type_id(TypeRegistryTrait<ObjectPointer>::get_type_uuid());
-						const size_t array_size = serializer.get_array_size();
-						for (size_t current_index = 0; current_index < array_size; ++current_index)
-						{
-							ObjectPointer current_obj = TypeRegistry::create_object(array_obj_type_id);
-							object_array.data.push_back(current_obj);
+						data_array.data.push_back(temp_value);
+					}
+					if (serializer.close_array() != Serializer::Result::SUCCESSFUL)
+					{
+						return false;
+					}
 
-							if (serializer.open_object(current_index) != Serializer::Result::SUCCESSFUL)
-							{
-								return false;
-							}
+					TypeRegistry::set_property(object.data, object.type, current_property_id, Box(data_array));
+				}
+				break;
+				case PropertyCategory::GENERIC_OBJECT_ARRAY:
+				{
+					if (serializer.open_array(current_key) != Serializer::Result::SUCCESSFUL)
+					{
+						return false;
+					}
 
-							if (serialize_object_properties(serializer, property_info.base_info.type, current_obj) == false)
-							{
-								return false;
-							}
+					VariantArray object_array;
 
-							if (serializer.close_object() != Serializer::Result::SUCCESSFUL)
-							{
-								return false;
-							}
-						}
-						if (serializer.close_array() != Serializer::Result::SUCCESSFUL)
+					const size_t array_size = serializer.get_array_size();
+					for (size_t current_index = 0; current_index < array_size; ++current_index)
+					{
+						if (serializer.open_object(current_index) != Serializer::Result::SUCCESSFUL)
 						{
 							return false;
 						}
 
-						// Set the property in the parent object
-						// FIXME: this will require copying each object
-						// The best solution would be to construct in-place and deserialize within the objects
-						TypeRegistry::set_property(object_ptr, type_id, current_property_id, Box(object_array));
+						const ::Vadon::Foundation::UUID current_obj_type_uuid = deserialize_type_uuid(serializer);
+						const TypeID current_obj_type_id = TypeRegistry::get_type_id(current_obj_type_uuid);
 
-						// Clean up the temporary objects
-						for (const Variant& current_obj_variant : object_array.data)
+						ObjectPointer current_obj = TypeRegistry::create_object(current_obj_type_id);
+
+						if (serialize_object(serializer, current_obj) == false)
 						{
-							ObjectPointer current_obj = std::get<ObjectPointer>(current_obj_variant);
-							TypeRegistry::destroy_object(array_obj_type_id, current_obj);
+							return false;
+						}
+
+						object_array.data.push_back(current_obj);
+
+						if (serializer.close_object() != Serializer::Result::SUCCESSFUL)
+						{
+							return false;
 						}
 					}
-						break;
-					default:
+					if (serializer.close_array() != Serializer::Result::SUCCESSFUL)
 					{
-						if (serializer.open_array(current_key) != Serializer::Result::SUCCESSFUL)
-						{
-							return false;
-						}
-						VariantArray data_array;
-						data_array.data_type = TypeRegistry::get_type_id(property_info.base_info.type);
-
-						const size_t array_size = serializer.get_array_size();
-						for (size_t current_index = 0; current_index < array_size; ++current_index)
-						{
-							Variant temp_value;
-							if (serialize_base_type(serializer, base_type, current_key, temp_value) == false)
-							{
-								return false;
-							}
-							data_array.data.push_back(temp_value);
-						}
-						if (serializer.close_array() != Serializer::Result::SUCCESSFUL)
-						{
-							return false;
-						}
-
-						TypeRegistry::set_property(object_ptr, type_id, current_property_id, Box(data_array));
+						return false;
 					}
-						break;
+
+					// Set the property in the parent object
+					TypeRegistry::set_property(object.data, object.type, current_property_id, Box(object_array));
+				}
+				break;
+				case PropertyCategory::TYPED_OBJECT_ARRAY:
+				{
+					const TypeID array_obj_type_id = TypeRegistry::get_type_id(property_info.base_info.type);
+					if (serializer.open_array(current_key) != Serializer::Result::SUCCESSFUL)
+					{
+						return false;
+					}
+
+					VariantArray object_array;
+					const size_t array_size = serializer.get_array_size();
+					for (size_t current_index = 0; current_index < array_size; ++current_index)
+					{
+						ObjectPointer current_obj = TypeRegistry::create_object(array_obj_type_id);
+						object_array.data.push_back(current_obj);
+
+						if (serializer.open_object(current_index) != Serializer::Result::SUCCESSFUL)
+						{
+							return false;
+						}
+
+						if (serialize_object_properties(serializer, current_obj) == false)
+						{
+							return false;
+						}
+
+						if (serializer.close_object() != Serializer::Result::SUCCESSFUL)
+						{
+							return false;
+						}
+					}
+					if (serializer.close_array() != Serializer::Result::SUCCESSFUL)
+					{
+						return false;
+					}
+
+					// Set the property in the parent object
+					// FIXME: this will require copying each object
+					// The best solution would be to construct in-place and deserialize within the objects
+					TypeRegistry::set_property(object.data, object.type, current_property_id, Box(object_array));
+
+					// Clean up the temporary objects
+					for (const Variant& current_obj_variant : object_array.data)
+					{
+						ObjectPointer current_obj = std::get<ObjectPointer>(current_obj_variant);
+						TypeRegistry::destroy_object(current_obj);
 					}
 				}
-					break;
-				case PropertyCategory::OBJECT:
+				break;
+				case PropertyCategory::GENERIC_OBJECT:
 				{
 					if (serializer.open_object(current_key) != Serializer::Result::SUCCESSFUL)
 					{
 						return false;
 					}
 
-					ObjectPointer sub_obj_ptr = std::get<ObjectPointer>(TypeRegistry::get_property(object_ptr, type_id, current_property_id));
-					if (serialize_object_properties(serializer, property_info.base_info.type, sub_obj_ptr) == false)
+					const ::Vadon::Foundation::UUID generic_obj_type_uuid = deserialize_type_uuid(serializer);
+					const TypeID generic_obj_type_id = TypeRegistry::get_type_id(generic_obj_type_uuid);
+
+					ObjectPointer generic_obj = TypeRegistry::create_object(generic_obj_type_id);
+					if (serialize_object(serializer, generic_obj) == false)
+					{
+						return false;
+					}
+
+					if (serializer.close_object() != Serializer::Result::SUCCESSFUL)
+					{
+						return false;
+					}
+
+					TypeRegistry::set_property(object.data, object.type, current_property_id, generic_obj);
+				}
+				break;
+				case PropertyCategory::TYPED_OBJECT:
+				{
+					if (serializer.open_object(current_key) != Serializer::Result::SUCCESSFUL)
+					{
+						return false;
+					}
+
+					// We can deserialize directly into the sub-object
+					ObjectPointer sub_obj_ptr = std::get<ObjectPointer>(TypeRegistry::get_property(object.data, object.type, current_property_id));
+					if (serialize_object_properties(serializer, sub_obj_ptr) == false)
 					{
 						return false;
 					}
@@ -291,7 +350,7 @@ namespace Vadon::Utilities
 		}
 		else
 		{
-			const PropertyInfoList property_info_list = TypeRegistry::get_type_properties(type_id);
+			const PropertyInfoList property_info_list = TypeRegistry::get_type_properties(object.type);
 			for (const PropertyInfo& current_property_info : property_info_list)
 			{
 				// FIXME: use labeled UUID?
@@ -300,90 +359,132 @@ namespace Vadon::Utilities
 				{
 				case PropertyCategory::TRIVIAL:
 				{
-					Variant temp_value = TypeRegistry::get_property(object_ptr, type_id, current_property_info.base_info.id);
+					Variant temp_value = TypeRegistry::get_property(object.data, object.type, current_property_info.base_info.id);
 					if (serialize_base_type(serializer, base_type_from_uuid(current_property_info.base_info.type), current_key, temp_value) == false)
 					{
 						return false;
 					}
 				}
 				break;
-				case PropertyCategory::ARRAY:
+				case PropertyCategory::TRIVIAL_ARRAY:
 				{
-					const ::Vadon::Foundation::BaseType base_type = base_type_from_uuid(current_property_info.base_info.type);
-					switch (base_type)
+					if (serializer.open_array(current_key) != Serializer::Result::SUCCESSFUL)
 					{
-					case ::Vadon::Foundation::BaseType::ARRAY:
-					case ::Vadon::Foundation::BaseType::DICTIONARY:
-						VADON_ERROR("Nested containers are not allowed!");
 						return false;
-					case ::Vadon::Foundation::BaseType::INVALID:
+					}
+
+					const ::Vadon::Foundation::BaseType base_type = base_type_from_uuid(current_property_info.base_info.type);
+
+					BoxedVariantArray data_array = std::get<BoxedVariantArray>(TypeRegistry::get_property(object.data, object.type, current_property_info.base_info.id));
+
+					for (size_t current_index = 0; current_index < data_array->data.size(); ++current_index)
 					{
-						// Assume it's an array of objects
-						if (serializer.open_array(current_key) != Serializer::Result::SUCCESSFUL)
-						{
-							return false;
-						}
-
-						const BoxedVariantArray object_array = std::get<BoxedVariantArray>(TypeRegistry::get_property(object_ptr, type_id, current_property_info.base_info.id));
-						for (size_t current_index = 0; current_index < object_array->data.size(); ++current_index)
-						{
-							if (serializer.open_object(current_index) != Serializer::Result::SUCCESSFUL)
-							{
-								return false;
-							}
-
-							ObjectPointer current_obj = std::get<ObjectPointer>(object_array->data[current_index]);
-							if (serialize_object_properties(serializer, current_property_info.base_info.type, current_obj) == false)
-							{
-								return false;
-							}
-
-							if (serializer.close_object() != Serializer::Result::SUCCESSFUL)
-							{
-								return false;
-							}
-						}
-						if (serializer.close_array() != Serializer::Result::SUCCESSFUL)
+						Variant& temp_value = data_array->data[current_index];
+						if (serialize_base_type(serializer, base_type, current_key, temp_value) == false)
 						{
 							return false;
 						}
 					}
-					break;
-					default:
+					if (serializer.close_array() != Serializer::Result::SUCCESSFUL)
 					{
-						if (serializer.open_array(current_key) != Serializer::Result::SUCCESSFUL)
-						{
-							return false;
-						}
-
-						BoxedVariantArray data_array = std::get<BoxedVariantArray>(TypeRegistry::get_property(object_ptr, type_id, current_property_info.base_info.id));
-
-						for (size_t current_index = 0; current_index < data_array->data.size(); ++current_index)
-						{
-							Variant& temp_value = data_array->data[current_index];
-							if (serialize_base_type(serializer, base_type, current_key, temp_value) == false)
-							{
-								return false;
-							}
-						}
-						if (serializer.close_array() != Serializer::Result::SUCCESSFUL)
-						{
-							return false;
-						}
-					}
-					break;
+						return false;
 					}
 				}
 				break;
-				case PropertyCategory::OBJECT:
+				case PropertyCategory::GENERIC_OBJECT_ARRAY:
+				{
+					if (serializer.open_array(current_key) != Serializer::Result::SUCCESSFUL)
+					{
+						return false;
+					}
+
+					const BoxedVariantArray object_array = std::get<BoxedVariantArray>(TypeRegistry::get_property(object.data, object.type, current_property_info.base_info.id));
+					for (size_t current_index = 0; current_index < object_array->data.size(); ++current_index)
+					{
+						if (serializer.open_object(current_index) != Serializer::Result::SUCCESSFUL)
+						{
+							return false;
+						}
+
+						ObjectPointer current_obj = std::get<ObjectPointer>(object_array->data[current_index]);
+						if (serialize_object(serializer, current_obj) == false)
+						{
+							return false;
+						}
+
+						if (serializer.close_object() != Serializer::Result::SUCCESSFUL)
+						{
+							return false;
+						}
+					}
+
+					if (serializer.close_array() != Serializer::Result::SUCCESSFUL)
+					{
+						return false;
+					}
+				}
+				break;
+				case PropertyCategory::TYPED_OBJECT_ARRAY:
+				{
+					if (serializer.open_array(current_key) != Serializer::Result::SUCCESSFUL)
+					{
+						return false;
+					}
+
+					const BoxedVariantArray object_array = std::get<BoxedVariantArray>(TypeRegistry::get_property(object.data, object.type, current_property_info.base_info.id));
+					for (size_t current_index = 0; current_index < object_array->data.size(); ++current_index)
+					{
+						if (serializer.open_object(current_index) != Serializer::Result::SUCCESSFUL)
+						{
+							return false;
+						}
+
+						ObjectPointer current_obj = std::get<ObjectPointer>(object_array->data[current_index]);
+						if (serialize_object_properties(serializer, current_obj) == false)
+						{
+							return false;
+						}
+
+						if (serializer.close_object() != Serializer::Result::SUCCESSFUL)
+						{
+							return false;
+						}
+					}
+
+					if (serializer.close_array() != Serializer::Result::SUCCESSFUL)
+					{
+						return false;
+					}
+				}
+				break;
+				case PropertyCategory::GENERIC_OBJECT:
 				{
 					if (serializer.open_object(current_key) != Serializer::Result::SUCCESSFUL)
 					{
 						return false;
 					}
 
-					ObjectPointer sub_obj_ptr = std::get<ObjectPointer>(TypeRegistry::get_property(object_ptr, type_id, current_property_info.base_info.id));
-					if (serialize_object_properties(serializer, current_property_info.base_info.type, sub_obj_ptr) == false)
+					ObjectPointer sub_obj_ptr = std::get<ObjectPointer>(TypeRegistry::get_property(object.data, object.type, current_property_info.base_info.id));
+					if (serialize_object(serializer, sub_obj_ptr) == false)
+					{
+						return false;
+					}
+
+					if (serializer.close_object() != Serializer::Result::SUCCESSFUL)
+					{
+						return false;
+					}
+				}
+				break;
+				case PropertyCategory::TYPED_OBJECT:
+				{
+					if (serializer.open_object(current_key) != Serializer::Result::SUCCESSFUL)
+					{
+						return false;
+					}
+
+					ObjectPointer sub_obj_ptr = std::get<ObjectPointer>(TypeRegistry::get_property(object.data, object.type, current_property_info.base_info.id));
+					if (serialize_object_properties(serializer, sub_obj_ptr) == false)
 					{
 						return false;
 					}

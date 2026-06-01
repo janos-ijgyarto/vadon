@@ -18,8 +18,6 @@ namespace Vadon::Model
 
 		virtual SceneHandle load_scene(SceneID scene_id) = 0;
 
-		virtual bool package_scene_data(SceneHandle scene_handle, Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle root_entity) = 0;
-
 		// NOTE: we don't check for circular dependencies, by this stage we assume scenes contain valid data
 		virtual Vadon::ECS::EntityHandle instantiate_scene(SceneHandle scene_handle, Vadon::ECS::World& ecs_world, bool is_sub_scene = true) = 0;
 		

@@ -87,6 +87,7 @@ namespace Vadon::Utilities
 		register_type<::Vadon::Foundation::UUID>();
 
 		register_type<BoxedVariantArray>();
+		register_type<ObjectPointer>();
 
 		return true;
 	}
@@ -137,36 +138,36 @@ namespace Vadon::Utilities
 		return false;
 	}
 
-	void* TypeRegistry::create_object(TypeID type_id)
+	ObjectPointer TypeRegistry::create_object(TypeID type_id)
 	{
 		TypeRegistry& instance = get_registry_instance();
 		auto type_data_it = instance.m_type_lookup.find(type_id);
 		if (type_data_it == instance.m_type_lookup.end())
 		{
 			type_not_found_error(type_id);
-			return nullptr;
+			return ObjectPointer{};
 		}
 
 		const TypeData& type_data = type_data_it->second;
 		VADON_ASSERT(type_data.object_factory.factory_function != nullptr, "Invalid factory function!");
 
-		return type_data.object_factory.factory_function();
+		return ObjectPointer{ .type = type_id, .data = type_data.object_factory.factory_function() };
 	}
 
-	void TypeRegistry::destroy_object(TypeID type_id, const ObjectPointer object)
+	void TypeRegistry::destroy_object(const ObjectPointer& object)
 	{
 		TypeRegistry& instance = get_registry_instance();
-		auto type_data_it = instance.m_type_lookup.find(type_id);
+		auto type_data_it = instance.m_type_lookup.find(object.type);
 		if (type_data_it == instance.m_type_lookup.end())
 		{
-			type_not_found_error(type_id);
+			type_not_found_error(object.type);
 			return;
 		}
 
 		const TypeData& type_data = type_data_it->second;
 		VADON_ASSERT(type_data.object_factory.destructor_function != nullptr, "Invalid factory function!");
 
-		type_data.object_factory.destructor_function(object);
+		type_data.object_factory.destructor_function(object.data);
 	}
 
 	TypeID TypeRegistry::get_type_id(const TypeUUID& type_uuid)
@@ -282,7 +283,7 @@ namespace Vadon::Utilities
 		const PropertyData* property_data = instance.internal_find_property(type_data_it->second, property_uuid);
 		if (property_data == nullptr)
 		{
-			// TODO: error!
+			// TODO: error?
 			return PropertyInfo();
 		}
 
@@ -358,7 +359,11 @@ namespace Vadon::Utilities
 	{
 		TypeRegistry& instance = get_registry_instance();
 
-		VADON_ASSERT(instance.m_id_lookup.find(type_uuid) == instance.m_id_lookup.end(), std::format("Type registry error: \"{}\" already exists in registry!\n", uuid_to_string(type_uuid)));
+		if (instance.m_id_lookup.find(type_uuid) != instance.m_id_lookup.end())
+		{
+			VADON_ERROR(std::format("Type registry error: \"{}\" already exists in registry!\n", uuid_to_string(type_uuid)));
+			return;
+		}
 
 		const TypeID new_type_id = to_enum<TypeID>(instance.m_id_counter++);
 		instance.m_id_lookup.emplace(type_uuid, new_type_id);
@@ -404,6 +409,8 @@ namespace Vadon::Utilities
 		}
 
 		// Make sure the property is itself a registered type
+		VADON_ASSERT(property_bind.type != TypeID::INVALID, "Property type is invalid!");
+		VADON_ASSERT(property_bind.data_type != TypeID::INVALID, "Property data type is invalid!");
 		auto property_type_it = instance.m_type_lookup.find(property_bind.type);
 		if (type_data_it == instance.m_type_lookup.end())
 		{

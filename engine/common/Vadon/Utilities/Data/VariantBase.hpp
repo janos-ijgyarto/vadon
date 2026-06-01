@@ -1,10 +1,9 @@
 #ifndef VADON_UTILITIES_DATA_VARIANTBASE_HPP
 #define VADON_UTILITIES_DATA_VARIANTBASE_HPP
-#include <Vadon/Foundation/Utilities/UUID.hpp>
 #include <Vadon/Math/Color.hpp>
 #include <Vadon/Math/Vector.hpp>
 #include <Vadon/Utilities/Container/Box.hpp>
-#include <Vadon/Utilities/Data/Object.hpp>
+#include <Vadon/Utilities/TypeInfo/TypeInfo.hpp>
 #include <Vadon/Utilities/TypeInfo/TypeList/VariantTypeList.hpp>
 #include <string>
 namespace Vadon::Utilities
