@@ -4,8 +4,8 @@
 #include <Vadon/Math/Vector.hpp>
 #include <Vadon/Utilities/Container/Box.hpp>
 #include <Vadon/Utilities/TypeInfo/TypeInfo.hpp>
-#include <Vadon/Utilities/TypeInfo/TypeList/VariantTypeList.hpp>
 #include <string>
+#include <variant>
 namespace Vadon::Utilities
 {
 	// Used by function bindings to indicate a void function

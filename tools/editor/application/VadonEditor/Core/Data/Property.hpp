@@ -21,6 +21,7 @@ namespace VadonEditor::Core
 	{
 		::Vadon::Foundation::Property info;
 		QHash<QString, QByteArray> metadata;
+		::Vadon::Foundation::CommonPropertyMetadata::Flags flags = ::Vadon::Foundation::CommonPropertyMetadata::Flags::NONE;
 
 		QString find_metadata(const char* key) const;
 		QString find_metadata(::Vadon::Foundation::CommonPropertyMetadata::Key key) const { return find_metadata(::Vadon::Foundation::CommonPropertyMetadata::key_string(key)); }

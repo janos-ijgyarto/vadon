@@ -166,23 +166,39 @@ namespace Vadon::Private::Model
 		}
 
 		ResourceID resource_id;
-		if (serializer.serialize(Vadon::Utilities::Property::property_schema_to_uuid(::Vadon::Foundation::ResourceSchema::c_id_property), resource_info.id) != SerializerResult::SUCCESSFUL)
-		{
-			resource_info_failed_to_serialize();
-			return false;
-		}
+
+		constexpr ::Vadon::Foundation::UUID c_id_uuid = Vadon::Utilities::Property::property_schema_to_uuid(::Vadon::Foundation::ResourceSchema::c_id_property);
+		constexpr ::Vadon::Foundation::UUID c_type_uuid = Vadon::Utilities::Property::property_schema_to_uuid(::Vadon::Foundation::ResourceSchema::c_type_property);
 
 		::Vadon::Foundation::UUID resource_type_uuid;
-		if (serializer.serialize(Vadon::Utilities::Property::property_schema_to_uuid(::Vadon::Foundation::ResourceSchema::c_type_property), resource_type_uuid) != SerializerResult::SUCCESSFUL)
+
+		const Vadon::Utilities::Serializer::KeyVector resource_property_keys = serializer.get_keys();
+		for (const std::string& current_property_key : resource_property_keys)
 		{
-			resource_info_failed_to_serialize();
-			return false;
+			const ::Vadon::Foundation::UUID current_property_uuid = Vadon::Utilities::parse_labeled_uuid(current_property_key);
+
+			if (current_property_uuid == c_id_uuid)
+			{
+				if (serializer.serialize(current_property_key, resource_info.id) != SerializerResult::SUCCESSFUL)
+				{
+					resource_info_failed_to_serialize();
+					return false;
+				}
+			}
+			else if (current_property_uuid == c_type_uuid)
+			{
+				if (serializer.serialize(current_property_key, resource_type_uuid) != SerializerResult::SUCCESSFUL)
+				{
+					resource_info_failed_to_serialize();
+					return false;
+				}
+			}
 		}
 
 		resource_info.type_id = Vadon::Utilities::TypeRegistry::get_type_id(resource_type_uuid);
 		if (resource_info.type_id == Vadon::Utilities::TypeID::INVALID)
 		{
-			log_error(std::format("Resource system error: resource data uses unknown type \"{}\"!\n", Vadon::Utilities::uuid_to_string(resource_type_uuid)));
+			log_error(std::format("Resource system error: resource data uses unknown type \"{}\"!\n", Vadon::Utilities::uuid_to_string(resource_type_uuid).string));
 			return false;
 		}
 
@@ -466,50 +482,27 @@ namespace Vadon::Private::Model
 		}
 
 		// Deserialize resource data
-		if (serializer.open_object(Vadon::Utilities::Property::property_schema_to_uuid(::Vadon::Foundation::ResourceSchema::c_properties_property)) != SerializerResult::SUCCESSFUL)
-		{
-			resource_data_failed_to_serialize();
-			return nullptr;
-		}
-		
-		Utilities::ObjectPointer resource_obj_ptr{ .type = info.type_id, .data = resource.get() };
-		if (Utilities::DataObject::serialize_object_properties(serializer, resource_obj_ptr) == false)
-		{
-			resource_data_failed_to_serialize();
-			return nullptr;
-		}
+		constexpr ::Vadon::Foundation::UUID c_properties_property_uuid = Vadon::Utilities::Property::property_schema_to_uuid(::Vadon::Foundation::ResourceSchema::c_properties_property);
+		constexpr ::Vadon::Foundation::UUID c_embedded_property_uuid = Vadon::Utilities::Property::property_schema_to_uuid(::Vadon::Foundation::ResourceSchema::c_embedded_property);
 
-		if (serializer.close_object() != SerializerResult::SUCCESSFUL)
+		const Vadon::Utilities::Serializer::KeyVector serializer_keys = serializer.get_keys();
+		for (const std::string& current_key_string : serializer_keys)
 		{
-			resource_data_failed_to_serialize();
-			return nullptr;
-		}
-
-		constexpr auto c_embedded_property_uuid = Vadon::Utilities::Property::property_schema_to_uuid(::Vadon::Foundation::ResourceSchema::c_embedded_property);
-		if (serializer.has_key(c_embedded_property_uuid) == true)
-		{
-			if (serializer.open_array(c_embedded_property_uuid) != SerializerResult::SUCCESSFUL)
+			const ::Vadon::Foundation::UUID current_property_uuid = Utilities::parse_labeled_uuid(current_key_string);
+			if (current_property_uuid == c_properties_property_uuid)
 			{
-				resource_custom_data_failed_to_serialize();
-				return nullptr;
-			}
-			const size_t embedded_resource_count = serializer.get_array_size();
-			for (size_t embedded_resource_index = 0; embedded_resource_index < embedded_resource_count; ++embedded_resource_index)
-			{
-				if (serializer.open_object(embedded_resource_index) != SerializerResult::SUCCESSFUL)
+				if (serializer.open_object(current_key_string) != SerializerResult::SUCCESSFUL)
 				{
 					resource_data_failed_to_serialize();
 					return nullptr;
 				}
 
-				ResourceHandle embedded_resource_handle = load_resource(serializer);
-				if (embedded_resource_handle.is_valid() == false)
+				Utilities::ObjectPointer resource_obj_ptr{ .type = info.type_id, .data = resource.get() };
+				if (Utilities::DataObject::serialize_object_properties(serializer, resource_obj_ptr) == false)
 				{
 					resource_data_failed_to_serialize();
 					return nullptr;
 				}
-
-				embedded_resources.push_back(embedded_resource_handle);
 
 				if (serializer.close_object() != SerializerResult::SUCCESSFUL)
 				{
@@ -517,10 +510,42 @@ namespace Vadon::Private::Model
 					return nullptr;
 				}
 			}
-			if (serializer.close_array() != SerializerResult::SUCCESSFUL)
+			else if (current_property_uuid == c_embedded_property_uuid)
 			{
-				resource_custom_data_failed_to_serialize();
-				return nullptr;
+				if (serializer.open_array(current_key_string) != SerializerResult::SUCCESSFUL)
+				{
+					resource_custom_data_failed_to_serialize();
+					return nullptr;
+				}
+				const size_t embedded_resource_count = serializer.get_array_size();
+				for (size_t embedded_resource_index = 0; embedded_resource_index < embedded_resource_count; ++embedded_resource_index)
+				{
+					if (serializer.open_object(embedded_resource_index) != SerializerResult::SUCCESSFUL)
+					{
+						resource_data_failed_to_serialize();
+						return nullptr;
+					}
+
+					ResourceHandle embedded_resource_handle = load_resource(serializer);
+					if (embedded_resource_handle.is_valid() == false)
+					{
+						resource_data_failed_to_serialize();
+						return nullptr;
+					}
+
+					embedded_resources.push_back(embedded_resource_handle);
+
+					if (serializer.close_object() != SerializerResult::SUCCESSFUL)
+					{
+						resource_data_failed_to_serialize();
+						return nullptr;
+					}
+				}
+				if (serializer.close_array() != SerializerResult::SUCCESSFUL)
+				{
+					resource_custom_data_failed_to_serialize();
+					return nullptr;
+				}
 			}
 		}
 

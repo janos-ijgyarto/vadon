@@ -1,6 +1,7 @@
 #include <VadonEditor/Core/Asset/AssetManager.hpp>
 
 #include <VadonEditor/Core/Application.hpp>
+#include <VadonEditor/Core/Configuration.hpp>
 
 #include <VadonEditor/Core/Asset/Asset.hpp>
 
@@ -227,8 +228,13 @@ namespace VadonEditor::Core
 
 	void AssetManager::project_loaded()
 	{
-		const Core::ProjectManager& project_manager = m_application.get_project_manager();
+		if (m_application.get_configuration().mode != ApplicationMode::EDITOR)
+		{
+			// We only manage assets in the editor
+			return;
+		}
 
+		const Core::ProjectManager& project_manager = m_application.get_project_manager();
 		if (project_manager.get_project_data_schema().is_valid() == false)
 		{
 			// FIXME: some way to load assets even without a data schema?

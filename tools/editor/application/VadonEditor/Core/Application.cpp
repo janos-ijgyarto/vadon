@@ -18,6 +18,8 @@
 
 #include <VadonEditor/Network/Message/MessageSerializer.hpp>
 
+#include <Vadon/Foundation/Editor/Network/Message/Simulator.hpp>
+
 #include <QCommandLineParser>
 #include <QtWidgets/QApplication>
 
@@ -323,6 +325,34 @@ namespace VadonEditor::Core
 				const ::Vadon::Foundation::EditorMessageTest* client_test = reinterpret_cast<const ::Vadon::Foundation::EditorMessageTest*>(message_reader.get_current_message_data());
 
 				qInfo() << "Client test message: number = " << client_test->number << ", other number = " << client_test->other_number;
+			}
+			break;
+			case ::Vadon::Foundation::EditorMessageCategory::SIMULATOR:
+			{
+				// FIXME: move this to Simulator class?
+				const char* message_data = message_reader.get_current_message_data();
+				const ::Vadon::Foundation::EditorSimulatorMessageHeader* simulator_message_header = reinterpret_cast<const ::Vadon::Foundation::EditorSimulatorMessageHeader*>(message_data);
+				switch (simulator_message_header->message_type)
+				{
+				case ::Vadon::Foundation::EditorSimulatorMessageType::SIMULATOR_LOG:
+				{
+					const ::Vadon::Foundation::EditorSimulatorMessageLog* log_message = reinterpret_cast<const ::Vadon::Foundation::EditorSimulatorMessageLog*>(message_reader.get_current_message_data());
+					const QString log_message_string = QByteArray(message_data + sizeof(::Vadon::Foundation::EditorSimulatorMessageLog), log_message->length);
+					switch (log_message->log_type)
+					{
+					case ::Vadon::Foundation::EditorSimulatorMessageLog::Type::INFO:
+						qInfo().noquote() << "[SIMULATOR]" << log_message_string;
+						break;
+					case ::Vadon::Foundation::EditorSimulatorMessageLog::Type::WARNING:
+						qWarning().noquote() << "[SIMULATOR]" << log_message_string;
+						break;
+					case ::Vadon::Foundation::EditorSimulatorMessageLog::Type::ERROR:
+						qCritical().noquote() << "[SIMULATOR]" << log_message_string;
+						break;
+					}
+				}
+					break;
+				}
 			}
 			break;
 			}

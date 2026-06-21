@@ -88,7 +88,7 @@ namespace VadonDemo::View
 
         VadonEditor::Model::ResourceSystem& editor_resource_system = m_editor.get_common_editor().get_resource_system();
         editor_resource_system.register_edit_callback(
-            [this, &editor_resource_system](Vadon::Model::ResourceID resource_id)
+            [this, &editor_resource_system](Vadon::Model::ResourceID resource_id, ::Vadon::Foundation::UUID /*property_uuid*/)
             {
                 // TODO: implement a system for tracking resource references!
                 // When it's modified in the editor, we need to know what was previously referenced and de-reference it

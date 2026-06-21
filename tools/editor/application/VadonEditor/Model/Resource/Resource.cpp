@@ -6,13 +6,19 @@
 #include <VadonEditor/Model/ModelSystem.hpp>
 #include <VadonEditor/Model/Resource/ResourceSystem.hpp>
 
+#include <VadonEditor/Network/NetworkSystem.hpp>
+#include <VadonEditor/Network/Message/MessageSerializer.hpp>
+
 #include <VadonEditor/Utilities/UUID.hpp>
 #include <VadonEditor/Utilities/Data/Variant.hpp>
+
+#include <Vadon/Foundation/Editor/Network/Message/Model.hpp>
 
 #include <Vadon/Foundation/Model/Resource/Resource.hpp>
 #include <Vadon/Foundation/Model/Resource/File.hpp>
 
 #include <QJsonArray>
+#include <QJsonDocument>
 #include <QJsonObject>
 
 namespace VadonEditor::Model
@@ -98,6 +104,34 @@ namespace VadonEditor::Model
 	{
 		m_data.set_property(property_id, value);
 		notify_modifed();
+
+		// FIXME: use temp allocator or shared serializer
+		VadonEditor::Network::MessageSerializer message_serializer;
+
+		::Vadon::Foundation::EditorModelMessageResourcePropertyEdited property_edited_message;
+		property_edited_message.message_type = ::Vadon::Foundation::EditorModelMessageType::RESOURCE_PROPERTY_EDITED;
+
+		property_edited_message.resource_id = Utilities::qt_uuid_to_vadon_uuid(m_info.id);
+		property_edited_message.property_id = Utilities::qt_uuid_to_vadon_uuid(property_id);
+
+		QJsonObject property_object;
+		if (m_data.serialize_property_data(property_id, property_object) == false)
+		{
+			Q_ASSERT_X(false, "Resource::set_property", "Failed to serialize property");
+			return;
+		}
+
+		QJsonDocument property_obj_document(property_object);
+		QByteArray json_data = property_obj_document.toJson(QJsonDocument::JsonFormat::Compact); // Serialize as compact JSON to minimize overhead
+
+		property_edited_message.data_size = json_data.size();
+
+		char* message_data = message_serializer.allocate_message(::Vadon::Foundation::EditorMessageCategory::MODEL, sizeof(::Vadon::Foundation::EditorModelMessageResourcePropertyEdited) + json_data.size());
+
+		memcpy(message_data, &property_edited_message, sizeof(::Vadon::Foundation::EditorModelMessageResourcePropertyEdited));
+		memcpy(message_data + sizeof(::Vadon::Foundation::EditorModelMessageResourcePropertyEdited), json_data.constData(), json_data.size());
+
+		m_application.get_network_system().send_message(message_serializer);
 	}
 
 	Resource* Resource::create_embedded_resource(const QUuid& type)
@@ -119,6 +153,22 @@ namespace VadonEditor::Model
 
 		m_embedded_resources.insert(embedded_resource->get_info().id, embedded_resource);
 		embedded_resource->m_owner = this;
+
+		{
+			// FIXME: use temp allocator or shared serializer
+			VadonEditor::Network::MessageSerializer message_serializer;
+
+			::Vadon::Foundation::EditorModelMessageResourceAddEmbedded add_embedded_message;
+			add_embedded_message.message_type = ::Vadon::Foundation::EditorModelMessageType::RESOURCE_ADD_EMBEDDED;
+
+			add_embedded_message.resource_id = Utilities::qt_uuid_to_vadon_uuid(m_info.id);
+			add_embedded_message.embedded_id = Utilities::qt_uuid_to_vadon_uuid(embedded_resource->get_info().id);
+			add_embedded_message.embedded_type_id = Utilities::qt_uuid_to_vadon_uuid(embedded_resource->get_info().type);
+
+			message_serializer.write_message_trivial(::Vadon::Foundation::EditorMessageCategory::MODEL, add_embedded_message);
+
+			m_application.get_network_system().send_message(message_serializer);
+		}
 
 		return embedded_resource;
 	}
@@ -308,6 +358,23 @@ namespace VadonEditor::Model
 					}
 				}
 			}
+		}
+
+		// Send message about Resource
+		// Only if not embedded, the embedded resources 
+		if(is_embedded() == false)
+		{
+			// FIXME: use temp allocator or shared serializer
+			VadonEditor::Network::MessageSerializer message_serializer;
+
+			::Vadon::Foundation::EditorModelMessageResourceLoaded resource_loaded_message;
+			resource_loaded_message.message_type = ::Vadon::Foundation::EditorModelMessageType::RESOURCE_LOADED;
+
+			resource_loaded_message.resource_id = Utilities::qt_uuid_to_vadon_uuid(m_info.id);
+
+			message_serializer.write_message_trivial(::Vadon::Foundation::EditorMessageCategory::MODEL, resource_loaded_message);
+
+			m_application.get_network_system().send_message(message_serializer);
 		}
 
 		return true;

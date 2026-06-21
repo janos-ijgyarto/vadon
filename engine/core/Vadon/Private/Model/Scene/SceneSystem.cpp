@@ -256,7 +256,8 @@ namespace Vadon::Private::Model
 
 		scene_metadata.add_property(Vadon::Utilities::Property::property_schema_to_uuid(::Vadon::Foundation::SceneSchema::c_entities_property))
 			.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Entities")
-			.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::ARRAY_TYPE, VADON_GET_TYPE_UUID_BASE64_STRING(EntityData));
+			.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::ARRAY_TYPE, VADON_GET_TYPE_UUID_BASE64_STRING(EntityData))
+			.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::FLAGS, ::Vadon::Foundation::CommonPropertyMetadata::flag_string(::Vadon::Foundation::CommonPropertyMetadata::Flags::EDITOR_HIDDEN));
 
 		AnimationSystem::register_type_metadata(metadata_registry);
 	}

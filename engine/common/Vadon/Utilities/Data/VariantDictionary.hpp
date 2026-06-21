@@ -1,7 +1,6 @@
 #ifndef VADON_UTILITIES_DATA_VARIANTDICTIONARY_HPP
 #define VADON_UTILITIES_DATA_VARIANTDICTIONARY_HPP
 #include <Vadon/Utilities/Data/VariantBase.hpp>
-#include <Vadon/Utilities/TypeInfo/TypeInfo.hpp>
 #include <unordered_map>
 namespace Vadon::Utilities
 {
@@ -10,18 +9,43 @@ namespace Vadon::Utilities
 	struct VariantDictionary
 	{
 		VariantUnorderedMap data;
-		TypeID data_type;
 
-		bool operator==(const VariantDictionary& /*other*/) const
+		bool operator==(const VariantDictionary& other) const
 		{
-			// TODO!!!
-			return false;
+			for (const auto& current_entry : data)
+			{
+				auto other_it = other.data.find(current_entry.first);
+				if(other_it == other.data.end())
+				{
+					return false;
+				}
+
+				if (other_it->second != current_entry.second)
+				{
+					return false;
+				}
+			}
+
+			return true;
 		}
 
-		bool operator!=(const VariantDictionary& /*other*/) const
+		bool operator!=(const VariantDictionary& other) const
 		{
-			// TODO!!!
-			return true;
+			return (*this == other) == false;
+		}
+	};
+
+	template<>
+	struct VariantTypeTrait<VariantDictionary>
+	{
+		static Variant to_variant(const VariantDictionary& dictionary)
+		{
+			return Variant(Box(dictionary));
+		}
+
+		static VariantDictionary from_variant(const Variant& variant)
+		{
+			return *std::get<Box<VariantDictionary>>(variant);
 		}
 	};
 }

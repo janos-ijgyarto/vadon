@@ -82,6 +82,12 @@ namespace VadonEditor::UI
 			{
 				const Core::PropertyData* property_data = current_type->find_property_data(Utilities::vadon_uuid_to_qt_uuid(property_uuid));
 
+				if (property_data->flags & ::Vadon::Foundation::CommonPropertyMetadata::Flags::EDITOR_HIDDEN)
+				{
+					// Skip properties that are hidden
+					continue;
+				}
+
 				PropertyWidgetInfo widget_info;
 				widget_info.property_id = Utilities::vadon_uuid_to_qt_uuid(property_uuid);
 				widget_info.category = property_data->get_category();

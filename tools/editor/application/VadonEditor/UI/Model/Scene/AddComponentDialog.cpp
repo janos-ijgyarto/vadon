@@ -17,10 +17,10 @@ namespace
 
 namespace VadonEditor::UI
 {
-	AddComponentDialog::AddComponentDialog(Core::Application& application, Model::Entity* entity, QWidget* parent)
+	AddComponentDialog::AddComponentDialog(Core::Application& application, const QList<QUuid>& existing_components, QWidget* parent)
 		: QDialog(parent)
 		, m_application(application)
-		, m_entity(entity)
+		, m_existing_components(existing_components)
 	{
 		m_ui.setupUi(this);
 
@@ -80,10 +80,13 @@ namespace VadonEditor::UI
 			const QString component_metadata = type_data->find_metadata(::Vadon::Foundation::CommonTypeMetadata::COMPONENT);
 			if (component_metadata.isEmpty() == false)
 			{
-				if (m_entity->find_component(type_qt_uuid) != nullptr)
+				for (const QUuid& existing_component_uuid : m_existing_components)
 				{
-					// Component already added to entity
-					continue;
+					if (type_qt_uuid == existing_component_uuid)
+					{
+						// Component already added to entity
+						continue;
+					}
 				}
 
 				// Component not present in entity, so we can add it to the list

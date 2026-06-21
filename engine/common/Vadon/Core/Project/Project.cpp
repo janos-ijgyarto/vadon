@@ -2,6 +2,9 @@
 #include <Vadon/Core/Project/Project.hpp>
 
 #include <Vadon/Utilities/Serialization/Serializer.hpp>
+#include <Vadon/Utilities/System/UUID/UUID.hpp>
+
+#include <Vadon/Foundation/Project/Project.hpp>
 
 #include <filesystem>
 #include <format>
@@ -49,17 +52,50 @@ namespace Vadon::Core
 			return false;
 		}
 
-		if (serializer.serialize("name", project_data.name) != SerializerResult::SUCCESSFUL)
-		{
-			project_serialization_error_log();
-			return false;
-		}
+		constexpr ::Vadon::Foundation::UUID c_name_uuid = Utilities::string_to_uuid(::Vadon::Foundation::ProjectInfoSchema::c_name_property.id);
+		constexpr ::Vadon::Foundation::UUID c_custom_data_uuid = Utilities::string_to_uuid(::Vadon::Foundation::ProjectInfoSchema::c_custom_data_id_property.id);
 
-		// Serialize any custom data to a separate object
-		if (serializer.serialize("custom_project_data", project_data.custom_data_id) != SerializerResult::SUCCESSFUL)
+		if (serializer.is_reading() == true)
 		{
-			project_serialization_error_log();
-			return false;
+			const Vadon::Utilities::Serializer::KeyVector key_strings = serializer.get_keys();
+			for (const std::string& current_key : key_strings)
+			{
+				const ::Vadon::Foundation::UUID current_uuid = Utilities::parse_labeled_uuid(current_key);
+				if (current_uuid == c_name_uuid)
+				{
+					if (serializer.serialize(current_key, project_data.name) != SerializerResult::SUCCESSFUL)
+					{
+						project_serialization_error_log();
+						return false;
+					}
+				}
+				else if (current_uuid == c_custom_data_uuid)
+				{
+					if (serializer.serialize(current_key, project_data.custom_data_id) != SerializerResult::SUCCESSFUL)
+					{
+						project_serialization_error_log();
+						return false;
+					}
+				}
+			}
+		}
+		else
+		{
+			if (serializer.serialize(Utilities::serialize_labeled_uuid("name", c_name_uuid), project_data.name) != SerializerResult::SUCCESSFUL)
+			{
+				project_serialization_error_log();
+				return false;
+			}
+
+			if (project_data.custom_data_id.is_valid() == true)
+			{
+				// Serialize any custom data to a separate object
+				if (serializer.serialize(Utilities::serialize_labeled_uuid("custom_data_id", c_custom_data_uuid), project_data.custom_data_id) != SerializerResult::SUCCESSFUL)
+				{
+					project_serialization_error_log();
+					return false;
+				}
+			}
 		}
 
 		if (serializer.finalize() == false)

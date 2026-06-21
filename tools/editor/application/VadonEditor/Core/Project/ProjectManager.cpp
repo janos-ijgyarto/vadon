@@ -7,7 +7,10 @@
 #include <VadonEditor/Core/Plugin/Plugin.hpp>
 #include <VadonEditor/Core/Plugin/PluginManager.hpp>
 
+#include <VadonEditor/Utilities/UUID.hpp>
+
 #include <Vadon/Foundation/Editor/Simulator/LibraryInterface.hpp>
+#include <Vadon/Foundation/Project/Project.hpp>
 
 #include <QCoreApplication>
 
@@ -93,9 +96,24 @@ namespace
 			return false;
 		}
 
+		const QUuid project_name_property_id = VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::ProjectInfoSchema::c_name_property.id);
+		const QUuid custom_data_id_property_id = VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::ProjectInfoSchema::c_custom_data_id_property.id);
+
 		// TODO: validate JSON data!
-		const QJsonObject cache_root = json_doc.object();
-		project_info.name = cache_root["name"].toString();
+		const QJsonObject project_info_root = json_doc.object();
+
+		for (auto property_it = project_info_root.begin(); property_it != project_info_root.end(); ++property_it)
+		{
+			const QUuid property_uuid = VadonEditor::Utilities::parse_labeled_uuid(property_it.key());
+			if (property_uuid == project_name_property_id)
+			{
+				project_info.name = property_it.value().toString();
+			}
+			else if (property_uuid == custom_data_id_property_id)
+			{
+				project_info.custom_data_id = VadonEditor::Utilities::base64_string_to_uuid(property_it.value().toString());
+			}
+		}
 		
 		return true;
 	}
@@ -583,8 +601,15 @@ namespace VadonEditor::Core
 			return false;
 		}
 
+		const QUuid project_name_property_id = Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::ProjectInfoSchema::c_name_property.id);
+		const QUuid custom_data_id_property_id = Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::ProjectInfoSchema::c_custom_data_id_property.id);
+
 		QJsonObject project_data_root;
-		project_data_root["name"] = project_info.name;
+		project_data_root[Utilities::serialize_labeled_uuid("name", project_name_property_id)] = project_info.name;
+		if (project_info.custom_data_id.isNull() == false)
+		{
+			project_data_root[Utilities::serialize_labeled_uuid("custom_data_id", custom_data_id_property_id)] = Utilities::uuid_to_base64_string(project_info.custom_data_id);
+		}
 
 		project_file.write(QJsonDocument(project_data_root).toJson());
 		project_file.close();

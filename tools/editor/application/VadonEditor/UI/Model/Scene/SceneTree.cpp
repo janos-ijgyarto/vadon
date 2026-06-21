@@ -22,6 +22,7 @@ namespace VadonEditor::UI
 	{
 		m_ui.setupUi(this);
 
+		m_ui.treeView->addAction(m_ui.actionSave);
 		m_ui.treeView->setModel(&scene->get_entity_model().get_qt_model());
 	}
 
@@ -63,42 +64,63 @@ namespace VadonEditor::UI
 		}
 	}
 
-	void SceneTree::entity_name_changed(const QUuid& entity_id, const QString& text)
-	{
-		Model::EntityModel& entity_model = m_scene->get_entity_model();
-		Model::Entity* entity = entity_model.find_entity_by_id(entity_id);
-
-		entity_model.set_entity_name(entity, text);
-
-		set_modified();
-	}
-
-	void SceneTree::entity_component_added(const QUuid& entity_id, const QUuid& component_id)
-	{
-		Q_UNUSED(entity_id);
-		Q_UNUSED(component_id);
-		set_modified();
-	}
-
-	void SceneTree::entity_component_removed(const QUuid& entity_id, const QUuid& component_id)
-	{
-		Q_UNUSED(entity_id);
-		Q_UNUSED(component_id);
-		set_modified();
-	}
-
-	void SceneTree::entity_component_data_changed(const QUuid& entity_id, const QUuid& component_id, const QUuid& property_id)
-	{
-		// TODO: handle the property changes!
-		Q_UNUSED(entity_id);
-		Q_UNUSED(component_id);
-		Q_UNUSED(property_id);
-		set_modified();
-	}
-
 	void SceneTree::save_triggered()
 	{
-		// TODO: save scene data!
+		if (m_scene->save_scene() == true)
+		{
+			emit(scene_saved(m_scene->get_resource()->get_info().id));
+		}
+	}
+
+	void SceneTree::add_entity_triggered()
+	{
+		Model::Entity* selected_entity = get_selected_entity();
+		if (selected_entity == nullptr)
+		{
+			qWarning() << "Entity add was requested, but no Entity was selected!";
+			return;
+		}
+
+		m_scene->get_entity_model().add_entity(selected_entity);
+		set_modified();
+	}
+
+	void SceneTree::remove_entity_triggered()
+	{
+		Model::Entity* selected_entity = get_selected_entity();
+		if (selected_entity == nullptr)
+		{
+			qWarning() << "Entity remove was requested, but no Entity was selected!";
+			return;
+		}
+
+		m_scene->get_entity_model().remove_entity(selected_entity->get_id());
+		set_modified();
+	}
+
+	void SceneTree::entity_context_menu_requested(const QPoint& position)
+	{
+#ifndef QT_NO_CONTEXTMENU
+		const QModelIndex entity_index = m_ui.treeView->indexAt(position);
+		if (entity_index.isValid() == false)
+		{
+			return;
+		}
+
+		QMenu menu(this);
+
+		menu.addAction(m_ui.actionAddEntity);
+		menu.addAction(m_ui.actionRemoveEntity);
+
+		menu.exec(m_ui.treeView->mapToGlobal(position));
+#else
+		Q_UNUSED(position);
+#endif
+	}
+
+	void SceneTree::internal_scene_modified()
+	{
+		set_modified();
 	}
 
 	void SceneTree::entity_opened(Model::Entity* entity)
@@ -125,10 +147,11 @@ namespace VadonEditor::UI
 			m_widget_reverse_lookup.insert(new_entity_editor, entity->get_id());
 
 			connect(new_entity_editor, &QObject::destroyed, this, &SceneTree::entity_widget_removed);
-			connect(new_entity_editor, &EntityEditor::entity_name_changed, this, &SceneTree::entity_name_changed);
-			connect(new_entity_editor, &EntityEditor::component_added, this, &SceneTree::entity_component_added);
-			connect(new_entity_editor, &EntityEditor::component_removed, this, &SceneTree::entity_component_removed);
-			connect(new_entity_editor, &EntityEditor::component_property_edited, this, &SceneTree::entity_component_data_changed);
+
+			connect(entity, &Model::Entity::name_changed, this, &SceneTree::internal_scene_modified);
+			connect(entity, &Model::Entity::component_added, this, &SceneTree::internal_scene_modified);
+			connect(entity, &Model::Entity::component_removed, this, &SceneTree::internal_scene_modified);
+			connect(entity, &Model::Entity::component_property_edited, this, &SceneTree::internal_scene_modified);
 
 			new_entity_editor->show();
 		}
@@ -176,5 +199,16 @@ namespace VadonEditor::UI
 	{ 
 		m_scene->notify_modified();
 		emit(scene_modified(m_scene->get_resource()->get_info().id));
+	}
+
+	Model::Entity* SceneTree::get_selected_entity() const
+	{
+		QModelIndexList selected_indexes = m_ui.treeView->selectionModel()->selectedIndexes();
+		if (selected_indexes.isEmpty() == false)
+		{
+			return m_scene->get_entity_model().get_entity_by_model_index(selected_indexes.front());
+		}
+
+		return nullptr;
 	}
 }

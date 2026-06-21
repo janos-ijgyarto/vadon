@@ -69,6 +69,21 @@ namespace VadonEditor::UI
 
 			return new PropertyResource(info.property_id, resource, owner_resource, info.data_type, parent_widget);
 		}
+		case Core::PropertyCategory::TRIVIAL_ARRAY:
+			// TODO!
+			break;
+		case Core::PropertyCategory::GENERIC_OBJECT_ARRAY:
+			// TODO!
+			break;
+		case Core::PropertyCategory::TYPED_OBJECT_ARRAY:
+			// TODO!
+			break;
+		case Core::PropertyCategory::GENERIC_OBJECT:
+			// TODO!
+			break;
+		case Core::PropertyCategory::TYPED_OBJECT:
+			// TODO!
+			break;
 		}
 
 		return nullptr;

@@ -39,6 +39,7 @@ namespace VadonEditor::Model
 		void set_property(const PropertyID& property_id, const QVariant& value);
 
 		const Resource* get_owner() const { return m_owner; }
+		bool is_embedded() const { return m_owner != nullptr; }
 
 		Resource* create_embedded_resource(const QUuid& type);
 

@@ -8,6 +8,7 @@ namespace Vadon
 		enum class EditorSimulatorMessageType : uint32
 		{
 			SIMULATOR_INIT,
+			SIMULATOR_LOG,
 			SIMULATOR_SHUTDOWN
 		};
 
@@ -21,9 +22,25 @@ namespace Vadon
 			uint32 error_code;
 		};
 
+		// FIXME: could generalize this, create an interface for RPC so other apps can
+		// "listen in" on the engine logs
+		struct EditorSimulatorMessageLog : public EditorSimulatorMessageHeader
+		{
+			enum Type
+			{
+				INFO,
+				WARNING,
+				ERROR
+			};
+
+			Type log_type;
+			uint32 length;
+		};
+
 		struct EditorSimulatorMessageShutdown : public EditorSimulatorMessageHeader
 		{
-			// TODO: exit code, or some other metadata to explain shutdown reason?
+			// TODO: any other message data?
+			uint32 exit_code;
 		};
 	}
 }

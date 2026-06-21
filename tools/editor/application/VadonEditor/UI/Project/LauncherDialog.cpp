@@ -5,6 +5,8 @@
 
 #include <VadonEditor/UI/Project/NewProjectDialog.hpp>
 
+#include <VadonEditor/UI/Utilities/UUIDDialog.hpp>
+
 #include <QFileDialog>
 #include <QMessageBox>
 
@@ -66,6 +68,12 @@ namespace VadonEditor::UI
 				QMessageBox::critical(this, "Project Manager Error", tr("Failed to import project!"));
 			}
 		}
+	}
+
+	void LauncherDialog::uuid_generator_clicked()
+	{
+		UUIDDialog* uuid_dialog = new UUIDDialog(this);
+		uuid_dialog->open();
 	}
 
 	void LauncherDialog::run_clicked()

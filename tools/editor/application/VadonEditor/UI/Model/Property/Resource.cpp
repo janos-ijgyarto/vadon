@@ -19,6 +19,7 @@ namespace
 {
 	bool is_resource_type_embeddable(VadonEditor::Core::Application& application, const QUuid& resource_type)
 	{
+		// FIXME: do this via type metadata instead of hardcoded checks?
 		if (VadonEditor::Model::Scene::is_scene_base_of_type(application, resource_type) == true)
 		{
 			return false;

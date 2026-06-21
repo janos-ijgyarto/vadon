@@ -2,9 +2,9 @@
 
 namespace VadonDemo::Network
 {
-	void MessageSerializer::write_message(::Vadon::Foundation::EditorMessageCategory category, const void* message_data, size_t message_size)
+	char* MessageSerializer::allocate_message(::Vadon::Foundation::EditorMessageCategory category, size_t message_size)
 	{
-		const size_t combined_size = sizeof(::Vadon::Foundation::EditorMessageCategory) + sizeof(uint32_t) + message_size;
+		const size_t combined_size = Vadon::Foundation::EditorMessageReader::c_header_size + message_size;
 		const size_t prev_buffer_size = m_buffer.size();
 		
 		m_buffer.insert(m_buffer.end(), combined_size, 0);
@@ -14,6 +14,7 @@ namespace VadonDemo::Network
 		const uint32_t message_size_uint = static_cast<uint32_t>(message_size);
 		memcpy(m_buffer.data() + prev_buffer_size + sizeof(::Vadon::Foundation::EditorMessageCategory), &message_size_uint, sizeof(uint32_t));
 		
-		memcpy(m_buffer.data() + prev_buffer_size + sizeof(::Vadon::Foundation::EditorMessageCategory) + sizeof(uint32_t), message_data, message_size);
+		// Return pointer to where client can allocate the message data
+		return m_buffer.data() + prev_buffer_size + Vadon::Foundation::EditorMessageReader::c_header_size;
 	}
 }

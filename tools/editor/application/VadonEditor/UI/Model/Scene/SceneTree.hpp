@@ -23,17 +23,19 @@ namespace VadonEditor::UI
 		Model::Scene* get_scene() const { return m_scene; }
 	signals:
 		void scene_modified(const QUuid& scene_id);
+		void scene_saved(const QUuid& scene_id);
 	private slots:
 		void entity_double_clicked(const QModelIndex& index);
 		void entity_widget_removed(QObject* widget_obj);
 
-		void entity_name_changed(const QUuid& entity_id, const QString& text);
-
-		void entity_component_added(const QUuid& entity_id, const QUuid& component_id);
-		void entity_component_removed(const QUuid& entity_id, const QUuid& component_id);
-		void entity_component_data_changed(const QUuid& entity_id, const QUuid& component_id, const QUuid& property_id);
-
 		void save_triggered();
+
+		void add_entity_triggered();
+		void remove_entity_triggered();
+
+		void entity_context_menu_requested(const QPoint& position);
+
+		void internal_scene_modified();
 	private:
 		void entity_opened(Model::Entity* entity);
 
@@ -41,6 +43,8 @@ namespace VadonEditor::UI
 		void force_close();
 
 		void set_modified();
+
+		Model::Entity* get_selected_entity() const;
 
 		Ui::SceneTree m_ui;
 

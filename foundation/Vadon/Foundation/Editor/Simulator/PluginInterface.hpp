@@ -14,7 +14,7 @@ namespace Vadon
 
 			EditorSimulatorInterface& get_simulator() { return m_simulator; }
 
-			virtual bool initialize() = 0;
+			virtual bool initialize(const char* project_path) = 0;
 			virtual void update() = 0;
 			virtual void shutdown() = 0;
 

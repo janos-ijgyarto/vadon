@@ -1,6 +1,6 @@
 #include <VadonEditor/UI/Utilities/UUIDDialog.hpp>
 
-#include <QUuid>
+#include <VadonEditor/Utilities/UUID.hpp>
 
 namespace VadonEditor::UI
 {
@@ -9,13 +9,48 @@ namespace VadonEditor::UI
 	{
 		setAttribute(Qt::WA_DeleteOnClose, true);
 		m_ui.setupUi(this);
-
-		QObject::connect(m_ui.generateButton, &QPushButton::clicked, this, &UUIDDialog::generate_clicked);
 	}
 
 	void UUIDDialog::generate_clicked()
 	{
 		QUuid new_uuid = QUuid::createUuid();
-		m_ui.uuidLineEdit->setText(new_uuid.toString(QUuid::StringFormat::WithoutBraces));
+		set_uuid_line_edit(new_uuid);
+		set_base64_line_edit(new_uuid);
+	}
+
+	void UUIDDialog::uuid_edited(const QString& text)
+	{
+		const QUuid parsed_uuid = QUuid::fromString(text);
+		set_base64_line_edit(parsed_uuid);
+	}
+
+	void UUIDDialog::base64_edited(const QString& text)
+	{
+		const QUuid parsed_uuid = Utilities::base64_string_to_uuid(text);
+		set_uuid_line_edit(parsed_uuid);
+	}
+
+	void UUIDDialog::set_uuid_line_edit(const QUuid& uuid_value)
+	{
+		if (uuid_value.isNull() == false)
+		{
+			m_ui.uuidLineEdit->setText(uuid_value.toString(QUuid::StringFormat::WithoutBraces));
+		}
+		else
+		{
+			m_ui.uuidLineEdit->setText("INVALID UUID");
+		}
+	}
+
+	void UUIDDialog::set_base64_line_edit(const QUuid& uuid_value)
+	{
+		if (uuid_value.isNull() == false)
+		{
+			m_ui.base64LineEdit->setText(Utilities::uuid_to_base64_string(uuid_value));
+		}
+		else
+		{
+			m_ui.base64LineEdit->setText("INVALID UUID");
+		}
 	}
 }

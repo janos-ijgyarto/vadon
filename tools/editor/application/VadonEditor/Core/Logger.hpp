@@ -8,7 +8,7 @@ namespace VadonEditor::Core
     {
         Q_OBJECT
     signals:
-        void message_logged(const QString& message);
+        void message_logged(QtMsgType type, const QString& message);
 
     private:
         void handle_message(QtMsgType type, const QMessageLogContext& context, const QString& message);

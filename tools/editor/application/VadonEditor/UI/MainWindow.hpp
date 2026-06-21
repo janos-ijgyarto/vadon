@@ -24,7 +24,7 @@ namespace VadonEditor::UI
         void stop_simulator_requested();
         void close_requested();
     private slots:
-        void message_logged(const QString& message);
+        void message_logged(QtMsgType type, const QString& message);
 
         void new_triggered();
         void quit_triggered();

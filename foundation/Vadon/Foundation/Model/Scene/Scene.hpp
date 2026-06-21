@@ -41,6 +41,13 @@ namespace Vadon
 				get_base_type_uuid_string(BaseType::UUID)
 			};
 		};
+
+		struct SceneEntityInfo
+		{
+			UUID id;
+			UUID parent;
+			UUID sub_scene;
+		};
 	}
 }
 #endif

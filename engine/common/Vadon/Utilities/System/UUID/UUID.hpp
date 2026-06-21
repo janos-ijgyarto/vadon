@@ -12,7 +12,50 @@ namespace Vadon::Utilities
 
 	// FIXME: these will always produce the same length string
 	// replace with a type that avoids dynamic allocation?
-	VADONCOMMON_API std::string uuid_to_string(const ::Vadon::Foundation::UUID& uuid);
+
+	constexpr char uuid_half_byte_to_hex(const char c)
+	{
+		if (c < 10)
+		{
+			return char('0' + c);
+		}
+		else
+		{
+			return char('A' + (c - 10));
+		}
+	}
+
+	constexpr ::Vadon::Foundation::UUIDString uuid_to_string(const ::Vadon::Foundation::UUID& uuid)
+	{
+		::Vadon::Foundation::UUIDString result_data = {};
+
+		constexpr char c_separator = '-';
+		constexpr size_t c_separator_offsets[4] = { 8, 13, 18, 23 };
+
+		constexpr char half_byte_mask = ((1 << 4) - 1);
+		size_t char_index = 0;
+		size_t separator_index = 0;
+		for (size_t index = 0; index < ::Vadon::Foundation::UUID::c_uuid_width; ++index)
+		{
+			if ((separator_index < 4) && (char_index == c_separator_offsets[separator_index]))
+			{
+				// Write separator
+				result_data.string[char_index] = c_separator;
+				++char_index;
+				++separator_index;
+			}
+
+			const char uuid_byte = uuid.data[index];
+
+			result_data.string[char_index] = uuid_half_byte_to_hex((uuid_byte >> 4) & half_byte_mask);
+			result_data.string[char_index + 1] = uuid_half_byte_to_hex(uuid_byte & half_byte_mask);
+			char_index += 2;
+		}
+
+		return result_data;
+	}
+
+	VADONCOMMON_API std::string uuid_to_hex_string(const ::Vadon::Foundation::UUID& uuid);
 	VADONCOMMON_API std::string uuid_to_base64_string(const ::Vadon::Foundation::UUID& uuid);
 	VADONCOMMON_API bool uuid_from_base64_string(std::string_view data_string, ::Vadon::Foundation::UUID& uuid);
 

@@ -8,8 +8,10 @@
 #include <VadonEditor/Core/Editor.hpp>
 
 #include <Vadon/Foundation/Editor/Simulator/PluginInterface.hpp>
+#include <Vadon/Foundation/Editor/Network/Message/Simulator.hpp>
 
 #include <Vadon/Core/Core.hpp>
+#include <Vadon/Core/Logger.hpp>
 #include <Vadon/ECS/World/World.hpp>
 
 #include <chrono>
@@ -19,14 +21,26 @@ namespace Vadon::Core
     class EngineCoreInterface;
     class EngineEnvironment;
 }
-namespace VadonDemo::Model
-{
-    class Model;
-}
 namespace VadonDemo::Core
 {
     class Core;
     class EditorPluginInterface;
+
+    class Editor;
+
+    class Logger : public Vadon::Core::DefaultLogger
+    {
+    public:
+        Logger(Editor& editor) : m_editor(editor) {}
+
+        void log_message(std::string_view message) override;
+        void log_warning(std::string_view message) override;
+        void log_error(std::string_view message) override;
+    private:
+        void dispatch_network_log_message(::Vadon::Foundation::EditorSimulatorMessageLog::Type type, std::string_view message);
+
+        Editor& m_editor;
+    };
 
     class Editor : public ::Vadon::Foundation::EditorSimulatorPluginInterface
     {
@@ -50,7 +64,7 @@ namespace VadonDemo::Core
 
         float get_delta_time() const { return m_delta_time; }
 
-        bool initialize() override;
+        bool initialize(const char* project_path) override;
         void update() override;
         void shutdown() override;
 
@@ -71,8 +85,9 @@ namespace VadonDemo::Core
 
         bool project_loaded();
 
-        VadonEditor::Core::Editor m_common_editor;
         Vadon::Core::EngineCorePtr m_engine_core;
+        VadonEditor::Core::Editor m_common_editor;
+        Logger m_logger;
 
         std::unique_ptr<VadonDemo::Core::Core> m_core;
 

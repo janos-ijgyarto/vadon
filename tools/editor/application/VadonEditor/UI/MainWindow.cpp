@@ -33,9 +33,27 @@ namespace VadonEditor::UI
 	{
 	}
 
-	void MainWindow::message_logged(const QString& message)
+	void MainWindow::message_logged(QtMsgType type, const QString& message)
 	{
-		m_ui.console->appendPlainText(message);
+		// FIXME: this assumes dark mode
+		// We should toggle based on app style setting!
+		QString html_color = "white";
+		switch (type)
+		{
+		case QtDebugMsg:
+			html_color = "pink";
+			break;
+		case QtWarningMsg:
+			html_color = "yellow";
+			break;
+		case QtCriticalMsg:
+			html_color = "red";
+			break;
+		case QtFatalMsg:
+			html_color = "darkRed";
+			break;
+		}
+		m_ui.console->appendHtml(QString("<p style=\"color:%1;white-space:pre\">%2</p>").arg(html_color).arg(message.simplified()));
 	}
 
 	void MainWindow::new_triggered()

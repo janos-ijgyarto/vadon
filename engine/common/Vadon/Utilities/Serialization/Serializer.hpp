@@ -104,6 +104,8 @@ namespace Vadon::Utilities
 
 		virtual bool has_key(std::string_view key) const = 0;
 		virtual bool has_key(const ::Vadon::Foundation::UUID& key) const = 0;
+
+		// FIXME: provide iterator instead of having to copy the keys!
 		virtual KeyVector get_keys() const = 0;
 
 		// TODO: implement an iterator for object elements

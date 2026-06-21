@@ -16,13 +16,14 @@ namespace VadonEditor::UI
 	private slots:
 		void new_clicked();
 		void import_clicked();
+		void uuid_generator_clicked();
 
 		void run_clicked();
 		void remove_clicked();
 
 		void project_selection_changed();
 		void project_double_clicked(QListWidgetItem* item);
-	private slots:
+
 		void new_project_created();
 		void new_project_dialog_destroyed() { m_new_project_dialog = nullptr; }
 	private:

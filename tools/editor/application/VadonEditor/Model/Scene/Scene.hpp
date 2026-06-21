@@ -39,6 +39,14 @@ namespace VadonEditor::Model
 		bool initialize();
 		bool store_scene_data() const;
 
+		void entity_added(const QUuid& id);
+		void entity_removed(const QUuid& id);
+		void entity_name_changed(const QUuid& id);
+
+		void entity_component_added(const QUuid& entity_id, const QUuid& component_id);
+		void entity_component_removed(const QUuid& entity_id, const QUuid& component_id);
+		void entity_component_property_edited(const QUuid& entity_id, const QUuid& component_id, const QUuid& property_id);
+
 		Core::Application& m_application;
 
 		SceneID m_id;

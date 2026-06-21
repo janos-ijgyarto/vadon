@@ -1,5 +1,7 @@
 #include <VadonEditor/Core/Project/ProjectManager.hpp>
 
+#include <VadonEditor/Core/Editor.hpp>
+
 #include <Vadon/Core/File/FileSystem.hpp>
 #include <Vadon/Core/Project/Project.hpp>
 
@@ -15,7 +17,13 @@ namespace
 
 namespace VadonEditor::Core
 {
-	bool ProjectManager::load_project(Vadon::Core::EngineCoreInterface& engine_core, std::string_view root_path)
+	ProjectManager::ProjectManager(Editor& editor)
+		: m_editor(editor)
+	{
+
+	}
+
+	bool ProjectManager::load_project(std::string_view root_path)
 	{
 		Vadon::Core::Logger::log_message(std::format("Project manager: loading project at path \"{}\"\n", root_path));
 
@@ -47,7 +55,7 @@ namespace VadonEditor::Core
 
 		Vadon::Core::RawFileDataBuffer project_file_data;
 
-		Vadon::Core::FileSystem& file_system = engine_core.get_system<Vadon::Core::FileSystem>();
+		Vadon::Core::FileSystem& file_system = m_editor.get_engine_core().get_system<Vadon::Core::FileSystem>();
 		if (file_system.load_file(project_file_path, project_file_data) == false)
 		{
 			Vadon::Core::Logger::log_error("Project manager: unable to load file!\n");
@@ -66,10 +74,5 @@ namespace VadonEditor::Core
 		Vadon::Core::Logger::log_message(std::format("Project manager: project \"{}\" loaded successfully!\n", project_info.name));
 
 		return true;
-	}
-
-	ProjectManager::ProjectManager()
-	{
-
 	}
 }

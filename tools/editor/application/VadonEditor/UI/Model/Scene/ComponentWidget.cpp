@@ -117,7 +117,6 @@ namespace VadonEditor::UI
 		PropertyWidget* property_widget = find_property_widget(property_id);
 
 		m_component->set_property(property_id, property_widget->get_value());
-		emit(property_edited(m_component->get_type_id(), property_id));
 	}
 
 	void ComponentWidget::remove_clicked()

@@ -56,7 +56,7 @@ namespace VadonEditor::Utilities
 		case ::Vadon::Foundation::BaseType::UINT32:
 			return QMetaType::Type::UInt;
 		case ::Vadon::Foundation::BaseType::FLOAT:
-			return QMetaType::Type::Double;
+			return QMetaType::Type::Float;
 		case ::Vadon::Foundation::BaseType::BOOL:
 			return QMetaType::Type::Bool;
 		case ::Vadon::Foundation::BaseType::STRING:

@@ -3,6 +3,7 @@
 #include <Vadon/Model/Animation/AnimationSystem.hpp>
 
 #include <Vadon/Utilities/Debugging/Assert.hpp>
+#include <Vadon/Utilities/TypeInfo/TypeList/VariantTypeList.hpp>
 
 #include <algorithm>
 
@@ -10,6 +11,7 @@ namespace
 {
 	Vadon::Utilities::Variant lerp_variant_values(const Vadon::Utilities::Variant& value_a, const Vadon::Utilities::Variant& value_b, float factor)
 	{
+		// FIXME: use std::holds_alternative?
 		VADON_ASSERT(value_a.index() == value_b.index(), "Mismatch in variant types!");
 		switch (value_a.index())
 		{

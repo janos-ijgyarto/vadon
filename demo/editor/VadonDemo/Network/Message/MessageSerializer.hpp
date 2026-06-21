@@ -8,12 +8,13 @@ namespace VadonDemo::Network
 	class MessageSerializer
 	{
 	public:
-		void write_message(::Vadon::Foundation::EditorMessageCategory category, const void* message_data, size_t message_size);
+		char* allocate_message(::Vadon::Foundation::EditorMessageCategory category, size_t message_size);
 
 		template<typename T>
 		void write_message_trivial(::Vadon::Foundation::EditorMessageCategory category, const T& message)
 		{
-			write_message(category, &message, sizeof(T));
+			char* message_data = allocate_message(category, sizeof(T));
+			memcpy(message_data, &message, sizeof(T));
 		}
 
 		const std::vector<char>& get_buffer() const { return m_buffer; }

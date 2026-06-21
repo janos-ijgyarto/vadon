@@ -1,5 +1,7 @@
 #ifndef VADON_FOUNDATION_TYPEINFO_METADATA_HPP
 #define VADON_FOUNDATION_TYPEINFO_METADATA_HPP
+#include <Vadon/Foundation/Utilities/Numeric.hpp>
+#include <cstring>
 namespace Vadon
 {
 	namespace Foundation
@@ -32,9 +34,10 @@ namespace Vadon
 			enum Key
 			{
 				NAME,
+				FLAGS,
 				RESOURCE_TYPE, // If property is UUID, this indicates that it should be interpreted as a resource UUID and provides the resource type
 				ARRAY_TYPE, // If property is array, this contains the type of the array
-				OBJECT_TYPE // If property is object, this contains the object type
+				OBJECT_TYPE // If property is object, this contains the object type				
 				// TODO: other metadata?
 			};
 
@@ -44,6 +47,8 @@ namespace Vadon
 				{
 				case NAME:
 					return "name";
+				case FLAGS:
+					return "flags";
 				case RESOURCE_TYPE:
 					return "resource_type";
 				case ARRAY_TYPE:
@@ -53,6 +58,41 @@ namespace Vadon
 				}
 
 				return nullptr;
+			}
+
+			enum Flags
+			{
+				NONE = 0,
+				EDITOR_HIDDEN = 1 << 0 // Property not displayed in Editor UI
+			};
+
+			static constexpr const char* flag_string(Flags flags)
+			{
+				for (uint32 current_offset = 0u; (1 << current_offset) <= flags; ++current_offset)
+				{
+					const uint32 current_flag_value = 1 << current_offset;
+					if ((flags & current_flag_value) != 0)
+					{
+						switch (current_flag_value)
+						{
+						case Flags::EDITOR_HIDDEN:
+							return "editor_hidden";
+						}
+					}
+				}
+
+				return nullptr;
+			}
+
+			static Flags parse_flag_string(const char* flag_string)
+			{
+				// FIXME: make this cleaner!
+				if (strcmp(flag_string, "editor_hidden") == 0)
+				{
+					return Flags::EDITOR_HIDDEN;
+				}
+
+				return Flags::NONE;
 			}
 		};
 	}

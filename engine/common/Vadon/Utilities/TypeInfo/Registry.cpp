@@ -96,7 +96,7 @@ namespace Vadon::Utilities
 	{
 		if (has_method(method_uuid) == true)
 		{
-			Vadon::Core::Logger::log_error(std::format("Type registry error: \"{}\" already has method registered with name \"{}\"!\n", uuid_to_string(info.id), uuid_to_string(method_uuid)));
+			Vadon::Core::Logger::log_error(std::format("Type registry error: \"{}\" already has method registered with name \"{}\"!\n", uuid_to_string(info.id).string, uuid_to_string(method_uuid).string));
 			return false;
 		}
 
@@ -108,7 +108,7 @@ namespace Vadon::Utilities
 	{
 		if (has_property(property_uuid) == true)
 		{
-			Vadon::Core::Logger::log_error(std::format("Type registry error: \"{}\" already has property registered with name \"{}\"!\n", uuid_to_string(info.id), uuid_to_string(property_uuid)));
+			Vadon::Core::Logger::log_error(std::format("Type registry error: \"{}\" already has property registered with name \"{}\"!\n", uuid_to_string(info.id).string, uuid_to_string(property_uuid).string));
 			return false;
 		}
 
@@ -177,7 +177,7 @@ namespace Vadon::Utilities
 		auto type_id_it = instance.m_id_lookup.find(type_uuid);
 		if (type_id_it == instance.m_id_lookup.end())
 		{
-			Vadon::Core::Logger::log_error(std::format("Type registry error: {} not present in registry!\n", uuid_to_string(type_uuid)));
+			Vadon::Core::Logger::log_error(std::format("Type registry error: {} not present in registry!\n", uuid_to_string(type_uuid).string));
 			return Vadon::Utilities::TypeID::INVALID;
 		}
 
@@ -304,7 +304,7 @@ namespace Vadon::Utilities
 		const PropertyData* property_data = instance.internal_find_property(type_data, property_uuid);
 		if (property_data == nullptr)
 		{
-			Vadon::Core::Logger::log_error(std::format("Type registry error: property \"{}\" not found in type \"{}\"!\n", uuid_to_string(property_uuid), uuid_to_string(type_data.info.id)));
+			Vadon::Core::Logger::log_error(std::format("Type registry error: property \"{}\" not found in type \"{}\"!\n", uuid_to_string(property_uuid).string, uuid_to_string(type_data.info.id).string));
 			return Variant();
 		}
 
@@ -361,7 +361,7 @@ namespace Vadon::Utilities
 
 		if (instance.m_id_lookup.find(type_uuid) != instance.m_id_lookup.end())
 		{
-			VADON_ERROR(std::format("Type registry error: \"{}\" already exists in registry!\n", uuid_to_string(type_uuid)));
+			VADON_ERROR(std::format("Type registry error: \"{}\" already exists in registry!\n", uuid_to_string(type_uuid).string));
 			return;
 		}
 
@@ -442,7 +442,7 @@ namespace Vadon::Utilities
 		auto base_data_it = m_type_lookup.find(base_id);
 		if (base_data_it == m_type_lookup.end())
 		{
-			Vadon::Core::Logger::log_error(std::format("Type registry error: base class with type ID {} provided for \"{}\" is not present in registry!\n", Vadon::Utilities::to_integral(base_id), uuid_to_string(data.info.id)));
+			Vadon::Core::Logger::log_error(std::format("Type registry error: base class with type ID {} provided for \"{}\" is not present in registry!\n", Vadon::Utilities::to_integral(base_id), uuid_to_string(data.info.id).string));
 			return;
 		}
 
@@ -583,7 +583,7 @@ namespace Vadon::Utilities
 		const PropertyData* property = internal_find_property(type_data, property_uuid);
 		if (property == nullptr)
 		{
-			Vadon::Core::Logger::log_error(std::format("Type registry error: property \"{}\" not found in type \"{}\"!\n", Vadon::Utilities::uuid_to_string(property_uuid), Vadon::Utilities::uuid_to_string(type_data.info.id)));
+			Vadon::Core::Logger::log_error(std::format("Type registry error: property \"{}\" not found in type \"{}\"!\n", Vadon::Utilities::uuid_to_string(property_uuid).string, Vadon::Utilities::uuid_to_string(type_data.info.id).string));
 			return;
 		}
 

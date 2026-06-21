@@ -14,6 +14,7 @@ namespace VadonEditor::Core
 {
 	struct Editor::Internal
 	{
+		Vadon::Core::EngineCoreInterface& m_engine_core;
 		Vadon::Utilities::CommandLineParser m_command_line_parser;
 
 		ProjectManager m_project_manager;
@@ -21,10 +22,18 @@ namespace VadonEditor::Core
 
 		Model::ResourceSystem m_resource_system;
 		Model::SceneSystem m_scene_system;
+
+		Internal(Editor& editor, Vadon::Core::EngineCoreInterface& engine_core)
+			: m_engine_core(engine_core)
+			, m_project_manager(editor)
+			, m_resource_system(editor)
+		{
+
+		}
 	};
 
-	Editor::Editor()
-		: m_internal(std::make_unique<Internal>())
+	Editor::Editor(Vadon::Core::EngineCoreInterface& engine_core)
+		: m_internal(std::make_unique<Internal>(*this, engine_core))
 	{
 	}
 
@@ -37,7 +46,26 @@ namespace VadonEditor::Core
 
 	bool Editor::initialize()
 	{
-		// TODO: anything?
+		if (get_resource_system().initialize() == false)
+		{
+			return false;
+		}
+
+		return true;
+	}
+
+	bool Editor::load_project(std::string_view root_path)
+	{
+		if (get_project_manager().load_project(root_path) == false)
+		{
+			return false;
+		}
+
+		if (get_resource_system().project_loaded() == false)
+		{
+			return false;
+		}
+
 		return true;
 	}
 
@@ -45,6 +73,8 @@ namespace VadonEditor::Core
 	{
 		// TODO: anything?
 	}
+
+	Vadon::Core::EngineCoreInterface& Editor::get_engine_core() { return m_internal->m_engine_core; }
 
 	Vadon::Utilities::CommandLineParser& Editor::get_command_line_parser() { return m_internal->m_command_line_parser; }
 
@@ -57,4 +87,9 @@ namespace VadonEditor::Core
 	Model::ResourceSystem& Editor::get_resource_system() { return m_internal->m_resource_system; }
 
 	Model::SceneSystem& Editor::get_scene_system() { return m_internal->m_scene_system; }
+
+	void Editor::process_message(const char* data, size_t size)
+	{
+		get_resource_system().process_message(data, size);
+	}
 }

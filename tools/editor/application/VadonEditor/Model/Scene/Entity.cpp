@@ -58,7 +58,10 @@ namespace VadonEditor::Model
 {
 	Entity::~Entity()
 	{
-		clear_components();
+		for (Component* current_component : m_components)
+		{
+			delete current_component;
+		}
 	}
 
 	bool Entity::initialize()
@@ -66,19 +69,10 @@ namespace VadonEditor::Model
 		return m_data.initialize(Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::SceneEntitySchema::c_type_uuid));
 	}
 	
-	bool Entity::load_entity_data(const QVariant& data)
+	bool Entity::load_data(const QVariant& data)
 	{
-		clear_components();
 		m_data.load_properties(data.toMap());
-
-		// TODO: create component objects from data in the relevant property
-
 		return true;
-	}
-
-	void Entity::store_entity_data()
-	{
-		// TODO: go over each component, gather data, write into array and add to the relevant property
 	}
 
 	QUuid Entity::get_id() const
@@ -97,6 +91,14 @@ namespace VadonEditor::Model
 	{
 		const QUuid name_property_uuid = Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::SceneEntitySchema::c_name_property.id);
 		return m_data.get_property(name_property_uuid).toString();
+	}
+
+	void Entity::set_name(const QString& name)
+	{
+		const QUuid name_property_uuid = Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::SceneEntitySchema::c_name_property.id);
+		m_data.set_property(name_property_uuid, name);
+
+		emit(name_changed(get_id()));
 	}
 
 	QString Entity::get_label() const
@@ -118,53 +120,105 @@ namespace VadonEditor::Model
 		return m_data.get_property(scene_property_uuid).toUuid();
 	}
 
-	QList<QUuid> Entity::get_component_list() const
+	Component* Entity::add_component(const QUuid& component_id)
 	{
-		return QList<QUuid>();
-	}
-
-	Component* Entity::add_component(const QUuid& type_id)
-	{
-		auto component_it = m_components.find(type_id);
-		if (component_it != m_components.end())
+		if (get_component(component_id) != nullptr)
 		{
-			Q_ASSERT_X(false, "VadonEditor::Model::Entity::add_component", "Component already added!");
-			return component_it.value();
+			Q_ASSERT_X(false, "VadonEditor::Model::Entity::add_component", "Component already added");
+			return nullptr;
 		}
-		
+
 		Component* new_component = new Component(m_application);
-		if (new_component->initialize(type_id) == false)
+		if (new_component->initialize(component_id) == false)
 		{
 			Q_ASSERT_X(false, "VadonEditor::Model::Entity::add_component", "Failed to initialize component");
 			delete new_component;
 			return nullptr;
 		}
 
-		component_it = m_components.insert(type_id, new_component);
-		return component_it.value();
+		internal_add_component(new_component);
+
+		emit(component_added(get_id(), component_id));
+		return new_component;
 	}
 
-	Component* Entity::find_component(const QUuid& type_id)
+	Component* Entity::get_component(const QUuid& component_id) const
 	{
-		auto component_it = m_components.find(type_id);
-		if (component_it != m_components.end())
+		for (Component* current_component : m_components)
 		{
-			return component_it.value();
+			if (current_component->get_type_id() == component_id)
+			{
+				return current_component;
+			}
 		}
 
 		return nullptr;
 	}
 
-	void Entity::remove_component(const QUuid& type_id)
+	void Entity::remove_component(const QUuid& component_id)
 	{
-		auto component_it = m_components.find(type_id);
-		if (component_it == m_components.end())
+		Component* component_to_remove = get_component(component_id);
+		if (component_to_remove == nullptr)
 		{
 			Q_ASSERT_X(false, "VadonEditor::Model::Entity::remove_component", "Component not found");
 			return;
 		}
 
-		m_components.erase(component_it);
+		m_components.removeOne(component_to_remove);
+		delete component_to_remove;
+
+		emit(component_removed(get_id(), component_id));
+	}
+
+	QList<QUuid> Entity::get_component_id_list()
+	{
+		if (m_components.isEmpty() == true)
+		{
+			const QVariantList component_data_list = m_data.get_property(components_property_uuid()).toList();
+			for (const QVariant& component_data : component_data_list)
+			{
+				const QVariantMap& component_obj_data = component_data.toMap();
+
+				Component* new_component = new Component(m_application);
+				if (new_component->import_data(component_obj_data) == false)
+				{
+					Q_ASSERT_X(false, "VadonEditor::Model::EntityModel::create_component_list", "Failed to create component object!");
+					delete new_component;
+				}
+
+				internal_add_component(new_component);
+			}
+		}
+
+		QList<QUuid> component_id_list;
+		for (Component* current_component : m_components)
+		{
+			component_id_list.push_back(current_component->get_type_id());
+		}
+
+		return component_id_list;
+	}
+
+	void Entity::store_component_data()
+	{
+		QVariantList component_data_list;
+
+		for (Component* current_component : m_components)
+		{
+			component_data_list.push_back(current_component->export_data());
+		}
+
+		m_data.set_property(components_property_uuid(), component_data_list);
+	}
+
+	QUuid Entity::components_property_uuid()
+	{
+		return Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::SceneEntitySchema::c_components_property.id);
+	}
+
+	void Entity::internal_component_property_edited(const QUuid& component_id, const QUuid& property_id)
+	{
+		emit(component_property_edited(get_id(), component_id, property_id));
 	}
 
 	void Entity::internal_set_name(const QString& name)
@@ -179,25 +233,26 @@ namespace VadonEditor::Model
 		m_data.set_property(id_property_uuid, id);
 	}
 
-	void Entity::clear_components()
+	void Entity::internal_add_component(Component* component)
 	{
-		for (auto component_it = m_components.begin(); component_it != m_components.end(); ++component_it)
-		{
-			Component* current_component = component_it.value();
-			delete current_component;
-		}
+		connect(component, &Component::property_edited, this, &Entity::internal_component_property_edited);
 
-		m_components.clear();
+		m_components.push_back(component);
+
+		// Sort components by UUID
+		std::sort(m_components.begin(), m_components.end(),
+			+[](const Model::Component* lhs, const Model::Component* rhs)
+			{
+				// FIXME: sort by metadata name instead?
+				return lhs->get_type_id() < rhs->get_type_id();
+			}
+		);
 	}
 
 	EntityModel::EntityModel(Core::Application& application)
 		: m_application(application)
 	{
-		m_root_entity = internal_create_entity(m_entity_lookup);
-		m_root_entity->internal_set_name("Root");
-
-		QStandardItem* root_item = create_scene_tree_standard_item(m_root_entity->get_label(), m_root_entity->get_id());
-		m_qt_model.invisibleRootItem()->appendRow(root_item);
+		internal_create_root_entity();
 	}
 
 	EntityModel::~EntityModel()
@@ -244,23 +299,58 @@ namespace VadonEditor::Model
 		return QModelIndex();
 	}
 
-	void EntityModel::set_entity_name(Entity* entity, const QString& name)
+	QUuid EntityModel::add_entity(Entity* parent)
 	{
-		const QUuid name_property_uuid = Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::SceneEntitySchema::c_name_property.id);
-		entity->m_data.set_property(name_property_uuid, name);
+		Q_ASSERT_X(parent != nullptr, "VadonEditor::Model::EntityModel::add_entity", "Must provide a valid parent");
 
-		internal_find_entity_item(entity->get_id())->setText(entity->get_label());
+		Entity* new_entity = internal_create_entity(m_entity_lookup);
+
+		const QUuid entity_parent_property_uuid = Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::SceneEntitySchema::c_parent_property.id);
+		const QUuid parent_id = parent->get_id();
+		new_entity->m_data.set_property(entity_parent_property_uuid, parent_id);
+
+		const QUuid new_entity_id = new_entity->get_id();
+
+		QStandardItem* new_entity_item = create_scene_tree_standard_item(new_entity->get_label(), new_entity_id);
+
+		const QModelIndex parent_item_index = find_entity_item_by_id(parent_id);
+		Q_ASSERT_X(parent_item_index.isValid() == true, "VadonEditor::Model::EntityModel::add_entity", "Cannot find parent item");
+
+		QStandardItem* parent_item = m_qt_model.itemFromIndex(parent_item_index);
+		parent_item->appendRow(new_entity_item);
+
+		emit(entity_added(new_entity_id));
+
+		return new_entity_id;
 	}
 
 	void EntityModel::remove_entity(const QUuid& id)
 	{
+		const bool is_root = m_root_entity->get_id() == id;
+
 		// FIXME: find a way to instead just remove the model item, and connect to signals to know which Entity objects to remove?
 		QStandardItem* entity_item = internal_find_entity_item(id);
 		Q_ASSERT_X(entity_item != nullptr, "VadonEditor::Model::EntityModel::remove_entity", "Cannot find entity");
 
 		internal_remove_entity(entity_item, id);
 
-		delete entity_item;
+		QStandardItem* parent_item = entity_item->parent();
+		QModelIndex parent_index;
+		if ((parent_item != nullptr) && (parent_item != m_qt_model.invisibleRootItem()))
+		{
+			parent_index = parent_item->index();
+		}
+
+		m_qt_model.removeRow(entity_item->row(), parent_index);
+
+		emit(entity_removed(id));
+
+		if(is_root == true)
+		{
+			// If we removed the root entity, we replace with a blank root entity
+			internal_create_root_entity();
+			emit(entity_added(m_root_entity->get_id()));
+		}
 	}
 
 	bool EntityModel::save_data(QVariantList& entity_list) const
@@ -277,7 +367,7 @@ namespace VadonEditor::Model
 	{
 		QHash<QUuid, Entity*> new_entity_lookup;
 		Entity* new_root_entity = internal_create_entity();
-		if (new_root_entity->load_entity_data(entity_list.front()) == false)
+		if (new_root_entity->load_data(entity_list.front()) == false)
 		{
 			return false;
 		}
@@ -288,7 +378,7 @@ namespace VadonEditor::Model
 		for (int entity_index = 1; entity_index < entity_list.size(); ++entity_index)
 		{
 			Entity* current_entity = internal_create_entity();
-			if (current_entity->load_entity_data(entity_list[entity_index]) == false)
+			if (current_entity->load_data(entity_list[entity_index]) == false)
 			{
 				clear_entity_lookup(new_entity_lookup);
 				delete new_root_item;
@@ -312,10 +402,8 @@ namespace VadonEditor::Model
 			}
 		}
 
-		Entity* prev_root = m_root_entity;
+		// Set new root entity (NOTE: clearing the lookup will already clear the previous Entity)
 		m_root_entity = new_root_entity;
-
-		delete prev_root;
 
 		m_entity_lookup.swap(new_entity_lookup);
 		clear_entity_lookup(new_entity_lookup);
@@ -355,6 +443,12 @@ namespace VadonEditor::Model
 			return;
 		}
 
+		QObject::connect(entity, &Entity::name_changed, this, &EntityModel::internal_entity_name_changed);
+
+		QObject::connect(entity, &Entity::component_added, this, &EntityModel::internal_entity_component_added);
+		QObject::connect(entity, &Entity::component_removed, this, &EntityModel::internal_entity_component_removed);
+		QObject::connect(entity, &Entity::component_property_edited, this, &EntityModel::internal_entity_component_property_edited);
+
 		entity_lookup.insert(entity->get_id(), entity);
 	}
 
@@ -367,6 +461,15 @@ namespace VadonEditor::Model
 		}
 
 		entity_lookup.clear();
+	}
+
+	void EntityModel::internal_create_root_entity()
+	{
+		m_root_entity = internal_create_entity(m_entity_lookup);
+		m_root_entity->internal_set_name("Root");
+
+		QStandardItem* root_item = create_scene_tree_standard_item(m_root_entity->get_label(), m_root_entity->get_id());
+		m_qt_model.invisibleRootItem()->appendRow(root_item);
 	}
 
 	QStandardItem* EntityModel::internal_find_entity_item(const QUuid& id) const
@@ -412,9 +515,32 @@ namespace VadonEditor::Model
 		for (int child_index = 0; child_index < entity_item->rowCount(); ++child_index)
 		{
 			QStandardItem* current_child_item = entity_item->child(child_index);
-			const QUuid child_uuid = get_entity_item_data(entity_item, EntityDataRole::ID).toUuid();
+			const QUuid child_uuid = get_entity_item_data(current_child_item, EntityDataRole::ID).toUuid();
 
 			internal_remove_entity(current_child_item, child_uuid);
 		}
+	}
+
+	void EntityModel::internal_entity_name_changed(const QUuid& id)
+	{
+		internal_find_entity_item(id)->setText(find_entity_by_id(id)->get_label());
+		emit(entity_name_changed(id));
+	}
+
+	void EntityModel::internal_entity_component_added(const QUuid& entity_id, const QUuid& component_id)
+	{
+		// TODO: represent in the QStandardItem somehow?
+		emit(entity_component_added(entity_id, component_id));
+	}
+
+	void EntityModel::internal_entity_component_removed(const QUuid& entity_id, const QUuid& component_id)
+	{
+		// TODO: represent in the QStandardItem somehow?
+		emit(entity_component_removed(entity_id, component_id));
+	}
+
+	void EntityModel::internal_entity_component_property_edited(const QUuid& entity_id, const QUuid& component_id, const QUuid& property_id)
+	{
+		emit(entity_component_property_edited(entity_id, component_id, property_id));
 	}
 }

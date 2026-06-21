@@ -7,10 +7,17 @@
 #include <VadonEditor/Model/Resource/ResourceSystem.hpp>
 #include <VadonEditor/Model/Scene/SceneSystem.hpp>
 
+#include <VadonEditor/Network/Message/MessageSerializer.hpp>
+
 #include <VadonEditor/UI/UISystem.hpp>
 #include <VadonEditor/UI/MainWindow.hpp>
 
 #include <VadonEditor/UI/Model/Scene/SceneTree.hpp>
+
+#include <VadonEditor/Utilities/UUID.hpp>
+
+#include <Vadon/Foundation/Editor/Network/Message/Model.hpp>
+#include <Vadon/Foundation/Model/Scene/Scene.hpp>
 
 namespace VadonEditor::UI
 {
@@ -44,6 +51,7 @@ namespace VadonEditor::UI
 		// Scene does not have tab yet, create one
 		SceneTree* new_scene_tree = new SceneTree(opened_scene);
 		connect(new_scene_tree, &SceneTree::scene_modified, this, &SceneManager::scene_modified);
+		connect(new_scene_tree, &SceneTree::scene_saved, this, &SceneManager::scene_saved);
 
 		const int new_tab_index = scene_tab_widget->addTab(new_scene_tree, asset_info.path);
 
@@ -60,16 +68,39 @@ namespace VadonEditor::UI
 			return;
 		}
 
-		QString scene_tab_label = scene_tree->get_label();
-		if (scene_tree->get_scene()->is_modified() == true)
+		update_scene_tab_label(scene_tree);
+	}
+
+	void SceneManager::scene_saved(const QUuid& scene_id)
+	{
+		SceneTree* scene_tree = find_scene_tab(scene_id);
+		if (scene_tree == nullptr)
 		{
-			scene_tab_label += " (*)";
+			Q_ASSERT_X(false, "VadonEditor::UI::SceneManager::scene_saved", "Cannot find scene");
+			return;
 		}
 
-		QTabWidget* scene_tab_widget = m_application.get_ui_system().get_main_window()->get_scene_tab_widget();
-		const int tab_index = scene_tab_widget->indexOf(scene_tree);
+		update_scene_tab_label(scene_tree);
+	}
 
-		scene_tab_widget->setTabText(tab_index, scene_tab_label);
+	void SceneManager::current_scene_changed(int tab_index)
+	{
+		QTabWidget* scene_tab_widget = m_application.get_ui_system().get_main_window()->get_scene_tab_widget();
+
+		QWidget* selected_tab = scene_tab_widget->widget(tab_index);
+		SceneTree* selected_scene_tree = qobject_cast<SceneTree*>(selected_tab);
+
+		{
+			// FIXME: use temp allocator or shared serializer
+			VadonEditor::Network::MessageSerializer message_serializer;
+
+			::Vadon::Foundation::EditorModelMessageSceneSelected scene_selected;
+			scene_selected.message_type = ::Vadon::Foundation::EditorModelMessageType::SCENE_SELECTED;
+
+			scene_selected.scene_id = Utilities::qt_uuid_to_vadon_uuid(selected_scene_tree->get_scene()->get_id());
+
+			message_serializer.write_message_trivial(::Vadon::Foundation::EditorMessageCategory::MODEL, scene_selected);
+		}
 	}
 
 	SceneManager::SceneManager(Core::Application& application)
@@ -81,6 +112,10 @@ namespace VadonEditor::UI
 	bool SceneManager::initialize()
 	{
 		connect(&m_application.get_asset_manager(), &Core::AssetManager::asset_opened, this, &SceneManager::asset_opened);
+		
+		QTabWidget* scene_tab_widget = m_application.get_ui_system().get_main_window()->get_scene_tab_widget();
+		connect(scene_tab_widget, &QTabWidget::currentChanged, this, &SceneManager::current_scene_changed);
+
 		return true;
 	}
 
@@ -148,5 +183,19 @@ namespace VadonEditor::UI
 		}
 
 		return nullptr;
+	}
+
+	void SceneManager::update_scene_tab_label(SceneTree* scene_tab) const
+	{
+		QString scene_tab_label = scene_tab->get_label();
+		if (scene_tab->get_scene()->is_modified() == true)
+		{
+			scene_tab_label += " (*)";
+		}
+
+		QTabWidget* scene_tab_widget = m_application.get_ui_system().get_main_window()->get_scene_tab_widget();
+		const int tab_index = scene_tab_widget->indexOf(scene_tab);
+
+		scene_tab_widget->setTabText(tab_index, scene_tab_label);
 	}
 }

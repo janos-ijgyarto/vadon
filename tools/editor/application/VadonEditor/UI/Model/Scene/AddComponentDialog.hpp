@@ -1,6 +1,7 @@
 #ifndef VADONEDITOR_UI_MODEL_SCENE_ADDCOMPONENTDIALOG_HPP
 #define VADONEDITOR_UI_MODEL_SCENE_ADDCOMPONENTDIALOG_HPP
 #include <VadonEditor/UI/Model/Scene/ui_AddComponentDialog.h>
+#include <QUuid>
 namespace VadonEditor::Core
 {
 	class Application;
@@ -15,7 +16,7 @@ namespace VadonEditor::UI
 	{
 		Q_OBJECT
 	public:
-		AddComponentDialog(Core::Application& application, Model::Entity* entity, QWidget* parent = nullptr);
+		AddComponentDialog(Core::Application& application, const QList<QUuid>& existing_components, QWidget* parent = nullptr);
 	signals:
 		void component_type_selected(const QUuid& component_type_id);
 	private slots:
@@ -27,7 +28,7 @@ namespace VadonEditor::UI
 		Ui::AddComponentDialog m_ui;
 
 		Core::Application& m_application;
-		Model::Entity* m_entity;
+		QList<QUuid> m_existing_components;
 	};
 }
 #endif

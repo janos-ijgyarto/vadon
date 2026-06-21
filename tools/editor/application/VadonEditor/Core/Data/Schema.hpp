@@ -38,6 +38,8 @@ namespace VadonEditor::Core
 
 			bool is_base_of(const QUuid& base_uuid, const QUuid& derived_uuid) const;
 		private:
+			void process_metadata();
+
 			QHash<QUuid, TypeData> m_types;
 			QList<::Vadon::Foundation::UUID> m_type_list; // NOTE: this is used for queries
 

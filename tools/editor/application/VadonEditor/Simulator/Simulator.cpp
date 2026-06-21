@@ -53,9 +53,10 @@ namespace
 		{
 		}
 
-		bool initialize() override
+		bool initialize(const char* project_path) override
 		{
 			// TODO: test sending message to editor!
+			Q_UNUSED(project_path);
 			return true;
 		}
 
@@ -202,11 +203,21 @@ namespace VadonEditor::Simulator
 				return false;
 			}
 
-			if (m_plugin_interface->initialize() == false)
+			const VadonEditor::Core::ProjectManager& project_manager = m_application.get_project_manager();
+			const VadonEditor::Core::ProjectInfo& project_info = project_manager.get_project_info();
+			if (m_plugin_interface->initialize(project_info.get_project_file_path().toUtf8().constData()) == false)
 			{
 				qCritical() << "Plugin failed to initialize!";
 				return false;
 			}
+
+			// Connect network signals
+			QObject::connect(&m_application.get_network_system(), &Network::NetworkSystem::disconnected_from_server,
+				[this]()
+				{
+					m_plugin_interface->editor_disconnected();
+				}
+			);
 
 			QObject::connect(&m_application.get_network_system(), &Network::NetworkSystem::received_message,
 				[this](const QByteArray& data)
@@ -242,6 +253,18 @@ namespace VadonEditor::Simulator
 
 			// The editor is also connected by this point, so we can notify the plugin
 			m_plugin_interface->editor_connected();
+
+			// Send message back to editor
+			{
+				::Vadon::Foundation::EditorSimulatorMessageInit init_message;
+				init_message.message_type = ::Vadon::Foundation::EditorSimulatorMessageType::SIMULATOR_INIT;
+				init_message.error_code = 0;
+
+				VadonEditor::Network::MessageSerializer serializer;
+				serializer.write_message_trivial(::Vadon::Foundation::EditorMessageCategory::SIMULATOR, init_message);
+
+				m_application.get_simulator().dispatch_message_to_editor(serializer.get_buffer().data(), serializer.get_buffer().size());
+			}
 
 			return true;
 		}
@@ -296,19 +319,8 @@ namespace VadonEditor::Simulator
 
 				QObject::connect(&m_simulator_process, &QProcess::aboutToClose, [this]() { cleanup_process(); });
 				QObject::connect(&m_simulator_process, &QProcess::errorOccurred, [this](QProcess::ProcessError error) { process_error(error); });
-
-				QObject::connect(&m_simulator_process, &QProcess::readyReadStandardOutput,
-					[this]()
-					{
-						qInfo() << "SIMULATOR: " << qPrintable(m_simulator_process.readAllStandardOutput().trimmed());
-					}
-				);
-				QObject::connect(&m_simulator_process, &QProcess::readyReadStandardError,
-					[this]()
-					{
-						qWarning() << "SIMULATOR: " << qPrintable(m_simulator_process.readAllStandardError().trimmed());
-					}
-				);
+				
+				// TODO: connect to standard outputs as well?
 
 				m_simulator_process.start(QIODevice::ReadOnly);
 			}
@@ -320,14 +332,6 @@ namespace VadonEditor::Simulator
 				{
 					return false;
 				}
-
-				// Connect network signals
-				QObject::connect(&m_application.get_network_system(), &Network::NetworkSystem::disconnected_from_server,
-					[this]()
-					{
-						m_plugin_interface->editor_disconnected();
-					}
-				);
 
 				// Start timer to update the plugin
 				QObject::connect(&m_plugin_timer, &QTimer::timeout,

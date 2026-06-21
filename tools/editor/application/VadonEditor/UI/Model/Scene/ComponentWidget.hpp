@@ -23,7 +23,6 @@ namespace VadonEditor::UI
 
 		const Model::Component* get_component() const { return m_component; }
 	signals:
-		void property_edited(const QUuid& component_id, const QUuid& property_id);
 		void remove_requested(const QUuid& component_id);
 	private slots:
 		void internal_property_edited(const QUuid& property_id);

@@ -75,12 +75,12 @@ namespace Vadon::Utilities
 		return generate_uuid_impl();
 	}
 
-    std::string uuid_to_string(const ::Vadon::Foundation::UUID& uuid)
+    std::string uuid_to_hex_string(const ::Vadon::Foundation::UUID& uuid)
     {
         std::string uuid_string;
-        uuid_string.resize(36);
+        uuid_string.resize(::Vadon::Foundation::UUID::c_uuid_width * 2);
 
-        constexpr auto half_byte_to_hex = [](const char c) {
+        constexpr auto half_byte_to_hex = +[](const char c) {
             if (c < 10)
             {
                 return char('0' + c);

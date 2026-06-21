@@ -320,6 +320,34 @@ namespace VadonEditor::Core
 		return false;
 	}
 
+	void DataSchema::TypeMetadataRegistry::process_metadata()
+	{
+		for (auto type_it = m_types.begin(); type_it != m_types.end(); ++type_it)
+		{
+			TypeData& current_type_data = type_it.value();
+			for (auto property_it = current_type_data.properties.begin(); property_it != current_type_data.properties.end(); ++property_it)
+			{
+				PropertyData& current_property_data = property_it.value();
+
+				const QString flags_string = current_property_data.find_metadata(::Vadon::Foundation::CommonPropertyMetadata::Key::FLAGS);
+				if (flags_string.isEmpty() == false)
+				{
+					const QStringList flag_string_list = flags_string.split(',', Qt::SplitBehaviorFlags::SkipEmptyParts);
+					for (const QString& current_flag_string : flag_string_list)
+					{
+						const ::Vadon::Foundation::CommonPropertyMetadata::Flags current_flag = ::Vadon::Foundation::CommonPropertyMetadata::parse_flag_string(current_flag_string.toLocal8Bit().constData());
+						if (current_flag != ::Vadon::Foundation::CommonPropertyMetadata::Flags::NONE)
+						{
+							current_property_data.flags = static_cast<::Vadon::Foundation::CommonPropertyMetadata::Flags>(current_property_data.flags | current_flag);
+						}
+					}
+				}
+			}
+		}
+
+		// TODO: any other post-processing?
+	}
+
 	const TypeData* DataSchema::find_type_data(const QUuid& type_uuid) const
 	{
 		auto type_it = m_registry.m_types.find(type_uuid);
@@ -585,6 +613,7 @@ namespace VadonEditor::Core
 		}
 
 		// Load successful
+		loaded_metadata_registry.process_metadata();
 		m_registry = loaded_metadata_registry;
 
 		// Re-generate the Qt model

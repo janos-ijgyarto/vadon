@@ -58,6 +58,6 @@ namespace VadonEditor::Core
 			fflush(stderr);
 			fflush(stdout);
 		}
-		emit message_logged(message_string);
+		emit message_logged(type, message_string);
 	}
 }

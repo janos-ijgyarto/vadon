@@ -23,7 +23,7 @@ namespace Vadon::Private::Model
 		::Vadon::Foundation::UUID id;
 		::Vadon::Foundation::UUID parent;
 		SceneID scene;
-		std::vector<ComponentData> components;
+		std::vector<ComponentData> components; // FIXME: use DataObject to store property data instead of allocating Component objects?
 		std::string name; // FIXME: this is only needed for the Editor, should be removed in live builds!
 
 		VADON_DECLARE_MEMBER_UUID(id, ::Vadon::Foundation::SceneEntitySchema::c_id_property.id.string);

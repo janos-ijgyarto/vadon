@@ -41,6 +41,6 @@ namespace VadonEditor::UI
 
 	void PropertyDoubleSpinBox::value_changed(double value)
 	{
-		internal_set_value(value);
+		internal_set_value(static_cast<float>(value));
 	}
 }

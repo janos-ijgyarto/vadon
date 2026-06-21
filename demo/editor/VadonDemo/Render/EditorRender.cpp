@@ -357,7 +357,7 @@ namespace VadonDemo::Render
 
         VadonEditor::Model::ResourceSystem& editor_resource_system = common_editor.get_resource_system();
         editor_resource_system.register_edit_callback(
-            [this](Vadon::Model::ResourceID resource_id)
+            [this](Vadon::Model::ResourceID resource_id, ::Vadon::Foundation::UUID /*property_id*/)
             {
                 Vadon::Core::EngineCoreInterface& engine_core = m_editor.get_engine_core();
                 Vadon::Model::ResourceSystem& resource_system = engine_core.get_system<Vadon::Model::ResourceSystem>();
