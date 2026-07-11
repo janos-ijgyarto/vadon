@@ -49,12 +49,6 @@ namespace Vadon::Private::Model
 {
 	ResourceHandle ResourceSystem::create_resource(Vadon::Utilities::TypeID type_id)
 	{
-		Resource* resource = internal_create_resource(type_id);
-		if (resource == nullptr)
-		{
-			return ResourceHandle();
-		}
-
 		// Generate UUID, checking to make sure it doesn't collide
 		// TODO: have a cutoff where we stop trying again?
 		ResourceID new_resource_id;
@@ -67,7 +61,17 @@ namespace Vadon::Private::Model
 			}
 		}
 
-		return internal_add_resource(ResourceInfo{ .id = new_resource_id, .type_id = type_id }, resource);
+		return internal_create_resource(type_id, new_resource_id);
+	}
+
+	ResourceHandle ResourceSystem::create_resource_with_id(Vadon::Utilities::TypeID type_id, ResourceID resource_id)
+	{
+		if (find_resource(resource_id).is_valid() == false)
+		{
+			log_error(std::format("Resource with ID {} already exists!", Utilities::uuid_to_string(resource_id).string));
+			return ResourceHandle();
+		}
+		return internal_create_resource(type_id, resource_id);
 	}
 
 	void ResourceSystem::add_embedded_resource(ResourceHandle owner_handle, ResourceHandle embedded_resource_handle)
@@ -438,13 +442,13 @@ namespace Vadon::Private::Model
 	{
 		Vadon::Utilities::TypeMetadata resource_metadata(metadata_registry, VADON_GET_TYPE_UUID(Vadon::Model::Resource));
 
-		resource_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "Vadon::Scene::Resource");
+		resource_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "Vadon::Model::Resource");
 
 		Vadon::Utilities::TypePropertyMetadata name_property(resource_metadata, VADON_GET_MEMBER_UUID(Vadon::Model::Resource, name));
 		name_property.set_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Name");
 
 		Vadon::Utilities::TypeMetadata(metadata_registry, VADON_GET_TYPE_UUID(Vadon::Model::FileResource))
-			.add_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "Vadon::Scene::FileResource");
+			.add_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "Vadon::Model::FileResource");
 	}
 
 	bool ResourceSystem::initialize()
@@ -553,13 +557,24 @@ namespace Vadon::Private::Model
 		return resource.release();
 	}
 
-	Resource* ResourceSystem::internal_create_resource(Vadon::Utilities::TypeID type_id) const
+	ResourceHandle ResourceSystem::internal_create_resource(Vadon::Utilities::TypeID type_id, ResourceID resource_id)
+	{
+		Resource* resource = internal_create_resource(type_id);
+		if (resource == nullptr)
+		{
+			return ResourceHandle();
+		}
+
+		return internal_add_resource(ResourceInfo{ .id = resource_id, .type_id = type_id }, resource);
+	}
+
+	Resource* ResourceSystem::internal_create_resource(Vadon::Utilities::TypeID type_id)
 	{
 		Resource* new_resource = Vadon::Model::ResourceRegistry::create_resource(type_id);
 		if (new_resource == nullptr)
 		{
 			// FIXME: show type name?
-			log_error(std::format("Resource system error: failed to create resource with type ID {}!\n", Vadon::Utilities::to_integral(type_id)));
+			Vadon::Core::Logger::log_error(std::format("Resource system error: failed to create resource with type ID {}!\n", Vadon::Utilities::to_integral(type_id)));
 		}
 
 		return new_resource;

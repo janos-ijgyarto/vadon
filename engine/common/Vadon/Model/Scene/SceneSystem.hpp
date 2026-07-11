@@ -19,7 +19,7 @@ namespace Vadon::Model
 		virtual SceneHandle load_scene(SceneID scene_id) = 0;
 
 		// NOTE: we don't check for circular dependencies, by this stage we assume scenes contain valid data
-		virtual Vadon::ECS::EntityHandle instantiate_scene(SceneHandle scene_handle, Vadon::ECS::World& ecs_world, bool is_sub_scene = true) = 0;
+		virtual Vadon::ECS::EntityHandle instantiate_scene(SceneHandle scene_handle, Vadon::ECS::World& ecs_world) = 0;
 		
 		// NOTE: cannot be const because we have to load the scenes to check for dependencies
 		// We expect to have to load them anyway to instantiate

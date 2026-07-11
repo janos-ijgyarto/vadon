@@ -8,10 +8,12 @@
 #include <VadonEditor/Model/Resource/Resource.hpp>
 #include <VadonEditor/Model/Scene/SceneSystem.hpp>
 
+#include <VadonEditor/UI/Project/Asset/AddFolderDialog.hpp>
 #include <VadonEditor/UI/Model/Resource/ResourceDialog.hpp>
 
 #include <QMenu>
 #include <QMessageBox>
+#include <QMouseEvent>
 #include <QPushButton>
 
 namespace VadonEditor::UI
@@ -21,6 +23,8 @@ namespace VadonEditor::UI
 		, m_application(nullptr)
 	{
 		m_ui.setupUi(this);
+
+		m_ui.assetTree->viewport()->installEventFilter(this);
 	}
 
 	void AssetBrowserTree::initialize(Core::Application& application)
@@ -33,10 +37,30 @@ namespace VadonEditor::UI
 		m_application = &application;
 	}
 
+	bool AssetBrowserTree::eventFilter(QObject* obj, QEvent* event)
+	{
+		if (obj == m_ui.assetTree->viewport())
+		{
+			if (event->type() == QEvent::MouseButtonRelease)
+			{
+				QMouseEvent* mouse_event = static_cast<QMouseEvent*>(event);
+				if (m_ui.assetTree->indexAt(mouse_event->pos()).isValid() == false)
+				{
+					m_ui.assetTree->selectionModel()->clearSelection();
+				}
+			}
+		}
+
+		// Standard event processing
+		return QObject::eventFilter(obj, event);
+	}
+
 	void AssetBrowserTree::asset_tree_context_menu_requested(const QPoint& position)
 	{
 #ifndef QT_NO_CONTEXTMENU
 		QMenu menu(this);
+
+		menu.addAction(m_ui.actionNewFolder);
 
 		QMenu* create_asset_menu = menu.addMenu(tr("Create New Asset"));
 		create_asset_menu->addAction(m_ui.actionCreateResource);
@@ -50,10 +74,16 @@ namespace VadonEditor::UI
 #endif
 	}
 
+	void AssetBrowserTree::add_folder_triggered()
+	{
+		AddFolderDialog* add_folder_dialog = new AddFolderDialog(*m_application, get_selected_asset(), this);
+		add_folder_dialog->open();
+	}
+
 	void AssetBrowserTree::new_resource_triggered()
 	{
 		// NOTE: we can fire-and-forget this object, it will clean itself up when the dialog closes
-		new NewResourceDialogBackend(*m_application, this); // TODO: use initial path!
+		new NewResourceDialogBackend(*m_application, this, get_selected_asset());
 	}
 
 	void AssetBrowserTree::new_scene_triggered()
@@ -138,13 +168,13 @@ namespace VadonEditor::UI
 		asset_manager.open_asset(index);
 	}
 
-	SaveAssetDialog::SaveAssetDialog(Core::Application& application, QWidget* parent)
+	SaveAssetDialog::SaveAssetDialog(Core::Application& application, QWidget* parent, const QModelIndex& root_asset)
 		: QDialog(parent)
 	{
 		m_ui.setupUi(this);
 		setAttribute(Qt::WidgetAttribute::WA_DeleteOnClose, true);
 
-		m_ui.assetBrowser->initialize(application);
+		m_ui.assetBrowser->initialize(application, root_asset);
 	}
 
 	void SaveAssetDialog::asset_name_changed(const QString& text)

@@ -8,6 +8,8 @@
 
 #include <Vadon/Core/Environment.hpp>
 
+#include <Vadon/ECS/World/World.hpp>
+
 #include <Vadon/Utilities/System/CommandLine/Parser.hpp>
 
 namespace VadonEditor::Core
@@ -16,6 +18,8 @@ namespace VadonEditor::Core
 	{
 		Vadon::Core::EngineCoreInterface& m_engine_core;
 		Vadon::Utilities::CommandLineParser m_command_line_parser;
+
+		Vadon::ECS::World m_ecs_world;
 
 		ProjectManager m_project_manager;
 		MetadataRegistry m_metadata_registry;
@@ -27,6 +31,7 @@ namespace VadonEditor::Core
 			: m_engine_core(engine_core)
 			, m_project_manager(editor)
 			, m_resource_system(editor)
+			, m_scene_system(editor)
 		{
 
 		}
@@ -71,10 +76,13 @@ namespace VadonEditor::Core
 
 	void Editor::shutdown()
 	{
-		// TODO: anything?
+		m_internal->m_scene_system.shutdown();
+		m_internal->m_resource_system.shutdown();
 	}
 
 	Vadon::Core::EngineCoreInterface& Editor::get_engine_core() { return m_internal->m_engine_core; }
+
+	Vadon::ECS::World& Editor::get_ecs_world() { return m_internal->m_ecs_world; }
 
 	Vadon::Utilities::CommandLineParser& Editor::get_command_line_parser() { return m_internal->m_command_line_parser; }
 

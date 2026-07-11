@@ -26,12 +26,17 @@ namespace VadonEditor::Model
 		const Vadon::Model::ResourceInfo& get_info() const { return m_info; }
 
 		bool is_loaded() const { return m_handle.is_valid(); }
+
+		Resource* find_embedded_resource(const Vadon::Model::ResourceID& resource_id) const;
 	private:
 		Resource(Core::Editor& editor, const Vadon::Model::ResourceID& id);
 
 		bool internal_load();
 		void load_property_data(const ::Vadon::Foundation::EditorModelMessageResourcePropertyEdited& resource_property_message, const char* data);
 		bool load_property_data(Vadon::Utilities::Serializer& serializer);
+
+		Resource* add_embedded_resource(const Vadon::Model::ResourceID& id, const ::Vadon::Foundation::UUID& type_id);
+		void remove_embedded_resource(const Vadon::Model::ResourceID& id);
 
 		Core::Editor& m_editor;
 
@@ -40,6 +45,7 @@ namespace VadonEditor::Model
 		Vadon::Model::ResourceHandle m_handle;
 
 		Resource* m_owner;
+		std::vector<Resource*> m_embedded_resources;
 
 		friend class ResourceSystem;
 	};

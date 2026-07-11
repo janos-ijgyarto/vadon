@@ -43,6 +43,7 @@ namespace VadonEditor::UI
 {
 	NewResourceDialog::NewResourceDialog(Core::Application& application, const QUuid& base_type, QWidget* parent)
 		: QDialog(parent)
+		, m_filter_model(nullptr)
 	{
 		setAttribute(Qt::WA_DeleteOnClose, true);
 
@@ -57,23 +58,23 @@ namespace VadonEditor::UI
 		}
 
 		const Core::DataSchema& data_schema = application.get_project_manager().get_project_data_schema();
-		m_ui.typeTreeView->setModel(const_cast<QStandardItemModel*>(&data_schema.get_qt_model()));
+		const_cast<QStandardItemModel*>(&data_schema.get_qt_model());
+
+		m_filter_model = new Core::TypeFilterModel(data_schema, this);
+		m_filter_model->setSourceModel(const_cast<QStandardItemModel*>(&data_schema.get_qt_model()));
+		m_filter_model->set_root_type(validated_base_type);
+		m_filter_model->setFilterCaseSensitivity(Qt::CaseSensitivity::CaseInsensitive);
+
+		m_ui.typeTreeView->setModel(m_filter_model);
 
 		const QModelIndex root_type_index = data_schema.find_type_index(validated_base_type);
 		if (root_type_index.isValid() == true)
 		{
 			const QModelIndex parent_index = root_type_index.parent();
 			m_ui.typeTreeView->setRootIndex(parent_index);
-		
-			const int row_count = m_ui.typeTreeView->model()->rowCount(parent_index);
-			for (int current_row = 0; current_row < row_count; ++current_row)
-			{
-				if (root_type_index.row() != current_row)
-				{
-					m_ui.typeTreeView->setRowHidden(current_row, parent_index, true);
-				}
-			}
 		}
+
+		m_ui.typeTreeView->expandAll();
 
 		connect(m_ui.typeTreeView->selectionModel(), &QItemSelectionModel::selectionChanged, this, &NewResourceDialog::selection_changed);
 
@@ -84,6 +85,12 @@ namespace VadonEditor::UI
 	{
 		const QUuid selected_type = get_selected_type(index);
 		finalize_selection(selected_type);
+	}
+
+	void NewResourceDialog::filter_text_changed(const QString& text)
+	{
+		m_filter_model->setFilterFixedString(text);
+		m_ui.typeTreeView->expandAll();
 	}
 
 	void NewResourceDialog::selection_changed(const QItemSelection& selected, const QItemSelection& deselected)
@@ -145,13 +152,11 @@ namespace VadonEditor::UI
 		accept();
 	}
 
-	NewResourceDialogBackend::NewResourceDialogBackend(Core::Application& application, QWidget* dialog_parent, const QString& init_path)
+	NewResourceDialogBackend::NewResourceDialogBackend(Core::Application& application, QWidget* dialog_parent, const QModelIndex& root_asset)
 		: m_application(application)
 		, m_dialog_parent(dialog_parent)
+		, m_root_asset(root_asset)
 	{
-		// TODO: use init path!
-		Q_UNUSED(init_path);
-
 		if (m_dialog_parent == nullptr)
 		{
 			// If no parent is provided, use main window
@@ -179,7 +184,7 @@ namespace VadonEditor::UI
 
 		m_new_resource_type = type_uuid;
 
-		SaveAssetDialog* save_dialog = new SaveAssetDialog(m_application, m_dialog_parent);
+		SaveAssetDialog* save_dialog = new SaveAssetDialog(m_application, m_dialog_parent, m_root_asset);
 		connect(save_dialog, &SaveAssetDialog::asset_saved, this, &NewResourceDialogBackend::file_path_selected);
 		connect(save_dialog, &SaveAssetDialog::rejected, this, &NewResourceDialogBackend::end_workflow);
 

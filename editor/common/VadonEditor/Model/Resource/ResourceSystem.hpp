@@ -31,6 +31,8 @@ namespace VadonEditor::Model
 		ResourceSystem(Core::Editor& editor);
 
 		bool initialize();
+		void shutdown();
+
 		bool project_loaded();
 
 		void process_message(const char* data, size_t size);

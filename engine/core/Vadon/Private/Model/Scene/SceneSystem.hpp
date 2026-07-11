@@ -26,7 +26,7 @@ namespace Vadon::Private::Model
 
 		SceneHandle load_scene(SceneID scene_id) override;
 
-		ECS::EntityHandle instantiate_scene(SceneHandle scene_handle, ECS::World& ecs_world, bool is_sub_scene) override;
+		ECS::EntityHandle instantiate_scene(SceneHandle scene_handle, ECS::World& ecs_world) override;
 
 		bool is_scene_dependent(SceneID base_scene_id, SceneID dependent_scene_id) override;
 	protected:
@@ -39,6 +39,8 @@ namespace Vadon::Private::Model
 		void shutdown();
 
 		bool internal_is_scene_dependent(SceneID scene_id, std::vector<SceneID>& dependency_stack);
+
+		ECS::EntityHandle internal_instantiate_scene(SceneHandle scene_handle, ECS::World& ecs_world, const SceneID& parent_scene_id);
 
 		const Scene* get_scene(SceneHandle scene_handle) const;
 		Scene* get_scene(SceneHandle scene_handle) { return const_cast<Scene*>(std::as_const(*this).get_scene(scene_handle)); }

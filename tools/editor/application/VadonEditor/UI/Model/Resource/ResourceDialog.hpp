@@ -6,6 +6,7 @@
 namespace VadonEditor::Core
 {
 	class Application;
+	class TypeFilterModel;
 }
 namespace VadonEditor::UI
 {
@@ -18,6 +19,7 @@ namespace VadonEditor::UI
 		void resource_type_selected(const QUuid& type_uuid);
 	private slots:
 		void type_double_clicked(const QModelIndex& index);
+		void filter_text_changed(const QString& text);
 
 		void selection_changed(const QItemSelection& selected, const QItemSelection& deselected);
 		void selection_accepted();
@@ -30,6 +32,8 @@ namespace VadonEditor::UI
 		void finalize_selection(const QUuid& type_uuid);
 
 		Ui::NewResourceDialog m_ui;
+
+		Core::TypeFilterModel* m_filter_model;
 	};
 
 	// NOTE: this is a utility object for NewResourceDialog which encapsulates
@@ -39,7 +43,7 @@ namespace VadonEditor::UI
 	{
 		Q_OBJECT
 	public:
-		NewResourceDialogBackend(Core::Application& application, QWidget* dialog_parent, const QString& init_path = "");
+		NewResourceDialogBackend(Core::Application& application, QWidget* dialog_parent, const QModelIndex& root_asset = QModelIndex());
 	private slots:
 		void resource_type_selected(const QUuid& type_uuid);
 		void file_path_selected(const QString& asset_path);
@@ -52,6 +56,7 @@ namespace VadonEditor::UI
 
 		QWidget* m_dialog_parent;
 		QUuid m_new_resource_type;
+		QModelIndex m_root_asset;
 	};
 }
 #endif

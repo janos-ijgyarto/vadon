@@ -11,8 +11,6 @@
 
 namespace
 {
-	constexpr char c_vadon_dir_separator = '/';
-
 	enum class AssetDataRole
 	{
 		ID = Qt::ItemDataRole::UserRole + 1, 
@@ -94,6 +92,17 @@ namespace VadonEditor::Core
 		{
 			qCritical() << "Failed to create asset!";
 			return QModelIndex();
+		}
+
+		if (info.type == AssetType::FOLDER)
+		{
+			const QDir directory;
+			if (directory.mkpath(file_info.absoluteFilePath()) == false)
+			{
+				qCritical() << "Failed to create folder at" << file_info.absoluteFilePath() << "!";
+				delete new_asset_item;
+				return QModelIndex();
+			}
 		}
 
 		return new_asset_item->index();
@@ -359,7 +368,7 @@ namespace VadonEditor::Core
 			return m_asset_model.invisibleRootItem();
 		}
 
-		QStringList split_path = QDir::cleanPath(path).split(c_vadon_dir_separator);
+		QStringList split_path = QDir::cleanPath(path).split(AssetInfo::c_dir_separator);
 
 		QStandardItem* current_parent = m_asset_model.invisibleRootItem();
 		for (const QString& path_part : split_path)
@@ -401,7 +410,7 @@ namespace VadonEditor::Core
 		QStandardItem* parent = asset_item->parent();
 		while ((parent != nullptr) && (parent != m_asset_model.invisibleRootItem()))
 		{
-			path = parent->text() + c_vadon_dir_separator + path;
+			path = parent->text() + AssetInfo::c_dir_separator + path;
 			parent = parent->parent();
 		}
 
@@ -411,7 +420,7 @@ namespace VadonEditor::Core
 	QString AssetManager::get_asset_absolute_file_path(const QString& asset_path) const
 	{
 		const ProjectInfo& project_info = m_application.get_project_manager().get_project_info();
-		return QDir::cleanPath(project_info.root_path + c_vadon_dir_separator + asset_path);
+		return QDir::cleanPath(project_info.root_path + AssetInfo::c_dir_separator + asset_path);
 	}
 
 	QString AssetManager::get_asset_relative_path(const QString& asset_path) const

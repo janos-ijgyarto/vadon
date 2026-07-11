@@ -12,7 +12,6 @@
 
 #include <Vadon/Core/Core.hpp>
 #include <Vadon/Core/Logger.hpp>
-#include <Vadon/ECS/World/World.hpp>
 
 #include <chrono>
 
@@ -56,8 +55,6 @@ namespace VadonDemo::Core
 
         Core& get_core() { return *m_core; }
 
-        Vadon::ECS::World& get_ecs_world() { return m_ecs_world; }
-
         Platform::EditorPlatform& get_platform() { return m_platform; }
         Render::EditorRender& get_render() { return m_render; }
         View::EditorView& get_view() { return m_view; }
@@ -90,8 +87,6 @@ namespace VadonDemo::Core
         Logger m_logger;
 
         std::unique_ptr<VadonDemo::Core::Core> m_core;
-
-        Vadon::ECS::World m_ecs_world;
 
         Platform::EditorPlatform m_platform;
         Render::EditorRender m_render;

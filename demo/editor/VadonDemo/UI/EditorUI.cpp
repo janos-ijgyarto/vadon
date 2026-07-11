@@ -87,7 +87,7 @@ namespace VadonDemo::UI
 
         m_entities_dirty = false;
 
-        Vadon::ECS::World& ecs_world = m_editor.get_ecs_world();
+        Vadon::ECS::World& ecs_world = m_editor.get_common_editor().get_ecs_world();
         auto base_ui_query = ecs_world.get_component_manager().run_component_query<Base&>();
 
         UI& common_ui = m_editor.get_core().get_ui();
@@ -117,7 +117,7 @@ namespace VadonDemo::UI
 
     void EditorUI::update_entity(Vadon::ECS::EntityHandle entity)
     {
-        Vadon::ECS::World& ecs_world = m_editor.get_ecs_world();
+        Vadon::ECS::World& ecs_world = m_editor.get_common_editor().get_ecs_world();
 
         // Make sure we at least have a base UI component!
         auto base_component = ecs_world.get_component_manager().get_component<Base>(entity);
@@ -133,7 +133,7 @@ namespace VadonDemo::UI
 
     void EditorUI::remove_entity(Vadon::ECS::EntityHandle entity)
     {
-        Vadon::ECS::World& ecs_world = m_editor.get_ecs_world();
+        Vadon::ECS::World& ecs_world = m_editor.get_common_editor().get_ecs_world();
         m_editor.get_core().get_ui().remove_ui_element(ecs_world, entity);
     }
 }

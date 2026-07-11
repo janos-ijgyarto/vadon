@@ -15,14 +15,36 @@ namespace VadonEditor::UI
 		m_ui.setupUi(this);
 	}
 
-	void AssetBrowserWidget::initialize(Core::Application& application)
+	void AssetBrowserWidget::initialize(Core::Application& application, const QModelIndex& root_asset)
 	{
 		m_application = &application;
 
 		m_ui.assetList->setModel(&application.get_asset_manager().get_model());
 
 		connect(m_ui.assetList->selectionModel(), &QItemSelectionModel::selectionChanged, this, &AssetBrowserWidget::selection_changed);
-		set_root(QModelIndex());
+		
+		if (root_asset.isValid() == true)
+		{
+			Core::AssetManager& asset_manager = m_application->get_asset_manager();
+			const Core::AssetInfo asset_info = get_asset_info(root_asset);
+			Q_ASSERT_X(asset_info.is_valid() == true, "VadonEditor::UI::AssetBrowserWidget::initialize", "Invalid root index!");
+
+			if (asset_info.type == Core::AssetType::FOLDER)
+			{
+				set_root(root_asset);
+			}
+			else
+			{
+				const QString parent_path = asset_info.get_parent_path();
+				const QModelIndex root_index = asset_manager.find_asset_index_by_path(parent_path);
+
+				set_root(root_index);
+			}
+		}
+		else
+		{
+			set_root(QModelIndex());
+		}
 	}
 
 	QModelIndex AssetBrowserWidget::get_selected_asset() const

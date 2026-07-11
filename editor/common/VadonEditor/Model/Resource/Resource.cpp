@@ -12,6 +12,19 @@
 
 namespace VadonEditor::Model
 {
+	Resource* Resource::find_embedded_resource(const Vadon::Model::ResourceID& resource_id) const
+	{
+		for (Resource* current_embedded : m_embedded_resources)
+		{
+			if (current_embedded->get_id() == resource_id)
+			{
+				return current_embedded;
+			}
+		}
+
+		return nullptr;
+	}
+
 	Resource::Resource(Core::Editor& editor, const Vadon::Model::ResourceID& id)
 		: m_editor(editor)
 		, m_id(id)
@@ -22,7 +35,7 @@ namespace VadonEditor::Model
 
 	bool Resource::internal_load()
 	{
-		VADON_ASSERT(m_handle.is_valid() == false, "Resource is already loaded!");
+		VADON_ASSERT(is_loaded() == false, "Resource is already loaded!");
 
 		Vadon::Model::ResourceSystem& engine_resource_system = m_editor.get_engine_core().get_system<Vadon::Model::ResourceSystem>();
 		m_handle = engine_resource_system.load_resource_base(m_id);
@@ -38,7 +51,7 @@ namespace VadonEditor::Model
 
 	void Resource::load_property_data(const ::Vadon::Foundation::EditorModelMessageResourcePropertyEdited& resource_property_message, const char* data)
 	{
-		VADON_ASSERT(m_handle.is_valid() == true, "Resource is not loaded!");
+		VADON_ASSERT(is_loaded() == true, "Resource is not loaded!");
 		const void* data_start = data + sizeof(::Vadon::Foundation::EditorModelMessageResourcePropertyEdited);
 
 		Vadon::Core::RawFileDataBuffer json_data_buffer;
@@ -80,14 +93,56 @@ namespace VadonEditor::Model
 		}
 
 		const Vadon::Utilities::Serializer::KeyVector property_keys = serializer.get_keys();
+		ResourceSystem& resource_system = m_editor.get_resource_system();
 		for (const std::string& current_key : property_keys)
 		{
 			const Vadon::Foundation::UUID current_property_id = Vadon::Utilities::parse_labeled_uuid(current_key);
-			m_editor.get_resource_system().resource_property_edited(m_id, current_property_id);
+			resource_system.resource_property_edited(m_id, current_property_id);
 
 			Vadon::Core::Logger::log_message(std::format("Modified resource {} property {}\n", Vadon::Utilities::uuid_to_string(get_id()).string, Vadon::Utilities::uuid_to_string(current_property_id).string));
 		}
 
 		return true;
+	}
+
+	Resource* Resource::add_embedded_resource(const Vadon::Model::ResourceID& id, const::Vadon::Foundation::UUID& type_id)
+	{
+		VADON_ASSERT(is_loaded() == true, "Resource is not loaded!");
+
+		// TODO: also check that embedded already exists in engine resource system?
+		if (find_embedded_resource(id) != nullptr)
+		{
+			// TODO: log error!
+			return nullptr;
+		}
+
+		Vadon::Model::ResourceSystem& engine_resource_system = m_editor.get_engine_core().get_system<Vadon::Model::ResourceSystem>();
+		Vadon::Model::ResourceHandle embedded_handle = engine_resource_system.create_resource_with_id(Vadon::Utilities::TypeRegistry::get_type_id(type_id), id);
+
+		VADON_ASSERT(embedded_handle.is_valid() == true, "Failed to create embedded resource!");
+
+		engine_resource_system.add_embedded_resource(m_handle, embedded_handle);
+				
+		Resource* embedded_resource_obj = new Resource(m_editor, id);
+		embedded_resource_obj->m_handle = embedded_handle;
+
+		m_embedded_resources.push_back(embedded_resource_obj);
+
+		return embedded_resource_obj;
+	}
+
+	void Resource::remove_embedded_resource(const Vadon::Model::ResourceID& id)
+	{
+		for (auto resource_it = m_embedded_resources.begin(); resource_it != m_embedded_resources.end(); ++resource_it)
+		{
+			Resource* current_embedded = *resource_it;
+			if (current_embedded->get_id() == id)
+			{
+				m_embedded_resources.erase(resource_it);
+				return;
+			}
+		}
+
+		VADON_UNREACHABLE;
 	}
 }

@@ -89,107 +89,9 @@ namespace Vadon::Private::Model
 		return SceneHandle::from_resource_handle(scene_resource_handle);
 	}
 
-	ECS::EntityHandle SceneSystem::instantiate_scene(SceneHandle scene_handle, ECS::World& ecs_world, bool is_sub_scene)
+	ECS::EntityHandle SceneSystem::instantiate_scene(SceneHandle scene_handle, ECS::World& ecs_world)
 	{
-		// TODO: circular dependency check?
-		const Scene* scene = get_scene(scene_handle);
-		std::unordered_map<::Vadon::Foundation::UUID, Vadon::ECS::EntityHandle> entity_lookup;
-
-		Vadon::ECS::EntityManager& entity_manager = ecs_world.get_entity_manager();
-		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
-
-		constexpr auto clean_up_scene = +[](ECS::World& world, const Scene* scene_ptr, std::unordered_map<::Vadon::Foundation::UUID, Vadon::ECS::EntityHandle>& lookup)
-			{
-				if (lookup.empty() == false)
-				{
-					// Clean up from root
-					const Vadon::ECS::EntityHandle root_entity = lookup[scene_ptr->entities.front().id];
-					world.remove_entity(root_entity);
-				}
-			};
-
-		for (const EntityData& current_entity_data : scene->entities)
-		{
-			Vadon::ECS::EntityHandle current_entity;
-			if (current_entity_data.scene.is_valid() == false)
-			{
-				current_entity = entity_manager.create_entity();
-			}
-			else
-			{
-				const SceneHandle sub_scene_handle = load_scene(current_entity_data.scene);
-				if (sub_scene_handle.is_valid() == false)
-				{
-					// TODO: log scene ID!
-					// TODO2: should we abort, or just skip the entity that failed to load?
-					log_error("Scene system: failed to load sub-scene while instantiating!\n");
-
-					clean_up_scene(ecs_world, scene, entity_lookup);
-					return Vadon::ECS::EntityHandle();
-				}
-				current_entity = instantiate_scene(sub_scene_handle, ecs_world, true);
-				if (current_entity.is_valid() == false)
-				{
-					clean_up_scene(ecs_world, scene, entity_lookup);
-					return Vadon::ECS::EntityHandle();
-				}
-			}
-
-			for (const ComponentData& current_component_data : current_entity_data.components)
-			{
-				Vadon::ECS::ComponentHandle current_component = current_entity_data.scene.is_valid() == false
-					? component_manager.add_component(current_entity, current_component_data.type)
-					: component_manager.get_component(current_entity, current_component_data.type);
-
-				if (current_component.is_valid() == false)
-				{
-					// TODO: error?
-					continue;
-				}
-
-				// FIXME: we're copying components per-propert
-				// We should instead pass the object as a whole and "clone" it
-				const Vadon::Utilities::PropertyList component_properties = Vadon::Utilities::TypeRegistry::get_properties(current_component_data.data, current_component_data.type);
-				for (const Vadon::Utilities::Property& current_property_data : component_properties)
-				{
-					Vadon::Utilities::TypeRegistry::set_property(current_component.get_raw(), current_component_data.type, current_property_data.info.id, current_property_data.value);
-				}
-			}
-
-			entity_lookup.insert(std::make_pair(current_entity_data.id, current_entity));
-
-			if (current_entity_data.has_parent() == true)
-			{
-				// TODO: set parent!
-				Vadon::ECS::EntityHandle parent_entity = entity_lookup[current_entity_data.parent];
-				entity_manager.add_child_entity(parent_entity, current_entity);
-			}
-		}
-
-		const Vadon::ECS::EntityHandle root_entity = entity_lookup[scene->entities.front().id];
-		if (is_sub_scene == true)
-		{
-			// Add scene component
-			Vadon::Model::ResourceSystem& resource_system = m_engine_core.get_system<Vadon::Model::ResourceSystem>();
-			const SceneID scene_id = SceneID::from_resource_id(resource_system.get_resource_info(scene_handle).id);
-
-			auto root_scene_component = component_manager.add_component<SceneComponent>(root_entity);
-			root_scene_component->root_scene = scene_id;
-
-			// Add scene component to each child, indicates that these were instantiated from the scene
-			for (Vadon::ECS::EntityHandle current_child : entity_manager.get_children(root_entity))
-			{
-				if (component_manager.has_component<SceneComponent>(current_child) == false)
-				{
-					component_manager.add_component<SceneComponent>(current_child);
-				}
-
-				auto child_scene_component = component_manager.get_component<SceneComponent>(current_child);
-				child_scene_component->parent_scene = scene_id;
-			}
-		}	
-
-		return root_entity;
+		return internal_instantiate_scene(scene_handle, ecs_world, SceneID{});
 	}
 
 	bool SceneSystem::is_scene_dependent(SceneID base_scene_id, SceneID dependent_scene_id)
@@ -233,7 +135,7 @@ namespace Vadon::Private::Model
 		constexpr ::Vadon::Foundation::UUID c_data_object_uuid = Vadon::Utilities::string_to_uuid(::Vadon::Foundation::DataObjectSchema::c_type_uuid);
 
 		Vadon::Utilities::TypeMetadata entitydata_metadata(metadata_registry, VADON_GET_TYPE_UUID(EntityData));
-		entitydata_metadata.add_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "Vadon::Private::Scene::EntityData")
+		entitydata_metadata.add_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "Vadon::Private::Model::EntityData")
 			.add_property(EntityData::c_id_member_id)
 				.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "ID")
 				.commit_property()
@@ -314,6 +216,118 @@ namespace Vadon::Private::Model
 		dependency_stack.pop_back();
 
 		return false;
+	}
+
+	ECS::EntityHandle SceneSystem::internal_instantiate_scene(SceneHandle scene_handle, ECS::World& ecs_world, const SceneID& parent_scene_id)
+	{
+		// TODO: circular dependency check?
+		const Scene* scene = get_scene(scene_handle);
+
+		Vadon::Model::ResourceSystem& resource_system = m_engine_core.get_system<Vadon::Model::ResourceSystem>();
+		const SceneID scene_id = SceneID::from_resource_id(resource_system.get_resource_info(scene_handle).id);
+
+		std::unordered_map<::Vadon::Foundation::UUID, Vadon::ECS::EntityHandle> entity_lookup;
+
+		Vadon::ECS::EntityManager& entity_manager = ecs_world.get_entity_manager();
+		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
+
+		constexpr auto clean_up_scene = +[](ECS::World& world, const Scene* scene_ptr, std::unordered_map<::Vadon::Foundation::UUID, Vadon::ECS::EntityHandle>& lookup)
+			{
+				if (lookup.empty() == false)
+				{
+					// Clean up from root
+					const Vadon::ECS::EntityHandle root_entity = lookup[scene_ptr->entities.front().id];
+					world.remove_entity(root_entity);
+				}
+			};
+
+		for (const EntityData& current_entity_data : scene->entities)
+		{
+			Vadon::ECS::EntityHandle current_entity;
+			if (current_entity_data.scene.is_valid() == false)
+			{
+				current_entity = entity_manager.create_entity();
+			}
+			else
+			{
+				const SceneHandle sub_scene_handle = load_scene(current_entity_data.scene);
+				if (sub_scene_handle.is_valid() == false)
+				{
+					// TODO: log scene ID!
+					// TODO2: should we abort, or just skip the entity that failed to load?
+					log_error("Scene system: failed to load sub-scene while instantiating!\n");
+
+					clean_up_scene(ecs_world, scene, entity_lookup);
+					return Vadon::ECS::EntityHandle();
+				}
+
+				current_entity = internal_instantiate_scene(sub_scene_handle, ecs_world, scene_id);
+				if (current_entity.is_valid() == false)
+				{
+					clean_up_scene(ecs_world, scene, entity_lookup);
+					return Vadon::ECS::EntityHandle();
+				}
+			}
+
+			for (const ComponentData& current_component_data : current_entity_data.components)
+			{
+				Vadon::ECS::ComponentHandle current_component = current_entity_data.scene.is_valid() == false
+					? component_manager.add_component(current_entity, current_component_data.type)
+					: component_manager.get_component(current_entity, current_component_data.type);
+
+				if (current_component.is_valid() == false)
+				{
+					// TODO: error?
+					continue;
+				}
+
+				// FIXME: we're copying components per-propert
+				// We should instead pass the object as a whole and "clone" it
+				const Vadon::Utilities::PropertyList component_properties = Vadon::Utilities::TypeRegistry::get_properties(current_component_data.data, current_component_data.type);
+				for (const Vadon::Utilities::Property& current_property_data : component_properties)
+				{
+					Vadon::Utilities::TypeRegistry::set_property(current_component.get_raw(), current_component_data.type, current_property_data.info.id, current_property_data.value);
+				}
+			}
+
+			entity_lookup.insert(std::make_pair(current_entity_data.id, current_entity));
+
+			if (current_entity_data.has_parent() == true)
+			{
+				// TODO: set parent!
+				Vadon::ECS::EntityHandle parent_entity = entity_lookup[current_entity_data.parent];
+				entity_manager.add_child_entity(parent_entity, current_entity);
+			}
+
+			// Add scene component
+			if (component_manager.has_component<SceneComponent>(current_entity) == false)
+			{
+				component_manager.add_component<SceneComponent>(current_entity);
+			}
+			auto scene_component = component_manager.get_component<SceneComponent>(current_entity);
+			if (scene_component->scene_info.scene_id.is_valid() == true)
+			{
+				// Entity is also the root of a sub-scene
+				// Data is already set, we just need to set its ID from the parent scene
+				scene_component->parent_scene_info.entity_id = current_entity_data.id;
+			}
+			else
+			{
+				// Entity is defined within this scene, set the Scene Component contents
+				scene_component->scene_info.scene_id = scene_id;
+				scene_component->scene_info.entity_id = current_entity_data.id;
+
+				if (parent_scene_id.is_valid() == true)
+				{
+					// Entity is created as a sub-scene in an owning scene
+					scene_component->parent_scene_info.scene_id = parent_scene_id;
+				}
+			}
+		}
+
+		const Vadon::ECS::EntityHandle root_entity = entity_lookup[scene->entities.front().id];
+
+		return root_entity;
 	}
 
 	const Scene* SceneSystem::get_scene(SceneHandle scene_handle) const

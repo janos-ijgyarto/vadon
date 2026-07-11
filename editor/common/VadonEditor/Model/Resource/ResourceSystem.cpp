@@ -46,12 +46,7 @@ namespace VadonEditor::Model
 {
 	ResourceSystem::~ResourceSystem()
 	{
-		for (const auto resource_pair : m_resource_lookup)
-		{
-			delete resource_pair.second;
-		}
-
-		m_resource_lookup.clear();
+		VADON_ASSERT(m_resource_lookup.empty() == true, "Resources were not cleared");
 	}
 
 	const Resource* ResourceSystem::find_resource(const Vadon::Model::ResourceID& resource_id) const
@@ -121,6 +116,16 @@ namespace VadonEditor::Model
 		return true;
 	}
 
+	void ResourceSystem::shutdown()
+	{
+		for (const auto resource_pair : m_resource_lookup)
+		{
+			delete resource_pair.second;
+		}
+
+		m_resource_lookup.clear();
+	}
+
 	bool ResourceSystem::project_loaded()
 	{
 		// Initialize the database
@@ -170,7 +175,7 @@ namespace VadonEditor::Model
 			{
 				const ::Vadon::Foundation::EditorModelMessageResourceLoaded* resource_loaded_message = reinterpret_cast<const ::Vadon::Foundation::EditorModelMessageResourceLoaded*>(message_data);
 
-				VadonEditor::Model::Resource* resource = find_resource(resource_loaded_message->resource_id);
+				Resource* resource = find_resource(resource_loaded_message->resource_id);
 				if (resource != nullptr)
 				{
 					// Remove resource, since we will reload
@@ -187,7 +192,7 @@ namespace VadonEditor::Model
 			{
 				const ::Vadon::Foundation::EditorModelMessageResourcePropertyEdited* resource_property_edited = reinterpret_cast<const ::Vadon::Foundation::EditorModelMessageResourcePropertyEdited*>(message_data);
 
-				VadonEditor::Model::Resource* resource = find_resource(resource_property_edited->resource_id);
+				Resource* resource = find_resource(resource_property_edited->resource_id);
 				VADON_ASSERT(resource != nullptr, "Resource was not loaded!");
 
 				resource->load_property_data(*resource_property_edited, message_data);
@@ -195,33 +200,34 @@ namespace VadonEditor::Model
 			break;
 			case ::Vadon::Foundation::EditorModelMessageType::RESOURCE_REMOVED:
 				// TODO: remove resource object
+				// TODO2: if embedded, we should not be getting this message!
 				break;
-			case ::Vadon::Foundation::EditorModelMessageType::SCENE_OPENED:
-				// TODO: load scene object, also add an object to manage when scene is focused
+			case ::Vadon::Foundation::EditorModelMessageType::RESOURCE_ADD_EMBEDDED:
+			{
+				const ::Vadon::Foundation::EditorModelMessageResourceAddEmbedded* add_embedded = reinterpret_cast<const ::Vadon::Foundation::EditorModelMessageResourceAddEmbedded*>(message_data);
+
+				Resource* resource = find_resource(add_embedded->resource_id);
+				VADON_ASSERT(resource != nullptr, "Resource was not loaded!");
+				
+				Resource* embedded_resource = resource->add_embedded_resource(add_embedded->embedded_id, add_embedded->embedded_type_id);
+				VADON_ASSERT(embedded_resource != nullptr, "Failed to add embedded resource!");
+				internal_add_resource(embedded_resource);
+			}
 				break;
-			case ::Vadon::Foundation::EditorModelMessageType::SCENE_SELECTED:
-				// TODO: focus scene in viewport
-				break;
-			case ::Vadon::Foundation::EditorModelMessageType::SCENE_CLOSED:
-				// TODO: unload scene, remove entities
-				break;
-			case ::Vadon::Foundation::EditorModelMessageType::ENTITY_ADDED:
-				// TODO: add entity in scene
-				break;
-			case ::Vadon::Foundation::EditorModelMessageType::ENTITY_MODIFIED:
-				// TODO: modify entity in scene
-				break;
-			case ::Vadon::Foundation::EditorModelMessageType::ENTITY_REMOVED:
-				// TODO: remove entity in scene
-				break;
-			case ::Vadon::Foundation::EditorModelMessageType::COMPONENT_ADDED:
-				// TODO: add component to Entity
-				break;
-			case ::Vadon::Foundation::EditorModelMessageType::COMPONENT_PROPERTY_EDITED:
-				// TODO: modify component in Entity
-				break;
-			case ::Vadon::Foundation::EditorModelMessageType::COMPONENT_REMOVED:
-				// TODO: remove component from Entity
+			case ::Vadon::Foundation::EditorModelMessageType::RESOURCE_REMOVE_EMBEDDED:
+			{
+				const ::Vadon::Foundation::EditorModelMessageResourceRemoveEmbedded* remove_embedded = reinterpret_cast<const ::Vadon::Foundation::EditorModelMessageResourceRemoveEmbedded*>(message_data);
+
+				Resource* resource = find_resource(remove_embedded->resource_id);
+				VADON_ASSERT(resource != nullptr, "Resource was not loaded!");
+
+				Resource* embedded_resource = find_resource(remove_embedded->embedded_id);
+				VADON_ASSERT(embedded_resource != nullptr, "Embedded not found!");
+
+				resource->remove_embedded_resource(remove_embedded->embedded_id);
+
+				internal_remove_resource(embedded_resource);
+			}
 				break;
 			}
 		}

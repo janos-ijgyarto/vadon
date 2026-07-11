@@ -14,6 +14,7 @@ namespace Vadon::Private::Model
 	using SceneID = Vadon::Model::SceneID;
 	using SceneHandle = Vadon::Model::SceneHandle;
 
+	using EntitySceneInfo = Vadon::Model::EntitySceneInfo;
 	using SceneComponent = Vadon::Model::SceneComponent;
 
 	using ComponentData = Vadon::Utilities::ObjectPointer;

@@ -9,13 +9,16 @@ namespace Vadon::Model
 	VADON_MODEL_DECLARE_TYPED_RESOURCE_ID(Scene, SceneID);
 	VADON_MODEL_DECLARE_TYPED_RESOURCE_HANDLE(Scene, SceneHandle);
 
-	// FIXME: remove this once we extract serialization/editing from core systems
+	struct EntitySceneInfo
+	{
+		SceneID scene_id; // ID of the scene this Entity is currently a part of
+		::Vadon::Foundation::UUID entity_id; // ID of the Entity within the scene data
+	};
+
 	struct SceneComponent
 	{
-		SceneID parent_scene; // Indicates that this Entity was instantiated as part of another scene
-		SceneID root_scene; // Indicates that this Entity is the root of an instantiated scene
-		// FIXME: should we use "owner", similar to Godot?
-		// TODO: flags and other metadata (e.g indicate that we override certain elements)
+		EntitySceneInfo scene_info; // Info for the Scene that defines this Entity
+		EntitySceneInfo parent_scene_info; // If Entity is sub-scene, this has info for the Scene that this is a sub-scene of
 	};
 }
 

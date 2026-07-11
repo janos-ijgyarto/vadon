@@ -1,7 +1,5 @@
 #include <VadonEditor/Core/Data/Schema.hpp>
 
-#include <VadonEditor/Core/Project/Project.hpp>
-
 #include <VadonEditor/Model/Resource/Resource.hpp>
 
 #include <VadonEditor/Utilities/UUID.hpp>
@@ -761,5 +759,55 @@ namespace VadonEditor::Core
 				root_item->appendRow(new_type_node);
 			}
 		}
+	}
+
+	TypeFilterModel::TypeFilterModel(const DataSchema& data_schema, QObject* parent)
+		: QSortFilterProxyModel(parent)
+		, m_data_schema(data_schema)
+	{
+	}
+
+	void TypeFilterModel::set_root_type(const QUuid& type_id)
+	{
+		m_root_type = type_id;
+		invalidateRowsFilter();
+	}
+
+	bool TypeFilterModel::filterAcceptsRow(int source_row, const QModelIndex& source_parent) const
+	{
+		QModelIndex source_index = sourceModel()->index(source_row, 0, source_parent);
+
+		if (m_root_type.isNull() == false)
+		{
+			const QUuid type_uuid = sourceModel()->data(source_index, static_cast<int>(TypeTreeDataRole::TYPE_UUID)).toUuid();
+
+			if (type_uuid.isNull() == true)
+			{
+				return false;
+			}
+
+			if (m_data_schema.is_base_of(m_root_type, type_uuid) == false)
+			{
+				return false;
+			}
+		}
+
+		if (QSortFilterProxyModel::filterAcceptsRow(source_row, source_parent) == true)
+		{
+			return true;
+		}
+
+		if (sourceModel()->hasChildren(source_index))
+		{
+			for (int child_index = 0; child_index < sourceModel()->rowCount(source_index); ++child_index)
+			{
+				if (filterAcceptsRow(child_index, source_index) == true)
+				{
+					return true;
+				}
+			}
+		}
+
+		return false;
 	}
 }

@@ -69,7 +69,7 @@ namespace VadonDemo::View
                     || (component_event.component_type == Vadon::Utilities::TypeRegistry::get_type_id<VadonDemo::View::ModelTransformComponent>())
                     )
                 {
-                    Vadon::ECS::World& ecs_world = m_editor.get_ecs_world();
+                    Vadon::ECS::World& ecs_world = m_editor.get_common_editor().get_ecs_world();
 
                     m_editor.get_core().get_view().update_entity_transform(ecs_world, component_event.owner);
                 }
@@ -117,7 +117,7 @@ namespace VadonDemo::View
 
     void EditorView::update_dirty_entities()
     {
-        Vadon::ECS::World& ecs_world = m_editor.get_ecs_world();
+        Vadon::ECS::World& ecs_world = m_editor.get_common_editor().get_ecs_world();
         Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
         auto dirty_entity_query = component_manager.run_component_query<EntityDirtyTag&, RenderComponent*>();
 
@@ -155,7 +155,7 @@ namespace VadonDemo::View
     {
         // Try to update the draw data
         // If it fails, we can just try again the next time the components/resources are updated
-        Vadon::ECS::World& ecs_world = m_editor.get_ecs_world();
+        Vadon::ECS::World& ecs_world = m_editor.get_common_editor().get_ecs_world();
 
         Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
         auto render_component = component_manager.get_component<RenderComponent>(entity);
@@ -169,7 +169,7 @@ namespace VadonDemo::View
 
     void EditorView::remove_entity(Vadon::ECS::EntityHandle entity)
     {
-        Vadon::ECS::World& ecs_world = m_editor.get_ecs_world();
+        Vadon::ECS::World& ecs_world = m_editor.get_common_editor().get_ecs_world();
 
         m_editor.get_core().get_view().remove_entity(ecs_world, entity);
     }
@@ -199,7 +199,7 @@ namespace VadonDemo::View
         common_view.reset_resource_data(view_render_resource);
 
         // Tag all entities that use this resource
-        Vadon::ECS::World& ecs_world = m_editor.get_ecs_world();
+        Vadon::ECS::World& ecs_world = m_editor.get_common_editor().get_ecs_world();
 
         Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
         auto view_query = component_manager.run_component_query<RenderComponent&, VadonDemo::Render::CanvasComponent&>();
@@ -226,7 +226,7 @@ namespace VadonDemo::View
 
         VadonDemo::View::View& common_view = m_editor.get_core().get_view();
 
-        Vadon::ECS::World& ecs_world = m_editor.get_ecs_world();
+        Vadon::ECS::World& ecs_world = m_editor.get_common_editor().get_ecs_world();
 
         Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
         auto view_query = component_manager.run_component_query<RenderComponent&, VadonDemo::Render::CanvasComponent&>();

@@ -23,6 +23,7 @@ namespace Vadon::Model
 		}
 
 		virtual ResourceHandle create_resource(Vadon::Utilities::TypeID type_id) = 0;
+		virtual ResourceHandle create_resource_with_id(Vadon::Utilities::TypeID type_id, ResourceID resource_id) = 0;
 
 		virtual void add_embedded_resource(ResourceHandle owner_handle, ResourceHandle embedded_resource_handle) = 0;
 		virtual ResourceHandle get_embedded_resource_onwer(ResourceHandle resource_handle) const = 0;

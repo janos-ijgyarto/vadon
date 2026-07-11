@@ -56,7 +56,7 @@ namespace VadonDemo::Render
 
     void EditorRender::init_entity(Vadon::ECS::EntityHandle entity)
     {
-        Vadon::ECS::World& ecs_world = m_editor.get_ecs_world();
+        Vadon::ECS::World& ecs_world = m_editor.get_common_editor().get_ecs_world();
         Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
 
         Render& common_render = m_editor.get_core().get_render();
@@ -125,7 +125,6 @@ namespace VadonDemo::Render
     EditorRender::EditorRender(Core::Editor& editor)
         : m_editor(editor)
         , m_layers_dirty(false)
-        , m_clear_value(0.0f)
     { }
 
     bool EditorRender::initialize()
@@ -158,14 +157,7 @@ namespace VadonDemo::Render
             clear_pass.targets.emplace_back("main_window", clear_pass_target);
             clear_pass.execution = [this, main_window_target, &rt_system]()
                 {
-                    m_clear_value += m_editor.get_delta_time();
-                    constexpr float two_pi = 2 * std::numbers::pi_v<float>;
-                    if (m_clear_value > two_pi)
-                    {
-                        m_clear_value -= two_pi;
-                    }
-
-                    rt_system.clear_target(main_window_target, Vadon::Math::Vector4(std::abs(std::sinf(m_clear_value)), std::abs(std::cosf(m_clear_value)), std::abs(std::sinf(m_clear_value + 0.2f)), 1.0f));
+                    rt_system.clear_target(main_window_target, Vadon::Math::Vector4(0.0f, 0.0f, 0.0f, 1.0f));
                     rt_system.set_target(main_window_target, Vadon::Render::DSVHandle());
                 };
         }
@@ -211,7 +203,7 @@ namespace VadonDemo::Render
 
                     // Update sprite tiling (needs the camera view rectangle)
                     {
-                        Vadon::ECS::World& ecs_world = m_editor.get_ecs_world();
+                        Vadon::ECS::World& ecs_world = m_editor.get_common_editor().get_ecs_world();
                         auto sprite_query = ecs_world.get_component_manager().run_component_query<CanvasComponent&, SpriteTilingComponent&>();
 
                         Vadon::Render::Rectangle culling_rect = render_context.camera.view_rectangle;
@@ -382,7 +374,7 @@ namespace VadonDemo::Render
 
                     Vadon::Render::Canvas::CanvasSystem& canvas_system = engine_core.get_system<Vadon::Render::Canvas::CanvasSystem>();
 
-                    Vadon::ECS::World& ecs_world = m_editor.get_ecs_world();
+                    Vadon::ECS::World& ecs_world = m_editor.get_common_editor().get_ecs_world();
                     auto sprite_query = ecs_world.get_component_manager().run_component_query<CanvasComponent&, SpriteTilingComponent&>();
                     
                     for (auto sprite_it = sprite_query.get_iterator(); sprite_it.is_valid() == true; sprite_it.next())
@@ -453,7 +445,7 @@ namespace VadonDemo::Render
 
     void EditorRender::update_entity(Vadon::ECS::EntityHandle entity)
     {
-        Vadon::ECS::World& ecs_world = m_editor.get_ecs_world();
+        Vadon::ECS::World& ecs_world = m_editor.get_common_editor().get_ecs_world();
         Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
 
         auto canvas_component = component_manager.get_component<CanvasComponent>(entity);
@@ -485,7 +477,7 @@ namespace VadonDemo::Render
 
     void EditorRender::remove_entity(Vadon::ECS::EntityHandle entity)
     {
-        Vadon::ECS::World& ecs_world = m_editor.get_ecs_world();
+        Vadon::ECS::World& ecs_world = m_editor.get_common_editor().get_ecs_world();
         Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
 
         auto canvas_component = component_manager.get_component<CanvasComponent>(entity);
@@ -509,7 +501,7 @@ namespace VadonDemo::Render
 
     void EditorRender::update_background_sprite_entity(Vadon::ECS::EntityHandle entity)
     {
-        Vadon::ECS::World& ecs_world = m_editor.get_ecs_world();
+        Vadon::ECS::World& ecs_world = m_editor.get_common_editor().get_ecs_world();
 
         auto sprite_component = ecs_world.get_component_manager().get_component<SpriteTilingComponent>(entity);
         VADON_ASSERT(sprite_component.is_valid() == true, "Missing component!");
@@ -520,7 +512,7 @@ namespace VadonDemo::Render
 
     void EditorRender::update_fullscreen_effect_entity(Vadon::ECS::EntityHandle entity)
     {
-        Vadon::ECS::World& ecs_world = m_editor.get_ecs_world();
+        Vadon::ECS::World& ecs_world = m_editor.get_common_editor().get_ecs_world();
 
         m_editor.get_core().get_render().update_fullscreen_effect_entity(ecs_world, entity);
     }

@@ -17,10 +17,13 @@ namespace VadonEditor::UI
 	public:
 		AssetBrowserTree(QWidget* parent = nullptr);
 
-		void initialize(Core::Application& application);
+		void initialize(Core::Application& application); 
+	protected:
+		bool eventFilter(QObject* obj, QEvent* event) override;
 	private slots:
 		void asset_tree_context_menu_requested(const QPoint& position);
 
+		void add_folder_triggered();
 		void new_resource_triggered();
 		void new_scene_triggered();
 		void new_scene_path_selected(const QString& scene_path);
@@ -42,7 +45,7 @@ namespace VadonEditor::UI
 	{
 		Q_OBJECT
 	public:
-		SaveAssetDialog(Core::Application& application, QWidget* parent = nullptr);
+		SaveAssetDialog(Core::Application& application, QWidget* parent = nullptr, const QModelIndex& root_asset = QModelIndex());
 	signals:
 		void asset_saved(const QString& path);
 	private slots:

@@ -67,8 +67,6 @@ namespace VadonDemo::Render
 
 		bool m_layers_dirty;
 
-		float m_clear_value;
-
 		friend Core::Editor;
 	};
 }

@@ -8,6 +8,10 @@ namespace Vadon::Core
 	class EngineCoreInterface;
 	class EngineEnvironment;
 }
+namespace Vadon::ECS
+{
+	class World;
+}
 namespace Vadon::Utilities
 {
 	class CommandLineParser;
@@ -35,6 +39,8 @@ namespace VadonEditor::Core
 		VADONEDITOR_API void shutdown();
 
 		VADONEDITOR_API Vadon::Core::EngineCoreInterface& get_engine_core();
+
+		VADONEDITOR_API Vadon::ECS::World& get_ecs_world();
 
 		VADONEDITOR_API Vadon::Utilities::CommandLineParser& get_command_line_parser();
 

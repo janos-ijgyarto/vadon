@@ -4,6 +4,7 @@
 #include <Vadon/Foundation/TypeInfo/MetadataRegistry.hpp>
 
 #include <QByteArray>
+#include <QSortFilterProxyModel>
 #include <QStandardItemModel>
 
 namespace VadonEditor::Core
@@ -68,6 +69,20 @@ namespace VadonEditor::Core
 
 		TypeMetadataRegistry m_registry;
 		QStandardItemModel m_qt_model;
+	};
+
+	class TypeFilterModel : public QSortFilterProxyModel
+	{
+		Q_OBJECT
+	public:
+		TypeFilterModel(const DataSchema& data_schema, QObject* parent = nullptr);
+
+		void set_root_type(const QUuid& type_id);
+	protected:
+		bool filterAcceptsRow(int source_row, const QModelIndex& source_parent) const override;
+	private:
+		const DataSchema& m_data_schema;
+		QUuid m_root_type;
 	};
 }
 #endif

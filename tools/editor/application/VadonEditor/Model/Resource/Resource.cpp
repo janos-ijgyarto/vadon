@@ -361,7 +361,7 @@ namespace VadonEditor::Model
 		}
 
 		// Send message about Resource
-		// Only if not embedded, the embedded resources 
+		// Only if not embedded, the embedded resources will be loaded by the simulator independently
 		if(is_embedded() == false)
 		{
 			// FIXME: use temp allocator or shared serializer

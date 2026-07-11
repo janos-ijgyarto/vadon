@@ -1,5 +1,7 @@
 #ifndef VADONEDITOR_CORE_ASSET_ASSET_HPP
 #define VADONEDITOR_CORE_ASSET_ASSET_HPP
+#include <QDir>
+#include <QFileInfo>
 #include <QUuid>
 namespace VadonEditor::Core
 {
@@ -15,6 +17,8 @@ namespace VadonEditor::Core
 
 	struct AssetInfo
 	{
+		static constexpr char c_dir_separator = '/';
+
 		static constexpr int c_invalid_file_id = 0;
 
 		int id = c_invalid_file_id;
@@ -47,7 +51,12 @@ namespace VadonEditor::Core
 		// NOTE: assumes path will not end in a file suffix, and can simply attach the suffix
 		static QString get_file_path(const QString& path, AssetType type)
 		{
-			return path + "." + Core::AssetInfo::get_file_suffix(type);
+			return path + "." + AssetInfo::get_file_suffix(type);
+		}
+
+		QString get_parent_path() const
+		{
+			return QFileInfo(path).dir().path();
 		}
 	};
 }

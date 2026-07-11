@@ -39,6 +39,9 @@
      <property name="editTriggers">
       <set>QAbstractItemView::EditTrigger::NoEditTriggers</set>
      </property>
+     <property name="itemsExpandable">
+      <bool>false</bool>
+     </property>
      <attribute name="headerVisible">
       <bool>false</bool>
      </attribute>
@@ -106,9 +109,26 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>filterLineEdit</sender>
+   <signal>textChanged(QString)</signal>
+   <receiver>NewResourceDialog</receiver>
+   <slot>filter_text_changed(QString)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>350</x>
+     <y>21</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>319</x>
+     <y>239</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>type_double_clicked(QModelIndex)</slot>
   <slot>selection_accepted()</slot>
+  <slot>filter_text_changed(QString)</slot>
  </slots>
 </ui>

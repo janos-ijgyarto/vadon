@@ -29,6 +29,9 @@
    </item>
   </layout>
   <action name="actionCreateResource">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::DocumentNew"/>
+   </property>
    <property name="text">
     <string>Resource</string>
    </property>
@@ -37,11 +40,25 @@
    </property>
   </action>
   <action name="actionCreateScene">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::CameraVideo"/>
+   </property>
    <property name="text">
     <string>Scene</string>
    </property>
    <property name="toolTip">
     <string>Scene</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::MenuRole::TextHeuristicRole</enum>
+   </property>
+  </action>
+  <action name="actionNewFolder">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::FolderNew"/>
+   </property>
+   <property name="text">
+    <string>New Folder</string>
    </property>
    <property name="menuRole">
     <enum>QAction::MenuRole::TextHeuristicRole</enum>
@@ -114,11 +131,28 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>actionNewFolder</sender>
+   <signal>triggered()</signal>
+   <receiver>AssetBrowserTree</receiver>
+   <slot>add_folder_triggered()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>199</x>
+     <y>149</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>asset_tree_context_menu_requested(QPoint)</slot>
   <slot>asset_double_clicked(QModelIndex)</slot>
   <slot>new_resource_triggered()</slot>
   <slot>new_scene_triggered()</slot>
+  <slot>add_folder_triggered()</slot>
  </slots>
 </ui>

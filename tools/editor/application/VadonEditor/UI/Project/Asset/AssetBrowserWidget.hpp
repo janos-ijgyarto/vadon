@@ -14,7 +14,7 @@ namespace VadonEditor::UI
 	public:
 		AssetBrowserWidget(QWidget* parent = nullptr);
 
-		void initialize(Core::Application& application);
+		void initialize(Core::Application& application, const QModelIndex& root_asset = QModelIndex());
 
 		QModelIndex get_selected_asset() const;
 		Core::AssetInfo get_asset_info(const QModelIndex& index) const;

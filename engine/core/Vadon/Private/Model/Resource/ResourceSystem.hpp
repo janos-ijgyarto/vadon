@@ -20,6 +20,7 @@ namespace Vadon::Private::Model
 	{
 	public:
 		ResourceHandle create_resource(Vadon::Utilities::TypeID type_id) override;
+		ResourceHandle create_resource_with_id(Vadon::Utilities::TypeID type_id, ResourceID resource_id) override;
 
 		void add_embedded_resource(ResourceHandle owner_handle, ResourceHandle embedded_resource_handle) override;
 		ResourceHandle get_embedded_resource_onwer(ResourceHandle resource_handle) const override;
@@ -69,7 +70,8 @@ namespace Vadon::Private::Model
 
 		Resource* load_resource_data(Vadon::Utilities::Serializer& serializer, std::vector<ResourceHandle>& embedded_resources,  const ResourceInfo& info);
 
-		Resource* internal_create_resource(Vadon::Utilities::TypeID type_id) const;
+		ResourceHandle internal_create_resource(Vadon::Utilities::TypeID type_id, ResourceID resource_id);
+		static Resource* internal_create_resource(Vadon::Utilities::TypeID type_id);
 		ResourceHandle internal_add_resource(const ResourceInfo& info, Resource* resource);
 
 		using ResourcePool = Vadon::Utilities::ObjectPool<Vadon::Model::ResourceBase, ResourceData>;
