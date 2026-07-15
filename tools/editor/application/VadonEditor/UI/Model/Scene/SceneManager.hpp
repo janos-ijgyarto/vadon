@@ -1,12 +1,34 @@
 #ifndef VADONEDITOR_UI_MODEL_SCENE_SCENEMANAGER_HPP
 #define VADONEDITOR_UI_MODEL_SCENE_SCENEMANAGER_HPP
-#include <QObject>
+#include <VadonEditor/UI/Project/Asset/AssetMessageBox.hpp>
+#include <QSortFilterProxyModel>
 namespace VadonEditor::Core
 {
 	class Application;
 }
 namespace VadonEditor::UI
 {
+	class UnsavedSceneAssetFilter : public QSortFilterProxyModel
+	{
+		Q_OBJECT
+	public:
+		UnsavedSceneAssetFilter(Core::Application& application, QObject* parent = nullptr);
+
+		bool initialize();
+	protected:
+		bool filterAcceptsRow(int source_row, const QModelIndex& source_parent) const override;
+	private:
+		Core::Application& m_application;
+		QList<int> m_unsaved_scene_asset_ids;
+	};
+
+	class UnsavedSceneMessageBox : public AssetMessageBox
+	{
+		Q_OBJECT
+	public:
+		UnsavedSceneMessageBox(QAbstractItemModel* asset_model, QWidget* parent = nullptr);
+	};
+
 	class SceneTree;
 	class SceneManager : public QObject
 	{

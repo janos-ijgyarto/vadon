@@ -26,7 +26,13 @@ namespace VadonEditor::UI
     private slots:
         void message_logged(QtMsgType type, const QString& message);
 
-        void new_triggered();
+        void new_resource_triggered();
+        void new_scene_triggered();
+
+        void save_triggered();
+        void open_triggered();
+        void import_triggered();
+
         void quit_triggered();
         void generate_uuid_triggered();
 
@@ -36,6 +42,8 @@ namespace VadonEditor::UI
 
         void project_data_schema_triggered();
         void generate_data_schema_triggered();
+
+        void asset_opened(const QString& asset_path);
     protected:
         void closeEvent(QCloseEvent* event) override;
     private:

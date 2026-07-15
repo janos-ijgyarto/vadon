@@ -777,37 +777,39 @@ namespace VadonEditor::Core
 	{
 		QModelIndex source_index = sourceModel()->index(source_row, 0, source_parent);
 
-		if (m_root_type.isNull() == false)
-		{
-			const QUuid type_uuid = sourceModel()->data(source_index, static_cast<int>(TypeTreeDataRole::TYPE_UUID)).toUuid();
-
-			if (type_uuid.isNull() == true)
-			{
-				return false;
-			}
-
-			if (m_data_schema.is_base_of(m_root_type, type_uuid) == false)
-			{
-				return false;
-			}
-		}
-
-		if (QSortFilterProxyModel::filterAcceptsRow(source_row, source_parent) == true)
-		{
-			return true;
-		}
-
+		// First check if any children passed filtering
 		if (sourceModel()->hasChildren(source_index))
 		{
 			for (int child_index = 0; child_index < sourceModel()->rowCount(source_index); ++child_index)
 			{
 				if (filterAcceptsRow(child_index, source_index) == true)
 				{
+					// If child is accepted, the parent is accepted as well
 					return true;
 				}
 			}
 		}
 
-		return false;
+		// Next check if we pass base filtering
+		if (QSortFilterProxyModel::filterAcceptsRow(source_row, source_parent) == false)
+		{
+			return false;
+		}
+
+		// If we have a root type set, check if item is subclass
+		if (m_root_type.isNull() == false)
+		{
+			const QUuid type_uuid = sourceModel()->data(source_index, static_cast<int>(TypeTreeDataRole::TYPE_UUID)).toUuid();
+			if (type_uuid.isNull() == false)
+			{
+				return m_data_schema.is_base_of(m_root_type, type_uuid);
+			}
+			else
+			{
+				return false;
+			}
+		}
+
+		return true;
 	}
 }

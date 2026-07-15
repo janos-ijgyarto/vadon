@@ -14,11 +14,15 @@ namespace VadonEditor::Core
 		QStandardItemModel& get_model() { return m_asset_model; }
 
 		QModelIndex create_asset(const AssetInfo& info);
+		QModelIndex import_asset_file(const QString& file_path);
 		
 		AssetInfo get_asset_info(const QModelIndex& index) const;
+		void set_asset_modified(const QModelIndex& index, bool modified);
 
 		bool save_asset_data(int asset_id, QByteArrayView data);
 		bool load_asset_data(int asset_id, QByteArray& data) const;
+
+		bool load_imported_file_data(int asset_id, QByteArray& data) const;
 
 		QModelIndex find_asset_index(int asset_id) const;
 		QModelIndex find_asset_index_by_path(const QString& path) const;
@@ -44,7 +48,7 @@ namespace VadonEditor::Core
 		QStandardItem* find_asset_by_path(const QString& path) const;
 		QStandardItem* find_asset_by_id(int id) const;
 
-		QString get_asset_path(QStandardItem* asset_item) const;
+		QString get_asset_path(const QStandardItem* asset_item) const;
 
 		QString get_asset_absolute_file_path(const QString& asset_path) const;
 		QString get_asset_relative_path(const QString& asset_path) const;

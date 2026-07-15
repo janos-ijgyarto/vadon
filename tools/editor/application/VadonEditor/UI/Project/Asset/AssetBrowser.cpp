@@ -4,17 +4,13 @@
 #include <VadonEditor/Core/Asset/AssetManager.hpp>
 #include <VadonEditor/Core/Project/ProjectManager.hpp>
 
-#include <VadonEditor/Model/ModelSystem.hpp>
-#include <VadonEditor/Model/Resource/Resource.hpp>
-#include <VadonEditor/Model/Scene/SceneSystem.hpp>
+#include <VadonEditor/UI/Model/Resource/ResourceDialog.hpp>
+#include <VadonEditor/UI/Model/Scene/SceneDialog.hpp>
 
 #include <VadonEditor/UI/Project/Asset/AddFolderDialog.hpp>
-#include <VadonEditor/UI/Model/Resource/ResourceDialog.hpp>
 
 #include <QMenu>
-#include <QMessageBox>
 #include <QMouseEvent>
-#include <QPushButton>
 
 namespace VadonEditor::UI
 {
@@ -88,46 +84,8 @@ namespace VadonEditor::UI
 
 	void AssetBrowserTree::new_scene_triggered()
 	{
-		SaveAssetDialog* save_dialog = new SaveAssetDialog(*m_application, this);
-		connect(save_dialog, &SaveAssetDialog::asset_saved, this, &AssetBrowserTree::new_scene_path_selected);
-
-		save_dialog->open();
-	}
-
-	void AssetBrowserTree::new_scene_path_selected(const QString& scene_path)
-	{
-		// FIXME: move all of this to a backend object as well?
-		Q_ASSERT_X(scene_path.isEmpty() == false, "VadonEditor::UI::AssetBrowserTree::new_scene_path_selected", "Invalid path");
-
-		// First verify that the asset doesn't already exist
-		Core::AssetManager& asset_manager = m_application->get_asset_manager();
-		if (asset_manager.find_asset_index_by_path(Core::AssetInfo::get_file_path(scene_path, Core::AssetType::SCENE)).isValid() == true)
-		{
-			QMessageBox::critical(this, "Asset Manager Error", "Asset file already exists!");
-			return;
-		}
-
-		// Next try to create the resource
-		Model::SceneSystem& scene_system = m_application->get_model_system().get_scene_system();
-		Model::Scene* new_scene = scene_system.create_scene();
-
-		if (new_scene == nullptr)
-		{
-			QMessageBox::critical(this, "Scene System Error", "Failed to create scene!");
-			return;
-		}
-
-		// Create asset
-		const int asset_id = scene_system.create_scene_asset(new_scene->get_resource()->get_info().id, scene_path);
-		if (asset_id == Core::AssetInfo::c_invalid_file_id)
-		{
-			QMessageBox::critical(this, "Scene System Error", "Failed to create scene asset!");
-			return;
-		}
-
-		// TODO: also print type!
-		const QModelIndex asset_index = asset_manager.find_asset_index(asset_id);
-		qDebug() << "Scene created at" << asset_manager.get_asset_info(asset_index).path;
+		NewSceneDialog* scene_dialog = new NewSceneDialog(*m_application, this);
+		scene_dialog->open();
 	}
 
 	void AssetBrowserTree::selection_changed(const QItemSelection& selected, const QItemSelection& deselected)
@@ -166,65 +124,5 @@ namespace VadonEditor::UI
 
 		Core::AssetManager& asset_manager = m_application->get_asset_manager();
 		asset_manager.open_asset(index);
-	}
-
-	SaveAssetDialog::SaveAssetDialog(Core::Application& application, QWidget* parent, const QModelIndex& root_asset)
-		: QDialog(parent)
-	{
-		m_ui.setupUi(this);
-		setAttribute(Qt::WidgetAttribute::WA_DeleteOnClose, true);
-
-		m_ui.assetBrowser->initialize(application, root_asset);
-	}
-
-	void SaveAssetDialog::asset_name_changed(const QString& text)
-	{
-		Q_UNUSED(text);
-		update_controls();
-	}
-
-	void SaveAssetDialog::finalize_asset_save()
-	{
-		const QString root_path = m_ui.assetBrowser->get_current_root_path();
-		QString asset_path = root_path.isEmpty() ? m_ui.assetBrowser->get_file_name() : QString("%1/%2").arg(root_path).arg(m_ui.assetBrowser->get_file_name());
-		emit(asset_saved(asset_path));
-
-		accept();
-	}
-
-	void SaveAssetDialog::update_controls()
-	{
-		QPushButton* save_button = m_ui.buttonBox->button(QDialogButtonBox::StandardButton::Save);
-		save_button->setEnabled(m_ui.assetBrowser->get_file_name().isEmpty() == false);
-	}
-
-	OpenAssetDialog::OpenAssetDialog(Core::Application& application, QWidget* parent)
-		: QDialog(parent)
-	{
-		m_ui.setupUi(this);
-		setAttribute(Qt::WidgetAttribute::WA_DeleteOnClose, true);
-
-		m_ui.assetBrowser->initialize(application);
-	}
-
-	void OpenAssetDialog::asset_name_changed(const QString& text)
-	{
-		Q_UNUSED(text);
-		update_controls();
-	}
-
-	void OpenAssetDialog::finalize_asset_open()
-	{
-		const QString root_path = m_ui.assetBrowser->get_current_root_path();
-		QString asset_path = root_path.isEmpty() ? m_ui.assetBrowser->get_file_name() : QString("%1/%2").arg(root_path).arg(m_ui.assetBrowser->get_file_name());
-		emit(asset_opened(asset_path));
-
-		accept();
-	}
-
-	void OpenAssetDialog::update_controls()
-	{
-		QPushButton* open_button = m_ui.buttonBox->button(QDialogButtonBox::StandardButton::Open);
-		open_button->setEnabled(m_ui.assetBrowser->get_file_name().isEmpty() == false);
 	}
 }

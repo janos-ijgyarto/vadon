@@ -153,6 +153,26 @@ namespace VadonEditor::Model
 		m_resource_lookup.erase(resource_it);
 	}
 
+	void ResourceSystem::save_all_resources()
+	{
+		for (auto resource_it = m_resource_lookup.begin(); resource_it != m_resource_lookup.end(); ++resource_it)
+		{
+			const Resource* current_resource = resource_it.value();
+			if (current_resource->is_embedded() == true)
+			{
+				continue;
+			}
+
+			if (current_resource->is_modified() == true)
+			{
+				if (save_resource(current_resource) == false)
+				{
+					qCritical() << "Failed to save resource!";
+				}
+			}
+		}
+	}
+
 	int ResourceSystem::create_resource_asset(const ResourceID& resource_id, const QString& path)
 	{
 		Resource* resource = find_resource(resource_id);
@@ -265,6 +285,32 @@ namespace VadonEditor::Model
 
 		resource->clear_modified();
 		return true;
+	}
+
+	Resource* ResourceSystem::import_file_resource(int asset_id)
+	{
+		if (m_resource_asset_reverse_lookup.find(asset_id) != m_resource_asset_reverse_lookup.end())
+		{
+			qCritical() << "Resource asset already added!";
+			return nullptr;
+		}
+
+		Resource* import_resource = create_resource(Resource::get_imported_file_resource_type());
+		if (internal_add_resource_asset(import_resource->get_info(), asset_id) == false)
+		{
+			qCritical() << "Failed to register import resource asset!";
+			delete import_resource;
+			return nullptr;
+		}
+
+		if (save_resource(import_resource) == false)
+		{
+			qCritical() << "Failed to save import resource data!";
+			delete import_resource;
+			return nullptr;
+		}
+
+		return import_resource;
 	}
 
 	Core::AssetType ResourceSystem::get_asset_type_for_resource_type(const QUuid& type_id) const
@@ -501,6 +547,24 @@ namespace VadonEditor::Model
 			return false;
 		}
 
+		// NOTE: we register all embedded resources after the fact, this ensures we don't expose the API
+		internal_add_embedded_resources(resource);
 		return true;
+	}
+
+	void ResourceSystem::internal_add_embedded_resources(Resource* resource)
+	{
+		if (resource->m_embedded_resources.isEmpty() == true)
+		{
+			return;
+		}
+
+		for (auto embedded_it = resource->m_embedded_resources.begin(); embedded_it != resource->m_embedded_resources.end(); ++embedded_it)
+		{
+			internal_add_new_resource(embedded_it.value());
+
+			// Recursively add any embedded resources
+			internal_add_embedded_resources(embedded_it.value());
+		}
 	}
 }

@@ -19,10 +19,12 @@ namespace VadonEditor::UI
 		void clear_triggered();
 
 		void new_resource_type_selected(const QUuid& resource_type);
-		void resource_asset_opened(const QString& resource_path);
+		void resource_asset_opened(const QUuid& resource_id);
 	private:
 		QUuid get_resource_id() const;
 		Model::Resource* find_resource() const;
+
+		void internal_set_resource(Model::Resource* resource);
 
 		void generate_resource_widgets();
 		void clear_resource_widgets();

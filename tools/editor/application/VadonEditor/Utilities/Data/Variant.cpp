@@ -146,6 +146,8 @@ namespace VadonEditor::Utilities
 			}
 		}
 		break;
+		case QMetaType::Type::Bool:
+			return json_value.toBool();
 		case QMetaType::Type::QUuid:
 		{
 			// UUIDs are stored as base64 strings

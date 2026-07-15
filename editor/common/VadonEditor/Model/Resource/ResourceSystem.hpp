@@ -3,6 +3,7 @@
 #include <VadonEditor/VadonEditor.hpp>
 
 #include <VadonEditor/Model/Resource/Database.hpp>
+#include <VadonEditor/Model/Resource/Event.hpp>
 #include <VadonEditor/Model/Resource/Resource.hpp>
 
 #include <functional>
@@ -15,8 +16,7 @@ namespace VadonEditor::Model
 	class ResourceSystem
 	{
 	public:
-		// FIXME: extend this so we can get info on what was modified!
-		using EditCallback = std::function<void(Vadon::Model::ResourceID, ::Vadon::Foundation::UUID)>;
+		using EventCallback = std::function<void(const ResourceEvent&)>;
 
 		~ResourceSystem();
 
@@ -25,8 +25,8 @@ namespace VadonEditor::Model
 
 		Resource* get_resource(const Vadon::Model::ResourceID& resource_id);
 
-		VADONEDITOR_API void register_edit_callback(EditCallback callback);
-		VADONEDITOR_API void resource_property_edited(const Vadon::Model::ResourceID& resource_id, const ::Vadon::Foundation::UUID& property_uuid);
+		VADONEDITOR_API void register_event_callback(EventCallback callback);
+		VADONEDITOR_API void broadcast_resource_event(const ResourceEvent& event);
 	private:
 		ResourceSystem(Core::Editor& editor);
 
@@ -38,7 +38,9 @@ namespace VadonEditor::Model
 		void process_message(const char* data, size_t size);
 
 		void internal_add_resource(Resource* resource);
-		void internal_remove_resource(Resource* resource);
+		void internal_remove_resource(Resource* resource, bool force_remove = false);
+
+		void reload_resource(Resource* resource);
 
 		Core::Editor& m_editor;
 
@@ -46,7 +48,7 @@ namespace VadonEditor::Model
 
 		std::unordered_map<Vadon::Model::ResourceID, Resource*> m_resource_lookup;
 
-		std::vector<EditCallback> m_edit_callbacks;
+		std::vector<EventCallback> m_event_callbacks;
 
 		friend Core::Editor;
 	};

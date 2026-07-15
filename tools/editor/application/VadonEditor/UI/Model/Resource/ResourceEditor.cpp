@@ -75,6 +75,7 @@ namespace VadonEditor::UI
 				QLabel* section_label = new QLabel(current_type_name, this);
 				section_label->setAlignment(Qt::AlignmentFlag::AlignCenter);
 
+				section_label->setFrameStyle(QFrame::Panel);
 				m_ui.propertyListVBox->insertWidget(spacer_index, section_label);
 			}
 
@@ -195,54 +196,13 @@ namespace VadonEditor::UI
 		}
 	}
 
-	bool ResourceEditor::request_close()
-	{
-		if (m_resource->is_modified() == true)
-		{
-			QMessageBox message_box(this);
-			message_box.setWindowTitle("Unsaved changes in Resource");
-			message_box.setText(QString("Save changes to \"%1?\"").arg(get_label()));
-			message_box.setStandardButtons(QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel);
-			message_box.setDefaultButton(QMessageBox::Yes);
-			message_box.setIcon(QMessageBox::Icon::Question);
-			
-			const int user_response = message_box.exec();
-			switch(user_response)
-			{
-			case QMessageBox::StandardButton::Yes:
-				save_triggered();
-				break;
-			case QMessageBox::StandardButton::No:
-				reload_triggered();
-				break;
-			case QMessageBox::StandardButton::Cancel:
-				return false;
-			}
-		}
-
-		return true;
-	}
-
-	void ResourceEditor::closeEvent(QCloseEvent* event)
-	{
-		if (windowType() == Qt::WindowType::Window)
-		{
-			if (request_close() == false)
-			{
-				event->ignore();
-				return;
-			}
-		}
-
-		QWidget::closeEvent(event);
-	}
-
 	void ResourceEditor::internal_property_edited(const QUuid& property_id)
 	{
 		PropertyWidget* property_widget = find_property_widget(property_id);
 		Q_ASSERT_X(property_widget != nullptr, "VadonEditor::UI::ResourceEditor::internal_property_edited", "Cannot find property widget");
 
 		m_resource->set_property(property_id, property_widget->get_value());
+		emit(resource_property_edited(property_id));
 
 		update_title();
 	}

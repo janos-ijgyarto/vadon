@@ -87,8 +87,8 @@ namespace VadonDemo::View
         );
 
         VadonEditor::Model::ResourceSystem& editor_resource_system = m_editor.get_common_editor().get_resource_system();
-        editor_resource_system.register_edit_callback(
-            [this, &editor_resource_system](Vadon::Model::ResourceID resource_id, ::Vadon::Foundation::UUID /*property_uuid*/)
+        editor_resource_system.register_event_callback(
+            [this, &editor_resource_system](const VadonEditor::Model::ResourceEvent& resource_event)
             {
                 // TODO: implement a system for tracking resource references!
                 // When it's modified in the editor, we need to know what was previously referenced and de-reference it
@@ -97,7 +97,14 @@ namespace VadonDemo::View
 
                 // NOTE: the above is mostly relevant for the Editor where anything can change at any time
                 // In-game a resource will have "static" data, so we can use much simpler reference tracking (each client adds ref to resource, deallocate resource once last client dereferences)
-                resource_edited(resource_id);
+                switch (resource_event.type)
+                {
+                case VadonEditor::Model::ResourceEventType::EDITED:
+                {
+                    resource_edited(resource_event.resource);
+                }
+                break;
+                }
             }
         );
 
@@ -107,7 +114,9 @@ namespace VadonDemo::View
     void EditorView::update()
     {
         update_dirty_entities();
-                
+        
+        m_active_scene = m_editor.get_common_editor().get_scene_system().get_selected_scene();
+
         if (m_active_scene != nullptr)
         {
             // Control camera per-scene

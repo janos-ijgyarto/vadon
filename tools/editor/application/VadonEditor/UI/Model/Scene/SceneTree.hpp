@@ -39,8 +39,7 @@ namespace VadonEditor::UI
 	private:
 		void entity_opened(Model::Entity* entity);
 
-		bool request_close();
-		void force_close();
+		void internal_close();
 
 		void set_modified();
 

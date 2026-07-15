@@ -1,6 +1,7 @@
 #include <VadonEditor/Model/Resource/Resource.hpp>
 
 #include <VadonEditor/Core/Application.hpp>
+#include <VadonEditor/Core/Asset/AssetManager.hpp>
 #include <VadonEditor/Core/Project/ProjectManager.hpp>
 
 #include <VadonEditor/Model/ModelSystem.hpp>
@@ -100,6 +101,16 @@ namespace VadonEditor::Model
 		m_application.get_model_system().get_resource_system().remove_resource(this);
 	}
 
+	void Resource::notify_modifed()
+	{
+		m_modified = true;
+		update_asset_state();
+		if (m_owner != nullptr)
+		{
+			m_owner->notify_modifed();
+		}
+	}
+
 	void Resource::set_property(const PropertyID& property_id, const QVariant& value)
 	{
 		m_data.set_property(property_id, value);
@@ -171,6 +182,11 @@ namespace VadonEditor::Model
 		}
 
 		return embedded_resource;
+	}
+
+	void Resource::open()
+	{
+		message_resource_loaded(false);
 	}
 
 	bool Resource::is_resource_base_of_type(Core::Application& application, const QUuid& type_id)
@@ -340,6 +356,7 @@ namespace VadonEditor::Model
 						{
 							Resource* embedded_resource = new Resource(m_application);
 							embedded_resource->m_info = embedded_info;
+							embedded_resource->m_owner = this;
 
 							if (embedded_resource->initialize() == false)
 							{
@@ -360,23 +377,55 @@ namespace VadonEditor::Model
 			}
 		}
 
-		// Send message about Resource
-		// Only if not embedded, the embedded resources will be loaded by the simulator independently
-		if(is_embedded() == false)
-		{
-			// FIXME: use temp allocator or shared serializer
-			VadonEditor::Network::MessageSerializer message_serializer;
-
-			::Vadon::Foundation::EditorModelMessageResourceLoaded resource_loaded_message;
-			resource_loaded_message.message_type = ::Vadon::Foundation::EditorModelMessageType::RESOURCE_LOADED;
-
-			resource_loaded_message.resource_id = Utilities::qt_uuid_to_vadon_uuid(m_info.id);
-
-			message_serializer.write_message_trivial(::Vadon::Foundation::EditorMessageCategory::MODEL, resource_loaded_message);
-
-			m_application.get_network_system().send_message(message_serializer);
-		}
+		message_resource_loaded(true);
 
 		return true;
+	}
+
+	void Resource::message_resource_loaded(bool reload) const
+	{
+		// Send message about Resource
+		if (is_embedded() == false)
+		{
+			// Only if not embedded, the embedded resources will be loaded by the simulator independently
+			return;
+		}
+
+		// FIXME: use temp allocator or shared serializer
+		VadonEditor::Network::MessageSerializer message_serializer;
+
+		::Vadon::Foundation::EditorModelMessageResourceLoaded resource_loaded_message;
+		resource_loaded_message.message_type = ::Vadon::Foundation::EditorModelMessageType::RESOURCE_LOADED;
+
+		resource_loaded_message.resource_id = Utilities::qt_uuid_to_vadon_uuid(m_info.id);
+		resource_loaded_message.reload = reload;
+
+		message_serializer.write_message_trivial(::Vadon::Foundation::EditorMessageCategory::MODEL, resource_loaded_message);
+
+		m_application.get_network_system().send_message(message_serializer);
+	}
+
+	void Resource::clear_modified()
+	{
+		m_modified = false;
+		update_asset_state();
+	}
+
+	void Resource::update_asset_state()
+	{
+		if (is_embedded() == true)
+		{
+			return;
+		}
+
+		Core::AssetManager& asset_manager = m_application.get_asset_manager();
+
+		const int asset_id = m_application.get_model_system().get_resource_system().find_resource_asset_id(m_info.id);
+		Q_ASSERT_X(asset_id != Core::AssetInfo::c_invalid_file_id, "VadonEditor::Model::Resource::update_asset_state", "Cannot find asset ID");
+
+		const QModelIndex asset_index = asset_manager.find_asset_index(asset_id);
+		Q_ASSERT_X(asset_index.isValid(), "VadonEditor::Model::Resource::update_asset_state", "Cannot find asset index");
+
+		asset_manager.set_asset_modified(asset_index, m_modified);
 	}
 }

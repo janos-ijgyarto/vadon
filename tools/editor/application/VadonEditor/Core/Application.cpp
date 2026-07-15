@@ -22,6 +22,7 @@
 
 #include <QCommandLineParser>
 #include <QtWidgets/QApplication>
+#include <QSettings>
 
 // TODO: make this always available in debug builds, activated via command line argument!
 //#define VADON_EDITOR_ENABLE_DEBUGBREAK_ON_INIT
@@ -358,6 +359,11 @@ namespace VadonEditor::Core
 			}
 		}
 	};
+
+	QSettings Application::get_app_settings()
+	{
+		return QSettings(QSettings::Format::IniFormat, QSettings::Scope::UserScope, Application::c_org_name, Application::c_app_name);
+	}
 
 	Application::Application(int argc, char* argv[])
 	{

@@ -8,10 +8,12 @@
 #include <VadonEditor/Model/Resource/ResourceSystem.hpp>
 #include <VadonEditor/Model/Scene/Scene.hpp>
 
-#include <VadonEditor/UI/Project/Asset/AssetBrowser.hpp>
-
 #include <VadonEditor/UI/Model/Resource/ResourceDialog.hpp>
 #include <VadonEditor/UI/Model/Resource/ResourceEditor.hpp>
+
+#include <VadonEditor/UI/Project/Asset/AssetDialog.hpp>
+
+#include <VadonEditor/Utilities/UUID.hpp>
 
 #include <QMessageBox>
 
@@ -78,23 +80,29 @@ namespace VadonEditor::UI
 		Model::Resource* resource = find_resource();
 		if (resource != nullptr)
 		{
-			QWidget* resource_widget = m_ui.resourceGroupBox->layout()->itemAt(0)->widget();
-			ResourceEditor* resource_editor = qobject_cast<ResourceEditor*>(resource_widget);
-			if (resource_editor != nullptr)
+			for(int item_index = 0; item_index < m_ui.resourceGroupBox->layout()->count(); ++item_index)
 			{
-				resource_editor->set_read_only(read_only);
-			}
-			else
-			{
-				// TODO: error!
+				QWidget* resource_widget = m_ui.resourceGroupBox->layout()->itemAt(item_index)->widget();
+				ResourceEditor* resource_editor = qobject_cast<ResourceEditor*>(resource_widget);
+				if (resource_editor != nullptr)
+				{
+					resource_editor->set_read_only(read_only || (resource->is_embedded() == false));
+					return;
+				}
+				else
+				{
+					// TODO: error!
+				}
 			}
 		}
 	}
 
 	void PropertyResource::resource_property_value_changed(const QUuid& id)
 	{
-		// TODO
 		Q_UNUSED(id);
+
+		// Propagate the change notification
+		emit(value_changed(get_id()));
 	}
 
 	void PropertyResource::new_triggered()
@@ -107,18 +115,31 @@ namespace VadonEditor::UI
 
 	void PropertyResource::load_triggered()
 	{
-		// FIXME: instead of this, create dedicated dialog where we can search among just the Resource assets
-		// filtered to the ones that are compatible in type
-		OpenAssetDialog* open_asset_dialog = new OpenAssetDialog(m_owner_resource->get_application(), this);
-		connect(open_asset_dialog, &OpenAssetDialog::asset_opened, this, &PropertyResource::resource_asset_opened);
+		SelectResourceDialog* select_dialog = new SelectResourceDialog(m_owner_resource->get_application(), m_base_type, this);
+		connect(select_dialog, &SelectResourceDialog::resource_asset_selected, this, &PropertyResource::resource_asset_opened);
 
-		open_asset_dialog->open();
+		select_dialog->open();
 	}
 
 	void PropertyResource::clear_triggered()
 	{
+		const QUuid resource_id = get_resource_id();
+		if (resource_id.isNull() == true)
+		{
+			return;
+		}
+
+		Model::Resource* resource = m_owner_resource->get_application().get_model_system().get_resource_system().find_resource(resource_id);
+		Q_ASSERT_X(resource != nullptr, "VadonEditor::UI::PropertyResource::clear_triggered", "Cannot find resource");
+
 		internal_set_value(QUuid());
 		clear_resource_widgets();
+
+		if (resource->is_embedded() == true)
+		{
+			// Delete embedded resource
+			delete resource;
+		}
 	}
 
 	void PropertyResource::new_resource_type_selected(const QUuid& resource_type)
@@ -129,33 +150,23 @@ namespace VadonEditor::UI
 			return;
 		}
 
-		qDebug() << "Created new embedded resource, with type" << resource_type.toString();
+		Model::Resource* embedded_resource = m_owner_resource->create_embedded_resource(resource_type);
+		internal_set_resource(embedded_resource);
 	}
 
-	void PropertyResource::resource_asset_opened(const QString& resource_path)
+	void PropertyResource::resource_asset_opened(const QUuid& resource_id)
 	{
 		Core::Application& application = m_owner_resource->get_application();
-
 		Model::ResourceSystem& resource_system = application.get_model_system().get_resource_system();
-		const Core::AssetType required_asset_type = resource_system.get_asset_type_for_resource_type(m_base_type);
 
-		Core::AssetManager& asset_manager = application.get_asset_manager();		
-
-		const QModelIndex asset_index = asset_manager.find_asset_index_by_path(resource_path);
-		if (asset_index.isValid() == false)
+		const int resource_asset_id = resource_system.find_resource_asset_id(resource_id);
+		if (resource_asset_id == Core::AssetInfo::c_invalid_file_id)
 		{
-			QMessageBox::critical(this, "Asset Library Error", QString("Cannot find asset at \"%1\"").arg(resource_path));
+			QMessageBox::critical(this, "Resource System Error", "Cannot find asset for Resource!");
 			return;
 		}
 
-		const Core::AssetInfo asset_info = asset_manager.get_asset_info(asset_index);
-		if (asset_info.type != required_asset_type)
-		{
-			QMessageBox::critical(this, "Asset Library Error", "Asset type does not match resource type!");
-			return;
-		}
-
-		const Model::ResourceInfo resource_info = resource_system.resource_info_by_asset_id(asset_info.id);
+		const Model::ResourceInfo resource_info = resource_system.resource_info_by_asset_id(resource_asset_id);
 		if (resource_info.is_valid() == false)
 		{
 			QMessageBox::critical(this, "Resource System Error", "Cannot find resource for this asset!");
@@ -168,7 +179,8 @@ namespace VadonEditor::UI
 			return;
 		}
 
-		qDebug() << "Opened resource" << resource_info.id << "at" << resource_path;
+		Model::Resource* selected_resource = m_owner_resource->get_application().get_model_system().get_resource_system().get_resource(resource_id);
+		internal_set_resource(selected_resource);
 	}
 
 	QUuid PropertyResource::get_resource_id() const
@@ -195,6 +207,22 @@ namespace VadonEditor::UI
 		return resource;
 	}
 
+	void PropertyResource::internal_set_resource(Model::Resource* resource)
+	{
+		// Clear previous contents
+		clear_triggered();
+
+		if (resource != nullptr)
+		{
+			internal_set_value(resource->get_info().id);
+			generate_resource_widgets();
+		}
+		else
+		{
+			Q_ASSERT_X(false, "VadonEditor::UI::PropertyResource::internal_set_resource", "Invalid resource");
+		}
+	}
+
 	void PropertyResource::generate_resource_widgets()
 	{
 		Model::Resource* resource = find_resource();
@@ -202,17 +230,57 @@ namespace VadonEditor::UI
 		{
 			QVBoxLayout* vbox_layout = new QVBoxLayout();
 
+			// FIXME: instead of creating it here, we should query it from the ResourceManager
+			// This allows it to track each "View" onto the same resource and connect signals, ensuring they
+			// can be updated if they are edited and viewed from multiple locations
 			ResourceEditor* resource_editor = new ResourceEditor(resource, this);
 			if (resource_editor->initialize() == false)
 			{
-				Q_ASSERT_X(false, "VadonEditor::UI::PropertyResource::find_resource", "Cannot find resource!");
+				Q_ASSERT_X(false, "VadonEditor::UI::PropertyResource::generate_resource_widgets", "Cannot find resource!");
 				clear_resource_widgets();
 			}
 
+			connect(resource_editor, &ResourceEditor::resource_property_edited, this, &PropertyResource::resource_property_value_changed);
+
+			const Model::ResourceInfo& resource_info = resource->get_info();
+
+			Core::Application& application = m_owner_resource->get_application();
+			const Core::DataSchema& data_schema = application.get_project_manager().get_project_data_schema();
+			const Core::TypeData* type_data = data_schema.find_type_data(resource_info.type);
+
+			QString current_type_name = type_data->find_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME);
+			if (current_type_name.isEmpty())
+			{
+				current_type_name = QString("Resource type %1").arg(m_base_type.toString());
+			}
+
+			QString label_string = current_type_name;
+			if (resource->is_embedded() == false)
+			{
+				const int resource_asset_id = application.get_model_system().get_resource_system().find_resource_asset_id(resource_info.id);
+				Q_ASSERT_X(resource_asset_id != Core::AssetInfo::c_invalid_file_id, "VadonEditor::UI::PropertyResource::generate_resource_widgets", "Cannot find resource asset");
+
+				Core::AssetManager& asset_manager = application.get_asset_manager();
+				const QModelIndex asset_index = asset_manager.find_asset_index(resource_asset_id);
+				const Core::AssetInfo asset_info = application.get_asset_manager().get_asset_info(asset_index);
+				label_string += QString(" (%1) - %2").arg(Utilities::uuid_to_base64_string(resource_info.id)).arg(asset_info.path);
+			}
+			else
+			{
+				// TODO: create a "path" of resource properties for embedded resource
+				label_string += QString(" (%1)").arg(Utilities::uuid_to_base64_string(resource_info.id));
+			}
+
+			QLabel* resource_label = new QLabel(label_string);
+			resource_label->setWordWrap(true);
+
+			vbox_layout->addWidget(resource_label);
 			vbox_layout->addWidget(resource_editor);
 			m_ui.resourceGroupBox->setLayout(vbox_layout);
 
 			set_read_only(m_read_only);
+
+			setMinimumSize(QSize(400, 300));
 		}
 		else
 		{
@@ -225,8 +293,22 @@ namespace VadonEditor::UI
 		QLayout* layout = m_ui.resourceGroupBox->layout();
 		if (layout != nullptr)
 		{
+			QLayoutItem* current_item = nullptr;
+			while (current_item = layout->takeAt(0))
+			{
+				if (current_item->widget())
+				{
+					delete current_item->widget();
+				}
+				delete current_item;
+			}
 			delete layout;
 		}
+		
+		// Reset minimum size
+		m_ui.resourceGroupBox->adjustSize();
+		setMinimumSize(QSize(0, 0));
+		adjustSize();
 
 		const Core::DataSchema& data_schema = m_owner_resource->get_application().get_project_manager().get_project_data_schema();
 		const Core::TypeData* type_data = data_schema.find_type_data(m_base_type);

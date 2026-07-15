@@ -348,65 +348,72 @@ namespace VadonDemo::Render
         );
 
         VadonEditor::Model::ResourceSystem& editor_resource_system = common_editor.get_resource_system();
-        editor_resource_system.register_edit_callback(
-            [this](Vadon::Model::ResourceID resource_id, ::Vadon::Foundation::UUID /*property_id*/)
+        editor_resource_system.register_event_callback(
+            [this](const VadonEditor::Model::ResourceEvent& resource_event)
             {
-                Vadon::Core::EngineCoreInterface& engine_core = m_editor.get_engine_core();
-                Vadon::Model::ResourceSystem& resource_system = engine_core.get_system<Vadon::Model::ResourceSystem>();
-                Vadon::Model::ResourceHandle resource_handle = resource_system.find_resource(resource_id);
-                VADON_ASSERT(resource_handle.is_valid() == true, "Resource not found!");
-
-                const Vadon::Model::ResourceInfo resource_info = resource_system.get_resource_info(resource_handle);
-                if (Vadon::Utilities::TypeRegistry::is_base_of(Vadon::Utilities::TypeRegistry::get_type_id<CanvasLayerDefinition>(), resource_info.type_id))
+                switch (resource_event.type)
                 {
-                    VadonDemo::Render::Render& common_render = m_editor.get_core().get_render();
-                    common_render.update_layer_definition(CanvasLayerDefHandle::from_resource_handle(resource_handle));
-
-                    set_layers_dirty();
-                }
-                else if (resource_info.type_id == Vadon::Utilities::TypeRegistry::get_type_id<TextureResource>())
+                case VadonEditor::Model::ResourceEventType::EDITED:
                 {
-                    const TextureResourceID texture_id = TextureResourceID::from_resource_id(resource_info.id);
+                    Vadon::Core::EngineCoreInterface& engine_core = m_editor.get_engine_core();
+                    Vadon::Model::ResourceSystem& resource_system = engine_core.get_system<Vadon::Model::ResourceSystem>();
+                    Vadon::Model::ResourceHandle resource_handle = resource_system.find_resource(resource_event.resource);
+                    VADON_ASSERT(resource_handle.is_valid() == true, "Resource not found!");
 
-                    // First unload the old texture
-                    VadonDemo::Render::Render& common_render = m_editor.get_core().get_render();
-                    common_render.unload_texture_resource(texture_id);
-
-                    Vadon::Render::Canvas::CanvasSystem& canvas_system = engine_core.get_system<Vadon::Render::Canvas::CanvasSystem>();
-
-                    Vadon::ECS::World& ecs_world = m_editor.get_common_editor().get_ecs_world();
-                    auto sprite_query = ecs_world.get_component_manager().run_component_query<CanvasComponent&, SpriteTilingComponent&>();
-                    
-                    for (auto sprite_it = sprite_query.get_iterator(); sprite_it.is_valid() == true; sprite_it.next())
+                    const Vadon::Model::ResourceInfo resource_info = resource_system.get_resource_info(resource_handle);
+                    if (Vadon::Utilities::TypeRegistry::is_base_of(Vadon::Utilities::TypeRegistry::get_type_id<CanvasLayerDefinition>(), resource_info.type_id))
                     {
-                        auto current_sprite_component = sprite_it.get_component<SpriteTilingComponent>();
-                        if (current_sprite_component->texture != texture_id)
+                        VadonDemo::Render::Render& common_render = m_editor.get_core().get_render();
+                        common_render.update_layer_definition(CanvasLayerDefHandle::from_resource_handle(resource_handle));
+
+                        set_layers_dirty();
+                    }
+                    else if (resource_info.type_id == Vadon::Utilities::TypeRegistry::get_type_id<TextureResource>())
+                    {
+                        const TextureResourceID texture_id = TextureResourceID::from_resource_id(resource_info.id);
+
+                        // First unload the old texture
+                        VadonDemo::Render::Render& common_render = m_editor.get_core().get_render();
+                        common_render.unload_texture_resource(texture_id);
+
+                        Vadon::Render::Canvas::CanvasSystem& canvas_system = engine_core.get_system<Vadon::Render::Canvas::CanvasSystem>();
+
+                        Vadon::ECS::World& ecs_world = m_editor.get_common_editor().get_ecs_world();
+                        auto sprite_query = ecs_world.get_component_manager().run_component_query<CanvasComponent&, SpriteTilingComponent&>();
+
+                        for (auto sprite_it = sprite_query.get_iterator(); sprite_it.is_valid() == true; sprite_it.next())
                         {
-                            continue;
+                            auto current_sprite_component = sprite_it.get_component<SpriteTilingComponent>();
+                            if (current_sprite_component->texture != texture_id)
+                            {
+                                continue;
+                            }
+
+                            // Make sure texture is loaded
+                            load_texture_resource_data(texture_id);
+
+                            // Clear the canvas item
+                            const auto current_canvas_component = sprite_it.get_component<CanvasComponent>();
+                            Vadon::Render::Canvas::CommandBuffer& item_command_buffer = canvas_system.get_item_command_buffer(current_canvas_component->canvas_item);
+                            item_command_buffer.get_data().clear();
+
+                            // Reset rect (this will force an update)
+                            current_sprite_component->reset_rect();
                         }
+                    }
+                    else if (resource_info.type_id == Vadon::Utilities::TypeRegistry::get_type_id<ShaderResource>())
+                    {
+                        const ShaderResourceID shader_id = ShaderResourceID::from_resource_id(resource_info.id);
 
-                        // Make sure texture is loaded
-                        load_texture_resource_data(texture_id);
+                        // First unload the old shader
+                        VadonDemo::Render::Render& common_render = m_editor.get_core().get_render();
+                        common_render.unload_shader_resource(shader_id);
 
-                        // Clear the canvas item
-                        const auto current_canvas_component = sprite_it.get_component<CanvasComponent>();
-                        Vadon::Render::Canvas::CommandBuffer& item_command_buffer = canvas_system.get_item_command_buffer(current_canvas_component->canvas_item);
-                        item_command_buffer.get_data().clear();
-
-                        // Reset rect (this will force an update)
-                        current_sprite_component->reset_rect();
+                        // Then re-load using new params
+                        load_shader_resource_data(shader_id);
                     }
                 }
-                else if (resource_info.type_id == Vadon::Utilities::TypeRegistry::get_type_id<ShaderResource>())
-                {
-                    const ShaderResourceID shader_id = ShaderResourceID::from_resource_id(resource_info.id);
-
-                    // First unload the old shader
-                    VadonDemo::Render::Render& common_render = m_editor.get_core().get_render();
-                    common_render.unload_shader_resource(shader_id);
-
-                    // Then re-load using new params
-                    load_shader_resource_data(shader_id);
+                break;
                 }
             }
         );

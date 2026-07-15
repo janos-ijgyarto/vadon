@@ -472,14 +472,14 @@ namespace VadonEditor::Core
 	{
 		m_project_cache.clear();
 
-		QSettings settings(QSettings::Format::IniFormat, QSettings::Scope::UserScope, Application::c_org_name, Application::c_app_name);
+		QSettings app_settings = Application::get_app_settings();
 
-		int project_count = settings.beginReadArray(c_project_cache_prefix);
+		int project_count = app_settings.beginReadArray(c_project_cache_prefix);
 		for (int project_index = 0; project_index < project_count; ++project_index)
 		{
-			settings.setArrayIndex(project_index);
+			app_settings.setArrayIndex(project_index);
 
-			const QString project_path = settings.value("path").toString();
+			const QString project_path = app_settings.value("path").toString();
 			const QString root_path = QFileInfo(project_path).absolutePath();
 			if (m_project_cache.contains(root_path) == true)
 			{
@@ -488,16 +488,16 @@ namespace VadonEditor::Core
 			}
 
 			CachedProjectInfo cached_info;
-			cached_info.name = settings.value("name").toString();
+			cached_info.name = app_settings.value("name").toString();
 			cached_info.path = project_path;
-			if (settings.contains("plugin_path") == true)
+			if (app_settings.contains("plugin_path") == true)
 			{
-				cached_info.plugin_path = settings.value("plugin_path").toString();
+				cached_info.plugin_path = app_settings.value("plugin_path").toString();
 			}
 
 			m_project_cache[root_path] = cached_info;
 		}
-		settings.endArray();
+		app_settings.endArray();
 
 		return true;
 	}

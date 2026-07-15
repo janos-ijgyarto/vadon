@@ -1,7 +1,8 @@
 #ifndef VADONEDITOR_UI_MODEL_RESOURCE_RESOURCEMANAGER_HPP
 #define VADONEDITOR_UI_MODEL_RESOURCE_RESOURCEMANAGER_HPP
-#include <QObject>
+#include <VadonEditor/UI/Project/Asset/AssetMessageBox.hpp>
 #include <QHash>
+#include <QSortFilterProxyModel>
 #include <QUuid>
 namespace VadonEditor::Core
 {
@@ -9,6 +10,27 @@ namespace VadonEditor::Core
 }
 namespace VadonEditor::UI
 {
+	class UnsavedResourceAssetFilter : public QSortFilterProxyModel
+	{
+		Q_OBJECT
+	public:
+		UnsavedResourceAssetFilter(Core::Application& application, QObject* parent = nullptr);
+
+		bool initialize();
+	protected:
+		bool filterAcceptsRow(int source_row, const QModelIndex& source_parent) const override;
+	private:
+		Core::Application& m_application;
+		QList<int> m_unsaved_resource_asset_ids;
+	};
+
+	class UnsavedResourceMessageBox : public AssetMessageBox
+	{
+		Q_OBJECT
+	public:
+		UnsavedResourceMessageBox(QAbstractItemModel* asset_model, QWidget* parent = nullptr);
+	};
+
 	class ResourceManager : public QObject
 	{
 		Q_OBJECT

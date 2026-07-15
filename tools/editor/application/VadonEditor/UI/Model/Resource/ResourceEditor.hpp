@@ -25,12 +25,8 @@ namespace VadonEditor::UI
 		QString get_label() const;
 
 		void set_read_only(bool read_only);
-
-		bool request_close();
 	signals:
 		void resource_property_edited(const QUuid& property_id);
-	protected:
-		void closeEvent(QCloseEvent* event) override;
 	private slots:
 		void internal_property_edited(const QUuid& property_id);
 		void save_triggered();

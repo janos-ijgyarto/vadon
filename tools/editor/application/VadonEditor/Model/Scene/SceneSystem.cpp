@@ -90,6 +90,26 @@ namespace VadonEditor::Model
 		return m_application.get_model_system().get_resource_system().find_resource_asset_id(scene_id);
 	}
 
+	void SceneSystem::save_all_scenes()
+	{
+		for (auto scene_it = m_scene_lookup.begin(); scene_it != m_scene_lookup.end(); ++scene_it)
+		{
+			const Scene* current_scene = scene_it.value();
+			if (current_scene->get_resource()->is_embedded() == true)
+			{
+				continue;
+			}
+
+			if (current_scene->is_modified() == true)
+			{
+				if (current_scene->save_scene() == false)
+				{
+					qCritical() << "Failed to save scene!";
+				}
+			}
+		}
+	}
+
 	SceneSystem::SceneSystem(Core::Application& application)
 		: m_application(application)
 	{

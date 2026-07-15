@@ -18,6 +18,8 @@ namespace VadonEditor::Model
 	class Resource
 	{
 	public:
+		~Resource();
+
 		// TODO: implement reference counting
 		// Each time something is loaded that references this resource
 		// add a reference
@@ -26,10 +28,13 @@ namespace VadonEditor::Model
 		const Vadon::Model::ResourceInfo& get_info() const { return m_info; }
 
 		bool is_loaded() const { return m_handle.is_valid(); }
+		bool is_embedded() const { return m_owner != nullptr; }
 
 		Resource* find_embedded_resource(const Vadon::Model::ResourceID& resource_id) const;
 	private:
 		Resource(Core::Editor& editor, const Vadon::Model::ResourceID& id);
+
+		void shutdown();
 
 		bool internal_load();
 		void load_property_data(const ::Vadon::Foundation::EditorModelMessageResourcePropertyEdited& resource_property_message, const char* data);

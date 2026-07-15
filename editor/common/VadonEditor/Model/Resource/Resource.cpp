@@ -12,6 +12,12 @@
 
 namespace VadonEditor::Model
 {
+	Resource::~Resource()
+	{
+		VADON_ASSERT(is_loaded() == false, "Did not clean up engine resource!");
+		VADON_ASSERT(m_embedded_resources.empty() == true, "Did not clean up embedded resources!");
+	}
+
 	Resource* Resource::find_embedded_resource(const Vadon::Model::ResourceID& resource_id) const
 	{
 		for (Resource* current_embedded : m_embedded_resources)
@@ -31,6 +37,12 @@ namespace VadonEditor::Model
 		, m_owner(nullptr)
 	{
 
+	}
+
+	void Resource::shutdown()
+	{
+		m_handle.invalidate();
+		m_embedded_resources.clear();
 	}
 
 	bool Resource::internal_load()
@@ -94,10 +106,17 @@ namespace VadonEditor::Model
 
 		const Vadon::Utilities::Serializer::KeyVector property_keys = serializer.get_keys();
 		ResourceSystem& resource_system = m_editor.get_resource_system();
+
+		ResourceEvent property_edit_event;
+		property_edit_event.resource = m_id;
+		property_edit_event.type = ResourceEventType::EDITED;
+
 		for (const std::string& current_key : property_keys)
 		{
 			const Vadon::Foundation::UUID current_property_id = Vadon::Utilities::parse_labeled_uuid(current_key);
-			resource_system.resource_property_edited(m_id, current_property_id);
+
+			property_edit_event.property_uuid = current_property_id;
+			resource_system.broadcast_resource_event(property_edit_event);
 
 			Vadon::Core::Logger::log_message(std::format("Modified resource {} property {}\n", Vadon::Utilities::uuid_to_string(get_id()).string, Vadon::Utilities::uuid_to_string(current_property_id).string));
 		}

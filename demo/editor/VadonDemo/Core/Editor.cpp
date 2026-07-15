@@ -148,23 +148,30 @@ namespace VadonDemo::Core
 
         // Add a callback for when the global config is modified
         VadonEditor::Model::ResourceSystem& editor_resource_system = m_common_editor.get_resource_system();
-        editor_resource_system.register_edit_callback(
-            [this](Vadon::Model::ResourceID resource_id, ::Vadon::Foundation::UUID /*property_id*/)
+        editor_resource_system.register_event_callback(
+            [this](const VadonEditor::Model::ResourceEvent& resource_event)
             {
-                Vadon::Model::ResourceSystem& resource_system = get_engine_core().get_system<Vadon::Model::ResourceSystem>();
-                Vadon::Model::ResourceHandle resource_handle = resource_system.find_resource(resource_id);
-                VADON_ASSERT(resource_handle.is_valid() == true, "Resource not found!");
-
-                const Vadon::Model::ResourceInfo resource_info = resource_system.get_resource_info(resource_handle);
-                if (Vadon::Utilities::TypeRegistry::is_base_of(Vadon::Utilities::TypeRegistry::get_type_id<GlobalConfiguration>(), resource_info.type_id))
+                switch (resource_event.type)
                 {
-                    // Global config resource, check if it's the one in the current project config
-                    const Vadon::Core::Project& active_project = m_common_editor.get_project_manager().get_active_project();
-                    if (active_project.custom_data_id == resource_id)
+                case VadonEditor::Model::ResourceEventType::EDITED:
+                {
+                    Vadon::Model::ResourceSystem& resource_system = get_engine_core().get_system<Vadon::Model::ResourceSystem>();
+                    Vadon::Model::ResourceHandle resource_handle = resource_system.find_resource(resource_event.resource);
+                    VADON_ASSERT(resource_handle.is_valid() == true, "Resource not found!");
+
+                    const Vadon::Model::ResourceInfo resource_info = resource_system.get_resource_info(resource_handle);
+                    if (Vadon::Utilities::TypeRegistry::is_base_of(Vadon::Utilities::TypeRegistry::get_type_id<GlobalConfiguration>(), resource_info.type_id))
                     {
-                        m_core->update_global_config(GlobalConfigurationID::from_resource_id(resource_id));
-                        m_render.update_editor_layer();
+                        // Global config resource, check if it's the one in the current project config
+                        const Vadon::Core::Project& active_project = m_common_editor.get_project_manager().get_active_project();
+                        if (active_project.custom_data_id == resource_event.resource)
+                        {
+                            m_core->update_global_config(GlobalConfigurationID::from_resource_id(resource_event.resource));
+                            m_render.update_editor_layer();
+                        }
                     }
+                }
+                break;
                 }
             }
         );

@@ -87,16 +87,16 @@ namespace VadonEditor::Model
 		return new_resource_obj;
 	}
 
-	void ResourceSystem::register_edit_callback(EditCallback callback)
+	void ResourceSystem::register_event_callback(EventCallback callback)
 	{
-		m_edit_callbacks.push_back(callback);
+		m_event_callbacks.push_back(callback);
 	}
 
-	void ResourceSystem::resource_property_edited(const Vadon::Model::ResourceID& resource_id, const ::Vadon::Foundation::UUID& property_uuid)
+	void ResourceSystem::broadcast_resource_event(const ResourceEvent& event)
 	{
-		for (const EditCallback& current_callback : m_edit_callbacks)
+		for (const EventCallback& current_callback : m_event_callbacks)
 		{
-			current_callback(resource_id, property_uuid);
+			current_callback(event);
 		}
 	}
 
@@ -120,7 +120,10 @@ namespace VadonEditor::Model
 	{
 		for (const auto resource_pair : m_resource_lookup)
 		{
-			delete resource_pair.second;
+			Resource* current_resource = resource_pair.second;
+			current_resource->shutdown();
+
+			delete current_resource;
 		}
 
 		m_resource_lookup.clear();
@@ -176,16 +179,18 @@ namespace VadonEditor::Model
 				const ::Vadon::Foundation::EditorModelMessageResourceLoaded* resource_loaded_message = reinterpret_cast<const ::Vadon::Foundation::EditorModelMessageResourceLoaded*>(message_data);
 
 				Resource* resource = find_resource(resource_loaded_message->resource_id);
-				if (resource != nullptr)
+				if (resource == nullptr)
 				{
-					// Remove resource, since we will reload
-					internal_remove_resource(resource);
+					// Resource not yet loaded, so we create it
+					resource = get_resource(resource_loaded_message->resource_id);
+					VADON_ASSERT(resource != nullptr, "Failed to create resource!");
+
+					Vadon::Core::Logger::log_message(std::format("Loaded resource {}\n", Vadon::Utilities::uuid_to_string(resource->get_id()).string));
 				}
-
-				resource = get_resource(resource_loaded_message->resource_id);
-				VADON_ASSERT(resource != nullptr, "Failed to create resource!");
-
-				Vadon::Core::Logger::log_message(std::format("Loaded resource {}\n", Vadon::Utilities::uuid_to_string(resource->get_id()).string));
+				else if (resource_loaded_message->reload == true)
+				{
+					reload_resource(resource);
+				}
 			}
 			break;
 			case ::Vadon::Foundation::EditorModelMessageType::RESOURCE_PROPERTY_EDITED:
@@ -226,7 +231,8 @@ namespace VadonEditor::Model
 
 				resource->remove_embedded_resource(remove_embedded->embedded_id);
 
-				internal_remove_resource(embedded_resource);
+				// This time we force removal
+				internal_remove_resource(embedded_resource, true);
 			}
 				break;
 			}
@@ -256,26 +262,58 @@ namespace VadonEditor::Model
 		}
 	}
 
-	void ResourceSystem::internal_remove_resource(Resource* resource)
+	void ResourceSystem::internal_remove_resource(Resource* resource, bool force_remove)
 	{
 		// Recursively remove all embedded resources
-		Vadon::Model::ResourceSystem& engine_resource_system = m_editor.get_engine_core().get_system<Vadon::Model::ResourceSystem>();
-		const std::vector<Vadon::Model::ResourceHandle> embedded_resources = engine_resource_system.get_embedded_resources(resource->m_handle);
-
-		for (Vadon::Model::ResourceHandle current_embedded_handle : embedded_resources)
+		for (Resource* current_embedded_resource : resource->m_embedded_resources)
 		{
-			const Vadon::Model::ResourceInfo embedded_info = engine_resource_system.get_resource_info(current_embedded_handle);
-
-			Resource* embedded_resource = find_resource(embedded_info.id);
-			VADON_ASSERT(embedded_resource != nullptr, "Cannot find embedded resource!");
-
-			internal_remove_resource(embedded_resource);
+			VADON_ASSERT(find_resource(current_embedded_resource->get_id()) != nullptr, "Cannot find embedded resource!");
+			internal_remove_resource(current_embedded_resource);
 		}
 
+		// Remove from lookup
 		auto resource_it = m_resource_lookup.find(resource->get_id());
 		VADON_ASSERT(resource_it != m_resource_lookup.end(), "Cannot find resource!");
 		m_resource_lookup.erase(resource_it);
 
+		// Remove from engine as well
+		// NOTE: Normally we rely on the root resource kicking removal for all embedded resources,
+		// unless we are explicitly removing a previously embedded resource
+		if (resource->is_embedded() == false)
+		{
+			m_editor.get_engine_core().get_system<Vadon::Model::ResourceSystem>().remove_resource(resource->m_handle);
+		}
+		else if (force_remove == true)
+		{
+			m_editor.get_engine_core().get_system<Vadon::Model::ResourceSystem>().remove_embedded_resource(resource->m_owner->m_handle, resource->m_handle);
+		}
+
+		resource->shutdown();
 		delete resource;
+	}
+
+	void ResourceSystem::reload_resource(Resource* resource)
+	{
+		VADON_ASSERT(resource->is_embedded() == false, "Cannot reload embedded resource!");
+
+		const Vadon::Model::ResourceID resource_id = resource->get_id();
+
+		// Notify listeners
+		{
+			ResourceEvent reload_event;
+			reload_event.resource = resource_id;
+			reload_event.type = ResourceEventType::RELOADED;
+
+			broadcast_resource_event(reload_event);
+		}
+
+		// Remove resource to clean up stale data
+		internal_remove_resource(resource);
+
+		// Reload the same resource
+		Resource* reloaded_resource = get_resource(resource_id);
+		VADON_ASSERT(reloaded_resource != nullptr, "Failed to create resource!");
+
+		Vadon::Core::Logger::log_message(std::format("Reloaded resource {}\n", Vadon::Utilities::uuid_to_string(reloaded_resource->get_id()).string));
 	}
 }

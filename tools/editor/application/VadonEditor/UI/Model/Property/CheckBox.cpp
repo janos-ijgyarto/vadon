@@ -7,6 +7,9 @@ namespace VadonEditor::UI
 	{
 		m_ui.setupUi(this);
 
+		// NOTE: Designer did not have this function, have to connect manually
+		connect(m_ui.checkBox, &QCheckBox::checkStateChanged, this, &PropertyCheckBox::check_state_changed);
+
 		m_ui.checkBox->setCheckState(value ? Qt::CheckState::Checked : Qt::CheckState::Unchecked);
 	}
 

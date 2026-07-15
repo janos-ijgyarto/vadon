@@ -11,6 +11,8 @@
 #include <VadonEditor/UI/MainWindow.hpp>
 #include <VadonEditor/UI/UISystem.hpp>
 
+#include <VadonEditor/UI/Project/Asset/AssetDialog.hpp>
+
 #include <VadonEditor/Utilities/UUID.hpp>
 
 #include <Vadon/Foundation/Model/Resource/File.hpp>
@@ -18,6 +20,7 @@
 #include <Vadon/Foundation/Model/Scene/Scene.hpp>
 
 #include <QMessageBox>
+#include <QPushButton>
 
 namespace
 {
@@ -71,7 +74,8 @@ namespace VadonEditor::UI
 		if (root_type_index.isValid() == true)
 		{
 			const QModelIndex parent_index = root_type_index.parent();
-			m_ui.typeTreeView->setRootIndex(parent_index);
+			const QModelIndex filtered_parent_index = m_filter_model->mapFromSource(parent_index);
+			m_ui.typeTreeView->setRootIndex(filtered_parent_index);
 		}
 
 		m_ui.typeTreeView->expandAll();
@@ -188,6 +192,8 @@ namespace VadonEditor::UI
 		connect(save_dialog, &SaveAssetDialog::asset_saved, this, &NewResourceDialogBackend::file_path_selected);
 		connect(save_dialog, &SaveAssetDialog::rejected, this, &NewResourceDialogBackend::end_workflow);
 
+		save_dialog->setWindowTitle("Save Resource As");
+
 		save_dialog->open();
 	}
 
@@ -237,5 +243,136 @@ namespace VadonEditor::UI
 		// TODO: also print type!
 		const QModelIndex asset_index = asset_manager.find_asset_index(asset_id);
 		qDebug() << "Resource created at" << asset_manager.get_asset_info(asset_index).path;
+	}
+
+	ResourceAssetFilterModel::ResourceAssetFilterModel(Core::Application& application, const QUuid& resource_type, QObject* parent)
+		: QSortFilterProxyModel(parent)
+		, m_application(application)
+		, m_resource_type(resource_type)
+	{
+	}
+
+	bool ResourceAssetFilterModel::filterAcceptsRow(int source_row, const QModelIndex& source_parent) const
+	{
+		QModelIndex source_index = sourceModel()->index(source_row, 0, source_parent);
+
+		// First check if any children passed filtering
+		if (sourceModel()->hasChildren(source_index))
+		{
+			for (int child_index = 0; child_index < sourceModel()->rowCount(source_index); ++child_index)
+			{
+				if (filterAcceptsRow(child_index, source_index) == true)
+				{
+					// If child is accepted, the parent is accepted as well
+					return true;
+				}
+			}
+		}
+
+		// Next check if we pass base filtering
+		if (QSortFilterProxyModel::filterAcceptsRow(source_row, source_parent) == false)
+		{
+			return false;
+		}
+
+		// Get asset info
+		const Core::AssetInfo& asset_info = m_application.get_asset_manager().get_asset_info(source_index);
+		if (asset_info.type == Core::AssetType::FOLDER)
+		{
+			return false;
+		}
+
+		// Check if it's a compatible resource type
+		const Model::ResourceInfo resource_info = m_application.get_model_system().get_resource_system().resource_info_by_asset_id(asset_info.id);
+
+		const Core::DataSchema& data_schema = m_application.get_project_manager().get_project_data_schema();
+		return data_schema.is_base_of(m_resource_type, resource_info.type) == true;
+	}
+
+	SelectResourceDialog::SelectResourceDialog(Core::Application& application, const QUuid& resource_type, QWidget* dialog_parent)
+		: QDialog(dialog_parent)
+		, m_application(application)
+		, m_filter_model(application, resource_type)
+	{
+		setAttribute(Qt::WA_DeleteOnClose, true);
+		m_ui.setupUi(this);
+
+		m_filter_model.setSourceModel(&m_application.get_asset_manager().get_model());
+
+		m_ui.assetTree->setModel(&m_filter_model);
+		m_ui.assetTree->expandAll();
+
+		update_buttons();
+	}
+
+	void SelectResourceDialog::filter_text_changed(const QString& text)
+	{
+		// Reset selection
+		m_ui.assetTree->selectionModel()->clearSelection();
+
+		// Update filter
+		m_filter_model.setFilterFixedString(text);
+
+		// Re-expand tree
+		m_ui.assetTree->expandAll();
+	}
+
+	void SelectResourceDialog::tree_item_clicked(const QModelIndex& index)
+	{
+		Q_UNUSED(index);
+		update_buttons();
+	}
+
+	void SelectResourceDialog::tree_item_double_clicked(const QModelIndex& index)
+	{
+		const Model::ResourceInfo resource_info = get_resource_info(index);
+		if (is_compatible_item(resource_info))
+		{			
+			emit(resource_asset_selected(resource_info.id));
+			accept();
+		}
+	}
+
+	void SelectResourceDialog::update_buttons()
+	{
+		QPushButton* ok_button = m_ui.buttonBox->button(QDialogButtonBox::StandardButton::Ok);
+
+		QItemSelectionModel* tree_selection_model = m_ui.assetTree->selectionModel();
+		if (tree_selection_model->hasSelection())
+		{
+			const QModelIndex selected_item = tree_selection_model->selectedIndexes().front();
+			const Model::ResourceInfo resource_info = get_resource_info(selected_item);
+
+			if(is_compatible_item(resource_info) == true)
+			{
+				ok_button->setEnabled(true);
+				return;
+			}
+		}
+
+		ok_button->setEnabled(false);
+	}
+
+	bool SelectResourceDialog::is_compatible_item(const Model::ResourceInfo& resource_info) const
+	{
+		if (resource_info.is_valid() == true)
+		{
+			const Core::DataSchema& data_schema = m_application.get_project_manager().get_project_data_schema();
+			return data_schema.is_base_of(m_filter_model.get_resource_type(), resource_info.type);
+		}
+
+		return false;
+	}
+
+	Model::ResourceInfo SelectResourceDialog::get_resource_info(const QModelIndex& index) const
+	{
+		const QModelIndex source_index = m_filter_model.mapToSource(index);
+		const Core::AssetInfo& asset_info = m_application.get_asset_manager().get_asset_info(source_index);
+		if (asset_info.type == Core::AssetType::FOLDER)
+		{
+			return Model::ResourceInfo();
+		}
+
+		return m_application.get_model_system().get_resource_system().resource_info_by_asset_id(asset_info.id);
 	}
 }

@@ -24,25 +24,8 @@
   </layout>
  </widget>
  <resources/>
- <connections>
-  <connection>
-   <sender>checkBox</sender>
-   <signal>stateChanged(int)</signal>
-   <receiver>PropertyCheckBox</receiver>
-   <slot>state_changed(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>102</x>
-     <y>19</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>102</x>
-     <y>19</y>
-    </hint>
-   </hints>
-  </connection>
- </connections>
+ <connections/>
  <slots>
-  <slot>state_changed(int)</slot>
+  <slot>check_state_changed(int)</slot>
  </slots>
 </ui>

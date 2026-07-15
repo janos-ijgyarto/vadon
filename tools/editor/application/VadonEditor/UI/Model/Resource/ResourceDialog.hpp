@@ -1,12 +1,18 @@
 #ifndef VADONEDITOR_UI_MODEL_RESOURCE_RESOURCEDIALOG_HPP
 #define VADONEDITOR_UI_MODEL_RESOURCE_RESOURCEDIALOG_HPP
 #include <VadonEditor/UI/Model/Resource/ui_NewResourceDialog.h>
+#include <VadonEditor/UI/Model/Resource/ui_SelectResourceDialog.h>
 #include <QDialog>
+#include <QSortFilterProxyModel>
 #include <QUuid>
 namespace VadonEditor::Core
 {
 	class Application;
 	class TypeFilterModel;
+}
+namespace VadonEditor::Model
+{
+	struct ResourceInfo;
 }
 namespace VadonEditor::UI
 {
@@ -57,6 +63,43 @@ namespace VadonEditor::UI
 		QWidget* m_dialog_parent;
 		QUuid m_new_resource_type;
 		QModelIndex m_root_asset;
+	};
+
+	class ResourceAssetFilterModel : public QSortFilterProxyModel
+	{
+		Q_OBJECT
+	public:
+		ResourceAssetFilterModel(Core::Application& application, const QUuid& resource_type, QObject* parent = nullptr);
+
+		const QUuid& get_resource_type() const { return m_resource_type; }
+	protected:
+		bool filterAcceptsRow(int source_row, const QModelIndex& source_parent) const override;
+	private:
+		Core::Application& m_application;
+		QUuid m_resource_type;
+	};
+
+	class SelectResourceDialog : public QDialog
+	{
+		Q_OBJECT
+	public:
+		SelectResourceDialog(Core::Application& application, const QUuid& resource_type, QWidget* dialog_parent = nullptr);
+	signals:
+		void resource_asset_selected(const QUuid& resource_id);
+	private slots:
+		void filter_text_changed(const QString& text);
+		void tree_item_clicked(const QModelIndex& index);
+		void tree_item_double_clicked(const QModelIndex& index);
+	private:
+		void update_buttons();
+		bool is_compatible_item(const Model::ResourceInfo& resource_info) const;
+		Model::ResourceInfo get_resource_info(const QModelIndex& index) const;
+
+		Ui::SelectResourceDialog m_ui;
+
+		Core::Application& m_application;
+		ResourceAssetFilterModel m_filter_model;
+		QModelIndex m_selection;
 	};
 }
 #endif

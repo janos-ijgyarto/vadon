@@ -22,6 +22,9 @@ namespace VadonEditor::Model
 
 		int create_scene_asset(const SceneID& scene_id, const QString& path);
 		int find_scene_asset(const SceneID& scene_id) const;
+
+		QList<Scene*> get_all_scenes() const { return m_scene_lookup.values(); }
+		void save_all_scenes();
 	private:
 		SceneSystem(Core::Application& application);
 

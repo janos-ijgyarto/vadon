@@ -21,6 +21,80 @@
 
 namespace VadonEditor::UI
 {
+	UnsavedSceneAssetFilter::UnsavedSceneAssetFilter(Core::Application& application, QObject* parent)
+		: QSortFilterProxyModel(parent)
+		, m_application(application)
+	{
+	}
+
+	bool UnsavedSceneAssetFilter::initialize()
+	{
+		Model::SceneSystem& scene_system = m_application.get_model_system().get_scene_system();
+		QList<Model::Scene*> active_scenes = scene_system.get_all_scenes();
+		for (Model::Scene* current_scene : active_scenes)
+		{
+			if (current_scene->get_resource()->is_embedded() == true)
+			{
+				continue;
+			}
+
+			if (current_scene->is_modified() == true)
+			{
+				const int asset_id = scene_system.find_scene_asset(current_scene->get_id());
+				Q_ASSERT_X(asset_id != Core::AssetInfo::c_invalid_file_id, "VadonEditor::UI::UnsavedSceneAssetFilter::initialize", "Cannot find scene asset");
+				m_unsaved_scene_asset_ids.push_back(asset_id);
+			}
+		}
+
+		if (m_unsaved_scene_asset_ids.isEmpty() == true)
+		{
+			return false;
+		}
+
+		setSourceModel(&m_application.get_asset_manager().get_model());
+		return true;
+	}
+
+	bool UnsavedSceneAssetFilter::filterAcceptsRow(int source_row, const QModelIndex& source_parent) const
+	{
+		QModelIndex source_index = sourceModel()->index(source_row, 0, source_parent);
+
+		Core::AssetManager& asset_manager = m_application.get_asset_manager();
+		const Core::AssetInfo asset_info = asset_manager.get_asset_info(source_index);
+
+		if (m_unsaved_scene_asset_ids.indexOf(asset_info.id) != -1)
+		{
+			return true;
+		}
+
+		// Quick check that the base filtering doesn't reject this row
+		if (QSortFilterProxyModel::filterAcceptsRow(source_row, source_parent) == false)
+		{
+			return false;
+		}
+
+		if (sourceModel()->hasChildren(source_index))
+		{
+			for (int child_index = 0; child_index < sourceModel()->rowCount(source_index); ++child_index)
+			{
+				if (filterAcceptsRow(child_index, source_index) == true)
+				{
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
+
+	UnsavedSceneMessageBox::UnsavedSceneMessageBox(QAbstractItemModel* asset_model, QWidget* parent)
+		: AssetMessageBox(asset_model, parent)
+	{
+		setWindowTitle("Save Scenes");
+
+		m_ui.mainLayout->insertWidget(0, new QLabel("The following scenes have unsaved changes. Would you like to save before closing?"));
+	}
+
 	void SceneManager::asset_opened(const QModelIndex& index)
 	{
 		const Core::AssetInfo asset_info = m_application.get_asset_manager().get_asset_info(index);
@@ -126,6 +200,29 @@ namespace VadonEditor::UI
 
 	bool SceneManager::request_close()
 	{
+		UnsavedSceneAssetFilter* asset_filter = new UnsavedSceneAssetFilter(m_application);
+		if (asset_filter->initialize() == true)
+		{
+			UnsavedSceneMessageBox message_box(asset_filter, m_application.get_ui_system().get_main_window());
+
+			const int result = message_box.exec();
+			switch (result)
+			{
+			case QDialog::DialogCode::Accepted:
+			{
+				Model::SceneSystem& scene_system = m_application.get_model_system().get_scene_system();
+				scene_system.save_all_scenes();
+			}
+			break;
+			case QDialog::DialogCode::Rejected:
+			{
+				// Cancel closing the editor
+				return false;
+			}
+			break;
+			}
+		}
+
 		// Check all scene trees to make sure we have no unsaved changes
 		QTabWidget* scene_tab_widget = m_application.get_ui_system().get_main_window()->get_scene_tab_widget();
 		QTabBar* scene_tab_bar = scene_tab_widget->tabBar();
@@ -139,10 +236,7 @@ namespace VadonEditor::UI
 				continue;
 			}
 
-			if (current_scene_tree->request_close() == false)
-			{
-				return false;
-			}
+			current_scene_tree->internal_close();
 		}
 
 		return true;
@@ -163,7 +257,7 @@ namespace VadonEditor::UI
 				continue;
 			}
 
-			current_scene_tree->force_close();
+			current_scene_tree->internal_close();
 		}
 	}
 

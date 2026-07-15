@@ -33,7 +33,7 @@ namespace VadonEditor::Model
 		bool is_pending_remove() const { return m_pending_remove; }
 		bool is_modified() const { return m_modified; }
 
-		void notify_modifed() { m_modified = true; }
+		void notify_modifed();
 
 		QVariant get_property(const PropertyID& property_id) const { return m_data.get_property(property_id); }
 		void set_property(const PropertyID& property_id, const QVariant& value);
@@ -42,6 +42,8 @@ namespace VadonEditor::Model
 		bool is_embedded() const { return m_owner != nullptr; }
 
 		Resource* create_embedded_resource(const QUuid& type);
+
+		void open();
 
 		static bool is_resource_base_of_type(Core::Application& application, const QUuid& type_id);
 		static bool is_imported_file_base_of_type(Core::Application& application, const QUuid& type_id);
@@ -56,7 +58,10 @@ namespace VadonEditor::Model
 		bool internal_save(QJsonObject& root_obj) const;
 		bool internal_load(const QJsonObject& root_obj);
 
-		void clear_modified() { m_modified = false; }
+		void message_resource_loaded(bool reload) const;
+
+		void clear_modified();
+		void update_asset_state();
 
 		Core::Application& m_application;
 

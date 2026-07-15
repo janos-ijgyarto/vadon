@@ -31,6 +31,7 @@ namespace Vadon
 		struct EditorModelMessageResourceLoaded : public EditorModelMessageHeader
 		{
 			UUID resource_id;
+			bool reload;
 			// TODO: anything else?
 		};
 

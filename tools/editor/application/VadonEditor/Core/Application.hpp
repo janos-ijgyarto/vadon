@@ -19,6 +19,7 @@ namespace VadonEditor::UI
 }
 
 class QCoreApplication;
+class QSettings;
 
 namespace VadonEditor::Core
 {
@@ -34,6 +35,8 @@ namespace VadonEditor::Core
 	public:
 		static constexpr const char* c_org_name = "VadonEngine";
 		static constexpr const char* c_app_name = "Vadon Editor";
+
+		static QSettings get_app_settings();
 
 		Application(int argc, char* argv[]);
 		~Application();

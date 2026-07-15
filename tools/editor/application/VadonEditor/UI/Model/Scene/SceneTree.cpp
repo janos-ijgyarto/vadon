@@ -157,32 +157,7 @@ namespace VadonEditor::UI
 		}
 	}
 
-	bool SceneTree::request_close()
-	{
-		if (m_scene->is_modified())
-		{
-			QMessageBox message_box(this);
-			message_box.setWindowTitle("Unsaved changes in Scene");
-			message_box.setText(QString("Save changes to scene \"%1?\"").arg(get_label())); 
-			message_box.setStandardButtons(QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel);
-			message_box.setDefaultButton(QMessageBox::Yes);
-			message_box.setIcon(QMessageBox::Icon::Question);
-
-			const int user_response = message_box.exec();
-			switch (user_response)
-			{
-			case QMessageBox::StandardButton::Yes:
-				// TODO: save changes
-				break;
-			case QMessageBox::StandardButton::Cancel:
-				return false;
-			}
-		}
-
-		return true;
-	}
-
-	void SceneTree::force_close()
+	void SceneTree::internal_close()
 	{
 		// Clear reverse lookup so we can ignore the signal from when the widgets are destroyed on close
 		m_widget_reverse_lookup.clear();
