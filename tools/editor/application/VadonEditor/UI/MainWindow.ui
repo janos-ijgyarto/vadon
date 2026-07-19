@@ -149,6 +149,7 @@
      <string>Utilities</string>
     </property>
     <addaction name="actionGenerate_UUID"/>
+    <addaction name="actionAnimation_Editor_Prototype"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuProject"/>
@@ -253,6 +254,11 @@
    </property>
    <property name="text">
     <string>Scene</string>
+   </property>
+  </action>
+  <action name="actionAnimation_Editor_Prototype">
+   <property name="text">
+    <string>Animation Editor Prototype</string>
    </property>
   </action>
  </widget>
@@ -448,6 +454,22 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>actionAnimation_Editor_Prototype</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>anim_editor_prototype_triggered()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>511</x>
+     <y>383</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>schema_editor_triggered()</slot>
@@ -463,5 +485,6 @@
   <slot>save_triggered()</slot>
   <slot>open_triggered()</slot>
   <slot>import_triggered()</slot>
+  <slot>anim_editor_prototype_triggered()</slot>
  </slots>
 </ui>

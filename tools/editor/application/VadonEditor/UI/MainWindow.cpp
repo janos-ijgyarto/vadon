@@ -14,6 +14,7 @@
 
 #include <VadonEditor/UI/UISystem.hpp>
 
+#include <VadonEditor/UI/Model/Animation/AnimationEditor.hpp>
 #include <VadonEditor/UI/Model/Resource/ResourceDialog.hpp>
 #include <VadonEditor/UI/Model/Scene/SceneDialog.hpp>
 
@@ -158,6 +159,13 @@ namespace VadonEditor::UI
 		{
 			QMessageBox::critical(this, "Project manager error", "Failed to load project data schema!");
 		}
+	}
+
+	void MainWindow::anim_editor_prototype_triggered()
+	{
+		AnimationEditor* anim_editor = new AnimationEditor();
+		anim_editor->setWindowTitle("Animation Editor Prototype");
+		anim_editor->show();
 	}
 
 	void MainWindow::asset_opened(const QString& asset_path)

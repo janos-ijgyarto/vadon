@@ -43,6 +43,8 @@ namespace VadonEditor::UI
         void project_data_schema_triggered();
         void generate_data_schema_triggered();
 
+        void anim_editor_prototype_triggered();
+
         void asset_opened(const QString& asset_path);
     protected:
         void closeEvent(QCloseEvent* event) override;

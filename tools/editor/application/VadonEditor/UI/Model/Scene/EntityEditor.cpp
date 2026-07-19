@@ -65,7 +65,7 @@ namespace VadonEditor::UI
 	void EntityEditor::component_remove_requested(const QUuid& component_id)
 	{
 		Model::Component* existing_component = m_entity->get_component(component_id);
-		if (existing_component != nullptr)
+		if (existing_component == nullptr)
 		{
 			Q_ASSERT_X(false, "VadonEditor::UI::EntityEditor::component_remove_requested", "Component not found in Entity");
 			return;

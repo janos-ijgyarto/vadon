@@ -421,7 +421,11 @@ namespace VadonEditor::Model
 		Core::AssetManager& asset_manager = m_application.get_asset_manager();
 
 		const int asset_id = m_application.get_model_system().get_resource_system().find_resource_asset_id(m_info.id);
-		Q_ASSERT_X(asset_id != Core::AssetInfo::c_invalid_file_id, "VadonEditor::Model::Resource::update_asset_state", "Cannot find asset ID");
+		if (asset_id == Core::AssetInfo::c_invalid_file_id)
+		{
+			// Resource may not have an asset yet (e.g new scene)
+			return;
+		}
 
 		const QModelIndex asset_index = asset_manager.find_asset_index(asset_id);
 		Q_ASSERT_X(asset_index.isValid(), "VadonEditor::Model::Resource::update_asset_state", "Cannot find asset index");
