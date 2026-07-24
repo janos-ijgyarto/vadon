@@ -1,5 +1,6 @@
 #ifndef VADON_UTILITIES_TYPEINFO_REFLECTION_FUNCTIONBIND_HPP
 #define VADON_UTILITIES_TYPEINFO_REFLECTION_FUNCTIONBIND_HPP
+#include <Vadon/Utilities/TypeInfo/Reflection/FunctionBindBase.hpp>
 #include <Vadon/Utilities/TypeInfo/TypeErasure.hpp>
 
 namespace Vadon::Utilities
@@ -13,6 +14,9 @@ namespace Vadon::Utilities
 
 	template <typename T, typename Ret, typename... Args>
 	using ConstMemberFunction = Ret(T::*)(Args...) const;
+
+	template<typename T>
+	using DecayedArgumentType = std::remove_reference_t<std::remove_pointer_t<std::decay_t<T>>>;
 
 	template <typename T, typename Ret, typename... Args>
 	static constexpr std::vector<TypeID> make_argument_type_id_list(MemberFunction<T, Ret, Args...>)
@@ -99,12 +103,12 @@ namespace Vadon::Utilities
 			size_t index = 0;
 			if constexpr (std::is_void_v<Ret>)
 			{
-				Invoker{ object, function, std::forward<Args>(VariantTypeTrait<Args>::from_variant(args[index++]))... };
+				Invoker{ object, function, std::forward<DecayedArgumentType<Args>>(VariantTypeTrait<DecayedArgumentType<Args>>::from_variant(args[index++]))... };
 				return NoReturnValue{};
 			}
 			else
 			{
-				const Invoker::_ReturnType mapped_return_value = Invoker{ object, function, std::forward<Args>(VariantTypeTrait<Args>::from_variant(args[index++]))... }.return_value;
+				const Invoker::_ReturnType mapped_return_value = Invoker{ object, function, std::forward<DecayedArgumentType<Args>>(VariantTypeTrait<DecayedArgumentType<Args>>::from_variant(args[index++]))... }.return_value;
 				return VariantTypeTrait<Invoker::_ReturnType>::to_variant(mapped_return_value);
 			}
 		}
@@ -140,12 +144,12 @@ namespace Vadon::Utilities
 			size_t index = 0;
 			if constexpr (std::is_void_v<Ret>)
 			{
-				Invoker{ object, function, std::forward<Args>(VariantTypeTrait<Args>::from_variant(args[index++]))... };
+				Invoker{ object, function, std::forward<DecayedArgumentType<Args>>(VariantTypeTrait<DecayedArgumentType<Args>>::from_variant(args[index++]))... };
 				return NoReturnValue{};
 			}
 			else
 			{
-				const Invoker::_ReturnType mapped_return_value = Invoker{ object, function, std::forward<Args>(VariantTypeTrait<Args>::from_variant(args[index++]))... }.return_value;
+				const Invoker::_ReturnType mapped_return_value = Invoker{ object, function, std::forward<DecayedArgumentType<Args>>(VariantTypeTrait<DecayedArgumentType<Args>>::from_variant(args[index++]))... }.return_value;
 				return VariantTypeTrait<Invoker::_ReturnType>::to_variant(mapped_return_value);
 			}
 		}

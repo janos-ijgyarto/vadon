@@ -91,8 +91,8 @@ namespace VadonEditor::UI
 
 				PropertyWidgetInfo widget_info;
 				widget_info.property_id = Utilities::vadon_uuid_to_qt_uuid(property_uuid);
-				widget_info.category = property_data->get_category();
-				widget_info.data_type = property_data->get_data_type();
+				widget_info.category = Core::PropertyData::get_category(property_data->get_root_type());
+				widget_info.type_list = property_data->type_list;
 				widget_info.init_value = m_resource->get_property(widget_info.property_id);
 
 				PropertyWidget* property_widget = PropertyWidget::create_widget(widget_info, this, m_resource);

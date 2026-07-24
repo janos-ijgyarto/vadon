@@ -3,7 +3,9 @@
 #include <Vadon/Math/Color.hpp>
 #include <Vadon/Math/Vector.hpp>
 #include <Vadon/Utilities/Container/Box.hpp>
-#include <Vadon/Utilities/TypeInfo/TypeInfo.hpp>
+
+#include <Vadon/Foundation/Utilities/UUID.hpp>
+
 #include <string>
 #include <variant>
 namespace Vadon::Utilities
@@ -21,7 +23,7 @@ namespace Vadon::Utilities
 		Math::Vector2, Math::Vector2i, Math::Vector3, Math::Vector3i, Math::Vector4,
 		Math::ColorRGBA,
 		::Vadon::Foundation::UUID, // TODO: allow handles?
-		BoxedVariantArray, BoxedVariantDictionary, ObjectPointer, NoReturnValue>;
+		BoxedVariantArray, BoxedVariantDictionary, NoReturnValue>;
 
 	template<typename T>
 	struct VariantTypeTrait
@@ -56,7 +58,6 @@ namespace Vadon::Utilities
 		|| std::is_same_v<T, ::Vadon::Foundation::UUID>
 		|| std::is_same_v<T, ::Vadon::Utilities::BoxedVariantArray>
 		|| std::is_same_v<T, ::Vadon::Utilities::BoxedVariantDictionary>
-		|| std::is_same_v<T, ::Vadon::Utilities::ObjectPointer>
 		|| std::is_same_v<T, ::Vadon::Utilities::NoReturnValue>;
 
 	template<is_trivial_variant_type T>
@@ -70,25 +71,6 @@ namespace Vadon::Utilities
 		static T from_variant(const Variant& variant)
 		{
 			return std::get<T>(variant);
-		}
-	};
-
-	// FIXME: have to "forward declare" this for Resource IDs because of how arrays are declared
-	// Need to revise to make sure we have an overload for arrays that contain ResourceIDs
-	template<typename T>
-	concept is_derived_uuid = std::is_base_of_v<::Vadon::Foundation::UUID, T> && (std::is_same_v<::Vadon::Foundation::UUID, T> == false);
-
-	template<is_derived_uuid T>
-	struct VariantTypeTrait<T>
-	{
-		static Variant to_variant(const T& value)
-		{
-			return VariantTypeTrait<::Vadon::Foundation::UUID>::to_variant(value);
-		}
-
-		static T from_variant(const Variant& variant)
-		{
-			return T(VariantTypeTrait<::Vadon::Foundation::UUID>::from_variant(variant));
 		}
 	};
 }

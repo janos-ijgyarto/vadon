@@ -6,30 +6,22 @@
 #include <QUuid>
 namespace VadonEditor::Core
 {
-	enum class PropertyCategory
-	{
-		TRIVIAL,
-		RESOURCE,
-		TRIVIAL_ARRAY,
-		GENERIC_OBJECT_ARRAY,
-		TYPED_OBJECT_ARRAY,
-		GENERIC_OBJECT,
-		TYPED_OBJECT
-	};
-
 	struct PropertyData
 	{
 		::Vadon::Foundation::Property info;
+		QList<QUuid> type_list;
 		QHash<QString, QByteArray> metadata;
 		::Vadon::Foundation::CommonPropertyMetadata::Flags flags = ::Vadon::Foundation::CommonPropertyMetadata::Flags::NONE;
 
 		QString find_metadata(const char* key) const;
 		QString find_metadata(::Vadon::Foundation::CommonPropertyMetadata::Key key) const { return find_metadata(::Vadon::Foundation::CommonPropertyMetadata::key_string(key)); }
 
-		PropertyCategory get_category() const;
+		QUuid get_root_type() const { return type_list.front(); }
 
+		static ::Vadon::Foundation::Property::Category get_category(const QUuid& root_type_id);
+
+		// NOTE: convenience function to check metadata
 		QString get_name() const;
-		QUuid get_data_type() const;
 	};
 }
 #endif

@@ -34,36 +34,349 @@ namespace
 		return true;
 	}
 
-	bool serialize_base_type(Vadon::Utilities::Serializer& serializer, ::Vadon::Foundation::BaseType base_type, std::string_view key, Vadon::Utilities::Variant& value)
+	template<typename Key>
+	bool serialize_base_type(Vadon::Utilities::Serializer& serializer, ::Vadon::Foundation::BaseType base_type, Key key, Vadon::Utilities::Variant& value)
 	{
 		using BaseType = ::Vadon::Foundation::BaseType;
 		switch (base_type)
 		{
 		case BaseType::INT32:
-			return serialize_base_type_impl<std::string_view, int>(serializer, key, value);
+			return serialize_base_type_impl<Key, int>(serializer, key, value);
 		case BaseType::UINT32:
-			return serialize_base_type_impl<std::string_view, uint32_t>(serializer, key, value);
+			return serialize_base_type_impl<Key, uint32_t>(serializer, key, value);
 		case BaseType::FLOAT:
-			return serialize_base_type_impl<std::string_view, float>(serializer, key, value);
+			return serialize_base_type_impl<Key, float>(serializer, key, value);
 		case BaseType::BOOL:
-			return serialize_base_type_impl<std::string_view, bool>(serializer, key, value);
+			return serialize_base_type_impl<Key, bool>(serializer, key, value);
 		case BaseType::STRING:
-			return serialize_base_type_impl<std::string_view, std::string>(serializer, key, value);
+			return serialize_base_type_impl<Key, std::string>(serializer, key, value);
 		case BaseType::VECTOR2:
-			return serialize_base_type_impl<std::string_view, Vadon::Math::Vector2>(serializer, key, value);
+			return serialize_base_type_impl<Key, Vadon::Math::Vector2>(serializer, key, value);
 		case BaseType::VECTOR2I:
-			return serialize_base_type_impl<std::string_view, Vadon::Math::Vector2i>(serializer, key, value);
+			return serialize_base_type_impl<Key, Vadon::Math::Vector2i>(serializer, key, value);
 		case BaseType::VECTOR3:
-			return serialize_base_type_impl<std::string_view, Vadon::Math::Vector3>(serializer, key, value);
+			return serialize_base_type_impl<Key, Vadon::Math::Vector3>(serializer, key, value);
 		case BaseType::VECTOR3I:
-			return serialize_base_type_impl<std::string_view, Vadon::Math::Vector3i>(serializer, key, value);
+			return serialize_base_type_impl<Key, Vadon::Math::Vector3i>(serializer, key, value);
 		case BaseType::VECTOR4:
-			return serialize_base_type_impl<std::string_view, Vadon::Math::Vector4>(serializer, key, value);
+			return serialize_base_type_impl<Key, Vadon::Math::Vector4>(serializer, key, value);
 		case BaseType::COLORRGBA:
-			return serialize_base_type_impl<std::string_view, Vadon::Math::ColorRGBA>(serializer, key, value);
+			return serialize_base_type_impl<Key, Vadon::Math::ColorRGBA>(serializer, key, value);
 		case BaseType::UUID:
-			return serialize_base_type_impl<std::string_view, ::Vadon::Foundation::UUID>(serializer, key, value);
+			return serialize_base_type_impl<Key, ::Vadon::Foundation::UUID>(serializer, key, value);
 		default:
+			return false;
+		}
+	}
+
+	// FIXME: replace this with a more efficient system where we can use the UUID even if the key is labeled!
+	struct ObjectSerializerKeyData
+	{
+		std::string type_key;
+		std::string properties_key;
+		bool is_null = false;
+
+		static ObjectSerializerKeyData get_key_data(const Vadon::Utilities::Serializer& serializer)
+		{
+			constexpr Vadon::Foundation::UUID type_property_uuid = Vadon::Utilities::Property::property_schema_to_uuid(Vadon::Foundation::DataObjectSchema::c_type_property);
+			constexpr Vadon::Foundation::UUID properties_property_uuid = Vadon::Utilities::Property::property_schema_to_uuid(Vadon::Foundation::DataObjectSchema::c_properties_property);
+
+			ObjectSerializerKeyData key_data;
+
+			const Vadon::Utilities::Serializer::KeyVector keys = serializer.get_keys();
+			if (keys.empty() == true)
+			{
+				key_data.is_null = true;
+				return key_data;
+			}
+
+			for (const std::string& current_key : keys)
+			{
+				const Vadon::Foundation::UUID current_property_id = Vadon::Utilities::parse_labeled_uuid(current_key);
+				if (current_property_id == type_property_uuid)
+				{
+					key_data.type_key = current_key;
+				}
+				else if (current_property_id == properties_property_uuid)
+				{
+					key_data.properties_key = current_key;
+				}
+			}
+
+			return key_data;
+		}
+
+		bool is_valid() const { return (type_key.empty() == false) && (properties_key.empty() == false); }
+	};
+
+	bool serialize_object_trivial_property(Vadon::Utilities::Serializer& serializer, std::string_view key, const Vadon::Utilities::PropertyInfo& property_info, Vadon::Utilities::Variant& property_value)
+	{
+		const ::Vadon::Foundation::BaseType base_type = Vadon::Utilities::base_type_from_uuid(property_info.base_info.root_type);
+		return serialize_base_type<std::string_view>(serializer, base_type, key, property_value);
+	}
+
+	bool serialize_object_array_nested_array_element(Vadon::Utilities::Serializer& /*serializer*/, size_t /*index*/, const Vadon::Utilities::PropertyInfo& /*property_info*/, size_t /*type_list_offset*/, Vadon::Utilities::Variant& /*array_element_value*/)
+	{
+		// FIXME: not supported yet (but it's possible now!)
+		return false;
+	}
+
+	bool serialize_object_array_nested_dictionary_element(Vadon::Utilities::Serializer& /*serializer*/, size_t /*index*/, const Vadon::Utilities::PropertyInfo& /*property_info*/, size_t /*type_list_offset*/, Vadon::Utilities::Variant& /*array_element_value*/)
+	{
+		// FIXME: not supported yet (but it's possible now!)
+		return false;
+	}
+
+	template<typename Key>
+	bool serialize_object_subobject_impl(Vadon::Utilities::Serializer& serializer, Key key, Vadon::Utilities::Variant& value, const ::Vadon::Foundation::UUID& object_type, bool allow_subclass)
+	{
+		Vadon::Utilities::VariantDictionary object_dictionary;
+		if (serializer.is_reading() == false)
+		{
+			object_dictionary = *std::get<Vadon::Utilities::BoxedVariantDictionary>(value);
+		}
+
+		if (serializer.open_object(key) != Vadon::Utilities::Serializer::Result::SUCCESSFUL)
+		{
+			return false;
+		}
+
+		// Check if it's a generic or explicit object
+		if (((object_type.is_valid() == true) && (allow_subclass == true)) || (object_type.is_valid() == false))
+		{
+			// FIXME: also validate when serializing?
+			if ((object_type.is_valid() == true) && (serializer.is_reading() == true))
+			{
+				// Ensure that the deserialized type is compatible
+				const ::Vadon::Utilities::TypeUUID type_uuid = Vadon::Utilities::ObjectSerializer::deserialize_type_uuid(serializer);
+
+				if (Vadon::Utilities::TypeRegistry::is_base_of(object_type, type_uuid) == false)
+				{
+					return false;
+				}
+			}
+
+			if (Vadon::Utilities::ObjectSerializer::serialize_object(serializer, object_dictionary) == false)
+			{
+				return false;
+			}
+		}
+		else if(object_type.is_valid() == true)
+		{
+			// Assume we are processing the object properties
+			const Vadon::Utilities::TypeID object_type_id = Vadon::Utilities::TypeRegistry::get_type_id(object_type);
+			if (Vadon::Utilities::ObjectSerializer::serialize_object_properties(serializer, object_type_id, object_dictionary) == false)
+			{
+				return false;
+			}
+		}
+		else
+		{
+			VADON_ERROR("Invalid parameters!");
+		}
+
+		if (Vadon::Utilities::ObjectSerializer::serialize_object(serializer, object_dictionary) == false)
+		{
+			return false;
+		}
+
+		if (serializer.close_object() != Vadon::Utilities::Serializer::Result::SUCCESSFUL)
+		{
+			return false;
+		}
+
+		if (serializer.is_reading() == true)
+		{
+			value = Vadon::Utilities::Box(object_dictionary);
+		}
+
+		return true;
+	}
+
+	bool serialize_object_array_subobject_element(Vadon::Utilities::Serializer& serializer, size_t index, const Vadon::Utilities::PropertyInfo& property_info, size_t type_list_offset, Vadon::Utilities::Variant& array_element_value)
+	{
+		// Check if the array uses ObjectWrapper
+		const ::Vadon::Utilities::TypeUUID element_type = property_info.type_list[type_list_offset];
+		if (element_type == Vadon::Utilities::string_to_uuid(::Vadon::Foundation::ObjectWrapperSchema::c_type_uuid))
+		{
+			// Check whether an explicit type is provided
+			const size_t object_type_offset = type_list_offset + 1;
+			if (object_type_offset >= property_info.type_list.size())
+			{
+				// No type specified, so it's a generic object
+				return serialize_object_subobject_impl<size_t>(serializer, index, array_element_value, Vadon::Utilities::TypeUUID{}, false);
+			}
+			else
+			{
+				// Constrain to the type specified in the type list
+				const ::Vadon::Utilities::TypeUUID object_type = property_info.type_list[object_type_offset];
+				return serialize_object_subobject_impl<size_t>(serializer, index, array_element_value, object_type, true);
+			}
+		}
+		else
+		{
+			// Serialize explicitly typed object (only this type)
+			return serialize_object_subobject_impl<size_t>(serializer, index, array_element_value, element_type, false);
+		}
+	}
+
+	bool serialize_object_array_resource_element(Vadon::Utilities::Serializer& serializer, size_t index, const Vadon::Utilities::PropertyInfo& property_info, size_t type_list_offset, Vadon::Utilities::Variant& array_element_value)
+	{
+		const size_t resource_type_offset = type_list_offset + 1;
+		VADON_ASSERT(resource_type_offset < property_info.type_list.size(), "Missing resource type!");
+
+		// Serialize the array element itself
+		if (serialize_base_type<size_t>(serializer, ::Vadon::Foundation::BaseType::UUID, index, array_element_value) == false)
+		{
+			return false;
+		}
+
+		// TODO: find a way to validate that the resource ID points to a compatible resource?
+		//const Vadon::Utilities::TypeUUID resource_type_uuid = property_info.type_list[resource_type_offset];
+
+		return true;
+	}
+
+	bool serialize_object_array_property_element(Vadon::Utilities::Serializer& serializer, size_t index, const Vadon::Utilities::PropertyInfo& property_info, size_t type_list_offset, Vadon::Utilities::Variant& array_element_value)
+	{
+		const ::Vadon::Foundation::UUID element_type = property_info.type_list[type_list_offset];
+		const ::Vadon::Foundation::Property::Category element_category = property_info.get_category(element_type);
+		switch (element_category)
+		{
+		case ::Vadon::Foundation::Property::Category::TRIVIAL:
+		{
+			const ::Vadon::Foundation::BaseType base_type = Vadon::Utilities::base_type_from_uuid(element_type);
+			return serialize_base_type<size_t>(serializer, base_type, index, array_element_value);
+		}
+		case ::Vadon::Foundation::Property::Category::ARRAY:
+			return serialize_object_array_nested_array_element(serializer, index, property_info, type_list_offset, array_element_value);
+		case ::Vadon::Foundation::Property::Category::DICTIONARY:
+			return serialize_object_array_nested_dictionary_element(serializer, index, property_info, type_list_offset, array_element_value);
+		case ::Vadon::Foundation::Property::Category::OBJECT:
+			return serialize_object_array_subobject_element(serializer, index, property_info, type_list_offset, array_element_value);
+		case ::Vadon::Foundation::Property::Category::RESOURCE:
+			return serialize_object_array_resource_element(serializer, index, property_info, type_list_offset, array_element_value);
+		default:
+			// Unsupported category!
+			return false;
+		}
+	}
+
+	bool serialize_object_array_property(Vadon::Utilities::Serializer& serializer, std::string_view key, const Vadon::Utilities::PropertyInfo& property_info, Vadon::Utilities::Variant& property_value)
+	{
+		VADON_ASSERT(property_info.type_list.front() == Vadon::Utilities::get_base_type_uuid(::Vadon::Foundation::BaseType::ARRAY), "Invalid type!");
+
+		if (serializer.open_array(key) != Vadon::Utilities::Serializer::Result::SUCCESSFUL)
+		{
+			return false;
+		}
+
+		Vadon::Utilities::VariantArray array_data;
+		if (serializer.is_reading() == false)
+		{
+			array_data = *std::get<Vadon::Utilities::BoxedVariantArray>(property_value);
+		}
+
+		const size_t array_size = serializer.is_reading() ? serializer.get_array_size() : array_data.data.size();
+		for (size_t index = 0; index < array_size; ++index)
+		{
+			Vadon::Utilities::Variant array_element_value;
+			if (serializer.is_reading() == false)
+			{
+				array_element_value = array_data.data[index];
+			}
+
+			if (serialize_object_array_property_element(serializer, index, property_info, 1, array_element_value) == false)
+			{
+				return false;
+			}
+
+			if (serializer.is_reading() == true)
+			{
+				array_data.data.push_back(array_element_value);
+			}
+		}
+
+		if (serializer.close_array() != Vadon::Utilities::Serializer::Result::SUCCESSFUL)
+		{
+			return false;
+		}
+
+		if (serializer.is_reading() == true)
+		{
+			property_value = Vadon::Utilities::Box(array_data);
+		}
+
+		return true;
+	}
+
+	bool serialize_object_dictionary_property(Vadon::Utilities::Serializer& /*serializer*/, std::string_view /*key*/, const Vadon::Utilities::PropertyInfo& /*property_info*/, Vadon::Utilities::Variant& /*property_value*/)
+	{
+		// FIXME: implement support for dictionary!
+		return false;
+	}
+
+	bool serialize_object_subobject_property(Vadon::Utilities::Serializer& serializer, std::string_view key, const Vadon::Utilities::PropertyInfo& property_info, Vadon::Utilities::Variant& property_value)
+	{
+		// Check if the property uses ObjectWrapper
+		const Vadon::Utilities::TypeUUID element_type = property_info.type_list.front();
+		if (element_type == Vadon::Utilities::string_to_uuid(::Vadon::Foundation::ObjectWrapperSchema::c_type_uuid))
+		{
+			// Check whether an explicit type is provided
+			if (property_info.type_list.size() < 2)
+			{
+				// No type specified, so it's a generic object
+				return serialize_object_subobject_impl<std::string_view>(serializer, key, property_value, Vadon::Utilities::TypeUUID{}, false);
+			}
+			else
+			{
+				// Constrain to the type specified in the type list
+				const Vadon::Utilities::TypeUUID object_type = property_info.type_list[1];
+				return serialize_object_subobject_impl<std::string_view>(serializer, key, property_value, object_type, true);
+			}
+		}
+		else
+		{
+			// Serialize explicitly typed object (only this type)
+			return serialize_object_subobject_impl<std::string_view>(serializer, key, property_value, element_type, false);
+		}
+
+		return true;
+	}
+
+	bool serialize_object_resource_property(Vadon::Utilities::Serializer& serializer, std::string_view key, const Vadon::Utilities::PropertyInfo& property_info, Vadon::Utilities::Variant& property_value)
+	{
+		VADON_ASSERT(property_info.type_list.size() >= 2, "Missing resource type!");
+
+		// Serialize the UUID property itself
+		if (serialize_base_type<std::string_view>(serializer, ::Vadon::Foundation::BaseType::UUID, key, property_value) == false)
+		{
+			return false;
+		}
+
+		// TODO: find a way to validate that the resource ID points to a compatible resource?
+		//const Vadon::Utilities::TypeUUID resource_type_uuid = property_info.type_list[resource_type_offset];
+
+		return true;
+	}
+
+	bool serialize_object_property_value(Vadon::Utilities::Serializer& serializer, std::string_view key, const Vadon::Utilities::PropertyInfo& property_info, Vadon::Utilities::Variant& property_value)
+	{
+		const ::Vadon::Foundation::Property::Category property_category = property_info.get_category(property_info.type_list.front());
+		switch (property_category)
+		{
+		case ::Vadon::Foundation::Property::Category::TRIVIAL:
+			return serialize_object_trivial_property(serializer, key, property_info, property_value);
+		case ::Vadon::Foundation::Property::Category::ARRAY:
+			return serialize_object_array_property(serializer, key, property_info, property_value);
+		case ::Vadon::Foundation::Property::Category::DICTIONARY:
+			return serialize_object_dictionary_property(serializer, key, property_info, property_value);
+		case ::Vadon::Foundation::Property::Category::OBJECT:
+			return serialize_object_subobject_property(serializer, key, property_info, property_value);
+		case ::Vadon::Foundation::Property::Category::RESOURCE:
+			return serialize_object_resource_property(serializer, key, property_info, property_value);
+		default:
+			// Unsupported category!
 			return false;
 		}
 	}
@@ -71,7 +384,7 @@ namespace
 
 namespace Vadon::Utilities
 {
-	Vadon::Foundation::UUID DataObject::deserialize_type_uuid(Serializer& serializer)
+	Vadon::Foundation::UUID ObjectSerializer::deserialize_type_uuid(Serializer& serializer)
 	{
 		VADON_ASSERT(serializer.is_object() == true, "Serializer is in invalid state!");
 
@@ -94,45 +407,101 @@ namespace Vadon::Utilities
 		return Vadon::Foundation::UUID();
 	}
 
-	bool DataObject::serialize_object(Serializer& serializer, ObjectPointer& object)
+	bool ObjectSerializer::serialize_object(Serializer& serializer, VariantDictionary& object_dictionary)
 	{
+		constexpr Vadon::Foundation::UUID type_property_uuid = Property::property_schema_to_uuid(Vadon::Foundation::DataObjectSchema::c_type_property);
 		constexpr Vadon::Foundation::UUID properties_property_uuid = Property::property_schema_to_uuid(Vadon::Foundation::DataObjectSchema::c_properties_property);
+
 		if (serializer.is_reading() == true)
 		{
-			const Serializer::KeyVector keys = serializer.get_keys();
-			for (const std::string& current_key : keys)
+			const ObjectSerializerKeyData key_data = ObjectSerializerKeyData::get_key_data(serializer);
+			if (key_data.is_null == true)
 			{
-				const Vadon::Foundation::UUID current_property_id = Utilities::parse_labeled_uuid(current_key);
-				if (current_property_id == properties_property_uuid)
-				{
-					if (serializer.open_object(current_key) != Serializer::Result::SUCCESSFUL)
-					{
-						return false;
-					}
+				// NOTE: null object, so we clear the dictionary and early out
+				object_dictionary.data.clear();
+				return true;
+			}
 
-					if (serialize_object_properties(serializer, object) == false)
-					{
-						return false;
-					}
+			if (key_data.is_valid() == false)
+			{
+				return false;
+			}
 
-					if (serializer.close_object() != Serializer::Result::SUCCESSFUL)
-					{
-						return false;
-					}
-				}
+			::Vadon::Foundation::UUID object_type_uuid;
+			if (serializer.serialize(key_data.type_key, object_type_uuid) != Serializer::Result::SUCCESSFUL)
+			{
+				return false;
+			}
+
+			if (object_type_uuid.is_valid() == false)
+			{
+				return false;
+			}
+
+			const TypeID object_type_id = TypeRegistry::get_type_id(object_type_uuid);
+			if (object_type_id == TypeID::INVALID)
+			{
+				return false;
+			}
+
+			object_dictionary.data.insert(std::make_pair(uuid_to_base64_string(type_property_uuid), object_type_uuid));
+
+			if (serializer.open_object(key_data.properties_key) != Serializer::Result::SUCCESSFUL)
+			{
+				return false;
+			}
+
+			VariantDictionary properties_dictionary;
+			if (serialize_object_properties(serializer, object_type_id, properties_dictionary) == false)
+			{
+				return false;
+			}
+
+			object_dictionary.data.insert(std::make_pair(uuid_to_base64_string(properties_property_uuid), Box(properties_dictionary)));
+
+			if (serializer.close_object() != Serializer::Result::SUCCESSFUL)
+			{
+				return false;
 			}
 		}
 		else
 		{
-			constexpr Vadon::Foundation::UUID type_property_uuid = Property::property_schema_to_uuid(Vadon::Foundation::DataObjectSchema::c_type_property);
-
-			// FIXME: should we serialize with a label?
+			if (object_dictionary.data.empty() == true)
 			{
-				::Vadon::Foundation::UUID type_uuid = TypeRegistry::get_type_info(object.type).id;
-				if (serializer.serialize(type_property_uuid, type_uuid) != Serializer::Result::SUCCESSFUL)
-				{
-					return false;
-				}
+				// Empty dictionary means null object, early out
+				return true;
+			}
+
+			auto obj_type_it = object_dictionary.data.find(uuid_to_base64_string(type_property_uuid));
+			if (obj_type_it == object_dictionary.data.end())
+			{
+				return false;
+			}
+
+			::Vadon::Foundation::UUID object_type_uuid = std::get<::Vadon::Foundation::UUID>(obj_type_it->second);
+			if (object_type_uuid.is_valid() == false)
+			{
+				return false;
+			}
+
+			const TypeID object_type_id = TypeRegistry::get_type_id(object_type_uuid);
+			if (object_type_id == TypeID::INVALID)
+			{
+				return false;
+			}
+
+			auto obj_properties_it = object_dictionary.data.find(uuid_to_base64_string(type_property_uuid));
+			if (obj_properties_it == object_dictionary.data.end())
+			{
+				return false;
+			}
+
+			BoxedVariantDictionary& properties_dictionary = std::get<BoxedVariantDictionary>(obj_properties_it->second);
+
+			// FIXME: should we serialize with labels?
+			if (serializer.serialize(type_property_uuid, object_type_uuid) != Serializer::Result::SUCCESSFUL)
+			{
+				return false;
 			}
 
 			if (serializer.open_object(properties_property_uuid) != Serializer::Result::SUCCESSFUL)
@@ -140,7 +509,7 @@ namespace Vadon::Utilities
 				return false;
 			}
 
-			if (serialize_object_properties(serializer, object) == false)
+			if (serialize_object_properties(serializer, object_type_id, *properties_dictionary) == false)
 			{
 				return false;
 			}
@@ -154,7 +523,7 @@ namespace Vadon::Utilities
 		return true;
 	}
 
-	bool DataObject::serialize_object_properties(Serializer& serializer, ObjectPointer& object)
+	bool ObjectSerializer::serialize_object_properties(Serializer& serializer, TypeID object_type, VariantDictionary& object_properties)
 	{
 		if (serializer.is_reading() == true)
 		{
@@ -162,341 +531,134 @@ namespace Vadon::Utilities
 			for (const std::string& current_key : keys)
 			{
 				const Vadon::Foundation::UUID current_property_id = Utilities::parse_labeled_uuid(current_key);
-
-				const PropertyInfo property_info = TypeRegistry::get_property_info(object.type, current_property_id);
+				const PropertyInfo property_info = TypeRegistry::get_property_info(object_type, current_property_id);
 				if (property_info.base_info.is_valid() == false)
 				{
 					// TODO: add warning?
 					continue;
 				}
 
-				switch (property_info.get_category())
+				Variant property_value;
+				if (serialize_object_property_value(serializer, current_key, property_info, property_value) == false)
 				{
-				case PropertyCategory::TRIVIAL:
-				{
-					Variant temp_value;
-					if (serialize_base_type(serializer, base_type_from_uuid(property_info.base_info.type), current_key, temp_value) == false)
-					{
-						return false;
-					}
-					TypeRegistry::set_property(object.data, object.type, current_property_id, temp_value);
+					return false;
 				}
-				break;
-				case PropertyCategory::TRIVIAL_ARRAY:
-				{
-					if (serializer.open_array(current_key) != Serializer::Result::SUCCESSFUL)
-					{
-						return false;
-					}
 
-					VariantArray data_array;
-					const ::Vadon::Foundation::BaseType base_type = base_type_from_uuid(property_info.base_info.type);
-
-					const size_t array_size = serializer.get_array_size();
-					for (size_t current_index = 0; current_index < array_size; ++current_index)
-					{
-						Variant temp_value;
-						if (serialize_base_type(serializer, base_type, current_key, temp_value) == false)
-						{
-							return false;
-						}
-						data_array.data.push_back(temp_value);
-					}
-					if (serializer.close_array() != Serializer::Result::SUCCESSFUL)
-					{
-						return false;
-					}
-
-					TypeRegistry::set_property(object.data, object.type, current_property_id, Box(data_array));
-				}
-				break;
-				case PropertyCategory::GENERIC_OBJECT_ARRAY:
-				{
-					if (serializer.open_array(current_key) != Serializer::Result::SUCCESSFUL)
-					{
-						return false;
-					}
-
-					VariantArray object_array;
-
-					const size_t array_size = serializer.get_array_size();
-					for (size_t current_index = 0; current_index < array_size; ++current_index)
-					{
-						if (serializer.open_object(current_index) != Serializer::Result::SUCCESSFUL)
-						{
-							return false;
-						}
-
-						const ::Vadon::Foundation::UUID current_obj_type_uuid = deserialize_type_uuid(serializer);
-						const TypeID current_obj_type_id = TypeRegistry::get_type_id(current_obj_type_uuid);
-
-						ObjectPointer current_obj = TypeRegistry::create_object(current_obj_type_id);
-
-						if (serialize_object(serializer, current_obj) == false)
-						{
-							return false;
-						}
-
-						object_array.data.push_back(current_obj);
-
-						if (serializer.close_object() != Serializer::Result::SUCCESSFUL)
-						{
-							return false;
-						}
-					}
-					if (serializer.close_array() != Serializer::Result::SUCCESSFUL)
-					{
-						return false;
-					}
-
-					// Set the property in the parent object
-					TypeRegistry::set_property(object.data, object.type, current_property_id, Box(object_array));
-				}
-				break;
-				case PropertyCategory::TYPED_OBJECT_ARRAY:
-				{
-					const TypeID array_obj_type_id = TypeRegistry::get_type_id(property_info.base_info.type);
-					if (serializer.open_array(current_key) != Serializer::Result::SUCCESSFUL)
-					{
-						return false;
-					}
-
-					VariantArray object_array;
-					const size_t array_size = serializer.get_array_size();
-					for (size_t current_index = 0; current_index < array_size; ++current_index)
-					{
-						ObjectPointer current_obj = TypeRegistry::create_object(array_obj_type_id);
-						object_array.data.push_back(current_obj);
-
-						if (serializer.open_object(current_index) != Serializer::Result::SUCCESSFUL)
-						{
-							return false;
-						}
-
-						if (serialize_object_properties(serializer, current_obj) == false)
-						{
-							return false;
-						}
-
-						if (serializer.close_object() != Serializer::Result::SUCCESSFUL)
-						{
-							return false;
-						}
-					}
-					if (serializer.close_array() != Serializer::Result::SUCCESSFUL)
-					{
-						return false;
-					}
-
-					// Set the property in the parent object
-					// FIXME: this will require copying each object
-					// The best solution would be to construct in-place and deserialize within the objects
-					TypeRegistry::set_property(object.data, object.type, current_property_id, Box(object_array));
-
-					// Clean up the temporary objects
-					for (const Variant& current_obj_variant : object_array.data)
-					{
-						ObjectPointer current_obj = std::get<ObjectPointer>(current_obj_variant);
-						TypeRegistry::destroy_object(current_obj);
-					}
-				}
-				break;
-				case PropertyCategory::GENERIC_OBJECT:
-				{
-					if (serializer.open_object(current_key) != Serializer::Result::SUCCESSFUL)
-					{
-						return false;
-					}
-
-					const ::Vadon::Foundation::UUID generic_obj_type_uuid = deserialize_type_uuid(serializer);
-					const TypeID generic_obj_type_id = TypeRegistry::get_type_id(generic_obj_type_uuid);
-
-					ObjectPointer generic_obj = TypeRegistry::create_object(generic_obj_type_id);
-					if (serialize_object(serializer, generic_obj) == false)
-					{
-						return false;
-					}
-
-					if (serializer.close_object() != Serializer::Result::SUCCESSFUL)
-					{
-						return false;
-					}
-
-					TypeRegistry::set_property(object.data, object.type, current_property_id, generic_obj);
-				}
-				break;
-				case PropertyCategory::TYPED_OBJECT:
-				{
-					if (serializer.open_object(current_key) != Serializer::Result::SUCCESSFUL)
-					{
-						return false;
-					}
-
-					// We can deserialize directly into the sub-object
-					ObjectPointer sub_obj_ptr = std::get<ObjectPointer>(TypeRegistry::get_property(object.data, object.type, current_property_id));
-					if (serialize_object_properties(serializer, sub_obj_ptr) == false)
-					{
-						return false;
-					}
-
-					if (serializer.close_object() != Serializer::Result::SUCCESSFUL)
-					{
-						return false;
-					}
-				}
-				break;
-				}
+				const std::string property_uuid_key = uuid_to_base64_string(current_property_id);
+				object_properties.data.insert(std::make_pair(property_uuid_key, property_value));
 			}
 		}
 		else
 		{
-			const PropertyInfoList property_info_list = TypeRegistry::get_type_properties(object.type);
+			const PropertyInfoList property_info_list = TypeRegistry::get_type_properties(object_type);
 			for (const PropertyInfo& current_property_info : property_info_list)
 			{
 				// FIXME: use labeled UUID?
 				const std::string current_key = Vadon::Utilities::uuid_to_base64_string(current_property_info.base_info.id);
-				switch (current_property_info.get_category())
+
+				auto property_data_it = object_properties.data.find(current_key);
+				if (property_data_it == object_properties.data.end())
 				{
-				case PropertyCategory::TRIVIAL:
-				{
-					Variant temp_value = TypeRegistry::get_property(object.data, object.type, current_property_info.base_info.id);
-					if (serialize_base_type(serializer, base_type_from_uuid(current_property_info.base_info.type), current_key, temp_value) == false)
-					{
-						return false;
-					}
+					continue;
 				}
-				break;
-				case PropertyCategory::TRIVIAL_ARRAY:
+
+				Variant& property_value = property_data_it->second;
+				if (serialize_object_property_value(serializer, current_key, current_property_info, property_value) == false)
 				{
-					if (serializer.open_array(current_key) != Serializer::Result::SUCCESSFUL)
-					{
-						return false;
-					}
-
-					const ::Vadon::Foundation::BaseType base_type = base_type_from_uuid(current_property_info.base_info.type);
-
-					BoxedVariantArray data_array = std::get<BoxedVariantArray>(TypeRegistry::get_property(object.data, object.type, current_property_info.base_info.id));
-
-					for (size_t current_index = 0; current_index < data_array->data.size(); ++current_index)
-					{
-						Variant& temp_value = data_array->data[current_index];
-						if (serialize_base_type(serializer, base_type, current_key, temp_value) == false)
-						{
-							return false;
-						}
-					}
-					if (serializer.close_array() != Serializer::Result::SUCCESSFUL)
-					{
-						return false;
-					}
-				}
-				break;
-				case PropertyCategory::GENERIC_OBJECT_ARRAY:
-				{
-					if (serializer.open_array(current_key) != Serializer::Result::SUCCESSFUL)
-					{
-						return false;
-					}
-
-					const BoxedVariantArray object_array = std::get<BoxedVariantArray>(TypeRegistry::get_property(object.data, object.type, current_property_info.base_info.id));
-					for (size_t current_index = 0; current_index < object_array->data.size(); ++current_index)
-					{
-						if (serializer.open_object(current_index) != Serializer::Result::SUCCESSFUL)
-						{
-							return false;
-						}
-
-						ObjectPointer current_obj = std::get<ObjectPointer>(object_array->data[current_index]);
-						if (serialize_object(serializer, current_obj) == false)
-						{
-							return false;
-						}
-
-						if (serializer.close_object() != Serializer::Result::SUCCESSFUL)
-						{
-							return false;
-						}
-					}
-
-					if (serializer.close_array() != Serializer::Result::SUCCESSFUL)
-					{
-						return false;
-					}
-				}
-				break;
-				case PropertyCategory::TYPED_OBJECT_ARRAY:
-				{
-					if (serializer.open_array(current_key) != Serializer::Result::SUCCESSFUL)
-					{
-						return false;
-					}
-
-					const BoxedVariantArray object_array = std::get<BoxedVariantArray>(TypeRegistry::get_property(object.data, object.type, current_property_info.base_info.id));
-					for (size_t current_index = 0; current_index < object_array->data.size(); ++current_index)
-					{
-						if (serializer.open_object(current_index) != Serializer::Result::SUCCESSFUL)
-						{
-							return false;
-						}
-
-						ObjectPointer current_obj = std::get<ObjectPointer>(object_array->data[current_index]);
-						if (serialize_object_properties(serializer, current_obj) == false)
-						{
-							return false;
-						}
-
-						if (serializer.close_object() != Serializer::Result::SUCCESSFUL)
-						{
-							return false;
-						}
-					}
-
-					if (serializer.close_array() != Serializer::Result::SUCCESSFUL)
-					{
-						return false;
-					}
-				}
-				break;
-				case PropertyCategory::GENERIC_OBJECT:
-				{
-					if (serializer.open_object(current_key) != Serializer::Result::SUCCESSFUL)
-					{
-						return false;
-					}
-
-					ObjectPointer sub_obj_ptr = std::get<ObjectPointer>(TypeRegistry::get_property(object.data, object.type, current_property_info.base_info.id));
-					if (serialize_object(serializer, sub_obj_ptr) == false)
-					{
-						return false;
-					}
-
-					if (serializer.close_object() != Serializer::Result::SUCCESSFUL)
-					{
-						return false;
-					}
-				}
-				break;
-				case PropertyCategory::TYPED_OBJECT:
-				{
-					if (serializer.open_object(current_key) != Serializer::Result::SUCCESSFUL)
-					{
-						return false;
-					}
-
-					ObjectPointer sub_obj_ptr = std::get<ObjectPointer>(TypeRegistry::get_property(object.data, object.type, current_property_info.base_info.id));
-					if (serialize_object_properties(serializer, sub_obj_ptr) == false)
-					{
-						return false;
-					}
-
-					if (serializer.close_object() != Serializer::Result::SUCCESSFUL)
-					{
-						return false;
-					}
-				}
-				break;
+					return false;
 				}
 			}
+		}
+
+		return true;
+	}
+
+	bool ObjectSerializer::load_object_data(ObjectWrapper& object, const VariantDictionary& data)
+	{
+		if (data.data.empty() == true)
+		{
+			// Empty dictionary means null object
+			object = ObjectWrapper();
+			return true;
+		}
+
+		auto type_it = data.data.find(uuid_to_base64_string(Property::property_schema_to_uuid(::Vadon::Foundation::DataObjectSchema::c_type_property)));
+		VADON_ASSERT(type_it != data.data.end(), "Invalid data!");
+
+		const TypeUUID object_type_uuid = std::get<::Vadon::Foundation::UUID>(type_it->second);
+		const TypeID object_type_id = TypeRegistry::get_type_id(object_type_uuid);
+
+		auto properties_it = data.data.find(uuid_to_base64_string(Property::property_schema_to_uuid(::Vadon::Foundation::DataObjectSchema::c_properties_property)));
+		VADON_ASSERT(properties_it != data.data.end(), "Invalid data!");
+
+		const VariantDictionary& property_data = *std::get<BoxedVariantDictionary>(properties_it->second);
+
+		ObjectWrapper new_object = TypeRegistry::create_object(object_type_id);
+		if (load_object_property_data(new_object, property_data) == false)
+		{
+			TypeRegistry::destroy_object(new_object);
+			return false;
+		}
+
+		object = new_object;
+		return true;
+	}
+
+	bool ObjectSerializer::load_object_property_data(ObjectWrapper& object, const VariantDictionary& property_data)
+	{
+		for (const auto& data_it : property_data.data)
+		{
+			PropertyUUID property_id;
+			if (uuid_from_base64_string(data_it.first, property_id) == false)
+			{
+				return false;
+			}
+			TypeRegistry::set_property(object.get_data(), object.get_type(), property_id, data_it.second);
+		}
+
+		return true;
+	}
+
+	bool ObjectSerializer::store_object_data(const ObjectWrapper& object, VariantDictionary& data)
+	{
+		if (object.is_valid() == false)
+		{
+			// Nothing to save
+			data.data.clear();
+			return true;
+		}
+
+		{
+			const std::string type_key = uuid_to_base64_string(Property::property_schema_to_uuid(::Vadon::Foundation::DataObjectSchema::c_type_property));
+			const TypeUUID type_uuid = TypeRegistry::get_type_info(object.get_type()).id;
+
+			data.data.insert(std::make_pair(type_key, type_uuid));
+		}
+
+		const std::string properties_key = uuid_to_base64_string(Property::property_schema_to_uuid(::Vadon::Foundation::DataObjectSchema::c_properties_property));
+		VariantDictionary properties_dictionary;
+
+		if (store_object_property_data(object, properties_dictionary) == false)
+		{
+			return false;
+		}
+
+		data.data.insert(std::make_pair(properties_key, Box(properties_dictionary)));
+
+		return true;
+	}
+
+	bool ObjectSerializer::store_object_property_data(const ObjectWrapper& object, VariantDictionary& property_data)
+	{
+		// TODO: optimize by only saving values that changed from default?
+		const PropertyInfoList property_info_list = TypeRegistry::get_type_properties(object.get_type());
+		for (const PropertyInfo& current_property_info : property_info_list)
+		{
+			const std::string current_key = uuid_to_base64_string(current_property_info.base_info.id);
+
+			const Variant property_value = TypeRegistry::get_property(object.get_data(), object.get_type(), current_property_info.base_info.id);
+
+			property_data.data.insert(std::make_pair(current_key, property_value));
 		}
 
 		return true;

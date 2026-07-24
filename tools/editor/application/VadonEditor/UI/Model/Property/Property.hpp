@@ -12,8 +12,8 @@ namespace VadonEditor::UI
 	struct PropertyWidgetInfo
 	{
 		QUuid property_id;
-		Core::PropertyCategory category;
-		QUuid data_type; // NOTE: must base type if trivial, otherwise it contains metadata about compound type
+		::Vadon::Foundation::Property::Category category = ::Vadon::Foundation::Property::Category::INVALID;
+		QList<QUuid> type_list;
 		QVariant init_value;
 	};
 

@@ -84,7 +84,6 @@ namespace VadonDemo::Model
 		{
 			Vadon::Utilities::TypePropertyMetadata starting_weapons_property(player_metadata, VADON_GET_MEMBER_UUID(Player, starting_weapons));
 			starting_weapons_property.set_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Starting Weapons");
-			starting_weapons_property.set_metadata(::Vadon::Foundation::CommonPropertyMetadata::ARRAY_TYPE, VADON_GET_TYPE_UUID_BASE64_STRING(WeaponDefinition));
 		}
 	}
 

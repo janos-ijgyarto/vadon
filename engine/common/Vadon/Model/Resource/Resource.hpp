@@ -2,7 +2,6 @@
 #define VADON_MODEL_RESOURCE_RESOURCE_HPP
 #include <Vadon/Foundation/Model/Resource/Resource.hpp>
 #include <Vadon/Utilities/Container/ObjectPool/Handle.hpp>
-#include <Vadon/Utilities/System/UUID/UUID.hpp>
 #include <Vadon/Utilities/TypeInfo/TypeErasure.hpp>
 namespace Vadon::Model
 {
@@ -68,19 +67,51 @@ namespace Vadon::Utilities
 	template<Vadon::Model::is_resource_id T>
 	struct TypeErasureTrait<T>
 	{
-		static constexpr TypeID get_erased_type_id()
+		static constexpr ::Vadon::Foundation::UUID get_erased_type_uuid()
 		{
-			return TypeRegistry::get_type_id<Vadon::Model::ResourceID>();
+			return Vadon::Utilities::string_to_uuid(::Vadon::Foundation::ResourceIDSchema::c_type_uuid);
 		}
 
-		static constexpr TypeID get_underlying_type_id()
+		static constexpr size_t get_nested_type_count()
 		{
-			return TypeRegistry::get_type_id<Vadon::Model::ResourceID>();
+			// Resource ID "header" + the resource type itself
+			return 2;
+		}
+
+		static constexpr void add_erased_type_uuid(::Vadon::Foundation::UUID* uuid_array)
+		{
+			*uuid_array = get_erased_type_uuid();
+
+			++uuid_array;
+
+			*uuid_array = TypeRegistryTrait<typename T::_ResourceType>::get_type_uuid();
+		}
+
+		static constexpr auto get_type_list()
+		{
+			std::array<::Vadon::Foundation::UUID, get_nested_type_count()> type_list;
+			add_erased_type_uuid(type_list.data());
+			return type_list;
+		}
+	};
+
+	template<Vadon::Model::is_resource_id T>
+	struct VariantTypeTrait<T>
+	{
+		static Variant to_variant(const T& value)
+		{
+			return VariantTypeTrait<::Vadon::Foundation::UUID>::to_variant(value);
+		}
+
+		static T from_variant(const Variant& variant)
+		{
+			return T(VariantTypeTrait<::Vadon::Foundation::UUID>::from_variant(variant));
 		}
 	};
 }
 
 VADON_REGISTER_TYPE_UUID(Vadon::Model::Resource, ::Vadon::Foundation::ResourceSchema::c_type_uuid.string);
+VADON_REGISTER_TYPE_UUID(::Vadon::Foundation::ResourceIDSchema, ::Vadon::Foundation::ResourceIDSchema::c_type_uuid.string);
 
 #define VADON_MODEL_DECLARE_TYPED_RESOURCE_ID(_resource, _name) using _name = Vadon::Model::TypedResourceID<_resource>
 #define VADON_MODEL_DECLARE_TYPED_RESOURCE_HANDLE(_resource, _name) using _name = Vadon::Model::TypedResourceHandle<_resource>

@@ -37,8 +37,9 @@ namespace
 		void set_type_metadata(const ::Vadon::Foundation::UUID&, const char*, const char*) override {}
 		const char* get_type_metadata(const ::Vadon::Foundation::UUID&, const char*) const override { return nullptr; }
 
-		void register_property(const ::Vadon::Foundation::UUID&, const ::Vadon::Foundation::Property&) override {}
-		virtual ::Vadon::Foundation::Property get_property_info(const ::Vadon::Foundation::UUID&, const ::Vadon::Foundation::UUID&) const { return ::Vadon::Foundation::Property{}; }
+		void register_property(const ::Vadon::Foundation::UUID&, const ::Vadon::Foundation::Property&, const ::Vadon::Foundation::UUID*) override {}
+		::Vadon::Foundation::Property get_property_info(const ::Vadon::Foundation::UUID&, const ::Vadon::Foundation::UUID&) const override { return ::Vadon::Foundation::Property{}; }
+		::Vadon::Foundation::UUID get_property_type_list_entry(const ::Vadon::Foundation::UUID&, const ::Vadon::Foundation::UUID&, size_t) const override { return ::Vadon::Foundation::UUID{}; }
 
 		void set_property_metadata(const ::Vadon::Foundation::UUID&, const ::Vadon::Foundation::UUID&, const char*, const char*) override {}
 		const char* get_property_metadata(const ::Vadon::Foundation::UUID&, const ::Vadon::Foundation::UUID&, const char*) const override { return nullptr; }

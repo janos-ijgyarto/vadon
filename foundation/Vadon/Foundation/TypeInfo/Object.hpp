@@ -12,15 +12,20 @@ namespace Vadon
 		{
 			static constexpr PropertySchema c_type_property{
 				UUIDString{"de0a777b-505a-42ce-b620-8ee4a9283be5"},
-				get_base_type_uuid_string(BaseType::UUID)
+				TypeInfo::get_base_type_uuid_string(BaseType::UUID)
 			};
 
 			static constexpr PropertySchema c_properties_property{
 				UUIDString{"bb8e2650-dca2-4700-b539-02c5d7a00bc7"},
-				get_base_type_uuid_string(BaseType::DICTIONARY)
+				TypeInfo::get_base_type_uuid_string(BaseType::DICTIONARY)
 			};
 
 			static constexpr UUIDString c_type_uuid{ "0906819c-304e-4176-9613-dccce94ef50a" };
+		};
+
+		struct ObjectWrapperSchema
+		{
+			static constexpr UUIDString c_type_uuid{ "e5159621-3d6b-4964-87b8-fe66041471ef" };
 		};
 	}
 }

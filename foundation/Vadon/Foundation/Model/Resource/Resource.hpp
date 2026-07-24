@@ -14,23 +14,28 @@ namespace Vadon
 
 			static constexpr PropertySchema c_id_property{
 				UUIDString{"190cfdfc-a70c-4723-b640-3975d7b675fc"},
-				get_base_type_uuid_string(BaseType::UUID)
+				TypeInfo::get_base_type_uuid_string(BaseType::UUID)
 			};
 
 			static constexpr PropertySchema c_type_property{
 				UUIDString{"19565dac-0540-48a8-b5e5-c692c85d9318"},
-				get_base_type_uuid_string(BaseType::UUID)
+				TypeInfo::get_base_type_uuid_string(BaseType::UUID)
 			};
 
 			static constexpr PropertySchema c_properties_property{
 				UUIDString{"08549120-323c-48ee-9086-f5bf52c435e2"},
-				get_base_type_uuid_string(BaseType::DICTIONARY)
+				TypeInfo::get_base_type_uuid_string(BaseType::DICTIONARY)
 			};
 
 			static constexpr PropertySchema c_embedded_property{
 				UUIDString{"512029ab-4cbc-4ae7-8996-1b520ebf8951"},
-				get_base_type_uuid_string(BaseType::ARRAY)
+				TypeInfo::get_base_type_uuid_string(BaseType::ARRAY)
 			};
+		};
+
+		struct ResourceIDSchema
+		{
+			static constexpr UUIDString c_type_uuid{ "cace2238-fd4a-4220-8747-487609bdb39a" };
 		};
 	}
 }

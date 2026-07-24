@@ -2,6 +2,8 @@
 
 #include <Vadon/Utilities/Debugging/Assert.hpp>
 
+#include <Vadon/Utilities/TypeInfo/Registry.hpp>
+
 namespace Vadon::Utilities
 {
 	TypeID get_erased_data_type_id(TypeID type_id)

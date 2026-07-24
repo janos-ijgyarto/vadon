@@ -21,9 +21,9 @@ namespace VadonEditor::UI
 	{
 		switch (info.category)
 		{
-		case Core::PropertyCategory::TRIVIAL:
+		case ::Vadon::Foundation::Property::Category::TRIVIAL:
 		{
-			const ::Vadon::Foundation::BaseType base_type = Core::TypeData::get_base_type(info.data_type);
+			const ::Vadon::Foundation::BaseType base_type = Core::TypeData::get_base_type(info.type_list.front());
 			switch (base_type)
 			{
 			case ::Vadon::Foundation::BaseType::INT32:
@@ -57,7 +57,16 @@ namespace VadonEditor::UI
 			}
 		}
 		break;
-		case Core::PropertyCategory::RESOURCE:
+		case ::Vadon::Foundation::Property::Category::ARRAY:
+			// TODO!
+			break;
+		case ::Vadon::Foundation::Property::Category::DICTIONARY:
+			// TODO!
+			break;
+		case ::Vadon::Foundation::Property::Category::OBJECT:
+			// TODO:
+			break;
+		case ::Vadon::Foundation::Property::Category::RESOURCE:
 		{
 			Model::Resource* resource = nullptr;
 			QUuid resource_id = info.init_value.toUuid();
@@ -67,23 +76,8 @@ namespace VadonEditor::UI
 				resource = application.get_model_system().get_resource_system().get_resource(resource_id);
 			}
 
-			return new PropertyResource(info.property_id, resource, owner_resource, info.data_type, parent_widget);
+			return new PropertyResource(info.property_id, resource, owner_resource, info.type_list[1], parent_widget);
 		}
-		case Core::PropertyCategory::TRIVIAL_ARRAY:
-			// TODO!
-			break;
-		case Core::PropertyCategory::GENERIC_OBJECT_ARRAY:
-			// TODO!
-			break;
-		case Core::PropertyCategory::TYPED_OBJECT_ARRAY:
-			// TODO!
-			break;
-		case Core::PropertyCategory::GENERIC_OBJECT:
-			// TODO!
-			break;
-		case Core::PropertyCategory::TYPED_OBJECT:
-			// TODO!
-			break;
 		}
 
 		return nullptr;

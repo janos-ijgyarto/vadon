@@ -17,7 +17,7 @@ namespace Vadon::Private::Model
 	using EntitySceneInfo = Vadon::Model::EntitySceneInfo;
 	using SceneComponent = Vadon::Model::SceneComponent;
 
-	using ComponentData = Vadon::Utilities::ObjectPointer;
+	using ComponentData = Vadon::Utilities::ObjectWrapper;
 
 	struct EntityData
 	{
@@ -34,6 +34,9 @@ namespace Vadon::Private::Model
 		VADON_DECLARE_MEMBER_UUID(name, ::Vadon::Foundation::SceneEntitySchema::c_name_property.id.string);
 
 		bool has_parent() const { return parent.is_valid(); }
+
+		void set_components(const std::vector<ComponentData>& component_vec);
+		void clear_component_data();
 	};
 }
 

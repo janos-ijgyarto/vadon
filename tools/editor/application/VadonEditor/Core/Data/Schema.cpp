@@ -168,7 +168,7 @@ namespace VadonEditor::Core
 		return metadata_it->constData();
 	}
 
-	void DataSchema::TypeMetadataRegistry::register_property(const::Vadon::Foundation::UUID& type_uuid, const::Vadon::Foundation::Property& property)
+	void DataSchema::TypeMetadataRegistry::register_property(const::Vadon::Foundation::UUID& type_uuid, const ::Vadon::Foundation::Property& property, const ::Vadon::Foundation::UUID* type_list)
 	{
 		Q_ASSERT_X(type_uuid.is_valid() == true, "VadonEditor::Core::DataSchema::register_property", "Invalid type UUID!");
 		Q_ASSERT_X(property.is_valid() == true, "VadonEditor::Core::DataSchema::register_property", "Invalid property info!");
@@ -192,6 +192,11 @@ namespace VadonEditor::Core
 
 		PropertyData property_data;
 		property_data.info = property;
+
+		for (size_t type_list_index = 0; type_list_index < property.type_list_length; ++type_list_index)
+		{
+			property_data.type_list.push_back(Utilities::vadon_uuid_to_qt_uuid(type_list[type_list_index]));
+		}
 
 		type_it->properties.insert(qt_property_uuid, property_data);
 		type_it->property_list.push_back(property.id);
@@ -222,6 +227,35 @@ namespace VadonEditor::Core
 		}
 
 		return property_it->info;
+	}
+
+	::Vadon::Foundation::UUID DataSchema::TypeMetadataRegistry::get_property_type_list_entry(const::Vadon::Foundation::UUID& type_uuid, const::Vadon::Foundation::UUID& property_uuid, size_t index) const
+	{
+		Q_ASSERT_X(type_uuid.is_valid() == true, "VadonEditor::Core::DataSchema::get_property_info", "Invalid type UUID!");
+		Q_ASSERT_X(property_uuid.is_valid() == true, "VadonEditor::Core::DataSchema::get_property_info", "Invalid property UUID!");
+
+		const QUuid qt_type_uuid = Utilities::vadon_uuid_to_qt_uuid(type_uuid);
+		auto type_it = m_types.find(qt_type_uuid);
+
+		if (type_it == m_types.end())
+		{
+			// TODO: Q_ERROR macro?
+			Q_ASSERT_X(false, "VadonEditor::Core::DataSchema::get_property_type_list_entry", "Type not registered!");
+			return ::Vadon::Foundation::UUID{};
+		}
+
+		const QUuid qt_property_uuid = Utilities::vadon_uuid_to_qt_uuid(property_uuid);
+		auto property_it = type_it->properties.find(qt_property_uuid);
+		if (property_it == type_it->properties.end())
+		{
+			// TODO: Q_ERROR macro?
+			Q_ASSERT_X(false, "VadonEditor::Core::DataSchema::get_property_type_list_entry", "Property not registered!");
+			return ::Vadon::Foundation::UUID{};
+		}
+
+		const PropertyData& property_data = property_it.value();
+
+		return Utilities::qt_uuid_to_vadon_uuid(property_data.type_list[index]);
 	}
 
 	void DataSchema::TypeMetadataRegistry::set_property_metadata(const ::Vadon::Foundation::UUID& type_uuid, const ::Vadon::Foundation::UUID& property_uuid, const char* key, const char* value)
@@ -429,7 +463,13 @@ namespace VadonEditor::Core
 					QJsonObject property_object;
 
 					property_object["id"] = uuid_to_json_string(property_it.key());
-					property_object["type"] = uuid_to_json_string(Utilities::vadon_uuid_to_qt_uuid(current_property_data.info.type));
+
+					QJsonArray type_list;
+					for (const QUuid& current_type : current_property_data.type_list)
+					{
+						type_list.push_back(Utilities::uuid_to_base64_string(current_type));
+					}
+					property_object["type_list"] = type_list;
 
 					QJsonObject property_metadata_object;
 					for (auto metadata_it = current_property_data.metadata.begin(); metadata_it != current_property_data.metadata.end(); ++metadata_it)
@@ -569,9 +609,13 @@ namespace VadonEditor::Core
 							return false;
 						}
 
-						if (const QJsonValue property_type_value = current_property_obj["type"]; property_type_value.isString())
+						if (const QJsonValue property_type_list_value = current_property_obj["type_list"]; property_type_list_value.isArray())
 						{
-							new_property_data.info.type = Utilities::qt_uuid_to_vadon_uuid(json_string_to_uuid(property_type_value));
+							const QJsonArray property_type_list_array = property_type_list_value.toArray();
+							for (const QJsonValueConstRef& current_type_list_type : property_type_list_array)
+							{
+								new_property_data.type_list.push_back(json_string_to_uuid(current_type_list_type));
+							}
 						}
 						else
 						{

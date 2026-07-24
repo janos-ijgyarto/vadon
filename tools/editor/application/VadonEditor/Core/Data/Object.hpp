@@ -43,17 +43,13 @@ namespace VadonEditor::Core
 		static QUuid get_object_type_uuid();
 		static QUuid get_type_property_uuid();
 		static QUuid get_properties_property_uuid();
+
+		static QUuid deserialize_object_type(const QJsonObject& object);
 	private:
 		bool internal_initialize();
 
-		bool internal_serialize_property_data(const PropertyData& type_property_data, const QVariant& property_value, QJsonObject& json_obj) const;
+		bool internal_serialize_property_data(QJsonObject& json_obj, const PropertyData& type_property_data, const QVariant& property_value) const;
 
-		bool serialize_generic_object_to_json(const QVariant& object_data, QJsonObject& json_object) const;
-		bool deserialize_generic_object_from_json(const QJsonObject& json_object, QVariant& object_data) const;
-
-		bool serialize_typed_object_to_json(const TypeData* type_data, const QVariant& object_data, QJsonObject& json_object) const;
-		bool deserialize_typed_object_from_json(const TypeData* type_data, const QJsonObject& json_object, QVariant& object_data) const;
-		
 		Application& m_application;
 
 		QUuid m_type_id;

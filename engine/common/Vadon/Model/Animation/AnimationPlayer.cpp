@@ -3,6 +3,8 @@
 #include <Vadon/Model/Animation/AnimationSystem.hpp>
 
 #include <Vadon/Utilities/Debugging/Assert.hpp>
+
+#include <Vadon/Utilities/TypeInfo/Registry.hpp>
 #include <Vadon/Utilities/TypeInfo/TypeList/VariantTypeList.hpp>
 
 #include <algorithm>

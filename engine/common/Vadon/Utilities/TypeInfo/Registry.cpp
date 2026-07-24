@@ -3,6 +3,7 @@
 #include <Vadon/Core/Environment.hpp>
 #include <Vadon/Core/Logger.hpp>
 
+#include <Vadon/Utilities/Data/Object.hpp>
 #include <Vadon/Utilities/Enum/EnumClass.hpp>
 #include <Vadon/Utilities/System/UUID/UUID.hpp>
 
@@ -17,7 +18,7 @@ namespace Vadon::Utilities
 		PropertyInfo make_property_info(const ::Vadon::Foundation::Property& property_info, const MemberVariableBindBase& property)
 		{
 			return PropertyInfo{ .base_info = property_info,
-				.data_type = property.data_type,
+				.type_list = property.type_list,
 				.has_getter = property.member_getter || property.getter_function,
 				.has_setter = property.member_setter || property.setter_function
 			};
@@ -87,7 +88,8 @@ namespace Vadon::Utilities
 		register_type<::Vadon::Foundation::UUID>();
 
 		register_type<BoxedVariantArray>();
-		register_type<ObjectPointer>();
+		register_type<BoxedVariantDictionary>();
+		register_type<ObjectWrapper>();
 
 		return true;
 	}
@@ -138,36 +140,36 @@ namespace Vadon::Utilities
 		return false;
 	}
 
-	ObjectPointer TypeRegistry::create_object(TypeID type_id)
+	ObjectWrapper TypeRegistry::create_object(TypeID type_id)
 	{
 		TypeRegistry& instance = get_registry_instance();
 		auto type_data_it = instance.m_type_lookup.find(type_id);
 		if (type_data_it == instance.m_type_lookup.end())
 		{
 			type_not_found_error(type_id);
-			return ObjectPointer{};
+			return ObjectWrapper{};
 		}
 
 		const TypeData& type_data = type_data_it->second;
 		VADON_ASSERT(type_data.object_factory.factory_function != nullptr, "Invalid factory function!");
 
-		return ObjectPointer{ .type = type_id, .data = type_data.object_factory.factory_function() };
+		return ObjectWrapper(type_id, type_data.object_factory.factory_function());
 	}
 
-	void TypeRegistry::destroy_object(const ObjectPointer& object)
+	void TypeRegistry::destroy_object(const ObjectWrapper& object)
 	{
 		TypeRegistry& instance = get_registry_instance();
-		auto type_data_it = instance.m_type_lookup.find(object.type);
+		auto type_data_it = instance.m_type_lookup.find(object.get_type());
 		if (type_data_it == instance.m_type_lookup.end())
 		{
-			type_not_found_error(object.type);
+			type_not_found_error(object.get_type());
 			return;
 		}
 
 		const TypeData& type_data = type_data_it->second;
 		VADON_ASSERT(type_data.object_factory.destructor_function != nullptr, "Invalid factory function!");
 
-		type_data.object_factory.destructor_function(object.data);
+		type_data.object_factory.destructor_function(object.get_data());
 	}
 
 	TypeID TypeRegistry::get_type_id(const TypeUUID& type_uuid)
@@ -182,6 +184,11 @@ namespace Vadon::Utilities
 		}
 
 		return type_id_it->second;
+	}
+
+	bool TypeRegistry::is_base_of(const TypeUUID& base_uuid, const TypeUUID& type_uuid)
+	{
+		return is_base_of(get_type_id(base_uuid), get_type_id(type_uuid));
 	}
 
 	bool TypeRegistry::is_base_of(TypeID base_id, TypeID type_id)
@@ -409,17 +416,28 @@ namespace Vadon::Utilities
 		}
 
 		// Make sure the property is itself a registered type
-		VADON_ASSERT(property_bind.type != TypeID::INVALID, "Property type is invalid!");
-		VADON_ASSERT(property_bind.data_type != TypeID::INVALID, "Property data type is invalid!");
-		auto property_type_it = instance.m_type_lookup.find(property_bind.type);
-		if (type_data_it == instance.m_type_lookup.end())
+		for (const ::Vadon::Foundation::UUID& property_type_uuid : property_bind.type_list)
 		{
-			type_not_found_error(property_bind.type);
-			return false;
+			if (property_type_uuid.is_valid() == false)
+			{
+				VADON_ERROR("Property type is invalid!");
+			}
+
+			const TypeID property_type_id = get_type_id(property_type_uuid);
+			auto property_type_it = instance.m_type_lookup.find(property_type_id);
+			if (property_type_it == instance.m_type_lookup.end())
+			{
+				type_not_found_error(type_id);
+				return false;
+			}
 		}
 
+		const TypeID front_type_id = get_type_id(property_bind.type_list.front());
+		auto property_type_it = instance.m_type_lookup.find(front_type_id);
+
 		const TypeData& property_type_data = property_type_it->second;
-		::Vadon::Foundation::Property property_info = { .id = property_uuid, .type = property_type_data.info.id };
+		::Vadon::Foundation::Property property_info = { .id = property_uuid, .root_type = property_type_data.info.id, .type_list_length = property_bind.type_list.size()};
+		VADON_ASSERT(property_info.type_list_length > 0, "Invalid type list!");
 
 		return type_data_it->second.add_property(property_uuid, property_info, std::move(property_bind));
 	}

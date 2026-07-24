@@ -14,28 +14,13 @@
 
 #include <format>
 
-namespace 
-{
-	void clear_entity_data(Vadon::Private::Model::EntityData& entity)
-	{
-		// We need to destroy each component in each entity, since they were heap-allocated
-		// FIXME: use refcounting and/or some kind of allocator strategy to make this more robust!
-		for (Vadon::Private::Model::ComponentData& current_component : entity.components)
-		{
-			Vadon::Utilities::TypeRegistry::destroy_object(current_component);
-		}
-
-		entity.components.clear();
-	}
-}
-
 namespace Vadon::Model
 {
 	Scene::~Scene()
 	{
 		for (Vadon::Private::Model::EntityData& current_entity : entities)
 		{
-			clear_entity_data(current_entity);
+			current_entity.clear_component_data();
 		}
 	}
 }
@@ -120,7 +105,7 @@ namespace Vadon::Private::Model
 		Vadon::Utilities::TypeRegistry::add_property<EntityData>(VADON_GET_MEMBER_UUID(EntityData, id), Vadon::Utilities::MemberVariableBind<&EntityData::id>().bind_member_getter().bind_member_setter());
 		Vadon::Utilities::TypeRegistry::add_property<EntityData>(VADON_GET_MEMBER_UUID(EntityData, parent), Vadon::Utilities::MemberVariableBind<&EntityData::parent>().bind_member_getter().bind_member_setter());
 		Vadon::Utilities::TypeRegistry::add_property<EntityData>(VADON_GET_MEMBER_UUID(EntityData, scene), Vadon::Utilities::MemberVariableBind<&EntityData::scene>().bind_member_getter().bind_member_setter());
-		Vadon::Utilities::TypeRegistry::add_property<EntityData>(VADON_GET_MEMBER_UUID(EntityData, components), Vadon::Utilities::MemberVariableBind<&EntityData::components>().bind_member_getter().bind_member_setter());
+		Vadon::Utilities::TypeRegistry::add_property<EntityData>(VADON_GET_MEMBER_UUID(EntityData, components), Vadon::Utilities::MemberVariableBind<&EntityData::components>().bind_member_getter().bind_setter_function<&EntityData::set_components>());
 		Vadon::Utilities::TypeRegistry::add_property<EntityData>(VADON_GET_MEMBER_UUID(EntityData, name), Vadon::Utilities::MemberVariableBind<&EntityData::name>().bind_member_getter().bind_member_setter());
 
 		Vadon::Utilities::TypeRegistry::add_property<Vadon::Model::Scene>(VADON_GET_MEMBER_UUID(Vadon::Model::Scene, entities), Vadon::Utilities::MemberVariableBind<&Vadon::Model::Scene::entities>().bind_member_getter().bind_member_setter());
@@ -144,11 +129,9 @@ namespace Vadon::Private::Model
 				.commit_property()
 			.add_property(EntityData::c_scene_member_id)
 				.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Scene")
-				.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::RESOURCE_TYPE, VADON_GET_TYPE_UUID_BASE64_STRING(Vadon::Model::Scene))
 				.commit_property()
 			.add_property(EntityData::c_components_member_id)
 				.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Components")
-				.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::ARRAY_TYPE, Vadon::Utilities::uuid_to_base64_string(c_data_object_uuid).c_str())
 				.commit_property()
 			.add_property(EntityData::c_name_member_id)
 				.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Name");
@@ -158,7 +141,6 @@ namespace Vadon::Private::Model
 
 		scene_metadata.add_property(Vadon::Utilities::Property::property_schema_to_uuid(::Vadon::Foundation::SceneSchema::c_entities_property))
 			.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Entities")
-			.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::ARRAY_TYPE, VADON_GET_TYPE_UUID_BASE64_STRING(EntityData))
 			.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::FLAGS, ::Vadon::Foundation::CommonPropertyMetadata::flag_string(::Vadon::Foundation::CommonPropertyMetadata::Flags::EDITOR_HIDDEN));
 
 		AnimationSystem::register_type_metadata(metadata_registry);
@@ -272,8 +254,8 @@ namespace Vadon::Private::Model
 			for (const ComponentData& current_component_data : current_entity_data.components)
 			{
 				Vadon::ECS::ComponentHandle current_component = current_entity_data.scene.is_valid() == false
-					? component_manager.add_component(current_entity, current_component_data.type)
-					: component_manager.get_component(current_entity, current_component_data.type);
+					? component_manager.add_component(current_entity, current_component_data.get_type())
+					: component_manager.get_component(current_entity, current_component_data.get_type());
 
 				if (current_component.is_valid() == false)
 				{
@@ -283,10 +265,10 @@ namespace Vadon::Private::Model
 
 				// FIXME: we're copying components per-propert
 				// We should instead pass the object as a whole and "clone" it
-				const Vadon::Utilities::PropertyList component_properties = Vadon::Utilities::TypeRegistry::get_properties(current_component_data.data, current_component_data.type);
+				const Vadon::Utilities::PropertyList component_properties = Vadon::Utilities::TypeRegistry::get_properties(current_component_data.get_data(), current_component_data.get_type());
 				for (const Vadon::Utilities::Property& current_property_data : component_properties)
 				{
-					Vadon::Utilities::TypeRegistry::set_property(current_component.get_raw(), current_component_data.type, current_property_data.info.id, current_property_data.value);
+					Vadon::Utilities::TypeRegistry::set_property(current_component.get_raw(), current_component_data.get_type(), current_property_data.info.id, current_property_data.value);
 				}
 			}
 

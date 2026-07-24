@@ -1,7 +1,6 @@
 #ifndef VADON_UTILITIES_DATA_VARIANTARRAY_HPP
 #define VADON_UTILITIES_DATA_VARIANTARRAY_HPP
 #include <Vadon/Utilities/Data/VariantBase.hpp>
-#include <Vadon/Utilities/TypeInfo/TypeInfo.hpp>
 namespace Vadon::Utilities
 {
 	using VariantVector = std::vector<Variant>;

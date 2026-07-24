@@ -40,7 +40,6 @@ namespace VadonDemo::Render
 			.add_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "VadonDemo::Render::TextureResource")
 			.add_property(VADON_GET_MEMBER_UUID(TextureResource, texture_file))
 				.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Texture File")
-				.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::RESOURCE_TYPE, VADON_GET_TYPE_UUID_BASE64_STRING(Vadon::Model::FileResource))
 				.commit_property();
 	}
 
@@ -57,7 +56,6 @@ namespace VadonDemo::Render
 			.add_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "VadonDemo::Render::ShaderResource")
 			.add_property(VADON_GET_MEMBER_UUID(ShaderResource, shader_file))
 				.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Shader File")
-				.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::RESOURCE_TYPE, VADON_GET_TYPE_UUID_BASE64_STRING(Vadon::Model::FileResource))
 				.commit_property();
 	}
 }

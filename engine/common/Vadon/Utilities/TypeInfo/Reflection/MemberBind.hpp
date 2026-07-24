@@ -10,6 +10,12 @@ namespace Vadon::Utilities
 		using _ObjectType = T;
 		using _MemberType = TMember;
 
+		static void* get_member_address(void* object, TMember T::* member_ptr)
+		{
+			T* cast_object = static_cast<T*>(object);
+			return &(cast_object->*member_ptr);
+		}
+
 		static Variant invoke_getter(void* object, TMember T::* member_ptr)
 		{
 			T* cast_object = static_cast<T*>(object);
@@ -28,6 +34,16 @@ namespace Vadon::Utilities
 	constexpr auto get_member_pointer_info(TMember T::*)
 	{
 		return MemberPointerInfo<T, TMember>{};
+	}
+
+	template<auto MemberPtr>
+	ErasedMemberAddressGetter erase_member_address_getter()
+	{
+		using MemberInfo = decltype(get_member_pointer_info(MemberPtr));
+		return +[](void* obj)
+			{
+				return MemberInfo::get_member_address(obj, MemberPtr);
+			};
 	}
 
 	template<auto MemberPtr>
@@ -56,8 +72,14 @@ namespace Vadon::Utilities
 		constexpr MemberVariableBind()
 		{
 			using MemberInfo = decltype(get_member_pointer_info(MemberPtr));
-			type = TypeErasureTrait<MemberInfo::_MemberType>::get_underlying_type_id();
-			data_type = TypeErasureTrait<MemberInfo::_MemberType>::get_erased_type_id();
+			constexpr auto type_list_array = TypeErasureTrait<MemberInfo::_MemberType>::get_type_list();
+			type_list = std::vector<::Vadon::Foundation::UUID>(type_list_array.begin(), type_list_array.end());
+		}
+
+		MemberVariableBind& bind_member_address_getter()
+		{
+			address_getter = erase_member_address_getter<MemberPtr>();
+			return *this;
 		}
 
 		MemberVariableBind& bind_member_getter()

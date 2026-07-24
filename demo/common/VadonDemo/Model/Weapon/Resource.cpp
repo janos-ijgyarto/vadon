@@ -21,7 +21,6 @@ namespace VadonDemo::Model
 			.add_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "VadonDemo::Model::WeaponDefinition")
 			.add_property(VADON_GET_MEMBER_UUID(WeaponDefinition, projectile_prefab))
 				.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Projectile Prefab")
-				.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::RESOURCE_TYPE, VADON_GET_TYPE_UUID_BASE64_STRING(Vadon::Model::Scene))
 				.commit_property()
 			.add_property(VADON_GET_MEMBER_UUID(WeaponDefinition, rate_of_fire))
 				.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Rate of Fire")

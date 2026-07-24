@@ -1,43 +1,212 @@
 #ifndef VADON_UTILITIES_DATA_OBJECT_HPP
 #define VADON_UTILITIES_DATA_OBJECT_HPP
+#include <Vadon/Utilities/Debugging/Assert.hpp>
 #include <Vadon/Utilities/TypeInfo/Registry.hpp>
+
+#include <Vadon/Foundation/TypeInfo/Object.hpp>
 namespace Vadon::Utilities
 {
+	class ObjectWrapper
+	{
+	public:
+		explicit ObjectWrapper(TypeID type = TypeID::INVALID, void* data = nullptr)
+			: m_type(type)
+			, m_data(data)
+		{
+		}
+
+		ObjectWrapper(const ObjectWrapper& other)
+			: ObjectWrapper(other.m_type, other.m_data)
+		{
+		}
+
+		ObjectWrapper& operator=(const ObjectWrapper& other)
+		{
+			m_type = other.m_type;
+			m_data = other.m_data;
+			return *this;
+		}
+
+		TypeID get_type() const { return m_type; }
+		void* get_data() const { return m_data; }
+
+		bool is_valid() const { return (m_type != TypeID::INVALID) && (m_data != nullptr); }
+	protected:
+		TypeID m_type;
+		void* m_data = nullptr;
+	};
+
+	VADON_REGISTER_TYPE_UUID(ObjectWrapper, ::Vadon::Foundation::ObjectWrapperSchema::c_type_uuid.string);
+
+	template<typename T>
+	class TypedObjectWrapper : public ObjectWrapper
+	{
+	public:
+		explicit TypedObjectWrapper(void* data = nullptr)
+			: ObjectWrapper(TypeRegistry::get_type_id<T>(), data)
+		{
+		}
+
+		// TODO: also implement versions which accept a subclass of the type!
+		explicit TypedObjectWrapper(const ObjectWrapper& other)
+			: TypedObjectWrapper(other.get_data())
+		{
+			VADON_ASSERT(other.get_type() == TypeRegistry::get_type_id<T>(), "Object type is not compatible!");
+		}
+
+		TypedObjectWrapper(const TypedObjectWrapper<T>& other)
+			: TypedObjectWrapper(other.m_data)
+		{
+		}
+
+		TypedObjectWrapper<T>& operator=(const TypedObjectWrapper& other)
+		{
+			m_data = other.m_data;
+			return *this;
+		}
+
+		TypedObjectWrapper<T>& operator=(const ObjectWrapper& other)
+		{
+			VADON_ASSERT(other.get_type() == m_type, "Object type is not compatible!");
+			m_data = other.get_data();
+			return *this;
+		}
+
+		T& operator*() { return *static_cast<T*>(m_data); }
+		const T& operator*() const { return *static_cast<const T*>(m_data); }
+
+		T* operator->() { return static_cast<T*>(m_data); }
+		const T* operator->() const { return static_cast<const T*>(m_data); }
+	};
+
+	class Serializer;
+
+	class ObjectSerializer
+	{
+	public:
+		static TypeUUID deserialize_type_uuid(Serializer& serializer);
+
+		VADONCOMMON_API static bool serialize_object(Serializer& serializer, VariantDictionary& object_dictionary);
+		VADONCOMMON_API static bool serialize_object_properties(Serializer& serializer, TypeID object_type, VariantDictionary& object_properties);
+
+		VADONCOMMON_API static bool load_object_data(ObjectWrapper& object, const VariantDictionary& data);
+		VADONCOMMON_API static bool load_object_property_data(ObjectWrapper& object, const VariantDictionary& property_data);
+
+		VADONCOMMON_API static bool store_object_data(const ObjectWrapper& object, VariantDictionary& data);
+		VADONCOMMON_API static bool store_object_property_data(const ObjectWrapper& object, VariantDictionary& property_data);
+	};
+
+	template<>
+	struct VariantTypeTrait<ObjectWrapper>
+	{
+		static Variant to_variant(const ObjectWrapper& value)
+		{
+			VariantDictionary object_dictionary;
+			if (ObjectSerializer::store_object_data(value, object_dictionary) == false)
+			{
+				return Box(VariantDictionary{});
+			}
+
+			return Box(object_dictionary);
+		}
+
+		static ObjectWrapper from_variant(const Variant& variant)
+		{
+			const VariantDictionary& object_dictionary = *std::get<BoxedVariantDictionary>(variant);
+			
+			ObjectWrapper object;
+			if(ObjectSerializer::load_object_data(object, object_dictionary) == false)
+			{
+				return ObjectWrapper();
+			}
+
+			return object;
+		}
+	};
+
 	template<typename T>
 	struct ObjectVariantTypeTrait
 	{
 		static Variant to_variant(const T& value)
 		{
-			return ObjectPointer{ .type = TypeRegistry::get_type_id<T>(), .data = const_cast<T*>(&value) };
+			ObjectWrapper obj_wrapper(TypeRegistry::get_type_id<T>(), const_cast<T*>(&value));
+			VariantDictionary properties_dictionary;
+			if (ObjectSerializer::store_object_property_data(obj_wrapper, properties_dictionary) == false)
+			{
+				VADON_ERROR("Failed to store property data!");
+				return Box(VariantDictionary{});
+			}
+			return Box(properties_dictionary);
 		}
 
 		static T from_variant(const Variant& variant)
 		{
-			return *static_cast<T*>(std::get<ObjectPointer>(variant).data);
+			T object;
+			ObjectWrapper obj_wrapper(TypeRegistry::get_type_id<T>(), &object);
+			const VariantDictionary& properties_dictionary = *std::get<BoxedVariantDictionary>(variant);
+			if (ObjectSerializer::load_object_property_data(obj_wrapper, properties_dictionary) == false)
+			{
+				VADON_ERROR("Failed to load property data!");
+				return T{};
+			}
+
+			return object;
 		}
 	};
 
-	class Serializer;
-
-	class DataObject
+	template<typename T>
+	struct TypedObjectWrapperVariantTypeTrait
 	{
-	public:
-		static Vadon::Foundation::UUID deserialize_type_uuid(Serializer& serializer);
+		using _WrapperType = TypedObjectWrapper<T>;
+		static Variant to_variant(const _WrapperType& value)
+		{
+			VariantDictionary object_dictionary;
+			ObjectWrapper generic_wrapper(value.get_type(), value.get_data());
+			if (ObjectSerializer::store_object_data(generic_wrapper, object_dictionary) == false)
+			{
+				VADON_ERROR("Failed to store object data!");
+				return Box(VariantDictionary{});
+			}
+			return Box(object_dictionary);
+		}
 
-		VADONCOMMON_API static bool serialize_object(Serializer& serializer, ObjectPointer& object);
-		VADONCOMMON_API static bool serialize_object_properties(Serializer& serializer, ObjectPointer& object);
+		static _WrapperType from_variant(const Variant& variant)
+		{
+			ObjectWrapper object;
+			const VariantDictionary& properties_dictionary = *std::get<BoxedVariantDictionary>(variant);
+			if (ObjectSerializer::load_object_data(object, properties_dictionary) == false)
+			{
+				VADON_ERROR("Failed to load object data!");
+				return _WrapperType{};
+			}
+
+			return _WrapperType(object);
+		}
 	};
 }
 #define VADON_DEFINE_OBJECT_VARIANT_TYPE_TRAIT(_type) template<>\
 struct Vadon::Utilities::VariantTypeTrait<_type>\
 {\
-	static Variant to_variant(const _type& value)\
+	static Vadon::Utilities::Variant to_variant(const _type& value)\
 	{\
 		return ObjectVariantTypeTrait<_type>::to_variant(value);\
 	}\
-	static _type from_variant(const Variant& variant)\
+	static _type from_variant(const Vadon::Utilities::Variant& variant)\
 	{\
 		return ObjectVariantTypeTrait<_type>::from_variant(variant);\
+	}\
+};\
+template<>\
+struct Vadon::Utilities::VariantTypeTrait<Vadon::Utilities::TypedObjectWrapper<_type>>\
+{\
+	using _WrapperType = Vadon::Utilities::TypedObjectWrapper<_type>;\
+	static Vadon::Utilities::Variant to_variant(const _WrapperType& value)\
+	{\
+		return TypedObjectWrapperVariantTypeTrait<_type>::to_variant(value);\
+	}\
+	static _WrapperType from_variant(const Vadon::Utilities::Variant& variant)\
+	{\
+		return TypedObjectWrapperVariantTypeTrait<_type>::from_variant(variant);\
 	}\
 }
 #endif

@@ -250,8 +250,8 @@ namespace VadonEditor::Model
 					return;
 				}
 
-				Vadon::Utilities::ObjectPointer component_pointer{.type = component_type_id, .data = component_handle.get_raw() };
-				if (load_component_property_data(*serializer_instance, component_pointer, entity_handle) == false)
+				Vadon::Utilities::ObjectWrapper component_wrapper(component_type_id, component_handle.get_raw());
+				if (load_component_property_data(*serializer_instance, component_wrapper, entity_handle) == false)
 				{
 					VADON_ERROR("Failed to load property data!");
 					return;
@@ -369,9 +369,16 @@ namespace VadonEditor::Model
 		}
 	}
 
-	bool Scene::load_component_property_data(Vadon::Utilities::Serializer& serializer, Vadon::Utilities::ObjectPointer& component_pointer, Vadon::ECS::EntityHandle owner_entity)
+	bool Scene::load_component_property_data(Vadon::Utilities::Serializer& serializer, Vadon::Utilities::ObjectWrapper& component_wrapper, Vadon::ECS::EntityHandle owner_entity)
 	{
-		if (Vadon::Utilities::DataObject::serialize_object_properties(serializer, component_pointer) == false)
+		Vadon::Utilities::VariantDictionary component_properties;
+		if (Vadon::Utilities::ObjectSerializer::serialize_object_properties(serializer, component_wrapper.get_type(), component_properties) == false)
+		{
+			VADON_ERROR("Failed to deserialize component properties!");
+			return false;
+		}
+
+		if (Vadon::Utilities::ObjectSerializer::load_object_property_data(component_wrapper, component_properties) == false)
 		{
 			VADON_ERROR("Failed to deserialize component properties!");
 			return false;
@@ -386,7 +393,7 @@ namespace VadonEditor::Model
 			ComponentEvent component_event;
 			component_event.type = ComponentEventType::EDITED;
 			component_event.owner = owner_entity;
-			component_event.component_type = component_pointer.type;
+			component_event.component_type = component_wrapper.get_type();
 
 			scene_system.dispatch_component_event(component_event);
 

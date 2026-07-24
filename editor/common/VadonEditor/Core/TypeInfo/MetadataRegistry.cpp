@@ -6,7 +6,8 @@ namespace
 {
 	struct PropertyMetadata
 	{
-		::Vadon::Foundation::Property info;
+		::Vadon::Foundation::Property base_info;
+		std::vector<::Vadon::Foundation::UUID> type_list;
 		std::unordered_map<std::string, std::string> metadata_lookup;
 	};
 
@@ -139,7 +140,7 @@ namespace VadonEditor::Core
 		return nullptr;
 	}
 
-	void MetadataRegistry::register_property(const::Vadon::Foundation::UUID& type_uuid, const::Vadon::Foundation::Property& property)
+	void MetadataRegistry::register_property(const::Vadon::Foundation::UUID& type_uuid, const::Vadon::Foundation::Property& property, const ::Vadon::Foundation::UUID* type_list)
 	{
 		VADON_ASSERT(type_uuid.is_valid() == true, "Invalid type UUID!");
 		VADON_ASSERT(property.is_valid() == true, "Invalid property info!");
@@ -160,7 +161,8 @@ namespace VadonEditor::Core
 		}
 
 		PropertyMetadata property_data;
-		property_data.info = property;
+		property_data.base_info = property;
+		property_data.type_list = std::vector<::Vadon::Foundation::UUID>(type_list, type_list + property_data.base_info.type_list_length);
 
 		type_metadata.property_lookup.insert(std::make_pair(property.id, property_data));
 	}
@@ -185,7 +187,37 @@ namespace VadonEditor::Core
 			return ::Vadon::Foundation::Property{};
 		}
 
-		return property_it->second.info;
+		return property_it->second.base_info;
+	}
+
+	::Vadon::Foundation::UUID MetadataRegistry::get_property_type_list_entry(const::Vadon::Foundation::UUID& type_uuid, const::Vadon::Foundation::UUID& property_uuid, size_t index) const
+	{
+		VADON_ASSERT(type_uuid.is_valid() == true, "Invalid type UUID!");
+		VADON_ASSERT(property_uuid.is_valid() == true, "Invalid property UUID!");
+
+		auto type_it = m_internal->m_type_metadata_lookup.find(type_uuid);
+		if (type_it == m_internal->m_type_metadata_lookup.end())
+		{
+			VADON_ERROR("Type not registered!");
+			return ::Vadon::Foundation::UUID{};
+		}
+
+		const TypeMetadata& type_metadata = type_it->second;
+		auto property_it = type_metadata.property_lookup.find(property_uuid);
+		if (property_it == type_metadata.property_lookup.end())
+		{
+			VADON_ERROR("Property not registered!");
+			return ::Vadon::Foundation::UUID{};
+		}
+
+		const PropertyMetadata& property_metadata = property_it->second;
+		if (index >= property_metadata.type_list.size())
+		{
+			VADON_ERROR("Invalid index!");
+			return ::Vadon::Foundation::UUID{};
+		}
+
+		return property_metadata.type_list[index];
 	}
 
 	void MetadataRegistry::set_property_metadata(const ::Vadon::Foundation::UUID& type_uuid, const ::Vadon::Foundation::UUID& property_uuid, const char* key, const char* value)

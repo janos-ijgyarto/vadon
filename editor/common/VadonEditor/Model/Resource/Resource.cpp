@@ -96,11 +96,18 @@ namespace VadonEditor::Model
 		Vadon::Model::ResourceSystem& engine_resource_system = m_editor.get_engine_core().get_system<Vadon::Model::ResourceSystem>();
 		Vadon::Model::Resource* engine_resource = engine_resource_system.get_base_resource(m_handle);
 
-		Vadon::Utilities::ObjectPointer resource_object_pointer{ .type = m_info.type_id, .data = engine_resource };
+		Vadon::Utilities::VariantDictionary resource_properties;
 
-		if (Vadon::Utilities::DataObject::serialize_object_properties(serializer, resource_object_pointer) == false)
+		if (Vadon::Utilities::ObjectSerializer::serialize_object_properties(serializer, m_info.type_id, resource_properties) == false)
 		{
-			VADON_ERROR("Failed to deserialize resource properties!");
+			VADON_ERROR("Failed to deserialize resource property data!");
+			return false;
+		}
+
+		Vadon::Utilities::ObjectWrapper resource_object_wrapper(m_info.type_id, engine_resource);
+		if (Vadon::Utilities::ObjectSerializer::load_object_property_data(resource_object_wrapper, resource_properties) == false)
+		{
+			VADON_ERROR("Failed to load property data into resource!");
 			return false;
 		}
 

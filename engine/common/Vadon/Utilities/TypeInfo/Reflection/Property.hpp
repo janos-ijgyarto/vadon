@@ -2,30 +2,20 @@
 #define VADON_UTILITIES_TYPEINFO_REFLECTION_PROPERTY_HPP
 #include <Vadon/Foundation/TypeInfo/Property.hpp>
 #include <Vadon/Utilities/Data/Variant.hpp>
+#include <Vadon/Utilities/System/UUID/UUID.hpp>
 namespace Vadon::Utilities
 {
 	using PropertyUUID = ::Vadon::Foundation::UUID;
 
-	enum class PropertyCategory
-	{
-		TRIVIAL,
-		TRIVIAL_ARRAY,
-		GENERIC_OBJECT_ARRAY,
-		TYPED_OBJECT_ARRAY,
-		GENERIC_OBJECT,
-		TYPED_OBJECT,
-		INVALID
-	};
-
 	struct PropertyInfo
 	{
 		::Vadon::Foundation::Property base_info;
-		TypeID data_type;
+		std::vector<::Vadon::Foundation::UUID> type_list;
 		bool has_getter = false;
 		bool has_setter = false;
 		// FIXME: any other metadata?
 
-		PropertyCategory get_category() const;
+		static ::Vadon::Foundation::Property::Category get_category(const ::Vadon::Foundation::UUID& type_uuid);
 	};
 
 	// TODO: make this a class so we can use builder pattern to add properties?

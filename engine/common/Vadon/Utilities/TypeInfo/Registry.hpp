@@ -7,6 +7,8 @@
 
 namespace Vadon::Utilities
 {
+	class ObjectWrapper;
+
 	class TypeRegistry
 	{
 	public:
@@ -63,8 +65,8 @@ namespace Vadon::Utilities
 			internal_register_type_factory(get_type_id<T>(), factory);
 		}
 
-		VADONCOMMON_API static ObjectPointer create_object(TypeID type_id);
-		VADONCOMMON_API static void destroy_object(const ObjectPointer& object_pointer);
+		VADONCOMMON_API static ObjectWrapper create_object(TypeID type_id);
+		VADONCOMMON_API static void destroy_object(const ObjectWrapper& object_instance);
 
 		template<typename T>
 		static TypeID get_type_id()
@@ -75,6 +77,7 @@ namespace Vadon::Utilities
 
 		VADONCOMMON_API static TypeID get_type_id(const TypeUUID& type_uuid);
 
+		VADONCOMMON_API static bool is_base_of(const TypeUUID& base_uuid, const TypeUUID& type_uuid);
 		VADONCOMMON_API static bool is_base_of(TypeID base_id, TypeID type_id);
 
 		template<typename T>
@@ -133,6 +136,8 @@ namespace Vadon::Utilities
 
 		VADONCOMMON_API static Variant get_property(void* object, TypeID type_id, const PropertyUUID& property_uuid);
 		VADONCOMMON_API static void set_property(void* object, TypeID type_id, const PropertyUUID& property_uuid, const Variant& value);
+
+		VADONCOMMON_API static void* get_property_member_address(void* object, TypeID type_id, const PropertyUUID& property_uuid);
 
 		VADONCOMMON_API static void apply_property_values(void* object, TypeID type_id, const PropertyList& properties);
 

@@ -13,53 +13,546 @@
 
 namespace
 {
-	bool serialize_trivial_array_to_json(const QUuid& array_data_type, const QVariant& array_data, QJsonArray& json_array)
+	bool serialize_object_trivial_property(QJsonValue& json_value, const QUuid& property_type, const QVariant& property_value)
 	{
-		const ::Vadon::Foundation::BaseType base_type = VadonEditor::Core::TypeData::get_base_type(array_data_type);
-		Q_ASSERT_X(base_type != ::Vadon::Foundation::BaseType::INVALID, "VadonEditor::Core::DataObject::serialize_trivial_array_to_json", "Invalid data type!");
+		// TODO: use property type?
+		Q_UNUSED(property_type);
+		json_value = VadonEditor::Utilities::save_variant_to_json(property_value);
+		return true;
+	}
 
-		if (base_type == ::Vadon::Foundation::BaseType::ARRAY || base_type == ::Vadon::Foundation::BaseType::DICTIONARY)
+	bool deserialize_object_trivial_property(const QJsonValueConstRef& json_value, const QUuid& property_type, QVariant& property_value)
+	{
+		const ::Vadon::Foundation::BaseType base_type = VadonEditor::Core::TypeData::get_base_type(property_type);
+		const int base_qt_type = VadonEditor::Utilities::get_qt_typeid_from_base_type(base_type);
+
+		property_value = VadonEditor::Utilities::get_variant_from_json(base_qt_type, json_value);
+
+		return true;
+	}
+
+	bool serialize_object_subobject_impl(VadonEditor::Core::Application& application, QJsonValue& json_value, const QVariant& value, const QUuid& object_type, bool allow_subclass)
+	{
+		// Check if it's a generic or explicit object
+		const QVariantMap object_dictionary = value.toMap();
+		QJsonObject json_object;
+
+		if (((object_type.isNull() == false) && (allow_subclass == true)) || (object_type.isNull() == true))
 		{
-			Q_ASSERT_X(false, "VadonEditor::Core::DataObject::serialize_array_to_json", "Cannot nest containers directly!");
-			return false;
+			if (object_dictionary.isEmpty())
+			{
+				// If null, early out
+				json_value = json_object;
+				return true;
+			}
+
+			// FIXME: also validate when serializing?
+
+			// FIXME2: allow for more "seamless" conversion from Map to Object
+			// instead of having to "serialize twice"
+			VadonEditor::Core::DataObject data_object(application);
+			if (data_object.import_data(object_dictionary) == false)
+			{
+				return false;
+			}
+
+			if (data_object.serialize(json_object) == false)
+			{
+				return false;
+			}
+		}
+		else if (object_type.isNull() == false)
+		{
+			// Assume we are processing the object properties
+			VadonEditor::Core::DataObject data_object(application);
+			if (data_object.initialize(object_type) == false)
+			{
+				return false;
+			}
+
+			data_object.load_properties(object_dictionary);
+
+			if (data_object.serialize_properties(json_object) == false)
+			{
+				return false;
+			}
+		}
+		else
+		{
+			Q_ASSERT_X(false, "serialize_object_subobject_impl", "Invalid parameters!");
 		}
 
-		const QVariantList array_data_list = array_data.toList();
-		for (const QVariant& current_entry : array_data_list)
+		json_value = json_object;
+		return true;
+	}
+
+	bool get_object_subobject_default_value_impl(VadonEditor::Core::Application& application, const QUuid& object_type, bool allow_subclass, QVariant& value)
+	{
+		if (((object_type.isNull() == false) && (allow_subclass == true)) || (object_type.isNull() == true))
 		{
-			switch (base_type)
+			// Just use a "null" object
+			// FIXME: add support on engine side for parsing "null" in JSON
+			value = QVariantMap();
+		}
+		else if (object_type.isNull() == false)
+		{
+			// Create a "default" instance of the object
+			VadonEditor::Core::DataObject data_object(application);
+			if (data_object.initialize(object_type) == false)
 			{
-			case ::Vadon::Foundation::BaseType::UUID:
-				json_array.push_back(VadonEditor::Utilities::uuid_to_base64_string(current_entry.toUuid()));
-				break;
-			default:
-				json_array.push_back(QJsonValue::fromVariant(current_entry));
+				return false;
 			}
+
+			value = data_object.get_property_map();
+		}
+		else
+		{
+			Q_ASSERT_X(false, "get_object_subobject_default_value_impl", "Invalid parameters!");
+			return false;
 		}
 
 		return true;
 	}
 
-	bool deserialize_trivial_array_from_json(const QUuid& array_data_type, const QJsonArray& json_array, QVariant& array_data)
+	bool deserialize_object_subobject_impl(VadonEditor::Core::Application& application, const QJsonValueConstRef& json_value, QVariant& value, const QUuid& object_type, bool allow_subclass)
 	{
-		const ::Vadon::Foundation::BaseType base_type = VadonEditor::Core::TypeData::get_base_type(array_data_type);
-		Q_ASSERT_X(base_type != ::Vadon::Foundation::BaseType::INVALID, "VadonEditor::Core::DataObject::serialize_trivial_array_to_json", "Invalid data type!");
-
-		if (base_type == ::Vadon::Foundation::BaseType::ARRAY || base_type == ::Vadon::Foundation::BaseType::DICTIONARY)
+		// Check if it's a generic or explicit object
+		QVariantHash object_dictionary;
+		if (((object_type.isNull() == false) && (allow_subclass == true)) || (object_type.isNull() == true))
 		{
-			Q_ASSERT_X(false, "VadonEditor::Core::DataObject::serialize_array_to_json", "Cannot nest containers directly!");
+			const QJsonObject json_object = json_value.toObject();
+			if (json_object.isEmpty() == true)
+			{
+				value = QVariantMap();
+			}
+
+			if (object_type.isNull() == false)
+			{
+				// Ensure that the deserialized type is compatible
+				const QUuid type_uuid = VadonEditor::Core::DataObject::deserialize_object_type(json_object);
+
+				if (application.get_project_manager().get_project_data_schema().is_base_of(object_type, type_uuid) == false)
+				{
+					return false;
+				}
+			}
+
+			VadonEditor::Core::DataObject data_object(application);
+			if (data_object.deserialize(json_object) == false)
+			{
+				return false;
+			}
+
+			value = data_object.export_data();
+		}
+		else if (object_type.isNull() == false)
+		{
+			// Assume we are processing the object properties
+			VadonEditor::Core::DataObject data_object(application);
+			if (data_object.initialize(object_type) == false)
+			{
+				return false;
+			}
+
+			if (data_object.deserialize_properties(json_value.toObject()) == false)
+			{
+				return false;
+			}
+
+			value = data_object.get_property_map();
+		}
+		else
+		{
+			Q_ASSERT_X(false, "deserialize_object_subobject_impl", "Invalid parameters!");
+		}
+
+		return true;
+	}
+
+	bool serialize_object_array_nested_array_element(QJsonValue& json_value, const VadonEditor::Core::PropertyData& property_data, qsizetype type_list_offset, const QVariant& array_element_value)
+	{
+		// FIXME: not supported yet (but it's possible now!)
+		Q_UNUSED(json_value);
+		Q_UNUSED(property_data);
+		Q_UNUSED(type_list_offset);
+		Q_UNUSED(array_element_value);
+		return false;
+	}
+
+	bool deserialize_object_array_nested_array_element(const QJsonValueConstRef& json_value, const VadonEditor::Core::PropertyData& property_data, qsizetype type_list_offset, QVariant& array_element_value)
+	{
+		// FIXME: not supported yet (but it's possible now!)
+		Q_UNUSED(json_value);
+		Q_UNUSED(property_data);
+		Q_UNUSED(type_list_offset);
+		Q_UNUSED(array_element_value);
+		return false;
+	}
+
+	bool serialize_object_array_nested_dictionary_element(QJsonValue& json_value, const VadonEditor::Core::PropertyData& property_data, qsizetype type_list_offset, const QVariant& array_element_value)
+	{
+		// FIXME: not supported yet (but it's possible now!)
+		Q_UNUSED(json_value);
+		Q_UNUSED(property_data);
+		Q_UNUSED(type_list_offset);
+		Q_UNUSED(array_element_value);
+		return false;
+	}
+
+	bool deserialize_object_array_nested_dictionary_element(const QJsonValueConstRef& json_value, const VadonEditor::Core::PropertyData& property_data, qsizetype type_list_offset, QVariant& array_element_value)
+	{
+		// FIXME: not supported yet (but it's possible now!)
+		Q_UNUSED(json_value);
+		Q_UNUSED(property_data);
+		Q_UNUSED(type_list_offset);
+		Q_UNUSED(array_element_value);
+		return false;
+	}
+
+	bool serialize_object_array_subobject_element(VadonEditor::Core::Application& application, QJsonValue& json_value, const VadonEditor::Core::PropertyData& property_data, qsizetype type_list_offset, const QVariant& array_element_value)
+	{
+		// Check if the array uses ObjectWrapper
+		const QUuid element_type = property_data.type_list[type_list_offset];
+		if (element_type == VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::ObjectWrapperSchema::c_type_uuid))
+		{
+			// Check whether an explicit type is provided
+			const qsizetype object_type_offset = type_list_offset + 1;
+			if (object_type_offset >= property_data.type_list.size())
+			{
+				// No type specified, so it's a generic object
+				return serialize_object_subobject_impl(application, json_value, array_element_value, QUuid{}, false);
+			}
+			else
+			{
+				// Constrain to the type specified in the type list
+				const QUuid object_type = property_data.type_list[object_type_offset];
+				return serialize_object_subobject_impl(application, json_value, array_element_value, object_type, true);
+			}
+		}
+		else
+		{
+			// Serialize explicitly typed object (only this type)
+			return serialize_object_subobject_impl(application, json_value, array_element_value, element_type, false);
+		}
+	}
+
+	bool deserialize_object_array_subobject_element(VadonEditor::Core::Application& application, const QJsonValueConstRef& json_value, const VadonEditor::Core::PropertyData& property_data, qsizetype type_list_offset, QVariant& array_element_value)
+	{
+		// Check if the array uses ObjectWrapper
+		const QUuid element_type = property_data.type_list[type_list_offset];
+		if (element_type == VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::ObjectWrapperSchema::c_type_uuid))
+		{
+			// Check whether an explicit type is provided
+			const qsizetype object_type_offset = type_list_offset + 1;
+			if (object_type_offset >= property_data.type_list.size())
+			{
+				// No type specified, so it's a generic object
+				return deserialize_object_subobject_impl(application, json_value, array_element_value, QUuid{}, false);
+			}
+			else
+			{
+				// Constrain to the type specified in the type list
+				const QUuid object_type = property_data.type_list[object_type_offset];
+				return deserialize_object_subobject_impl(application, json_value, array_element_value, object_type, true);
+			}
+		}
+		else
+		{
+			// Serialize explicitly typed object (only this type)
+			return deserialize_object_subobject_impl(application, json_value, array_element_value, element_type, false);
+		}
+	}
+
+	bool serialize_object_array_resource_element(QJsonValue& json_value, const VadonEditor::Core::PropertyData& property_data, qsizetype type_list_offset, const QVariant& array_element_value)
+	{
+		const qsizetype resource_type_offset = type_list_offset + 1;
+		Q_ASSERT_X(resource_type_offset < property_data.type_list.size(), "serialize_object_array_resource_element", "Missing resource type!");
+
+		// Serialize the array element itself
+		if (serialize_object_trivial_property(json_value, VadonEditor::Core::TypeData::get_base_type_uuid(::Vadon::Foundation::BaseType::UUID), array_element_value) == false)
+		{
 			return false;
 		}
 
-		const int base_qt_type = VadonEditor::Utilities::get_qt_typeid_from_base_type(base_type);
-		QVariantList value_list;
-		for (QJsonValueConstRef current_entry_value : json_array)
-		{
-			value_list.push_back(VadonEditor::Utilities::get_variant_from_json(base_qt_type, current_entry_value));
-		}
-		array_data = value_list;
+		// TODO: find a way to validate that the resource ID points to a compatible resource?
+		//const Vadon::Utilities::TypeUUID resource_type_uuid = property_info.type_list[resource_type_offset];
 
 		return true;
+	}
+
+	bool deserialize_object_array_resource_element(const QJsonValueConstRef& json_value, const VadonEditor::Core::PropertyData& property_data, qsizetype type_list_offset, QVariant& array_element_value)
+	{
+		const qsizetype resource_type_offset = type_list_offset + 1;
+		Q_ASSERT_X(resource_type_offset < property_data.type_list.size(), "deserialize_object_array_resource_element", "Missing resource type!");
+
+		// Serialize the array element itself
+		if (deserialize_object_trivial_property(json_value, VadonEditor::Core::TypeData::get_base_type_uuid(::Vadon::Foundation::BaseType::UUID), array_element_value) == false)
+		{
+			return false;
+		}
+
+		// TODO: find a way to validate that the resource ID points to a compatible resource?
+		//const Vadon::Utilities::TypeUUID resource_type_uuid = property_info.type_list[resource_type_offset];
+
+		return true;
+	}
+
+	bool serialize_object_array_property_element(VadonEditor::Core::Application& application, QJsonValue& json_value, const VadonEditor::Core::PropertyData& property_data, qsizetype type_list_offset, const QVariant& array_element_value)
+	{
+		const QUuid element_type = property_data.type_list[type_list_offset];
+		const ::Vadon::Foundation::Property::Category element_category = VadonEditor::Core::PropertyData::get_category(element_type);
+		switch (element_category)
+		{
+		case ::Vadon::Foundation::Property::Category::TRIVIAL:
+			return serialize_object_trivial_property(json_value, element_type, array_element_value);
+		case ::Vadon::Foundation::Property::Category::ARRAY:
+			return serialize_object_array_nested_array_element(json_value, property_data, type_list_offset, array_element_value);
+		case ::Vadon::Foundation::Property::Category::DICTIONARY:
+			return serialize_object_array_nested_dictionary_element(json_value, property_data, type_list_offset, array_element_value);
+		case ::Vadon::Foundation::Property::Category::OBJECT:
+			return serialize_object_array_subobject_element(application, json_value, property_data, type_list_offset, array_element_value);
+		case ::Vadon::Foundation::Property::Category::RESOURCE:
+			return serialize_object_array_resource_element(json_value, property_data, type_list_offset, array_element_value);
+		default:
+			// Unsupported category!
+			return false;
+		}
+	}
+
+	bool deserialize_object_array_property_element(VadonEditor::Core::Application& application, const QJsonValueConstRef& json_value, const VadonEditor::Core::PropertyData& property_data, qsizetype type_list_offset, QVariant& array_element_value)
+	{
+		const QUuid element_type = property_data.type_list[type_list_offset];
+		const ::Vadon::Foundation::Property::Category element_category = VadonEditor::Core::PropertyData::get_category(element_type);
+		switch (element_category)
+		{
+		case ::Vadon::Foundation::Property::Category::TRIVIAL:
+			return deserialize_object_trivial_property(json_value, element_type, array_element_value);
+		case ::Vadon::Foundation::Property::Category::ARRAY:
+			return deserialize_object_array_nested_array_element(json_value, property_data, type_list_offset, array_element_value);
+		case ::Vadon::Foundation::Property::Category::DICTIONARY:
+			return deserialize_object_array_nested_dictionary_element(json_value, property_data, type_list_offset, array_element_value);
+		case ::Vadon::Foundation::Property::Category::OBJECT:
+			return deserialize_object_array_subobject_element(application, json_value, property_data, type_list_offset, array_element_value);
+		case ::Vadon::Foundation::Property::Category::RESOURCE:
+			return deserialize_object_array_resource_element(json_value, property_data, type_list_offset, array_element_value);
+		default:
+			// Unsupported category!
+			return false;
+		}
+	}
+
+	bool serialize_object_array_property(VadonEditor::Core::Application& application, QJsonValue& json_value, const VadonEditor::Core::PropertyData& property_data, const QVariant& property_value)
+	{
+		Q_ASSERT_X(property_data.type_list.front() == VadonEditor::Core::TypeData::get_base_type_uuid(::Vadon::Foundation::BaseType::ARRAY), "serialize_object_array_property", "Invalid type!");
+
+		const QVariantList array_value = property_value.toList();
+		QJsonArray json_array;
+
+		for (const QVariant& array_element_value : array_value)
+		{
+			QJsonValue current_array_value;
+			if (serialize_object_array_property_element(application, current_array_value, property_data, 1, array_element_value) == false)
+			{
+				return false;
+			}
+			json_array.push_back(current_array_value);
+		}
+
+		json_value = json_array;
+		return true;
+	}
+
+	bool deserialize_object_array_property(VadonEditor::Core::Application& application, const QJsonValueConstRef& json_value, const VadonEditor::Core::PropertyData& property_data, QVariant& property_value)
+	{
+		Q_ASSERT_X(property_data.type_list.front() == VadonEditor::Core::TypeData::get_base_type_uuid(::Vadon::Foundation::BaseType::ARRAY), "deserialize_object_array_property", "Invalid type!");
+
+		const QJsonArray json_array = json_value.toArray();
+		QVariantList array_value;
+
+		for (const QJsonValueConstRef& current_array_value : json_array)
+		{
+			QVariant array_element_value;
+			if (deserialize_object_array_property_element(application, current_array_value, property_data, 1, array_element_value) == false)
+			{
+				return false;
+			}
+			array_value.push_back(array_element_value);
+		}
+
+		property_value = array_value;
+		return true;
+	}
+
+	bool serialize_object_dictionary_property(VadonEditor::Core::Application& application, QJsonValue& json_value, const VadonEditor::Core::PropertyData& property_data, const QVariant& property_value)
+	{
+		// FIXME: implement support for dictionary!
+		Q_UNUSED(application);
+		Q_UNUSED(json_value);
+		Q_UNUSED(property_data);
+		Q_UNUSED(property_value);
+		return false;
+	}
+
+	bool deserialize_object_dictionary_property(VadonEditor::Core::Application& application, const QJsonValueConstRef& json_value, const VadonEditor::Core::PropertyData& property_data, QVariant& property_value)
+	{
+		// FIXME: implement support for dictionary!
+		Q_UNUSED(application);
+		Q_UNUSED(json_value);
+		Q_UNUSED(property_data);
+		Q_UNUSED(property_value);
+		return false;
+	}
+
+	bool get_object_subobject_default_value(VadonEditor::Core::Application& application, const VadonEditor::Core::PropertyData& property_data, QVariant& value)
+	{
+		// Check if the property uses ObjectWrapper
+		const QUuid element_type = property_data.type_list.front();
+		if (element_type == VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::ObjectWrapperSchema::c_type_uuid))
+		{
+			// Check whether an explicit type is provided
+			if (property_data.type_list.size() < 2)
+			{
+				// No type specified, so it's a generic object
+				return get_object_subobject_default_value_impl(application, QUuid{}, false, value);
+			}
+			else
+			{
+				// Constrain to the type specified in the type list
+				const QUuid object_type = property_data.type_list[1];
+				return get_object_subobject_default_value_impl(application, object_type, true, value);
+			}
+		}
+		else
+		{
+			// Serialize explicitly typed object (only this type)
+			return get_object_subobject_default_value_impl(application, element_type, false, value);
+		}
+	}
+
+	bool serialize_object_subobject_property(VadonEditor::Core::Application& application, QJsonValue& json_value, const VadonEditor::Core::PropertyData& property_data, const QVariant& property_value)
+	{
+		// Check if the property uses ObjectWrapper
+		const QUuid element_type = property_data.type_list.front();
+		if (element_type == VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::ObjectWrapperSchema::c_type_uuid))
+		{
+			// Check whether an explicit type is provided
+			if (property_data.type_list.size() < 2)
+			{
+				// No type specified, so it's a generic object
+				return serialize_object_subobject_impl(application, json_value, property_value, QUuid{}, false);
+			}
+			else
+			{
+				// Constrain to the type specified in the type list
+				const QUuid object_type = property_data.type_list[1];
+				return serialize_object_subobject_impl(application, json_value, property_value, object_type, true);
+			}
+		}
+		else
+		{
+			// Serialize explicitly typed object (only this type)
+			return serialize_object_subobject_impl(application, json_value, property_value, element_type, false);
+		}
+	}
+
+	bool deserialize_object_subobject_property(VadonEditor::Core::Application& application, const QJsonValueConstRef& json_value, const VadonEditor::Core::PropertyData& property_data, QVariant& property_value)
+	{
+		// Check if the property uses ObjectWrapper
+		const QUuid element_type = property_data.type_list.front();
+		if (element_type == VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::ObjectWrapperSchema::c_type_uuid))
+		{
+			// Check whether an explicit type is provided
+			if (property_data.type_list.size() < 2)
+			{
+				// No type specified, so it's a generic object
+				return deserialize_object_subobject_impl(application, json_value, property_value, QUuid{}, false);
+			}
+			else
+			{
+				// Constrain to the type specified in the type list
+				const QUuid object_type = property_data.type_list[1];
+				return deserialize_object_subobject_impl(application, json_value, property_value, object_type, true);
+			}
+		}
+		else
+		{
+			// Serialize explicitly typed object (only this type)
+			return deserialize_object_subobject_impl(application, json_value, property_value, element_type, false);
+		}
+	}
+
+	bool serialize_object_resource_property(QJsonValue& json_value, const VadonEditor::Core::PropertyData& property_data, const QVariant& property_value)
+	{
+		Q_ASSERT_X(property_data.type_list.size() >= 2, "serialize_object_resource_property", "Missing resource type!");
+		Q_UNUSED(property_data);
+
+		// Serialize the UUID property itself
+		if (serialize_object_trivial_property(json_value, VadonEditor::Core::TypeData::get_base_type_uuid(::Vadon::Foundation::BaseType::UUID), property_value) == false)
+		{
+			return false;
+		}
+
+		// TODO: find a way to validate that the resource ID points to a compatible resource?
+
+		return true;
+	}
+
+	bool deserialize_object_resource_property(const QJsonValueConstRef& json_value, const VadonEditor::Core::PropertyData& property_data, QVariant& property_value)
+	{
+		Q_ASSERT_X(property_data.type_list.size() >= 2, "deserialize_object_resource_property", "Missing resource type!");
+		Q_UNUSED(property_data);
+
+		// Serialize the UUID property itself
+		if (deserialize_object_trivial_property(json_value, VadonEditor::Core::TypeData::get_base_type_uuid(::Vadon::Foundation::BaseType::UUID), property_value) == false)
+		{
+			return false;
+		}
+
+		// TODO: find a way to validate that the resource ID points to a compatible resource?
+
+		return true;
+	}
+
+	bool serialize_object_property_value(VadonEditor::Core::Application& application, QJsonValue& json_value, const VadonEditor::Core::PropertyData& property_data, const QVariant& property_value)
+	{
+		const ::Vadon::Foundation::Property::Category property_category = VadonEditor::Core::PropertyData::get_category(property_data.type_list.front());
+		switch (property_category)
+		{
+		case ::Vadon::Foundation::Property::Category::TRIVIAL:
+			return serialize_object_trivial_property(json_value, property_data.get_root_type(), property_value);
+		case ::Vadon::Foundation::Property::Category::ARRAY:
+			return serialize_object_array_property(application, json_value, property_data, property_value);
+		case ::Vadon::Foundation::Property::Category::DICTIONARY:
+			return serialize_object_dictionary_property(application, json_value, property_data, property_value);
+		case ::Vadon::Foundation::Property::Category::OBJECT:
+			return serialize_object_subobject_property(application, json_value, property_data, property_value);
+		case ::Vadon::Foundation::Property::Category::RESOURCE:
+			return serialize_object_resource_property(json_value, property_data, property_value);
+		default:
+			// Unsupported category!
+			return false;
+		}
+	}
+
+	bool deserialize_object_property_value(VadonEditor::Core::Application& application, const QJsonValueConstRef& json_value, const VadonEditor::Core::PropertyData& property_data, QVariant& property_value)
+	{
+		const ::Vadon::Foundation::Property::Category property_category = VadonEditor::Core::PropertyData::get_category(property_data.type_list.front());
+		switch (property_category)
+		{
+		case ::Vadon::Foundation::Property::Category::TRIVIAL:
+			return deserialize_object_trivial_property(json_value, property_data.get_root_type(), property_value);
+		case ::Vadon::Foundation::Property::Category::ARRAY:
+			return deserialize_object_array_property(application, json_value, property_data, property_value);
+		case ::Vadon::Foundation::Property::Category::DICTIONARY:
+			return deserialize_object_dictionary_property(application, json_value, property_data, property_value);
+		case ::Vadon::Foundation::Property::Category::OBJECT:
+			return deserialize_object_subobject_property(application, json_value, property_data, property_value);
+		case ::Vadon::Foundation::Property::Category::RESOURCE:
+			return deserialize_object_resource_property(json_value, property_data, property_value);
+		default:
+			// Unsupported category!
+			return false;
+		}
 	}
 }
 
@@ -160,6 +653,16 @@ namespace VadonEditor::Core
 
 	bool DataObject::deserialize(const QJsonObject& root_obj)
 	{
+		const QUuid type_property_uuid = Utilities::vadon_uuid_string_to_qt_uuid(Vadon::Foundation::DataObjectSchema::c_type_property.id);
+		const QUuid properties_property_uuid = Utilities::vadon_uuid_string_to_qt_uuid(Vadon::Foundation::DataObjectSchema::c_properties_property.id);
+
+		if (root_obj.isEmpty() == true)
+		{
+			// NOTE: null object, so we clear the dictionary and early out
+			m_properties.clear();
+			return true;
+		}
+
 		auto properties_obj_it = root_obj.end();
 		for (auto property_it = root_obj.begin(); property_it != root_obj.end(); ++property_it)
 		{
@@ -231,7 +734,7 @@ namespace VadonEditor::Core
 				auto property_value_it = m_properties.find(Utilities::uuid_to_base64_string(property_it.key()));
 				Q_ASSERT_X(property_value_it != m_properties.end(), "VadonEditor::Core::DataObject::serialize_properties", "Cannot find property value");
 
-				if (internal_serialize_property_data(*type_property_data, property_value_it.value(), properties_obj) == false)
+				if (internal_serialize_property_data(properties_obj, *type_property_data, property_value_it.value()) == false)
 				{
 					return false;
 				}
@@ -252,163 +755,25 @@ namespace VadonEditor::Core
 			return false;
 		}
 
-		const DataSchema& data_schema = m_application.get_project_manager().get_project_data_schema();
-		
+		const DataSchema& data_schema = m_application.get_project_manager().get_project_data_schema();		
 		for (auto property_it = properties_obj.begin(); property_it != properties_obj.end(); ++property_it)
 		{
 			const QUuid property_uuid = Utilities::parse_labeled_uuid(property_it.key());
 			const Core::PropertyData* type_property_data = data_schema.find_type_property_data(m_type_id, property_uuid);
-						
-			const PropertyCategory category = type_property_data->get_category();
-			switch (category)
+
+			if (type_property_data == nullptr)
 			{
-			case PropertyCategory::TRIVIAL:
-			case PropertyCategory::RESOURCE:
+				// TODO: warning about obsolete data?
+				continue;
+			}
+
+			QVariant property_value;
+			if(deserialize_object_property_value(m_application, property_it.value(), *type_property_data, property_value) == false)
 			{
-				const ::Vadon::Foundation::BaseType base_type = category != PropertyCategory::RESOURCE ? TypeData::get_base_type(type_property_data->get_data_type()) : ::Vadon::Foundation::BaseType::UUID;
-				const int base_qt_type = Utilities::get_qt_typeid_from_base_type(base_type);
-
-				set_property(property_uuid, Utilities::get_variant_from_json(base_qt_type, property_it.value()));
+				return false;
 			}
-			break;
-			case PropertyCategory::TRIVIAL_ARRAY:
-			{
-				if (const QJsonValueConstRef array_value_ref = property_it.value(); array_value_ref.isArray())
-				{
-					QVariant array_data;
-					if (deserialize_trivial_array_from_json(type_property_data->get_data_type(), array_value_ref.toArray(), array_data) == false)
-					{
-						Q_ASSERT_X(false, "VadonEditor::Core::DataObject::deserialize_properties", "Failed to load array property");
-						return false;
-					}
-					set_property(property_uuid, array_data);
-				}
-				else
-				{
-					Q_ASSERT_X(false, "VadonEditor::Core::DataObject::deserialize_properties", "Invalid data");
-					return false;
-				}
-			}
-				break;
-			case PropertyCategory::GENERIC_OBJECT_ARRAY:
-			{
-				if (const QJsonValueConstRef obj_array_value_ref = property_it.value(); obj_array_value_ref.isArray())
-				{
-					const QJsonArray json_array = obj_array_value_ref.toArray();
 
-					QVariantList object_array;
-					for (const QJsonValueConstRef current_array_value : json_array)
-					{
-						if (current_array_value.isObject())
-						{
-							QVariant object_data;
-							if (deserialize_generic_object_from_json(current_array_value.toObject(), object_data) == false)
-							{
-								Q_ASSERT_X(false, "VadonEditor::Core::DataObject::serialize_properties", "Failed to load object property");
-								return false;
-							}
-							object_array.push_back(object_data);
-						}
-						else
-						{
-							Q_ASSERT_X(false, "VadonEditor::Core::DataObject::deserialize_properties", "Invalid data");
-							return false;
-						}
-					}
-
-					set_property(property_uuid, object_array);
-				}
-				else
-				{
-					Q_ASSERT_X(false, "VadonEditor::Core::DataObject::deserialize_properties", "Invalid data");
-					return false;
-				}
-			}
-				break;
-			case PropertyCategory::TYPED_OBJECT_ARRAY:
-			{
-				const TypeData* array_obj_type_data = data_schema.find_type_data(type_property_data->get_data_type());
-
-				if (array_obj_type_data == nullptr)
-				{
-					Q_ASSERT_X(false, "VadonEditor::Core::DataObject::deserialize_properties", "Cannot find type data");
-					return false;
-				}
-
-				if (const QJsonValueConstRef obj_array_value_ref = property_it.value(); obj_array_value_ref.isArray())
-				{
-					const QJsonArray json_array = obj_array_value_ref.toArray();
-
-					QVariantList object_array;
-					for (const QJsonValueConstRef current_array_value : json_array)
-					{
-						if (current_array_value.isObject())
-						{
-							QVariant object_data;
-							if (deserialize_typed_object_from_json(array_obj_type_data, current_array_value.toObject(), object_data) == false)
-							{
-								Q_ASSERT_X(false, "VadonEditor::Core::DataObject::serialize_properties", "Failed to load object property");
-								return false;
-							}
-							object_array.push_back(object_data);
-						}
-						else
-						{
-							Q_ASSERT_X(false, "VadonEditor::Core::DataObject::deserialize_properties", "Invalid data");
-							return false;
-						}
-					}
-
-					set_property(property_uuid, object_array);
-				}
-				else
-				{
-					Q_ASSERT_X(false, "VadonEditor::Core::DataObject::deserialize_properties", "Invalid data");
-					return false;
-				}
-			}
-				break;
-			case PropertyCategory::GENERIC_OBJECT:
-			{
-				if (const QJsonValueConstRef object_ref = property_it.value(); object_ref.isObject())
-				{
-					QVariant object_data;
-					if (deserialize_generic_object_from_json(object_ref.toObject(), object_data) == false)
-					{
-						Q_ASSERT_X(false, "VadonEditor::Core::DataObject::serialize_properties", "Failed to load object property");
-						return false;
-					}
-					set_property(property_uuid, object_data);
-				}
-				else
-				{
-					Q_ASSERT_X(false, "VadonEditor::Core::DataObject::deserialize_properties", "Invalid data");
-					return false;
-				}
-			}
-				break;
-			case PropertyCategory::TYPED_OBJECT:
-			{
-				if (const QJsonValueConstRef object_properties_ref = property_it.value(); object_properties_ref.isObject())
-				{
-					const Core::TypeData* sub_object_type_data = data_schema.find_type_data(type_property_data->get_data_type());
-					QVariant object_data;
-					if (deserialize_typed_object_from_json(sub_object_type_data, object_properties_ref.toObject(), object_data) == false)
-					{
-						Q_ASSERT_X(false, "VadonEditor::Core::DataObject::serialize_properties", "Failed to load object property");
-						return false;
-					}
-
-					set_property(property_uuid, object_data);
-				}
-				else
-				{
-					Q_ASSERT_X(false, "VadonEditor::Core::DataObject::deserialize_properties", "Invalid data");
-					return false;
-				}
-			}
-				break;
-			}
+			set_property(property_uuid, property_value);
 		}
 
 		return true;
@@ -423,7 +788,7 @@ namespace VadonEditor::Core
 		auto property_value_it = m_properties.find(Utilities::uuid_to_base64_string(property_id));
 		Q_ASSERT_X(property_value_it != m_properties.end(), "VadonEditor::Core::DataObject::serialize_properties", "Cannot find property value");
 
-		return internal_serialize_property_data(*type_property_data, property_value_it.value(), property_obj);
+		return internal_serialize_property_data(property_obj, *type_property_data, property_value_it.value());
 	}
 
 	void DataObject::load_properties(const QVariantMap& properties)
@@ -457,6 +822,22 @@ namespace VadonEditor::Core
 		return Utilities::vadon_uuid_string_to_qt_uuid(Vadon::Foundation::DataObjectSchema::c_properties_property.id);
 	}
 
+	QUuid DataObject::deserialize_object_type(const QJsonObject& object)
+	{
+		const QUuid type_property_uuid = Utilities::vadon_uuid_string_to_qt_uuid(Vadon::Foundation::DataObjectSchema::c_type_property.id);
+
+		for (auto obj_it = object.begin(); obj_it != object.end(); ++obj_it)
+		{
+			const QUuid current_property_id = Utilities::parse_labeled_uuid(obj_it.key());
+			if (current_property_id == type_property_uuid)
+			{
+				return Utilities::base64_string_to_uuid(obj_it.value().toString());
+			}
+		}
+
+		return QUuid();
+	}
+
 	bool DataObject::internal_initialize()
 	{
 		const DataSchema& data_schema = m_application.get_project_manager().get_project_data_schema();
@@ -478,45 +859,45 @@ namespace VadonEditor::Core
 				const QString property_key_string = Utilities::uuid_to_base64_string(property_it.key());
 
 				const Core::PropertyData& type_property_data = property_it.value();
-				const PropertyCategory category = type_property_data.get_category();
-				switch (category)
+				const ::Vadon::Foundation::Property::Category property_category = Core::PropertyData::get_category(type_property_data.get_root_type());
+
+				QVariant property_value;
+				switch (property_category)
 				{
-				case PropertyCategory::TRIVIAL:
+				case ::Vadon::Foundation::Property::Category::TRIVIAL:
 				{
-					m_properties[property_key_string] = Utilities::get_base_type_default_value(TypeData::get_base_type(type_property_data.get_data_type()));
+					property_value = Utilities::get_base_type_default_value(TypeData::get_base_type(type_property_data.get_root_type()));
 				}
-					break;
-				case PropertyCategory::RESOURCE:
+				break;
+				case ::Vadon::Foundation::Property::Category::ARRAY:
 				{
-					m_properties[property_key_string] = Utilities::get_base_type_default_value(::Vadon::Foundation::BaseType::UUID);
+					property_value = QVariantList();
 				}
-					break;
-				case PropertyCategory::TRIVIAL_ARRAY:
-				case PropertyCategory::GENERIC_OBJECT_ARRAY:
-				case PropertyCategory::TYPED_OBJECT_ARRAY:
+				break;
+				case ::Vadon::Foundation::Property::Category::DICTIONARY:
 				{
-					m_properties[property_key_string] = QVariantList();
+					property_value = QVariantMap();
 				}
-					break;
-				case PropertyCategory::GENERIC_OBJECT:
+				break;
+				case ::Vadon::Foundation::Property::Category::OBJECT:
 				{
-					m_properties[property_key_string] = QVariantMap();
-				}
-					break;
-				case PropertyCategory::TYPED_OBJECT:
-				{
-					DataObject sub_object(m_application);
-					sub_object.m_type_id = type_property_data.get_data_type();
-					if (sub_object.internal_initialize() == false)
+					if (get_object_subobject_default_value(m_application, type_property_data, property_value) == false)
 					{
-						Q_ASSERT_X(false, "VadonEditor::Core::DataObject::internal_initialize", "Failed to initialize sub-object");
 						return false;
 					}
-
-					m_properties[property_key_string] = sub_object.m_properties;
+				}
+				break;
+				case ::Vadon::Foundation::Property::Category::RESOURCE:
+				{
+					property_value = Utilities::get_base_type_default_value(::Vadon::Foundation::BaseType::UUID);
 				}
 					break;
+				default:
+					// Unsupported category!
+					return false;
 				}
+
+				m_properties[property_key_string] = property_value;
 			}
 
 			const QUuid base_uuid = Utilities::vadon_uuid_to_qt_uuid(current_type_data->info.base_id);
@@ -534,10 +915,8 @@ namespace VadonEditor::Core
 		return true;
 	}
 
-	bool DataObject::internal_serialize_property_data(const PropertyData& type_property_data, const QVariant& property_value, QJsonObject& json_obj) const
+	bool DataObject::internal_serialize_property_data(QJsonObject& json_obj, const PropertyData& type_property_data, const QVariant& property_value) const
 	{
-		const DataSchema& data_schema = m_application.get_project_manager().get_project_data_schema();
-
 		const QUuid property_id = Utilities::vadon_uuid_to_qt_uuid(type_property_data.info.id);
 		const QString property_name = type_property_data.find_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME);
 
@@ -551,150 +930,13 @@ namespace VadonEditor::Core
 			key_string = Utilities::uuid_to_base64_string(property_id);
 		}
 
-		const PropertyCategory category = type_property_data.get_category();
-		switch (category)
+		QJsonValue json_value;
+		if (serialize_object_property_value(m_application, json_value, type_property_data, property_value) == false)
 		{
-		case PropertyCategory::TRIVIAL:
-		case PropertyCategory::RESOURCE:
-			json_obj[key_string] = Utilities::save_variant_to_json(property_value);
-			break;
-		case PropertyCategory::TRIVIAL_ARRAY:
-		{
-			QJsonArray json_array;
-			if (serialize_trivial_array_to_json(type_property_data.get_data_type(), property_value, json_array) == false)
-			{
-				Q_ASSERT_X(false, "VadonEditor::Core::DataObject::serialize_properties", "Failed to save array property");
-				return false;
-			}
-			json_obj[key_string] = json_array;
-		}
-		break;
-		case PropertyCategory::GENERIC_OBJECT_ARRAY:
-		{
-			QJsonArray json_array;
-			const QVariantList object_list = property_value.toList();
-
-			for (const QVariant& current_object_data : object_list)
-			{
-				QJsonObject json_object;
-				if (serialize_generic_object_to_json(current_object_data, json_object) == false)
-				{
-					Q_ASSERT_X(false, "VadonEditor::Core::DataObject::serialize_properties", "Failed to save object array property");
-					return false;
-				}
-				json_array.push_back(json_object);
-			}
-			json_obj[key_string] = json_array;
-		}
-		break;
-		case PropertyCategory::TYPED_OBJECT_ARRAY:
-		{
-			const Core::TypeData* sub_object_type_data = data_schema.find_type_data(type_property_data.get_data_type());
-
-			QJsonArray json_array;
-			const QVariantList object_list = property_value.toList();
-			for (const QVariant& current_object_data : object_list)
-			{
-				QJsonObject json_object;
-				if (serialize_typed_object_to_json(sub_object_type_data, current_object_data, json_object) == false)
-				{
-					Q_ASSERT_X(false, "VadonEditor::Core::DataObject::serialize_properties", "Failed to save object array property");
-					return false;
-				}
-				json_array.push_back(json_object);
-			}
-			json_obj[key_string] = json_array;
-		}
-		break;
-		case VadonEditor::Core::PropertyCategory::GENERIC_OBJECT:
-		{
-			QJsonObject json_object;
-			if (serialize_generic_object_to_json(property_value, json_object) == false)
-			{
-				Q_ASSERT_X(false, "VadonEditor::Core::DataObject::serialize_properties", "Failed to save object property");
-				return false;
-			}
-
-			json_obj[key_string] = json_object;
-		}
-		break;
-		case VadonEditor::Core::PropertyCategory::TYPED_OBJECT:
-		{
-			const Core::TypeData* sub_object_type_data = data_schema.find_type_data(type_property_data.get_data_type());
-
-			QJsonObject json_object;
-			if (serialize_typed_object_to_json(sub_object_type_data, json_object, json_object) == false)
-			{
-				Q_ASSERT_X(false, "VadonEditor::Core::DataObject::serialize_properties", "Failed to save object property");
-				return false;
-			}
-
-			json_obj[key_string] = json_object;
-		}
-		break;
-		}
-
-		return true;
-	}
-
-	bool DataObject::serialize_generic_object_to_json(const QVariant& object_data, QJsonObject& json_object) const
-	{
-		DataObject data_object(m_application);
-		if (data_object.import_data(object_data.toMap()) == false)
-		{
-			Q_ASSERT_X(false, "VadonEditor::Core::DataObject::serialize_generic_object_to_json", "Failed to prepare object");
 			return false;
 		}
 
-		if (data_object.serialize(json_object) == false)
-		{
-			Q_ASSERT_X(false, "VadonEditor::Core::DataObject::serialize_properties", "Failed to serialize object");
-			return false;
-		}
-
-		return true;
-	}
-
-	bool DataObject::deserialize_generic_object_from_json(const QJsonObject& json_object, QVariant& object_data) const
-	{
-		DataObject data_object(m_application);
-		if (data_object.deserialize(json_object) == false)
-		{
-			Q_ASSERT_X(false, "VadonEditor::Core::DataObject::deserialize_generic_object_from_json", "Failed to deserialize object");
-			return false;
-		}
-
-		object_data = data_object.export_data();
-		return true;
-	}
-
-	bool DataObject::serialize_typed_object_to_json(const TypeData* type_data, const QVariant& object_data, QJsonObject& json_object) const
-	{
-		DataObject data_object(m_application);
-		data_object.m_type_id = Utilities::vadon_uuid_to_qt_uuid(type_data->info.id);
-		data_object.m_properties = object_data.toMap();
-
-		if (data_object.serialize_properties(json_object) == false)
-		{
-			Q_ASSERT_X(false, "VadonEditor::Core::DataObject::serialize_typed_object_to_json", "Failed to serialize object");
-			return false;
-		}
-
-		return true;
-	}
-
-	bool DataObject::deserialize_typed_object_from_json(const TypeData* type_data, const QJsonObject& json_object, QVariant& object_data) const
-	{
-		DataObject data_object(m_application);
-		data_object.m_type_id = Utilities::vadon_uuid_to_qt_uuid(type_data->info.id);
-
-		if (data_object.deserialize_properties(json_object) == false)
-		{
-			Q_ASSERT_X(false, "VadonEditor::Core::DataObject::deserialize_typed_object_from_json", "Failed to deserialize object");
-			return false;
-		}
-
-		object_data = data_object.m_properties;
+		json_obj[key_string] = json_value;
 		return true;
 	}
 }

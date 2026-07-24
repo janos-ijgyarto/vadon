@@ -22,12 +22,10 @@ namespace VadonDemo::Core
 		global_config_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "VadonDemo::Core::GlobalConfiguration");
 
 		global_config_metadata.add_property(VADON_GET_MEMBER_UUID(GlobalConfiguration, main_menu_scene))
-			.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Main Menu Scene")
-			.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::RESOURCE_TYPE, VADON_GET_TYPE_UUID_BASE64_STRING(Vadon::Model::Scene));
+			.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Main Menu Scene");
 
 		global_config_metadata.add_property(VADON_GET_MEMBER_UUID(GlobalConfiguration, default_start_level))
-			.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Default Start Level")
-			.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::RESOURCE_TYPE, VADON_GET_TYPE_UUID_BASE64_STRING(Vadon::Model::Scene));
+			.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Default Start Level");
 
 		global_config_metadata.add_property(VADON_GET_MEMBER_UUID(GlobalConfiguration, viewport_size))
 			.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Viewport Size");

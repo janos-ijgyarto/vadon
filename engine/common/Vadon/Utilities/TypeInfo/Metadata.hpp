@@ -61,7 +61,8 @@ namespace Vadon::Utilities
 			: type_metadata(type_metadata_obj)
 			, uuid(property_uuid)
 		{
-			type_metadata.registry.register_property(type_metadata.uuid, Vadon::Utilities::TypeRegistry::get_property_info(type_metadata.id, property_uuid).base_info);
+			const Vadon::Utilities::PropertyInfo property_info = Vadon::Utilities::TypeRegistry::get_property_info(type_metadata.id, property_uuid);
+			type_metadata.registry.register_property(type_metadata.uuid, property_info.base_info, property_info.type_list.data());
 		}
 
 		void set_metadata(const char* key, const char* value)

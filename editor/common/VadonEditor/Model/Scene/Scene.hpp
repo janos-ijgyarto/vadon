@@ -9,7 +9,7 @@ namespace VadonEditor::Core
 }
 namespace Vadon::Utilities
 {
-	struct ObjectPointer;
+	class ObjectWrapper;
 	class Serializer;
 }
 namespace VadonEditor::Model
@@ -40,7 +40,7 @@ namespace VadonEditor::Model
 		void internal_add_entity(const ::Vadon::Foundation::SceneEntityInfo& entity_info);
 		void internal_remove_entity(Vadon::ECS::EntityHandle entity_handle);
 
-		bool load_component_property_data(Vadon::Utilities::Serializer& serializer, Vadon::Utilities::ObjectPointer& component_pointer, Vadon::ECS::EntityHandle owner_entity);
+		bool load_component_property_data(Vadon::Utilities::Serializer& serializer, Vadon::Utilities::ObjectWrapper& component_wrapper, Vadon::ECS::EntityHandle owner_entity);
 
 		void entity_added(Vadon::ECS::EntityHandle entity_handle);
 		void entity_removed(Vadon::ECS::EntityHandle entity_handle);

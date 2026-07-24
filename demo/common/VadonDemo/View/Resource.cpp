@@ -54,7 +54,6 @@ namespace VadonDemo::View
 			.add_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "VadonDemo::View::Sprite")
 			.add_property(VADON_GET_MEMBER_UUID(Sprite, texture))
 				.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Texture")
-				.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::RESOURCE_TYPE, VADON_GET_TYPE_UUID_BASE64_STRING(VadonDemo::Render::TextureResource))
 				.commit_property();
 	}
 }

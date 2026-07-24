@@ -5,6 +5,8 @@
 #include <QUuid>
 namespace VadonEditor::Utilities
 {
+	// FIXME: implement constexpr conversions from Vadon UUID strings to Qt UUIDs
+
 	inline QUuid vadon_uuid_to_qt_uuid(const ::Vadon::Foundation::UUID& uuid)
 	{
 		// NOTE: Qt defaults to Big Endian, worth taking a second look?

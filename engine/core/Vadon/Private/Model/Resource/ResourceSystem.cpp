@@ -270,8 +270,16 @@ namespace Vadon::Private::Model
 			return false;
 		}
 
-		Utilities::ObjectPointer resource_obj_ptr{ .type = Utilities::TypeRegistry::get_type_id(resource_type_uuid), .data = resource_data.resource };
-		if (Utilities::DataObject::serialize_object_properties(serializer, resource_obj_ptr) == false)
+		Utilities::ObjectWrapper resource_obj_wrapper(Utilities::TypeRegistry::get_type_id(resource_type_uuid), resource_data.resource);
+		Utilities::VariantDictionary resource_property_data;
+
+		if (Utilities::ObjectSerializer::store_object_property_data(resource_obj_wrapper, resource_property_data) == false)
+		{
+			resource_data_failed_to_serialize();
+			return false;
+		}
+
+		if (Utilities::ObjectSerializer::serialize_object_properties(serializer, resource_obj_wrapper.get_type(), resource_property_data) == false)
 		{
 			resource_data_failed_to_serialize();
 			return false;
@@ -431,6 +439,9 @@ namespace Vadon::Private::Model
 
 	void ResourceSystem::register_types()
 	{
+		// NOTE: have to register this as a "placeholder type" to ensure that we get a valid TypeID when processing properties
+		Vadon::Utilities::TypeRegistry::register_type<::Vadon::Foundation::ResourceIDSchema>();
+
 		Vadon::Model::ResourceRegistry::register_resource_type<Resource>();
 		Vadon::Utilities::TypeRegistry::add_property<Resource>(VADON_GET_MEMBER_UUID(Resource, name),
 			Vadon::Utilities::create_member_variable_bind<Resource, &Resource::name>().bind_member_getter().bind_member_setter());
@@ -501,14 +512,21 @@ namespace Vadon::Private::Model
 					return nullptr;
 				}
 
-				Utilities::ObjectPointer resource_obj_ptr{ .type = info.type_id, .data = resource.get() };
-				if (Utilities::DataObject::serialize_object_properties(serializer, resource_obj_ptr) == false)
+				Utilities::VariantDictionary resource_property_data;
+				if (Utilities::ObjectSerializer::serialize_object_properties(serializer, info.type_id, resource_property_data) == false)
 				{
 					resource_data_failed_to_serialize();
 					return nullptr;
 				}
 
 				if (serializer.close_object() != SerializerResult::SUCCESSFUL)
+				{
+					resource_data_failed_to_serialize();
+					return nullptr;
+				}
+
+				Utilities::ObjectWrapper resource_obj_wrapper(info.type_id, resource.get());
+				if (Utilities::ObjectSerializer::load_object_property_data(resource_obj_wrapper, resource_property_data) == false)
 				{
 					resource_data_failed_to_serialize();
 					return nullptr;

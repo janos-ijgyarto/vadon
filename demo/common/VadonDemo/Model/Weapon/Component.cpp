@@ -20,7 +20,6 @@ namespace VadonDemo::Model
 		{
 			Vadon::Utilities::TypePropertyMetadata definition_property(weapon_component_metadata, VADON_GET_MEMBER_UUID(WeaponComponent, definition));
 			definition_property.set_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Definition");
-			definition_property.set_metadata(::Vadon::Foundation::CommonPropertyMetadata::RESOURCE_TYPE, VADON_GET_TYPE_UUID_BASE64_STRING(WeaponDefinition));
 		}
 	}
 

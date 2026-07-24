@@ -5,20 +5,20 @@
 namespace
 {
 	QUuid s_base_type_uuids[static_cast<::Vadon::Foundation::uint32>(::Vadon::Foundation::BaseType::TYPE_COUNT)] = {
-		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::INT32)),
-		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::UINT32)),
-		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::FLOAT)),
-		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::BOOL)),
-		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::STRING)),
-		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::VECTOR2)),
-		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::VECTOR2I)),
-		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::VECTOR3)),
-		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::VECTOR3I)),
-		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::VECTOR4)),
-		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::COLORRGBA)),
-		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::UUID)),
-		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::ARRAY)),
-		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::get_base_type_uuid_string(::Vadon::Foundation::BaseType::DICTIONARY))
+		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::TypeInfo::get_base_type_uuid_string(::Vadon::Foundation::BaseType::INT32)),
+		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::TypeInfo::get_base_type_uuid_string(::Vadon::Foundation::BaseType::UINT32)),
+		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::TypeInfo::get_base_type_uuid_string(::Vadon::Foundation::BaseType::FLOAT)),
+		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::TypeInfo::get_base_type_uuid_string(::Vadon::Foundation::BaseType::BOOL)),
+		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::TypeInfo::get_base_type_uuid_string(::Vadon::Foundation::BaseType::STRING)),
+		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::TypeInfo::get_base_type_uuid_string(::Vadon::Foundation::BaseType::VECTOR2)),
+		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::TypeInfo::get_base_type_uuid_string(::Vadon::Foundation::BaseType::VECTOR2I)),
+		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::TypeInfo::get_base_type_uuid_string(::Vadon::Foundation::BaseType::VECTOR3)),
+		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::TypeInfo::get_base_type_uuid_string(::Vadon::Foundation::BaseType::VECTOR3I)),
+		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::TypeInfo::get_base_type_uuid_string(::Vadon::Foundation::BaseType::VECTOR4)),
+		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::TypeInfo::get_base_type_uuid_string(::Vadon::Foundation::BaseType::COLORRGBA)),
+		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::TypeInfo::get_base_type_uuid_string(::Vadon::Foundation::BaseType::UUID)),
+		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::TypeInfo::get_base_type_uuid_string(::Vadon::Foundation::BaseType::ARRAY)),
+		VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::TypeInfo::get_base_type_uuid_string(::Vadon::Foundation::BaseType::DICTIONARY))
 	};
 }
 

@@ -17,8 +17,7 @@ namespace VadonDemo::Model
 		enemy_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::COMPONENT, "VadonDemo/Model");
 
 		enemy_metadata.add_property(VADON_GET_MEMBER_UUID(EnemyBase, definition))
-			.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Definition")
-			.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::RESOURCE_TYPE, VADON_GET_TYPE_UUID_BASE64_STRING(EnemyDefinition));
+			.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Definition");
 	}
 
 	void EnemyMovement::register_component(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry)
@@ -32,8 +31,7 @@ namespace VadonDemo::Model
 		movement_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::COMPONENT, "VadonDemo/Model");
 
 		movement_metadata.add_property(VADON_GET_MEMBER_UUID(EnemyMovement, definition))
-			.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Definition")
-			.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::RESOURCE_TYPE, VADON_GET_TYPE_UUID_BASE64_STRING(EnemyMovementDefinition));
+			.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Definition");
 	}
 
 	void EnemyWeapon::register_component(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry)
@@ -47,8 +45,7 @@ namespace VadonDemo::Model
 		weapon_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::COMPONENT, "VadonDemo/Model");
 
 		weapon_metadata.add_property(VADON_GET_MEMBER_UUID(EnemyWeapon, definition))
-			.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Definition")
-			.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::RESOURCE_TYPE, VADON_GET_TYPE_UUID_BASE64_STRING(EnemyWeaponAttackDefinition));
+			.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Definition");
 	}
 
 	void EnemyContactDamage::register_component(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry)
@@ -62,8 +59,7 @@ namespace VadonDemo::Model
 		contact_damage_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::COMPONENT, "VadonDemo/Model");
 
 		contact_damage_metadata.add_property(VADON_GET_MEMBER_UUID(EnemyContactDamage, definition))
-			.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Definition")
-			.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::RESOURCE_TYPE, VADON_GET_TYPE_UUID_BASE64_STRING(EnemyContactDamageDefinition));
+			.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Definition");
 	}
 
 	void Spawner::register_component(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry)
@@ -84,8 +80,7 @@ namespace VadonDemo::Model
 		spawner_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::COMPONENT, "VadonDemo/Model");
 
 		spawner_metadata.add_property(VADON_GET_MEMBER_UUID(Spawner, enemy_prefab))
-			.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Enemy Prefab")
-			.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::RESOURCE_TYPE, VADON_GET_TYPE_UUID_BASE64_STRING(Vadon::Model::Scene));
+			.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Enemy Prefab");
 
 		spawner_metadata.add_property(VADON_GET_MEMBER_UUID(Spawner, activation_delay))
 			.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Activation Delay");

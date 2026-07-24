@@ -33,7 +33,6 @@ namespace VadonDemo::Render
 		{
 			Vadon::Utilities::TypePropertyMetadata layer_def_property(canvas_component_metadata, VADON_GET_MEMBER_UUID(CanvasComponent, layer_def));
 			layer_def_property.set_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Layer Definition");
-			layer_def_property.set_metadata(::Vadon::Foundation::CommonPropertyMetadata::RESOURCE_TYPE, VADON_GET_TYPE_UUID_BASE64_STRING(CanvasLayerDefinition));
 		}
 	}
 
@@ -55,7 +54,6 @@ namespace VadonDemo::Render
 		{
 			Vadon::Utilities::TypePropertyMetadata texture_property(sprite_tiling_metadata, VADON_GET_MEMBER_UUID(SpriteTilingComponent, texture));
 			texture_property.set_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Texture");
-			texture_property.set_metadata(::Vadon::Foundation::CommonPropertyMetadata::RESOURCE_TYPE, VADON_GET_TYPE_UUID_BASE64_STRING(TextureResource));
 		}
 
 		{
@@ -90,7 +88,6 @@ namespace VadonDemo::Render
 		{
 			Vadon::Utilities::TypePropertyMetadata shader_property(fullscreen_effect_metadata, VADON_GET_MEMBER_UUID(FullscreenEffectComponent, shader));
 			shader_property.set_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Shader");
-			shader_property.set_metadata(::Vadon::Foundation::CommonPropertyMetadata::RESOURCE_TYPE, VADON_GET_TYPE_UUID_BASE64_STRING(FullscreenEffectComponent));
 		}
 
 		{
