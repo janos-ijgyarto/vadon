@@ -25,7 +25,7 @@
         <x>0</x>
         <y>0</y>
         <width>380</width>
-        <height>280</height>
+        <height>250</height>
        </rect>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -50,8 +50,38 @@
      </widget>
     </widget>
    </item>
+   <item alignment="">
+    <widget class="QPushButton" name="addButton">
+     <property name="text">
+      <string/>
+     </property>
+     <property name="icon">
+      <iconset theme="QIcon::ThemeIcon::ListAdd"/>
+     </property>
+    </widget>
+   </item>
   </layout>
  </widget>
  <resources/>
- <connections/>
+ <connections>
+  <connection>
+   <sender>addButton</sender>
+   <signal>clicked()</signal>
+   <receiver>PropertyArray</receiver>
+   <slot>add_entry_triggered()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>376</x>
+     <y>278</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>199</x>
+     <y>149</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+ <slots>
+  <slot>add_entry_triggered()</slot>
+ </slots>
 </ui>

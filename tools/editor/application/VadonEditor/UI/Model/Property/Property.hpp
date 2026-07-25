@@ -12,8 +12,8 @@ namespace VadonEditor::UI
 	struct PropertyWidgetInfo
 	{
 		QUuid property_id;
-		::Vadon::Foundation::Property::Category category = ::Vadon::Foundation::Property::Category::INVALID;
 		QList<QUuid> type_list;
+		qsizetype type_list_offset = 0;
 		QVariant init_value;
 	};
 

@@ -150,6 +150,12 @@ namespace VadonEditor::UI
 		}
 	}
 
+	void DataSchemaDialog::tree_selection_current_changed(const QModelIndex& current, const QModelIndex& previous)
+	{
+		Q_UNUSED(previous);
+		tree_item_selected(current);
+	}
+
 	void DataSchemaDialog::initialize()
 	{
 		Core::ProjectManager& project_manager = m_application.get_project_manager();
@@ -160,5 +166,7 @@ namespace VadonEditor::UI
 
 		m_ui.typeTreeView->setModel(&m_type_tree_model);
 		m_ui.typeTreeView->sortByColumn(0, Qt::SortOrder::AscendingOrder);
+
+		connect(m_ui.typeTreeView->selectionModel(), &QItemSelectionModel::currentChanged, this, &DataSchemaDialog::tree_selection_current_changed);
 	}
 }

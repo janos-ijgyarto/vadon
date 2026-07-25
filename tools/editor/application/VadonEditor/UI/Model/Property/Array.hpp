@@ -12,6 +12,10 @@ namespace VadonEditor::UI
 		PropertyArrayEntry(QWidget* parent, PropertyWidget* property_widget);
 
 		PropertyWidget* get_property_widget() const { return m_property_widget; }
+
+		void set_read_only(bool read_only);
+
+		void update_index(int index);
 	signals:
 		void value_changed();
 		void remove_requested();
@@ -27,13 +31,23 @@ namespace VadonEditor::UI
 	{
 		Q_OBJECT
 	public:
-		PropertyArray(const QUuid& id, const QVariantList& value, QWidget* parent, Model::Resource* owner_resource);
+		PropertyArray(const PropertyWidgetInfo& info, QWidget* parent, Model::Resource* owner_resource);
+
+		void set_read_only(bool read_only) override;
 	private slots:
-		void array_element_value_changed();
-		void array_element_remove_requested();
+		void array_entry_value_changed();
+		void array_entry_remove_requested();
+
+		void add_entry_triggered();
 	private:
+		void initialize();
+
+		void internal_add_array_entry(PropertyWidget* property_widget);
+		void update_entry_layout();
+
 		Ui::PropertyArray m_ui;
 
+		PropertyWidgetInfo m_info;
 		Model::Resource* m_owner_resource;
 	};
 }

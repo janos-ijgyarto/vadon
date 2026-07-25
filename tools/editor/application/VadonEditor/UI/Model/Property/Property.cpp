@@ -6,6 +6,7 @@
 #include <VadonEditor/Model/ModelSystem.hpp>
 #include <VadonEditor/Model/Resource/ResourceSystem.hpp>
 
+#include <VadonEditor/UI/Model/Property/Array.hpp>
 #include <VadonEditor/UI/Model/Property/CheckBox.hpp>
 #include <VadonEditor/UI/Model/Property/Color.hpp>
 #include <VadonEditor/UI/Model/Property/Numeric.hpp>
@@ -19,11 +20,15 @@ namespace VadonEditor::UI
 {
 	PropertyWidget* PropertyWidget::create_widget(const PropertyWidgetInfo& info, QWidget* parent_widget, Model::Resource* owner_resource)
 	{
-		switch (info.category)
+		// TODO: check if offset is still within type list
+		// e.g for an Array going past the bounds means "generic"
+		const QUuid& property_type_id = info.type_list[info.type_list_offset];
+		const ::Vadon::Foundation::Property::Category property_category = Core::PropertyData::get_category(property_type_id);
+		switch (property_category)
 		{
 		case ::Vadon::Foundation::Property::Category::TRIVIAL:
 		{
-			const ::Vadon::Foundation::BaseType base_type = Core::TypeData::get_base_type(info.type_list.front());
+			const ::Vadon::Foundation::BaseType base_type = Core::TypeData::get_base_type(property_type_id);
 			switch (base_type)
 			{
 			case ::Vadon::Foundation::BaseType::INT32:
@@ -31,7 +36,7 @@ namespace VadonEditor::UI
 			case ::Vadon::Foundation::BaseType::UINT32:
 				return new PropertySpinBox(info.property_id, info.init_value.toUInt(), parent_widget);
 			case ::Vadon::Foundation::BaseType::FLOAT:
-				return new PropertyDoubleSpinBox(info.property_id, info.init_value.toDouble(), parent_widget);
+				return new PropertyDoubleSpinBox(info.property_id, info.init_value.toFloat(), parent_widget);
 			case ::Vadon::Foundation::BaseType::BOOL:
 				return new PropertyCheckBox(info.property_id, info.init_value.toBool(), parent_widget);
 			case ::Vadon::Foundation::BaseType::STRING:
@@ -58,13 +63,12 @@ namespace VadonEditor::UI
 		}
 		break;
 		case ::Vadon::Foundation::Property::Category::ARRAY:
-			// TODO!
-			break;
+			return new PropertyArray(info, parent_widget, owner_resource);
 		case ::Vadon::Foundation::Property::Category::DICTIONARY:
 			// TODO!
 			break;
 		case ::Vadon::Foundation::Property::Category::OBJECT:
-			// TODO:
+			// TODO!
 			break;
 		case ::Vadon::Foundation::Property::Category::RESOURCE:
 		{
@@ -76,7 +80,8 @@ namespace VadonEditor::UI
 				resource = application.get_model_system().get_resource_system().get_resource(resource_id);
 			}
 
-			return new PropertyResource(info.property_id, resource, owner_resource, info.type_list[1], parent_widget);
+			const QUuid resource_type = info.type_list[info.type_list_offset + 1];
+			return new PropertyResource(info.property_id, resource, owner_resource, resource_type, parent_widget);
 		}
 		}
 

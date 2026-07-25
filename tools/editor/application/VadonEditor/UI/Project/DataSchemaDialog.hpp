@@ -17,6 +17,7 @@ namespace VadonEditor::UI
 		DataSchemaDialog(Core::Application& application, QWidget* parent = nullptr);
 	private slots:
 		void tree_item_selected(const QModelIndex& index);
+		void tree_selection_current_changed(const QModelIndex& current, const QModelIndex& previous);
 	private:
 		void initialize();
 

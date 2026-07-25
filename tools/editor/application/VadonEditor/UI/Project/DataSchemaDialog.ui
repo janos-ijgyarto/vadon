@@ -113,22 +113,6 @@
     </hint>
    </hints>
   </connection>
-  <connection>
-   <sender>typeTreeView</sender>
-   <signal>clicked(QModelIndex)</signal>
-   <receiver>DataSchemaDialog</receiver>
-   <slot>tree_item_selected(QModelIndex)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>203</x>
-     <y>284</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>399</x>
-     <y>299</y>
-    </hint>
-   </hints>
-  </connection>
  </connections>
  <slots>
   <slot>tree_item_selected(QModelIndex)</slot>
