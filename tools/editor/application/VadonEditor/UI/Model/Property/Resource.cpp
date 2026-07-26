@@ -5,6 +5,7 @@
 #include <VadonEditor/Core/Project/ProjectManager.hpp>
 
 #include <VadonEditor/Model/ModelSystem.hpp>
+#include <VadonEditor/Model/Animation/Animation.hpp>
 #include <VadonEditor/Model/Resource/ResourceSystem.hpp>
 #include <VadonEditor/Model/Scene/Scene.hpp>
 
@@ -28,6 +29,11 @@ namespace
 		}
 
 		if (VadonEditor::Model::Resource::is_imported_file_base_of_type(application, resource_type) == true)
+		{
+			return false;
+		}
+
+		if (VadonEditor::Model::Animation::is_animation_base_of_type(application, resource_type) == true)
 		{
 			return false;
 		}

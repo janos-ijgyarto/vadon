@@ -111,7 +111,7 @@ namespace VadonDemo::View
 			{
 				auto anim_component = anim_it.get_component<AnimationComponent>();
 
-				anim_component->animation_player.update(view_delta_time);
+				anim_component->animation_player.update(engine_core, view_delta_time);
 
 				const Vadon::Model::AnimationSample anim_sample = anim_component->animation_player.get_sample();
 

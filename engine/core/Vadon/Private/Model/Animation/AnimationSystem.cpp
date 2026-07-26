@@ -3,169 +3,19 @@
 #include <Vadon/Model/Resource/Registry.hpp>
 #include <Vadon/Model/Resource/ResourceSystem.hpp>
 
-#include <Vadon/Utilities/Enum/EnumClass.hpp>
-
-#include <Vadon/Utilities/Serialization/Serializer.hpp>
-
-#include <Vadon/Utilities/TypeInfo/Reflection/PropertySerialization.hpp>
-#include <Vadon/Utilities/TypeInfo/TypeErasure.hpp>
+#include <Vadon/Utilities/TypeInfo/Reflection/MemberBind.hpp>
 
 #include <Vadon/Utilities/TypeInfo/Metadata.hpp>
 
-namespace
-{
-	bool serialize_animation_channel(Vadon::Utilities::Serializer& serializer, Vadon::Model::AnimationData& animation_data, size_t channel_index)
-	{
-		using SerializerResult = Vadon::Utilities::Serializer::Result;
-		Vadon::Model::AnimationChannel& animation_channel = animation_data.channels[channel_index];
+#define VADON_REGISTER_ANIMATION_CHANNEL_TYPE(_type_name, _member_name) TypeRegistry::register_type<_type_name, AnimationChannel>();\
+TypeRegistry::add_property<_type_name>(VADON_GET_MEMBER_UUID(AnimationChannel, _member_name), Vadon::Utilities::MemberVariableBind<&_type_name::key_data>().bind_member_getter().bind_member_setter())
 
-		if (serializer.serialize("tag", animation_channel.tag) != SerializerResult::SUCCESSFUL)
-		{
-			return false;
-		}
-
-		using AnimationChannelDataType = std::underlying_type_t<Vadon::Model::AnimationChannelType>;
-		if (serializer.is_reading() == true)
-		{
-			AnimationChannelDataType channel_data_type = 0;
-			if (serializer.serialize("data_type", channel_data_type) != SerializerResult::SUCCESSFUL)
-			{
-				return false;
-			}
-
-			animation_channel.data_type = Vadon::Utilities::to_enum<Vadon::Model::AnimationChannelType>(channel_data_type);
-		}
-		else
-		{
-			VADON_ASSERT(animation_channel.data_type != Vadon::Model::AnimationChannelType::INVALID, "Invalid channel type!");
-			AnimationChannelDataType channel_data_type = Vadon::Utilities::to_integral(animation_channel.data_type);
-			if (serializer.serialize("data_type", channel_data_type) != SerializerResult::SUCCESSFUL)
-			{
-				return false;
-			}
-		}
-
-		// Putting indices and values in separate arrays
-		// FIXME: might be easier to just put them together?
-		if (serializer.open_array("keyframe_indices") != SerializerResult::SUCCESSFUL)
-		{
-			return false;
-		}
-
-		const size_t keyframe_count = (serializer.is_reading() == true) ? serializer.get_array_size() : animation_channel.keyframe_range.count;
-		if (serializer.is_reading() == true)
-		{
-			animation_channel.keyframe_range.offset = static_cast<int32_t>(animation_data.keyframe_data.size());
-			animation_channel.keyframe_range.count = static_cast<int32_t>(keyframe_count);
-
-			animation_data.keyframe_data.insert(animation_data.keyframe_data.end(), keyframe_count, Vadon::Model::AnimationKeyframe{});
-		}
-
-		for (size_t keyframe_index = 0; keyframe_index < keyframe_count; ++keyframe_index)
-		{
-			Vadon::Model::AnimationKeyframe& keyframe_data = animation_data.keyframe_data[animation_channel.keyframe_range.offset + keyframe_index];
-			if (serializer.serialize(keyframe_index, keyframe_data.frame_index) != SerializerResult::SUCCESSFUL)
-			{
-				return false;
-			}
-		}
-
-		if (serializer.close_array() != SerializerResult::SUCCESSFUL)
-		{
-			return false;
-		}
-
-		if (serializer.open_array("keyframe_values") != SerializerResult::SUCCESSFUL)
-		{
-			return false;
-		}
-
-		if (serializer.is_reading() == true)
-		{
-			VADON_ASSERT(animation_channel.keyframe_range.count == serializer.get_array_size(), "Mismatch in channel data!");
-		}
-
-		for (size_t keyframe_index = 0; keyframe_index < keyframe_count; ++keyframe_index)
-		{
-			Vadon::Model::AnimationKeyframe& keyframe_data = animation_data.keyframe_data[animation_channel.keyframe_range.offset + keyframe_index];
-			if (Vadon::Utilities::process_trivial_property(serializer, keyframe_index, keyframe_data.value, Vadon::Model::AnimationChannel::get_data_type_id(animation_channel.data_type)) != SerializerResult::SUCCESSFUL)
-			{
-				return false;
-			}
-		}
-
-		if (serializer.close_array() != SerializerResult::SUCCESSFUL)
-		{
-			return false;
-		}
-
-		return true;
-	}
-
-	bool serialize_animation_data(Vadon::Model::ResourceSystem& resource_system, Vadon::Utilities::Serializer& serializer, Vadon::Model::Resource& resource)
-	{
-		using SerializerResult = Vadon::Utilities::Serializer::Result;
-		constexpr const char* c_error_message = "Animation system: unable to serialize animation data!\n";
-
-		Vadon::Model::Animation& animation = static_cast<Vadon::Model::Animation&>(resource);
-		Vadon::Model::AnimationData& animation_data = animation.data;
-
-		if (serializer.serialize("frame_count", animation_data.frame_count) != SerializerResult::SUCCESSFUL)
-		{
-			resource_system.log_error(c_error_message);
-			return false;
-		}
-
-		if (serializer.open_array("channels") != SerializerResult::SUCCESSFUL)
-		{
-			resource_system.log_error(c_error_message);
-			return false;
-		}
-
-		const size_t channel_count = (serializer.is_reading() == true) ? serializer.get_array_size() : animation_data.channels.size();
-		if (serializer.is_reading() == true)
-		{
-			animation_data.channels.resize(channel_count);
-			animation_data.keyframe_data.clear();
-		}
-
-		for (size_t channel_index = 0; channel_index < channel_count; ++channel_index)
-		{
-			if (serializer.open_object(channel_index) != SerializerResult::SUCCESSFUL)
-			{
-				resource_system.log_error(c_error_message);
-				return false;
-			}
-
-			if (serialize_animation_channel(serializer, animation_data, channel_index) == false)
-			{
-				resource_system.log_error(c_error_message);
-				return false;
-			}
-
-			if (serializer.close_object() != SerializerResult::SUCCESSFUL)
-			{
-				resource_system.log_error(c_error_message);
-				return false;
-			}
-		}
-
-		if (serializer.close_array() != SerializerResult::SUCCESSFUL)
-		{
-			resource_system.log_error(c_error_message);
-			return false;
-		}
-
-		return true;
-	}
-}
-
-namespace Vadon::Model
-{
-	void Animation::register_type_info()
-	{
-		Vadon::Model::ResourceRegistry::register_resource_type<Animation, Resource>();
-	}
+#define VADON_REGISTER_ANIMATION_CHANNEL_METADATA(_registry, _type_name, _member_name) {\
+Vadon::Utilities::TypeMetadata animation_channel_metadata(_registry, VADON_GET_TYPE_UUID(_type_name)); \
+animation_channel_metadata.add_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, #_type_name)\
+.add_property(VADON_GET_MEMBER_UUID(_type_name, _member_name))\
+.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Data")\
+.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::FLAGS, ::Vadon::Foundation::CommonPropertyMetadata::flag_string(::Vadon::Foundation::CommonPropertyMetadata::Flags::EDITOR_HIDDEN));\
 }
 namespace Vadon::Private::Model
 {
@@ -217,20 +67,10 @@ namespace Vadon::Private::Model
 		return AnimationHandle::from_resource_handle(animation_resource_handle);
 	}
 
-	const AnimationData& AnimationSystem::get_animation_data(AnimationHandle animation_handle) const
+	const Animation* AnimationSystem::get_animation_data(AnimationHandle anim_handle) const
 	{
 		Vadon::Model::ResourceSystem& resource_system = m_engine_core.get_system<Vadon::Model::ResourceSystem>();
-		Vadon::Model::Animation* animation = resource_system.get_resource<Vadon::Model::Animation>(animation_handle);
-
-		return animation->data;
-	}
-
-	void AnimationSystem::set_animation_data(AnimationHandle animation_handle, const AnimationData& data)
-	{
-		Vadon::Model::ResourceSystem& resource_system = m_engine_core.get_system<Vadon::Model::ResourceSystem>();
-		Vadon::Model::Animation* animation = resource_system.get_resource<Vadon::Model::Animation>(animation_handle);
-
-		animation->data = data;
+		return resource_system.get_resource(anim_handle);
 	}
 
 	AnimationSystem::AnimationSystem(Vadon::Core::EngineCoreInterface& core)
@@ -241,13 +81,62 @@ namespace Vadon::Private::Model
 
 	void AnimationSystem::register_types()
 	{
-		Vadon::Model::Animation::register_type_info();
+		using TypeRegistry = Vadon::Utilities::TypeRegistry;
+
+		TypeRegistry::register_type<AnimationChannel>();
+
+		TypeRegistry::add_property<AnimationChannel>(VADON_GET_MEMBER_UUID(AnimationChannel, id), Vadon::Utilities::MemberVariableBind<&AnimationChannel::id>().bind_member_getter().bind_member_setter());
+		TypeRegistry::add_property<AnimationChannel>(VADON_GET_MEMBER_UUID(AnimationChannel, key_times), Vadon::Utilities::MemberVariableBind<&AnimationChannel::key_times>().bind_member_getter().bind_member_setter());
+		TypeRegistry::add_property<AnimationChannel>(VADON_GET_MEMBER_UUID(AnimationChannel, tag), Vadon::Utilities::MemberVariableBind<&AnimationChannel::tag>().bind_member_getter().bind_member_setter());
+
+		VADON_REGISTER_ANIMATION_CHANNEL_TYPE(AnimationIntChannel, int_data);
+		VADON_REGISTER_ANIMATION_CHANNEL_TYPE(AnimationUintChannel, uint_data);
+		VADON_REGISTER_ANIMATION_CHANNEL_TYPE(AnimationFloatChannel, float_data);
+		VADON_REGISTER_ANIMATION_CHANNEL_TYPE(AnimationVector2Channel, vector2_data);
+		VADON_REGISTER_ANIMATION_CHANNEL_TYPE(AnimationVector2iChannel, vector2i_data);
+		VADON_REGISTER_ANIMATION_CHANNEL_TYPE(AnimationVector3Channel, vector3_data);
+		VADON_REGISTER_ANIMATION_CHANNEL_TYPE(AnimationVector3iChannel, vector3i_data);
+		VADON_REGISTER_ANIMATION_CHANNEL_TYPE(AnimationVector4Channel, vector4_data);
+		VADON_REGISTER_ANIMATION_CHANNEL_TYPE(AnimationColorRGBAChannel, colorrgba_data);
+
+		Vadon::Model::ResourceRegistry::register_resource_type<Animation, Vadon::Model::Resource>();
+		TypeRegistry::add_property<Animation>(VADON_GET_MEMBER_UUID(Animation, channels), Vadon::Utilities::MemberVariableBind<&Animation::channels>().bind_member_getter().bind_setter_function<&Animation::set_channels>());
 	}
 
 	void AnimationSystem::register_type_metadata(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry)
 	{
-		Vadon::Utilities::TypeMetadata animation_metadata(metadata_registry, VADON_GET_TYPE_UUID(Vadon::Model::Animation));
-		animation_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "Vadon::Model::Animation");
+		{
+			Vadon::Utilities::TypeMetadata animation_metadata(metadata_registry, VADON_GET_TYPE_UUID(Animation));
+			animation_metadata.add_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "Vadon::Model::Animation")
+				.add_property(VADON_GET_MEMBER_UUID(Animation, channels))
+					.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Channels")
+					.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::FLAGS, ::Vadon::Foundation::CommonPropertyMetadata::flag_string(::Vadon::Foundation::CommonPropertyMetadata::Flags::EDITOR_HIDDEN));
+			
+			Vadon::Utilities::TypeMetadata animation_channel_metadata(metadata_registry, VADON_GET_TYPE_UUID(AnimationChannel));
+			animation_channel_metadata.add_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "Vadon::Model::AnimationChannel")
+				.add_property(VADON_GET_MEMBER_UUID(AnimationChannel, id))
+					.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "ID")
+					.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::FLAGS, ::Vadon::Foundation::CommonPropertyMetadata::flag_string(::Vadon::Foundation::CommonPropertyMetadata::Flags::EDITOR_HIDDEN))
+					.commit_property()
+				.add_property(VADON_GET_MEMBER_UUID(AnimationChannel, tag))
+					.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Tag")
+					.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::FLAGS, ::Vadon::Foundation::CommonPropertyMetadata::flag_string(::Vadon::Foundation::CommonPropertyMetadata::Flags::EDITOR_HIDDEN))
+					.commit_property()
+				.add_property(VADON_GET_MEMBER_UUID(AnimationChannel, key_times))
+					.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Key times")
+					.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::FLAGS, ::Vadon::Foundation::CommonPropertyMetadata::flag_string(::Vadon::Foundation::CommonPropertyMetadata::Flags::EDITOR_HIDDEN))
+					.commit_property();
+		}
+
+		VADON_REGISTER_ANIMATION_CHANNEL_METADATA(metadata_registry, Vadon::Model::AnimationIntChannel, int_data);
+		VADON_REGISTER_ANIMATION_CHANNEL_METADATA(metadata_registry, Vadon::Model::AnimationUintChannel, uint_data);
+		VADON_REGISTER_ANIMATION_CHANNEL_METADATA(metadata_registry, Vadon::Model::AnimationFloatChannel, float_data);
+		VADON_REGISTER_ANIMATION_CHANNEL_METADATA(metadata_registry, Vadon::Model::AnimationVector2Channel, vector2_data);
+		VADON_REGISTER_ANIMATION_CHANNEL_METADATA(metadata_registry, Vadon::Model::AnimationVector2iChannel, vector2i_data);
+		VADON_REGISTER_ANIMATION_CHANNEL_METADATA(metadata_registry, Vadon::Model::AnimationVector3Channel, vector3_data);
+		VADON_REGISTER_ANIMATION_CHANNEL_METADATA(metadata_registry, Vadon::Model::AnimationVector3iChannel, vector3i_data);
+		VADON_REGISTER_ANIMATION_CHANNEL_METADATA(metadata_registry, Vadon::Model::AnimationVector4Channel, vector4_data);
+		VADON_REGISTER_ANIMATION_CHANNEL_METADATA(metadata_registry, Vadon::Model::AnimationColorRGBAChannel, colorrgba_data);
 	}
 
 	bool AnimationSystem::initialize()

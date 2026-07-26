@@ -14,8 +14,7 @@ namespace Vadon::Model
 
 		virtual AnimationHandle load_animation(AnimationID anim_id) = 0;
 
-		virtual const AnimationData& get_animation_data(AnimationHandle animation_handle) const = 0;
-		virtual void set_animation_data(AnimationHandle animation_handle, const AnimationData& data) = 0;
+		virtual const Animation* get_animation_data(AnimationHandle anim_handle) const = 0;
 	protected:
 		AnimationSystem(Core::EngineCoreInterface& core)
 			: System(core)

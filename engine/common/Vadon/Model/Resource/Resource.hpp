@@ -54,17 +54,17 @@ namespace Vadon::Model
 
 		uint64_t to_uint() const { return this->handle.to_uint(); }
 	};
+		
+	template<typename T>
+	using as_typed_resource_id = TypedResourceID<typename T::_ResourceType>;
 
 	template<typename T>
-	concept is_resource_id = std::is_base_of_v<Vadon::Model::ResourceID, T> && (std::is_same_v<Vadon::Model::ResourceID, T> == false);
-
-	template<typename T>
-	concept is_resource_handle = std::is_base_of_v<Vadon::Model::ResourceHandle, T> && (std::is_same_v<Vadon::Model::ResourceHandle, T> == false);
+	concept is_typed_resource_id = std::is_same_v<T, as_typed_resource_id<T>>;
 }
 
 namespace Vadon::Utilities
 {
-	template<Vadon::Model::is_resource_id T>
+	template<Vadon::Model::is_typed_resource_id T>
 	struct TypeErasureTrait<T>
 	{
 		static constexpr ::Vadon::Foundation::UUID get_erased_type_uuid()
@@ -95,7 +95,7 @@ namespace Vadon::Utilities
 		}
 	};
 
-	template<Vadon::Model::is_resource_id T>
+	template<Vadon::Model::is_typed_resource_id T>
 	struct VariantTypeTrait<T>
 	{
 		static Variant to_variant(const T& value)

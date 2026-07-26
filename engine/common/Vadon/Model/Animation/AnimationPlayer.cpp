@@ -48,33 +48,6 @@ namespace
 
 namespace Vadon::Model
 {
-	Vadon::Utilities::TypeID AnimationChannel::get_data_type_id(AnimationChannelType channel_type)
-	{
-		switch (channel_type)
-		{
-		case AnimationChannelType::INT:
-			return Vadon::Utilities::TypeRegistry::get_type_id<int>();
-		case AnimationChannelType::UINT32:
-			return Vadon::Utilities::TypeRegistry::get_type_id<uint32_t>();
-		case AnimationChannelType::FLOAT:
-			return Vadon::Utilities::TypeRegistry::get_type_id<float>();
-		case AnimationChannelType::VEC2:
-			return Vadon::Utilities::TypeRegistry::get_type_id<Vadon::Math::Vector2>();
-		case AnimationChannelType::VEC2I:
-			return Vadon::Utilities::TypeRegistry::get_type_id<Vadon::Math::Vector2i>();
-		case AnimationChannelType::VEC3:
-			return Vadon::Utilities::TypeRegistry::get_type_id<Vadon::Math::Vector3>();
-		case AnimationChannelType::VEC3I:
-			return Vadon::Utilities::TypeRegistry::get_type_id<Vadon::Math::Vector3i>();
-		case AnimationChannelType::VEC4:
-			return Vadon::Utilities::TypeRegistry::get_type_id<Vadon::Math::Vector4>();
-		case AnimationChannelType::COLORRGBA:
-			return Vadon::Utilities::TypeRegistry::get_type_id<Vadon::Math::ColorRGBA>();
-		}
-
-		VADON_UNREACHABLE;
-	}
-
 	void AnimationPlayer::set_animation(Vadon::Core::EngineCoreInterface& engine_core, AnimationHandle animation_handle)
 	{
 		if (m_animation == animation_handle)
@@ -88,117 +61,116 @@ namespace Vadon::Model
 			return;
 		}
 
-		m_animation_data = &engine_core.get_system<AnimationSystem>().get_animation_data(animation_handle);
+		const Animation* animation_data = engine_core.get_system<AnimationSystem>().get_animation_data(animation_handle);
 
 		m_sample_data.reset();
 
-		m_sample_data.channels.resize(m_animation_data->channels.size());
+		m_sample_data.channels.resize(animation_data->channels.size());
 
-		for (size_t channel_index = 0; channel_index < m_animation_data->channels.size(); ++channel_index)
+		for (size_t channel_index = 0; channel_index < animation_data->channels.size(); ++channel_index)
 		{
-			const AnimationChannel& current_channel = m_animation_data->channels[channel_index];
+			const AnimationChannel& current_channel = *animation_data->channels[channel_index];
 			AnimationChannelSample& current_channel_sample = m_sample_data.channels[channel_index];
 
+			current_channel_sample.id = current_channel.id;
 			current_channel_sample.tag = current_channel.tag;
 		}
 	}
 
-	void AnimationPlayer::set_current_frame(int32_t frame)
+	void AnimationPlayer::set_current_time(float time)
 	{
-		m_current_frame = std::clamp(frame, 0, m_animation_data->frame_count - 1);
-		m_current_time = float(m_current_frame);
+		m_current_time = std::clamp(time, 0.0f, 1.0f);
 	}
 
-	void AnimationPlayer::update(float delta_time)
+	void AnimationPlayer::update(Vadon::Core::EngineCoreInterface& engine_core, float delta_time)
 	{
 		if (is_looping() == true)
 		{
 			m_current_time += m_time_scale * delta_time;
-			if (m_current_time >= m_animation_data->frame_count)
+			if (m_current_time >= 1.0f)
 			{
-				m_current_time = std::max(m_current_time - float(m_animation_data->frame_count), 0.0f);
+				m_current_time -= 1.0f;
 			}
-			m_current_frame = int(m_current_time);
 		} 
-		else if(m_current_time < m_animation_data->frame_count)
+		else if(m_current_time < 1.0f)
 		{
-			m_current_time += m_time_scale * delta_time;
-			m_current_frame = std::clamp(int(m_current_time), 0, m_animation_data->frame_count - 1);
+			m_current_time = std::min(m_current_time + (m_time_scale * delta_time), 1.0f);
 		}
 
-		update_sample_data();
+		update_sample_data(engine_core);
 	}
 
 	void AnimationPlayer::reset()
 	{
-		m_current_frame = 0;
 		m_current_time = 0.0f;
 
 		m_sample_data.reset();
 	}
 
-	void AnimationPlayer::update_sample_data()
+	void AnimationPlayer::update_sample_data(Vadon::Core::EngineCoreInterface& engine_core)
 	{
-		if (m_animation_data == nullptr)
+		if (m_animation.is_valid() == false)
 		{
 			return;
 		}
 
-		if (m_sample_data.sampled_frame == m_current_frame)
+		if (m_sample_data.sampled_time == m_current_time)
 		{
 			return;
 		}
 
-		for (size_t channel_index = 0; channel_index < m_animation_data->channels.size(); ++channel_index)
+		const Animation* animation_data = engine_core.get_system<AnimationSystem>().get_animation_data(m_animation);
+
+		for (size_t channel_index = 0; channel_index < animation_data->channels.size(); ++channel_index)
 		{
-			const AnimationChannel& current_channel = m_animation_data->channels[channel_index];
+			const AnimationChannel& current_channel = *animation_data->channels[channel_index];
 			AnimationChannelSample& current_channel_sample = m_sample_data.channels[channel_index];
 			
-			if (current_channel.keyframe_range.count == 0)
+			if (current_channel.get_key_count() == 0)
 			{
 				// No valid data to return
 				current_channel_sample.value = Vadon::Utilities::Variant();
 				continue;
 			}
 
-			if (m_sample_method == AnimationSampleMethod::LAST_KEYFRAME)
+			if (m_sample_method == AnimationSampleMethod::LAST_KEY)
 			{
-				for (int32_t keyframe_data_index = 0; keyframe_data_index < current_channel.keyframe_range.count; ++keyframe_data_index)
+				for (size_t key_index = 0; key_index < current_channel.get_key_count(); ++key_index)
 				{
-					const AnimationKeyframe& keyframe_data = m_animation_data->keyframe_data[current_channel.keyframe_range.offset + keyframe_data_index];
-					if (keyframe_data.frame_index <= m_current_frame)
+					const AnimationKey key_data = current_channel.get_key(key_index);
+					if (key_data.time <= m_current_time)
 					{
-						current_channel_sample.value = keyframe_data.value;
+						current_channel_sample.value = key_data.value;
 						break;
 					}
 				}
 				continue;
 			}
 
-			if (current_channel.keyframe_range.count == 1)
+			if (current_channel.get_key_count() == 1)
 			{
-				current_channel_sample.value = m_animation_data->keyframe_data[current_channel.keyframe_range.offset].value;
+				current_channel_sample.value = current_channel.get_key_data(0);
 				continue;
 			}
 
-			// Find the closest keyframe
-			int32_t min_keyframe_distance = std::numeric_limits<int32_t>::max();
-			int32_t closest_keyframe_index = 0;
-			for (int32_t keyframe_data_index = 0; (keyframe_data_index < current_channel.keyframe_range.count) && (min_keyframe_distance > 0); ++keyframe_data_index)
+			// Find the closest key
+			float min_key_distance = 1.0f;
+			size_t closest_key_index = 0;
+			for (size_t key_data_index = 0; (key_data_index < current_channel.get_key_count()) && (min_key_distance > 0); ++key_data_index)
 			{
-				const AnimationKeyframe& keyframe_data = m_animation_data->keyframe_data[current_channel.keyframe_range.offset + keyframe_data_index];
-				if (keyframe_data.frame_index == m_current_frame)
+				const AnimationKey key_data = current_channel.get_key(key_data_index);
+				if (key_data.time == m_current_time)
 				{
-					closest_keyframe_index = keyframe_data_index;
-					min_keyframe_distance = 0;
+					closest_key_index = key_data_index;
+					min_key_distance = 0;
 				}
 				else
 				{
-					const int32_t current_distance = std::abs(keyframe_data.frame_index - m_current_frame);
-					if (current_distance < min_keyframe_distance)
+					const float current_distance = std::abs(key_data.time - m_current_time);
+					if (current_distance < min_key_distance)
 					{
-						closest_keyframe_index = keyframe_data_index;
-						min_keyframe_distance = current_distance;
+						closest_key_index = key_data_index;
+						min_key_distance = current_distance;
 					}
 				}
 			}
@@ -207,37 +179,62 @@ namespace Vadon::Model
 			{
 			case AnimationSampleMethod::LINEAR:
 			{
-				if (min_keyframe_distance > 0)
+				if (min_key_distance > 0)
 				{
-					const AnimationKeyframe& keyframe_data = m_animation_data->keyframe_data[current_channel.keyframe_range.offset + closest_keyframe_index];
+					const AnimationKey& key_data = current_channel.get_key(closest_key_index);
 
-					const bool is_before_closest = m_current_frame < keyframe_data.frame_index;
+					const bool is_before_closest = m_current_time < key_data.time;
 
-					const int32_t other_keyframe_index = is_before_closest ? (closest_keyframe_index - 1) : (closest_keyframe_index + 1);
+					size_t other_key_index = 0;
+					if (is_before_closest)
+					{
+						if (closest_key_index > 0)
+						{
+							other_key_index = closest_key_index - 1;
+						}
+						else
+						{
+							// Just use the closest value
+							// TODO: "wrap around" and lerp toward last key?
+							current_channel_sample.value = current_channel.get_key_data(closest_key_index);
+							continue;
+						}
+					}
+					else
+					{
+						other_key_index = closest_key_index + 1;
+						if (other_key_index >= current_channel.get_key_count())
+						{
+							// Just use the closest value
+							// TODO: "wrap around" and lerp toward first key?
+							current_channel_sample.value = current_channel.get_key_data(closest_key_index);
+							continue;
+						}
+					}
 
-					const AnimationKeyframe& other_keyframe_data = m_animation_data->keyframe_data[current_channel.keyframe_range.offset + other_keyframe_index];
+					const AnimationKey& other_key_data = current_channel.get_key(other_key_index);
 
-					const int32_t frame_difference = std::abs(other_keyframe_data.frame_index - keyframe_data.frame_index);
-					const float keyframe_factor = float(min_keyframe_distance) / float(frame_difference);
+					const float time_difference = std::abs(other_key_data.time - key_data.time);
+					const float key_factor = float(min_key_distance) / float(time_difference);
 					
 					current_channel_sample.value = is_before_closest ? 
-						lerp_variant_values(keyframe_data.value, other_keyframe_data.value, keyframe_factor)
-						: lerp_variant_values(other_keyframe_data.value, keyframe_data.value, 1.0f - keyframe_factor);
+						lerp_variant_values(key_data.value, other_key_data.value, key_factor)
+						: lerp_variant_values(other_key_data.value, key_data.value, 1.0f - key_factor);
 				}
 				else
 				{
-					// Exactly on keyframe, use its value
-					current_channel_sample.value = m_animation_data->keyframe_data[current_channel.keyframe_range.offset + closest_keyframe_index].value;
+					// Exactly on key, use its value
+					current_channel_sample.value = current_channel.get_key_data(closest_key_index);
 				}
 			}
 				break;
 			case AnimationSampleMethod::NEAREST_NEIGHBOR:
-				// Just use the value of the closest keyframe
-				current_channel_sample.value = m_animation_data->keyframe_data[current_channel.keyframe_range.offset + closest_keyframe_index].value;
+				// Just use the value of the closest key
+				current_channel_sample.value = current_channel.get_key_data(closest_key_index);
 				break;
 			}
 		}
 
-		m_sample_data.sampled_frame = m_current_frame;
+		m_sample_data.sampled_time = m_current_time;
 	}
 }

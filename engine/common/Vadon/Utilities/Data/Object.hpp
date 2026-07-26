@@ -42,6 +42,8 @@ namespace Vadon::Utilities
 	class TypedObjectWrapper : public ObjectWrapper
 	{
 	public:
+		using _WrappedType = T;
+
 		explicit TypedObjectWrapper(void* data = nullptr)
 			: ObjectWrapper(TypeRegistry::get_type_id<T>(), data)
 		{
@@ -155,10 +157,15 @@ namespace Vadon::Utilities
 	};
 
 	template<typename T>
-	struct TypedObjectWrapperVariantTypeTrait
+	using as_typed_object_wrapper = TypedObjectWrapper<typename T::_WrappedType>;
+
+	template<typename T>
+	concept is_typed_object_wrapper = std::is_same_v<T, as_typed_object_wrapper<T>>;
+
+	template<is_typed_object_wrapper T>
+	struct VariantTypeTrait<T>
 	{
-		using _WrapperType = TypedObjectWrapper<T>;
-		static Variant to_variant(const _WrapperType& value)
+		static Variant to_variant(const T& value)
 		{
 			VariantDictionary object_dictionary;
 			ObjectWrapper generic_wrapper(value.get_type(), value.get_data());
@@ -170,17 +177,17 @@ namespace Vadon::Utilities
 			return Box(object_dictionary);
 		}
 
-		static _WrapperType from_variant(const Variant& variant)
+		static T from_variant(const Variant& variant)
 		{
 			ObjectWrapper object;
 			const VariantDictionary& properties_dictionary = *std::get<BoxedVariantDictionary>(variant);
 			if (ObjectSerializer::load_object_data(object, properties_dictionary) == false)
 			{
 				VADON_ERROR("Failed to load object data!");
-				return _WrapperType{};
+				return T{};
 			}
 
-			return _WrapperType(object);
+			return T(object);
 		}
 	};
 }
@@ -194,19 +201,6 @@ struct Vadon::Utilities::VariantTypeTrait<_type>\
 	static _type from_variant(const Vadon::Utilities::Variant& variant)\
 	{\
 		return ObjectVariantTypeTrait<_type>::from_variant(variant);\
-	}\
-};\
-template<>\
-struct Vadon::Utilities::VariantTypeTrait<Vadon::Utilities::TypedObjectWrapper<_type>>\
-{\
-	using _WrapperType = Vadon::Utilities::TypedObjectWrapper<_type>;\
-	static Vadon::Utilities::Variant to_variant(const _WrapperType& value)\
-	{\
-		return TypedObjectWrapperVariantTypeTrait<_type>::to_variant(value);\
-	}\
-	static _WrapperType from_variant(const Vadon::Utilities::Variant& variant)\
-	{\
-		return TypedObjectWrapperVariantTypeTrait<_type>::from_variant(variant);\
 	}\
 }
 #endif

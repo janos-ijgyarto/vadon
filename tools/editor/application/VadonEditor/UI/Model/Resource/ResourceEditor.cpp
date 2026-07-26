@@ -63,6 +63,8 @@ namespace VadonEditor::UI
 		// NOTE: this will create the widgets from the derived type first, going from top-to-bottom toward the parent type
 		for (const Core::TypeData* current_type : type_parent_list)
 		{
+			// TODO: implement custom widgets for certain resource types
+
 			// Add a label for the property section
 			{
 				QString current_type_name = current_type->find_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME);

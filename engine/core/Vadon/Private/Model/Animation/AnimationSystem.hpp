@@ -16,8 +16,7 @@ namespace Vadon::Private::Model
 
 		AnimationHandle load_animation(AnimationID anim_id) override;
 
-		const AnimationData& get_animation_data(AnimationHandle animation_handle) const override;
-		void set_animation_data(AnimationHandle animation_handle, const AnimationData& data) override;
+		const Animation* get_animation_data(AnimationHandle anim_handle) const override;
 	private:
 		AnimationSystem(Vadon::Core::EngineCoreInterface& core);
 
