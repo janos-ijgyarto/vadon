@@ -77,12 +77,31 @@
        <item>
         <layout class="QHBoxLayout" name="channelButtonsHBox">
          <item>
-          <widget class="QPushButton" name="addChannelButton">
+          <widget class="QToolButton" name="addChannelButton">
+           <property name="toolTip">
+            <string>Add Channel</string>
+           </property>
            <property name="text">
             <string/>
            </property>
            <property name="icon">
             <iconset theme="QIcon::ThemeIcon::ListAdd"/>
+           </property>
+           <property name="popupMode">
+            <enum>QToolButton::ToolButtonPopupMode::InstantPopup</enum>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="removeChannelButton">
+           <property name="toolTip">
+            <string>Remove Channel</string>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset theme="QIcon::ThemeIcon::ListRemove"/>
            </property>
           </widget>
          </item>
@@ -219,52 +238,112 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>403</width>
+         <width>445</width>
          <height>580</height>
         </rect>
        </property>
-       <layout class="QVBoxLayout" name="verticalLayout_3" stretch="0,0,0,1">
+       <layout class="QVBoxLayout" name="propertiesScrollLayout" stretch="0,1,1">
         <item>
-         <widget class="QLabel" name="animationPropertiesLabel">
-          <property name="text">
+         <widget class="QGroupBox" name="animationPropertiesGroup">
+          <property name="title">
            <string>Animation Properties</string>
           </property>
+          <layout class="QFormLayout" name="animationPropertiesLayout">
+           <item row="0" column="0">
+            <widget class="QLabel" name="animationNameLabel">
+             <property name="text">
+              <string>Name:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QLineEdit" name="animationNameLineEdit"/>
+           </item>
+          </layout>
          </widget>
         </item>
         <item>
-         <layout class="QFormLayout" name="animationPropertiesForm">
-          <item row="0" column="0">
-           <widget class="QLabel" name="nameLabel">
-            <property name="text">
-             <string>Name</string>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="1">
-           <widget class="QLineEdit" name="nameLineEdit"/>
-          </item>
-         </layout>
+         <widget class="QGroupBox" name="channelPropertiesGroup">
+          <property name="title">
+           <string>Channel Properties</string>
+          </property>
+          <layout class="QFormLayout" name="channelPropertiesLayout">
+           <item row="0" column="0">
+            <widget class="QLabel" name="channelIDLabel">
+             <property name="text">
+              <string>ID:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="0">
+            <widget class="QLabel" name="channelTagLabel">
+             <property name="text">
+              <string>Tag:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QLineEdit" name="channelTagLineEdit"/>
+           </item>
+           <item row="0" column="1">
+            <widget class="QLabel" name="channelIDTextLabel">
+             <property name="text">
+              <string>N/A</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="channelTypeLabel">
+             <property name="text">
+              <string>Type:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QLabel" name="channelTypeTextLabel">
+             <property name="text">
+              <string>N/A</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
         </item>
         <item>
-         <widget class="QLabel" name="keyPropertiesLabel">
-          <property name="text">
+         <widget class="QGroupBox" name="keyPropertiesGroup">
+          <property name="title">
            <string>Key Properties</string>
           </property>
+          <layout class="QFormLayout" name="keyPropertiesLayout">
+           <item row="0" column="0">
+            <widget class="QLabel" name="keyTimeLabel">
+             <property name="text">
+              <string>Time:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QDoubleSpinBox" name="keyTimeSpinBox">
+             <property name="decimals">
+              <number>4</number>
+             </property>
+             <property name="maximum">
+              <double>1.000000000000000</double>
+             </property>
+             <property name="singleStep">
+              <double>0.010000000000000</double>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="label">
+             <property name="text">
+              <string>Value:</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
          </widget>
-        </item>
-        <item>
-         <layout class="QFormLayout" name="keyPropertiesForm">
-          <item row="0" column="0">
-           <widget class="QLabel" name="keyTimeLabel">
-            <property name="text">
-             <string>Time</string>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="1">
-           <widget class="QDoubleSpinBox" name="keyTimeSpinBox"/>
-          </item>
-         </layout>
         </item>
        </layout>
       </widget>
@@ -300,25 +379,48 @@
     <enum>QAction::MenuRole::TextHeuristicRole</enum>
    </property>
   </action>
+  <action name="actionSave">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::DocumentSave"/>
+   </property>
+   <property name="text">
+    <string>Save</string>
+   </property>
+   <property name="toolTip">
+    <string>Save Animation</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+S</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::MenuRole::TextHeuristicRole</enum>
+   </property>
+  </action>
+  <action name="actionAddKey">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::ListAdd"/>
+   </property>
+   <property name="text">
+    <string>Add Key</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::MenuRole::TextHeuristicRole</enum>
+   </property>
+  </action>
+  <action name="actionRemoveKeys">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::ListRemove"/>
+   </property>
+   <property name="text">
+    <string>Remove Key(s)</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::MenuRole::TextHeuristicRole</enum>
+   </property>
+  </action>
  </widget>
  <resources/>
  <connections>
-  <connection>
-   <sender>addChannelButton</sender>
-   <signal>clicked()</signal>
-   <receiver>AnimationEditor</receiver>
-   <slot>add_channel_triggered()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>24</x>
-     <y>44</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>605</x>
-     <y>232</y>
-    </hint>
-   </hints>
-  </connection>
   <connection>
    <sender>playbackStartButton</sender>
    <signal>clicked()</signal>
@@ -383,11 +485,146 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>actionSave</sender>
+   <signal>triggered()</signal>
+   <receiver>AnimationEditor</receiver>
+   <slot>save_triggered()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>599</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionRemoveChannel</sender>
+   <signal>triggered()</signal>
+   <receiver>AnimationEditor</receiver>
+   <slot>remove_channel_triggered()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>599</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>removeChannelButton</sender>
+   <signal>clicked()</signal>
+   <receiver>actionRemoveChannel</receiver>
+   <slot>trigger()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>54</x>
+     <y>76</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>animationNameLineEdit</sender>
+   <signal>textChanged(QString)</signal>
+   <receiver>AnimationEditor</receiver>
+   <slot>animation_name_changed(QString)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>1007</x>
+     <y>53</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>599</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>channelTagLineEdit</sender>
+   <signal>textChanged(QString)</signal>
+   <receiver>AnimationEditor</receiver>
+   <slot>channel_tag_text_changed(QString)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>1002</x>
+     <y>156</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>599</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>keyTimeSpinBox</sender>
+   <signal>valueChanged(double)</signal>
+   <receiver>AnimationEditor</receiver>
+   <slot>key_time_changed(double)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>1004</x>
+     <y>235</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>599</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionAddKey</sender>
+   <signal>triggered()</signal>
+   <receiver>AnimationEditor</receiver>
+   <slot>add_key_triggered()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>599</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionRemoveKeys</sender>
+   <signal>triggered()</signal>
+   <receiver>AnimationEditor</receiver>
+   <slot>remove_keys_triggered()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>599</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>add_channel_triggered()</slot>
   <slot>playback_start_triggered()</slot>
   <slot>playback_stop_triggered()</slot>
   <slot>timeline_zoom_changed()</slot>
+  <slot>save_triggered()</slot>
+  <slot>remove_channel_triggered()</slot>
+  <slot>animation_name_changed(QString)</slot>
+  <slot>channel_tag_text_changed(QString)</slot>
+  <slot>key_time_changed(double)</slot>
+  <slot>add_key_triggered()</slot>
+  <slot>remove_keys_triggered()</slot>
  </slots>
 </ui>

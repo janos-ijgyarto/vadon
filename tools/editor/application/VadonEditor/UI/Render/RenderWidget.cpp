@@ -172,7 +172,7 @@ namespace VadonEditor::UI
 	RenderWidget::RenderWidget(QWidget* parent)
 		: QWidget(parent)
 	{
-
+		setFocusPolicy(Qt::FocusPolicy::ClickFocus);
 	}
 
 	RenderWidget::~RenderWidget()
@@ -249,6 +249,12 @@ namespace VadonEditor::UI
 
 	void RenderWidget::keyReleaseEvent(QKeyEvent* event)
 	{
+		if (event->isAutoRepeat() == true)
+		{
+			event->ignore();
+			return;
+		}
+
 		if (m_client_info.is_valid() == true)
 		{
 			::Vadon::Foundation::EditorPlatformEventHeader platform_event_header;

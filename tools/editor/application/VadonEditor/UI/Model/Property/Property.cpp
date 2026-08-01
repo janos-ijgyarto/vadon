@@ -32,9 +32,9 @@ namespace VadonEditor::UI
 			switch (base_type)
 			{
 			case ::Vadon::Foundation::BaseType::INT32:
-				return new PropertySpinBox(info.property_id, info.init_value.toInt(), parent_widget);
+				return new PropertySpinBox(info.property_id, info.init_value.toInt(), true, parent_widget);
 			case ::Vadon::Foundation::BaseType::UINT32:
-				return new PropertySpinBox(info.property_id, info.init_value.toUInt(), parent_widget);
+				return new PropertySpinBox(info.property_id, info.init_value.toUInt(), false, parent_widget);
 			case ::Vadon::Foundation::BaseType::FLOAT:
 				return new PropertyDoubleSpinBox(info.property_id, info.init_value.toFloat(), parent_widget);
 			case ::Vadon::Foundation::BaseType::BOOL:

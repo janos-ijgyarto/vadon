@@ -52,7 +52,14 @@ namespace VadonEditor::Model
 			return nullptr;
 		}
 
+		// Add scene to lookup
 		m_scene_lookup.insert(std::make_pair(scene_id, scene));
+
+		// Dispatch event for Scene root entity
+		// Have to do this AFTER the scene has been added to the lookup
+		// FIXME: this makes things a bit complicated, would be nicer to do it async?
+		scene->entity_added(scene->m_root_entity);
+
 		return scene;
 	}
 

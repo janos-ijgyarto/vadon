@@ -217,6 +217,7 @@ namespace VadonDemo::Core
         }
 
         // Update subsystems
+        m_view.update();
         m_ui.update();
         m_platform.update();
     }

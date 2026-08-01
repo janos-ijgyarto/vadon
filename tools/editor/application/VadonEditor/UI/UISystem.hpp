@@ -1,5 +1,6 @@
 #ifndef VADONEDITOR_UI_UISYSTEM_HPP
 #define VADONEDITOR_UI_UISYSTEM_HPP
+#include <VadonEditor/UI/Model/Animation/AnimationManager.hpp>
 #include <VadonEditor/UI/Model/Resource/ResourceManager.hpp>
 #include <VadonEditor/UI/Model/Scene/SceneManager.hpp>
 class QByteArray;
@@ -11,6 +12,7 @@ namespace VadonEditor::UI
 {
 	class LauncherDialog;
 	class MainWindow;
+	class RenderWidget;
 
 	class UISystem
 	{
@@ -38,7 +40,9 @@ namespace VadonEditor::UI
 
 		LauncherDialog* m_launcher_dialog;
 		MainWindow* m_main_window;
+		RenderWidget* m_viewport_widget;
 
+		AnimationManager m_animation_manager;
 		ResourceManager m_resource_manager;
 		SceneManager m_scene_manager;
 

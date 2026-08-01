@@ -4,10 +4,10 @@
 
 namespace
 {
-	void init_spinbox_min_max(QSpinBox* spin_box)
+	void init_spinbox_min_max(QSpinBox* spin_box, bool is_signed)
 	{
-		spin_box->setMinimum(INT_MIN);
-		spin_box->setMaximum(INT_MAX);
+		spin_box->setMinimum(is_signed ? INT_MIN : 0);
+		spin_box->setMaximum(INT_MAX); // TODO: allow UINT MAX?
 	}
 
 	void init_double_spinbox_min_max(QDoubleSpinBox* spin_box)
@@ -58,6 +58,9 @@ namespace VadonEditor::UI
 		: PropertyWidget(id, value, parent)
 	{
 		m_ui.setupUi(this);
+
+		init_spinbox_min_max(m_ui.xSpinBox, true);
+		init_spinbox_min_max(m_ui.ySpinBox, true);
 
 		m_ui.xSpinBox->setValue(value.x());
 		m_ui.ySpinBox->setValue(value.y());
@@ -130,6 +133,10 @@ namespace VadonEditor::UI
 		: PropertyWidget(id, value, parent)
 	{
 		m_ui.setupUi(this);
+
+		init_spinbox_min_max(m_ui.xSpinBox, true);
+		init_spinbox_min_max(m_ui.ySpinBox, true);
+		init_spinbox_min_max(m_ui.zSpinBox, true);
 
 		m_ui.xSpinBox->setValue(value.x1());
 		m_ui.ySpinBox->setValue(value.y1());

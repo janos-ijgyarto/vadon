@@ -99,5 +99,6 @@ namespace VadonEditor::Core
 	void Editor::process_message(const char* data, size_t size)
 	{
 		get_resource_system().process_message(data, size);
+		get_scene_system().process_message(data, size);
 	}
 }

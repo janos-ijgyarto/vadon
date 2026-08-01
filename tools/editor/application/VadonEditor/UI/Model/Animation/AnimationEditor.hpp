@@ -1,8 +1,13 @@
 #ifndef VADONEDITOR_UI_MODEL_ANIMATION_ANIMATIONEDITOR_HPP
 #define VADONEDITOR_UI_MODEL_ANIMATION_ANIMATIONEDITOR_HPP
 #include <VadonEditor/UI/Model/Animation/ui_AnimationEditor.h>
+#include <VadonEditor/Model/Animation/Animation.hpp>
 #include <QGraphicsView>
 #include <QTimer>
+namespace VadonEditor::Model
+{
+    class Resource;
+}
 namespace VadonEditor::UI
 {
     // Implementation partially based on https://github.com/hasielhassan/QtEditorialTimelineWidget
@@ -33,8 +38,7 @@ namespace VadonEditor::UI
         int left_margin = 150;
         int top_margin = 30;
         int bottom_margin = 20;
-        int track_spacing = 2;
-        int default_track_height = c_default_channel_height;
+        int channel_spacing = 2;
     };
 
     struct AnimationEditorTheme
@@ -43,62 +47,53 @@ namespace VadonEditor::UI
         AnimationEditorColorTheme colors;
     };
 
-    struct AnimationKeyData
-    {
-        QVariant value;
-        qreal start_time;
-        qreal duration;
-    };
-
-    class AnimationChannelData
-    {
-    public:
-        AnimationChannelData(const QString& name, int height = AnimationEditorConstants::c_default_channel_height)
-            : m_name(name)
-            , m_height(height)
-        {
-
-        }
-
-        void add_key(const AnimationKeyData& key_data)
-        {
-            m_keys.push_back(key_data);
-        }
-
-        const QList<AnimationKeyData>& get_keys() const { return m_keys; }
-        QList<AnimationKeyData>& get_keys() { return m_keys; }
-
-        const QString& get_name() const { return m_name; }
-        int get_height() const { return m_height; }
-    private:
-        QString m_name;
-        int m_height;
-        QList<AnimationKeyData> m_keys;
-    };
-
 	class AnimationEditor : public QWidget
 	{
 		Q_OBJECT
 	public:
-        AnimationEditor(QWidget* parent = nullptr);
+        AnimationEditor(Model::Resource* resource, QWidget* parent = nullptr);
         ~AnimationEditor();
 
+        bool initialize();
+
+        const Model::Animation& get_animation() const { return m_animation; }
         const AnimationEditorTheme& get_theme() const { return m_theme; }
-        const QList<AnimationChannelData>& get_channel_data() const { return m_channel_data; }
+        QGraphicsView* get_view() const { return m_ui.timelineView; }
 
         qreal get_horizontal_zoom() const { return m_horizontal_zoom; }
         qreal get_vertical_zoom() const { return m_vertical_zoom; }
 
+        qreal get_timeline_width() const;
         qreal calculate_scene_height() const;
+
+        void channel_selected(const QUuid& channel_id);
+        void key_moved(const QUuid& channel_id, int key_id);
+
+        void channel_context_menu_requested(const QUuid& channel_id, const QPoint& screen_pos, const QPointF& item_pos);
     private slots:
         void playback_start_triggered();
         void playback_stop_triggered();
 
         void add_channel_triggered();
+        void remove_channel_triggered();
+
+        void add_key_triggered();
+        void remove_keys_triggered();
 
         void timeline_zoom_changed();
+
+        void save_triggered();
+
+        void animation_edited();
+
+        void animation_name_changed(const QString& text);
+        void channel_tag_text_changed(const QString& text);
+        void key_time_changed(double value);
+        void key_value_changed();
+
+        void item_selection_changed();
 	private:
-        void initialize();
+        void update_title();
 
         void transform_updated();
         void time_updated();
@@ -106,10 +101,12 @@ namespace VadonEditor::UI
         void playback_timer_update();
         void reset_playback();
 
+        Model::Resource* m_resource;
+        Model::Animation m_animation;
+
 		Ui::AnimationEditor m_ui;
 
         AnimationEditorTheme m_theme;
-        QList<AnimationChannelData> m_channel_data;
 
         QGraphicsScene m_graphics_scene;
 

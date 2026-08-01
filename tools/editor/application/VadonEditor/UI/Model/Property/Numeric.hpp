@@ -9,7 +9,7 @@ namespace VadonEditor::UI
 	{
 		Q_OBJECT
 	public:
-		PropertySpinBox(const QUuid& id, int value, QWidget* parent);
+		PropertySpinBox(const QUuid& id, int value, bool is_signed, QWidget* parent);
 
 		void set_read_only(bool read_only) override;
 	private slots:

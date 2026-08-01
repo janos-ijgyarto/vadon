@@ -12,6 +12,7 @@
 
 #include <VadonEditor/UI/MainWindow.hpp>
 #include <VadonEditor/UI/Project/LauncherDialog.hpp>
+#include <VadonEditor/UI/Render/RenderWidget.hpp>
 
 #include <Vadon/Foundation/Editor/Network/Message/Platform.hpp>
 
@@ -22,10 +23,12 @@ namespace VadonEditor::UI
 {
 	UISystem::UISystem(Core::Application& application)
 		: m_application(application)
+		, m_animation_manager(application)
 		, m_resource_manager(application)
 		, m_scene_manager(application)
 		, m_launcher_dialog(nullptr)
 		, m_main_window(nullptr)
+		, m_viewport_widget(nullptr)
 		, m_shutting_down(false)
 	{
 
@@ -86,6 +89,11 @@ namespace VadonEditor::UI
 			return false;
 		}
 
+		if (m_animation_manager.initialize() == false)
+		{
+			return false;
+		}
+
 		return true;
 	}
 
@@ -93,6 +101,7 @@ namespace VadonEditor::UI
 	{
 		m_resource_manager.shutdown();
 		m_scene_manager.shutdown();
+		m_animation_manager.shutdown();
 
 		if (m_launcher_dialog != nullptr)
 		{
@@ -148,13 +157,47 @@ namespace VadonEditor::UI
 				client_info.application = &m_application;
 				client_info.client_id = window_request->id;
 
-				RenderWidget* main_viewport = m_main_window->get_viewport();
-				main_viewport->register_client(client_info);
+				// FIXME: this is a very hacky solution
+				// Long-term we should have a proper system where plugins can manage
+				// the windows they requested, and we can clean them up in case of shutdown/crash/etc.
+				QVBoxLayout* viewport_layout = m_main_window->get_viewport_layout();
+
+				if (m_viewport_widget != nullptr)
+				{
+					// Remove previous widget
+					viewport_layout->removeWidget(m_viewport_widget);
+					m_viewport_widget->deleteLater();
+					m_viewport_widget = nullptr;
+				}
+
+				m_viewport_widget = new RenderWidget(m_main_window);
+				m_viewport_widget->register_client(client_info);
+
+				viewport_layout->addWidget(m_viewport_widget);
+
+				// Adjust splitter so the viewport is more clearly visible
+				{
+					QList<int> splitter_sizes = m_main_window->m_ui.viewportSplitter->sizes();
+					int total_size = 0;
+					for (int current_size : splitter_sizes)
+					{
+						total_size += current_size;
+					}
+
+					QList<int> new_sizes;
+					const int new_size = total_size / splitter_sizes.count();
+					for (qsizetype index = 0; index < splitter_sizes.count(); ++index)
+					{
+						new_sizes.push_back(new_size);
+					}
+
+					m_main_window->m_ui.viewportSplitter->setSizes(new_sizes);
+				}
 
 				::Vadon::Foundation::EditorPlatformManagerWindowRequest window_request_response;
 				window_request_response.message_type = ::Vadon::Foundation::EditorPlatformMessageType::MANAGER_WINDOW_REQUEST;
 				window_request_response.id = window_request->id;
-				window_request_response.handle = main_viewport->winId();
+				window_request_response.handle = m_viewport_widget->winId();
 
 				VadonEditor::Network::MessageSerializer message_serializer;
 				message_serializer.write_message_trivial(::Vadon::Foundation::EditorMessageCategory::PLATFORM, window_request_response);
@@ -186,8 +229,13 @@ namespace VadonEditor::UI
 
 	void UISystem::close_requested()
 	{
-		// Check scenes first
+		// Check scenes and animations first
 		if (m_scene_manager.request_close() == false)
+		{
+			return;
+		}
+
+		if (m_animation_manager.request_close() == false)
 		{
 			return;
 		}

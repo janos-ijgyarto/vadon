@@ -7,6 +7,7 @@
 #include <VadonEditor/Model/Resource/ResourceSystem.hpp>
 #include <VadonEditor/Model/Scene/SceneSystem.hpp>
 
+#include <VadonEditor/Network/NetworkSystem.hpp>
 #include <VadonEditor/Network/Message/MessageSerializer.hpp>
 
 #include <VadonEditor/UI/UISystem.hpp>
@@ -174,6 +175,8 @@ namespace VadonEditor::UI
 			scene_selected.scene_id = Utilities::qt_uuid_to_vadon_uuid(selected_scene_tree->get_scene()->get_id());
 
 			message_serializer.write_message_trivial(::Vadon::Foundation::EditorMessageCategory::MODEL, scene_selected);
+
+			m_application.get_network_system().send_message(message_serializer);
 		}
 	}
 

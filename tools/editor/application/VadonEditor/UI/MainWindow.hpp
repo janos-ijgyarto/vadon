@@ -18,7 +18,7 @@ namespace VadonEditor::UI
         ~MainWindow();
 
         QTabWidget* get_scene_tab_widget() const { return m_ui.sceneTabWidget; }
-        RenderWidget* get_viewport() const { return m_ui.viewport; }
+        QVBoxLayout* get_viewport_layout() const { return m_ui.viewportVBox; }
     signals:
         void run_simulator_requested();
         void stop_simulator_requested();
@@ -42,8 +42,6 @@ namespace VadonEditor::UI
 
         void project_data_schema_triggered();
         void generate_data_schema_triggered();
-
-        void anim_editor_prototype_triggered();
 
         void asset_opened(const QString& asset_path);
     protected:

@@ -2,13 +2,13 @@
 
 namespace VadonEditor::UI
 {
-	PropertySpinBox::PropertySpinBox(const QUuid& id, int value, QWidget* parent)
+	PropertySpinBox::PropertySpinBox(const QUuid& id, int value, bool is_signed, QWidget* parent)
 		: PropertyWidget(id, value, parent)
 	{
 		m_ui.setupUi(this);
 
-		m_ui.spinBox->setMinimum(INT_MIN);
-		m_ui.spinBox->setMaximum(INT_MAX);
+		m_ui.spinBox->setMinimum(is_signed ? INT_MIN : 0);
+		m_ui.spinBox->setMaximum(INT_MAX); // FIXME: allow UINT MAX?
 
 		m_ui.spinBox->setValue(value);
 	}

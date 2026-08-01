@@ -16,28 +16,30 @@ namespace Vadon::Utilities
 		using ObjectDestructorFunction = void(*)(const void*);
 
 		// TODO: use allocator API to ensure that we don't just naively heap-allocate!
+		template<typename T>
+		struct DefaultObjectFactory
+		{
+			static void* factory_function()
+			{
+				return new T();
+			}
+
+			static void destructor_function(const void* object)
+			{
+				delete static_cast<const T*>(object);
+			}
+		};
+
 		struct ObjectFactory
 		{
 			ObjectFactoryFunction factory_function = nullptr;
 			ObjectDestructorFunction destructor_function = nullptr;
 
 			template<typename T>
-			static void* default_factory_function()
-			{
-				return new T();
-			}
-
-			template<typename T>
-			static void default_destructor_function(const void* object)
-			{
-				delete static_cast<const T*>(object);
-			}
-
-			template<typename T>
 			static ObjectFactory get_default_factory()
 			{
-				return ObjectFactory{ .factory_function = &ObjectFactory::default_factory_function<T>,
-					.destructor_function = &ObjectFactory::default_destructor_function<T> };
+				return ObjectFactory{ .factory_function = &DefaultObjectFactory<T>::factory_function,
+					.destructor_function = &DefaultObjectFactory<T>::destructor_function };
 			}
 		};
 
@@ -60,7 +62,7 @@ namespace Vadon::Utilities
 		}
 
 		template<typename T>
-		static void register_type_factory(ObjectFactory factory = ObjectFactory::get_default_factory())
+		static void register_type_factory(ObjectFactory factory = ObjectFactory::get_default_factory<T>())
 		{
 			internal_register_type_factory(get_type_id<T>(), factory);
 		}

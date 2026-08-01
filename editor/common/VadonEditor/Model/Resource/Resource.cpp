@@ -151,6 +151,7 @@ namespace VadonEditor::Model
 				
 		Resource* embedded_resource_obj = new Resource(m_editor, id);
 		embedded_resource_obj->m_handle = embedded_handle;
+		embedded_resource_obj->m_info = engine_resource_system.get_resource_info(embedded_handle);
 
 		m_embedded_resources.push_back(embedded_resource_obj);
 

@@ -84,7 +84,7 @@ namespace VadonEditor::UI
 
 	void AssetBrowserTree::new_scene_triggered()
 	{
-		NewSceneDialog* scene_dialog = new NewSceneDialog(*m_application, this);
+		NewSceneDialog* scene_dialog = new NewSceneDialog(*m_application, this, get_selected_asset());
 		scene_dialog->open();
 	}
 

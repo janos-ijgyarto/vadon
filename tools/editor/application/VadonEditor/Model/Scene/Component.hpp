@@ -28,7 +28,7 @@ namespace VadonEditor::Model
 		const QUuid& get_type_id() const { return m_data.get_type_id(); }
 
 		QVariant get_property(const Core::PropertyID& property_id) const { return m_data.get_property(property_id); }
-		void set_property(const Core::PropertyID& property_id, const QVariant& value) { m_data.set_property(property_id, value); }
+		void set_property(const Core::PropertyID& property_id, const QVariant& value) { m_data.set_property(property_id, value); emit(property_edited(get_type_id(), property_id)); }
 
 		bool serialize_property(const Core::PropertyID& property_id, QJsonObject& json_obj) const { return m_data.serialize_property_data(property_id, json_obj); }
 

@@ -175,11 +175,6 @@ namespace
 			VADON_ERROR("Invalid parameters!");
 		}
 
-		if (Vadon::Utilities::ObjectSerializer::serialize_object(serializer, object_dictionary) == false)
-		{
-			return false;
-		}
-
 		if (serializer.close_object() != Vadon::Utilities::Serializer::Result::SUCCESSFUL)
 		{
 			return false;

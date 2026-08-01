@@ -66,7 +66,7 @@ namespace Vadon::Private::Model
 
 	ResourceHandle ResourceSystem::create_resource_with_id(Vadon::Utilities::TypeID type_id, ResourceID resource_id)
 	{
-		if (find_resource(resource_id).is_valid() == false)
+		if (find_resource(resource_id).is_valid() == true)
 		{
 			log_error(std::format("Resource with ID {} already exists!", Utilities::uuid_to_string(resource_id).string));
 			return ResourceHandle();

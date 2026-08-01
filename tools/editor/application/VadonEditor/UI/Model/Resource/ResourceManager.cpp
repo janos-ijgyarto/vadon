@@ -2,9 +2,9 @@
 
 #include <VadonEditor/Core/Application.hpp>
 #include <VadonEditor/Core/Asset/AssetManager.hpp>
-#include <VadonEditor/Core/Project/ProjectManager.hpp>
 
 #include <VadonEditor/Model/ModelSystem.hpp>
+#include <VadonEditor/Model/Animation/Animation.hpp>
 #include <VadonEditor/Model/Resource/ResourceSystem.hpp>
 #include <VadonEditor/Model/Scene/Scene.hpp>
 
@@ -23,8 +23,6 @@ namespace VadonEditor::UI
 
 	bool UnsavedResourceAssetFilter::initialize()
 	{
-		const Core::DataSchema& data_schema = m_application.get_project_manager().get_project_data_schema();
-
 		Model::ResourceSystem& resource_system = m_application.get_model_system().get_resource_system();
 		QList<Model::Resource*> active_resources = resource_system.get_all_resources();
 		for (Model::Resource* current_resource : active_resources)
@@ -34,7 +32,13 @@ namespace VadonEditor::UI
 				continue;
 			}
 
-			if (data_schema.is_base_of(Model::Scene::get_scene_type_uuid(), current_resource->get_info().type) == true)
+			if (Model::Animation::is_animation_base_of_type(m_application, current_resource->get_info().type) == true)
+			{
+				// Skip animations
+				continue;
+			}
+
+			if (Model::Scene::is_scene_base_of_type(m_application, current_resource->get_info().type) == true)
 			{
 				// Skip scenes
 				continue;
@@ -109,6 +113,13 @@ namespace VadonEditor::UI
 		Model::ResourceSystem& resource_system = m_application.get_model_system().get_resource_system();
 		const Model::ResourceInfo resource_info = resource_system.resource_info_by_asset_id(asset_info.id);
 		Q_ASSERT_X(resource_info.is_valid() == true, "VadonEditor::UI::ResourceManager::asset_opened", "Cannot find resource");
+
+		// FIXME: instead of this, use a system where we try managers until we get one that accepts it!
+		if (Model::Animation::is_animation_base_of_type(m_application, resource_info.type) == true)
+		{
+			// Skip animations
+			return;
+		}
 
 		auto editor_it = m_resource_widgets.find(resource_info.id);
 		if (editor_it == m_resource_widgets.end())

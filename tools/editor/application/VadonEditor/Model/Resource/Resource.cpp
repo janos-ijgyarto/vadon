@@ -385,7 +385,7 @@ namespace VadonEditor::Model
 	void Resource::message_resource_loaded(bool reload) const
 	{
 		// Send message about Resource
-		if (is_embedded() == false)
+		if (is_embedded() == true)
 		{
 			// Only if not embedded, the embedded resources will be loaded by the simulator independently
 			return;

@@ -19,7 +19,7 @@ namespace Vadon::Model
 	// TODO: revise as class to restrict access to base members?
 	struct Resource
 	{
-		VADON_DECLARE_MEMBER_UUID(name, "27c87325-75f7-4c32-b309-0dd56f8cc5d9");
+		VADON_DECLARE_MEMBER_UUID(name, ::Vadon::Foundation::ResourceSchema::c_name_property.id.string);
 
 		ResourceID id;
 		std::string name;

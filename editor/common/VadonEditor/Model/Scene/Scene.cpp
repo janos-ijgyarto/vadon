@@ -105,8 +105,6 @@ namespace VadonEditor::Model
 		m_root_entity = engine_scene_system.instantiate_scene(scene_handle, m_editor.get_ecs_world());
 		VADON_ASSERT(m_root_entity.is_valid(), "Failed to instantiate scene");
 
-		entity_added(m_root_entity);
-
 		return true;
 	}
 
@@ -262,6 +260,13 @@ namespace VadonEditor::Model
 					VADON_ERROR("Failed to finalize message serializer!");
 					return;
 				}
+
+				ComponentEvent component_event;
+				component_event.type = ComponentEventType::EDITED;
+				component_event.owner = entity_handle;
+				component_event.component_type = component_type_id;
+
+				m_editor.get_scene_system().dispatch_component_event(component_event);
 			}
 			break;
 			case ::Vadon::Foundation::EditorModelMessageType::COMPONENT_REMOVED:
