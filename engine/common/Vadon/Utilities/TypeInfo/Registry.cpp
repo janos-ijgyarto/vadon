@@ -89,6 +89,7 @@ namespace Vadon::Utilities
 
 		register_type<BoxedVariantArray>();
 		register_type<BoxedVariantDictionary>();
+		register_type<DataObject>();
 		register_type<ObjectWrapper>();
 
 		return true;

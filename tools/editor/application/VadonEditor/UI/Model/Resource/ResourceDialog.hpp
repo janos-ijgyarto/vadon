@@ -90,7 +90,10 @@ namespace VadonEditor::UI
 		void filter_text_changed(const QString& text);
 		void tree_item_clicked(const QModelIndex& index);
 		void tree_item_double_clicked(const QModelIndex& index);
+		void selection_accepted();
 	private:
+		void resource_selected(const QModelIndex& index);
+
 		void update_buttons();
 		bool is_compatible_item(const Model::ResourceInfo& resource_info) const;
 		Model::ResourceInfo get_resource_info(const QModelIndex& index) const;

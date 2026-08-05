@@ -65,8 +65,9 @@ namespace
 		{
 			// Assume we are processing the object properties
 			VadonEditor::Core::DataObject data_object(application);
-			if (data_object.initialize(object_type) == false)
+			if (data_object.init_type(object_type) == false)
 			{
+				Q_ASSERT_X(false, "VadonEditor::Core::DataObject::DataObject", "Failed to initialize type");
 				return false;
 			}
 
@@ -98,7 +99,7 @@ namespace
 		{
 			// Create a "default" instance of the object
 			VadonEditor::Core::DataObject data_object(application);
-			if (data_object.initialize(object_type) == false)
+			if (data_object.default_initialize(object_type) == false)
 			{
 				return false;
 			}
@@ -149,7 +150,7 @@ namespace
 		{
 			// Assume we are processing the object properties
 			VadonEditor::Core::DataObject data_object(application);
-			if (data_object.initialize(object_type) == false)
+			if (data_object.init_type(object_type) == false)
 			{
 				return false;
 			}
@@ -229,6 +230,12 @@ namespace
 				return serialize_object_subobject_impl(application, json_value, array_element_value, object_type, true);
 			}
 		}
+		// FIXME: this is a bit convoluted, find a way to deduplicate this logic!
+		else if (element_type == VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::DataObjectSchema::c_type_uuid))
+		{
+			// DataObject is serialized as generic object
+			return serialize_object_subobject_impl(application, json_value, array_element_value, QUuid{}, false);
+		}
 		else
 		{
 			// Serialize explicitly typed object (only this type)
@@ -255,6 +262,12 @@ namespace
 				const QUuid object_type = property_data.type_list[object_type_offset];
 				return deserialize_object_subobject_impl(application, json_value, array_element_value, object_type, true);
 			}
+		}
+		// FIXME: this is a bit convoluted, find a way to deduplicate this logic!
+		else if (element_type == VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::DataObjectSchema::c_type_uuid))
+		{
+			// DataObject is deserialized as generic object
+			return deserialize_object_subobject_impl(application, json_value, array_element_value, QUuid{}, false);
 		}
 		else
 		{
@@ -422,6 +435,12 @@ namespace
 				return get_object_subobject_default_value_impl(application, object_type, true, value);
 			}
 		}
+		// FIXME: this is a bit convoluted, find a way to deduplicate this logic!
+		else if (element_type == VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::DataObjectSchema::c_type_uuid))
+		{
+			// DataObject is serialized as generic object
+			return get_object_subobject_default_value_impl(application, QUuid{}, false, value);
+		}
 		else
 		{
 			// Serialize explicitly typed object (only this type)
@@ -448,6 +467,12 @@ namespace
 				return serialize_object_subobject_impl(application, json_value, property_value, object_type, true);
 			}
 		}
+		// FIXME: this is a bit convoluted, find a way to deduplicate this logic!
+		else if (element_type == VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::DataObjectSchema::c_type_uuid))
+		{
+			// DataObject is serialized as generic object
+			return serialize_object_subobject_impl(application, json_value, property_value, QUuid{}, false);
+		}
 		else
 		{
 			// Serialize explicitly typed object (only this type)
@@ -473,6 +498,12 @@ namespace
 				const QUuid object_type = property_data.type_list[1];
 				return deserialize_object_subobject_impl(application, json_value, property_value, object_type, true);
 			}
+		}
+		// FIXME: this is a bit convoluted, find a way to deduplicate this logic!
+		else if (element_type == VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::DataObjectSchema::c_type_uuid))
+		{
+			// DataObject is serialized as generic object
+			return deserialize_object_subobject_impl(application, json_value, property_value, QUuid{}, false);
 		}
 		else
 		{
@@ -554,6 +585,29 @@ namespace
 			return false;
 		}
 	}
+
+	int get_data_object_property_qt_typeid(const VadonEditor::Core::PropertyData& property_data)
+	{
+		switch (VadonEditor::Core::PropertyData::get_category(property_data.get_root_type()))
+		{
+		case ::Vadon::Foundation::Property::Category::TRIVIAL:
+		{
+			const ::Vadon::Foundation::BaseType base_type = VadonEditor::Core::TypeData::get_base_type(property_data.get_root_type());
+			return VadonEditor::Utilities::get_qt_typeid_from_base_type(base_type);
+		}
+		case ::Vadon::Foundation::Property::Category::ARRAY:
+			return QMetaType::Type::QVariantList;
+		case ::Vadon::Foundation::Property::Category::DICTIONARY:
+			return QMetaType::Type::QVariantMap;
+		case ::Vadon::Foundation::Property::Category::OBJECT:
+			return QMetaType::Type::QVariantMap;
+		case ::Vadon::Foundation::Property::Category::RESOURCE:
+			return QMetaType::Type::QUuid;
+		default:
+			// Unsupported category!
+			return QMetaType::Type::UnknownType;
+		}
+	}
 }
 
 namespace VadonEditor::Core
@@ -563,23 +617,113 @@ namespace VadonEditor::Core
 	{
 	}
 
-	bool DataObject::initialize(const QUuid& type_id)
+	bool DataObject::init_type(const QUuid& type_id)
 	{
 		if (type_id.isNull() == true)
 		{
-			Q_ASSERT_X(false, "VadonEditor::Core::DataObject::initialize", "Invalid type ID");
+			Q_ASSERT_X(false, "VadonEditor::Core::DataObject::init_type", "Invalid type ID");
+			return false;
+		}
+
+		const DataSchema& data_schema = m_application.get_project_manager().get_project_data_schema();
+		const TypeData* type_data = data_schema.find_type_data(type_id);
+		if (type_data == nullptr)
+		{
+			Q_ASSERT_X(false, "VadonEditor::Core::DataObject::init_type", "Cannot find type data");
 			return false;
 		}
 
 		m_type_id = type_id;
-		return internal_initialize();
+		return true;
+	}
+
+	bool DataObject::default_initialize(const QUuid& type_id)
+	{
+		if (init_type(type_id) == false)
+		{
+			Q_ASSERT_X(false, "VadonEditor::Core::DataObject::default_initialize", "Failed to initialize type");
+			return false;
+		}
+
+		const DataSchema& data_schema = m_application.get_project_manager().get_project_data_schema();
+		const TypeData* type_data = data_schema.find_type_data(m_type_id);
+		if (type_data == nullptr)
+		{
+			Q_ASSERT_X(false, "VadonEditor::Core::DataObject::default_initialize", "Cannot find type data");
+			return false;
+		}
+
+		m_properties.clear();
+
+		const TypeData* current_type_data = type_data;
+		while (current_type_data != nullptr)
+		{
+			for (auto property_it = current_type_data->properties.begin(); property_it != current_type_data->properties.end(); ++property_it)
+			{
+				const QString property_key_string = Utilities::uuid_to_base64_string(property_it.key());
+
+				const Core::PropertyData& type_property_data = property_it.value();
+				const ::Vadon::Foundation::Property::Category property_category = Core::PropertyData::get_category(type_property_data.get_root_type());
+
+				QVariant property_value;
+				switch (property_category)
+				{
+				case ::Vadon::Foundation::Property::Category::TRIVIAL:
+				{
+					property_value = Utilities::get_base_type_default_value(TypeData::get_base_type(type_property_data.get_root_type()));
+				}
+				break;
+				case ::Vadon::Foundation::Property::Category::ARRAY:
+				{
+					property_value = QVariantList();
+				}
+				break;
+				case ::Vadon::Foundation::Property::Category::DICTIONARY:
+				{
+					property_value = QVariantMap();
+				}
+				break;
+				case ::Vadon::Foundation::Property::Category::OBJECT:
+				{
+					if (get_object_subobject_default_value(m_application, type_property_data, property_value) == false)
+					{
+						return false;
+					}
+				}
+				break;
+				case ::Vadon::Foundation::Property::Category::RESOURCE:
+				{
+					property_value = Utilities::get_base_type_default_value(::Vadon::Foundation::BaseType::UUID);
+				}
+				break;
+				default:
+					// Unsupported category!
+					return false;
+				}
+
+				m_properties[property_key_string] = property_value;
+			}
+
+			const QUuid base_uuid = Utilities::vadon_uuid_to_qt_uuid(current_type_data->info.base_id);
+			if (base_uuid.isNull() == false)
+			{
+				current_type_data = data_schema.find_type_data(base_uuid);
+				Q_ASSERT_X(current_type_data != nullptr, "VadonEditor::Core::DataObject::default_initialize", "Cannot find base type data");
+			}
+			else
+			{
+				break;
+			}
+		}
+
+		return true;
 	}
 
 	bool DataObject::import_data(const QVariantMap& data_map)
 	{
 		const QUuid type_id = data_map[Utilities::uuid_to_base64_string(get_type_property_uuid())].toUuid();
 
-		if (initialize(type_id) == false)
+		if (init_type(type_id) == false)
 		{
 			return false;
 		}
@@ -609,26 +753,14 @@ namespace VadonEditor::Core
 	QVariant DataObject::get_property(const PropertyID& property_id) const
 	{
 		auto property_it = m_properties.find(Utilities::uuid_to_base64_string(property_id));
-		Q_ASSERT_X(property_it != m_properties.end(), "VadonEditor::Core::DataObject::get_property", "Cannot find property");
+		Q_ASSERT_X(property_it != m_properties.end(), "VadonEditor::Core::DataObject::get_property", "Cannot find property data");
 
 		return property_it.value();
 	}
 
 	void DataObject::set_property(const PropertyID& property_id, const QVariant& value)
 	{
-		// TODO: validate that property is set with a value compatible with the schema?
-		auto property_it = m_properties.find(Utilities::uuid_to_base64_string(property_id));
-		Q_ASSERT_X(property_it != m_properties.end(), "VadonEditor::Core::DataObject::set_property", "Cannot find property");
-		if (property_it.value().typeId() != value.typeId())
-		{
-			const int original_type_id = property_it.value().typeId();
-			const int new_value_type_id = value.typeId();
-			qCritical() << "Mismatch in data type while setting property! (original:" << original_type_id << "new:" << new_value_type_id << ")";
-			Q_ASSERT_X(false, "VadonEditor::Core::DataObject::set_property", "Property value type mismatch");
-			return;
-		}
-
-		property_it.value() = value;
+		internal_set_property(property_id, value, false);
 	}
 
 	bool DataObject::serialize(QJsonObject& root_obj) const
@@ -732,7 +864,11 @@ namespace VadonEditor::Core
 				const Core::PropertyData* type_property_data = type_data->find_property_data(property_it.key());
 
 				auto property_value_it = m_properties.find(Utilities::uuid_to_base64_string(property_it.key()));
-				Q_ASSERT_X(property_value_it != m_properties.end(), "VadonEditor::Core::DataObject::serialize_properties", "Cannot find property value");
+				if (property_value_it == m_properties.end())
+				{
+					// Object has no data for this property
+					continue;
+				}
 
 				if (internal_serialize_property_data(properties_obj, *type_property_data, property_value_it.value()) == false)
 				{
@@ -749,11 +885,7 @@ namespace VadonEditor::Core
 	bool DataObject::deserialize_properties(const QJsonObject& properties_obj)
 	{
 		Q_ASSERT_X(m_type_id.isNull() == false, "VadonEditor::Core::DataObject::deserialize_properties", "Type ID is not valid");
-		if (internal_initialize() == false)
-		{
-			Q_ASSERT_X(false, "VadonEditor::Core::DataObject::deserialize_properties", "Failed to initialize");
-			return false;
-		}
+		m_properties.clear();
 
 		const DataSchema& data_schema = m_application.get_project_manager().get_project_data_schema();		
 		for (auto property_it = properties_obj.begin(); property_it != properties_obj.end(); ++property_it)
@@ -763,7 +895,8 @@ namespace VadonEditor::Core
 
 			if (type_property_data == nullptr)
 			{
-				// TODO: warning about obsolete data?
+				// Ignore property
+				qWarning() << "Stale property" << property_uuid << "loaded for object type" << m_type_id;
 				continue;
 			}
 
@@ -795,15 +928,7 @@ namespace VadonEditor::Core
 	{
 		for (auto property_it = properties.begin(); property_it != properties.end(); ++property_it)
 		{
-			auto internal_property_it = m_properties.find(property_it.key());
-			if (internal_property_it != m_properties.end())
-			{
-				internal_property_it.value() = property_it.value();
-			}
-			else
-			{
-				qWarning() << "Cannot find property" << property_it.key() << "in object" << m_type_id.toString();
-			}
+			internal_set_property(Utilities::base64_string_to_uuid(property_it.key()), property_it.value(), true);
 		}
 	}
 
@@ -838,83 +963,6 @@ namespace VadonEditor::Core
 		return QUuid();
 	}
 
-	bool DataObject::internal_initialize()
-	{
-		const DataSchema& data_schema = m_application.get_project_manager().get_project_data_schema();
-		const TypeData* type_data = data_schema.find_type_data(m_type_id);
-
-		if (type_data == nullptr)
-		{
-			Q_ASSERT_X(false, "VadonEditor::Core::DataObject::internal_initialize", "Cannot find type data");
-			return false;
-		}
-
-		m_properties.clear();
-
-		const TypeData* current_type_data = type_data;
-		while (current_type_data != nullptr)
-		{
-			for (auto property_it = current_type_data->properties.begin(); property_it != current_type_data->properties.end(); ++property_it)
-			{
-				const QString property_key_string = Utilities::uuid_to_base64_string(property_it.key());
-
-				const Core::PropertyData& type_property_data = property_it.value();
-				const ::Vadon::Foundation::Property::Category property_category = Core::PropertyData::get_category(type_property_data.get_root_type());
-
-				QVariant property_value;
-				switch (property_category)
-				{
-				case ::Vadon::Foundation::Property::Category::TRIVIAL:
-				{
-					property_value = Utilities::get_base_type_default_value(TypeData::get_base_type(type_property_data.get_root_type()));
-				}
-				break;
-				case ::Vadon::Foundation::Property::Category::ARRAY:
-				{
-					property_value = QVariantList();
-				}
-				break;
-				case ::Vadon::Foundation::Property::Category::DICTIONARY:
-				{
-					property_value = QVariantMap();
-				}
-				break;
-				case ::Vadon::Foundation::Property::Category::OBJECT:
-				{
-					if (get_object_subobject_default_value(m_application, type_property_data, property_value) == false)
-					{
-						return false;
-					}
-				}
-				break;
-				case ::Vadon::Foundation::Property::Category::RESOURCE:
-				{
-					property_value = Utilities::get_base_type_default_value(::Vadon::Foundation::BaseType::UUID);
-				}
-					break;
-				default:
-					// Unsupported category!
-					return false;
-				}
-
-				m_properties[property_key_string] = property_value;
-			}
-
-			const QUuid base_uuid = Utilities::vadon_uuid_to_qt_uuid(current_type_data->info.base_id);
-			if (base_uuid.isNull() == false)
-			{
-				current_type_data = data_schema.find_type_data(base_uuid);
-				Q_ASSERT_X(current_type_data != nullptr, "VadonEditor::Core::DataObject::initialize", "Cannot find base type data");
-			}
-			else
-			{
-				break;
-			}
-		}
-
-		return true;
-	}
-
 	bool DataObject::internal_serialize_property_data(QJsonObject& json_obj, const PropertyData& type_property_data, const QVariant& property_value) const
 	{
 		const QUuid property_id = Utilities::vadon_uuid_to_qt_uuid(type_property_data.info.id);
@@ -938,5 +986,39 @@ namespace VadonEditor::Core
 
 		json_obj[key_string] = json_value;
 		return true;
+	}
+
+	void DataObject::internal_set_property(const PropertyID& property_id, const QVariant& value, bool ignore_deprecated)
+	{
+		Q_ASSERT_X(is_valid() == true, "VadonEditor::Core::DataObject::internal_set_property", "Cannot set property on uninitialized object");
+
+		const DataSchema& data_schema = m_application.get_project_manager().get_project_data_schema();
+		const PropertyData* property_data = data_schema.find_type_property_data(m_type_id, property_id);
+		if (property_data == nullptr)
+		{
+			if (ignore_deprecated == true)
+			{
+				// Ignore property
+				qWarning() << "Stale property" << property_id << "loaded for object type" << m_type_id;
+			}
+			else
+			{
+				Q_ASSERT_X(false, "VadonEditor::Core::DataObject::internal_set_property", "Property not found in type!");
+			}
+			return;
+		}
+
+		// Validate the incoming data type against the data schema
+		const int property_typeid = get_data_object_property_qt_typeid(*property_data);
+		if (property_typeid != value.typeId())
+		{
+			const int original_type_id = property_typeid;
+			const int new_value_type_id = value.typeId();
+			qCritical() << "Mismatch in data type while setting property! (original:" << original_type_id << "new:" << new_value_type_id << ")";
+			Q_ASSERT_X(false, "VadonEditor::Core::DataObject::set_property", "Property value type mismatch");
+			return;
+		}
+
+		m_properties.insert(Utilities::uuid_to_base64_string(property_id), value);
 	}
 }

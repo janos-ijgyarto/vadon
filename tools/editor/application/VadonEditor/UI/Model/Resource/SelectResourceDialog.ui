@@ -54,7 +54,7 @@
    <sender>buttonBox</sender>
    <signal>accepted()</signal>
    <receiver>SelectResourceDialog</receiver>
-   <slot>accept()</slot>
+   <slot>selection_accepted()</slot>
    <hints>
     <hint type="sourcelabel">
      <x>248</x>
@@ -135,5 +135,6 @@
   <slot>filter_text_changed(QString)</slot>
   <slot>tree_item_clicked(QModelIndex)</slot>
   <slot>tree_item_double_clicked(QModelIndex)</slot>
+  <slot>selection_accepted()</slot>
  </slots>
 </ui>

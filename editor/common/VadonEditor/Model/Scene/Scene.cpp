@@ -25,10 +25,12 @@ namespace
 		VADON_ASSERT(scene_component.is_valid() == true, "Cannot find scene component!");
 
 		// Make sure Entity is defined in this scene
-		if (scene_component->scene_info.scene_id != scene_id)
+		const Vadon::Model::EntitySceneInfo& entity_scene_info = scene_component->scene_info;
+		if (entity_scene_info.scene_id != scene_id)
 		{
-			VADON_ASSERT(scene_component->parent_scene_info.scene_id == scene_id, "Invalid Entity data in scene!");
-			if (scene_component->parent_scene_info.entity_id == scene_id)
+			const Vadon::Model::EntitySceneInfo& parent_scene_info = scene_component->parent_scene_info;
+			VADON_ASSERT(parent_scene_info.scene_id == scene_id, "Invalid Entity data in scene!");
+			if (parent_scene_info.entity_id == entity_id)
 			{
 				return root_entity;
 			}
@@ -39,7 +41,7 @@ namespace
 		}
 
 		// Check ID for match
-		if (scene_component->scene_info.entity_id == entity_id)
+		if (entity_scene_info.entity_id == entity_id)
 		{
 			return root_entity;
 		}
@@ -305,7 +307,7 @@ namespace VadonEditor::Model
 		VADON_ASSERT(internal_find_entity(entity_info.id).is_valid() == false, "Entity already added with this ID!");
 
 		Vadon::ECS::EntityHandle parent_entity;
-		if (entity_info.parent.is_valid() == false)
+		if (entity_info.parent.is_valid() == true)
 		{
 			parent_entity = internal_find_entity(entity_info.parent);
 			VADON_ASSERT(parent_entity.is_valid() == true, "Cannot find parent entity!");
@@ -411,10 +413,22 @@ namespace VadonEditor::Model
 	void Scene::entity_added(Vadon::ECS::EntityHandle entity_handle)
 	{
 		m_editor.get_scene_system().dispatch_entity_event(EntityEvent{ .entity = entity_handle, .type = EntityEventType::ADDED });
+
+		Vadon::ECS::EntityManager& entity_manager = m_editor.get_ecs_world().get_entity_manager();
+		for (Vadon::ECS::EntityHandle child_entity : entity_manager.get_children(entity_handle))
+		{
+			entity_added(child_entity);
+		}
 	}
 
 	void Scene::entity_removed(Vadon::ECS::EntityHandle entity_handle)
 	{
 		m_editor.get_scene_system().dispatch_entity_event(EntityEvent{ .entity = entity_handle, .type = EntityEventType::REMOVED });
+
+		Vadon::ECS::EntityManager& entity_manager = m_editor.get_ecs_world().get_entity_manager();
+		for (Vadon::ECS::EntityHandle child_entity : entity_manager.get_children(entity_handle))
+		{
+			entity_removed(child_entity);
+		}
 	}
 }

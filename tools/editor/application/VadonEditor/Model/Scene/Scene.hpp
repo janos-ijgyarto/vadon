@@ -22,6 +22,7 @@ namespace VadonEditor::Model
 		Resource* get_resource() { return m_resource; }
 		const Resource* get_resource() const { return m_resource; }
 
+		const EntityModel& get_entity_model() const { return m_entity_model; }
 		EntityModel& get_entity_model() { return m_entity_model; }
 
 		bool is_modified() const;
@@ -31,8 +32,12 @@ namespace VadonEditor::Model
 		static QUuid get_scene_type_uuid();
 		static QUuid get_scene_entities_uuid();
 
+		void open_scene();
+
 		bool save_scene() const;
 		bool load_scene();
+
+		QUuid instantiate_scene(const QUuid& scene_id, Entity* parent);
 	private:
 		Scene(Core::Application& application, Resource* resource);
 
@@ -46,6 +51,10 @@ namespace VadonEditor::Model
 		void entity_component_added(const QUuid& entity_id, const QUuid& component_id);
 		void entity_component_removed(const QUuid& entity_id, const QUuid& component_id);
 		void entity_component_property_edited(const QUuid& entity_id, const QUuid& component_id, const QUuid& property_id);
+
+		bool is_sub_scene_acyclic(const QUuid& scene_id);
+
+		void message_scene_opened(bool reload);
 
 		Core::Application& m_application;
 

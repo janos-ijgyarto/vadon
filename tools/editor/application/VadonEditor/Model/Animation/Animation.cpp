@@ -215,7 +215,7 @@ namespace VadonEditor::Model
 			const QUuid channel_type_uuid = get_animation_channel_type_uuid(current_channel->get_type());
 
 			Core::DataObject channel_object(m_resource->get_application());
-			if (channel_object.initialize(channel_type_uuid) == false)
+			if (channel_object.init_type(channel_type_uuid) == false)
 			{
 				Q_ASSERT_X(false, "VadonEditor::Model::Animation::store_data", "Failed to initialize channel object");
 				return;

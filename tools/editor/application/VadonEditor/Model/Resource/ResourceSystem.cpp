@@ -60,6 +60,9 @@ namespace VadonEditor::Model
 		if (new_resource != nullptr)
 		{
 			internal_add_new_resource(new_resource);
+
+			// Notify the clients about the new resource
+			new_resource->message_resource_created();
 		}
 
 		return new_resource;
@@ -217,6 +220,9 @@ namespace VadonEditor::Model
 		{
 			Q_ASSERT_X(false, "VadonEditor::Model::ResourceSystem::create_resource_asset", "Failed to save resource to file!");
 		}
+
+		// Notify clients
+		resource->message_resource_asset_created();
 
 		return asset_id;
 	}

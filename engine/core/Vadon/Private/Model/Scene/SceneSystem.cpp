@@ -14,17 +14,6 @@
 
 #include <format>
 
-namespace Vadon::Model
-{
-	Scene::~Scene()
-	{
-		for (Vadon::Private::Model::EntityData& current_entity : entities)
-		{
-			current_entity.clear_component_data();
-		}
-	}
-}
-
 namespace Vadon::Private::Model
 {
 	SceneHandle SceneSystem::create_scene()
@@ -105,7 +94,7 @@ namespace Vadon::Private::Model
 		Vadon::Utilities::TypeRegistry::add_property<EntityData>(VADON_GET_MEMBER_UUID(EntityData, id), Vadon::Utilities::MemberVariableBind<&EntityData::id>().bind_member_getter().bind_member_setter());
 		Vadon::Utilities::TypeRegistry::add_property<EntityData>(VADON_GET_MEMBER_UUID(EntityData, parent), Vadon::Utilities::MemberVariableBind<&EntityData::parent>().bind_member_getter().bind_member_setter());
 		Vadon::Utilities::TypeRegistry::add_property<EntityData>(VADON_GET_MEMBER_UUID(EntityData, scene), Vadon::Utilities::MemberVariableBind<&EntityData::scene>().bind_member_getter().bind_member_setter());
-		Vadon::Utilities::TypeRegistry::add_property<EntityData>(VADON_GET_MEMBER_UUID(EntityData, components), Vadon::Utilities::MemberVariableBind<&EntityData::components>().bind_member_getter().bind_setter_function<&EntityData::set_components>());
+		Vadon::Utilities::TypeRegistry::add_property<EntityData>(VADON_GET_MEMBER_UUID(EntityData, components), Vadon::Utilities::MemberVariableBind<&EntityData::components>().bind_member_getter().bind_member_setter());
 		Vadon::Utilities::TypeRegistry::add_property<EntityData>(VADON_GET_MEMBER_UUID(EntityData, name), Vadon::Utilities::MemberVariableBind<&EntityData::name>().bind_member_getter().bind_member_setter());
 
 		Vadon::Utilities::TypeRegistry::add_property<Vadon::Model::Scene>(VADON_GET_MEMBER_UUID(Vadon::Model::Scene, entities), Vadon::Utilities::MemberVariableBind<&Vadon::Model::Scene::entities>().bind_member_getter().bind_member_setter());
@@ -117,8 +106,6 @@ namespace Vadon::Private::Model
 
 	void SceneSystem::register_type_metadata(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry)
 	{
-		constexpr ::Vadon::Foundation::UUID c_data_object_uuid = Vadon::Utilities::string_to_uuid(::Vadon::Foundation::DataObjectSchema::c_type_uuid);
-
 		Vadon::Utilities::TypeMetadata entitydata_metadata(metadata_registry, VADON_GET_TYPE_UUID(EntityData));
 		entitydata_metadata.add_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "Vadon::Private::Model::EntityData")
 			.add_property(EntityData::c_id_member_id)
@@ -251,24 +238,25 @@ namespace Vadon::Private::Model
 				}
 			}
 
+			// Load the component data
+			// NOTE: in case of instantiated sub-scene, this will override values set in the owner scene
 			for (const ComponentData& current_component_data : current_entity_data.components)
 			{
 				Vadon::ECS::ComponentHandle current_component = current_entity_data.scene.is_valid() == false
-					? component_manager.add_component(current_entity, current_component_data.get_type())
-					: component_manager.get_component(current_entity, current_component_data.get_type());
+					? component_manager.add_component(current_entity, current_component_data.get_type_id())
+					: component_manager.get_component(current_entity, current_component_data.get_type_id());
 
 				if (current_component.is_valid() == false)
 				{
-					// TODO: error?
+					// TODO: in case it's a sub-scene, notify that we have stale component data
+					// Otherwise throw error for invalid data
 					continue;
 				}
 
-				// FIXME: we're copying components per-propert
-				// We should instead pass the object as a whole and "clone" it
-				const Vadon::Utilities::PropertyList component_properties = Vadon::Utilities::TypeRegistry::get_properties(current_component_data.get_data(), current_component_data.get_type());
-				for (const Vadon::Utilities::Property& current_property_data : component_properties)
+				for (const auto& current_property_pair : current_component_data.get_properties().data)
 				{
-					Vadon::Utilities::TypeRegistry::set_property(current_component.get_raw(), current_component_data.get_type(), current_property_data.info.id, current_property_data.value);
+					const Utilities::PropertyUUID property_id = Utilities::parse_labeled_uuid(current_property_pair.first);
+					Vadon::Utilities::TypeRegistry::set_property(current_component.get_raw(), current_component_data.get_type_id(), property_id, current_property_pair.second);
 				}
 			}
 

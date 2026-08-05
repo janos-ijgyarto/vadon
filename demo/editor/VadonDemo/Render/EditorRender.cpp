@@ -326,8 +326,8 @@ namespace VadonDemo::Render
             [this](const VadonEditor::Model::ComponentEvent& event)
             {
                 if (event.component_type != Vadon::Utilities::TypeRegistry::get_type_id<CanvasComponent>()
-                    || event.component_type != Vadon::Utilities::TypeRegistry::get_type_id<SpriteTilingComponent>()
-                    || event.component_type != Vadon::Utilities::TypeRegistry::get_type_id<FullscreenEffectComponent>())
+                    && event.component_type != Vadon::Utilities::TypeRegistry::get_type_id<SpriteTilingComponent>()
+                    && event.component_type != Vadon::Utilities::TypeRegistry::get_type_id<FullscreenEffectComponent>())
                 {
                     return;
                 }

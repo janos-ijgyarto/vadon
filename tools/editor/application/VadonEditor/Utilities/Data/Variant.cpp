@@ -124,7 +124,7 @@ namespace VadonEditor::Utilities
 		case ::Vadon::Foundation::BaseType::VECTOR4:
 			return QVector4D{};
 		case ::Vadon::Foundation::BaseType::COLORRGBA:
-			return QColor{};
+			return QColor(0, 0, 0, 0);
 		case ::Vadon::Foundation::BaseType::UUID:
 			return QUuid{};
 		case ::Vadon::Foundation::BaseType::ARRAY:

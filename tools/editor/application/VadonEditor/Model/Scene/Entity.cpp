@@ -1,8 +1,10 @@
 #include <VadonEditor/Model/Scene/Entity.hpp>
 
+#include <VadonEditor/Core/Application.hpp>
 #include <VadonEditor/Core/Data/Type.hpp>
 
-#include <VadonEditor/Model/Scene/Scene.hpp>
+#include <VadonEditor/Model/ModelSystem.hpp>
+#include <VadonEditor/Model/Scene/SceneSystem.hpp>
 
 #include <VadonEditor/Utilities/UUID.hpp>
 #include <VadonEditor/Utilities/Data/Variant.hpp>
@@ -66,13 +68,13 @@ namespace VadonEditor::Model
 
 	bool Entity::initialize()
 	{
-		return m_data.initialize(Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::SceneEntitySchema::c_type_uuid));
+		return m_data.default_initialize(Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::SceneEntitySchema::c_type_uuid));
 	}
 	
 	bool Entity::load_data(const QVariant& data)
 	{
 		m_data.load_properties(data.toMap());
-		return true;
+		return internal_load_data();
 	}
 
 	QUuid Entity::get_id() const
@@ -170,26 +172,8 @@ namespace VadonEditor::Model
 		emit(component_removed(get_id(), component_id));
 	}
 
-	QList<QUuid> Entity::get_component_id_list()
+	QList<QUuid> Entity::get_component_id_list() const
 	{
-		if (m_components.isEmpty() == true)
-		{
-			const QVariantList component_data_list = m_data.get_property(components_property_uuid()).toList();
-			for (const QVariant& component_data : component_data_list)
-			{
-				const QVariantMap& component_obj_data = component_data.toMap();
-
-				Component* new_component = new Component(m_application);
-				if (new_component->import_data(component_obj_data) == false)
-				{
-					Q_ASSERT_X(false, "VadonEditor::Model::EntityModel::create_component_list", "Failed to create component object!");
-					delete new_component;
-				}
-
-				internal_add_component(new_component);
-			}
-		}
-
 		QList<QUuid> component_id_list;
 		for (Component* current_component : m_components)
 		{
@@ -203,9 +187,53 @@ namespace VadonEditor::Model
 	{
 		QVariantList component_data_list;
 
+		const Entity* sub_scene_entity = nullptr;
+		const SceneID sub_scene_id = get_sub_scene_id();
+		if (sub_scene_id.isNull() == false)
+		{
+			SceneSystem& scene_system = m_application.get_model_system().get_scene_system();
+			Scene* sub_scene = scene_system.get_scene(sub_scene_id);
+
+			sub_scene_entity = sub_scene->get_entity_model().get_root_entity();
+		}
+
 		for (Component* current_component : m_components)
 		{
-			component_data_list.push_back(current_component->export_data());
+			QVariantMap component_data = current_component->export_data();
+			if (sub_scene_entity != nullptr)
+			{
+				const Component* ref_component = sub_scene_entity->get_component(current_component->get_type_id());
+				Q_ASSERT_X(ref_component != nullptr, "VadonEditor::Model::Entity::store_component_data", "Cannot find ref component");
+
+				const QString properties_key_string = Utilities::uuid_to_base64_string(Core::DataObject::get_properties_property_uuid());
+				auto properties_it = component_data.find(properties_key_string);
+				QVariantMap component_properties = properties_it->toMap();
+
+				for (auto property_entry_it = component_properties.begin(); property_entry_it != component_properties.end();)
+				{
+					const QVariant ref_value = ref_component->get_property(Utilities::base64_string_to_uuid(property_entry_it.key()));
+					if (property_entry_it.value() == ref_value)
+					{
+						// Property value is the same, so we can remove it from the map
+						property_entry_it = component_properties.erase(property_entry_it);
+					}
+					else
+					{
+						// Property is different from original, so we keep it
+						++property_entry_it;
+					}
+				}
+
+				if (component_properties.isEmpty())
+				{
+					// No difference from source scene, skip component
+					continue;
+				}
+
+				component_data.insert(properties_key_string, component_properties);
+			}
+
+			component_data_list.push_back(component_data);
 		}
 
 		m_data.set_property(components_property_uuid(), component_data_list);
@@ -219,6 +247,70 @@ namespace VadonEditor::Model
 	void Entity::internal_component_property_edited(const QUuid& component_id, const QUuid& property_id)
 	{
 		emit(component_property_edited(get_id(), component_id, property_id));
+	}
+
+	bool Entity::internal_load_data()
+	{
+		const SceneID sub_scene_id = get_sub_scene_id();
+		if (sub_scene_id.isNull() == false)
+		{
+			// First copy components from reference scene
+			SceneSystem& scene_system = m_application.get_model_system().get_scene_system();
+			Scene* sub_scene = scene_system.get_scene(sub_scene_id);
+
+			const Entity* sub_scene_entity = sub_scene->get_entity_model().get_root_entity();
+			for (const Component* ref_component : sub_scene_entity->m_components)
+			{
+				Component* copied_component = new Component(m_application);
+				if (copied_component->import_data(ref_component->export_data()) == false)
+				{
+					Q_ASSERT_X(false, "VadonEditor::Model::EntityModel::internal_load_data", "Failed to import ref component data");
+					delete copied_component;
+					continue;
+				}
+
+				internal_add_component(copied_component);
+			}
+		}
+
+		// Gather the component data for this entity
+		const QVariantList component_data_list = m_data.get_property(components_property_uuid()).toList();
+		for (const QVariant& component_data : component_data_list)
+		{
+			const QVariantMap component_obj_data = component_data.toMap();
+
+			if (sub_scene_id.isNull() == true)
+			{
+				Component* new_component = new Component(m_application);
+				if (new_component->import_data(component_obj_data) == false)
+				{
+					Q_ASSERT_X(false, "VadonEditor::Model::EntityModel::create_component_list", "Failed to create component object!");
+					delete new_component;
+					continue;
+				}
+
+				internal_add_component(new_component);
+			}
+			else
+			{
+				Core::DataObject component_data_obj(m_application);
+				if (component_data_obj.import_data(component_obj_data) == false)
+				{
+					return false;
+				}
+
+				Component* component = get_component(component_data_obj.get_type_id());
+				if (component == nullptr)
+				{
+					qWarning() << "Stale component type" << component_data_obj.get_type_id() << "in Entity" << get_id();
+					continue;
+				}
+
+				component->import_properties(component_data_obj.get_property_map());
+			}
+		}
+
+		return true;
 	}
 
 	void Entity::internal_set_name(const QString& name)
@@ -301,27 +393,7 @@ namespace VadonEditor::Model
 
 	QUuid EntityModel::add_entity(Entity* parent)
 	{
-		Q_ASSERT_X(parent != nullptr, "VadonEditor::Model::EntityModel::add_entity", "Must provide a valid parent");
-
-		Entity* new_entity = internal_create_entity(m_entity_lookup);
-
-		const QUuid entity_parent_property_uuid = Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::SceneEntitySchema::c_parent_property.id);
-		const QUuid parent_id = parent->get_id();
-		new_entity->m_data.set_property(entity_parent_property_uuid, parent_id);
-
-		const QUuid new_entity_id = new_entity->get_id();
-
-		QStandardItem* new_entity_item = create_scene_tree_standard_item(new_entity->get_label(), new_entity_id);
-
-		const QModelIndex parent_item_index = find_entity_item_by_id(parent_id);
-		Q_ASSERT_X(parent_item_index.isValid() == true, "VadonEditor::Model::EntityModel::add_entity", "Cannot find parent item");
-
-		QStandardItem* parent_item = m_qt_model.itemFromIndex(parent_item_index);
-		parent_item->appendRow(new_entity_item);
-
-		emit(entity_added(new_entity_id));
-
-		return new_entity_id;
+		return internal_add_entity(parent, QUuid{});
 	}
 
 	void EntityModel::remove_entity(const QUuid& id)
@@ -414,6 +486,11 @@ namespace VadonEditor::Model
 		return true;
 	}
 
+	QUuid EntityModel::instantiate_scene(const SceneID& scene_id, Entity* parent)
+	{
+		return internal_add_entity(parent, scene_id);
+	}
+
 	Entity* EntityModel::internal_create_entity()
 	{
 		VadonEditor::Model::Entity* entity = new VadonEditor::Model::Entity(m_application);
@@ -432,6 +509,50 @@ namespace VadonEditor::Model
 		new_entity->set_id(QUuid::createUuid()); // TODO: make sure UUID is unique in the project?
 		internal_add_entity(new_entity, entity_lookup);
 		return new_entity;
+	}
+
+	QUuid EntityModel::internal_add_entity(Entity* parent, const QUuid& sub_scene_id)
+	{
+		Q_ASSERT_X(parent != nullptr, "VadonEditor::Model::EntityModel::internal_add_entity", "Must provide a valid parent");
+
+		Entity* new_entity = internal_create_entity(m_entity_lookup);
+
+		const QUuid entity_parent_property_uuid = Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::SceneEntitySchema::c_parent_property.id);
+		const QUuid parent_id = parent->get_id();
+		new_entity->m_data.set_property(entity_parent_property_uuid, parent_id);
+
+		if (sub_scene_id.isNull() == false)
+		{
+			// Set the sub-scene ID
+			const QUuid entity_sub_scene_property_uuid = Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::SceneEntitySchema::c_scene_property.id);
+			new_entity->m_data.set_property(entity_sub_scene_property_uuid, sub_scene_id);
+
+			// We can simply copy the components from the original entity
+			SceneSystem& scene_system = m_application.get_model_system().get_scene_system();
+			Scene* sub_scene = scene_system.get_scene(sub_scene_id);
+
+			const Entity* sub_scene_entity = sub_scene->get_entity_model().get_root_entity();
+			new_entity->m_data.set_property(Entity::components_property_uuid(), sub_scene_entity->m_data.get_property(Entity::components_property_uuid()));
+
+			if (new_entity->internal_load_data() == false)
+			{
+				Q_ASSERT_X(false, "VadonEditor::Model::EntityModel::internal_add_entity", "Failed to load Entity");
+			}
+		}
+
+		const QUuid new_entity_id = new_entity->get_id();
+
+		QStandardItem* new_entity_item = create_scene_tree_standard_item(new_entity->get_label(), new_entity_id);
+
+		const QModelIndex parent_item_index = find_entity_item_by_id(parent_id);
+		Q_ASSERT_X(parent_item_index.isValid() == true, "VadonEditor::Model::EntityModel::add_entity", "Cannot find parent item");
+
+		QStandardItem* parent_item = m_qt_model.itemFromIndex(parent_item_index);
+		parent_item->appendRow(new_entity_item);
+
+		emit(entity_added(new_entity_id));
+
+		return new_entity_id;
 	}
 
 	void EntityModel::internal_add_entity(Entity* entity, QHash<QUuid, Entity*>& entity_lookup)

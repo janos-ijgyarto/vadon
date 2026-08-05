@@ -10,6 +10,8 @@
 #include <VadonEditor/UI/UISystem.hpp>
 #include <VadonEditor/UI/MainWindow.hpp>
 
+#include <VadonEditor/UI/Model/Resource/ResourceDialog.hpp>
+
 #include <VadonEditor/UI/Model/Scene/EntityEditor.hpp>
 
 #include <QMessageBox>
@@ -85,6 +87,21 @@ namespace VadonEditor::UI
 		set_modified();
 	}
 
+	void SceneTree::instantiate_scene_triggered()
+	{
+		Model::Entity* selected_entity = get_selected_entity();
+		if (selected_entity == nullptr)
+		{
+			qWarning() << "Instantiate scene was requested, but no Entity was selected!";
+			return;
+		}
+
+		SelectResourceDialog* select_dialog = new SelectResourceDialog(m_scene->get_application(), Model::Scene::get_scene_type_uuid(), this);
+		connect(select_dialog, &SelectResourceDialog::resource_asset_selected, this, &SceneTree::scene_asset_selected);
+
+		select_dialog->open();
+	}
+
 	void SceneTree::remove_entity_triggered()
 	{
 		Model::Entity* selected_entity = get_selected_entity();
@@ -110,6 +127,7 @@ namespace VadonEditor::UI
 		QMenu menu(this);
 
 		menu.addAction(m_ui.actionAddEntity);
+		menu.addAction(m_ui.actionInstantiateScene);
 		menu.addAction(m_ui.actionRemoveEntity);
 
 		menu.exec(m_ui.treeView->mapToGlobal(position));
@@ -120,6 +138,19 @@ namespace VadonEditor::UI
 
 	void SceneTree::internal_scene_modified()
 	{
+		set_modified();
+	}
+
+	void SceneTree::scene_asset_selected(const QUuid& scene_id)
+	{
+		Model::Entity* selected_entity = get_selected_entity();
+		if (selected_entity == nullptr)
+		{
+			qWarning() << "Scene asset was selected, but no parent Entity was selected!";
+			return;
+		}
+
+		m_scene->instantiate_scene(scene_id, selected_entity);
 		set_modified();
 	}
 

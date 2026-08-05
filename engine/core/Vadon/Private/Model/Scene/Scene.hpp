@@ -17,14 +17,14 @@ namespace Vadon::Private::Model
 	using EntitySceneInfo = Vadon::Model::EntitySceneInfo;
 	using SceneComponent = Vadon::Model::SceneComponent;
 
-	using ComponentData = Vadon::Utilities::ObjectWrapper;
+	using ComponentData = Vadon::Utilities::DataObject;
 
 	struct EntityData
 	{
 		::Vadon::Foundation::UUID id;
 		::Vadon::Foundation::UUID parent;
 		SceneID scene;
-		std::vector<ComponentData> components; // FIXME: use DataObject to store property data instead of allocating Component objects?
+		std::vector<ComponentData> components; // NOTE: a downside of this is having to additionally deserialize Components from Variant format
 		std::string name; // FIXME: this is only needed for the Editor, should be removed in live builds!
 
 		VADON_DECLARE_MEMBER_UUID(id, ::Vadon::Foundation::SceneEntitySchema::c_id_property.id.string);
@@ -34,9 +34,6 @@ namespace Vadon::Private::Model
 		VADON_DECLARE_MEMBER_UUID(name, ::Vadon::Foundation::SceneEntitySchema::c_name_property.id.string);
 
 		bool has_parent() const { return parent.is_valid(); }
-
-		void set_components(const std::vector<ComponentData>& component_vec);
-		void clear_component_data();
 	};
 }
 
@@ -49,8 +46,6 @@ namespace Vadon::Model
 {
 	struct Scene : public Resource
 	{
-		~Scene();
-
 		std::vector<Vadon::Private::Model::EntityData> entities;
 
 		VADON_DECLARE_MEMBER_UUID(entities, ::Vadon::Foundation::SceneSchema::c_entities_property.id.string);

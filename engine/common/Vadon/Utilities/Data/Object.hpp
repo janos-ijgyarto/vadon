@@ -4,6 +4,7 @@
 #include <Vadon/Utilities/TypeInfo/Registry.hpp>
 
 #include <Vadon/Foundation/TypeInfo/Object.hpp>
+
 namespace Vadon::Utilities
 {
 	class ObjectWrapper
@@ -79,6 +80,50 @@ namespace Vadon::Utilities
 
 		T* operator->() { return static_cast<T*>(m_data); }
 		const T* operator->() const { return static_cast<const T*>(m_data); }
+	};
+
+	class DataObject
+	{
+	public:
+		DataObject(TypeID type_id = TypeID::INVALID)
+			: m_type_id(type_id)
+		{}
+
+		TypeID get_type_id() const { return m_type_id; }
+		const VariantDictionary& get_properties() const { return m_properties; }
+
+		VADONCOMMON_API Variant get_property(const PropertyUUID& property_id);
+		VADONCOMMON_API void set_property(const PropertyUUID& property_id, const Variant& value);
+
+		VADONCOMMON_API VariantDictionary export_data() const;
+		VADONCOMMON_API bool import_data(const VariantDictionary& data);
+	private:
+		TypeID m_type_id;
+		VariantDictionary m_properties;
+	};
+
+	VADON_REGISTER_TYPE_UUID(Vadon::Utilities::DataObject, ::Vadon::Foundation::DataObjectSchema::c_type_uuid.string);
+
+	template<>
+	struct VariantTypeTrait<DataObject>
+	{
+		static Variant to_variant(const DataObject& value)
+		{
+			return Box(value.export_data());
+		}
+
+		static DataObject from_variant(const Variant& variant)
+		{
+			const VariantDictionary& object_dictionary = *std::get<BoxedVariantDictionary>(variant);
+			DataObject data_object;
+
+			if (data_object.import_data(object_dictionary) == false)
+			{
+				return DataObject{};
+			}
+
+			return data_object;
+		}
 	};
 
 	class Serializer;

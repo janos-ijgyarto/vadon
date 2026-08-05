@@ -134,6 +134,25 @@ namespace VadonEditor::UI
 		}
 
 		m_main_window->m_ui.assetBrowser->initialize(m_application);
+
+		// Resize splitter to use equal portions of the window
+		// FIXME: nicer way to do this?
+		{
+			const QList<int> original_sizes = m_main_window->m_ui.assetSplitter->sizes();
+			int total_size = 0;
+			for (int current_size : original_sizes)
+			{
+				total_size += current_size;
+			}
+
+			QList<int> new_sizes;
+			for (qsizetype index = 0; index < original_sizes.count(); ++index)
+			{
+				new_sizes.push_back(total_size / original_sizes.count());
+			}
+
+			m_main_window->m_ui.assetSplitter->setSizes(new_sizes);
+		}
 	}
 
 	void UISystem::received_message(const QByteArray& data)

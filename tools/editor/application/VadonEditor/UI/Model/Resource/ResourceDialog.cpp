@@ -325,9 +325,27 @@ namespace VadonEditor::UI
 
 	void SelectResourceDialog::tree_item_double_clicked(const QModelIndex& index)
 	{
+		resource_selected(index);
+	}
+
+	void SelectResourceDialog::selection_accepted()
+	{
+		QItemSelectionModel* tree_selection_model = m_ui.assetTree->selectionModel();
+		if (tree_selection_model->hasSelection() == false)
+		{
+			qCritical() << "No resource was selected!";
+			return;
+		}
+
+		const QModelIndex selected_item = tree_selection_model->selectedIndexes().front();
+		resource_selected(selected_item);
+	}
+
+	void SelectResourceDialog::resource_selected(const QModelIndex& index)
+	{
 		const Model::ResourceInfo resource_info = get_resource_info(index);
 		if (is_compatible_item(resource_info))
-		{			
+		{
 			emit(resource_asset_selected(resource_info.id));
 			accept();
 		}

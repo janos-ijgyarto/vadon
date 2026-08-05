@@ -208,6 +208,12 @@ namespace
 				return serialize_object_subobject_impl<size_t>(serializer, index, array_element_value, object_type, true);
 			}
 		}
+		// FIXME: this is a bit convoluted, find a way to deduplicate this logic!
+		else if (element_type == Vadon::Utilities::string_to_uuid(::Vadon::Foundation::DataObjectSchema::c_type_uuid))
+		{
+			// DataObject is deserialized as generic object
+			return serialize_object_subobject_impl<size_t>(serializer, index, array_element_value, Vadon::Utilities::TypeUUID{}, false);
+		}
 		else
 		{
 			// Serialize explicitly typed object (only this type)
@@ -330,6 +336,12 @@ namespace
 				return serialize_object_subobject_impl<std::string_view>(serializer, key, property_value, object_type, true);
 			}
 		}
+		// FIXME: this is a bit convoluted, find a way to deduplicate this logic!
+		else if (element_type == Vadon::Utilities::string_to_uuid(::Vadon::Foundation::DataObjectSchema::c_type_uuid))
+		{
+			// DataObject is deserialized as generic object
+			return serialize_object_subobject_impl<std::string_view>(serializer, key, property_value, Vadon::Utilities::TypeUUID{}, false);
+		}
 		else
 		{
 			// Serialize explicitly typed object (only this type)
@@ -379,6 +391,74 @@ namespace
 
 namespace Vadon::Utilities
 {
+	Variant DataObject::get_property(const PropertyUUID& property_id)
+	{
+		VADON_ASSERT(m_type_id != TypeID::INVALID, "Object is not set to valid type!");
+		VADON_ASSERT(Utilities::TypeRegistry::get_property_info(m_type_id, property_id).base_info.is_valid() == true, "Property not found in object!");
+
+		const std::string property_id_key = Utilities::uuid_to_base64_string(property_id);
+		auto property_it = m_properties.data.find(property_id_key);
+		if (property_it != m_properties.data.end())
+		{
+			return property_it->second;
+		}
+
+		// FIXME: look up default value from 
+		return Variant();
+	}
+
+	void DataObject::set_property(const PropertyUUID& property_id, const Variant& value)
+	{
+		VADON_ASSERT(m_type_id != TypeID::INVALID, "Object is not set to valid type!");
+		VADON_ASSERT(Utilities::TypeRegistry::get_property_info(m_type_id, property_id).base_info.is_valid() == true, "Property not found in object!");
+
+		const std::string property_id_key = Utilities::uuid_to_base64_string(property_id);
+		m_properties.data.insert(std::make_pair(property_id_key, value));
+	}
+
+	VariantDictionary DataObject::export_data() const
+	{
+		VariantDictionary data;
+
+		// NOTE: invalid object should be serialized as empty dictionary
+		if (m_type_id != TypeID::INVALID)
+		{
+			const std::string type_entry_key = Utilities::uuid_to_base64_string(Utilities::string_to_uuid(::Vadon::Foundation::DataObjectSchema::c_type_property.id));
+			data.data.insert(std::make_pair(type_entry_key, Utilities::TypeRegistry::get_type_info(m_type_id).id));
+
+			const std::string properties_entry_key = Utilities::uuid_to_base64_string(Utilities::string_to_uuid(::Vadon::Foundation::DataObjectSchema::c_properties_property.id));
+			data.data.insert(std::make_pair(properties_entry_key, Box(m_properties)));
+		}
+
+		return data;
+	}
+
+	bool DataObject::import_data(const VariantDictionary& data)
+	{
+		if (data.data.empty() == false)
+		{
+			const std::string type_entry_key = Utilities::uuid_to_base64_string(Utilities::string_to_uuid(::Vadon::Foundation::DataObjectSchema::c_type_property.id));
+			auto type_entry_it = data.data.find(type_entry_key);
+			VADON_ASSERT(type_entry_it != data.data.end(), "Invalid data");
+
+			m_type_id = Utilities::TypeRegistry::get_type_id(std::get<TypeUUID>(type_entry_it->second));
+
+			const std::string properties_entry_key = Utilities::uuid_to_base64_string(Utilities::string_to_uuid(::Vadon::Foundation::DataObjectSchema::c_properties_property.id));
+			auto properties_entry_it = data.data.find(properties_entry_key);
+			VADON_ASSERT(properties_entry_it != data.data.end(), "Invalid data");
+
+			m_properties = *std::get<BoxedVariantDictionary>(properties_entry_it->second);
+		}
+		else
+		{
+			// NOTE: invalid object should be serialized as empty dictionary
+			m_type_id = TypeID::INVALID;
+			m_properties.data.clear();
+		}
+
+		return true;
+	}
+
 	Vadon::Foundation::UUID ObjectSerializer::deserialize_type_uuid(Serializer& serializer)
 	{
 		VADON_ASSERT(serializer.is_object() == true, "Serializer is in invalid state!");

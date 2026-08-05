@@ -31,11 +31,14 @@ namespace VadonEditor::UI
 		void save_triggered();
 
 		void add_entity_triggered();
+		void instantiate_scene_triggered();
 		void remove_entity_triggered();
 
 		void entity_context_menu_requested(const QPoint& position);
 
 		void internal_scene_modified();
+
+		void scene_asset_selected(const QUuid& scene_id);
 	private:
 		void entity_opened(Model::Entity* entity);
 

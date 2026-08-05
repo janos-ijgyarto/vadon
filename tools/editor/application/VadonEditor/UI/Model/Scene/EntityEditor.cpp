@@ -97,6 +97,13 @@ namespace VadonEditor::UI
 	{
 		m_ui.setupUi(this);
 		setAttribute(Qt::WidgetAttribute::WA_DeleteOnClose, true);
+
+		const Model::SceneID sub_scene_id = entity->get_sub_scene_id();
+		if (sub_scene_id.isNull() == false)
+		{
+			m_ui.addComponentButton->setEnabled(false);
+			m_ui.addComponentButton->setVisible(false);
+		}
 	}
 
 	bool EntityEditor::initialize()
@@ -113,7 +120,10 @@ namespace VadonEditor::UI
 			return false;
 		}
 
+		// Block signals while we initialize the name line edit
+		m_ui.nameLineEdit->blockSignals(true);
 		m_ui.nameLineEdit->setText(m_entity->get_name());
+		m_ui.nameLineEdit->blockSignals(false);
 
 		if (m_entity->get_sub_scene_id().isNull() == false)
 		{
@@ -186,7 +196,8 @@ namespace VadonEditor::UI
 
 	bool EntityEditor::internal_add_component_widget(Model::Component* component)
 	{
-		ComponentWidget* component_widget = new ComponentWidget(component);
+		const bool is_sub_scene = m_entity->get_sub_scene_id().isNull() == false;
+		ComponentWidget* component_widget = new ComponentWidget(component, is_sub_scene);
 		if (component_widget->initialize(m_scene) == false)
 		{
 			Q_ASSERT_X(false, "VadonEditor::UI::EntityEditor::internal_add_component_widget", "Failed to initialize component widget!");

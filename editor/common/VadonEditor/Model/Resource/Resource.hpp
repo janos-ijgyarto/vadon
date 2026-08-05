@@ -34,14 +34,14 @@ namespace VadonEditor::Model
 	private:
 		Resource(Core::Editor& editor, const Vadon::Model::ResourceID& id);
 
+		bool initialize();
 		void shutdown();
 
-		bool internal_load();
 		void load_property_data(const ::Vadon::Foundation::EditorModelMessageResourcePropertyEdited& resource_property_message, const char* data);
 		bool load_property_data(Vadon::Utilities::Serializer& serializer);
 
-		Resource* add_embedded_resource(const Vadon::Model::ResourceID& id, const ::Vadon::Foundation::UUID& type_id);
-		void remove_embedded_resource(const Vadon::Model::ResourceID& id);
+		bool add_embedded_resource(Resource* resource);
+		void remove_embedded_resource(Resource* resource);
 
 		Core::Editor& m_editor;
 

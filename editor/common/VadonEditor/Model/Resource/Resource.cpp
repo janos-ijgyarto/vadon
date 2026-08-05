@@ -39,26 +39,26 @@ namespace VadonEditor::Model
 
 	}
 
-	void Resource::shutdown()
+	bool Resource::initialize()
 	{
-		m_handle.invalidate();
-		m_embedded_resources.clear();
-	}
-
-	bool Resource::internal_load()
-	{
-		VADON_ASSERT(is_loaded() == false, "Resource is already loaded!");
-
 		Vadon::Model::ResourceSystem& engine_resource_system = m_editor.get_engine_core().get_system<Vadon::Model::ResourceSystem>();
-		m_handle = engine_resource_system.load_resource_base(m_id);
-
-		if (m_handle.is_valid() == false)
+		if (is_loaded() == false)
 		{
-			return false;
+			m_handle = engine_resource_system.load_resource_base(m_id);
+			if (m_handle.is_valid() == false)
+			{
+				return false;
+			}
 		}
 
 		m_info = engine_resource_system.get_resource_info(m_handle);
 		return true;
+	}
+
+	void Resource::shutdown()
+	{
+		m_handle.invalidate();
+		m_embedded_resources.clear();
 	}
 
 	void Resource::load_property_data(const ::Vadon::Foundation::EditorModelMessageResourcePropertyEdited& resource_property_message, const char* data)
@@ -131,39 +131,33 @@ namespace VadonEditor::Model
 		return true;
 	}
 
-	Resource* Resource::add_embedded_resource(const Vadon::Model::ResourceID& id, const::Vadon::Foundation::UUID& type_id)
+	bool Resource::add_embedded_resource(Resource* resource)
 	{
 		VADON_ASSERT(is_loaded() == true, "Resource is not loaded!");
+		VADON_ASSERT(resource->is_loaded() == true, "Embedded resource is not loaded!");
+		VADON_ASSERT(resource->is_embedded() == false, "Resource is already embedded!");
 
 		// TODO: also check that embedded already exists in engine resource system?
-		if (find_embedded_resource(id) != nullptr)
+		if (find_embedded_resource(resource->get_id()) != nullptr)
 		{
-			// TODO: log error!
-			return nullptr;
+			// TODO: log error?
+			VADON_ERROR("Resource is already embedded in parent!");
+			return false;
 		}
 
 		Vadon::Model::ResourceSystem& engine_resource_system = m_editor.get_engine_core().get_system<Vadon::Model::ResourceSystem>();
-		Vadon::Model::ResourceHandle embedded_handle = engine_resource_system.create_resource_with_id(Vadon::Utilities::TypeRegistry::get_type_id(type_id), id);
-
-		VADON_ASSERT(embedded_handle.is_valid() == true, "Failed to create embedded resource!");
-
-		engine_resource_system.add_embedded_resource(m_handle, embedded_handle);
+		engine_resource_system.add_embedded_resource(m_handle, resource->m_handle);
 				
-		Resource* embedded_resource_obj = new Resource(m_editor, id);
-		embedded_resource_obj->m_handle = embedded_handle;
-		embedded_resource_obj->m_info = engine_resource_system.get_resource_info(embedded_handle);
-
-		m_embedded_resources.push_back(embedded_resource_obj);
-
-		return embedded_resource_obj;
+		m_embedded_resources.push_back(resource);
+		return true;
 	}
 
-	void Resource::remove_embedded_resource(const Vadon::Model::ResourceID& id)
+	void Resource::remove_embedded_resource(Resource* resource)
 	{
 		for (auto resource_it = m_embedded_resources.begin(); resource_it != m_embedded_resources.end(); ++resource_it)
 		{
 			Resource* current_embedded = *resource_it;
-			if (current_embedded->get_id() == id)
+			if (current_embedded == resource)
 			{
 				m_embedded_resources.erase(resource_it);
 				return;

@@ -43,7 +43,7 @@ namespace VadonEditor::Model
 		Component* get_component(const QUuid& component_id) const;
 		void remove_component(const QUuid& component_id);
 
-		QList<QUuid> get_component_id_list();
+		QList<QUuid> get_component_id_list() const;
 		void store_component_data();
 
 		static QUuid components_property_uuid();
@@ -56,6 +56,8 @@ namespace VadonEditor::Model
 	private slots:
 		void internal_component_property_edited(const QUuid& component_id, const QUuid& property_id);
 	private:
+		bool internal_load_data();
+
 		void internal_set_name(const QString& name);
 		void set_id(const QUuid& id);
 
@@ -88,6 +90,8 @@ namespace VadonEditor::Model
 		Entity* find_entity_by_id(const QUuid& id) const;
 		QModelIndex find_entity_item_by_id(const QUuid& id) const;
 
+		QList<QUuid> get_entity_id_list() const { return m_entity_lookup.keys(); }
+
 		QUuid add_entity(Entity* parent);
 		void remove_entity(const QUuid& id);
 
@@ -102,9 +106,12 @@ namespace VadonEditor::Model
 		void entity_component_removed(const QUuid& entity_id, const QUuid& component_id);
 		void entity_component_property_edited(const QUuid& entity_id, const QUuid& component_id, const QUuid& property_id);
 	private:
+		QUuid instantiate_scene(const SceneID& scene_id, Entity* parent);
+
 		Entity* internal_create_entity();
 		Entity* internal_create_entity(QHash<QUuid, Entity*>& entity_lookup);
 
+		QUuid internal_add_entity(Entity* parent, const QUuid& sub_scene_id);
 		void internal_add_entity(Entity* entity, QHash<QUuid, Entity*>& entity_lookup);
 		static void clear_entity_lookup(QHash<QUuid, Entity*>& entity_lookup);
 
@@ -125,6 +132,8 @@ namespace VadonEditor::Model
 		QHash<QUuid, Entity*> m_entity_lookup;
 		QStandardItemModel m_qt_model;
 		Entity* m_root_entity;
+
+		friend class Scene;
 	};
 }
 #endif

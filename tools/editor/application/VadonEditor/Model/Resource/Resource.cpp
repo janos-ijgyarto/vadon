@@ -174,7 +174,6 @@ namespace VadonEditor::Model
 
 			add_embedded_message.resource_id = Utilities::qt_uuid_to_vadon_uuid(m_info.id);
 			add_embedded_message.embedded_id = Utilities::qt_uuid_to_vadon_uuid(embedded_resource->get_info().id);
-			add_embedded_message.embedded_type_id = Utilities::qt_uuid_to_vadon_uuid(embedded_resource->get_info().type);
 
 			message_serializer.write_message_trivial(::Vadon::Foundation::EditorMessageCategory::MODEL, add_embedded_message);
 
@@ -223,7 +222,7 @@ namespace VadonEditor::Model
 		Q_ASSERT_X(m_info.id.isNull() == false, "VadonEditor::Model::Resource::initialize", "Invalid resource ID!");
 		Q_ASSERT_X(m_info.type.isNull() == false, "VadonEditor::Model::Resource::initialize", "Invalid resource type!");
 
-		if (m_data.initialize(m_info.type) == false)
+		if (m_data.default_initialize(m_info.type) == false)
 		{
 			return false;
 		}
@@ -380,6 +379,51 @@ namespace VadonEditor::Model
 		message_resource_loaded(true);
 
 		return true;
+	}
+
+	void Resource::message_resource_created() const
+	{
+		// FIXME: use temp allocator or shared serializer
+		VadonEditor::Network::MessageSerializer message_serializer;
+
+		::Vadon::Foundation::EditorModelMessageResourceCreated resource_created_message;
+		resource_created_message.message_type = ::Vadon::Foundation::EditorModelMessageType::RESOURCE_CREATED;
+
+		resource_created_message.type_id = Utilities::qt_uuid_to_vadon_uuid(m_info.type);
+		resource_created_message.resource_id = Utilities::qt_uuid_to_vadon_uuid(m_info.id);
+
+		message_serializer.write_message_trivial(::Vadon::Foundation::EditorMessageCategory::MODEL, resource_created_message);
+
+		m_application.get_network_system().send_message(message_serializer);
+	}
+
+	void Resource::message_resource_asset_created() const
+	{
+		Core::AssetManager& asset_manager = m_application.get_asset_manager();
+
+		const int asset_id = m_application.get_model_system().get_resource_system().find_resource_asset_id(m_info.id);
+		Q_ASSERT_X(asset_id != Core::AssetInfo::c_invalid_file_id, "VadonEditor::Model::Resource::message_resource_asset_created", "Cannot find resource asset");
+
+		const QModelIndex asset_index = asset_manager.find_asset_index(asset_id);
+		Q_ASSERT_X(asset_index.isValid(), "VadonEditor::Model::Resource::message_resource_asset_created", "Cannot find asset index");
+
+		const Core::AssetInfo asset_info = asset_manager.get_asset_info(asset_index);
+
+		// FIXME: use temp allocator or shared serializer
+		VadonEditor::Network::MessageSerializer message_serializer;
+
+		::Vadon::Foundation::EditorModelMessageResourceAssetCreated resource_asset_created_message;
+		resource_asset_created_message.message_type = ::Vadon::Foundation::EditorModelMessageType::RESOURCE_ASSET_CREATED;
+
+		resource_asset_created_message.resource_id = Utilities::qt_uuid_to_vadon_uuid(m_info.id);
+		resource_asset_created_message.asset_path_length = asset_info.path.length();
+
+		// FIXME: create a more elegant way to add a string to a message
+		char* message_data = message_serializer.allocate_message(::Vadon::Foundation::EditorMessageCategory::MODEL, sizeof(::Vadon::Foundation::EditorModelMessageResourceAssetCreated) + resource_asset_created_message.asset_path_length);
+		memcpy(message_data, &resource_asset_created_message, sizeof(::Vadon::Foundation::EditorModelMessageResourceAssetCreated));
+		memcpy(message_data + sizeof(::Vadon::Foundation::EditorModelMessageResourceAssetCreated), asset_info.path.toUtf8().constData(), resource_asset_created_message.asset_path_length);
+
+		m_application.get_network_system().send_message(message_serializer);
 	}
 
 	void Resource::message_resource_loaded(bool reload) const

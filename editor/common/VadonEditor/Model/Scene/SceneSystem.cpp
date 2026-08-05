@@ -95,7 +95,7 @@ namespace VadonEditor::Model
 		const Vadon::ECS::EntityHandle root_entity = ecs_world.get_entity_manager().get_entity_root(entity);
 
 		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
-		auto root_scene_component = component_manager.get_component<Vadon::Model::SceneComponent>(entity);
+		auto root_scene_component = component_manager.get_component<Vadon::Model::SceneComponent>(root_entity);
 
 		VADON_ASSERT(root_scene_component.is_valid() == true, "Cannot find Scene component");
 
@@ -142,18 +142,16 @@ namespace VadonEditor::Model
 			{
 			case ::Vadon::Foundation::EditorModelMessageType::SCENE_OPENED:
 			{
+				// TODO: add a way to reload a scene?
 				const ::Vadon::Foundation::EditorModelMessageSceneOpened* scene_opened_message = reinterpret_cast<const ::Vadon::Foundation::EditorModelMessageSceneOpened*>(message_data);
 
 				const Vadon::Model::SceneID scene_id = Vadon::Model::SceneID::from_resource_id(scene_opened_message->scene_id);
 				Scene* scene = find_scene(scene_id);
-				if (scene != nullptr)
+				if (scene == nullptr)
 				{
-					// Remove resource, since we will reload
-					internal_remove_scene(scene);
+					scene = get_scene(scene_id);
+					VADON_ASSERT(scene != nullptr, "Failed to create scene!");
 				}
-
-				scene = get_scene(scene_id);
-				VADON_ASSERT(scene != nullptr, "Failed to create scene!");
 
 				Vadon::Core::Logger::log_message(std::format("Opened scene {}\n", Vadon::Utilities::uuid_to_string(scene_id).string));
 			}

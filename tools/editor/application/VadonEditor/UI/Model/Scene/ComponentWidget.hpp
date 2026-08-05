@@ -17,7 +17,7 @@ namespace VadonEditor::UI
 	{
 		Q_OBJECT
 	public:
-		ComponentWidget(Model::Component* component, QWidget* parent = nullptr);
+		ComponentWidget(Model::Component* component, bool is_sub_scene, QWidget* parent = nullptr);
 
 		bool initialize(Model::Scene* scene);
 

@@ -18,7 +18,7 @@ namespace VadonEditor::Model
 
 	bool Component::initialize(const QUuid& type_id)
 	{
-		return m_data.initialize(type_id);
+		return m_data.default_initialize(type_id);
 	}
 
 	bool Component::is_type_component(Core::Application& application, const QUuid& type_id)

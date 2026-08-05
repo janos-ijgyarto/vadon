@@ -23,6 +23,8 @@ namespace VadonEditor::Model
 		bool import_data(const QVariantMap& data_map) { return m_data.import_data(data_map); }
 		QVariantMap export_data() const { return m_data.export_data(); }
 
+		void import_properties(const QVariantMap& properties_map) { m_data.load_properties(properties_map); }
+
 		Core::Application& get_application() { return m_application; }
 
 		const QUuid& get_type_id() const { return m_data.get_type_id(); }
@@ -38,6 +40,8 @@ namespace VadonEditor::Model
 	private:
 		Core::Application& m_application;
 		Core::DataObject m_data;
+
+		friend Entity;
 	};
 }
 #endif

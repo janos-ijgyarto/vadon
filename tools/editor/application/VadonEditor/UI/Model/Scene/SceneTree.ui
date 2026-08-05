@@ -64,6 +64,17 @@
     <enum>QAction::MenuRole::TextHeuristicRole</enum>
    </property>
   </action>
+  <action name="actionInstantiateScene">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::CameraVideo"/>
+   </property>
+   <property name="text">
+    <string>Instantiate Scene</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::MenuRole::TextHeuristicRole</enum>
+   </property>
+  </action>
  </widget>
  <resources/>
  <connections>
@@ -147,6 +158,22 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>actionInstantiateScene</sender>
+   <signal>triggered()</signal>
+   <receiver>SceneTree</receiver>
+   <slot>instantiate_scene_triggered()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>199</x>
+     <y>149</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>entity_double_clicked(QModelIndex)</slot>
@@ -154,5 +181,6 @@
   <slot>add_entity_triggered()</slot>
   <slot>remove_entity_triggered()</slot>
   <slot>entity_context_menu_requested(QPoint)</slot>
+  <slot>instantiate_scene_triggered()</slot>
  </slots>
 </ui>

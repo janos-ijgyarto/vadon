@@ -64,6 +64,11 @@ namespace VadonEditor::Model
 		return Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::SceneSchema::c_entities_property.id);
 	}
 
+	void Scene::open_scene()
+	{
+		message_scene_opened(false);
+	}
+
 	bool Scene::save_scene() const
 	{
 		if (store_scene_data() == false)
@@ -85,22 +90,20 @@ namespace VadonEditor::Model
 			return false;
 		}
 
-		// Send message about opening the scene for editing
-		{
-			// FIXME: use temp allocator or shared serializer
-			VadonEditor::Network::MessageSerializer message_serializer;
-
-			::Vadon::Foundation::EditorModelMessageSceneOpened scene_opened_message;
-			scene_opened_message.message_type = ::Vadon::Foundation::EditorModelMessageType::SCENE_OPENED;
-
-			scene_opened_message.scene_id = Utilities::qt_uuid_to_vadon_uuid(get_id());
-
-			message_serializer.write_message_trivial(::Vadon::Foundation::EditorMessageCategory::MODEL, scene_opened_message);
-
-			m_application.get_network_system().send_message(message_serializer);
-		}
+		message_scene_opened(true);
 
 		return true;
+	}
+
+	QUuid Scene::instantiate_scene(const QUuid& scene_id, Entity* parent)
+	{
+		if (is_sub_scene_acyclic(scene_id) == false)
+		{
+			Q_ASSERT_X(false, "VadonEditor::Model::Scene::instantiate_scene", "Instantiated scene would create infinite recursion");
+			return QUuid();
+		}
+
+		return m_entity_model.instantiate_scene(scene_id, parent);
 	}
 
 	Scene::Scene(Core::Application& application, Resource* resource)
@@ -123,7 +126,7 @@ namespace VadonEditor::Model
 		QObject::connect(&m_entity_model, &EntityModel::entity_removed,
 			[this](const QUuid& id)
 			{
-				entity_added(id);
+				entity_removed(id);
 			}
 		);
 		QObject::connect(&m_entity_model, &EntityModel::entity_name_changed, 
@@ -180,6 +183,7 @@ namespace VadonEditor::Model
 		entity_added_message.entity_info.id = Utilities::qt_uuid_to_vadon_uuid(id);
 
 		Entity* entity = m_entity_model.find_entity_by_id(id);
+		Q_ASSERT_X(entity != nullptr, "VadonEditor::Model::Scene::entity_added", "Cannot find entity");
 
 		entity_added_message.entity_info.parent = Utilities::qt_uuid_to_vadon_uuid(entity->get_parent());
 		entity_added_message.entity_info.sub_scene = Utilities::qt_uuid_to_vadon_uuid(entity->get_sub_scene_id());
@@ -295,6 +299,52 @@ namespace VadonEditor::Model
 
 		memcpy(message_data, &component_property_edited, sizeof(::Vadon::Foundation::EditorModelMessageComponentPropertyEdited));
 		memcpy(message_data + sizeof(::Vadon::Foundation::EditorModelMessageComponentPropertyEdited), json_data.constData(), json_data.size());
+
+		m_application.get_network_system().send_message(message_serializer);
+	}
+
+	bool Scene::is_sub_scene_acyclic(const QUuid& scene_id)
+	{
+		if (m_id == scene_id)
+		{
+			return false;
+		}
+
+		const Scene* instantiated_scene = m_application.get_model_system().get_scene_system().get_scene(scene_id);
+		const EntityModel& entity_model = instantiated_scene->get_entity_model();
+
+		const QList<QUuid> entity_id_list = entity_model.get_entity_id_list();
+		for (const QUuid& current_entity_id : entity_id_list)
+		{
+			const Entity* current_entity = entity_model.find_entity_by_id(current_entity_id);
+			const SceneID sub_scene_id = current_entity->get_sub_scene_id();
+			if (sub_scene_id.isNull() == false)
+			{
+				// Entity is an instantiated scene, perform recursive check
+				if (is_sub_scene_acyclic(sub_scene_id) == false)
+				{
+					return false;
+				}
+			}
+		}
+
+		return true;
+	}
+
+	void Scene::message_scene_opened(bool reload)
+	{
+		// TODO: use the "reload" flag to indicate whether the client should reload scene, or if they should just ensure it's loaded?
+		Q_UNUSED(reload);
+
+		// FIXME: use temp allocator or shared serializer
+		VadonEditor::Network::MessageSerializer message_serializer;
+
+		::Vadon::Foundation::EditorModelMessageSceneOpened scene_opened_message;
+		scene_opened_message.message_type = ::Vadon::Foundation::EditorModelMessageType::SCENE_OPENED;
+
+		scene_opened_message.scene_id = Utilities::qt_uuid_to_vadon_uuid(get_id());
+
+		message_serializer.write_message_trivial(::Vadon::Foundation::EditorMessageCategory::MODEL, scene_opened_message);
 
 		m_application.get_network_system().send_message(message_serializer);
 	}

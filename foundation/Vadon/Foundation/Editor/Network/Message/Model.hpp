@@ -7,6 +7,8 @@ namespace Vadon
 	{
 		enum class EditorModelMessageType : uint32
 		{
+			RESOURCE_CREATED,
+			RESOURCE_ASSET_CREATED,
 			RESOURCE_LOADED,
 			RESOURCE_PROPERTY_EDITED,
 			RESOURCE_REMOVED,
@@ -26,6 +28,20 @@ namespace Vadon
 		struct EditorModelMessageHeader
 		{
 			EditorModelMessageType message_type;
+		};
+
+		struct EditorModelMessageResourceCreated : public EditorModelMessageHeader
+		{
+			UUID type_id;
+			UUID resource_id;
+			// TODO: anything else?
+		};
+
+		struct EditorModelMessageResourceAssetCreated : public EditorModelMessageHeader
+		{
+			UUID resource_id;
+			uint32 asset_path_length;
+			// TODO: anything else?
 		};
 
 		struct EditorModelMessageResourceLoaded : public EditorModelMessageHeader
@@ -52,7 +68,6 @@ namespace Vadon
 		{
 			UUID resource_id;
 			UUID embedded_id;
-			UUID embedded_type_id;
 			// TODO: anything else?
 		};
 

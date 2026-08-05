@@ -119,6 +119,11 @@ namespace Vadon::Private::Core
             }
         }
 
+        {
+            Vadon::Utilities::TypeMetadata data_object_metadata(metadata_registry, VADON_GET_TYPE_UUID(Vadon::Utilities::DataObject));
+            data_object_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "DataObject");
+        }
+
         Vadon::Private::Model::ResourceSystem::register_type_metadata(metadata_registry);
         Vadon::Private::Model::SceneSystem::register_type_metadata(metadata_registry);
     }

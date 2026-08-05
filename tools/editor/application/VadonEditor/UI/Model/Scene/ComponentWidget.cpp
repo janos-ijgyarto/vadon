@@ -15,11 +15,17 @@
 
 namespace VadonEditor::UI
 {
-	ComponentWidget::ComponentWidget(Model::Component* component, QWidget* parent)
+	ComponentWidget::ComponentWidget(Model::Component* component, bool is_sub_scene, QWidget* parent)
 		: QWidget(parent)
 		, m_component(component)
 	{
 		m_ui.setupUi(this);
+
+		if (is_sub_scene == true)
+		{
+			m_ui.removeButton->setEnabled(false);
+			m_ui.removeButton->setVisible(false);
+		}
 	}
 
 	bool ComponentWidget::initialize(Model::Scene* scene)

@@ -37,6 +37,7 @@ namespace VadonEditor::Model
 
 		void process_message(const char* data, size_t size);
 
+		void internal_create_resource(const Vadon::Utilities::TypeUUID& type_id, const Vadon::Model::ResourceID& resource_id);
 		void internal_add_resource(Resource* resource);
 		void internal_remove_resource(Resource* resource, bool force_remove = false);
 

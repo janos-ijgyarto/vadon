@@ -107,6 +107,9 @@ namespace Vadon::Utilities
 	template<>
 	struct TypeErasureTrait<class ObjectWrapper> : public TrivialTypeErasureTrait<class ObjectWrapper> {};
 
+	template<>
+	struct TypeErasureTrait<class DataObject> : public TrivialTypeErasureTrait<class DataObject> {};
+
 	template<typename T>
 	struct TypedObjectWrapperTypeErasureTrait : public ContainerTypeErasureTrait<class ObjectWrapper, T> {};
 

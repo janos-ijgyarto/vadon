@@ -28,7 +28,6 @@ namespace Vadon::ECS
 		{
 			static_assert(std::is_base_of_v<TypedComponentPool<T>, ComponentPool<T>>, "Error in Vadon::ECS: component type must be derived from Vadon::ECS::TypedComponentPool<T>!");
 			Vadon::Utilities::TypeRegistry::register_type<T, Base>();
-			Vadon::Utilities::TypeRegistry::register_type_factory<T>(); // FIXME: this will conflict with the component factory API!
 			
 			PoolFactoryFunction factory_impl = type_info.factory;
 			if (factory_impl == nullptr)

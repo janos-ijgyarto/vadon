@@ -17,9 +17,10 @@ namespace VadonEditor::Core
 	public:
 		DataObject(Application& application);
 
-		bool is_valid() const { return m_type_id.isNull() == false; }
+		bool init_type(const QUuid& type_id);
+		bool default_initialize(const QUuid& type_id);
 
-		bool initialize(const QUuid& type_id);
+		bool is_valid() const { return m_type_id.isNull() == false; }
 
 		bool import_data(const QVariantMap& data_map);
 		QVariantMap export_data() const;
@@ -46,9 +47,9 @@ namespace VadonEditor::Core
 
 		static QUuid deserialize_object_type(const QJsonObject& object);
 	private:
-		bool internal_initialize();
-
 		bool internal_serialize_property_data(QJsonObject& json_obj, const PropertyData& type_property_data, const QVariant& property_value) const;
+
+		void internal_set_property(const PropertyID& property_id, const QVariant& value, bool ignore_deprecated);
 
 		Application& m_application;
 

@@ -114,6 +114,7 @@ namespace VadonEditor::UI
 		Model::Scene* opened_scene = scene_system.get_scene(resource_info.id);
 
 		Q_ASSERT_X(opened_scene != nullptr, "VadonEditor::UI::SceneManager::asset_opened", "Failed to get scene");
+		opened_scene->open_scene();
 
 		QTabWidget* scene_tab_widget = m_application.get_ui_system().get_main_window()->get_scene_tab_widget();
 		SceneTree* scene_tree = find_scene_tab(resource_info.id);
