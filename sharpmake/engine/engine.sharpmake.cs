@@ -173,15 +173,27 @@ namespace Vadon.Engine
             // FIXME: find way to only do this for files that need it!
             return Path.Combine("[conf.IntermediatePath]/", Path.ChangeExtension(input, ".obj"));
         }
+ 
+        protected const string GeneratedShaderFileRoot = "[conf.IntermediatePath]/shaders";
 
-        // FIXME: find better way to make this work!
-        // Use some kind of custom command to build shader compiler and access the output path via dependency
-        protected static string GetShaderCompilerPath() { return $"{BuildPath}/tools/shadercompiler/[target.Platform]/release/fastbuild/shadercompiler.exe"; }
-        
-        protected static string GeneratedShaderFileRoot { get { return "[conf.IntermediatePath]/shaders"; } }
+        protected static Tools.Target GetShaderCompilerTarget(Target target)
+        {
+            return new Tools.Target { 
+                        DevEnvironment = target.DevEnvironment,
+                        Platform = target.Platform,
+                        Optimization = Tools.Optimization.Release, // Always build in Release
+                        BuildSystem = target.BuildSystem
+                        };
+        }
 
         protected void AddShaderCompileStep(Configuration conf, Target target, string shaderFile, ShaderTarget shaderTarget, string shaderEntryPoint, string shaderNamespace, ShaderExportType exportType = ShaderExportType.ShaderFile)
         {
+            if(conf.HaveDependency<Tools.ShaderCompiler>() == false)
+            {
+                // Add the Shader Compiler as a dependency
+                conf.AddPrivateDependency<Tools.ShaderCompiler>(GetShaderCompilerTarget(target));
+            }
+
             // FIXME: make this platform-agnostic!
             string fileSuffix = "";
             string targetString = ""; // FIXME: replace target string with numeric code?
@@ -215,16 +227,40 @@ namespace Vadon.Engine
             // Report to devs and fix once patched
             string argsOutputPath = Path.Combine($"[config.IntermediatePath]/shaders/{relativePath}", $"{Path.GetFileNameWithoutExtension(shaderFile)}{fileSuffix}.hpp");
 
+            string shaderBuildStepKey = Path.Combine(relativePath, Path.GetFileNameWithoutExtension(shaderFile)).Replace('\\', '_').Replace('/','_') + "_" + shaderTarget.ToString();
+
             conf.CustomFileBuildSteps.Add(
                 new Configuration.CustomFileBuildStep
                 {
                     KeyInput = shaderFile,
                     Output = outputPath,
-                    Description = $"Generate {outputPath}",
-                    Executable = GetShaderCompilerPath(),
+                    Description = $"CompileShader_{shaderBuildStepKey}_[target.Platform]_[target.Optimization]",
+                    Executable = "",
                     ExecutableArguments = $"{SourceRootPath} {shaderFile} {argsOutputPath} {targetString} {shaderEntryPoint} {exportTypeString} {shaderNamespace}"
                 }
             );
+        }
+
+        public override void PostLink()
+        {
+            base.PostLink();
+
+            foreach(var currentConf in Configurations)
+            {
+                foreach(var customFileBuildStep in currentConf.CustomFileBuildSteps)
+                {
+                    if(customFileBuildStep.Description.StartsWith("CompileShader_"))
+                    {
+                        Tools.Target toolsTarget = GetShaderCompilerTarget(currentConf.Target as Target);
+                        string shaderCompilerPath = Tools.ShaderCompiler.FindCompilerExePath(toolsTarget);
+                        if(string.IsNullOrEmpty(shaderCompilerPath))
+                        {
+                            throw new Error("Cannot find shader compiler!");
+                        }
+                        customFileBuildStep.Executable = shaderCompilerPath;
+                    }
+                }
+            }
         }
     }
 

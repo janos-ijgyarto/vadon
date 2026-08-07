@@ -12,4 +12,5 @@ CTestTestfile.cmake
 _deps
 .vs
 out
+output
 *.bak
