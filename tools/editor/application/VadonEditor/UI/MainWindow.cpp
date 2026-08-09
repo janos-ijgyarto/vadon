@@ -149,7 +149,7 @@ namespace VadonEditor::UI
 	void MainWindow::generate_data_schema_triggered()
 	{
 		Core::ProjectManager& project_manager = m_application.get_project_manager();
-		if (project_manager.generate_project_data_schema() == false)
+		if (project_manager.generate_project_data_schema(m_application.get_project_manager().get_project_info().plugin_settings.selected_configuration) == false)
 		{
 			QMessageBox::critical(this, "Project manager error", "Failed to generate project data schema!");
 		}

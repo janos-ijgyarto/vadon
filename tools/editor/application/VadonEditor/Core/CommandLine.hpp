@@ -8,6 +8,7 @@ namespace VadonEditor::Core
 		IS_SIMULATOR,
 		IS_SCHEMA_EXPORTER,
 		STARTUP_PROJECT_PATH,
+		PLUGIN_CONFIG_NAME,
 		DEBUG_BREAK_ON_INIT
 	};
 
@@ -16,6 +17,7 @@ namespace VadonEditor::Core
 		bool is_simulator = false;
 		bool is_schema_exporter = false;
 		QString startup_project_path;
+		QString plugin_config_name;
 		bool debug_break_on_init = false;
 
 		static constexpr const char* get_parameter_key(CommandLineParameter parameter)
@@ -28,6 +30,8 @@ namespace VadonEditor::Core
 				return "schema-exporter";
 			case CommandLineParameter::STARTUP_PROJECT_PATH:
 				return "startup-project";
+			case CommandLineParameter::PLUGIN_CONFIG_NAME:
+				return "plugin-config-name";
 			case CommandLineParameter::DEBUG_BREAK_ON_INIT:
 				return "debug-break-on-init";
 			}

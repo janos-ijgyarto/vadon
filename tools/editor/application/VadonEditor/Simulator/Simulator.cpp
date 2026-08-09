@@ -148,14 +148,21 @@ namespace VadonEditor::Simulator
 			return true;
 		}
 
-		bool load_plugin()
+		bool load_plugin(const QString& configuration_name)
 		{
 			VadonEditor::Core::PluginManager& plugin_manager = m_application.get_plugin_manager();
 			const VadonEditor::Core::ProjectManager& project_manager = m_application.get_project_manager();
 			const VadonEditor::Core::ProjectInfo& project_info = project_manager.get_project_info();
 
+			const Core::EditorPluginInfo* editor_plugin_info = project_info.find_plugin_entry(configuration_name);
+			if (editor_plugin_info == nullptr)
+			{
+				qCritical() << "Invalid setting for project editor plugin!";
+				return false;
+			}
+
 			Core::PluginInfo plugin_info;
-			plugin_info.path = project_info.plugin_path;
+			plugin_info.path = editor_plugin_info->path;
 
 			m_simulator_plugin = plugin_manager.load_plugin(plugin_info);
 			if (m_simulator_plugin == Core::PluginManager::c_invalid_plugin_handle)
@@ -191,9 +198,9 @@ namespace VadonEditor::Simulator
 			return true;
 		}
 
-		bool run_plugin()
+		bool run_plugin(const QString& configuration_name)
 		{
-			if (load_plugin() == false)
+			if (load_plugin(configuration_name) == false)
 			{
 				return false;
 			}
@@ -288,9 +295,10 @@ namespace VadonEditor::Simulator
 			Core::ProjectManager& project_manager = m_application.get_project_manager();
 			const Core::ProjectInfo& project_info = project_manager.get_project_info();
 
-			if (project_info.plugin_path.isEmpty() == true)
+			const Core::EditorPluginInfo* editor_plugin_info = project_info.find_plugin_entry(settings.configuration_name);
+			if (editor_plugin_info == nullptr)
 			{
-				qWarning() << "Project has no runnable simulator plugin set!";
+				qCritical() << "Invalid setting for project editor plugin!";
 				return false;
 			}
 
@@ -311,6 +319,9 @@ namespace VadonEditor::Simulator
 				arguments.push_back(QString("--%1").arg(Core::CommandLineState::get_parameter_key(Core::CommandLineParameter::STARTUP_PROJECT_PATH)));
 				arguments.push_back(project_info.get_project_file_path());
 
+				arguments.push_back(QString("--%1").arg(Core::CommandLineState::get_parameter_key(Core::CommandLineParameter::PLUGIN_CONFIG_NAME)));
+				arguments.push_back(settings.configuration_name);
+
 				if (settings.debug_break_on_init == true)
 				{
 					arguments.push_back(QString("--%1").arg(Core::CommandLineState::get_parameter_key(Core::CommandLineParameter::DEBUG_BREAK_ON_INIT)));
@@ -329,7 +340,7 @@ namespace VadonEditor::Simulator
 			case Core::ApplicationMode::SIMULATOR:
 			{
 				// We are the simulator, load plugin!
-				if (run_plugin() == false)
+				if (run_plugin(settings.configuration_name) == false)
 				{
 					return false;
 				}

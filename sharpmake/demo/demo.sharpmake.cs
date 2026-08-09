@@ -92,6 +92,37 @@ namespace Vadon.Demo
             // from the same subdirectory
             conf.ExecuteTargetCopy = true;
         }
+
+        private static void GenerateEditorPluginFile(Configuration conf)
+        {
+            // TODO: find some way for the resolver to generate the JSON contents?
+            string outputFileName = conf.TargetFileFullNameWithExtension + ".vdeplugin";
+
+            FileInfo outputFileInfo = new FileInfo(Path.Combine(conf.TargetPath, outputFileName));
+
+            MemoryStream memoryStream = new MemoryStream();
+            StreamWriter streamWriter = new StreamWriter(memoryStream);
+
+            string configString = $"{conf.Target.Name}";
+
+            string jsonString = $@"{{
+    ""configuration"" : ""{configString}""
+}}";
+            streamWriter.Write(jsonString);
+            streamWriter.Flush();
+ 
+            Sharpmake.Util.FileWriteIfDifferent(outputFileInfo, memoryStream);
+        }
+
+        public override void PostResolve()
+        {
+            base.PostResolve();
+
+            foreach(var currentConf in Configurations)
+            {
+                GenerateEditorPluginFile(currentConf);
+            }
+        }
     }
 
     [Sharpmake.Generate]
@@ -129,6 +160,37 @@ namespace Vadon.Demo
 
             AddShaderCompileStep(conf, target, $"{SourceRootPath}/VadonDemo/Render/CopyShader.hlsl", Engine.ShaderTarget.Vertex, "vs_main", "VadonDemo::Render::ShaderVS", Engine.ShaderExportType.CPP);
             AddShaderCompileStep(conf, target, $"{SourceRootPath}/VadonDemo/Render/CopyShader.hlsl", Engine.ShaderTarget.Pixel, "ps_main", "VadonDemo::Render::ShaderPS", Engine.ShaderExportType.CPP);
+        }
+
+        private static void GenerateEditorExecutableFile(Configuration conf)
+        {
+            // TODO: find some way for the resolver to generate the JSON contents?
+            string outputFileName = conf.TargetFileFullNameWithExtension + ".vdgexe";
+
+            FileInfo outputFileInfo = new FileInfo(Path.Combine(conf.TargetPath, outputFileName));
+
+            MemoryStream memoryStream = new MemoryStream();
+            StreamWriter streamWriter = new StreamWriter(memoryStream);
+
+            string configString = $"{conf.Target.Name}";
+
+            string jsonString = $@"{{
+    ""configuration"" : ""{configString}""
+}}";
+            streamWriter.Write(jsonString);
+            streamWriter.Flush();
+ 
+            Sharpmake.Util.FileWriteIfDifferent(outputFileInfo, memoryStream);
+        }
+
+        public override void PostResolve()
+        {
+            base.PostResolve();
+
+            foreach(var currentConf in Configurations)
+            {
+                GenerateEditorExecutableFile(currentConf);
+            }
         }
     }
 }

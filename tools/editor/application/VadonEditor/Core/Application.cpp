@@ -65,6 +65,12 @@ namespace
 
 		command_line_parser.addOption(startup_project_option);
 
+		QCommandLineOption plugin_config_option(VadonEditor::Core::CommandLineState::get_parameter_key(VadonEditor::Core::CommandLineParameter::PLUGIN_CONFIG_NAME),
+			QCoreApplication::translate("main", "Editor plugin configuration name to use"),
+			QCoreApplication::translate("main", "name"));
+
+		command_line_parser.addOption(plugin_config_option);
+
 		command_line_parser.process(application);
 
 		VadonEditor::Core::CommandLineState command_line_state;
@@ -72,6 +78,7 @@ namespace
 		command_line_state.is_schema_exporter = command_line_parser.isSet(schema_exporter_option);
 		command_line_state.debug_break_on_init = command_line_parser.isSet(debug_break_on_init_option);
 		command_line_state.startup_project_path = command_line_parser.value(startup_project_option);
+		command_line_state.plugin_config_name = command_line_parser.value(plugin_config_option);
 
 		return command_line_state;
 	}
@@ -91,6 +98,7 @@ namespace
 		}
 
 		configuration.startup_project_path = command_line_state.startup_project_path;
+		configuration.plugin_config_name = command_line_state.plugin_config_name;
 
 		return configuration;
 	}
@@ -251,7 +259,9 @@ namespace VadonEditor::Core
 			if (m_configuration.mode == ApplicationMode::SIMULATOR)
 			{
 				// Simulator is connected to editor, now we can run the plugin
-				Simulator::SimulatorSettings settings; // TODO: apply relevant settings?
+				Simulator::SimulatorSettings settings;
+				settings.configuration_name = m_configuration.plugin_config_name;
+				// TODO: other settings?
 				if (m_simulator.run_simulator(settings) == false)
 				{
 					// Failed to load plugin, exit!
@@ -292,7 +302,7 @@ namespace VadonEditor::Core
 				break;
 			case ApplicationMode::SCHEMA_EXPORTER:
 			{
-				if (m_project_manager.generate_project_data_schema() == true)
+				if (m_project_manager.generate_project_data_schema(m_configuration.plugin_config_name) == true)
 				{
 					request_quit(0);
 				}

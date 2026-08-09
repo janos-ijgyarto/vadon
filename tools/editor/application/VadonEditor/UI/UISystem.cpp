@@ -235,6 +235,7 @@ namespace VadonEditor::UI
 		// TODO: gather settings!
 		Simulator::SimulatorSettings settings;
 		settings.debug_break_on_init = true;
+		settings.configuration_name = m_application.get_project_manager().get_project_info().plugin_settings.selected_configuration;
 		if (m_application.get_simulator().run_simulator(settings) == false)
 		{
 			// TODO: error popup?

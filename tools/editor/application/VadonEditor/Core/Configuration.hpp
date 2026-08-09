@@ -14,6 +14,7 @@ namespace VadonEditor::Core
 	{
 		ApplicationMode mode = ApplicationMode::EDITOR;
 		QString startup_project_path;
+		QString plugin_config_name;
 		// TODO: other settings?
 	};
 }

@@ -2,6 +2,7 @@
 #define VADONEDITOR_SIMULATOR_SIMULATOR_HPP
 #include <Vadon/Foundation/Editor/Simulator/SimulatorInterface.hpp>
 #include <memory>
+#include <QString>
 namespace Vadon::Foundation
 {
 	class EditorSimulatorPluginInterface;
@@ -16,6 +17,7 @@ namespace VadonEditor::Simulator
 	struct SimulatorSettings
 	{
 		bool debug_break_on_init = false;
+		QString configuration_name;
 	};
 
 	// TODO: "hide" the simulator interface so it's only available internally?

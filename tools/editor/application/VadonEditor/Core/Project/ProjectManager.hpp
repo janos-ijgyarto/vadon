@@ -14,31 +14,45 @@ namespace VadonEditor::Core
 	{
 		Q_OBJECT
 	public:
+		struct CachedProjectEditorPluginSettings
+		{
+			QString custom_search_path;
+			QString selected_config;
+		};
+
+		struct CachedProjectGameSettings
+		{
+			QString custom_search_path;
+			QString selected_config;
+		};
+
 		struct CachedProjectInfo
 		{
 			QString name;
 			QString path;
-			QString plugin_path;
+			CachedProjectEditorPluginSettings plugin_settings;
+			CachedProjectGameSettings game_settings;
 		};
 
 		const ProjectInfo& get_project_info() const { return m_loaded_project_info; }
+		void set_project_info(const ProjectInfo& project_info);
+
 		bool is_project_loaded() const { return m_loaded_project_info.name.isEmpty() == false; }
 
 		const DataSchema& get_project_data_schema() const { return m_loaded_project_schema; }
 
-		bool generate_project_data_schema();
+		bool generate_project_data_schema(const QString& plugin_config);
 		bool load_project_data_schema();
 		
 		const QList<CachedProjectInfo> get_cached_project_list() const;
 
-		// TODO: have some kind of attribute system?
-		bool set_project_name(const QString& name);
-		bool set_plugin_path(const QString& path);
-
-		bool create_project(const VadonEditor::Core::ProjectInfo& project_info);
+		bool create_project(const ProjectInfo& project_info);
 		bool import_project(const QString& project_path);
 		bool load_project(const QString& project_path);
 		void remove_project(const QString& project_path);
+
+		QList<EditorPluginInfo> find_editor_plugins(const QString& search_path) const;
+		QList<GameExecutableInfo> find_game_executables(const QString& search_path) const;
 	signals:
 		void project_loaded();
 	private:
