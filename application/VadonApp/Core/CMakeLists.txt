@@ -1,9 +1,0 @@
-target_sources(${VADONAPP_CURRENT_TARGET}
-    PRIVATE
-        Application.hpp
-        Application.cpp
-        Configuration.hpp
-        System.hpp
-        SystemModule.hpp
-        SystemRegistry.hpp
-   )
