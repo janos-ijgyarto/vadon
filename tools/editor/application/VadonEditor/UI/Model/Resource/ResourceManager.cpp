@@ -232,4 +232,18 @@ namespace VadonEditor::UI
 
 		m_resource_widgets.clear();
 	}
+
+	void ResourceManager::simulator_initialized()
+	{
+		Model::ResourceSystem& resource_system = m_application.get_model_system().get_resource_system();
+
+		for (auto resource_widget_it = m_resource_widgets.begin(); resource_widget_it != m_resource_widgets.end(); ++resource_widget_it)
+		{
+			// Send the "open resource" message for all resources currently open
+			Model::Resource* resource = resource_system.get_resource(resource_widget_it.key());
+			Q_ASSERT_X(resource != nullptr, "VadonEditor::UI::ResourceManager::simulator_initialized", "Cannot find resource!");
+
+			resource->open();
+		}
+	}
 }

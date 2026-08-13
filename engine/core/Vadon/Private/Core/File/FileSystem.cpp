@@ -140,6 +140,7 @@ namespace Vadon::Private::Core
 		if (db_file_info != nullptr)
 		{
 			file_info = *db_file_info;
+			file_info.metadata = get_file_metadata(get_absolute_path(db_handle, db_file_info->path));
 		}
 
 		return file_info;
@@ -283,6 +284,17 @@ namespace Vadon::Private::Core
 		}
 
 		return true;
+	}
+
+	bool FileSystem::does_file_exist(std::string_view absolute_path) const
+	{
+		const std::filesystem::path fs_file_path = absolute_path;
+		return std::filesystem::exists(fs_file_path);
+	}
+
+	FileMetadata FileSystem::get_file_metadata(std::string_view absolute_path) const
+	{
+		return internal_get_file_metadata(absolute_path);
 	}
 
 	FileSystem::FileSystem(Vadon::Core::EngineCoreInterface& core)
@@ -509,5 +521,23 @@ namespace Vadon::Private::Core
 		}
 
 		return true;
+	}
+
+	FileMetadata FileSystem::internal_get_file_metadata(const std::filesystem::path& file_path) const
+	{
+		FileMetadata metadata;
+		std::error_code fs_error;
+
+		std::filesystem::file_time_type file_write_time = std::filesystem::last_write_time(file_path, fs_error);
+		if (fs_error)
+		{
+			// TODO: log the specific error?
+			log_error(std::format("File system error: unable to get write time for file \"{}\"!\nError: \"{}\"\n", file_path.string(), fs_error.message()));
+			return metadata;
+		}
+
+		metadata.last_write_time = file_write_time;
+
+		return metadata;
 	}
 }

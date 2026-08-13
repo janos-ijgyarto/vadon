@@ -296,4 +296,36 @@ namespace VadonEditor::UI
 
 		scene_tab_widget->setTabText(tab_index, scene_tab_label);
 	}
+
+	void SceneManager::simulator_initialized()
+	{
+		QTabWidget* scene_tab_widget = m_application.get_ui_system().get_main_window()->get_scene_tab_widget();
+		QTabBar* scene_tab_bar = scene_tab_widget->tabBar();
+
+		if (scene_tab_bar->count() == 0)
+		{
+			return;
+		}
+
+		VadonEditor::Network::MessageSerializer message_serializer;
+
+		for (int tab_index = 0; tab_index < scene_tab_bar->count(); ++tab_index)
+		{
+			const QUuid tab_scene_uuid = scene_tab_bar->tabData(tab_index).toUuid();
+			if (tab_scene_uuid.isNull() == true)
+			{
+				continue;
+			}
+
+			Model::SceneSystem& scene_system = m_application.get_model_system().get_scene_system();
+			Model::Scene* opened_scene = scene_system.get_scene(tab_scene_uuid);
+			
+			// Send the "open scene" message for all scenes currently open
+			Q_ASSERT_X(opened_scene != nullptr, "VadonEditor::UI::SceneManager::simulator_initialized", "Failed to get scene");
+			opened_scene->open_scene();
+		}
+
+		// Also send out a message for which tab is currently selected
+		current_scene_changed(scene_tab_bar->currentIndex());
+	}
 }

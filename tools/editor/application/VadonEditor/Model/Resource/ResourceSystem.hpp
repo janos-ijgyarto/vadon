@@ -28,6 +28,7 @@ namespace VadonEditor::Model
 
 		QList<Resource*> get_all_resources() const { return m_resource_lookup.values(); }
 		void save_all_resources();
+		void generate_temp_resources();
 
 		int create_resource_asset(const ResourceID& resource_id, const QString& path);
 		QList<int> get_resource_asset_list() const;
@@ -43,6 +44,8 @@ namespace VadonEditor::Model
 		bool initialize();
 		void project_loaded();
 		void shutdown();
+
+		void simulator_initialized();
 
 		Resource* internal_create_new_resource(const ResourceInfo& info);
 		void internal_add_new_resource(Resource* resource);

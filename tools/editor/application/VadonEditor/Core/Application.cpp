@@ -345,6 +345,18 @@ namespace VadonEditor::Core
 				const ::Vadon::Foundation::EditorSimulatorMessageHeader* simulator_message_header = reinterpret_cast<const ::Vadon::Foundation::EditorSimulatorMessageHeader*>(message_data);
 				switch (simulator_message_header->message_type)
 				{
+				case ::Vadon::Foundation::EditorSimulatorMessageType::SIMULATOR_INIT:
+				{
+					const ::Vadon::Foundation::EditorSimulatorMessageInit* simulator_init_message = reinterpret_cast<const ::Vadon::Foundation::EditorSimulatorMessageInit*>(message_reader.get_current_message_data());
+					if (simulator_init_message->error_code != 0)
+					{
+						qCritical() << "Simulator initialized, but with error code:" << simulator_init_message->error_code;
+						return;
+					}
+
+					simulator_initialized();
+				}
+				break;
 				case ::Vadon::Foundation::EditorSimulatorMessageType::SIMULATOR_LOG:
 				{
 					const ::Vadon::Foundation::EditorSimulatorMessageLog* log_message = reinterpret_cast<const ::Vadon::Foundation::EditorSimulatorMessageLog*>(message_reader.get_current_message_data());
@@ -367,6 +379,13 @@ namespace VadonEditor::Core
 			}
 			break;
 			}
+		}
+
+		void simulator_initialized()
+		{
+			// NOTE: have to process it this way to ensure model sends out messages first
+			m_model_system.simulator_initialized();
+			m_ui_system.simulator_initialized();
 		}
 	};
 

@@ -55,7 +55,7 @@ namespace VadonEditor::Model
 
 		bool initialize();
 
-		bool internal_save(QJsonObject& root_obj) const;
+		bool internal_save(QJsonObject& root_obj, bool labeled) const;
 		bool internal_load(const QJsonObject& root_obj);
 
 		void message_resource_created() const;

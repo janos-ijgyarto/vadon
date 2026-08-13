@@ -77,4 +77,10 @@ namespace VadonEditor::Model
 	{
 		m_internal->shutdown();
 	}
+
+	void ModelSystem::simulator_initialized()
+	{
+		m_internal->m_resource_system.simulator_initialized();
+		m_internal->m_scene_system.simulator_initialized();
+	}
 }

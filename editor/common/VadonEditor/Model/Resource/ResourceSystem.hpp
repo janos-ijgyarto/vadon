@@ -43,6 +43,8 @@ namespace VadonEditor::Model
 
 		void reload_resource(Resource* resource);
 
+		void internal_notify_resource_added(Resource* resource);
+
 		Core::Editor& m_editor;
 
 		ResourceDatabase m_database;

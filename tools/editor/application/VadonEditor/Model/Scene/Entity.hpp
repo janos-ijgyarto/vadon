@@ -18,6 +18,7 @@ namespace VadonEditor::Model
 		Entity(Core::Application& application)
 			: m_application(application)
 			, m_data(application)
+			, m_components_modified(false)
 		{
 		}
 
@@ -67,6 +68,7 @@ namespace VadonEditor::Model
 		Core::DataObject m_data;
 
 		QList<Component*> m_components;
+		bool m_components_modified; // FIXME: replace this by having components write directly via property paths, reducing the overhead
 
 		friend class EntityModel;
 	};

@@ -20,7 +20,7 @@ namespace VadonEditor::UI
 
 	void PropertyColorRGBA::color_picker_button_clicked()
 	{
-		const QColor new_color = QColorDialog::getColor(get_value().value<QColor>(), this);
+		const QColor new_color = QColorDialog::getColor(get_value().value<QColor>(), this, "Pick Color", QColorDialog::ColorDialogOption::ShowAlphaChannel);
 		if (new_color.isValid())
 		{
 			internal_set_color(new_color);

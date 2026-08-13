@@ -31,6 +31,7 @@ namespace VadonEditor::Simulator
 		void dispatch_message_to_editor(const char* data, size_t size) override;
 
 		bool run_simulator(const SimulatorSettings& settings);
+		bool is_running() const;
 		void stop_simulator();
 	private:
 		Simulator(Core::Application& application);

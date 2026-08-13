@@ -22,6 +22,8 @@ namespace VadonEditor::Core
 		bool save_asset_data(int asset_id, QByteArrayView data);
 		bool load_asset_data(int asset_id, QByteArray& data) const;
 
+		bool save_temp_file_data(QStringView temp_file_relative_path, QByteArrayView data);
+
 		bool load_imported_file_data(int asset_id, QByteArray& data) const;
 
 		QModelIndex find_asset_index(int asset_id) const;

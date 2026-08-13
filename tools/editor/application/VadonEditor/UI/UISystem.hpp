@@ -36,6 +36,8 @@ namespace VadonEditor::UI
 		void stop_simulator();
 		void close_requested();
 
+		void simulator_initialized();
+
 		Core::Application& m_application;
 
 		LauncherDialog* m_launcher_dialog;

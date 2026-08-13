@@ -116,6 +116,7 @@ namespace VadonEditor::Model
 		m_data.set_property(property_id, value);
 		notify_modifed();
 
+		// FIXME: should we only send a message if a plugin is attached?
 		// FIXME: use temp allocator or shared serializer
 		VadonEditor::Network::MessageSerializer message_serializer;
 
@@ -125,8 +126,9 @@ namespace VadonEditor::Model
 		property_edited_message.resource_id = Utilities::qt_uuid_to_vadon_uuid(m_info.id);
 		property_edited_message.property_id = Utilities::qt_uuid_to_vadon_uuid(property_id);
 
+		// NOTE: skip label, we are only serializing to message the plugin
 		QJsonObject property_object;
-		if (m_data.serialize_property_data(property_id, property_object) == false)
+		if (m_data.serialize_property_data(property_id, property_object, false) == false)
 		{
 			Q_ASSERT_X(false, "Resource::set_property", "Failed to serialize property");
 			return;
@@ -239,28 +241,28 @@ namespace VadonEditor::Model
 		return true;
 	}
 
-	bool Resource::internal_save(QJsonObject& root_obj) const
+	bool Resource::internal_save(QJsonObject& root_obj, bool labeled) const
 	{
 		// NOTE: cannot use the DataObject API to serialize entirely, as we need to place the ID and embedded
 		// properties on the root
 		// FIXME: find a way around this?
 		{
 			const QUuid id_property_uuid = Utilities::vadon_uuid_string_to_qt_uuid(Vadon::Foundation::ResourceSchema::c_id_property.id);
-			root_obj[Utilities::serialize_labeled_uuid("id", id_property_uuid)] = Utilities::uuid_to_base64_string(m_info.id);
+			root_obj[Utilities::create_uuid_key_string(id_property_uuid, L"id", labeled)] = Utilities::uuid_to_base64_string(m_info.id);
 
 			const QUuid type_property_uuid = Utilities::vadon_uuid_string_to_qt_uuid(Vadon::Foundation::ResourceSchema::c_type_property.id);
-			root_obj[Utilities::serialize_labeled_uuid("type", type_property_uuid)] = Utilities::uuid_to_base64_string(m_info.type);
+			root_obj[Utilities::create_uuid_key_string(type_property_uuid, L"type", labeled)] = Utilities::uuid_to_base64_string(m_info.type);
 		}
 
 		{
 			QJsonObject properties_object;
-			if (m_data.serialize_properties(properties_object) == false)
+			if (m_data.serialize_properties(properties_object, labeled) == false)
 			{
 				return false;
 			}
 
 			const QUuid properties_property_uuid = Utilities::vadon_uuid_string_to_qt_uuid(Vadon::Foundation::ResourceSchema::c_properties_property.id);
-			root_obj[Utilities::serialize_labeled_uuid("properties", properties_property_uuid)] = properties_object;
+			root_obj[Utilities::create_uuid_key_string(properties_property_uuid, L"properties", labeled)] = properties_object;
 		}
 
 		if (m_embedded_resources.isEmpty() == false)
@@ -269,7 +271,7 @@ namespace VadonEditor::Model
 			for (auto embedded_it = m_embedded_resources.begin(); embedded_it != m_embedded_resources.end(); ++embedded_it)
 			{
 				QJsonObject current_embedded_obj;
-				if (embedded_it.value()->internal_save(current_embedded_obj) == false)
+				if (embedded_it.value()->internal_save(current_embedded_obj, labeled) == false)
 				{
 					return false;
 				}
@@ -277,7 +279,7 @@ namespace VadonEditor::Model
 			}
 
 			const QUuid embedded_property_uuid = Utilities::vadon_uuid_string_to_qt_uuid(Vadon::Foundation::ResourceSchema::c_embedded_property.id);
-			root_obj[Utilities::serialize_labeled_uuid("embedded_resources", embedded_property_uuid)] = embedded_array;
+			root_obj[Utilities::create_uuid_key_string(embedded_property_uuid, L"embedded_resources", labeled)] = embedded_array;
 		}
 
 		return true;

@@ -66,6 +66,8 @@ namespace Vadon.Application.ThirdParty
 
             conf.Output = Configuration.OutputType.Utility;
 
+            conf.Options.Add(Options.Vc.General.DisableFastUpToDateCheck.Enable);
+
             conf.ProjectPath += "/third_party";
 
             // No need to include its own path

@@ -237,6 +237,7 @@ namespace VadonEditor::Model
 		}
 
 		m_data.set_property(components_property_uuid(), component_data_list);
+		m_components_modified = false;
 	}
 
 	QUuid Entity::components_property_uuid()
@@ -246,6 +247,7 @@ namespace VadonEditor::Model
 
 	void Entity::internal_component_property_edited(const QUuid& component_id, const QUuid& property_id)
 	{
+		m_components_modified = true;
 		emit(component_property_edited(get_id(), component_id, property_id));
 	}
 
@@ -606,6 +608,13 @@ namespace VadonEditor::Model
 
 	bool EntityModel::save_entity_data_recursive(Entity* parent_entity, QVariantList& entity_list) const
 	{
+		// Make sure we stored the data from the components
+		// FIXME: replace this by having components write directly via property paths, reducing the overhead
+		if (parent_entity->m_components_modified == true)
+		{
+			parent_entity->store_component_data();
+		}
+
 		// First add self to the list
 		entity_list.append(parent_entity->m_data.get_property_map());
 

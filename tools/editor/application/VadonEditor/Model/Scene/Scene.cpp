@@ -269,6 +269,7 @@ namespace VadonEditor::Model
 
 	void Scene::entity_component_property_edited(const QUuid& entity_id, const QUuid& component_id, const QUuid& property_id)
 	{
+		// FIXME: should we only send a message if a plugin is attached?
 		// FIXME: use temp allocator or shared serializer
 		VadonEditor::Network::MessageSerializer message_serializer;
 
@@ -283,8 +284,9 @@ namespace VadonEditor::Model
 		const Entity* entity = m_entity_model.find_entity_by_id(entity_id);
 		const Component* component = entity->get_component(component_id);
 
+		// NOTE: skip label, we are only serializing to message the plugin
 		QJsonObject property_object;
-		if (component->serialize_property(property_id, property_object) == false)
+		if (component->serialize_property(property_id, property_object, false) == false)
 		{
 			Q_ASSERT_X(false, "Scene::entity_component_property_edited", "Failed to serialize property");
 			return;

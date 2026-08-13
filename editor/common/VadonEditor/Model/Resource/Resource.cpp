@@ -111,6 +111,7 @@ namespace VadonEditor::Model
 			return false;
 		}
 
+		// FIXME: use iterator instead of having to get the list of keys!
 		const Vadon::Utilities::Serializer::KeyVector property_keys = serializer.get_keys();
 		ResourceSystem& resource_system = m_editor.get_resource_system();
 
@@ -120,7 +121,12 @@ namespace VadonEditor::Model
 
 		for (const std::string& current_key : property_keys)
 		{
-			const Vadon::Foundation::UUID current_property_id = Vadon::Utilities::parse_labeled_uuid(current_key);
+			Vadon::Foundation::UUID current_property_id;
+			if (Vadon::Utilities::uuid_from_base64_string(current_key, current_property_id) == false)
+			{
+				VADON_ERROR("Invalid data in resource!");
+				return false;
+			}
 
 			property_edit_event.property_uuid = current_property_id;
 			resource_system.broadcast_resource_event(property_edit_event);

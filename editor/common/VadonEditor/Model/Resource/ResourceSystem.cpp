@@ -306,6 +306,12 @@ namespace VadonEditor::Model
 
 			internal_add_resource(embedded_resource_obj);
 		}
+
+		// Send add event from root
+		if (resource->is_embedded() == false)
+		{
+			internal_notify_resource_added(resource);
+		}
 	}
 
 	void ResourceSystem::internal_remove_resource(Resource* resource, bool force_remove)
@@ -315,6 +321,15 @@ namespace VadonEditor::Model
 		{
 			VADON_ASSERT(find_resource(current_embedded_resource->get_id()) != nullptr, "Cannot find embedded resource!");
 			internal_remove_resource(current_embedded_resource);
+		}
+
+		// Notify listeners
+		{
+			ResourceEvent removed_event;
+			removed_event.resource = resource->get_id();
+			removed_event.type = ResourceEventType::REMOVED;
+
+			broadcast_resource_event(removed_event);
 		}
 
 		// Remove from lookup
@@ -361,5 +376,21 @@ namespace VadonEditor::Model
 		VADON_ASSERT(reloaded_resource != nullptr, "Failed to create resource!");
 
 		Vadon::Core::Logger::log_message(std::format("Reloaded resource {}\n", Vadon::Utilities::uuid_to_string(reloaded_resource->get_id()).string));
+	}
+
+	void ResourceSystem::internal_notify_resource_added(Resource* resource)
+	{
+		{
+			ResourceEvent added_event;
+			added_event.resource = resource->get_id();
+			added_event.type = ResourceEventType::ADDED;
+
+			broadcast_resource_event(added_event);
+		}
+
+		for (Resource* current_embedded_resource : resource->m_embedded_resources)
+		{
+			internal_notify_resource_added(current_embedded_resource);
+		}
 	}
 }

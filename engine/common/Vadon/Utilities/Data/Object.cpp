@@ -69,46 +69,6 @@ namespace
 		}
 	}
 
-	// FIXME: replace this with a more efficient system where we can use the UUID even if the key is labeled!
-	struct ObjectSerializerKeyData
-	{
-		std::string type_key;
-		std::string properties_key;
-		bool is_null = false;
-
-		static ObjectSerializerKeyData get_key_data(const Vadon::Utilities::Serializer& serializer)
-		{
-			constexpr Vadon::Foundation::UUID type_property_uuid = Vadon::Utilities::Property::property_schema_to_uuid(Vadon::Foundation::DataObjectSchema::c_type_property);
-			constexpr Vadon::Foundation::UUID properties_property_uuid = Vadon::Utilities::Property::property_schema_to_uuid(Vadon::Foundation::DataObjectSchema::c_properties_property);
-
-			ObjectSerializerKeyData key_data;
-
-			const Vadon::Utilities::Serializer::KeyVector keys = serializer.get_keys();
-			if (keys.empty() == true)
-			{
-				key_data.is_null = true;
-				return key_data;
-			}
-
-			for (const std::string& current_key : keys)
-			{
-				const Vadon::Foundation::UUID current_property_id = Vadon::Utilities::parse_labeled_uuid(current_key);
-				if (current_property_id == type_property_uuid)
-				{
-					key_data.type_key = current_key;
-				}
-				else if (current_property_id == properties_property_uuid)
-				{
-					key_data.properties_key = current_key;
-				}
-			}
-
-			return key_data;
-		}
-
-		bool is_valid() const { return (type_key.empty() == false) && (properties_key.empty() == false); }
-	};
-
 	bool serialize_object_trivial_property(Vadon::Utilities::Serializer& serializer, std::string_view key, const Vadon::Utilities::PropertyInfo& property_info, Vadon::Utilities::Variant& property_value)
 	{
 		const ::Vadon::Foundation::BaseType base_type = Vadon::Utilities::base_type_from_uuid(property_info.base_info.root_type);
@@ -148,7 +108,12 @@ namespace
 			if ((object_type.is_valid() == true) && (serializer.is_reading() == true))
 			{
 				// Ensure that the deserialized type is compatible
-				const ::Vadon::Utilities::TypeUUID type_uuid = Vadon::Utilities::ObjectSerializer::deserialize_type_uuid(serializer);
+				constexpr Vadon::Foundation::UUID type_property_uuid = Vadon::Utilities::Property::property_schema_to_uuid(Vadon::Foundation::DataObjectSchema::c_type_property);
+				::Vadon::Utilities::TypeUUID type_uuid;
+				if (serializer.serialize(type_property_uuid, type_uuid) != Vadon::Utilities::Serializer::Result::SUCCESSFUL)
+				{
+					return false;
+				}
 
 				if (Vadon::Utilities::TypeRegistry::is_base_of(object_type, type_uuid) == false)
 				{
@@ -459,29 +424,6 @@ namespace Vadon::Utilities
 		return true;
 	}
 
-	Vadon::Foundation::UUID ObjectSerializer::deserialize_type_uuid(Serializer& serializer)
-	{
-		VADON_ASSERT(serializer.is_object() == true, "Serializer is in invalid state!");
-
-		constexpr Vadon::Foundation::UUID type_property_uuid = Property::property_schema_to_uuid(Vadon::Foundation::DataObjectSchema::c_type_property);
-
-		const Serializer::KeyVector keys = serializer.get_keys();
-		for (const std::string& current_key : keys)
-		{
-			const Vadon::Foundation::UUID current_property_id = Utilities::parse_labeled_uuid(current_key);
-			if (current_property_id == type_property_uuid)
-			{
-				Vadon::Foundation::UUID result;
-				if (serializer.serialize(current_key, result) == Serializer::Result::SUCCESSFUL)
-				{
-					return result;
-				}
-			}
-		}
-
-		return Vadon::Foundation::UUID();
-	}
-
 	bool ObjectSerializer::serialize_object(Serializer& serializer, VariantDictionary& object_dictionary)
 	{
 		constexpr Vadon::Foundation::UUID type_property_uuid = Property::property_schema_to_uuid(Vadon::Foundation::DataObjectSchema::c_type_property);
@@ -489,21 +431,18 @@ namespace Vadon::Utilities
 
 		if (serializer.is_reading() == true)
 		{
-			const ObjectSerializerKeyData key_data = ObjectSerializerKeyData::get_key_data(serializer);
-			if (key_data.is_null == true)
+			// First check if it's a null object
+			// FIXME: modify serializer API to allow checking without querying keys!
+			const Vadon::Utilities::Serializer::KeyVector keys = serializer.get_keys();
+			if (keys.empty() == true)
 			{
-				// NOTE: null object, so we clear the dictionary and early out
+				// Null object, we can clear the dictionary and early out
 				object_dictionary.data.clear();
 				return true;
 			}
 
-			if (key_data.is_valid() == false)
-			{
-				return false;
-			}
-
 			::Vadon::Foundation::UUID object_type_uuid;
-			if (serializer.serialize(key_data.type_key, object_type_uuid) != Serializer::Result::SUCCESSFUL)
+			if (serializer.serialize(type_property_uuid, object_type_uuid) != Serializer::Result::SUCCESSFUL)
 			{
 				return false;
 			}
@@ -521,7 +460,7 @@ namespace Vadon::Utilities
 
 			object_dictionary.data.insert(std::make_pair(uuid_to_base64_string(type_property_uuid), object_type_uuid));
 
-			if (serializer.open_object(key_data.properties_key) != Serializer::Result::SUCCESSFUL)
+			if (serializer.open_object(properties_property_uuid) != Serializer::Result::SUCCESSFUL)
 			{
 				return false;
 			}
@@ -605,7 +544,12 @@ namespace Vadon::Utilities
 			const Serializer::KeyVector keys = serializer.get_keys();
 			for (const std::string& current_key : keys)
 			{
-				const Vadon::Foundation::UUID current_property_id = Utilities::parse_labeled_uuid(current_key);
+				Vadon::Foundation::UUID current_property_id;
+				if (Utilities::uuid_from_base64_string(current_key, current_property_id) == false)
+				{
+					return false;
+				}
+
 				const PropertyInfo property_info = TypeRegistry::get_property_info(object_type, current_property_id);
 				if (property_info.base_info.is_valid() == false)
 				{

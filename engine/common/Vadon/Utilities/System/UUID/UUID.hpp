@@ -55,7 +55,36 @@ namespace Vadon::Utilities
 		return result_data;
 	}
 
-	VADONCOMMON_API std::string uuid_to_hex_string(const ::Vadon::Foundation::UUID& uuid);
+	constexpr std::string uuid_to_hex_string(const ::Vadon::Foundation::UUID& uuid)
+	{
+		std::string uuid_string;
+		uuid_string.resize(::Vadon::Foundation::UUID::c_uuid_width * 2);
+
+		constexpr auto half_byte_to_hex = +[](const char c) {
+			if (c < 10)
+			{
+				return char('0' + c);
+			}
+			else
+			{
+				return char('A' + (c - 10));
+			}
+			};
+
+		constexpr char half_byte_mask = ((1 << 4) - 1);
+		size_t char_index = 0;
+		for (size_t index = 0; index < ::Vadon::Foundation::UUID::c_uuid_width; ++index)
+		{
+			const char uuid_byte = uuid.data[index];
+
+			uuid_string[char_index] = half_byte_to_hex((uuid_byte >> 4) & half_byte_mask);
+			uuid_string[char_index + 1] = half_byte_to_hex(uuid_byte & half_byte_mask);
+			char_index += 2;
+		}
+
+		return uuid_string;
+	}
+
 	VADONCOMMON_API std::string uuid_to_base64_string(const ::Vadon::Foundation::UUID& uuid);
 	VADONCOMMON_API bool uuid_from_base64_string(std::string_view data_string, ::Vadon::Foundation::UUID& uuid);
 

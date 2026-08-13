@@ -18,6 +18,10 @@
 		{
 			"name": "nlohmann-json",
 			"host": true
+		},
+		{
+			"name": "simdjson",
+			"host": true
 		}
 	],
 	"builtin-baseline": "2c356da17069ed4ce4d793d03a60bf87b3e5cf2a",
@@ -37,6 +41,10 @@
 	{ 
         "name": "nlohmann-json", 
         "version": "3.11.2"
+    },
+	{ 
+        "name": "simdjson", 
+        "version": "4.6.6"
     }
   ]	
 }

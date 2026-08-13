@@ -30,13 +30,13 @@ namespace VadonEditor::Core
 		QVariant get_property(const PropertyID& property_id) const;
 		void set_property(const PropertyID& property_id, const QVariant& value);
 
-		bool serialize(QJsonObject& root_obj) const;
+		bool serialize(QJsonObject& root_obj, bool labeled) const;
 		bool deserialize(const QJsonObject& root_obj);
 
-		bool serialize_properties(QJsonObject& properties_obj) const;
+		bool serialize_properties(QJsonObject& properties_obj, bool labeled) const;
 		bool deserialize_properties(const QJsonObject& properties_obj);
 
-		bool serialize_property_data(const QUuid& property_id, QJsonObject& property_obj) const;
+		bool serialize_property_data(const QUuid& property_id, QJsonObject& property_obj, bool labeled) const;
 
 		const QVariantMap& get_property_map() const { return m_properties; }
 		void load_properties(const QVariantMap& properties);
@@ -47,7 +47,7 @@ namespace VadonEditor::Core
 
 		static QUuid deserialize_object_type(const QJsonObject& object);
 	private:
-		bool internal_serialize_property_data(QJsonObject& json_obj, const PropertyData& type_property_data, const QVariant& property_value) const;
+		bool internal_serialize_property_data(QJsonObject& json_obj, const PropertyData& type_property_data, const QVariant& property_value, bool labeled) const;
 
 		void internal_set_property(const PropertyID& property_id, const QVariant& value, bool ignore_deprecated);
 

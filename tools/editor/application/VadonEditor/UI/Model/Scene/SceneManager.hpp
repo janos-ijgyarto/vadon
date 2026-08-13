@@ -52,6 +52,8 @@ namespace VadonEditor::UI
 		SceneTree* find_scene_tab(const QUuid& scene_id) const;
 		void update_scene_tab_label(SceneTree* scene_tree) const;
 
+		void simulator_initialized();
+
 		Core::Application& m_application;
 
 		friend class UISystem;

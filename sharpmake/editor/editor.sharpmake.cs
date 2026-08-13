@@ -21,6 +21,8 @@ namespace Vadon.Editor
 
             conf.TargetPath = $"{BuildPath}/editor/[project.Name]/[target.Platform]/[target.Optimization]/[target.BuildSystem]";
             conf.IntermediatePath = $"{BuildPath}/editor/obj/[project.Name]/[target.Platform]/[target.Optimization]/[target.BuildSystem]";
+
+            conf.AddPrivateDependency<Vadon.Engine.ThirdParty.SIMDJson>(target);
         }
 
         protected static string EditorPath { get { return Path.Combine(Utilities.ConfigurationParameters.RepositoryPath, "editor"); } }

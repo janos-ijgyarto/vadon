@@ -131,8 +131,6 @@ namespace Vadon::Utilities
 	class ObjectSerializer
 	{
 	public:
-		static TypeUUID deserialize_type_uuid(Serializer& serializer);
-
 		VADONCOMMON_API static bool serialize_object(Serializer& serializer, VariantDictionary& object_dictionary);
 		VADONCOMMON_API static bool serialize_object_properties(Serializer& serializer, TypeID object_type, VariantDictionary& object_properties);
 

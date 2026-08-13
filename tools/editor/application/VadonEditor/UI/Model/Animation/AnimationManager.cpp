@@ -218,4 +218,18 @@ namespace VadonEditor::UI
 
 		m_animation_widgets.clear();
 	}
+
+	void AnimationManager::simulator_initialized()
+	{
+		Model::ResourceSystem& resource_system = m_application.get_model_system().get_resource_system();
+
+		for (auto animation_widget_it = m_animation_widgets.begin(); animation_widget_it != m_animation_widgets.end(); ++animation_widget_it)
+		{
+			// Send the "open resource" message for all anim resources currently open
+			Model::Resource* resource = resource_system.get_resource(animation_widget_it.key());
+			Q_ASSERT_X(resource != nullptr, "VadonEditor::UI::AnimationManager::simulator_initialized", "Cannot find resource!");
+
+			resource->open();
+		}
+	}
 }

@@ -47,6 +47,8 @@ namespace VadonEditor::UI
 		bool request_close();
 		void force_close();
 
+		void simulator_initialized();
+
 		Core::Application& m_application;
 		QHash<QUuid, QWidget*> m_resource_widgets;
 		QHash<QWidget*, QUuid> m_widget_reverse_lookup;

@@ -10,11 +10,122 @@
 
 #include <Vadon/Core/File/FileSystem.hpp>
 
+// FIXME: this is a quick hacky solution!
+// Long-term we should replace nlohmann with simdjson since it can now both read and write documents!
+#include <simdjson.h>
+
 #include <filesystem>
+
+namespace
+{
+	std::string_view get_sanitized_json_key(std::string_view original_key)
+	{
+		const size_t separator_index = original_key.find('|');
+		if (separator_index != std::string::npos)
+		{
+			return original_key.substr(separator_index + 1);
+		}
+		else
+		{
+			return original_key;
+		}
+	}
+
+	bool recursive_sanitize_json(simdjson::ondemand::value element, simdjson::builder::string_builder& builder) {
+		bool add_comma;
+		switch (element.type()) {
+		case simdjson::ondemand::json_type::array:
+			builder.start_array();
+			add_comma = false;
+			for (auto child : element.get_array()) {
+				if (add_comma) {
+					builder.append_comma();
+				}
+				// We need the call to value() to get
+				// an ondemand::value type.
+				recursive_sanitize_json(child.value(), builder);
+				add_comma = true;
+			}
+			builder.end_array();
+			break;
+		case simdjson::ondemand::json_type::object:
+			builder.start_object();
+			add_comma = false;
+			for (auto field : element.get_object()) {
+				if (add_comma) {
+					builder.append_comma();
+				}
+				std::string_view key_string = field.escaped_key();
+				std::string_view sanitized_key_string = get_sanitized_json_key(key_string);
+
+				builder.append(sanitized_key_string);
+				builder.append_colon();
+				recursive_sanitize_json(field.value(), builder);
+				add_comma = true;
+			}
+			builder.end_object();
+			break;
+		case simdjson::ondemand::json_type::number:
+			// assume it fits in a double
+			builder.append(element.get_double().value());
+			break;
+		case simdjson::ondemand::json_type::string:
+			builder.append(element.get_string().value());
+			break;
+		case simdjson::ondemand::json_type::boolean:
+			builder.append(element.get_bool().value());
+			break;
+		case simdjson::ondemand::json_type::null:
+			// We check that the value is indeed null
+			// otherwise: an error is thrown.
+			if (element.is_null()) {
+				builder.append_null();
+			}
+			break;
+		case simdjson::ondemand::json_type::unknown:
+			// TODO: error?
+			return false;
+		}
+
+		return true;
+	}
+
+	bool simdjson_sanitize_json_data(Vadon::Core::RawFileDataBuffer& file_buffer)
+	{
+		if (file_buffer.empty() == true)
+		{
+			// Nothing to do
+			return true;
+		}
+
+		// Add padding required by simdjson
+		const size_t original_length = file_buffer.size();
+		file_buffer.insert(file_buffer.end(), simdjson::SIMDJSON_PADDING, std::byte{ 0 });
+
+		simdjson::padded_string_view simdjson_string(reinterpret_cast<char*>(file_buffer.data()), original_length, file_buffer.size());
+
+		simdjson::builder::string_builder builder;
+
+		simdjson::ondemand::parser parser;
+		simdjson::ondemand::document doc = parser.iterate(simdjson_string);
+		simdjson::ondemand::value val = doc;
+		
+		if (recursive_sanitize_json(val, builder) == false)
+		{
+			return false;
+		}
+
+		std::string_view builder_string = builder.view();
+
+		file_buffer.resize(builder_string.size());
+		memcpy(file_buffer.data(), builder_string.data(), builder_string.size());
+
+		return true;
+	}
+}
 
 namespace VadonEditor::Model
 {
-
 	ResourceDatabase::ResourceDatabase(Core::Editor& editor)
 		: m_editor(editor)
 	{
@@ -90,14 +201,55 @@ namespace VadonEditor::Model
 	{
 		const Vadon::Core::FileDatabaseHandle resource_file_db = get_database(FileDatabaseType::RESOURCE);
 
+		// First make sure we have a valid file for this resource
 		Vadon::Core::FileSystem& file_system = m_editor.get_engine_core().get_system<Vadon::Core::FileSystem>();
-		Vadon::Core::RawFileDataBuffer resource_file_buffer;
-
-		if (file_system.load_file(resource_file_db, resource_id, resource_file_buffer) == false)
+		const Vadon::Core::FileInfo resource_file_info = file_system.get_file_info(resource_file_db, resource_id);
+		if (resource_file_info.is_valid() == false)
 		{
 			resource_system.log_error("Editor resource database: failed to load resource file!\n");
 			return Vadon::Model::ResourceHandle();
 		}
+
+		// Check whether a temp file is also available
+		Core::ProjectManager& project_manager = m_editor.get_project_manager();
+		
+		std::filesystem::path temp_file_path = project_manager.get_active_project().root_path;
+		temp_file_path /= ".vadon/temp/model";
+		temp_file_path /= Vadon::Utilities::uuid_to_hex_string(resource_id) + ".vdtmp";
+
+		Vadon::Core::RawFileDataBuffer resource_file_buffer;
+
+		if (file_system.does_file_exist(temp_file_path.string()) == true)
+		{
+			// Temp file exists, check if it's more recent
+			const Vadon::Core::FileMetadata temp_file_metadata = file_system.get_file_metadata(temp_file_path.string());
+			if (temp_file_metadata.last_write_time > resource_file_info.metadata.last_write_time)
+			{
+				// Temp file was updated more recently, load data from there
+				if (file_system.load_file(temp_file_path.string(), resource_file_buffer) == false)
+				{
+					resource_system.log_error("Editor resource database: failed to load temp resource file!\n");
+				}
+			}
+		}
+
+		if (resource_file_buffer.empty() == true)
+		{
+			// No temp file, load from original resource file
+			if (file_system.load_file(resource_file_db, resource_id, resource_file_buffer) == false)
+			{
+				resource_system.log_error("Editor resource database: failed to load resource file!\n");
+				return Vadon::Model::ResourceHandle();
+			}
+
+			// This is a "raw" editor file, we have to clear the labels from the keys
+			if (sanitize_editor_resource_file(resource_file_buffer) == false)
+			{
+				resource_system.log_error("Editor resource database: failed to process resource file data!\n");
+				return Vadon::Model::ResourceHandle();
+			}
+		}
+		VADON_ASSERT(resource_file_buffer.empty() == false, "Failed to load resource data!");
 
 		// FIXME: support binary file serialization!
 		// Solution: have file system create the appropriate serializer!
@@ -167,6 +319,14 @@ namespace VadonEditor::Model
 			return Vadon::Model::ResourceID();
 		}
 
+		// This is a "raw" editor file, we have to clear the labels from the keys
+		// FIXME: find a better way, maybe using simdjson and iterators?
+		if (sanitize_editor_resource_file(resource_file_buffer) == false)
+		{
+			Vadon::Core::Logger::log_error("Editor resource database: failed to process resource file data!\n");
+			return Vadon::Model::ResourceID();
+		}
+
 		Vadon::Utilities::Serializer::Instance serializer_instance = Vadon::Utilities::Serializer::create_serializer(resource_file_buffer, Vadon::Utilities::Serializer::Type::JSON, Vadon::Utilities::Serializer::Mode::READ);
 
 		// FIXME: support binary file serialization!
@@ -201,6 +361,11 @@ namespace VadonEditor::Model
 
 		internal_import_resource(imported_resource_info, path);
 		return imported_resource_info.id;
+	}
+
+	bool ResourceDatabase::sanitize_editor_resource_file(Vadon::Core::RawFileDataBuffer& file_data)
+	{
+		return simdjson_sanitize_json_data(file_data);
 	}
 
 	void ResourceDatabase::internal_import_resource(const Vadon::Model::ResourceInfo& resource_info, std::string_view path)

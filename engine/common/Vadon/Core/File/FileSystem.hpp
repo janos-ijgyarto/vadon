@@ -42,6 +42,9 @@ namespace Vadon::Core
 
 		// FIXME: this is meant to be something set by client code, for the time being we'll just return std::filesystem::current_path
 		virtual std::string get_current_path() const = 0;
+
+		virtual bool does_file_exist(std::string_view absolute_path) const = 0;
+		virtual FileMetadata get_file_metadata(std::string_view absolute_path) const = 0;
 	protected:
 		FileSystem(EngineCoreInterface& core)
 			: System(core)

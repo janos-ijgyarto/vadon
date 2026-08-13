@@ -5,6 +5,10 @@
 
 #include <VadonEditor/Core/Project/ProjectManager.hpp>
 
+#include <VadonEditor/Model/ModelSystem.hpp>
+#include <VadonEditor/Model/Resource/ResourceSystem.hpp>
+#include <VadonEditor/Model/Scene/SceneSystem.hpp>
+
 #include <VadonEditor/Network/NetworkSystem.hpp>
 #include <VadonEditor/Network/Message/MessageSerializer.hpp>
 
@@ -232,11 +236,19 @@ namespace VadonEditor::UI
 
 	void UISystem::run_simulator()
 	{
+		Simulator::Simulator& simulator = m_application.get_simulator();
+		if (simulator.is_running() == false)
+		{
+			Model::ModelSystem& model_system = m_application.get_model_system();
+			model_system.get_scene_system().generate_temp_scenes();
+			model_system.get_resource_system().generate_temp_resources();
+		}
+
 		// TODO: gather settings!
 		Simulator::SimulatorSettings settings;
 		settings.debug_break_on_init = true;
 		settings.configuration_name = m_application.get_project_manager().get_project_info().plugin_settings.selected_configuration;
-		if (m_application.get_simulator().run_simulator(settings) == false)
+		if (simulator.run_simulator(settings) == false)
 		{
 			// TODO: error popup?
 		}
@@ -273,5 +285,12 @@ namespace VadonEditor::UI
 		m_scene_manager.force_close();
 
 		m_main_window->close();
+	}
+
+	void UISystem::simulator_initialized()
+	{
+		m_resource_manager.simulator_initialized();
+		m_scene_manager.simulator_initialized();
+		m_animation_manager.simulator_initialized();
 	}
 }

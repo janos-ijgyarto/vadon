@@ -145,6 +145,36 @@ namespace
 		
 		return true;
 	}
+
+	bool asset_manager_do_write_file(const QString& file_absolute_path, QByteArrayView data)
+	{
+		const QFileInfo file_info(file_absolute_path);
+		if (file_info.exists() == false)
+		{
+			// File doesn't exist yet, attempt to create the path to it
+			const QDir asset_dir;
+			if (asset_dir.mkpath(file_info.absolutePath()) == false)
+			{
+				qCritical() << "Failed to create path" << file_info.absolutePath();
+				return false;
+			}
+		}
+
+		QFile asset_file(file_info.absoluteFilePath());
+		if (asset_file.open(QIODevice::WriteOnly) == false)
+		{
+			qCritical() << "Failed to open asset file" << file_info.absoluteFilePath();
+			return false;
+		}
+
+		if (asset_file.write(data.data(), data.length()) != data.length())
+		{
+			qCritical() << "Failed to write all data to file" << file_info.absoluteFilePath();
+			return false;
+		}
+
+		return true;
+	}
 }
 
 namespace VadonEditor::Core
@@ -314,31 +344,15 @@ namespace VadonEditor::Core
 			asset_absolute_path = get_imported_file_resource_path(asset_absolute_path);
 		}
 
-		const QFileInfo file_info(asset_absolute_path);
-		if (file_info.exists() == false)
-		{
-			// File doesn't exist yet, attempt to create the path to it
-			const QDir asset_dir;
-			if (asset_dir.mkpath(file_info.absolutePath()) == false)
-			{
-				qCritical() << "Failed to create path" << file_info.absolutePath();
-				return false;
-			}
-		}
+		return asset_manager_do_write_file(asset_absolute_path, data);
+	}
 
-		QFile asset_file(file_info.absoluteFilePath());
-		if (asset_file.open(QIODevice::WriteOnly) == false)
-		{
-			qCritical() << "Failed to open asset file" << file_info.absoluteFilePath();
-			return false;
-		}
+	bool AssetManager::save_temp_file_data(QStringView temp_file_relative_path, QByteArrayView data)
+	{
+		const ProjectInfo& project_info = m_application.get_project_manager().get_project_info();
+		const QString file_absolute_path = QDir::cleanPath(project_info.root_path + QString("/%1/temp/%2").arg(c_project_metadata_folder_name).arg(temp_file_relative_path));
 
-		if (asset_file.write(data.data(), data.length()) != data.length())
-		{
-			qCritical() << "Failed to write all data to file" << file_info.absoluteFilePath();
-			return false;
-		}
-		return true;
+		return asset_manager_do_write_file(file_absolute_path, data);
 	}
 
 	bool AssetManager::load_asset_data(int asset_id, QByteArray& data) const

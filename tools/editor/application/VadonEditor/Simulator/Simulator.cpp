@@ -362,6 +362,32 @@ namespace VadonEditor::Simulator
 			return true;
 		}
 
+		bool is_running() const
+		{
+			const Core::Configuration& configuration = m_application.get_configuration();
+			switch (configuration.mode)
+			{
+			case Core::ApplicationMode::EDITOR:
+			{
+				if (m_simulator_process.state() != QProcess::NotRunning)
+				{
+					return true;
+				}
+			}
+			break;
+			case Core::ApplicationMode::SIMULATOR:
+			{
+				if (m_plugin_interface != nullptr)
+				{
+					return true;
+				}
+			}
+			break;
+			}
+
+			return false;
+		}
+
 		void stop_simulator()
 		{
 			const Core::Configuration& configuration = m_application.get_configuration();
@@ -460,6 +486,11 @@ namespace VadonEditor::Simulator
 	bool Simulator::run_simulator(const SimulatorSettings& settings)
 	{
 		return m_internal->run_simulator(settings);
+	}
+
+	bool Simulator::is_running() const
+	{
+		return false;
 	}
 
 	void Simulator::stop_simulator()

@@ -192,9 +192,12 @@ namespace VadonEditor::Utilities
 		}
 		case QMetaType::Type::QColor:
 		{
-			// Colors are stored as #AARRGGBB strings
+			// NOTE: Qt can convert colors to #AARRGGBB strings
+			// but the engine works with #RRGGBBAA, so we have
+			// to convert
 			Q_ASSERT_X(json_value.isString() == true, "VadonEditor::Utilities::get_variant_from_json", "Invalid type");
-			return QColor::fromString(json_value.toString());
+			const QString vadon_color_string = json_value.toString();
+			return QColor::fromString(QString("#") + vadon_color_string.last(2) + vadon_color_string.sliced(1, 6));
 		}
 		case QMetaType::Type::QUuid:
 		{
@@ -246,8 +249,12 @@ namespace VadonEditor::Utilities
 		}
 		case QMetaType::Type::QColor:
 		{
+			// NOTE: Qt can convert colors to #AARRGGBB strings
+			// but the engine works with #RRGGBBAA, so we have
+			// to convert
 			const QColor color_value = value.value<QColor>();
-			return color_value.name(QColor::NameFormat::HexArgb);
+			const QString qt_color_string = color_value.name(QColor::NameFormat::HexArgb);
+			return QString("#") + qt_color_string.last(6) + qt_color_string.sliced(1, 2);
 		}
 		default:
 			return QJsonValue::fromVariant(value);

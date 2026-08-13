@@ -855,10 +855,10 @@ namespace VadonEditor::Core
 		const QUuid custom_data_id_property_id = Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::ProjectInfoSchema::c_custom_data_id_property.id);
 
 		QJsonObject project_data_root;
-		project_data_root[Utilities::serialize_labeled_uuid("name", project_name_property_id)] = project_info.name;
+		project_data_root[Utilities::serialize_labeled_uuid(L"name", project_name_property_id)] = project_info.name;
 		if (project_info.custom_data_id.isNull() == false)
 		{
-			project_data_root[Utilities::serialize_labeled_uuid("custom_data_id", custom_data_id_property_id)] = Utilities::uuid_to_base64_string(project_info.custom_data_id);
+			project_data_root[Utilities::serialize_labeled_uuid(L"custom_data_id", custom_data_id_property_id)] = Utilities::uuid_to_base64_string(project_info.custom_data_id);
 		}
 
 		project_file.write(QJsonDocument(project_data_root).toJson());

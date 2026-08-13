@@ -31,7 +31,7 @@ namespace
 		return true;
 	}
 
-	bool serialize_object_subobject_impl(VadonEditor::Core::Application& application, QJsonValue& json_value, const QVariant& value, const QUuid& object_type, bool allow_subclass)
+	bool serialize_object_subobject_impl(VadonEditor::Core::Application& application, QJsonValue& json_value, const QVariant& value, const QUuid& object_type, bool allow_subclass, bool labeled)
 	{
 		// Check if it's a generic or explicit object
 		const QVariantMap object_dictionary = value.toMap();
@@ -56,7 +56,7 @@ namespace
 				return false;
 			}
 
-			if (data_object.serialize(json_object) == false)
+			if (data_object.serialize(json_object, labeled) == false)
 			{
 				return false;
 			}
@@ -73,7 +73,7 @@ namespace
 
 			data_object.load_properties(object_dictionary);
 
-			if (data_object.serialize_properties(json_object) == false)
+			if (data_object.serialize_properties(json_object, labeled) == false)
 			{
 				return false;
 			}
@@ -210,7 +210,7 @@ namespace
 		return false;
 	}
 
-	bool serialize_object_array_subobject_element(VadonEditor::Core::Application& application, QJsonValue& json_value, const VadonEditor::Core::PropertyData& property_data, qsizetype type_list_offset, const QVariant& array_element_value)
+	bool serialize_object_array_subobject_element(VadonEditor::Core::Application& application, QJsonValue& json_value, const VadonEditor::Core::PropertyData& property_data, qsizetype type_list_offset, const QVariant& array_element_value, bool labeled)
 	{
 		// Check if the array uses ObjectWrapper
 		const QUuid element_type = property_data.type_list[type_list_offset];
@@ -221,25 +221,25 @@ namespace
 			if (object_type_offset >= property_data.type_list.size())
 			{
 				// No type specified, so it's a generic object
-				return serialize_object_subobject_impl(application, json_value, array_element_value, QUuid{}, false);
+				return serialize_object_subobject_impl(application, json_value, array_element_value, QUuid{}, false, labeled);
 			}
 			else
 			{
 				// Constrain to the type specified in the type list
 				const QUuid object_type = property_data.type_list[object_type_offset];
-				return serialize_object_subobject_impl(application, json_value, array_element_value, object_type, true);
+				return serialize_object_subobject_impl(application, json_value, array_element_value, object_type, true, labeled);
 			}
 		}
 		// FIXME: this is a bit convoluted, find a way to deduplicate this logic!
 		else if (element_type == VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::DataObjectSchema::c_type_uuid))
 		{
 			// DataObject is serialized as generic object
-			return serialize_object_subobject_impl(application, json_value, array_element_value, QUuid{}, false);
+			return serialize_object_subobject_impl(application, json_value, array_element_value, QUuid{}, false, labeled);
 		}
 		else
 		{
 			// Serialize explicitly typed object (only this type)
-			return serialize_object_subobject_impl(application, json_value, array_element_value, element_type, false);
+			return serialize_object_subobject_impl(application, json_value, array_element_value, element_type, false, labeled);
 		}
 	}
 
@@ -310,7 +310,7 @@ namespace
 		return true;
 	}
 
-	bool serialize_object_array_property_element(VadonEditor::Core::Application& application, QJsonValue& json_value, const VadonEditor::Core::PropertyData& property_data, qsizetype type_list_offset, const QVariant& array_element_value)
+	bool serialize_object_array_property_element(VadonEditor::Core::Application& application, QJsonValue& json_value, const VadonEditor::Core::PropertyData& property_data, qsizetype type_list_offset, const QVariant& array_element_value, bool labeled)
 	{
 		const QUuid element_type = property_data.type_list[type_list_offset];
 		const ::Vadon::Foundation::Property::Category element_category = VadonEditor::Core::PropertyData::get_category(element_type);
@@ -323,7 +323,7 @@ namespace
 		case ::Vadon::Foundation::Property::Category::DICTIONARY:
 			return serialize_object_array_nested_dictionary_element(json_value, property_data, type_list_offset, array_element_value);
 		case ::Vadon::Foundation::Property::Category::OBJECT:
-			return serialize_object_array_subobject_element(application, json_value, property_data, type_list_offset, array_element_value);
+			return serialize_object_array_subobject_element(application, json_value, property_data, type_list_offset, array_element_value, labeled);
 		case ::Vadon::Foundation::Property::Category::RESOURCE:
 			return serialize_object_array_resource_element(json_value, property_data, type_list_offset, array_element_value);
 		default:
@@ -354,7 +354,7 @@ namespace
 		}
 	}
 
-	bool serialize_object_array_property(VadonEditor::Core::Application& application, QJsonValue& json_value, const VadonEditor::Core::PropertyData& property_data, const QVariant& property_value)
+	bool serialize_object_array_property(VadonEditor::Core::Application& application, QJsonValue& json_value, const VadonEditor::Core::PropertyData& property_data, const QVariant& property_value, bool labeled)
 	{
 		Q_ASSERT_X(property_data.type_list.front() == VadonEditor::Core::TypeData::get_base_type_uuid(::Vadon::Foundation::BaseType::ARRAY), "serialize_object_array_property", "Invalid type!");
 
@@ -364,7 +364,7 @@ namespace
 		for (const QVariant& array_element_value : array_value)
 		{
 			QJsonValue current_array_value;
-			if (serialize_object_array_property_element(application, current_array_value, property_data, 1, array_element_value) == false)
+			if (serialize_object_array_property_element(application, current_array_value, property_data, 1, array_element_value, labeled) == false)
 			{
 				return false;
 			}
@@ -448,7 +448,7 @@ namespace
 		}
 	}
 
-	bool serialize_object_subobject_property(VadonEditor::Core::Application& application, QJsonValue& json_value, const VadonEditor::Core::PropertyData& property_data, const QVariant& property_value)
+	bool serialize_object_subobject_property(VadonEditor::Core::Application& application, QJsonValue& json_value, const VadonEditor::Core::PropertyData& property_data, const QVariant& property_value, bool labeled)
 	{
 		// Check if the property uses ObjectWrapper
 		const QUuid element_type = property_data.type_list.front();
@@ -458,25 +458,25 @@ namespace
 			if (property_data.type_list.size() < 2)
 			{
 				// No type specified, so it's a generic object
-				return serialize_object_subobject_impl(application, json_value, property_value, QUuid{}, false);
+				return serialize_object_subobject_impl(application, json_value, property_value, QUuid{}, false, labeled);
 			}
 			else
 			{
 				// Constrain to the type specified in the type list
 				const QUuid object_type = property_data.type_list[1];
-				return serialize_object_subobject_impl(application, json_value, property_value, object_type, true);
+				return serialize_object_subobject_impl(application, json_value, property_value, object_type, true, labeled);
 			}
 		}
 		// FIXME: this is a bit convoluted, find a way to deduplicate this logic!
 		else if (element_type == VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::DataObjectSchema::c_type_uuid))
 		{
 			// DataObject is serialized as generic object
-			return serialize_object_subobject_impl(application, json_value, property_value, QUuid{}, false);
+			return serialize_object_subobject_impl(application, json_value, property_value, QUuid{}, false, labeled);
 		}
 		else
 		{
 			// Serialize explicitly typed object (only this type)
-			return serialize_object_subobject_impl(application, json_value, property_value, element_type, false);
+			return serialize_object_subobject_impl(application, json_value, property_value, element_type, false, labeled);
 		}
 	}
 
@@ -544,7 +544,7 @@ namespace
 		return true;
 	}
 
-	bool serialize_object_property_value(VadonEditor::Core::Application& application, QJsonValue& json_value, const VadonEditor::Core::PropertyData& property_data, const QVariant& property_value)
+	bool serialize_object_property_value(VadonEditor::Core::Application& application, QJsonValue& json_value, const VadonEditor::Core::PropertyData& property_data, const QVariant& property_value, bool labeled)
 	{
 		const ::Vadon::Foundation::Property::Category property_category = VadonEditor::Core::PropertyData::get_category(property_data.type_list.front());
 		switch (property_category)
@@ -552,11 +552,11 @@ namespace
 		case ::Vadon::Foundation::Property::Category::TRIVIAL:
 			return serialize_object_trivial_property(json_value, property_data.get_root_type(), property_value);
 		case ::Vadon::Foundation::Property::Category::ARRAY:
-			return serialize_object_array_property(application, json_value, property_data, property_value);
+			return serialize_object_array_property(application, json_value, property_data, property_value, labeled);
 		case ::Vadon::Foundation::Property::Category::DICTIONARY:
 			return serialize_object_dictionary_property(application, json_value, property_data, property_value);
 		case ::Vadon::Foundation::Property::Category::OBJECT:
-			return serialize_object_subobject_property(application, json_value, property_data, property_value);
+			return serialize_object_subobject_property(application, json_value, property_data, property_value, labeled);
 		case ::Vadon::Foundation::Property::Category::RESOURCE:
 			return serialize_object_resource_property(json_value, property_data, property_value);
 		default:
@@ -763,22 +763,22 @@ namespace VadonEditor::Core
 		internal_set_property(property_id, value, false);
 	}
 
-	bool DataObject::serialize(QJsonObject& root_obj) const
+	bool DataObject::serialize(QJsonObject& root_obj, bool labeled) const
 	{
 		{
 			const QUuid type_property_uuid = Utilities::vadon_uuid_string_to_qt_uuid(Vadon::Foundation::DataObjectSchema::c_type_property.id);
-			root_obj[Utilities::serialize_labeled_uuid("type", type_property_uuid)] = Utilities::uuid_to_base64_string(m_type_id);
+			root_obj[Utilities::create_uuid_key_string(type_property_uuid, L"type", labeled)] = Utilities::uuid_to_base64_string(m_type_id);
 		}
 
 		QJsonObject properties_obj;
-		if (serialize_properties(properties_obj) == false)
+		if (serialize_properties(properties_obj, labeled) == false)
 		{
 			Q_ASSERT_X(false, "VadonEditor::Core::DataObject::serialize", "Failed to serialize properties");
 			return false;
 		}
 
 		const QUuid properties_property_uuid = Utilities::vadon_uuid_string_to_qt_uuid(Vadon::Foundation::DataObjectSchema::c_properties_property.id);
-		root_obj[Utilities::serialize_labeled_uuid("properties", properties_property_uuid)] = properties_obj;
+		root_obj[Utilities::create_uuid_key_string(properties_property_uuid, L"properties", labeled)] = properties_obj;
 
 		return true;
 	}
@@ -850,7 +850,7 @@ namespace VadonEditor::Core
 		return true;
 	}
 
-	bool DataObject::serialize_properties(QJsonObject& properties_obj) const
+	bool DataObject::serialize_properties(QJsonObject& properties_obj, bool labeled) const
 	{
 		const DataSchema& data_schema = m_application.get_project_manager().get_project_data_schema();
 		QUuid current_type_uuid = m_type_id;
@@ -870,7 +870,7 @@ namespace VadonEditor::Core
 					continue;
 				}
 
-				if (internal_serialize_property_data(properties_obj, *type_property_data, property_value_it.value()) == false)
+				if (internal_serialize_property_data(properties_obj, *type_property_data, property_value_it.value(), labeled) == false)
 				{
 					return false;
 				}
@@ -912,7 +912,7 @@ namespace VadonEditor::Core
 		return true;
 	}
 
-	bool DataObject::serialize_property_data(const QUuid& property_id, QJsonObject& property_obj) const
+	bool DataObject::serialize_property_data(const QUuid& property_id, QJsonObject& property_obj, bool labeled) const
 	{
 		const DataSchema& data_schema = m_application.get_project_manager().get_project_data_schema();
 		const PropertyData* type_property_data = data_schema.find_type_property_data(m_type_id, property_id);
@@ -921,7 +921,7 @@ namespace VadonEditor::Core
 		auto property_value_it = m_properties.find(Utilities::uuid_to_base64_string(property_id));
 		Q_ASSERT_X(property_value_it != m_properties.end(), "VadonEditor::Core::DataObject::serialize_properties", "Cannot find property value");
 
-		return internal_serialize_property_data(property_obj, *type_property_data, property_value_it.value());
+		return internal_serialize_property_data(property_obj, *type_property_data, property_value_it.value(), labeled);
 	}
 
 	void DataObject::load_properties(const QVariantMap& properties)
@@ -963,23 +963,15 @@ namespace VadonEditor::Core
 		return QUuid();
 	}
 
-	bool DataObject::internal_serialize_property_data(QJsonObject& json_obj, const PropertyData& type_property_data, const QVariant& property_value) const
+	bool DataObject::internal_serialize_property_data(QJsonObject& json_obj, const PropertyData& type_property_data, const QVariant& property_value, bool labeled) const
 	{
 		const QUuid property_id = Utilities::vadon_uuid_to_qt_uuid(type_property_data.info.id);
 		const QString property_name = type_property_data.find_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME);
 
-		QString key_string;
-		if (property_name.isEmpty() == false)
-		{
-			key_string = Utilities::serialize_labeled_uuid(property_name, property_id);
-		}
-		else
-		{
-			key_string = Utilities::uuid_to_base64_string(property_id);
-		}
+		const QString key_string = Utilities::create_uuid_key_string(property_id, property_name, labeled);
 
 		QJsonValue json_value;
-		if (serialize_object_property_value(m_application, json_value, type_property_data, property_value) == false)
+		if (serialize_object_property_value(m_application, json_value, type_property_data, property_value, labeled) == false)
 		{
 			return false;
 		}

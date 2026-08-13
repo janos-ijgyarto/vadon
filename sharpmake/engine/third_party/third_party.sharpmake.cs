@@ -112,6 +112,8 @@ namespace Vadon.Engine.ThirdParty
 
             conf.Output = Configuration.OutputType.Utility;
 
+            conf.Options.Add(Options.Vc.General.DisableFastUpToDateCheck.Enable);
+
             conf.ProjectPath += "/third_party";
 
             // No need to include its own path
@@ -197,6 +199,34 @@ namespace Vadon.Engine.ThirdParty
         public NlohmannJson()
         {
             Name = "NlohmannJson";
+        }
+    }
+
+    [Sharpmake.Export]
+    public class SIMDJson : InstalledProject
+    {
+        public SIMDJson()
+        {
+            Name = "simdjson";
+        }
+
+        public override void ConfigureAll(Configuration conf, Target target)
+        {
+            conf.Output = Configuration.OutputType.Dll;
+
+            conf.ExportDefines.Add("SIMDJSON_USING_WINDOWS_DYNAMIC_LIBRARY");
+
+            conf.TargetFileName = "simdjson";
+            if(target.Optimization != Optimization.Debug)
+            {
+                conf.TargetPath = $"{EngineInstallPath}/x64-windows/bin";
+                conf.TargetLibraryPath = $"{EngineInstallPath}/x64-windows/lib";
+            }
+            else
+            {
+                conf.TargetPath = $"{EngineInstallPath}/x64-windows/debug/bin";
+                conf.TargetLibraryPath = $"{EngineInstallPath}/x64-windows/debug/lib";
+            }
         }
     }
 }

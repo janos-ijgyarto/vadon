@@ -40,6 +40,8 @@ namespace VadonEditor::Model
 		Vadon::Model::ResourceID import_resource(std::string_view path);
 
 		Vadon::Core::FileDatabaseHandle get_database(FileDatabaseType type) const { return m_file_databases[static_cast<size_t>(type)]; }
+
+		static bool sanitize_editor_resource_file(Vadon::Core::RawFileDataBuffer& file_data);
 	private:
 		void internal_import_resource(const Vadon::Model::ResourceInfo& resource_info, std::string_view path);
 		bool import_asset_file(Vadon::Model::ResourceID file_id);

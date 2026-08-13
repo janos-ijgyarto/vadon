@@ -110,6 +110,29 @@ namespace VadonEditor::Model
 		}
 	}
 
+	void SceneSystem::generate_temp_scenes()
+	{
+		for (auto scene_it = m_scene_lookup.begin(); scene_it != m_scene_lookup.end(); ++scene_it)
+		{
+			const Scene* current_scene = scene_it.value();
+			if (current_scene->get_resource()->is_embedded() == true)
+			{
+				continue;
+			}
+
+			if (current_scene->is_modified() == false)
+			{
+				continue;
+			}
+
+			if (current_scene->store_scene_data() == false)
+			{
+				qCritical() << "Failed to store scene data!";
+				continue;
+			}
+		}
+	}
+
 	SceneSystem::SceneSystem(Core::Application& application)
 		: m_application(application)
 	{
@@ -139,6 +162,11 @@ namespace VadonEditor::Model
 		}
 
 		m_scene_lookup.clear();
+	}
+
+	void SceneSystem::simulator_initialized()
+	{
+		// TODO: anything?
 	}
 
 	Scene* SceneSystem::internal_add_new_scene(Resource* scene_resource)

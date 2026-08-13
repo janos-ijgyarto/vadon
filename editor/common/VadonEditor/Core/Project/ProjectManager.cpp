@@ -1,6 +1,7 @@
 #include <VadonEditor/Core/Project/ProjectManager.hpp>
 
 #include <VadonEditor/Core/Editor.hpp>
+#include <VadonEditor/Model/Resource/Database.hpp>
 
 #include <Vadon/Core/File/FileSystem.hpp>
 #include <Vadon/Core/Project/Project.hpp>
@@ -62,10 +63,29 @@ namespace VadonEditor::Core
 			return false;
 		}
 
+		if (Model::ResourceDatabase::sanitize_editor_resource_file(project_file_data) == false)
+		{
+			Vadon::Core::Logger::log_error("Project manager: failed to process file!\n");
+			return false;
+		}
+
 		Vadon::Utilities::Serializer::Instance serializer = Vadon::Utilities::Serializer::create_serializer(project_file_data, Vadon::Utilities::Serializer::Type::JSON, Vadon::Utilities::Serializer::Mode::READ);
+
+		if (serializer->initialize() == false)
+		{
+			Vadon::Core::Logger::log_error("Project manager: failed to initialize serializer for project file!\n");
+			return false;
+		}
+
 		if (Vadon::Core::Project::serialize_project_data(*serializer, project_info) == false)
 		{
 			Vadon::Core::Logger::log_error(std::format("Project manager: \"{}\" is not a valid project file!\n", project_file_path));
+			return false;
+		}
+
+		if (serializer->finalize() == false)
+		{
+			Vadon::Core::Logger::log_error("Project manager: failed to finalize serializer for project file!\n");
 			return false;
 		}
 

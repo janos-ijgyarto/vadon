@@ -613,11 +613,25 @@ namespace VadonDemo::Core
 			const bool is_raw_data = m_engine_app->has_command_line_arg("raw");
 
 			Vadon::Utilities::Serializer::Instance serializer = Vadon::Utilities::Serializer::create_serializer(project_file_data, is_raw_data ? Vadon::Utilities::Serializer::Type::JSON : Vadon::Utilities::Serializer::Type::BINARY, Vadon::Utilities::Serializer::Mode::READ);
+			
+			if (serializer->initialize() == false)
+			{
+				Vadon::Core::Logger::log_error("Failed to initialize serializer for project file!\n");
+				return false;
+			}
+
 			if (Vadon::Core::Project::serialize_project_data(*serializer, m_project_info) == false)
 			{
 				Vadon::Core::Logger::log_error(std::format("Invalid project file at \"{}\"!\n", project_file_path));
 				return false;
 			}
+
+			if (serializer->finalize() == false)
+			{
+				Vadon::Core::Logger::log_error("Failed to finalize serializer for project file!\n");
+				return false;
+			}
+
 			m_project_info.root_path = fs_root_path.parent_path().generic_string();
 
 			if (m_resource_db.initialize(m_project_info.root_path, is_raw_data) == false)

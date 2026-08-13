@@ -25,12 +25,16 @@ namespace VadonEditor::Model
 
 		QList<Scene*> get_all_scenes() const { return m_scene_lookup.values(); }
 		void save_all_scenes();
+
+		void generate_temp_scenes();
 	private:
 		SceneSystem(Core::Application& application);
 
 		bool initialize();
 		void project_loaded();
 		void shutdown();
+
+		void simulator_initialized();
 
 		Scene* internal_add_new_scene(Resource* scene_resource);
 

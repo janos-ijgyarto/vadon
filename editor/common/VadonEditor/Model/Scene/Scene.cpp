@@ -391,11 +391,17 @@ namespace VadonEditor::Model
 			return false;
 		}
 
+		// FIXME: use iterator instead of requesting keys!
 		SceneSystem& scene_system = m_editor.get_scene_system();
 		const Vadon::Utilities::Serializer::KeyVector property_keys = serializer.get_keys();
 		for (const std::string& current_key : property_keys)
 		{
-			const Vadon::Foundation::UUID current_property_id = Vadon::Utilities::parse_labeled_uuid(current_key);
+			Vadon::Foundation::UUID current_property_id;
+			if (Vadon::Utilities::uuid_from_base64_string(current_key, current_property_id) == false)
+			{
+				VADON_ERROR("Invalid data in component!");
+				return false;
+			}
 
 			ComponentEvent component_event;
 			component_event.type = ComponentEventType::EDITED;
@@ -404,6 +410,7 @@ namespace VadonEditor::Model
 
 			scene_system.dispatch_component_event(component_event);
 
+			// TODO: only log this in debug?
 			Vadon::Core::Logger::log_message(std::format("Modified component {} property {}\n", Vadon::Utilities::uuid_to_string(get_id()).string, Vadon::Utilities::uuid_to_string(current_property_id).string));
 		}
 

@@ -255,7 +255,12 @@ namespace Vadon::Private::Model
 
 				for (const auto& current_property_pair : current_component_data.get_properties().data)
 				{
-					const Utilities::PropertyUUID property_id = Utilities::parse_labeled_uuid(current_property_pair.first);
+					Utilities::PropertyUUID property_id;
+					if (Utilities::uuid_from_base64_string(current_property_pair.first, property_id) == false)
+					{
+						// TODO: error?
+						continue;
+					}
 					Vadon::Utilities::TypeRegistry::set_property(current_component.get_raw(), current_component_data.get_type_id(), property_id, current_property_pair.second);
 				}
 			}

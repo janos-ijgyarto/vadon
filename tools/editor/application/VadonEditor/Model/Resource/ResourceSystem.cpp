@@ -176,6 +176,41 @@ namespace VadonEditor::Model
 		}
 	}
 
+	void ResourceSystem::generate_temp_resources()
+	{
+		for (auto resource_it = m_resource_lookup.begin(); resource_it != m_resource_lookup.end(); ++resource_it)
+		{
+			const Resource* current_resource = resource_it.value();
+			if (current_resource->is_embedded() == true)
+			{
+				continue;
+			}
+
+			if (current_resource->is_modified() == false)
+			{
+				continue;
+			}
+
+			// NOTE: saving temp resource file, only meant to be "machine readable"
+			// so we don't save with labels. We also don't clear the "modified" flag
+			// since we only want to propagate changes to the simulator plugin
+			QJsonObject root_object;
+			if (current_resource->internal_save(root_object, false) == false)
+			{
+				Q_ASSERT_X(false, "VadonEditor::Model::ResourceSystem::save_temp_resources", "Failed to save resource data!");
+				continue;
+			}
+
+			const QString file_path = QString("model/%1.vdtmp").arg(Utilities::uuid_to_hex_string(current_resource->get_info().id));
+
+			if (m_application.get_asset_manager().save_temp_file_data(file_path, QJsonDocument(root_object).toJson()) == false)
+			{
+				Q_ASSERT_X(false, "VadonEditor::Model::ResourceSystem::save_temp_resources", "Failed to save resource to file!");
+				continue;
+			}
+		}
+	}
+
 	int ResourceSystem::create_resource_asset(const ResourceID& resource_id, const QString& path)
 	{
 		Resource* resource = find_resource(resource_id);
@@ -247,7 +282,7 @@ namespace VadonEditor::Model
 		}
 
 		QJsonObject root_object;
-		if (resource->internal_save(root_object) == false)
+		if (resource->internal_save(root_object, true) == false)
 		{
 			Q_ASSERT_X(false, "VadonEditor::Model::ResourceSystem::save_resource", "Failed to save resource data!");
 			return false;
@@ -460,6 +495,15 @@ namespace VadonEditor::Model
 		m_resource_asset_lookup.clear();
 		m_resource_asset_reverse_lookup.clear();
 		m_resource_init_data_lookup.clear();
+	}
+
+	void ResourceSystem::simulator_initialized()
+	{
+		for (auto resource_it = m_resource_lookup.begin(); resource_it != m_resource_lookup.end(); ++resource_it)
+		{
+			Resource* current_resource = resource_it.value();
+			current_resource->message_resource_loaded(false);
+		}
 	}
 
 	Resource* ResourceSystem::internal_create_new_resource(const ResourceInfo& info)
