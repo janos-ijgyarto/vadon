@@ -66,7 +66,7 @@ namespace VadonEditor::Core
 
 	::Vadon::Foundation::BaseType TypeData::get_base_type(const QUuid& type_uuid)
 	{
-		if (type_uuid.isNull() == true)
+		if (Utilities::is_uuid_valid(type_uuid) == false)
 		{
 			return ::Vadon::Foundation::BaseType::INVALID;
 		}

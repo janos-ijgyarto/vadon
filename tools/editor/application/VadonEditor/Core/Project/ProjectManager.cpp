@@ -856,7 +856,7 @@ namespace VadonEditor::Core
 
 		QJsonObject project_data_root;
 		project_data_root[Utilities::serialize_labeled_uuid(L"name", project_name_property_id)] = project_info.name;
-		if (project_info.custom_data_id.isNull() == false)
+		if (Utilities::is_uuid_valid(project_info.custom_data_id) == true)
 		{
 			project_data_root[Utilities::serialize_labeled_uuid(L"custom_data_id", custom_data_id_property_id)] = Utilities::uuid_to_base64_string(project_info.custom_data_id);
 		}

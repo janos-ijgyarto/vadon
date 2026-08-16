@@ -32,7 +32,7 @@ namespace VadonEditor::UI
 
 	void UUIDDialog::set_uuid_line_edit(const QUuid& uuid_value)
 	{
-		if (uuid_value.isNull() == false)
+		if (Utilities::is_uuid_valid(uuid_value) == true)
 		{
 			m_ui.uuidLineEdit->setText(uuid_value.toString(QUuid::StringFormat::WithoutBraces));
 		}
@@ -44,7 +44,7 @@ namespace VadonEditor::UI
 
 	void UUIDDialog::set_base64_line_edit(const QUuid& uuid_value)
 	{
-		if (uuid_value.isNull() == false)
+		if (Utilities::is_uuid_valid(uuid_value) == true)
 		{
 			m_ui.base64LineEdit->setText(Utilities::uuid_to_base64_string(uuid_value));
 		}

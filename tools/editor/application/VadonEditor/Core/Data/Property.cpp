@@ -24,7 +24,7 @@ namespace VadonEditor::Core
 	::Vadon::Foundation::Property::Category PropertyData::get_category(const QUuid& root_type_id)
 	{
 		// FIXME: duplicated by engine, could move it to a shared library?
-		if (root_type_id.isNull() == true)
+		if (Utilities::is_uuid_valid(root_type_id) == false)
 		{
 			return ::Vadon::Foundation::Property::Category::INVALID;
 		}

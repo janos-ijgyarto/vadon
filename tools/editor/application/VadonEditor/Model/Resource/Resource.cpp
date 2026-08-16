@@ -221,8 +221,8 @@ namespace VadonEditor::Model
 
 	bool Resource::initialize()
 	{
-		Q_ASSERT_X(m_info.id.isNull() == false, "VadonEditor::Model::Resource::initialize", "Invalid resource ID!");
-		Q_ASSERT_X(m_info.type.isNull() == false, "VadonEditor::Model::Resource::initialize", "Invalid resource type!");
+		Q_ASSERT_X(Utilities::is_uuid_valid(m_info.id) == true, "VadonEditor::Model::Resource::initialize", "Invalid resource ID!");
+		Q_ASSERT_X(Utilities::is_uuid_valid(m_info.type) == true, "VadonEditor::Model::Resource::initialize", "Invalid resource type!");
 
 		if (m_data.default_initialize(m_info.type) == false)
 		{

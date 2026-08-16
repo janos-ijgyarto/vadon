@@ -189,7 +189,7 @@ namespace VadonEditor::Model
 
 		const Entity* sub_scene_entity = nullptr;
 		const SceneID sub_scene_id = get_sub_scene_id();
-		if (sub_scene_id.isNull() == false)
+		if (Utilities::is_uuid_valid(sub_scene_id) == true)
 		{
 			SceneSystem& scene_system = m_application.get_model_system().get_scene_system();
 			Scene* sub_scene = scene_system.get_scene(sub_scene_id);
@@ -254,7 +254,7 @@ namespace VadonEditor::Model
 	bool Entity::internal_load_data()
 	{
 		const SceneID sub_scene_id = get_sub_scene_id();
-		if (sub_scene_id.isNull() == false)
+		if (Utilities::is_uuid_valid(sub_scene_id) == true)
 		{
 			// First copy components from reference scene
 			SceneSystem& scene_system = m_application.get_model_system().get_scene_system();
@@ -281,7 +281,7 @@ namespace VadonEditor::Model
 		{
 			const QVariantMap component_obj_data = component_data.toMap();
 
-			if (sub_scene_id.isNull() == true)
+			if (Utilities::is_uuid_valid(sub_scene_id) == false)
 			{
 				Component* new_component = new Component(m_application);
 				if (new_component->import_data(component_obj_data) == false)
@@ -523,7 +523,7 @@ namespace VadonEditor::Model
 		const QUuid parent_id = parent->get_id();
 		new_entity->m_data.set_property(entity_parent_property_uuid, parent_id);
 
-		if (sub_scene_id.isNull() == false)
+		if (Utilities::is_uuid_valid(sub_scene_id) == true)
 		{
 			// Set the sub-scene ID
 			const QUuid entity_sub_scene_property_uuid = Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::SceneEntitySchema::c_scene_property.id);
@@ -559,7 +559,7 @@ namespace VadonEditor::Model
 
 	void EntityModel::internal_add_entity(Entity* entity, QHash<QUuid, Entity*>& entity_lookup)
 	{
-		Q_ASSERT_X(entity->get_id().isNull() == false, "VadonEditor::Model::EntityModel::internal_add_entity", "Invalid entity");
+		Q_ASSERT_X(Utilities::is_uuid_valid(entity->get_id()) == true, "VadonEditor::Model::EntityModel::internal_add_entity", "Invalid entity");
 		if (entity_lookup.find(entity->get_id()) != entity_lookup.end())
 		{
 			Q_ASSERT_X(false, "VadonEditor::Model::EntityModel::internal_add_entity", "Entity already added");

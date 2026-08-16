@@ -1,5 +1,6 @@
 #ifndef VADON_UTILITIES_DATA_OBJECT_HPP
 #define VADON_UTILITIES_DATA_OBJECT_HPP
+#include <Vadon/Utilities/Data/ObjectSerializer.hpp>
 #include <Vadon/Utilities/Debugging/Assert.hpp>
 #include <Vadon/Utilities/TypeInfo/Registry.hpp>
 
@@ -90,13 +91,33 @@ namespace Vadon::Utilities
 		{}
 
 		TypeID get_type_id() const { return m_type_id; }
+		bool is_valid_type() const { return m_type_id != TypeID::INVALID; }
+
 		const VariantDictionary& get_properties() const { return m_properties; }
 
-		VADONCOMMON_API Variant get_property(const PropertyUUID& property_id);
+		// NOTE: DataObject is empty by default, this fills it with default values for all properties
+		VADONCOMMON_API bool default_initialize();
+
+		VADONCOMMON_API Variant get_property(const PropertyUUID& property_id) const;
 		VADONCOMMON_API void set_property(const PropertyUUID& property_id, const Variant& value);
+
+		VADONCOMMON_API Variant get_property(PropertyPath property_path) const;
+		VADONCOMMON_API void set_property(PropertyPath property_path, const Variant& value);
+
+		// NOTE: these assume container properties!
+		VADONCOMMON_API void add_property(PropertyPath property_path, const Variant& value);
+		VADONCOMMON_API void remove_property(PropertyPath property_path);
+
+		static VADONCOMMON_API Variant get_object_property(PropertyPath property_path, TypeID object_type, void* object_ptr);
+		static VADONCOMMON_API void set_object_property(PropertyPath property_path, TypeID object_type, void* object_ptr, const Variant& value);
+
+		// NOTE: these assume container properties!
+		static VADONCOMMON_API void add_object_property(PropertyPath property_path, TypeID object_type, void* object_ptr, const Variant& value);
+		static VADONCOMMON_API void remove_object_property(PropertyPath property_path, TypeID object_type, void* object_ptr);
 
 		VADONCOMMON_API VariantDictionary export_data() const;
 		VADONCOMMON_API bool import_data(const VariantDictionary& data);
+		VADONCOMMON_API void import_properties(const VariantDictionary& properties);
 	private:
 		TypeID m_type_id;
 		VariantDictionary m_properties;
@@ -124,21 +145,6 @@ namespace Vadon::Utilities
 
 			return data_object;
 		}
-	};
-
-	class Serializer;
-
-	class ObjectSerializer
-	{
-	public:
-		VADONCOMMON_API static bool serialize_object(Serializer& serializer, VariantDictionary& object_dictionary);
-		VADONCOMMON_API static bool serialize_object_properties(Serializer& serializer, TypeID object_type, VariantDictionary& object_properties);
-
-		VADONCOMMON_API static bool load_object_data(ObjectWrapper& object, const VariantDictionary& data);
-		VADONCOMMON_API static bool load_object_property_data(ObjectWrapper& object, const VariantDictionary& property_data);
-
-		VADONCOMMON_API static bool store_object_data(const ObjectWrapper& object, VariantDictionary& data);
-		VADONCOMMON_API static bool store_object_property_data(const ObjectWrapper& object, VariantDictionary& property_data);
 	};
 
 	template<>

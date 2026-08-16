@@ -21,6 +21,29 @@ namespace Vadon
 			};
 
 			static constexpr UUIDString c_type_uuid{ "0906819c-304e-4176-9613-dccce94ef50a" };
+
+			// NOTE: this is for when 
+			enum PathSerializerKey
+			{
+				TRIVIAL,
+				ARRAY,
+				DICTIONARY,
+				OBJECT,
+				KEY_COUNT
+			};
+
+			// FIXME: use UUIDs instead?
+			static constexpr const char* c_path_serializer_key_strings[static_cast<uint32>(PathSerializerKey::KEY_COUNT)] = {
+				"value",
+				"array",
+				"dictionary",
+				"object"
+			};
+
+			static constexpr const char* get_path_serializer_key(PathSerializerKey key)
+			{
+				return c_path_serializer_key_strings[static_cast<uint32>(key)];
+			}
 		};
 
 		struct ObjectWrapperSchema

@@ -115,7 +115,7 @@ namespace VadonEditor::UI
 		QPushButton* ok_button = m_ui.buttonBox->button(QDialogButtonBox::StandardButton::Ok);
 
 		const QUuid selected_type = get_selected_type(get_current_selection());
-		if (selected_type.isNull() == false)
+		if (Utilities::is_uuid_valid(selected_type) == true)
 		{
 			ok_button->setEnabled(true);
 		}
@@ -150,7 +150,7 @@ namespace VadonEditor::UI
 
 	void NewResourceDialog::finalize_selection(const QUuid& type_uuid)
 	{
-		Q_ASSERT_X(type_uuid.isNull() == false, "VadonEditor::UI::NewResourceDialog::finalize_selection", "Must select a valid resource type");
+		Q_ASSERT_X(Utilities::is_uuid_valid(type_uuid) == true, "VadonEditor::UI::NewResourceDialog::finalize_selection", "Must select a valid resource type");
 
 		emit(resource_type_selected(type_uuid));
 		accept();
@@ -212,7 +212,7 @@ namespace VadonEditor::UI
 	void NewResourceDialogBackend::create_resource_asset(const QString& asset_path)
 	{
 		Q_ASSERT_X(asset_path.isEmpty() == false, "VadonEditor::UI::NewResourceDialogBackend::create_resource_asset", "Invalid path");
-		Q_ASSERT_X(m_new_resource_type.isNull() == false, "VadonEditor::UI::NewResourceDialogBackend::create_resource_asset", "Resource type not set");
+		Q_ASSERT_X(Utilities::is_uuid_valid(m_new_resource_type) == true, "VadonEditor::UI::NewResourceDialogBackend::create_resource_asset", "Resource type not set");
 
 		// First verify that the asset doesn't already exist
 		Core::AssetManager& asset_manager = m_application.get_asset_manager();

@@ -74,7 +74,7 @@ namespace VadonEditor::UI
 		{
 			Model::Resource* resource = nullptr;
 			QUuid resource_id = info.init_value.toUuid();
-			if (resource_id.isNull() == false)
+			if (Utilities::is_uuid_valid(resource_id) == true)
 			{
 				Core::Application& application = owner_resource->get_application();
 				resource = application.get_model_system().get_resource_system().get_resource(resource_id);

@@ -30,7 +30,7 @@ namespace
 
 	QString uuid_to_json_string(const QUuid& uuid)
 	{
-		if (uuid.isNull() == true)
+		if (VadonEditor::Utilities::is_uuid_valid(uuid) == false)
 		{
 			return "";
 		}
@@ -324,8 +324,8 @@ namespace VadonEditor::Core
 
 	bool DataSchema::TypeMetadataRegistry::is_base_of(const QUuid& base_uuid, const QUuid& derived_uuid) const
 	{
-		Q_ASSERT_X(base_uuid.isNull() == false, "VadonEditor::Core::DataSchema::is_base_of", "Invalid type UUID!");
-		Q_ASSERT_X(derived_uuid.isNull() == false, "VadonEditor::Core::DataSchema::is_base_of", "Invalid type UUID!");
+		Q_ASSERT_X(Utilities::is_uuid_valid(base_uuid) == true, "VadonEditor::Core::DataSchema::is_base_of", "Invalid type UUID!");
+		Q_ASSERT_X(Utilities::is_uuid_valid(derived_uuid) == true, "VadonEditor::Core::DataSchema::is_base_of", "Invalid type UUID!");
 		
 		if (base_uuid == derived_uuid)
 		{
@@ -335,7 +335,7 @@ namespace VadonEditor::Core
 		const ::Vadon::Foundation::UUID base_vadon_uuid = Utilities::qt_uuid_to_vadon_uuid(base_uuid);
 		QUuid current_type_uuid = derived_uuid;
 
-		while (current_type_uuid.isNull() == false)
+		while (Utilities::is_uuid_valid(current_type_uuid) == true)
 		{
 			auto type_it = m_types.find(current_type_uuid);
 			Q_ASSERT_X(type_it != m_types.end(), "VadonEditor::Core::DataSchema::is_base_of", "Type not in schema!");
@@ -841,10 +841,10 @@ namespace VadonEditor::Core
 		}
 
 		// If we have a root type set, check if item is subclass
-		if (m_root_type.isNull() == false)
+		if (Utilities::is_uuid_valid(m_root_type) == true)
 		{
 			const QUuid type_uuid = sourceModel()->data(source_index, static_cast<int>(TypeTreeDataRole::TYPE_UUID)).toUuid();
-			if (type_uuid.isNull() == false)
+			if (Utilities::is_uuid_valid(type_uuid) == true)
 			{
 				return m_data_schema.is_base_of(m_root_type, type_uuid);
 			}

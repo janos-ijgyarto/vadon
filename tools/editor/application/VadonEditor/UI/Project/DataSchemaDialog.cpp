@@ -123,7 +123,7 @@ namespace VadonEditor::UI
 
 		const VadonEditor::Core::TypeData* type_data = project_data_schema.find_type_data(type_qt_uuid);
 		QUuid parent_type_uuid = Utilities::vadon_uuid_to_qt_uuid(type_data->info.id);
-		while (parent_type_uuid.isNull() == false)
+		while (Utilities::is_uuid_valid(parent_type_uuid) == true)
 		{
 			QGroupBox* property_group_box = new QGroupBox();
 			const VadonEditor::Core::TypeData* parent_type_data = project_data_schema.find_type_data(parent_type_uuid);

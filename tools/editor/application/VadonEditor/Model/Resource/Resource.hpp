@@ -20,7 +20,7 @@ namespace VadonEditor::Model
 
 		bool load(const QJsonObject& root_obj);
 
-		bool is_valid() const { return (id.isNull() == false) && (type.isNull() == false); }
+		bool is_valid() const { return (Utilities::is_uuid_valid(id) == true) && (Utilities::is_uuid_valid(type) == true); }
 	};
 
 	class Resource

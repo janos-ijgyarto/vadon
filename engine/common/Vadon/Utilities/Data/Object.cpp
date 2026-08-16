@@ -1,159 +1,199 @@
 #include <Vadon/Utilities/Data/Object.hpp>
 
-#include <Vadon/Utilities/Serialization/Serializer.hpp>
-
 #include <Vadon/Utilities/System/UUID/UUID.hpp>
 
 #include <Vadon/Utilities/TypeInfo/Registry.hpp>
 #include <Vadon/Utilities/TypeInfo/Reflection/Property.hpp>
 
-#include <Vadon/Foundation/TypeInfo/Object.hpp>
-
 namespace
 {
-	template<typename Key, typename T>
-	bool serialize_base_type_impl(Vadon::Utilities::Serializer& serializer, Key key, Vadon::Utilities::Variant& value)
-	{
-		T temp_value;
-
-		if (serializer.is_reading() == false)
-		{
-			temp_value = std::get<T>(value);
-		}
-
-		if (serializer.serialize(key, temp_value) != Vadon::Utilities::Serializer::Result::SUCCESSFUL)
-		{
-			return false;
-		}
-
-		if (serializer.is_reading() == true)
-		{
-			value = temp_value;
-		}
-
-		return true;
-	}
-
-	template<typename Key>
-	bool serialize_base_type(Vadon::Utilities::Serializer& serializer, ::Vadon::Foundation::BaseType base_type, Key key, Vadon::Utilities::Variant& value)
+	Vadon::Utilities::Variant get_trivial_property_default_value(::Vadon::Foundation::BaseType base_type)
 	{
 		using BaseType = ::Vadon::Foundation::BaseType;
 		switch (base_type)
 		{
 		case BaseType::INT32:
-			return serialize_base_type_impl<Key, int>(serializer, key, value);
+			return ::Vadon::Foundation::int32{ 0 };
 		case BaseType::UINT32:
-			return serialize_base_type_impl<Key, uint32_t>(serializer, key, value);
+			return ::Vadon::Foundation::uint32{ 0 };
 		case BaseType::FLOAT:
-			return serialize_base_type_impl<Key, float>(serializer, key, value);
+			return 0.0f;
 		case BaseType::BOOL:
-			return serialize_base_type_impl<Key, bool>(serializer, key, value);
+			return false;
 		case BaseType::STRING:
-			return serialize_base_type_impl<Key, std::string>(serializer, key, value);
+			return std::string();
 		case BaseType::VECTOR2:
-			return serialize_base_type_impl<Key, Vadon::Math::Vector2>(serializer, key, value);
+			return Vadon::Math::Vector2_Zero;
 		case BaseType::VECTOR2I:
-			return serialize_base_type_impl<Key, Vadon::Math::Vector2i>(serializer, key, value);
+			return Vadon::Math::Vector2i{ 0, 0 };
 		case BaseType::VECTOR3:
-			return serialize_base_type_impl<Key, Vadon::Math::Vector3>(serializer, key, value);
+			return Vadon::Math::Vector3_Zero;
 		case BaseType::VECTOR3I:
-			return serialize_base_type_impl<Key, Vadon::Math::Vector3i>(serializer, key, value);
+			return Vadon::Math::Vector3i{ 0, 0, 0 };
 		case BaseType::VECTOR4:
-			return serialize_base_type_impl<Key, Vadon::Math::Vector4>(serializer, key, value);
+			return Vadon::Math::Vector4_Zero;
 		case BaseType::COLORRGBA:
-			return serialize_base_type_impl<Key, Vadon::Math::ColorRGBA>(serializer, key, value);
+			return Vadon::Math::Color_Black;
 		case BaseType::UUID:
-			return serialize_base_type_impl<Key, ::Vadon::Foundation::UUID>(serializer, key, value);
+			return ::Vadon::Foundation::UUID{};
 		default:
-			return false;
+			return Vadon::Utilities::Variant{};
 		}
 	}
 
-	bool serialize_object_trivial_property(Vadon::Utilities::Serializer& serializer, std::string_view key, const Vadon::Utilities::PropertyInfo& property_info, Vadon::Utilities::Variant& property_value)
+	bool get_object_subobject_default_value_impl(Vadon::Utilities::TypeUUID object_type, bool allow_subclass, Vadon::Utilities::Variant& value)
 	{
-		const ::Vadon::Foundation::BaseType base_type = Vadon::Utilities::base_type_from_uuid(property_info.base_info.root_type);
-		return serialize_base_type<std::string_view>(serializer, base_type, key, property_value);
-	}
-
-	bool serialize_object_array_nested_array_element(Vadon::Utilities::Serializer& /*serializer*/, size_t /*index*/, const Vadon::Utilities::PropertyInfo& /*property_info*/, size_t /*type_list_offset*/, Vadon::Utilities::Variant& /*array_element_value*/)
-	{
-		// FIXME: not supported yet (but it's possible now!)
-		return false;
-	}
-
-	bool serialize_object_array_nested_dictionary_element(Vadon::Utilities::Serializer& /*serializer*/, size_t /*index*/, const Vadon::Utilities::PropertyInfo& /*property_info*/, size_t /*type_list_offset*/, Vadon::Utilities::Variant& /*array_element_value*/)
-	{
-		// FIXME: not supported yet (but it's possible now!)
-		return false;
-	}
-
-	template<typename Key>
-	bool serialize_object_subobject_impl(Vadon::Utilities::Serializer& serializer, Key key, Vadon::Utilities::Variant& value, const ::Vadon::Foundation::UUID& object_type, bool allow_subclass)
-	{
-		Vadon::Utilities::VariantDictionary object_dictionary;
-		if (serializer.is_reading() == false)
-		{
-			object_dictionary = *std::get<Vadon::Utilities::BoxedVariantDictionary>(value);
-		}
-
-		if (serializer.open_object(key) != Vadon::Utilities::Serializer::Result::SUCCESSFUL)
-		{
-			return false;
-		}
-
-		// Check if it's a generic or explicit object
 		if (((object_type.is_valid() == true) && (allow_subclass == true)) || (object_type.is_valid() == false))
 		{
-			// FIXME: also validate when serializing?
-			if ((object_type.is_valid() == true) && (serializer.is_reading() == true))
+			// Just use a "null" object
+			value = Vadon::Utilities::Box(Vadon::Utilities::VariantDictionary());
+		}
+		else if (object_type.is_valid() == true)
+		{
+			// Create a "default" instance of the object
+			const Vadon::Utilities::TypeID object_type_id = Vadon::Utilities::TypeRegistry::get_type_id(object_type);
+			Vadon::Utilities::DataObject data_object(object_type_id);
+			if (data_object.default_initialize() == false)
 			{
-				// Ensure that the deserialized type is compatible
-				constexpr Vadon::Foundation::UUID type_property_uuid = Vadon::Utilities::Property::property_schema_to_uuid(Vadon::Foundation::DataObjectSchema::c_type_property);
-				::Vadon::Utilities::TypeUUID type_uuid;
-				if (serializer.serialize(type_property_uuid, type_uuid) != Vadon::Utilities::Serializer::Result::SUCCESSFUL)
-				{
-					return false;
-				}
-
-				if (Vadon::Utilities::TypeRegistry::is_base_of(object_type, type_uuid) == false)
-				{
-					return false;
-				}
+				return false;
 			}
 
-			if (Vadon::Utilities::ObjectSerializer::serialize_object(serializer, object_dictionary) == false)
+			value = Vadon::Utilities::Box(data_object.get_properties());
+		}
+		else
+		{
+			VADON_ERROR("Invalid parameters!");
+			return false;
+		}
+
+		return true;
+	}
+
+	bool get_object_property_default_value(const Vadon::Utilities::PropertyInfo& property_info, size_t type_list_offset, Vadon::Utilities::Variant& value, bool shallow)
+	{
+		if (shallow == true)
+		{
+			// Use empty dictionary ("null" object)
+			value = Vadon::Utilities::Box(Vadon::Utilities::VariantDictionary());
+			return true;
+		}
+
+		// Check if the property uses ObjectWrapper
+		const ::Vadon::Utilities::TypeUUID element_type = property_info.type_list[type_list_offset];
+		if (element_type == Vadon::Utilities::string_to_uuid(::Vadon::Foundation::ObjectWrapperSchema::c_type_uuid))
+		{
+			// Check whether an explicit type is provided
+			if (property_info.type_list.size() < 2)
+			{
+				// No type specified, so it's a generic object
+				return get_object_subobject_default_value_impl(Vadon::Utilities::TypeUUID{}, false, value);
+			}
+			else
+			{
+				// Constrain to the type specified in the type list
+				const Vadon::Utilities::TypeUUID object_type = property_info.type_list[1];
+				return get_object_subobject_default_value_impl(object_type, true, value);
+			}
+		}
+		// FIXME: this is a bit convoluted, find a way to deduplicate this logic!
+		else if (element_type == Vadon::Utilities::string_to_uuid(::Vadon::Foundation::DataObjectSchema::c_type_uuid))
+		{
+			// DataObject is initialized as generic object
+			return get_object_subobject_default_value_impl(Vadon::Utilities::TypeUUID{}, false, value);
+		}
+		else
+		{
+			// Initialize explicitly typed object (only this type)
+			return get_object_subobject_default_value_impl(element_type, false, value);
+		}
+	}
+
+	bool get_property_default_value(const Vadon::Utilities::PropertyInfo& property_info, size_t type_list_offset, Vadon::Utilities::Variant& value, bool shallow)
+	{
+		const ::Vadon::Foundation::UUID element_type = property_info.type_list[type_list_offset];
+		const ::Vadon::Foundation::Property::Category element_category = Vadon::Utilities::PropertyInfo::get_category(element_type);
+		switch (element_category)
+		{
+		case ::Vadon::Foundation::Property::Category::TRIVIAL:
+		{
+			const ::Vadon::Foundation::BaseType base_type = Vadon::Utilities::base_type_from_uuid(element_type);
+			value = get_trivial_property_default_value(base_type);
+		}
+		break;
+		case ::Vadon::Foundation::Property::Category::ARRAY:
+		{
+			value = Vadon::Utilities::Box(Vadon::Utilities::VariantArray{});
+		}
+		break;
+		case ::Vadon::Foundation::Property::Category::DICTIONARY:
+		{
+			value = Vadon::Utilities::Box(Vadon::Utilities::VariantDictionary{});
+		}
+		break;
+		case ::Vadon::Foundation::Property::Category::OBJECT:
+		{
+			if (get_object_property_default_value(property_info, type_list_offset, value, shallow) == false)
 			{
 				return false;
 			}
 		}
-		else if(object_type.is_valid() == true)
+		break;
+		case ::Vadon::Foundation::Property::Category::RESOURCE:
+		{
+			value = ::Vadon::Foundation::UUID{};
+		}
+		break;
+		default:
+			// Unsupported category!
+			return false;
+		}
+
+		return true;
+	}
+
+	Vadon::Utilities::Variant query_object_array_nested_array_element(Vadon::Utilities::PropertyPath /*property_path*/, const Vadon::Utilities::PropertyInfo& /*property_info*/, size_t /*type_list_offset*/, const Vadon::Utilities::Variant& /*array_element_value*/)
+	{
+		// FIXME: not supported yet (but it's possible now!)
+		return Vadon::Utilities::Variant{};
+	}
+
+	Vadon::Utilities::Variant query_object_array_nested_dictionary_element(Vadon::Utilities::PropertyPath /*property_path*/, const Vadon::Utilities::PropertyInfo& /*property_info*/, size_t /*type_list_offset*/, const Vadon::Utilities::Variant& /*array_element_value*/)
+	{
+		// FIXME: not supported yet (but it's possible now!)
+		return Vadon::Utilities::Variant{};
+	}
+
+	Vadon::Utilities::Variant query_object_subobject_impl(Vadon::Utilities::PropertyPath property_path, const Vadon::Utilities::Variant& value, const ::Vadon::Foundation::UUID& object_type, bool allow_subclass)
+	{
+		// Check if it's a generic or explicit object
+		// FIXME: instead of creating a DataObject (which adds a copy), we should have a "view" implementation
+		// which takes pointers/references to the underlying data and implements the DataObject API
+		Vadon::Utilities::DataObject data_object;
+		if (((object_type.is_valid() == true) && (allow_subclass == true)) || (object_type.is_valid() == false))
+		{
+			if (data_object.import_data(*std::get<Vadon::Utilities::BoxedVariantDictionary>(value)) == false)
+			{
+				return Vadon::Utilities::Variant();
+			}
+		}
+		else if (object_type.is_valid() == true)
 		{
 			// Assume we are processing the object properties
 			const Vadon::Utilities::TypeID object_type_id = Vadon::Utilities::TypeRegistry::get_type_id(object_type);
-			if (Vadon::Utilities::ObjectSerializer::serialize_object_properties(serializer, object_type_id, object_dictionary) == false)
-			{
-				return false;
-			}
+			VADON_ASSERT(object_type_id != Vadon::Utilities::TypeID::INVALID, "Invalid type!");
+			data_object = Vadon::Utilities::DataObject(object_type_id);
+
+			data_object.import_properties(*std::get<Vadon::Utilities::BoxedVariantDictionary>(value));
 		}
 		else
 		{
 			VADON_ERROR("Invalid parameters!");
 		}
 
-		if (serializer.close_object() != Vadon::Utilities::Serializer::Result::SUCCESSFUL)
-		{
-			return false;
-		}
-
-		if (serializer.is_reading() == true)
-		{
-			value = Vadon::Utilities::Box(object_dictionary);
-		}
-
-		return true;
+		return data_object.get_property(property_path);
 	}
 
-	bool serialize_object_array_subobject_element(Vadon::Utilities::Serializer& serializer, size_t index, const Vadon::Utilities::PropertyInfo& property_info, size_t type_list_offset, Vadon::Utilities::Variant& array_element_value)
+	Vadon::Utilities::Variant query_object_array_subobject_element(Vadon::Utilities::PropertyPath property_path, const Vadon::Utilities::PropertyInfo& property_info, size_t type_list_offset, const Vadon::Utilities::Variant& array_element_value)
 	{
 		// Check if the array uses ObjectWrapper
 		const ::Vadon::Utilities::TypeUUID element_type = property_info.type_list[type_list_offset];
@@ -164,125 +204,64 @@ namespace
 			if (object_type_offset >= property_info.type_list.size())
 			{
 				// No type specified, so it's a generic object
-				return serialize_object_subobject_impl<size_t>(serializer, index, array_element_value, Vadon::Utilities::TypeUUID{}, false);
+				return query_object_subobject_impl(property_path, array_element_value, ::Vadon::Foundation::UUID{}, false);
 			}
 			else
 			{
 				// Constrain to the type specified in the type list
 				const ::Vadon::Utilities::TypeUUID object_type = property_info.type_list[object_type_offset];
-				return serialize_object_subobject_impl<size_t>(serializer, index, array_element_value, object_type, true);
+				return query_object_subobject_impl(property_path, array_element_value, object_type, true);
 			}
 		}
 		// FIXME: this is a bit convoluted, find a way to deduplicate this logic!
 		else if (element_type == Vadon::Utilities::string_to_uuid(::Vadon::Foundation::DataObjectSchema::c_type_uuid))
 		{
 			// DataObject is deserialized as generic object
-			return serialize_object_subobject_impl<size_t>(serializer, index, array_element_value, Vadon::Utilities::TypeUUID{}, false);
+			return query_object_subobject_impl(property_path, array_element_value, ::Vadon::Foundation::UUID{}, false);
 		}
 		else
 		{
 			// Serialize explicitly typed object (only this type)
-			return serialize_object_subobject_impl<size_t>(serializer, index, array_element_value, element_type, false);
+			return query_object_subobject_impl(property_path, array_element_value, element_type, false);
 		}
 	}
 
-	bool serialize_object_array_resource_element(Vadon::Utilities::Serializer& serializer, size_t index, const Vadon::Utilities::PropertyInfo& property_info, size_t type_list_offset, Vadon::Utilities::Variant& array_element_value)
+	Vadon::Utilities::Variant query_object_array_property_value(Vadon::Utilities::PropertyPath property_path, const Vadon::Utilities::PropertyInfo& property_info, size_t type_list_offset, const Vadon::Utilities::Variant& array_value)
 	{
-		const size_t resource_type_offset = type_list_offset + 1;
-		VADON_ASSERT(resource_type_offset < property_info.type_list.size(), "Missing resource type!");
+		VADON_ASSERT(property_path.front().is_array_index() == true, "Path must contain array index!");
 
-		// Serialize the array element itself
-		if (serialize_base_type<size_t>(serializer, ::Vadon::Foundation::BaseType::UUID, index, array_element_value) == false)
+		const Vadon::Utilities::BoxedVariantArray& array_data = std::get<Vadon::Utilities::BoxedVariantArray>(array_value);
+		const Vadon::Utilities::Variant& array_element_value = array_data->data[property_path.front().index];
+
+		if (property_path.size() == 1)
 		{
-			return false;
+			// Return the element as-is
+			return array_element_value;
 		}
 
-		// TODO: find a way to validate that the resource ID points to a compatible resource?
-		//const Vadon::Utilities::TypeUUID resource_type_uuid = property_info.type_list[resource_type_offset];
-
-		return true;
-	}
-
-	bool serialize_object_array_property_element(Vadon::Utilities::Serializer& serializer, size_t index, const Vadon::Utilities::PropertyInfo& property_info, size_t type_list_offset, Vadon::Utilities::Variant& array_element_value)
-	{
 		const ::Vadon::Foundation::UUID element_type = property_info.type_list[type_list_offset];
-		const ::Vadon::Foundation::Property::Category element_category = property_info.get_category(element_type);
+		const ::Vadon::Foundation::Property::Category element_category = Vadon::Utilities::PropertyInfo::get_category(element_type);
 		switch (element_category)
 		{
-		case ::Vadon::Foundation::Property::Category::TRIVIAL:
-		{
-			const ::Vadon::Foundation::BaseType base_type = Vadon::Utilities::base_type_from_uuid(element_type);
-			return serialize_base_type<size_t>(serializer, base_type, index, array_element_value);
-		}
 		case ::Vadon::Foundation::Property::Category::ARRAY:
-			return serialize_object_array_nested_array_element(serializer, index, property_info, type_list_offset, array_element_value);
+			return query_object_array_nested_array_element(property_path.subspan(1), property_info, type_list_offset, array_element_value);
 		case ::Vadon::Foundation::Property::Category::DICTIONARY:
-			return serialize_object_array_nested_dictionary_element(serializer, index, property_info, type_list_offset, array_element_value);
+			return query_object_array_nested_dictionary_element(property_path.subspan(1), property_info, type_list_offset, array_element_value);
 		case ::Vadon::Foundation::Property::Category::OBJECT:
-			return serialize_object_array_subobject_element(serializer, index, property_info, type_list_offset, array_element_value);
-		case ::Vadon::Foundation::Property::Category::RESOURCE:
-			return serialize_object_array_resource_element(serializer, index, property_info, type_list_offset, array_element_value);
+			return query_object_array_subobject_element(property_path.subspan(1), property_info, type_list_offset, array_element_value);
 		default:
-			// Unsupported category!
-			return false;
+			VADON_ERROR("Invalid path!");
+			return Vadon::Utilities::Variant();
 		}
 	}
 
-	bool serialize_object_array_property(Vadon::Utilities::Serializer& serializer, std::string_view key, const Vadon::Utilities::PropertyInfo& property_info, Vadon::Utilities::Variant& property_value)
+	Vadon::Utilities::Variant query_object_dictionary_property_value(Vadon::Utilities::PropertyPath /*property_path*/, const Vadon::Utilities::PropertyInfo& /*property_info*/, const Vadon::Utilities::Variant& /*property_value*/)
 	{
-		VADON_ASSERT(property_info.type_list.front() == Vadon::Utilities::get_base_type_uuid(::Vadon::Foundation::BaseType::ARRAY), "Invalid type!");
-
-		if (serializer.open_array(key) != Vadon::Utilities::Serializer::Result::SUCCESSFUL)
-		{
-			return false;
-		}
-
-		Vadon::Utilities::VariantArray array_data;
-		if (serializer.is_reading() == false)
-		{
-			array_data = *std::get<Vadon::Utilities::BoxedVariantArray>(property_value);
-		}
-
-		const size_t array_size = serializer.is_reading() ? serializer.get_array_size() : array_data.data.size();
-		for (size_t index = 0; index < array_size; ++index)
-		{
-			Vadon::Utilities::Variant array_element_value;
-			if (serializer.is_reading() == false)
-			{
-				array_element_value = array_data.data[index];
-			}
-
-			if (serialize_object_array_property_element(serializer, index, property_info, 1, array_element_value) == false)
-			{
-				return false;
-			}
-
-			if (serializer.is_reading() == true)
-			{
-				array_data.data.push_back(array_element_value);
-			}
-		}
-
-		if (serializer.close_array() != Vadon::Utilities::Serializer::Result::SUCCESSFUL)
-		{
-			return false;
-		}
-
-		if (serializer.is_reading() == true)
-		{
-			property_value = Vadon::Utilities::Box(array_data);
-		}
-
-		return true;
+		// TODO: implement dictionary support!
+		return Vadon::Utilities::Variant();
 	}
 
-	bool serialize_object_dictionary_property(Vadon::Utilities::Serializer& /*serializer*/, std::string_view /*key*/, const Vadon::Utilities::PropertyInfo& /*property_info*/, Vadon::Utilities::Variant& /*property_value*/)
-	{
-		// FIXME: implement support for dictionary!
-		return false;
-	}
-
-	bool serialize_object_subobject_property(Vadon::Utilities::Serializer& serializer, std::string_view key, const Vadon::Utilities::PropertyInfo& property_info, Vadon::Utilities::Variant& property_value)
+	Vadon::Utilities::Variant query_object_subobject_property(Vadon::Utilities::PropertyPath property_path, const Vadon::Utilities::PropertyInfo& property_info, const Vadon::Utilities::Variant& property_value)
 	{
 		// Check if the property uses ObjectWrapper
 		const Vadon::Utilities::TypeUUID element_type = property_info.type_list.front();
@@ -292,73 +271,317 @@ namespace
 			if (property_info.type_list.size() < 2)
 			{
 				// No type specified, so it's a generic object
-				return serialize_object_subobject_impl<std::string_view>(serializer, key, property_value, Vadon::Utilities::TypeUUID{}, false);
+				return query_object_subobject_impl(property_path, property_value, Vadon::Utilities::TypeUUID{}, false);
 			}
 			else
 			{
 				// Constrain to the type specified in the type list
 				const Vadon::Utilities::TypeUUID object_type = property_info.type_list[1];
-				return serialize_object_subobject_impl<std::string_view>(serializer, key, property_value, object_type, true);
+				return query_object_subobject_impl(property_path, property_value, object_type, true);
 			}
 		}
 		// FIXME: this is a bit convoluted, find a way to deduplicate this logic!
 		else if (element_type == Vadon::Utilities::string_to_uuid(::Vadon::Foundation::DataObjectSchema::c_type_uuid))
 		{
 			// DataObject is deserialized as generic object
-			return serialize_object_subobject_impl<std::string_view>(serializer, key, property_value, Vadon::Utilities::TypeUUID{}, false);
+			return query_object_subobject_impl(property_path, property_value, Vadon::Utilities::TypeUUID{}, false);
 		}
 		else
 		{
 			// Serialize explicitly typed object (only this type)
-			return serialize_object_subobject_impl<std::string_view>(serializer, key, property_value, element_type, false);
+			return query_object_subobject_impl(property_path, property_value, element_type, false);
 		}
-
-		return true;
 	}
 
-	bool serialize_object_resource_property(Vadon::Utilities::Serializer& serializer, std::string_view key, const Vadon::Utilities::PropertyInfo& property_info, Vadon::Utilities::Variant& property_value)
+	Vadon::Utilities::Variant query_object_property_value(Vadon::Utilities::PropertyPath property_path, const Vadon::Utilities::PropertyInfo& property_info, const Vadon::Utilities::Variant& property_value)
 	{
-		VADON_ASSERT(property_info.type_list.size() >= 2, "Missing resource type!");
-
-		// Serialize the UUID property itself
-		if (serialize_base_type<std::string_view>(serializer, ::Vadon::Foundation::BaseType::UUID, key, property_value) == false)
+		if (property_path.size() == 1)
 		{
-			return false;
+			// Whatever the property is, return as-is
+			return property_value;
 		}
 
-		// TODO: find a way to validate that the resource ID points to a compatible resource?
-		//const Vadon::Utilities::TypeUUID resource_type_uuid = property_info.type_list[resource_type_offset];
-
-		return true;
-	}
-
-	bool serialize_object_property_value(Vadon::Utilities::Serializer& serializer, std::string_view key, const Vadon::Utilities::PropertyInfo& property_info, Vadon::Utilities::Variant& property_value)
-	{
-		const ::Vadon::Foundation::Property::Category property_category = property_info.get_category(property_info.type_list.front());
+		const ::Vadon::Foundation::Property::Category property_category = Vadon::Utilities::PropertyInfo::get_category(property_info.type_list.front());
 		switch (property_category)
 		{
-		case ::Vadon::Foundation::Property::Category::TRIVIAL:
-			return serialize_object_trivial_property(serializer, key, property_info, property_value);
 		case ::Vadon::Foundation::Property::Category::ARRAY:
-			return serialize_object_array_property(serializer, key, property_info, property_value);
+			return query_object_array_property_value(property_path.subspan(1), property_info, 1, property_value);
 		case ::Vadon::Foundation::Property::Category::DICTIONARY:
-			return serialize_object_dictionary_property(serializer, key, property_info, property_value);
+			return query_object_dictionary_property_value(property_path.subspan(1), property_info, property_value);
 		case ::Vadon::Foundation::Property::Category::OBJECT:
-			return serialize_object_subobject_property(serializer, key, property_info, property_value);
-		case ::Vadon::Foundation::Property::Category::RESOURCE:
-			return serialize_object_resource_property(serializer, key, property_info, property_value);
+			return query_object_subobject_property(property_path.subspan(1), property_info, property_value);
 		default:
-			// Unsupported category!
-			return false;
+			VADON_ERROR("Invalid path!");
+			return Vadon::Utilities::Variant();
 		}
+	}
+
+	enum class DataObjectPropertyEditMode
+	{
+		SET,
+		ADD,
+		REMOVE
+	};
+
+	void set_object_subobject_impl(Vadon::Utilities::PropertyPath property_path, Vadon::Utilities::Variant& value, const Vadon::Utilities::Variant& new_value, const ::Vadon::Foundation::UUID& object_type, bool allow_subclass, DataObjectPropertyEditMode edit_mode)
+	{
+		// Check if it's a generic or explicit object
+		// FIXME: instead of creating a DataObject (which adds a copy), we should have a "view" implementation
+		// which takes pointers/references to the underlying data and implements the DataObject API
+		Vadon::Utilities::DataObject data_object;
+		if (((object_type.is_valid() == true) && (allow_subclass == true)) || (object_type.is_valid() == false))
+		{
+			if (data_object.import_data(*std::get<Vadon::Utilities::BoxedVariantDictionary>(value)) == false)
+			{
+				return;
+			}
+		}
+		else if (object_type.is_valid() == true)
+		{
+			// Assume we are processing the object properties
+			const Vadon::Utilities::TypeID object_type_id = Vadon::Utilities::TypeRegistry::get_type_id(object_type);
+			VADON_ASSERT(object_type_id != Vadon::Utilities::TypeID::INVALID, "Invalid type!");
+			data_object = Vadon::Utilities::DataObject(object_type_id);
+
+			data_object.import_properties(*std::get<Vadon::Utilities::BoxedVariantDictionary>(value));
+		}
+		else
+		{
+			VADON_ERROR("Invalid parameters!");
+		}
+
+		// FIXME: this in particular is very hacky, adds a lot of redundant copying and cleanup
+		// Should replace this with a "view"
+		switch (edit_mode)
+		{
+		case DataObjectPropertyEditMode::SET:
+			data_object.set_property(property_path, new_value);
+		break;
+		case DataObjectPropertyEditMode::ADD:
+			data_object.add_property(property_path, new_value);
+		break;
+		case DataObjectPropertyEditMode::REMOVE:
+			data_object.remove_property(property_path);
+		break;
+		}
+		data_object.set_property(property_path, new_value);
+		value = Vadon::Utilities::Box(data_object.export_data());
+	}
+	
+	void set_object_array_nested_array_element(Vadon::Utilities::PropertyPath /*property_path*/, const Vadon::Utilities::PropertyInfo& /*property_info*/, size_t /*type_list_offset*/, Vadon::Utilities::Variant& /*array_element_value*/, const Vadon::Utilities::Variant& /*new_value*/, DataObjectPropertyEditMode /*edit_mode*/)
+	{
+		// FIXME: not supported yet (but it's possible now!)
+	}
+
+	void set_object_array_nested_dictionary_element(Vadon::Utilities::PropertyPath /*property_path*/, const Vadon::Utilities::PropertyInfo& /*property_info*/, size_t /*type_list_offset*/, Vadon::Utilities::Variant& /*array_element_value*/, const Vadon::Utilities::Variant& /*new_value*/, DataObjectPropertyEditMode /*edit_mode*/)
+	{
+		// FIXME: not supported yet (but it's possible now!)
+	}
+
+	void set_object_array_subobject_element(Vadon::Utilities::PropertyPath property_path, const Vadon::Utilities::PropertyInfo& property_info, size_t type_list_offset, Vadon::Utilities::Variant& array_element_value, const Vadon::Utilities::Variant& new_value, DataObjectPropertyEditMode edit_mode)
+	{
+		// Check if the array uses ObjectWrapper
+		const ::Vadon::Utilities::TypeUUID element_type = property_info.type_list[type_list_offset];
+		if (element_type == Vadon::Utilities::string_to_uuid(::Vadon::Foundation::ObjectWrapperSchema::c_type_uuid))
+		{
+			// Check whether an explicit type is provided
+			const size_t object_type_offset = type_list_offset + 1;
+			if (object_type_offset >= property_info.type_list.size())
+			{
+				// No type specified, so it's a generic object
+				set_object_subobject_impl(property_path, array_element_value, new_value, ::Vadon::Foundation::UUID{}, false, edit_mode);
+			}
+			else
+			{
+				// Constrain to the type specified in the type list
+				const ::Vadon::Utilities::TypeUUID object_type = property_info.type_list[object_type_offset];
+				set_object_subobject_impl(property_path, array_element_value, new_value, object_type, true, edit_mode);
+			}
+		}
+		// FIXME: this is a bit convoluted, find a way to deduplicate this logic!
+		else if (element_type == Vadon::Utilities::string_to_uuid(::Vadon::Foundation::DataObjectSchema::c_type_uuid))
+		{
+			// DataObject is deserialized as generic object
+			set_object_subobject_impl(property_path, array_element_value, new_value, ::Vadon::Foundation::UUID{}, false, edit_mode);
+		}
+		else
+		{
+			set_object_subobject_impl(property_path, array_element_value, new_value, element_type, false, edit_mode);
+		}
+	}
+
+	void set_object_array_property_value(Vadon::Utilities::PropertyPath property_path, const Vadon::Utilities::PropertyInfo& property_info, size_t type_list_offset, Vadon::Utilities::Variant& array_value, const Vadon::Utilities::Variant& new_value, DataObjectPropertyEditMode edit_mode)
+	{
+		VADON_ASSERT(property_path.front().is_array_index() == true, "Path must contain array index!");
+		Vadon::Utilities::BoxedVariantArray& array_data = std::get<Vadon::Utilities::BoxedVariantArray>(array_value);
+
+		if (property_path.size() == 1)
+		{
+			switch (edit_mode)
+			{
+			case DataObjectPropertyEditMode::SET:
+			{
+				// Set element here
+				array_data->data[property_path.front().index] = new_value;				
+			}
+			break;
+			case DataObjectPropertyEditMode::ADD:
+			{
+				// Insert new element
+				array_data->data.insert(array_data->data.begin() + property_path.front().index, new_value);				
+			}
+			break;
+			case DataObjectPropertyEditMode::REMOVE:
+			{
+				// Remove existing element
+				array_data->data.erase(array_data->data.begin() + property_path.front().index);
+			}
+			break;
+			}
+			return;
+		}
+
+		// Path goes deeper, so we know it must point to an existing array element
+		Vadon::Utilities::Variant& array_element_value = array_data->data[property_path.front().index];
+
+		const ::Vadon::Foundation::UUID element_type = property_info.type_list[type_list_offset];
+		const ::Vadon::Foundation::Property::Category element_category = Vadon::Utilities::PropertyInfo::get_category(element_type);
+		switch (element_category)
+		{
+		case ::Vadon::Foundation::Property::Category::ARRAY:
+			set_object_array_nested_array_element(property_path.subspan(1), property_info, type_list_offset, array_element_value, new_value, edit_mode);
+			break;
+		case ::Vadon::Foundation::Property::Category::DICTIONARY:
+			set_object_array_nested_dictionary_element(property_path.subspan(1), property_info, type_list_offset, array_element_value, new_value, edit_mode);
+			break;
+		case ::Vadon::Foundation::Property::Category::OBJECT:
+			set_object_array_subobject_element(property_path.subspan(1), property_info, type_list_offset, array_element_value, new_value, edit_mode);
+			break;
+		default:
+			VADON_ERROR("Invalid path!");
+			return;
+		}
+	}
+
+	void set_object_dictionary_property_value(Vadon::Utilities::PropertyPath /*property_path*/, const Vadon::Utilities::PropertyInfo& /*property_info*/, Vadon::Utilities::Variant& /*property_value*/, const Vadon::Utilities::Variant& /*new_value*/, DataObjectPropertyEditMode /*edit_mode*/)
+	{
+		// TODO: implement dictionary support!
+	}
+
+	void set_object_subobject_property(Vadon::Utilities::PropertyPath property_path, const Vadon::Utilities::PropertyInfo& property_info, Vadon::Utilities::Variant& property_value, const Vadon::Utilities::Variant& new_value, DataObjectPropertyEditMode edit_mode)
+	{
+		// Check if the property uses ObjectWrapper
+		const Vadon::Utilities::TypeUUID element_type = property_info.type_list.front();
+		if (element_type == Vadon::Utilities::string_to_uuid(::Vadon::Foundation::ObjectWrapperSchema::c_type_uuid))
+		{
+			// Check whether an explicit type is provided
+			if (property_info.type_list.size() < 2)
+			{
+				// No type specified, so it's a generic object
+				set_object_subobject_impl(property_path, property_value, new_value, Vadon::Utilities::TypeUUID{}, false, edit_mode);
+			}
+			else
+			{
+				// Constrain to the type specified in the type list
+				const Vadon::Utilities::TypeUUID object_type = property_info.type_list[1];
+				set_object_subobject_impl(property_path, property_value, new_value, object_type, true, edit_mode);
+			}
+		}
+		// FIXME: this is a bit convoluted, find a way to deduplicate this logic!
+		else if (element_type == Vadon::Utilities::string_to_uuid(::Vadon::Foundation::DataObjectSchema::c_type_uuid))
+		{
+			// DataObject is processed as generic object
+			set_object_subobject_impl(property_path, property_value, new_value, Vadon::Utilities::TypeUUID{}, false, edit_mode);
+		}
+		else
+		{
+			// Process explicitly typed object (only this type)
+			set_object_subobject_impl(property_path, property_value, new_value, element_type, false, edit_mode);
+		}
+	}
+
+	void set_object_property_value(Vadon::Utilities::PropertyPath property_path, const Vadon::Utilities::PropertyInfo& property_info, Vadon::Utilities::Variant& property_value, const Vadon::Utilities::Variant& new_value, DataObjectPropertyEditMode edit_mode)
+	{
+		if (property_path.size() == 1)
+		{
+			switch (edit_mode)
+			{
+			case DataObjectPropertyEditMode::SET:
+			case DataObjectPropertyEditMode::ADD:
+			{
+				// Set the value here
+				property_value = new_value;
+				return;
+			}
+			default:
+				VADON_ERROR("Invalid edit mode!");
+				return;
+			}
+		}
+
+		const ::Vadon::Foundation::Property::Category property_category = Vadon::Utilities::PropertyInfo::get_category(property_info.type_list.front());
+		switch (property_category)
+		{
+		case ::Vadon::Foundation::Property::Category::ARRAY:
+			set_object_array_property_value(property_path.subspan(1), property_info, 1, property_value, new_value, edit_mode);
+			break;
+		case ::Vadon::Foundation::Property::Category::DICTIONARY:
+			set_object_dictionary_property_value(property_path.subspan(1), property_info, property_value, new_value, edit_mode);
+			break;
+		case ::Vadon::Foundation::Property::Category::OBJECT:
+			set_object_subobject_property(property_path.subspan(1), property_info, property_value, new_value, edit_mode);
+			break;
+		default:
+			VADON_ERROR("Invalid path!");
+			return;
+		}
+	}
+
+	void set_object_instance_property_value(Vadon::Utilities::PropertyPath property_path, Vadon::Utilities::TypeID object_type, void* object_ptr, const Vadon::Utilities::Variant& value, DataObjectPropertyEditMode edit_mode)
+	{
+		VADON_ASSERT(property_path.empty() == false, "Path is empty!");
+		VADON_ASSERT(property_path.front().is_object_key(), "Path to object property must start with property key!");
+
+		const Vadon::Utilities::PropertyInfo property_info = Vadon::Utilities::TypeRegistry::get_property_info(object_type, property_path.front().uuid);
+		if (property_info.base_info.is_valid() == false)
+		{
+			VADON_ERROR("Cannot find property!");
+			return;
+		}
+
+		// We get the "root" property data from the object, then use the DataObject path, then write it back into the object
+		// FIXME: not very efficient, but it works for now
+		Vadon::Utilities::Variant root_property_data = Vadon::Utilities::TypeRegistry::get_property(object_ptr, object_type, property_path.front().uuid);
+		set_object_property_value(property_path, property_info, root_property_data, value, edit_mode);
+
+		Vadon::Utilities::TypeRegistry::set_property(object_ptr, object_type, property_path.front().uuid, root_property_data);
 	}
 }
 
 namespace Vadon::Utilities
 {
-	Variant DataObject::get_property(const PropertyUUID& property_id)
+	bool DataObject::default_initialize()
 	{
-		VADON_ASSERT(m_type_id != TypeID::INVALID, "Object is not set to valid type!");
+		VADON_ASSERT(is_valid_type(), "Object is not set to valid type!");
+		const PropertyInfoList property_info_list = TypeRegistry::get_type_properties(m_type_id);
+
+		for (const PropertyInfo current_property_info : property_info_list)
+		{	
+			Variant property_value;
+			if (get_property_default_value(current_property_info, 0, property_value, false) == false)
+			{
+				return false;
+			}
+
+			m_properties.data.insert(std::make_pair(uuid_to_base64_string(current_property_info.base_info.id), property_value));
+		}
+
+		return true;
+	}
+
+	Variant DataObject::get_property(const PropertyUUID& property_id) const
+	{
+		VADON_ASSERT(is_valid_type(), "Object is not set to valid type!");
 		VADON_ASSERT(Utilities::TypeRegistry::get_property_info(m_type_id, property_id).base_info.is_valid() == true, "Property not found in object!");
 
 		const std::string property_id_key = Utilities::uuid_to_base64_string(property_id);
@@ -374,11 +597,148 @@ namespace Vadon::Utilities
 
 	void DataObject::set_property(const PropertyUUID& property_id, const Variant& value)
 	{
-		VADON_ASSERT(m_type_id != TypeID::INVALID, "Object is not set to valid type!");
+		VADON_ASSERT(is_valid_type(), "Object is not set to valid type!");
 		VADON_ASSERT(Utilities::TypeRegistry::get_property_info(m_type_id, property_id).base_info.is_valid() == true, "Property not found in object!");
 
 		const std::string property_id_key = Utilities::uuid_to_base64_string(property_id);
 		m_properties.data.insert(std::make_pair(property_id_key, value));
+	}
+
+	Variant DataObject::get_property(PropertyPath property_path) const
+	{
+		VADON_ASSERT(is_valid_type(), "Object is not set to valid type!");
+		VADON_ASSERT(property_path.empty() == false, "Path is empty!");
+
+		VADON_ASSERT(property_path.front().is_object_key(), "Path to object property must start with property key!");
+
+		const PropertyInfo property_info = TypeRegistry::get_property_info(m_type_id, property_path.front().uuid);
+		if (property_info.base_info.is_valid() == false)
+		{
+			VADON_ERROR("Cannot find property!");
+			return Variant();
+		}
+
+		Variant property_value = get_property(property_path.front().uuid);
+		return query_object_property_value(property_path, property_info, property_value);
+	}
+
+	void DataObject::set_property(PropertyPath property_path, const Variant& value)
+	{
+		VADON_ASSERT(is_valid_type(), "Object is not set to valid type!");
+		VADON_ASSERT(property_path.empty() == false, "Path is empty!");
+
+		VADON_ASSERT(property_path.front().is_object_key(), "Path to object property must start with property key!");
+
+		const PropertyInfo property_info = TypeRegistry::get_property_info(m_type_id, property_path.front().uuid);
+		if (property_info.base_info.is_valid() == false)
+		{
+			VADON_ERROR("Cannot find property!");
+			return;
+		}
+
+		auto property_it = m_properties.data.find(uuid_to_base64_string(property_path.front().uuid));
+
+		// When using set_property with path, it must be for existing data!
+		// To add data that did not exist, use add_property
+		VADON_ASSERT(property_it != m_properties.data.end(), "Property data not found!");
+
+		set_object_property_value(property_path, property_info, property_it->second, value, DataObjectPropertyEditMode::SET);
+	}
+
+	void DataObject::add_property(PropertyPath property_path, const Variant& value)
+	{
+		VADON_ASSERT(is_valid_type(), "Object is not set to valid type!");
+		VADON_ASSERT(property_path.empty() == false, "Path is empty!");
+
+		VADON_ASSERT(property_path.front().is_object_key(), "Path to object property must start with property key!");
+
+		const PropertyInfo property_info = TypeRegistry::get_property_info(m_type_id, property_path.front().uuid);
+		if (property_info.base_info.is_valid() == false)
+		{
+			VADON_ERROR("Cannot find property!");
+			return;
+		}
+
+		auto property_it = m_properties.data.find(uuid_to_base64_string(property_path.front().uuid));
+		if (property_it == m_properties.data.end())
+		{
+			// First create the property
+			// NOTE: this time we create it "shallow" because we only intend to add the properties along the path,
+			// so we don't want sub-objects to be fully filled in
+			Variant property_value;
+			if (get_property_default_value(property_info, 0, property_value, true) == false)
+			{
+				VADON_ERROR("Failed to initialize property!");
+				return;
+			}
+
+			property_it = m_properties.data.insert(std::make_pair(uuid_to_base64_string(property_path.front().uuid), property_value)).first;
+		}
+
+		set_object_property_value(property_path, property_info, property_it->second, value, DataObjectPropertyEditMode::ADD);
+	}
+
+	void DataObject::remove_property(PropertyPath property_path)
+	{
+		VADON_ASSERT(is_valid_type(), "Object is not set to valid type!");
+		VADON_ASSERT(property_path.empty() == false, "Path is empty!");
+
+		VADON_ASSERT(property_path.front().is_object_key(), "Path to object property must start with property key!");
+
+		const PropertyInfo property_info = TypeRegistry::get_property_info(m_type_id, property_path.front().uuid);
+		if (property_info.base_info.is_valid() == false)
+		{
+			VADON_ERROR("Cannot find property!");
+			return;
+		}
+
+		auto property_it = m_properties.data.find(uuid_to_base64_string(property_path.front().uuid));
+
+		// When using remove_property with path, it must be for existing data!
+		// To add data that did not exist, use add_property
+		VADON_ASSERT(property_it != m_properties.data.end(), "Property data not found!");
+
+		if (property_path.size() == 1)
+		{
+			// Simply erase the member here
+			m_properties.data.erase(property_it);
+			return;
+		}
+
+		set_object_property_value(property_path, property_info, property_it->second, Variant(), DataObjectPropertyEditMode::REMOVE);
+	}
+
+	Variant DataObject::get_object_property(PropertyPath property_path, TypeID object_type, void* object_ptr)
+	{
+		VADON_ASSERT(property_path.empty() == false, "Path is empty!");
+		VADON_ASSERT(property_path.front().is_object_key(), "Path to object property must start with property key!");
+
+		const PropertyInfo property_info = TypeRegistry::get_property_info(object_type, property_path.front().uuid);
+		if (property_info.base_info.is_valid() == false)
+		{
+			VADON_ERROR("Cannot find property!");
+			return Variant();
+		}
+
+		// We get the "root" property data from the object, then use the DataObject path
+		// FIXME: not very efficient, but it works for now
+		const Variant root_property_data = TypeRegistry::get_property(object_ptr, object_type, property_path.front().uuid);
+		return query_object_property_value(property_path, property_info, root_property_data);
+	}
+
+	void DataObject::set_object_property(PropertyPath property_path, TypeID object_type, void* object_ptr, const Variant& value)
+	{
+		set_object_instance_property_value(property_path, object_type, object_ptr, value, DataObjectPropertyEditMode::SET);
+	}
+
+	void DataObject::add_object_property(PropertyPath property_path, TypeID object_type, void* object_ptr, const Variant& value)
+	{
+		set_object_instance_property_value(property_path, object_type, object_ptr, value, DataObjectPropertyEditMode::ADD);
+	}
+
+	void DataObject::remove_object_property(PropertyPath property_path, TypeID object_type, void* object_ptr)
+	{
+		set_object_instance_property_value(property_path, object_type, object_ptr, Variant{}, DataObjectPropertyEditMode::REMOVE);
 	}
 
 	VariantDictionary DataObject::export_data() const
@@ -386,7 +746,7 @@ namespace Vadon::Utilities
 		VariantDictionary data;
 
 		// NOTE: invalid object should be serialized as empty dictionary
-		if (m_type_id != TypeID::INVALID)
+		if (is_valid_type())
 		{
 			const std::string type_entry_key = Utilities::uuid_to_base64_string(Utilities::string_to_uuid(::Vadon::Foundation::DataObjectSchema::c_type_property.id));
 			data.data.insert(std::make_pair(type_entry_key, Utilities::TypeRegistry::get_type_info(m_type_id).id));
@@ -412,7 +772,7 @@ namespace Vadon::Utilities
 			auto properties_entry_it = data.data.find(properties_entry_key);
 			VADON_ASSERT(properties_entry_it != data.data.end(), "Invalid data");
 
-			m_properties = *std::get<BoxedVariantDictionary>(properties_entry_it->second);
+			import_properties(*std::get<BoxedVariantDictionary>(properties_entry_it->second));
 		}
 		else
 		{
@@ -424,262 +784,24 @@ namespace Vadon::Utilities
 		return true;
 	}
 
-	bool ObjectSerializer::serialize_object(Serializer& serializer, VariantDictionary& object_dictionary)
+	void DataObject::import_properties(const VariantDictionary& properties)
 	{
-		constexpr Vadon::Foundation::UUID type_property_uuid = Property::property_schema_to_uuid(Vadon::Foundation::DataObjectSchema::c_type_property);
-		constexpr Vadon::Foundation::UUID properties_property_uuid = Property::property_schema_to_uuid(Vadon::Foundation::DataObjectSchema::c_properties_property);
-
-		if (serializer.is_reading() == true)
+		for (auto property_it = properties.data.begin(); property_it != properties.data.end(); ++property_it)
 		{
-			// First check if it's a null object
-			// FIXME: modify serializer API to allow checking without querying keys!
-			const Vadon::Utilities::Serializer::KeyVector keys = serializer.get_keys();
-			if (keys.empty() == true)
+			PropertyUUID property_uuid;
+			if (Utilities::uuid_from_base64_string(property_it->first, property_uuid) == false)
 			{
-				// Null object, we can clear the dictionary and early out
-				object_dictionary.data.clear();
-				return true;
+				continue;
 			}
 
-			::Vadon::Foundation::UUID object_type_uuid;
-			if (serializer.serialize(type_property_uuid, object_type_uuid) != Serializer::Result::SUCCESSFUL)
+			const PropertyInfo property_info = TypeRegistry::get_property_info(m_type_id, property_uuid);
+			if (property_info.base_info.is_valid() == false)
 			{
-				return false;
+				// TODO: add warning?
+				continue;
 			}
 
-			if (object_type_uuid.is_valid() == false)
-			{
-				return false;
-			}
-
-			const TypeID object_type_id = TypeRegistry::get_type_id(object_type_uuid);
-			if (object_type_id == TypeID::INVALID)
-			{
-				return false;
-			}
-
-			object_dictionary.data.insert(std::make_pair(uuid_to_base64_string(type_property_uuid), object_type_uuid));
-
-			if (serializer.open_object(properties_property_uuid) != Serializer::Result::SUCCESSFUL)
-			{
-				return false;
-			}
-
-			VariantDictionary properties_dictionary;
-			if (serialize_object_properties(serializer, object_type_id, properties_dictionary) == false)
-			{
-				return false;
-			}
-
-			object_dictionary.data.insert(std::make_pair(uuid_to_base64_string(properties_property_uuid), Box(properties_dictionary)));
-
-			if (serializer.close_object() != Serializer::Result::SUCCESSFUL)
-			{
-				return false;
-			}
+			m_properties.data.insert(std::make_pair(property_it->first, property_it->second));
 		}
-		else
-		{
-			if (object_dictionary.data.empty() == true)
-			{
-				// Empty dictionary means null object, early out
-				return true;
-			}
-
-			auto obj_type_it = object_dictionary.data.find(uuid_to_base64_string(type_property_uuid));
-			if (obj_type_it == object_dictionary.data.end())
-			{
-				return false;
-			}
-
-			::Vadon::Foundation::UUID object_type_uuid = std::get<::Vadon::Foundation::UUID>(obj_type_it->second);
-			if (object_type_uuid.is_valid() == false)
-			{
-				return false;
-			}
-
-			const TypeID object_type_id = TypeRegistry::get_type_id(object_type_uuid);
-			if (object_type_id == TypeID::INVALID)
-			{
-				return false;
-			}
-
-			auto obj_properties_it = object_dictionary.data.find(uuid_to_base64_string(type_property_uuid));
-			if (obj_properties_it == object_dictionary.data.end())
-			{
-				return false;
-			}
-
-			BoxedVariantDictionary& properties_dictionary = std::get<BoxedVariantDictionary>(obj_properties_it->second);
-
-			// FIXME: should we serialize with labels?
-			if (serializer.serialize(type_property_uuid, object_type_uuid) != Serializer::Result::SUCCESSFUL)
-			{
-				return false;
-			}
-
-			if (serializer.open_object(properties_property_uuid) != Serializer::Result::SUCCESSFUL)
-			{
-				return false;
-			}
-
-			if (serialize_object_properties(serializer, object_type_id, *properties_dictionary) == false)
-			{
-				return false;
-			}
-
-			if (serializer.close_object() != Serializer::Result::SUCCESSFUL)
-			{
-				return false;
-			}
-		}
-
-		return true;
-	}
-
-	bool ObjectSerializer::serialize_object_properties(Serializer& serializer, TypeID object_type, VariantDictionary& object_properties)
-	{
-		if (serializer.is_reading() == true)
-		{
-			const Serializer::KeyVector keys = serializer.get_keys();
-			for (const std::string& current_key : keys)
-			{
-				Vadon::Foundation::UUID current_property_id;
-				if (Utilities::uuid_from_base64_string(current_key, current_property_id) == false)
-				{
-					return false;
-				}
-
-				const PropertyInfo property_info = TypeRegistry::get_property_info(object_type, current_property_id);
-				if (property_info.base_info.is_valid() == false)
-				{
-					// TODO: add warning?
-					continue;
-				}
-
-				Variant property_value;
-				if (serialize_object_property_value(serializer, current_key, property_info, property_value) == false)
-				{
-					return false;
-				}
-
-				const std::string property_uuid_key = uuid_to_base64_string(current_property_id);
-				object_properties.data.insert(std::make_pair(property_uuid_key, property_value));
-			}
-		}
-		else
-		{
-			const PropertyInfoList property_info_list = TypeRegistry::get_type_properties(object_type);
-			for (const PropertyInfo& current_property_info : property_info_list)
-			{
-				// FIXME: use labeled UUID?
-				const std::string current_key = Vadon::Utilities::uuid_to_base64_string(current_property_info.base_info.id);
-
-				auto property_data_it = object_properties.data.find(current_key);
-				if (property_data_it == object_properties.data.end())
-				{
-					continue;
-				}
-
-				Variant& property_value = property_data_it->second;
-				if (serialize_object_property_value(serializer, current_key, current_property_info, property_value) == false)
-				{
-					return false;
-				}
-			}
-		}
-
-		return true;
-	}
-
-	bool ObjectSerializer::load_object_data(ObjectWrapper& object, const VariantDictionary& data)
-	{
-		if (data.data.empty() == true)
-		{
-			// Empty dictionary means null object
-			object = ObjectWrapper();
-			return true;
-		}
-
-		auto type_it = data.data.find(uuid_to_base64_string(Property::property_schema_to_uuid(::Vadon::Foundation::DataObjectSchema::c_type_property)));
-		VADON_ASSERT(type_it != data.data.end(), "Invalid data!");
-
-		const TypeUUID object_type_uuid = std::get<::Vadon::Foundation::UUID>(type_it->second);
-		const TypeID object_type_id = TypeRegistry::get_type_id(object_type_uuid);
-
-		auto properties_it = data.data.find(uuid_to_base64_string(Property::property_schema_to_uuid(::Vadon::Foundation::DataObjectSchema::c_properties_property)));
-		VADON_ASSERT(properties_it != data.data.end(), "Invalid data!");
-
-		const VariantDictionary& property_data = *std::get<BoxedVariantDictionary>(properties_it->second);
-
-		ObjectWrapper new_object = TypeRegistry::create_object(object_type_id);
-		if (load_object_property_data(new_object, property_data) == false)
-		{
-			TypeRegistry::destroy_object(new_object);
-			return false;
-		}
-
-		object = new_object;
-		return true;
-	}
-
-	bool ObjectSerializer::load_object_property_data(ObjectWrapper& object, const VariantDictionary& property_data)
-	{
-		for (const auto& data_it : property_data.data)
-		{
-			PropertyUUID property_id;
-			if (uuid_from_base64_string(data_it.first, property_id) == false)
-			{
-				return false;
-			}
-			TypeRegistry::set_property(object.get_data(), object.get_type(), property_id, data_it.second);
-		}
-
-		return true;
-	}
-
-	bool ObjectSerializer::store_object_data(const ObjectWrapper& object, VariantDictionary& data)
-	{
-		if (object.is_valid() == false)
-		{
-			// Nothing to save
-			data.data.clear();
-			return true;
-		}
-
-		{
-			const std::string type_key = uuid_to_base64_string(Property::property_schema_to_uuid(::Vadon::Foundation::DataObjectSchema::c_type_property));
-			const TypeUUID type_uuid = TypeRegistry::get_type_info(object.get_type()).id;
-
-			data.data.insert(std::make_pair(type_key, type_uuid));
-		}
-
-		const std::string properties_key = uuid_to_base64_string(Property::property_schema_to_uuid(::Vadon::Foundation::DataObjectSchema::c_properties_property));
-		VariantDictionary properties_dictionary;
-
-		if (store_object_property_data(object, properties_dictionary) == false)
-		{
-			return false;
-		}
-
-		data.data.insert(std::make_pair(properties_key, Box(properties_dictionary)));
-
-		return true;
-	}
-
-	bool ObjectSerializer::store_object_property_data(const ObjectWrapper& object, VariantDictionary& property_data)
-	{
-		// TODO: optimize by only saving values that changed from default?
-		const PropertyInfoList property_info_list = TypeRegistry::get_type_properties(object.get_type());
-		for (const PropertyInfo& current_property_info : property_info_list)
-		{
-			const std::string current_key = uuid_to_base64_string(current_property_info.base_info.id);
-
-			const Variant property_value = TypeRegistry::get_property(object.get_data(), object.get_type(), current_property_info.base_info.id);
-
-			property_data.data.insert(std::make_pair(current_key, property_value));
-		}
-
-		return true;
 	}
 }

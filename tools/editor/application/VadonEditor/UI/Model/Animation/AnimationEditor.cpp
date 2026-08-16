@@ -731,7 +731,7 @@ namespace VadonEditor::UI
 
         Model::AnimationChannel* get_selected_channel(Model::Animation& animation) const
         {
-            if (m_selected_channel.isNull() == true)
+            if (Utilities::is_uuid_valid(m_selected_channel) == false)
             {
                 return nullptr;
             }
@@ -747,9 +747,9 @@ namespace VadonEditor::UI
                 return;
             }
 
-            if (m_selected_channel.isNull() == false)
+            if (Utilities::is_uuid_valid(m_selected_channel) == true)
             {
-                if (channel_id.isNull() == true)
+                if (Utilities::is_uuid_valid(channel_id) == false)
                 {
                     // Channel deselected, disable the UI
                     set_channel_ui_enabled(anim_editor, false);

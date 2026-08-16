@@ -320,7 +320,7 @@ namespace VadonEditor::Model
 		{
 			const Entity* current_entity = entity_model.find_entity_by_id(current_entity_id);
 			const SceneID sub_scene_id = current_entity->get_sub_scene_id();
-			if (sub_scene_id.isNull() == false)
+			if (Utilities::is_uuid_valid(sub_scene_id) == true)
 			{
 				// Entity is an instantiated scene, perform recursive check
 				if (is_sub_scene_acyclic(sub_scene_id) == false)

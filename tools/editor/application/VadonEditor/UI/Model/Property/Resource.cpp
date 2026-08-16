@@ -130,7 +130,7 @@ namespace VadonEditor::UI
 	void PropertyResource::clear_triggered()
 	{
 		const QUuid resource_id = get_resource_id();
-		if (resource_id.isNull() == true)
+		if (Utilities::is_uuid_valid(resource_id) == false)
 		{
 			return;
 		}
@@ -197,7 +197,7 @@ namespace VadonEditor::UI
 	Model::Resource* PropertyResource::find_resource() const
 	{
 		const QUuid resource_id = get_resource_id();
-		if (resource_id.isNull() == true)
+		if (Utilities::is_uuid_valid(resource_id) == false)
 		{
 			return nullptr;
 		}

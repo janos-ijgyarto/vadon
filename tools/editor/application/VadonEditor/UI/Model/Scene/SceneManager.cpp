@@ -312,7 +312,7 @@ namespace VadonEditor::UI
 		for (int tab_index = 0; tab_index < scene_tab_bar->count(); ++tab_index)
 		{
 			const QUuid tab_scene_uuid = scene_tab_bar->tabData(tab_index).toUuid();
-			if (tab_scene_uuid.isNull() == true)
+			if (Utilities::is_uuid_valid(tab_scene_uuid) == false)
 			{
 				continue;
 			}

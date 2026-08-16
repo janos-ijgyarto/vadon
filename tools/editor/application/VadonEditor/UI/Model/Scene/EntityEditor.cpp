@@ -99,7 +99,7 @@ namespace VadonEditor::UI
 		setAttribute(Qt::WidgetAttribute::WA_DeleteOnClose, true);
 
 		const Model::SceneID sub_scene_id = entity->get_sub_scene_id();
-		if (sub_scene_id.isNull() == false)
+		if (Utilities::is_uuid_valid(sub_scene_id) == true)
 		{
 			m_ui.addComponentButton->setEnabled(false);
 			m_ui.addComponentButton->setVisible(false);
@@ -125,7 +125,7 @@ namespace VadonEditor::UI
 		m_ui.nameLineEdit->setText(m_entity->get_name());
 		m_ui.nameLineEdit->blockSignals(false);
 
-		if (m_entity->get_sub_scene_id().isNull() == false)
+		if (Utilities::is_uuid_valid(m_entity->get_sub_scene_id()) == true)
 		{
 			Core::Application& application = m_entity->get_application();
 			Model::SceneSystem& scene_system = application.get_model_system().get_scene_system();
@@ -196,7 +196,7 @@ namespace VadonEditor::UI
 
 	bool EntityEditor::internal_add_component_widget(Model::Component* component)
 	{
-		const bool is_sub_scene = m_entity->get_sub_scene_id().isNull() == false;
+		const bool is_sub_scene = Utilities::is_uuid_valid(m_entity->get_sub_scene_id());
 		ComponentWidget* component_widget = new ComponentWidget(component, is_sub_scene);
 		if (component_widget->initialize(m_scene) == false)
 		{

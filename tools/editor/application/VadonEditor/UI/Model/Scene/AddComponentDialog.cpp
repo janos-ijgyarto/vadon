@@ -55,7 +55,7 @@ namespace VadonEditor::UI
 
 		QListWidgetItem* selected_component_item = selected_items.first();
 		const QUuid component_type_id = selected_component_item->data(c_component_type_role).toUuid();
-		if (component_type_id.isNull() == true)
+		if (Utilities::is_uuid_valid(component_type_id) == false)
 		{
 			Q_ASSERT_X(false, "AddComponentDialog::finalize_component_selection", "Component UUID invalid");
 			return;
