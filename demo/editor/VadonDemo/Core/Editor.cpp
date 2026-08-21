@@ -3,8 +3,6 @@
 #include <VadonDemo/Core/Core.hpp>
 #include <VadonDemo/Model/Model.hpp>
 
-#include <VadonDemo/Network/Message/MessageSerializer.hpp>
-
 #include <VadonEditor/Core/Project/ProjectManager.hpp>
 #include <VadonEditor/Core/TypeInfo/MetadataRegistry.hpp>
 
@@ -13,73 +11,35 @@
 #include <Vadon/Core/Core.hpp>
 #include <Vadon/Core/CoreConfiguration.hpp>
 #include <Vadon/Core/Environment.hpp>
-#include <Vadon/Core/File/FileSystem.hpp>
 
 #include <Vadon/Model/Resource/ResourceSystem.hpp>
 
 #include <Vadon/Utilities/System/CommandLine/Parser.hpp>
 
 #include <Vadon/Foundation/Editor/Network/Message/Message.hpp>
-#include <Vadon/Foundation/Editor/Network/Message/Simulator.hpp>
+#include <Vadon/Foundation/Editor/Network/Message/Plugin.hpp>
 #include <Vadon/Foundation/Editor/Simulator/SimulatorInterface.hpp>
 
-#include <filesystem>
 #include <thread>
 
 namespace VadonDemo::Core
 {
-    void Logger::log_message(std::string_view message)
+    EditorLogger::EditorLogger(::Vadon::Foundation::EditorSimulatorInterface& simulator_interface)
+        : Logger(::Vadon::Foundation::EditorPluginMessageSource::SIMULATOR)
+        , m_simulator_interface(simulator_interface)
     {
-        Vadon::Core::DefaultLogger::log_message(message);
-        dispatch_network_log_message(::Vadon::Foundation::EditorSimulatorMessageLog::INFO, message);
     }
 
-    void Logger::log_warning(std::string_view message)
+    void EditorLogger::dispatch_message_data(const char* data, size_t size)
     {
-        Vadon::Core::DefaultLogger::log_warning(message);
-        dispatch_network_log_message(::Vadon::Foundation::EditorSimulatorMessageLog::WARNING, message);
-    }
-
-    void Logger::log_error(std::string_view message)
-    {
-        Vadon::Core::DefaultLogger::log_error(message);
-        dispatch_network_log_message(::Vadon::Foundation::EditorSimulatorMessageLog::ERROR, message);
-    }
-
-    void Logger::dispatch_network_log_message(::Vadon::Foundation::EditorSimulatorMessageLog::Type type, std::string_view message)
-    {
-        // Trim trailing newline
-        // FIXME: make this more robust!
-        std::string_view message_trimmed = message;
-        if (message_trimmed.back() == '\n')
-        {
-            message_trimmed = message.substr(0, message.length() - 1);
-        }
-
-        if (message_trimmed.empty())
-        {
-            return;
-        }
-
-        ::Vadon::Foundation::EditorSimulatorMessageLog simulator_log_message;
-        simulator_log_message.message_type = Vadon::Foundation::EditorSimulatorMessageType::SIMULATOR_LOG;
-        simulator_log_message.log_type = type;
-        simulator_log_message.length = static_cast<::Vadon::Foundation::uint32>(message_trimmed.size());
-
-        Network::MessageSerializer message_serializer;
-        char* message_data = message_serializer.allocate_message(::Vadon::Foundation::EditorMessageCategory::SIMULATOR, sizeof(::Vadon::Foundation::EditorSimulatorMessageLog) + message_trimmed.size());
-
-        memcpy(message_data, &simulator_log_message, sizeof(::Vadon::Foundation::EditorSimulatorMessageLog));
-        memcpy(message_data + sizeof(::Vadon::Foundation::EditorSimulatorMessageLog), message_trimmed.data(), message_trimmed.size());
-
-        m_editor.get_simulator().dispatch_message_to_editor(message_serializer.get_buffer().data(), message_serializer.get_buffer().size());
+        m_simulator_interface.dispatch_message_to_editor(data, size);
     }
 
     Editor::Editor(::Vadon::Foundation::EditorSimulatorInterface& simulator_interface)
         : ::Vadon::Foundation::EditorSimulatorPluginInterface(simulator_interface)
         , m_engine_core(Vadon::Core::create_engine_core())
         , m_common_editor(*m_engine_core)
-        , m_logger(*this)
+        , m_logger(simulator_interface)
         , m_platform(*this)
         , m_render(*this)
         , m_ui(*this)
@@ -234,15 +194,20 @@ namespace VadonDemo::Core
         ::Vadon::Foundation::EditorMessageReader message_reader(data, size);
         switch (message_reader.get_current_category())
         {
-        case ::Vadon::Foundation::EditorMessageCategory::SIMULATOR:
+        case ::Vadon::Foundation::EditorMessageCategory::PLUGIN:
         {
             const char* message_data = message_reader.get_current_message_data();
-            const ::Vadon::Foundation::EditorSimulatorMessageHeader* simulator_message_header = reinterpret_cast<const ::Vadon::Foundation::EditorSimulatorMessageHeader*>(message_data);
-            switch (simulator_message_header->message_type)
+            const ::Vadon::Foundation::EditorPluginMessageHeader* plugin_message_header = reinterpret_cast<const ::Vadon::Foundation::EditorPluginMessageHeader*>(message_data);
+            if (plugin_message_header->plugin_type != ::Vadon::Foundation::EditorPluginMessageSource::SIMULATOR)
             {
-            case ::Vadon::Foundation::EditorSimulatorMessageType::SIMULATOR_INIT:
+                return;
+            }
+
+            switch (plugin_message_header->message_type)
+            {
+            case ::Vadon::Foundation::EditorPluginMessageType::PLUGIN_INIT:
                 break;
-            case ::Vadon::Foundation::EditorSimulatorMessageType::SIMULATOR_SHUTDOWN:
+            case ::Vadon::Foundation::EditorPluginMessageType::PLUGIN_SHUTDOWN:
                 break;
             }
         }

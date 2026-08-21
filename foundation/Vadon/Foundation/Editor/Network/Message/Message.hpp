@@ -7,7 +7,8 @@ namespace Vadon
 	{
 		enum class EditorMessageCategory
 		{
-			SIMULATOR,
+			PLUGIN,
+			ASSET_SERVER,
 			MODEL,
 			PLATFORM,
 			TEST

@@ -9,6 +9,7 @@
 
 #include <VadonApp/UI/Developer/IconsFontAwesome7.h>
 
+#include <Vadon/Core/Configuration.hpp>
 #include <Vadon/Core/Task/TaskSystem.hpp>
 
 #include <Vadon/Math/Matrix.hpp>
@@ -1278,6 +1279,16 @@ namespace VadonApp::Private::UI::Developer::ImGUI
 
     bool GUISystem::init_renderer()
     {
+        // FIXME: this requires CanvasSystem to be explicitly aware of the renderer config
+        // Could instead make it agnostic and accept null handles from the Null backend?
+        // That approach would risk delaying an error until after initialization!
+        Vadon::Core::EngineCoreInterface& engine_core = m_application.get_engine_core();
+        const bool is_renderer_disabled = Vadon::Utilities::to_bool(engine_core.get_config().render_config.flags & Vadon::Core::RenderConfigurationFlags::DISABLE_RENDERING);
+        if (is_renderer_disabled == true)
+        {
+            return true;
+        }
+
         ImGuiIO& io = ImGui::GetIO();
         IM_ASSERT(io.BackendRendererUserData == nullptr);
 
@@ -1286,7 +1297,6 @@ namespace VadonApp::Private::UI::Developer::ImGUI
         io.BackendRendererName = "imgui_impl_renderer_vadon";
         io.BackendFlags |= ImGuiBackendFlags_RendererHasVtxOffset;  // We can honor the ImDrawCmd::VtxOffset field, allowing for large meshes.
 
-        Vadon::Core::EngineCoreInterface& engine_core = m_application.get_engine_core();
         {
             // Create shaders
             Vadon::Render::GraphicsAPI& graphics_api = engine_core.get_system<Vadon::Render::GraphicsAPI>();

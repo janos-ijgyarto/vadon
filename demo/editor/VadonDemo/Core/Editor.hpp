@@ -1,5 +1,6 @@
 #ifndef VADONDEMO_CORE_EDITOR_HPP
 #define VADONDEMO_CORE_EDITOR_HPP
+#include <VadonDemo/Core/Logger.hpp>
 #include <VadonDemo/Platform/EditorPlatform.hpp>
 #include <VadonDemo/Render/EditorRender.hpp>
 #include <VadonDemo/UI/EditorUI.hpp>
@@ -8,10 +9,8 @@
 #include <VadonEditor/Core/Editor.hpp>
 
 #include <Vadon/Foundation/Editor/Simulator/PluginInterface.hpp>
-#include <Vadon/Foundation/Editor/Network/Message/Simulator.hpp>
 
 #include <Vadon/Core/Core.hpp>
-#include <Vadon/Core/Logger.hpp>
 
 #include <chrono>
 
@@ -25,20 +24,14 @@ namespace VadonDemo::Core
     class Core;
     class EditorPluginInterface;
 
-    class Editor;
-
-    class Logger : public Vadon::Core::DefaultLogger
+    class EditorLogger : public Logger
     {
     public:
-        Logger(Editor& editor) : m_editor(editor) {}
-
-        void log_message(std::string_view message) override;
-        void log_warning(std::string_view message) override;
-        void log_error(std::string_view message) override;
+        EditorLogger(::Vadon::Foundation::EditorSimulatorInterface& simulator_interface);
+    protected:
+        void dispatch_message_data(const char* data, size_t size) override;
     private:
-        void dispatch_network_log_message(::Vadon::Foundation::EditorSimulatorMessageLog::Type type, std::string_view message);
-
-        Editor& m_editor;
+        ::Vadon::Foundation::EditorSimulatorInterface& m_simulator_interface;
     };
 
     class Editor : public ::Vadon::Foundation::EditorSimulatorPluginInterface
@@ -84,7 +77,7 @@ namespace VadonDemo::Core
 
         Vadon::Core::EngineCorePtr m_engine_core;
         VadonEditor::Core::Editor m_common_editor;
-        Logger m_logger;
+        EditorLogger m_logger;
 
         std::unique_ptr<VadonDemo::Core::Core> m_core;
 

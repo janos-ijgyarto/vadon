@@ -11,7 +11,6 @@ namespace VadonEditor::Core
 {
 	class Application;
 }
-class QString;
 namespace VadonEditor::Simulator
 {
 	struct SimulatorSettings

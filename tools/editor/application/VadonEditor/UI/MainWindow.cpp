@@ -17,6 +17,7 @@
 #include <VadonEditor/UI/Model/Resource/ResourceDialog.hpp>
 #include <VadonEditor/UI/Model/Scene/SceneDialog.hpp>
 
+#include <VadonEditor/UI/Project/Asset/ExportProjectDataDialog.hpp>
 #include <VadonEditor/UI/Project/DataSchemaDialog.hpp>
 #include <VadonEditor/UI/Project/ProjectSettingsDialog.hpp>
 
@@ -158,6 +159,20 @@ namespace VadonEditor::UI
 		{
 			QMessageBox::critical(this, "Project manager error", "Failed to load project data schema!");
 		}
+	}
+
+	void MainWindow::export_project_data_triggered()
+	{
+		Core::ProjectManager& project_manager = m_application.get_project_manager();
+		const Core::ProjectInfo project_info = project_manager.get_project_info();
+		if (project_info.plugin_settings.selected_configuration.isEmpty() == true)
+		{
+			QMessageBox::critical(this, "Project manager error", "Must select a valid plugin configuration before running asset server!");
+			return;
+		}
+
+		ExportProjectDataDialog* export_data_dialog = new ExportProjectDataDialog(m_application, this);
+		export_data_dialog->open();
 	}
 
 	void MainWindow::asset_opened(const QString& asset_path)

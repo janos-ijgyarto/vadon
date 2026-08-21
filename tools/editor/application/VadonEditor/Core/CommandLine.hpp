@@ -5,6 +5,7 @@ namespace VadonEditor::Core
 {
 	enum class CommandLineParameter
 	{
+		IS_ASSET_SERVER,
 		IS_SIMULATOR,
 		IS_SCHEMA_EXPORTER,
 		STARTUP_PROJECT_PATH,
@@ -14,6 +15,7 @@ namespace VadonEditor::Core
 
 	struct CommandLineState
 	{
+		bool is_asset_server = false;
 		bool is_simulator = false;
 		bool is_schema_exporter = false;
 		QString startup_project_path;
@@ -24,6 +26,8 @@ namespace VadonEditor::Core
 		{
 			switch (parameter)
 			{
+			case CommandLineParameter::IS_ASSET_SERVER:
+				return "asset-server";
 			case CommandLineParameter::IS_SIMULATOR:
 				return "simulator";
 			case CommandLineParameter::IS_SCHEMA_EXPORTER:

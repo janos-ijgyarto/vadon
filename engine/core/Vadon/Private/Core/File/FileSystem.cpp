@@ -31,6 +31,19 @@ namespace Vadon::Private::Core
 		return nullptr;
 	}
 
+	FileID FileSystem::FileDatabaseData::find_file(std::string_view path) const
+	{
+		for (const auto entry_pair : file_lookup)
+		{
+			if (entry_pair.second.path == path)
+			{
+				return entry_pair.first;
+			}
+		}
+
+		return FileID{};
+	}
+
 	FileDatabaseHandle FileSystem::create_database(const FileDatabaseInfo& info)
 	{
 		VADON_ASSERT(info.type != FileDatabaseType::INVALID, "Invalid database type!");
@@ -149,7 +162,13 @@ namespace Vadon::Private::Core
 	bool FileSystem::does_file_exist(FileDatabaseHandle db_handle, const FileID& file_id) const
 	{
 		const FileDatabaseData& database_data = m_database_pool.get(db_handle);
-		return database_data.find_file(file_id) != nullptr;		
+		return database_data.find_file(file_id) != nullptr;
+	}
+
+	FileID FileSystem::find_file(FileDatabaseHandle db_handle, std::string_view path) const
+	{
+		const FileDatabaseData& database_data = m_database_pool.get(db_handle);
+		return database_data.find_file(path);
 	}
 
 	void FileSystem::remove_file(FileDatabaseHandle db_handle, const FileID& file_id)

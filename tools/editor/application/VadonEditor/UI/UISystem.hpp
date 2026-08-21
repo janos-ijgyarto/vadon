@@ -20,6 +20,8 @@ namespace VadonEditor::UI
 		MainWindow* get_main_window() const { return m_main_window; }
 
 		bool is_shutting_down() const { return m_shutting_down; }
+	private slots:
+		void received_message(const QByteArray& data);
 	private:
 		UISystem(Core::Application& application);
 
@@ -29,8 +31,6 @@ namespace VadonEditor::UI
 		void launcher_accepted();
 
 		void show_main_window();
-
-		void received_message(const QByteArray& data);
 
 		void run_simulator();
 		void stop_simulator();

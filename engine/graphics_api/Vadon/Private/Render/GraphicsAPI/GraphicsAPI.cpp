@@ -16,6 +16,7 @@
 #endif
 
 #include <Vadon/Core/Environment.hpp>
+#include <Vadon/Core/Configuration.hpp>
 
 namespace Vadon::Private::Render
 {
@@ -27,6 +28,10 @@ namespace Vadon::Private::Render
 	GraphicsAPIBase::Implementation GraphicsAPIBase::get_graphics_api(Vadon::Core::EngineCoreInterface& core)
 	{
 #ifdef VADON_GRAPHICS_API_DIRECTX
+		if (Vadon::Utilities::to_bool(core.get_config().render_config.flags & Vadon::Core::RenderConfigurationFlags::DISABLE_RENDERING) == true)
+		{
+			return get_null_graphics_api(core);
+		}
 		return std::make_unique<DirectX::GraphicsAPI>(core);
 #else
 		return get_null_graphics_api(core);

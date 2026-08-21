@@ -22,8 +22,8 @@ using VadonEditorSimulatorInterface = Vadon::Foundation::EditorSimulatorInterfac
 using VadonTypeMetadataRegistry = Vadon::Foundation::TypeMetadataRegistry;
 
 extern "C" {
-    VADON_EDITOR_SIMULATOR_PLUGIN_DLLEXPORT VadonEditorSimulatorPluginInterface* VadonEditorPluginEntrypoint(VadonEditorSimulatorInterface* simulator);
-    VADON_EDITOR_SIMULATOR_PLUGIN_DLLEXPORT void VadonEditorPluginExit(VadonEditorSimulatorPluginInterface* interface);
+    VADON_EDITOR_SIMULATOR_PLUGIN_DLLEXPORT VadonEditorSimulatorPluginInterface* VadonEditorSimulatorPluginEntrypoint(VadonEditorSimulatorInterface* simulator);
+    VADON_EDITOR_SIMULATOR_PLUGIN_DLLEXPORT void VadonEditorSimulatorPluginExit(VadonEditorSimulatorPluginInterface* interface);
 
     // FIXME: 
     VADON_EDITOR_SIMULATOR_PLUGIN_DLLEXPORT void VadonEditorPluginExportDataSchema(VadonTypeMetadataRegistry* registry);

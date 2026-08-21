@@ -431,7 +431,7 @@ namespace Vadon::Utilities
 				return false;
 			}
 
-			auto obj_properties_it = object_dictionary.data.find(uuid_to_base64_string(type_property_uuid));
+			auto obj_properties_it = object_dictionary.data.find(uuid_to_base64_string(properties_property_uuid));
 			if (obj_properties_it == object_dictionary.data.end())
 			{
 				return false;

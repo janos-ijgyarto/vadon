@@ -7,9 +7,14 @@
 #include <VadonEditor/Model/Resource/Resource.hpp>
 
 #include <functional>
+namespace Vadon::Core
+{
+	class EngineCoreInterface;
+}
 namespace VadonEditor::Core
 {
 	class Editor;
+	class ProjectManager;
 }
 namespace VadonEditor::Model
 {
@@ -28,7 +33,7 @@ namespace VadonEditor::Model
 		VADONEDITOR_API void register_event_callback(EventCallback callback);
 		VADONEDITOR_API void broadcast_resource_event(const ResourceEvent& event);
 	private:
-		ResourceSystem(Core::Editor& editor);
+		ResourceSystem(Core::Editor& editor, Vadon::Core::EngineCoreInterface& engine_core, Core::ProjectManager& project_manager);
 
 		bool initialize();
 		void shutdown();

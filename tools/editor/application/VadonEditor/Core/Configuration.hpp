@@ -6,6 +6,7 @@ namespace VadonEditor::Core
 	enum class ApplicationMode
 	{
 		EDITOR,
+		ASSET_SERVER,
 		SIMULATOR,
 		SCHEMA_EXPORTER
 	};

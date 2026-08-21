@@ -13,35 +13,6 @@
 #include <Vadon/Foundation/Editor/Network/Message/Message.hpp>
 #include <Vadon/Foundation/Model/Resource/File.hpp>
 
-#include <filesystem>
-
-namespace
-{
-	std::string get_filesystem_style_asset_extension(::Vadon::Foundation::ResourceFileInfo::Type file_type)
-	{
-		return std::format(".{}", ::Vadon::Foundation::ResourceFileInfo::get_file_extension(file_type));
-	}
-
-	::Vadon::Foundation::ResourceFileInfo::Type get_file_asset_type(const std::filesystem::path& path)
-	{
-		const std::string extension = path.extension().generic_string();
-		if (extension == get_filesystem_style_asset_extension(::Vadon::Foundation::ResourceFileInfo::Type::SCENE))
-		{
-			return ::Vadon::Foundation::ResourceFileInfo::Type::SCENE;
-		}
-		else if (extension == get_filesystem_style_asset_extension(::Vadon::Foundation::ResourceFileInfo::Type::RESOURCE))
-		{
-			return ::Vadon::Foundation::ResourceFileInfo::Type::RESOURCE;
-		}
-		else if (extension == get_filesystem_style_asset_extension(::Vadon::Foundation::ResourceFileInfo::Type::IMPORTED_FILE))
-		{
-			return ::Vadon::Foundation::ResourceFileInfo::Type::IMPORTED_FILE;
-		}
-
-		return ::Vadon::Foundation::ResourceFileInfo::Type::NONE;
-	}
-}
-
 namespace VadonEditor::Model
 {
 	ResourceSystem::~ResourceSystem()
@@ -100,9 +71,9 @@ namespace VadonEditor::Model
 		}
 	}
 
-	ResourceSystem::ResourceSystem(Core::Editor& editor)
+	ResourceSystem::ResourceSystem(Core::Editor& editor, Vadon::Core::EngineCoreInterface& engine_core, Core::ProjectManager& project_manager)
 		: m_editor(editor)
-		, m_database(editor)
+		, m_database(engine_core, project_manager)
 	{
 
 	}
@@ -137,30 +108,14 @@ namespace VadonEditor::Model
 			return false;
 		}
 
-		// Import all resources in the project
-		// FIXME: make use of a cache so we don't have to load every resource to get its ID
-		// Will need to check whether something changed between the cache and the actual files
-		Core::ProjectManager& project_manager = m_editor.get_project_manager();
-		const std::filesystem::path root_fs_path(project_manager.get_active_project().root_path);
-
-		bool all_valid = true;
-
-		for (const auto& directory_entry : std::filesystem::recursive_directory_iterator(root_fs_path))
+		// Import all resources currently in the project
+		// TODO: file watcher logic to auto-import new files?
+		if (m_database.import_project_resources() == false)
 		{
-			if (directory_entry.is_regular_file() == false)
-			{
-				continue;
-			}
-
-			const ::Vadon::Foundation::ResourceFileInfo::Type current_asset_type = get_file_asset_type(directory_entry.path());
-			if (current_asset_type != ::Vadon::Foundation::ResourceFileInfo::Type::NONE)
-			{
-				const std::string relative_path = std::filesystem::relative(directory_entry.path(), root_fs_path).generic_string();
-				all_valid &= m_database.import_resource(relative_path).is_valid();
-			}
+			return false;
 		}
 
-		return all_valid;
+		return true;
 	}
 
 	void ResourceSystem::process_message(const char* data, size_t size)

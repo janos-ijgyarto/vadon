@@ -15,9 +15,9 @@
 
 #include <Vadon/ECS/World/World.hpp>
 
-#include <Vadon/Scene/Animation/AnimationSystem.hpp>
-#include <Vadon/Scene/Resource/ResourceSystem.hpp>
-#include <Vadon/Scene/SceneSystem.hpp>
+#include <Vadon/Model/Animation/AnimationSystem.hpp>
+#include <Vadon/Model/Resource/ResourceSystem.hpp>
+#include <Vadon/Model/Scene/SceneSystem.hpp>
 
 namespace VadonDemo::View
 {
@@ -150,8 +150,8 @@ namespace VadonDemo::View
 			return;
 		}
 
-		Vadon::Scene::SceneSystem& scene_system = m_game_core.get_engine_core().get_system<Vadon::Scene::SceneSystem>();
-		const Vadon::Scene::SceneHandle vfx_scene = scene_system.load_scene(projectile_vfx->vfx_prefab);
+		Vadon::Model::SceneSystem& scene_system = m_game_core.get_engine_core().get_system<Vadon::Model::SceneSystem>();
+		const Vadon::Model::SceneHandle vfx_scene = scene_system.load_scene(projectile_vfx->vfx_prefab);
 
 		Vadon::ECS::EntityHandle vfx_entity = scene_system.instantiate_scene(vfx_scene, ecs_world);
 
@@ -179,8 +179,8 @@ namespace VadonDemo::View
 		{
 			if (projectile_vfx->animation.is_valid() == true)
 			{
-				Vadon::Scene::AnimationSystem& anim_system = m_game_core.get_engine_core().get_system<Vadon::Scene::AnimationSystem>();
-				const Vadon::Scene::AnimationHandle anim_handle = anim_system.load_animation(projectile_vfx->animation);
+				Vadon::Model::AnimationSystem& anim_system = m_game_core.get_engine_core().get_system<Vadon::Model::AnimationSystem>();
+				const Vadon::Model::AnimationHandle anim_handle = anim_system.load_animation(projectile_vfx->animation);
 
 				vfx_anim_component->animation_player.set_animation(m_game_core.get_engine_core(), anim_handle);
 			}
@@ -201,11 +201,11 @@ namespace VadonDemo::View
 		}
 
 		Vadon::Core::EngineCoreInterface& engine_core = m_game_core.get_engine_core();
-		Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
+		Vadon::Model::ResourceSystem& resource_system = engine_core.get_system<Vadon::Model::ResourceSystem>();
 
 		const RenderResourceHandle resource_handle = resource_system.load_resource(resource_id);
 
-		const Vadon::Scene::ResourceInfo resource_info = resource_system.get_resource_info(resource_handle);
+		const Vadon::Model::ResourceInfo resource_info = resource_system.get_resource_info(resource_handle);
 		if (resource_info.type_id == Vadon::Utilities::TypeRegistry::get_type_id<Sprite>())
 		{
 			// Try to load the texture for the sprite

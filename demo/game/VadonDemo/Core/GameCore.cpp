@@ -29,6 +29,8 @@
 
 #include <Vadon/Utilities/Serialization/Serializer.hpp>
 
+#include <Vadon/Foundation/TypeInfo/MetadataRegistry.hpp>
+
 #include <chrono>
 #include <format>
 #include <filesystem>
@@ -434,7 +436,11 @@ namespace VadonDemo::Core
 			// FIXME: this needs to be done here to ensure that the parent types are already available
 			// Should refactor to instead have "auto-registering" (via macros on the declarations and static vars)
 			// that enqueues type registry metadata, and then use one explicit call to process all of it.
-			VadonDemo::Core::Core::register_types();
+
+			// Use null registry, since we don't need the metadata while playing
+			// FIXME: we might still want it in debug builds?
+			::Vadon::Foundation::NullMetadataRegistry null_metadata_registry;
+			VadonDemo::Core::Core::register_types(null_metadata_registry);
 
 			if (load_project() == false)
 			{

@@ -26,6 +26,7 @@ namespace Vadon::Core
 		virtual bool add_existing_file(FileDatabaseHandle db_handle, const FileID& file_id, const FileInfo& info) = 0;
 		virtual FileInfo get_file_info(FileDatabaseHandle db_handle, const FileID& file_id) const = 0;
 		virtual bool does_file_exist(FileDatabaseHandle db_handle, const FileID& file_id) const = 0;
+		virtual FileID find_file(FileDatabaseHandle db_handle, std::string_view path) const = 0;
 		virtual void remove_file(FileDatabaseHandle db_handle, const FileID& file_id) = 0;
 
 		virtual std::vector<FileID> get_all_files(FileDatabaseHandle db_handle) const = 0;

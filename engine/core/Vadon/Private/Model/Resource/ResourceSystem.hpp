@@ -43,6 +43,9 @@ namespace Vadon::Private::Model
 		bool save_resource(Vadon::Utilities::Serializer& serializer, ResourceHandle resource_handle) override;
 		ResourceHandle load_resource(Vadon::Utilities::Serializer& serializer) override;
 
+		bool save_resource_raw_data(Vadon::Utilities::Serializer& serializer, Utilities::VariantDictionary& resource_data) const override;
+		bool load_resource_raw_data(Vadon::Utilities::Serializer& serializer, Utilities::VariantDictionary& resource_data) const override;
+
 		void remove_resource(ResourceHandle resource_handle) override;
 
 		const Resource* get_base_resource(ResourceHandle resource_handle) const override;

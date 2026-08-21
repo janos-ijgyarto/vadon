@@ -8,8 +8,6 @@ namespace Vadon::Core
 }
 namespace VadonEditor::Core
 {
-	class Editor;
-
 	class ProjectManager
 	{
 	public:
@@ -17,14 +15,15 @@ namespace VadonEditor::Core
 
 		const Vadon::Core::Project& get_active_project() const { return m_active_project; }
 	private:
-		ProjectManager(Editor& editor);
+		ProjectManager();
 
-		bool load_project(std::string_view root_path);
+		bool load_project(Vadon::Core::EngineCoreInterface& engine_core, std::string_view root_path);
 
-		Editor& m_editor;
 		Vadon::Core::Project m_active_project;
 
-		friend Editor;
+		// FIXME: find a better way to share between the two classes?
+		friend class AssetServer;
+		friend class Editor;
 	};
 }
 #endif

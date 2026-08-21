@@ -26,6 +26,7 @@ namespace VadonEditor::Core
 	struct Configuration;
 
 	class AssetManager;
+	class AssetServer;
 	class Logger;
 	class PluginManager;
 	class ProjectManager;
@@ -46,6 +47,7 @@ namespace VadonEditor::Core
 		const Configuration& get_configuration() const;
 
 		AssetManager& get_asset_manager();
+		AssetServer& get_asset_server();
 		Logger& get_logger();
 		PluginManager& get_plugin_manager();
 		ProjectManager& get_project_manager();

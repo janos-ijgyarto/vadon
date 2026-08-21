@@ -45,8 +45,6 @@ namespace Vadon::Private::Render::DirectX
 
 		GraphicsAPI& m_graphics_api;
 
-		BufferPool m_buffer_pool;
-
 		friend GraphicsAPI;
 	};
 }

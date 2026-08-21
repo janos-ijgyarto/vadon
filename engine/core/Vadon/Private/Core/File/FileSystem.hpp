@@ -34,6 +34,7 @@ namespace Vadon::Private::Core
 		bool add_existing_file(FileDatabaseHandle db_handle, const FileID& file_id, const FileInfo& info) override;
 		FileInfo get_file_info(FileDatabaseHandle db_handle, const FileID& file_id) const override;
 		bool does_file_exist(FileDatabaseHandle db_handle, const FileID& file_id) const override;
+		FileID find_file(FileDatabaseHandle db_handle, std::string_view path) const override;
 		void remove_file(FileDatabaseHandle db_handle, const FileID& file_id) override;
 
 		std::vector<FileID> get_all_files(FileDatabaseHandle db_handle) const override;
@@ -61,6 +62,7 @@ namespace Vadon::Private::Core
 			// TODO: anything else?
 
 			const FileInfo* find_file(const FileID& file_id) const;
+			FileID find_file(std::string_view path) const;
 		};
 
 		FileSystem(Vadon::Core::EngineCoreInterface& core);

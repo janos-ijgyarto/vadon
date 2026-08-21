@@ -53,7 +53,7 @@ namespace Vadon.Utilities
                         {
                             case System.Text.Json.JsonTokenType.String:
                                 {
-                                    parameters.Add(propertyName, $"\"{reader.GetString()}\"");
+                                    parameters.Add(propertyName, $"@'{reader.GetString()}'");
                                 }
                                 break;
                             case System.Text.Json.JsonTokenType.StartArray:
@@ -64,7 +64,7 @@ namespace Vadon.Utilities
                                     {                            
                                         if(reader.TokenType == System.Text.Json.JsonTokenType.String)
                                         {
-                                            stringList.Add($"\"{reader.GetString()}\"");
+                                            stringList.Add($"@'{reader.GetString()}");
                                             reader.Read();
                                         }
                                         else
@@ -155,34 +155,6 @@ namespace Vadon.Utilities
             QtPath = path;
         }
 
-        // NOTE: copied from Sharpmake.CommandLine.GetMethodsMapping
-        private static Dictionary<string, List<MethodInfo>> GetMethodsMapping(Type type, bool isStatic)
-        {
-            Dictionary<string, List<MethodInfo>> results = new Dictionary<string, List<MethodInfo>>(StringComparer.OrdinalIgnoreCase);
-
-            MethodInfo[] methodInfos = type.GetMethods();
-
-            foreach (MethodInfo methodInfo in methodInfos)
-            {
-                if (methodInfo.IsStatic != isStatic)
-                    continue;
-
-                CommandLine.Option[] options = methodInfo.GetCustomAttributes(typeof(CommandLine.Option), false) as CommandLine.Option[];
-                foreach (CommandLine.Option option in options)
-                {
-                    List<MethodInfo> optionsMethodInfo;
-                    if (!results.TryGetValue(option.Name, out optionsMethodInfo))
-                    {
-                        optionsMethodInfo = new List<MethodInfo>();
-                        results.Add(option.Name, optionsMethodInfo);
-                    }
-                    optionsMethodInfo.Add(methodInfo);
-                }
-            }
-            return results;
-        }
-
-        // NOTE: implementation partly copied from Sharpmake.CommandLine.Execute
         private static void ProcessConfigFile()
         {
             // FIXME: this is a bit hacky, only works for methods with 1 string argument
@@ -196,44 +168,14 @@ namespace Vadon.Utilities
                 return;
             }
 
-            Type type = typeof(ConfigurationParameters);
-            var paramMethods = GetMethodsMapping(typeof(ConfigurationParameters), true);
-
-            StringBuilder errors = new StringBuilder();
-
-            // use associated assembly
-            var assemblies = new List<Assembly> { type.Assembly };
-
             foreach(var (key, value) in parameters)
             {
-                List<MethodInfo> methodInfos;
-                if (paramMethods.TryGetValue(key, out methodInfos))
+                string commandString = $"/{key}";
+                if(string.IsNullOrEmpty(value) == false)
                 {
-                    foreach (MethodInfo methodInfo in methodInfos)
-                    {
-                        try
-                        {
-                            string executeCode = string.Format("{0}.{1}({2});", type.FullName.Replace("+", "."), methodInfo.Name, value);
-                            Action execute = Assembler.BuildDelegate<Action>(executeCode, type.Namespace, CommandLine.DefaultNamespaces.ToArray(), assemblies.ToArray());
-
-                            execute();
-                        }
-                        catch (Error e)
-                        {
-                            string[] parametersName = methodInfo.GetParameters().Select((ParameterInfo p) => p.ToString()).ToArray();
-                            errors.Append(string.Format("Config file option '/{0}' has invalid parameters '({1})', maybe not compatible with '({2})'" + Environment.NewLine + "\t",
-                                key,
-                                value,
-                                string.Join(", ", parametersName)));
-
-                            errors.Append(e.Message + Environment.NewLine);
-                        }
-                    } 
+                    commandString += $"({value})";
                 }
-            }
-            if (errors.Length != 0)
-            { 
-                throw new Error(errors.ToString());
+                Sharpmake.CommandLine.ExecuteOnType(typeof(ConfigurationParameters), commandString);
             }
         }
 

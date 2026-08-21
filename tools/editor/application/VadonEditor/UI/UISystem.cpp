@@ -25,6 +25,81 @@
 
 namespace VadonEditor::UI
 {
+	void UISystem::received_message(const QByteArray& data)
+	{
+		::Vadon::Foundation::EditorMessageReader message_reader(data.constData(), data.size());
+
+		switch (message_reader.get_current_category())
+		{
+		case ::Vadon::Foundation::EditorMessageCategory::PLATFORM:
+		{
+			const ::Vadon::Foundation::EditorPlatformMessageHeader* platform_message_header = reinterpret_cast<const ::Vadon::Foundation::EditorPlatformMessageHeader*>(message_reader.get_current_message_data());
+			switch (platform_message_header->message_type)
+			{
+			case ::Vadon::Foundation::EditorPlatformMessageType::MANAGER_WINDOW_REQUEST:
+			{
+				// Send the main viewport as our response
+				// TODO: allow clients to create and register other widgets!
+				const ::Vadon::Foundation::EditorPlatformManagerWindowRequest* window_request = reinterpret_cast<const ::Vadon::Foundation::EditorPlatformManagerWindowRequest*>(message_reader.get_current_message_data());
+
+				RenderClientInfo client_info;
+				client_info.application = &m_application;
+				client_info.client_id = window_request->id;
+
+				// FIXME: this is a very hacky solution
+				// Long-term we should have a proper system where plugins can manage
+				// the windows they requested, and we can clean them up in case of shutdown/crash/etc.
+				QVBoxLayout* viewport_layout = m_main_window->get_viewport_layout();
+
+				if (m_viewport_widget != nullptr)
+				{
+					// Remove previous widget
+					viewport_layout->removeWidget(m_viewport_widget);
+					m_viewport_widget->deleteLater();
+					m_viewport_widget = nullptr;
+				}
+
+				m_viewport_widget = new RenderWidget(m_main_window);
+				m_viewport_widget->register_client(client_info);
+
+				viewport_layout->addWidget(m_viewport_widget);
+
+				// Adjust splitter so the viewport is more clearly visible
+				{
+					QList<int> splitter_sizes = m_main_window->m_ui.viewportSplitter->sizes();
+					int total_size = 0;
+					for (int current_size : splitter_sizes)
+					{
+						total_size += current_size;
+					}
+
+					QList<int> new_sizes;
+					const int new_size = total_size / splitter_sizes.count();
+					for (qsizetype index = 0; index < splitter_sizes.count(); ++index)
+					{
+						new_sizes.push_back(new_size);
+					}
+
+					m_main_window->m_ui.viewportSplitter->setSizes(new_sizes);
+				}
+
+				::Vadon::Foundation::EditorPlatformManagerWindowRequest window_request_response;
+				window_request_response.message_type = ::Vadon::Foundation::EditorPlatformMessageType::MANAGER_WINDOW_REQUEST;
+				window_request_response.id = window_request->id;
+				window_request_response.handle = m_viewport_widget->winId();
+
+				VadonEditor::Network::MessageSerializer message_serializer;
+				message_serializer.write_message_trivial(::Vadon::Foundation::EditorMessageCategory::PLATFORM, window_request_response);
+
+				m_application.get_network_system().send_message(message_serializer);
+			}
+			break;
+			}
+		}
+		break;
+		}
+	}
+
 	UISystem::UISystem(Core::Application& application)
 		: m_application(application)
 		, m_animation_manager(application)
@@ -156,81 +231,6 @@ namespace VadonEditor::UI
 			}
 
 			m_main_window->m_ui.assetSplitter->setSizes(new_sizes);
-		}
-	}
-
-	void UISystem::received_message(const QByteArray& data)
-	{
-		::Vadon::Foundation::EditorMessageReader message_reader(data.constData(), data.size());
-
-		switch (message_reader.get_current_category())
-		{
-		case ::Vadon::Foundation::EditorMessageCategory::PLATFORM:
-		{
-			const ::Vadon::Foundation::EditorPlatformMessageHeader* platform_message_header = reinterpret_cast<const ::Vadon::Foundation::EditorPlatformMessageHeader*>(message_reader.get_current_message_data());
-			switch (platform_message_header->message_type)
-			{
-			case ::Vadon::Foundation::EditorPlatformMessageType::MANAGER_WINDOW_REQUEST:
-			{
-				// Send the main viewport as our response
-				// TODO: allow clients to create and register other widgets!
-				const ::Vadon::Foundation::EditorPlatformManagerWindowRequest* window_request = reinterpret_cast<const ::Vadon::Foundation::EditorPlatformManagerWindowRequest*>(message_reader.get_current_message_data());
-
-				RenderClientInfo client_info;
-				client_info.application = &m_application;
-				client_info.client_id = window_request->id;
-
-				// FIXME: this is a very hacky solution
-				// Long-term we should have a proper system where plugins can manage
-				// the windows they requested, and we can clean them up in case of shutdown/crash/etc.
-				QVBoxLayout* viewport_layout = m_main_window->get_viewport_layout();
-
-				if (m_viewport_widget != nullptr)
-				{
-					// Remove previous widget
-					viewport_layout->removeWidget(m_viewport_widget);
-					m_viewport_widget->deleteLater();
-					m_viewport_widget = nullptr;
-				}
-
-				m_viewport_widget = new RenderWidget(m_main_window);
-				m_viewport_widget->register_client(client_info);
-
-				viewport_layout->addWidget(m_viewport_widget);
-
-				// Adjust splitter so the viewport is more clearly visible
-				{
-					QList<int> splitter_sizes = m_main_window->m_ui.viewportSplitter->sizes();
-					int total_size = 0;
-					for (int current_size : splitter_sizes)
-					{
-						total_size += current_size;
-					}
-
-					QList<int> new_sizes;
-					const int new_size = total_size / splitter_sizes.count();
-					for (qsizetype index = 0; index < splitter_sizes.count(); ++index)
-					{
-						new_sizes.push_back(new_size);
-					}
-
-					m_main_window->m_ui.viewportSplitter->setSizes(new_sizes);
-				}
-
-				::Vadon::Foundation::EditorPlatformManagerWindowRequest window_request_response;
-				window_request_response.message_type = ::Vadon::Foundation::EditorPlatformMessageType::MANAGER_WINDOW_REQUEST;
-				window_request_response.id = window_request->id;
-				window_request_response.handle = m_viewport_widget->winId();
-
-				VadonEditor::Network::MessageSerializer message_serializer;
-				message_serializer.write_message_trivial(::Vadon::Foundation::EditorMessageCategory::PLATFORM, window_request_response);
-
-				m_application.get_network_system().send_message(message_serializer);
-			}
-			break;
-			}
-		}
-		break;
 		}
 	}
 

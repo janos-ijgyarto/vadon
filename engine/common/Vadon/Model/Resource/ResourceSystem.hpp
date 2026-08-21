@@ -61,6 +61,9 @@ namespace Vadon::Model
 		virtual bool save_resource(Vadon::Utilities::Serializer& serializer, ResourceHandle resource_handle) = 0;
 		virtual ResourceHandle load_resource(Vadon::Utilities::Serializer& serializer) = 0;
 
+		virtual bool save_resource_raw_data(Vadon::Utilities::Serializer& serializer, Utilities::VariantDictionary& resource_data) const = 0;
+		virtual bool load_resource_raw_data(Vadon::Utilities::Serializer& serializer, Utilities::VariantDictionary& resource_data) const = 0;
+
 		// NOTE: this effectively just unloads the resource, can always be reloaded via the ID
 		virtual void remove_resource(ResourceHandle resource_handle) = 0;
 

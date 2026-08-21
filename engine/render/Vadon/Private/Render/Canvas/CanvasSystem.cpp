@@ -1,5 +1,7 @@
 #include <Vadon/Private/Render/Canvas/CanvasSystem.hpp>
 
+#include <Vadon/Core/Configuration.hpp>
+
 #include <Vadon/Math/Vector/Rotate.hpp>
 
 #include <Vadon/Render/Canvas/Context.hpp>
@@ -410,6 +412,15 @@ namespace Vadon::Private::Render::Canvas
 
 	bool CanvasSystem::initialize()
 	{
+		// FIXME: this requires CanvasSystem to be explicitly aware of the renderer config
+		// Could instead make it agnostic and accept null handles from the Null backend?
+		// That approach would risk delaying an error until after initialization!
+		const bool is_renderer_disabled = Utilities::to_bool(m_engine_core.get_config().render_config.flags & Vadon::Core::RenderConfigurationFlags::DISABLE_RENDERING);
+		if (is_renderer_disabled == true)
+		{
+			return true;
+		}
+
 		// Create pipeline state
 		{
 			Vadon::Render::PipelineSystem& pipeline_system = m_engine_core.get_system<Vadon::Render::PipelineSystem>();

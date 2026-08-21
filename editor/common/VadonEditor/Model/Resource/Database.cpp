@@ -18,6 +18,30 @@
 
 namespace
 {
+	std::string get_filesystem_style_asset_extension(::Vadon::Foundation::ResourceFileInfo::Type file_type)
+	{
+		return std::format(".{}", ::Vadon::Foundation::ResourceFileInfo::get_file_extension(file_type));
+	}
+
+	::Vadon::Foundation::ResourceFileInfo::Type get_file_asset_type(const std::filesystem::path& path)
+	{
+		const std::string extension = path.extension().generic_string();
+		if (extension == get_filesystem_style_asset_extension(::Vadon::Foundation::ResourceFileInfo::Type::SCENE))
+		{
+			return ::Vadon::Foundation::ResourceFileInfo::Type::SCENE;
+		}
+		else if (extension == get_filesystem_style_asset_extension(::Vadon::Foundation::ResourceFileInfo::Type::RESOURCE))
+		{
+			return ::Vadon::Foundation::ResourceFileInfo::Type::RESOURCE;
+		}
+		else if (extension == get_filesystem_style_asset_extension(::Vadon::Foundation::ResourceFileInfo::Type::IMPORTED_FILE))
+		{
+			return ::Vadon::Foundation::ResourceFileInfo::Type::IMPORTED_FILE;
+		}
+
+		return ::Vadon::Foundation::ResourceFileInfo::Type::NONE;
+	}
+
 	std::string_view get_sanitized_json_key(std::string_view original_key)
 	{
 		const size_t separator_index = original_key.find('|');
@@ -126,23 +150,21 @@ namespace
 
 namespace VadonEditor::Model
 {
-	ResourceDatabase::ResourceDatabase(Core::Editor& editor)
-		: m_editor(editor)
+	ResourceDatabase::ResourceDatabase(Vadon::Core::EngineCoreInterface& engine_core, VadonEditor::Core::ProjectManager& project_manager)
+		: m_engine_core(engine_core)
+		, m_project_manager(project_manager)
 	{
 
 	}
 
 	bool ResourceDatabase::initialize()
 	{
-		Core::ProjectManager& project_manager = m_editor.get_project_manager();
-
-		Vadon::Core::EngineCoreInterface& engine_core = m_editor.get_engine_core();
-		Vadon::Core::FileSystem& file_system = engine_core.get_system<Vadon::Core::FileSystem>();
+		Vadon::Core::FileSystem& file_system = m_engine_core.get_system<Vadon::Core::FileSystem>();
 
 		// Create the databases for resources and assets
 		{
 			Vadon::Core::FileDatabaseInfo resource_db_info;
-			resource_db_info.root_path = project_manager.get_active_project().root_path;
+			resource_db_info.root_path = m_project_manager.get_active_project().root_path;
 			resource_db_info.type = Vadon::Core::FileDatabaseType::FILESYSTEM;
 
 			m_file_databases[static_cast<size_t>(FileDatabaseType::RESOURCE)] = file_system.create_database(resource_db_info);
@@ -150,7 +172,7 @@ namespace VadonEditor::Model
 
 		{
 			Vadon::Core::FileDatabaseInfo asset_db_info;
-			asset_db_info.root_path = project_manager.get_active_project().root_path;
+			asset_db_info.root_path = m_project_manager.get_active_project().root_path;
 			asset_db_info.type = Vadon::Core::FileDatabaseType::FILESYSTEM;
 
 			m_file_databases[static_cast<size_t>(FileDatabaseType::ASSET_FILE)] = file_system.create_database(asset_db_info);
@@ -187,7 +209,7 @@ namespace VadonEditor::Model
 		// Save via the asset library
 		const Vadon::Core::FileDatabaseHandle resource_file_db = get_database(FileDatabaseType::RESOURCE);
 
-		Vadon::Core::FileSystem& file_system = m_editor.get_engine_core().get_system<Vadon::Core::FileSystem>();
+		Vadon::Core::FileSystem& file_system = m_engine_core.get_system<Vadon::Core::FileSystem>();
 		if (file_system.save_file(resource_file_db, resource_info.id, resource_file_buffer) == false)
 		{
 			resource_system.log_error("Editor resource database: failed to save resource data to file!\n");
@@ -202,7 +224,7 @@ namespace VadonEditor::Model
 		const Vadon::Core::FileDatabaseHandle resource_file_db = get_database(FileDatabaseType::RESOURCE);
 
 		// First make sure we have a valid file for this resource
-		Vadon::Core::FileSystem& file_system = m_editor.get_engine_core().get_system<Vadon::Core::FileSystem>();
+		Vadon::Core::FileSystem& file_system = m_engine_core.get_system<Vadon::Core::FileSystem>();
 		const Vadon::Core::FileInfo resource_file_info = file_system.get_file_info(resource_file_db, resource_id);
 		if (resource_file_info.is_valid() == false)
 		{
@@ -210,10 +232,8 @@ namespace VadonEditor::Model
 			return Vadon::Model::ResourceHandle();
 		}
 
-		// Check whether a temp file is also available
-		Core::ProjectManager& project_manager = m_editor.get_project_manager();
-		
-		std::filesystem::path temp_file_path = project_manager.get_active_project().root_path;
+		// Check whether a temp file is also available		
+		std::filesystem::path temp_file_path = m_project_manager.get_active_project().root_path;
 		temp_file_path /= ".vadon/temp/model";
 		temp_file_path /= Vadon::Utilities::uuid_to_hex_string(resource_id) + ".vdtmp";
 
@@ -280,15 +300,23 @@ namespace VadonEditor::Model
 	{
 		const Vadon::Core::FileDatabaseHandle asset_db = get_database(FileDatabaseType::ASSET_FILE);
 
-		Vadon::Core::FileSystem& file_system = m_editor.get_engine_core().get_system<Vadon::Core::FileSystem>();
+		Vadon::Core::FileSystem& file_system = m_engine_core.get_system<Vadon::Core::FileSystem>();
 		return file_system.get_file_info(asset_db, resource_id);
 	}
 
-	bool ResourceDatabase::load_file_resource_data(Vadon::Model::ResourceSystem& /*resource_system*/, Vadon::Model::ResourceID resource_id, Vadon::Core::RawFileDataBuffer& file_data)
+	bool ResourceDatabase::load_resource_data(Vadon::Model::ResourceID resource_id, Vadon::Core::RawFileDataBuffer& file_data) const
+	{
+		const Vadon::Core::FileDatabaseHandle resource_db = get_database(FileDatabaseType::RESOURCE);
+
+		Vadon::Core::FileSystem& file_system = m_engine_core.get_system<Vadon::Core::FileSystem>();
+		return file_system.load_file(resource_db, resource_id, file_data);
+	}
+
+	bool ResourceDatabase::load_file_resource_data(Vadon::Model::ResourceID resource_id, Vadon::Core::RawFileDataBuffer& file_data) const
 	{
 		const Vadon::Core::FileDatabaseHandle asset_db = get_database(FileDatabaseType::ASSET_FILE);
 
-		Vadon::Core::FileSystem& file_system = m_editor.get_engine_core().get_system<Vadon::Core::FileSystem>();
+		Vadon::Core::FileSystem& file_system = m_engine_core.get_system<Vadon::Core::FileSystem>();
 		return file_system.load_file(asset_db, resource_id, file_data);
 	}
 
@@ -308,8 +336,14 @@ namespace VadonEditor::Model
 		Vadon::Core::RawFileDataBuffer resource_file_buffer;
 		const Vadon::Core::FileDatabaseHandle file_db = get_database(FileDatabaseType::RESOURCE);
 
-		Vadon::Core::EngineCoreInterface& engine_core = m_editor.get_engine_core();
-		Vadon::Core::FileSystem& file_system = engine_core.get_system<Vadon::Core::FileSystem>();
+		Vadon::Core::FileSystem& file_system = m_engine_core.get_system<Vadon::Core::FileSystem>();
+
+		const Vadon::Core::FileID existing_file_id = file_system.find_file(file_db, path);
+		if (existing_file_id.is_valid() == true)
+		{
+			// Resource already imported to DB
+			return existing_file_id;
+		}
 
 		const std::string file_abs_path = file_system.get_absolute_path(file_db, path);
 
@@ -339,7 +373,7 @@ namespace VadonEditor::Model
 
 		Vadon::Model::ResourceInfo imported_resource_info;
 
-		Vadon::Model::ResourceSystem& resource_system = engine_core.get_system<Vadon::Model::ResourceSystem>();
+		Vadon::Model::ResourceSystem& resource_system = m_engine_core.get_system<Vadon::Model::ResourceSystem>();
 		if (resource_system.load_resource_info(*serializer_instance, imported_resource_info) == false)
 		{
 			Vadon::Core::Logger::log_error("Editor resource database: failed to load resource info!\n");
@@ -363,6 +397,45 @@ namespace VadonEditor::Model
 		return imported_resource_info.id;
 	}
 
+	bool ResourceDatabase::import_project_resources()
+	{
+		// Import all resources in the project
+		// FIXME: make use of a cache so we don't have to load every resource to get its ID
+		// Will need to check whether something changed between the cache and the actual files
+		const std::filesystem::path root_fs_path(m_project_manager.get_active_project().root_path);
+
+		bool all_valid = true;
+
+		for (const auto& directory_entry : std::filesystem::recursive_directory_iterator(root_fs_path))
+		{
+			if (directory_entry.is_regular_file() == false)
+			{
+				continue;
+			}
+
+			const ::Vadon::Foundation::ResourceFileInfo::Type current_asset_type = get_file_asset_type(directory_entry.path());
+			if (current_asset_type != ::Vadon::Foundation::ResourceFileInfo::Type::NONE)
+			{
+				const std::string relative_path = std::filesystem::relative(directory_entry.path(), root_fs_path).generic_string();
+				all_valid &= import_resource(relative_path).is_valid();
+			}
+		}
+
+		return all_valid;
+	}
+
+	std::vector<Vadon::Model::ResourceID> ResourceDatabase::get_resource_list() const
+	{
+		std::vector<Vadon::Model::ResourceID> resource_list;
+
+		for (const auto& entry_pair : m_resource_entry_lookup)
+		{
+			resource_list.push_back(entry_pair.first);
+		}
+
+		return resource_list;
+	}
+
 	bool ResourceDatabase::sanitize_editor_resource_file(Vadon::Core::RawFileDataBuffer& file_data)
 	{
 		return simdjson_sanitize_json_data(file_data);
@@ -375,7 +448,7 @@ namespace VadonEditor::Model
 		Vadon::Core::FileInfo file_info;
 		file_info.path = path;
 
-		Vadon::Core::FileSystem& file_system = m_editor.get_engine_core().get_system<Vadon::Core::FileSystem>();
+		Vadon::Core::FileSystem& file_system = m_engine_core.get_system<Vadon::Core::FileSystem>();
 		if (file_system.add_existing_file(resource_file_db, resource_info.id, file_info) == false)
 		{
 			// TODO: log error?
@@ -409,8 +482,7 @@ namespace VadonEditor::Model
 		const Vadon::Core::FileDatabaseHandle resource_db = get_database(FileDatabaseType::RESOURCE);
 		const Vadon::Core::FileDatabaseHandle asset_db = get_database(FileDatabaseType::ASSET_FILE);
 
-		Vadon::Core::EngineCoreInterface& engine_core = m_editor.get_engine_core();
-		Vadon::Core::FileSystem& file_system = engine_core.get_system<Vadon::Core::FileSystem>();
+		Vadon::Core::FileSystem& file_system = m_engine_core.get_system<Vadon::Core::FileSystem>();
 
 		const Vadon::Core::FileInfo resource_file_info = file_system.get_file_info(resource_db, file_id);
 		const std::filesystem::path resource_file_path = std::filesystem::path(resource_file_info.path).generic_string();

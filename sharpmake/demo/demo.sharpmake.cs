@@ -80,6 +80,7 @@ namespace Vadon.Demo
             }
 
             // Adding macro to export the plugin functions
+            conf.Defines.Add("VADON_EDITOR_ASSET_SERVER_PLUGIN_IMPLEMENTATION");
             conf.Defines.Add("VADON_EDITOR_SIMULATOR_PLUGIN_IMPLEMENTATION");
 
             conf.AddPrivateDependency<Common>(target);
@@ -98,20 +99,13 @@ namespace Vadon.Demo
             // TODO: find some way for the resolver to generate the JSON contents?
             string outputFileName = conf.TargetFileFullNameWithExtension + ".vdeplugin";
 
-            FileInfo outputFileInfo = new FileInfo(Path.Combine(conf.TargetPath, outputFileName));
-
-            MemoryStream memoryStream = new MemoryStream();
-            StreamWriter streamWriter = new StreamWriter(memoryStream);
-
             string configString = $"{conf.Target.Name}";
 
             string jsonString = $@"{{
     ""configuration"" : ""{configString}""
 }}";
-            streamWriter.Write(jsonString);
-            streamWriter.Flush();
  
-            Sharpmake.Util.FileWriteIfDifferent(outputFileInfo, memoryStream);
+            Utilities.UtilityFunctions.FileWriteIfDifferent(Path.Combine(conf.TargetPath, outputFileName), jsonString);
         }
 
         public override void PostResolve()
@@ -167,20 +161,13 @@ namespace Vadon.Demo
             // TODO: find some way for the resolver to generate the JSON contents?
             string outputFileName = conf.TargetFileFullNameWithExtension + ".vdgexe";
 
-            FileInfo outputFileInfo = new FileInfo(Path.Combine(conf.TargetPath, outputFileName));
-
-            MemoryStream memoryStream = new MemoryStream();
-            StreamWriter streamWriter = new StreamWriter(memoryStream);
-
             string configString = $"{conf.Target.Name}";
 
             string jsonString = $@"{{
     ""configuration"" : ""{configString}""
 }}";
-            streamWriter.Write(jsonString);
-            streamWriter.Flush();
  
-            Sharpmake.Util.FileWriteIfDifferent(outputFileInfo, memoryStream);
+            Utilities.UtilityFunctions.FileWriteIfDifferent(Path.Combine(conf.TargetPath, outputFileName), jsonString);
         }
 
         public override void PostResolve()

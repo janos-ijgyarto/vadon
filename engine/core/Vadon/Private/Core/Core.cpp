@@ -147,7 +147,6 @@ namespace Vadon::Private::Core
             return false;
         }
 
-        // TODO: use configuration to select graphics backend
         m_graphics_api = Render::GraphicsAPIBase::get_graphics_api(*this);
         if (m_graphics_api->initialize() == false)
         {

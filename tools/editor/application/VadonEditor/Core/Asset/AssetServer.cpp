@@ -1,4 +1,4 @@
-#include <VadonEditor/Simulator/Simulator.hpp>
+#include <VadonEditor/Core/Asset/AssetServer.hpp>
 
 #include <VadonEditor/Core/Application.hpp>
 #include <VadonEditor/Core/CommandLine.hpp>
@@ -12,108 +12,33 @@
 #include <VadonEditor/Network/NetworkSystem.hpp>
 #include <VadonEditor/Network/Message/MessageSerializer.hpp>
 
-#include <Vadon/Foundation/Editor/Simulator/LibraryInterface.hpp>
-#include <Vadon/Foundation/Editor/Simulator/PluginInterface.hpp>
+#include <Vadon/Foundation/Editor/Asset/LibraryInterface.hpp>
+#include <Vadon/Foundation/Editor/Asset/PluginInterface.hpp>
+
 #include <Vadon/Foundation/Editor/Network/Message/Plugin.hpp>
+#include <Vadon/Foundation/Editor/Network/Message/AssetServer.hpp>
 
 #include <QCoreApplication>
-#include <QDebug>
 #include <QProcess>
-#include <QTimer>
 
-namespace
+namespace VadonEditor::Core
 {
-	// NOTE: null implementation of plugin in case no plugin path was provided (useful for testing)
-	class NullPlugin : public Vadon::Foundation::EditorSimulatorPluginInterface
-	{
-	public:
-		NullPlugin(VadonEditor::Core::Application& application)
-			: Vadon::Foundation::EditorSimulatorPluginInterface(application.get_simulator())
-		{
-		}
-
-		bool initialize(const char* project_path) override
-		{
-			// TODO: test sending message to editor!
-			Q_UNUSED(project_path);
-			return true;
-		}
-
-		void update() override
-		{
-			// TODO: anything?
-		}
-
-		void shutdown() override
-		{
-			// TODO: anything?
-		}
-
-		void process_message_from_editor(const char* data, size_t size) override
-		{
-			::Vadon::Foundation::EditorMessageReader message_reader(data, size);
-			switch (message_reader.get_current_category())
-			{
-			case ::Vadon::Foundation::EditorMessageCategory::TEST:
-			{
-				// Send back a test message of our own
-				::Vadon::Foundation::EditorMessageTest test_message_in;
-
-				qInfo() << "Server test message received: number = " << test_message_in.number << ", other number = " << test_message_in.other_number;
-
-				::Vadon::Foundation::EditorMessageTest test_message_out;
-				test_message_out.number = 2 * test_message_in.number;
-				test_message_out.other_number = 3 * test_message_in.other_number;
-
-				VadonEditor::Network::MessageSerializer serializer;
-				serializer.write_message_trivial(::Vadon::Foundation::EditorMessageCategory::TEST, test_message_out);
-
-				m_simulator.dispatch_message_to_editor(serializer.get_buffer().data(), serializer.get_buffer().size());
-			}
-			break;
-			}
-		}
-
-		void editor_connected() override
-		{
-			// TODO
-		}
-
-		void editor_disconnected()  override
-		{
-			QCoreApplication::quit();
-		}
-
-		const Vadon::Foundation::TypeMetadataRegistry& get_metadata_registry() const { return m_metadata_registry; }
-	private:
-		::Vadon::Foundation::NullMetadataRegistry m_metadata_registry;
-	};
-
-	struct SimulatorSettings
-	{
-		std::string plugin_path;
-	};
-}
-
-namespace VadonEditor::Simulator
-{
-	struct Simulator::Internal
+	struct AssetServer::Internal 
 	{
 		Core::Application& m_application;
 
-		// TODO: split contents into editor and simulator objects (only one or the other will be initialized
-		QProcess m_simulator_process;
+		// TODO: split contents into editor and asset server objects (only one or the other will be initialized)
+		QProcess m_asset_server_process;
 
-		Core::PluginHandle m_simulator_plugin;
-		VADONEDITOR_API_FUNCTION_POINTER(VadonEditorSimulatorPluginEntrypoint) m_entrypoint_func;
-		VADONEDITOR_API_FUNCTION_POINTER(VadonEditorSimulatorPluginExit) m_exit_func;
+		Core::PluginHandle m_asset_server_plugin;
+		VADONEDITOR_API_FUNCTION_POINTER(VadonEditorAssetServerPluginEntrypoint) m_entrypoint_func;
+		VADONEDITOR_API_FUNCTION_POINTER(VadonEditorAssetServerPluginExit) m_exit_func;
 
-		::Vadon::Foundation::EditorSimulatorPluginInterface* m_plugin_interface;
-		QTimer m_plugin_timer;
+		::Vadon::Foundation::EditorAssetServerPluginInterface* m_plugin_interface;
 
 		Internal(Core::Application& application)
 			: m_application(application)
-			, m_simulator_plugin(Core::PluginManager::c_invalid_plugin_handle)
+			, m_asset_server_plugin(Core::PluginManager::c_invalid_plugin_handle)
 			, m_entrypoint_func(nullptr)
 			, m_exit_func(nullptr)
 			, m_plugin_interface(nullptr)
@@ -142,16 +67,16 @@ namespace VadonEditor::Simulator
 			Core::PluginInfo plugin_info;
 			plugin_info.path = editor_plugin_info->path;
 
-			m_simulator_plugin = plugin_manager.load_plugin(plugin_info);
-			if (m_simulator_plugin == Core::PluginManager::c_invalid_plugin_handle)
+			m_asset_server_plugin = plugin_manager.load_plugin(plugin_info);
+			if (m_asset_server_plugin == Core::PluginManager::c_invalid_plugin_handle)
 			{
-				qCritical() << "Simulator failed to load plugin!";
+				qCritical() << "Asset server failed to load plugin!";
 				unload_plugin();
 				return false;
 			}
 
 			// FIXME: wrap this in a more concise macro?
-			m_entrypoint_func = reinterpret_cast<VADONEDITOR_API_FUNCTION_POINTER(VadonEditorSimulatorPluginEntrypoint)>(plugin_manager.get_plugin_function(m_simulator_plugin, VADONEDITOR_API_FUNCTION_NAME(VadonEditorSimulatorPluginEntrypoint)));
+			m_entrypoint_func = reinterpret_cast<VADONEDITOR_API_FUNCTION_POINTER(VadonEditorAssetServerPluginEntrypoint)>(plugin_manager.get_plugin_function(m_asset_server_plugin, VADONEDITOR_API_FUNCTION_NAME(VadonEditorAssetServerPluginEntrypoint)));
 			if (m_entrypoint_func == nullptr)
 			{
 				qCritical() << "Failed to get entrypoint function address!";
@@ -159,7 +84,7 @@ namespace VadonEditor::Simulator
 				return false;
 			}
 
-			m_exit_func = reinterpret_cast<VADONEDITOR_API_FUNCTION_POINTER(VadonEditorSimulatorPluginExit)>(plugin_manager.get_plugin_function(m_simulator_plugin, VADONEDITOR_API_FUNCTION_NAME(VadonEditorSimulatorPluginExit)));
+			m_exit_func = reinterpret_cast<VADONEDITOR_API_FUNCTION_POINTER(VadonEditorAssetServerPluginExit)>(plugin_manager.get_plugin_function(m_asset_server_plugin, VADONEDITOR_API_FUNCTION_NAME(VadonEditorAssetServerPluginExit)));
 			if (m_exit_func == nullptr)
 			{
 				qCritical() << "Failed to get exit function address!";
@@ -170,7 +95,7 @@ namespace VadonEditor::Simulator
 			if (m_entrypoint_func != nullptr)
 			{
 				// Plugin will create its interface and return it to us
-				m_plugin_interface = m_entrypoint_func(&m_application.get_simulator());
+				m_plugin_interface = m_entrypoint_func(&m_application.get_asset_server());
 			}
 
 			return true;
@@ -215,7 +140,7 @@ namespace VadonEditor::Simulator
 					case ::Vadon::Foundation::EditorMessageCategory::PLUGIN:
 					{
 						const ::Vadon::Foundation::EditorPluginMessageHeader* plugin_message_header = reinterpret_cast<const ::Vadon::Foundation::EditorPluginMessageHeader*>(message_reader.get_current_message_data());
-						if (plugin_message_header->plugin_type != ::Vadon::Foundation::EditorPluginMessageSource::SIMULATOR)
+						if (plugin_message_header->plugin_type != ::Vadon::Foundation::EditorPluginMessageSource::ASSET_SERVER)
 						{
 							return;
 						}
@@ -226,7 +151,6 @@ namespace VadonEditor::Simulator
 						{
 							// TODO: run shutdown code in plugin
 							// Stop timer so it doesn't try to update during shutdown
-							m_plugin_timer.stop();
 							m_application.request_quit(0);
 							return;
 						}
@@ -237,7 +161,7 @@ namespace VadonEditor::Simulator
 					}
 
 					// Pass on to plugin
-					// TODO: any messages that we should handle in the simulator?
+					// TODO: any messages that we should handle in the asset server?
 					m_plugin_interface->process_message_from_editor(data.data(), data.size());
 				}
 			);
@@ -248,31 +172,26 @@ namespace VadonEditor::Simulator
 			// Send message back to editor
 			{
 				::Vadon::Foundation::EditorPluginMessageInit init_message;
-				init_message.plugin_type = ::Vadon::Foundation::EditorPluginMessageSource::SIMULATOR;
+				init_message.plugin_type = ::Vadon::Foundation::EditorPluginMessageSource::ASSET_SERVER;
 				init_message.message_type = ::Vadon::Foundation::EditorPluginMessageType::PLUGIN_INIT;
 				init_message.error_code = 0;
 
 				VadonEditor::Network::MessageSerializer serializer;
 				serializer.write_message_trivial(::Vadon::Foundation::EditorMessageCategory::PLUGIN, init_message);
 
-				m_application.get_simulator().dispatch_message_to_editor(serializer.get_buffer().data(), serializer.get_buffer().size());
+				m_application.get_asset_server().dispatch_message_to_editor(serializer.get_buffer().data(), serializer.get_buffer().size());
 			}
 
 			return true;
 		}
 
-		void update()
-		{
-			m_plugin_interface->update();
-		}
-
 		void shutdown()
 		{
-			// Make sure we stop the simulator
-			stop_simulator();
+			// Make sure we stop the asset server
+			stop_asset_server();
 		}
 
-		bool run_simulator(const SimulatorSettings& settings)
+		bool run_asset_server(const AssetServerSettings& settings)
 		{
 			const Core::Configuration& configuration = m_application.get_configuration();
 
@@ -290,16 +209,16 @@ namespace VadonEditor::Simulator
 			{
 			case Core::ApplicationMode::EDITOR:
 			{
-				if (m_simulator_process.state() != QProcess::NotRunning)
+				if (m_asset_server_process.state() != QProcess::NotRunning)
 				{
-					qWarning() << "Simulator already running!";
+					qWarning() << "Asset server already running!";
 					return true;
 				}
 
 				QString program_path = QCoreApplication::applicationFilePath();
-				m_simulator_process.setProgram(program_path);
+				m_asset_server_process.setProgram(program_path);
 
-				QStringList arguments{ QString("--%1").arg(Core::CommandLineState::get_parameter_key(Core::CommandLineParameter::IS_SIMULATOR)) };
+				QStringList arguments{ QString("--%1").arg(Core::CommandLineState::get_parameter_key(Core::CommandLineParameter::IS_ASSET_SERVER)) };
 				arguments.push_back(QString("--%1").arg(Core::CommandLineState::get_parameter_key(Core::CommandLineParameter::STARTUP_PROJECT_PATH)));
 				arguments.push_back(project_info.get_project_file_path());
 
@@ -311,37 +230,28 @@ namespace VadonEditor::Simulator
 					arguments.push_back(QString("--%1").arg(Core::CommandLineState::get_parameter_key(Core::CommandLineParameter::DEBUG_BREAK_ON_INIT)));
 				}
 
-				m_simulator_process.setArguments(arguments);
+				m_asset_server_process.setArguments(arguments);
 
-				QObject::connect(&m_simulator_process, &QProcess::aboutToClose, [this]() { cleanup_process(); });
-				QObject::connect(&m_simulator_process, &QProcess::errorOccurred, [this](QProcess::ProcessError error) { process_error(error); });
-				
+				QObject::connect(&m_asset_server_process, &QProcess::aboutToClose, [this]() { cleanup_process(); });
+				QObject::connect(&m_asset_server_process, &QProcess::errorOccurred, [this](QProcess::ProcessError error) { process_error(error); });
+
 				// TODO: connect to standard outputs as well?
 
-				m_simulator_process.start(QIODevice::ReadOnly);
+				m_asset_server_process.start(QIODevice::ReadOnly);
 			}
 			break;
-			case Core::ApplicationMode::SIMULATOR:
+			case Core::ApplicationMode::ASSET_SERVER:
 			{
-				// We are the simulator, load plugin!
+				// We are the asset server, load plugin!
 				if (run_plugin(settings.configuration_name) == false)
 				{
 					return false;
 				}
-
-				// Start timer to update the plugin
-				QObject::connect(&m_plugin_timer, &QTimer::timeout,
-					[this]()
-					{
-						update();
-					}
-				);
-				m_plugin_timer.start();
 			}
 			break;
 			}
 
-			qDebug() << "Simulator started";
+			qDebug() << "Asset server started";
 
 			return true;
 		}
@@ -353,13 +263,13 @@ namespace VadonEditor::Simulator
 			{
 			case Core::ApplicationMode::EDITOR:
 			{
-				if (m_simulator_process.state() != QProcess::NotRunning)
+				if (m_asset_server_process.state() != QProcess::NotRunning)
 				{
 					return true;
 				}
 			}
 			break;
-			case Core::ApplicationMode::SIMULATOR:
+			case Core::ApplicationMode::ASSET_SERVER:
 			{
 				if (m_plugin_interface != nullptr)
 				{
@@ -372,16 +282,16 @@ namespace VadonEditor::Simulator
 			return false;
 		}
 
-		void stop_simulator()
+		void stop_asset_server()
 		{
 			const Core::Configuration& configuration = m_application.get_configuration();
 			switch (configuration.mode)
 			{
 			case Core::ApplicationMode::EDITOR:
 			{
-				if (m_simulator_process.state() == QProcess::ProcessState::NotRunning)
+				if (m_asset_server_process.state() == QProcess::ProcessState::NotRunning)
 				{
-					// Simulator is already turned off
+					// Asset server is already turned off
 					return;
 				}
 
@@ -390,7 +300,7 @@ namespace VadonEditor::Simulator
 					VadonEditor::Network::MessageSerializer message_serializer;
 
 					::Vadon::Foundation::EditorPluginMessageShutdown shutdown_message;
-					shutdown_message.plugin_type = ::Vadon::Foundation::EditorPluginMessageSource::SIMULATOR;
+					shutdown_message.plugin_type = ::Vadon::Foundation::EditorPluginMessageSource::ASSET_SERVER;
 					shutdown_message.message_type = ::Vadon::Foundation::EditorPluginMessageType::PLUGIN_SHUTDOWN;
 
 					message_serializer.write_message_trivial(::Vadon::Foundation::EditorMessageCategory::PLUGIN, shutdown_message);
@@ -399,22 +309,22 @@ namespace VadonEditor::Simulator
 				}
 
 				// Wait for process to finish
-				if (m_simulator_process.waitForFinished() == false)
+				if (m_asset_server_process.waitForFinished() == false)
 				{
-					qCritical() << "Error shutting down simulator!";
+					qCritical() << "Error shutting down asset server!";
 				}
 
-				if (m_simulator_process.exitStatus() == QProcess::ExitStatus::NormalExit)
+				if (m_asset_server_process.exitStatus() == QProcess::ExitStatus::NormalExit)
 				{
-					qDebug() << "Simulator process exited with " << m_simulator_process.exitCode();
+					qDebug() << "Asset server process exited with " << m_asset_server_process.exitCode();
 				}
 				else
 				{
-					qCritical() << "Simulator process crashed!";
+					qCritical() << "Asset server process crashed!";
 				}
 			}
 			break;
-			case Core::ApplicationMode::SIMULATOR:
+			case Core::ApplicationMode::ASSET_SERVER:
 			{
 				if (m_plugin_interface == nullptr)
 				{
@@ -446,59 +356,83 @@ namespace VadonEditor::Simulator
 
 		void unload_plugin()
 		{
-			if (m_simulator_plugin != Core::PluginManager::c_invalid_plugin_handle)
+			if (m_asset_server_plugin != Core::PluginManager::c_invalid_plugin_handle)
 			{
-				m_application.get_plugin_manager().unload_plugin(m_simulator_plugin);
-				m_simulator_plugin = Core::PluginManager::c_invalid_plugin_handle;
+				m_application.get_plugin_manager().unload_plugin(m_asset_server_plugin);
+				m_asset_server_plugin = Core::PluginManager::c_invalid_plugin_handle;
 			}
 		}
 
 		void cleanup_process()
 		{
 			// TODO: anything else?
-			qInfo() << "Simulator process shutting down";
+			qInfo() << "Asset server process shutting down";
 		}
 
 		void process_error(QProcess::ProcessError error)
 		{
 			// TODO: anything else?
-			qCritical() << "Error running simulator process: " << error;
+			qCritical() << "Error running asset server process: " << error;
+		}
+
+		void export_project_data(const QString& output_path)
+		{
+			const Core::Configuration& configuration = m_application.get_configuration();
+			if (configuration.mode != Core::ApplicationMode::EDITOR)
+			{
+				return;
+			}
+
+			// Send message to plugin
+			VadonEditor::Network::MessageSerializer serializer;
+
+			::Vadon::Foundation::EditorAssetServerMessageExportData export_data_message;
+			export_data_message.message_type = ::Vadon::Foundation::EditorAssetServerMessageType::EXPORT_DATA;
+			export_data_message.output_path_length = output_path.size();
+
+			// FIXME: create a more elegant way to add a string to a message
+			char* message_data = serializer.allocate_message(::Vadon::Foundation::EditorMessageCategory::ASSET_SERVER, sizeof(::Vadon::Foundation::EditorAssetServerMessageExportData) + export_data_message.output_path_length);
+			memcpy(message_data, &export_data_message, sizeof(::Vadon::Foundation::EditorAssetServerMessageExportData));
+			memcpy(message_data + sizeof(::Vadon::Foundation::EditorAssetServerMessageExportData), output_path.toUtf8().constData(), export_data_message.output_path_length);
+
+			m_application.get_network_system().send_message(serializer);
 		}
 	};
 
-	Simulator::~Simulator() = default;
+	AssetServer::~AssetServer() = default;
 
-	bool Simulator::run_simulator(const SimulatorSettings& settings)
-	{
-		return m_internal->run_simulator(settings);
-	}
-
-	bool Simulator::is_running() const
-	{
-		return m_internal->is_running();
-	}
-
-	void Simulator::stop_simulator()
-	{
-		m_internal->stop_simulator();
-	}
-
-	::Vadon::Foundation::EditorSimulatorPluginInterface* Simulator::get_plugin_interface() const
-	{
-		return m_internal->m_plugin_interface;
-	}
-
-	void Simulator::dispatch_message_to_editor(const char* data, size_t size)
+	void AssetServer::dispatch_message_to_editor(const char* data, size_t size)
 	{
 		m_internal->m_application.get_network_system().send_message(QByteArrayView(data, size));
 	}
 
-	Simulator::Simulator(Core::Application& application)
-		: m_internal(std::make_unique<Internal>(application))
+	bool AssetServer::run_asset_server(const AssetServerSettings& settings)
 	{
+		return m_internal->run_asset_server(settings);
 	}
 
-	bool Simulator::initialize()
+	bool AssetServer::is_running() const
+	{
+		return m_internal->is_running();
+	}
+
+	void AssetServer::stop_asset_server()
+	{
+		m_internal->stop_asset_server();
+	}
+
+	void AssetServer::export_project_data(const QString& output_path)
+	{
+		m_internal->export_project_data(output_path);
+	}
+
+	AssetServer::AssetServer(Core::Application& application)
+		: m_internal(std::make_unique<Internal>(application))
+	{
+
+	}
+
+	bool AssetServer::initialize()
 	{
 		if (m_internal->initialize() == false)
 		{
@@ -508,7 +442,7 @@ namespace VadonEditor::Simulator
 		return true;
 	}
 
-	void Simulator::shutdown()
+	void AssetServer::shutdown()
 	{
 		m_internal->shutdown();
 	}

@@ -29,8 +29,7 @@ namespace VadonEditor::Core
 
 		Internal(Editor& editor, Vadon::Core::EngineCoreInterface& engine_core)
 			: m_engine_core(engine_core)
-			, m_project_manager(editor)
-			, m_resource_system(editor)
+			, m_resource_system(editor, engine_core, m_project_manager)
 			, m_scene_system(editor)
 		{
 
@@ -61,7 +60,7 @@ namespace VadonEditor::Core
 
 	bool Editor::load_project(std::string_view root_path)
 	{
-		if (get_project_manager().load_project(root_path) == false)
+		if (get_project_manager().load_project(get_engine_core(), root_path) == false)
 		{
 			return false;
 		}
