@@ -17,6 +17,8 @@ namespace VadonEditor::UI
 		void closeEvent(QCloseEvent* event) override;
 	private slots:
 		void internal_name_changed(const QString& text);
+		void component_filter_text_changed(const QString& text);
+
 		void add_component_clicked();
 		void new_component_selected(const QUuid& component_type);
 
@@ -28,6 +30,7 @@ namespace VadonEditor::UI
 		bool update_title();
 
 		bool internal_add_component_widget(Model::Component* component);
+		void sort_component_widgets();
 
 		void store_entity_data();
 

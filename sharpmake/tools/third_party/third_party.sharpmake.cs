@@ -12,10 +12,29 @@ namespace Vadon.Tools.ThirdParty
             AddTargets(Target.GetDefaultTargets());
         }
 
+        [ConfigurePriority(ConfigurePriorities.All)]
         [Sharpmake.Configure()]
         virtual public void ConfigureAll(Configuration conf, Target target)
         {
             conf.Name = "[target.Optimization]";
+        }
+
+        [ConfigurePriority(ConfigurePriorities.Platform)]
+        [Configure(Platform.win64)]
+        public virtual void ConfigureWin64(Configuration conf, Target target)
+        {
+        }
+
+        [ConfigurePriority(ConfigurePriorities.Optimization)]
+        [Configure(Optimization.Debug)]
+        public virtual void ConfigureDebug(Configuration conf, Target target)
+        {
+        }
+
+        [ConfigurePriority(ConfigurePriorities.Optimization)]
+        [Configure(Optimization.Release)]
+        public virtual void ConfigureRelease(Configuration conf, Target target)
+        {
         }
     }
 
@@ -57,13 +76,16 @@ namespace Vadon.Tools.ThirdParty
             conf.IncludePaths.Add(Path.Combine(QtPath, $"include/Qt{ModuleName}"));
 
             conf.TargetFileName = $"Qt6{ModuleName}";
-            if(target.Optimization == Optimization.Debug)
-            {
-                conf.TargetFileName += "d";
-            }
 
             conf.TargetPath = Path.Combine(QtPath, "bin");
             conf.TargetLibraryPath = Path.Combine(QtPath, "lib");
+        }
+
+        public override void ConfigureDebug(Configuration conf, Target target)
+        {
+            base.ConfigureDebug(conf, target);
+
+            conf.TargetFileName += "d"; // Add suffix to DLL name
         }
     }
 
@@ -106,17 +128,12 @@ namespace Vadon.Tools.ThirdParty
         {
         }
 
-        public override void ConfigureAll(Configuration conf, Target target)
+        public override void ConfigureWin64(Configuration conf, Target target)
         {
-            base.ConfigureAll(conf, target);
+            base.ConfigureWin64(conf, target);
             
-            switch(target.Platform)
-            {
-                case Platform.win64:         
-                    conf.IncludePaths.Add($"{ToolsInstallPath}/x64-windows/include");
-                    // NOTE: not adding library paths, need to let dependencies decide which optimization uses which build
-                    break;
-            }
+            conf.IncludePaths.Add($"{ToolsInstallPath}/x64-windows/include");
+            // NOTE: not adding library paths, need to let dependencies decide which optimization uses which build
         }
     }
 
@@ -193,22 +210,27 @@ namespace Vadon.Tools.ThirdParty
             conf.IncludePaths.Clear();
 
             conf.AddPublicDependency<Asio>(target);
+        }
+
+        public override void ConfigureDebug(Configuration conf, Target target)
+        {
+            base.ConfigureDebug(conf, target);
+
+            conf.Output = Configuration.OutputType.Dll;
+                
+            conf.Defines.Add("ASIO_DYN_LINK");
+            conf.ExportDefines.Add("ASIO_DYN_LINK");
+        }
+
+        public override void ConfigureRelease(Configuration conf, Target target)
+        {
+            base.ConfigureRelease(conf, target);
 
             // Link statically in release
-            if(target.Optimization != Optimization.Release)
-            {
-                conf.Output = Configuration.OutputType.Dll;
-                
-                conf.Defines.Add("ASIO_DYN_LINK");
-                conf.ExportDefines.Add("ASIO_DYN_LINK");
-            }
-            else
-            {                
-                conf.Output = Configuration.OutputType.Lib;
+            conf.Output = Configuration.OutputType.Lib;
 
-                conf.Defines.Add("ASIO_SEPARATE_COMPILATION");
-                conf.ExportDefines.Add("ASIO_SEPARATE_COMPILATION");
-            }
+            conf.Defines.Add("ASIO_SEPARATE_COMPILATION");
+            conf.ExportDefines.Add("ASIO_SEPARATE_COMPILATION");
         }
     }
 }

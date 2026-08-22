@@ -22,6 +22,8 @@ namespace VadonEditor::UI
 		bool initialize(Model::Scene* scene);
 
 		const Model::Component* get_component() const { return m_component; }
+
+		QString get_name_label() const { return m_ui.componentNameLabel->text(); }
 	signals:
 		void remove_requested(const QUuid& component_id);
 	private slots:

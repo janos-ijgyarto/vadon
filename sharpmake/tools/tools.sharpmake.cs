@@ -7,6 +7,15 @@ using System.IO;
 
 namespace Vadon.Tools
 {
+    public static class ConfigurePriorities
+    {
+        public const int All = -75;
+        public const int Platform = -50;
+        public const int Optimization = -25;
+        /*     SHARPMAKE DEFAULT IS 0     */
+        public const int BuildSystem = 50;
+    }
+
     // TODO: add profile?
     [Fragment, System.Flags]
     public enum Optimization
@@ -45,38 +54,51 @@ namespace Vadon.Tools
             AddTargets(Target.GetDefaultTargets());
         }
 
+        [Sharpmake.ConfigurePriority(ConfigurePriorities.All)]
         [Sharpmake.Configure()]
         virtual public void ConfigureAll(Configuration conf, Target target)
         {
             conf.Name = "[target.Optimization]";
             conf.ProjectFileName = "[project.Name]_[target.DevEnvironment]_[target.Platform]_[target.BuildSystem]";
-
-            switch(target.Platform)
-            {
-                case Platform.win64:
-                    conf.Defines.Add("VADON_PLATFORM_WIN32");
-                    conf.Options.Add(Options.Vc.General.PlatformToolset.v143);
-                    conf.Options.Add(Options.Vc.General.WindowsTargetPlatformVersion.v10_0_26100_0);
-                    break;
-            }
-
-            switch(target.Optimization)
-            {
-                case Optimization.Debug:
-                    conf.Options.Add(Sharpmake.Options.Vc.Compiler.RuntimeLibrary.MultiThreadedDebugDLL);
-                    conf.DefaultOption = Options.DefaultTarget.Debug;
-                    break;
-                default:
-                    conf.DefaultOption = Options.DefaultTarget.Release;
-                    break;
-            }
         }
 
+        #region Platforms
+        [ConfigurePriority(ConfigurePriorities.Platform)]
+        [Configure(Platform.win64)]
+        public virtual void ConfigureWin64(Configuration conf, Target target)
+        {
+            conf.Defines.Add("VADON_PLATFORM_WIN32");
+            conf.Options.Add(Options.Vc.General.PlatformToolset.v143);
+            conf.Options.Add(Options.Vc.General.WindowsTargetPlatformVersion.v10_0_26100_0);
+        }
+        #endregion
+
+        #region Optimizations
+        [ConfigurePriority(ConfigurePriorities.Optimization)]
+        [Configure(Optimization.Debug)]
+        public virtual void ConfigureDebug(Configuration conf, Target target)
+        {
+            conf.Options.Add(Sharpmake.Options.Vc.Compiler.RuntimeLibrary.MultiThreadedDebugDLL);
+            conf.DefaultOption = Options.DefaultTarget.Debug;
+        }
+
+        [ConfigurePriority(ConfigurePriorities.Optimization)]
+        [Configure(Optimization.Release)]
+        public virtual void ConfigureRelease(Configuration conf, Target target)
+        {
+            conf.Options.Add(Sharpmake.Options.Vc.Compiler.RuntimeLibrary.MultiThreadedDLL);
+            conf.DefaultOption = Options.DefaultTarget.Release;
+        }
+        #endregion
+
+        #region Build system
+        [ConfigurePriority(ConfigurePriorities.BuildSystem)]
         [Configure(BuildSystem.FastBuild)]
         virtual public void ConfigureFastBuild(Configuration conf, Target target)
         {
             conf.IsFastBuild = true;
         }
+        #endregion
 
         protected static string ToolsPath { get { return Path.Combine(Utilities.ConfigurationParameters.RepositoryPath, "tools"); } }
         protected static string GeneratorPath { get { return Utilities.ConfigurationParameters.GeneratorOutputPath; } }
@@ -167,11 +189,15 @@ namespace Vadon.Tools
             base.ConfigureAll(conf, target);
             
             conf.Defines.Add("QT_SHARED");
+        }
 
-            if (target.Optimization != Optimization.Debug)
-            {
-                conf.Defines.Add("QT_NO_DEBUG");
-            }
+        public override void ConfigureRelease(Configuration conf, Target target)
+        {
+            base.ConfigureRelease(conf, target);
+            
+            // Turn off asserts and debug output outside of debug builds
+            conf.Defines.Add("QT_NO_DEBUG");
+            conf.Defines.Add("QT_NO_DEBUG_OUTPUT");
         }
 
         protected override void ExcludeOutputFiles()

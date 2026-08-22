@@ -9,6 +9,15 @@ using System.IO;
 
 namespace Vadon.Engine
 {
+    public static class ConfigurePriorities
+    {
+        public const int All = -75;
+        public const int Platform = -50;
+        public const int Optimization = -25;
+        /*     SHARPMAKE DEFAULT IS 0     */
+        public const int BuildSystem = 50;
+    }
+
     [Fragment, System.Flags]
     public enum Optimization
     {
@@ -61,39 +70,73 @@ namespace Vadon.Engine
             AddTargets(Target.GetDefaultTargets());
         }
 
+        [Sharpmake.ConfigurePriority(ConfigurePriorities.All)]
         [Sharpmake.Configure()]
         virtual public void ConfigureAll(Configuration conf, Target target)
         {
             conf.Name = "[target.Optimization]";
             conf.ProjectFileName = "[project.Name]_[target.DevEnvironment]_[target.Platform]_[target.BuildSystem]";
 
-            switch(target.Platform)
-            {
-                case Platform.win64:
-                    conf.Defines.Add("VADON_PLATFORM_WIN32");
-                    conf.Options.Add(Options.Vc.General.PlatformToolset.v143);
-                    conf.Options.Add(Options.Vc.General.WindowsTargetPlatformVersion.v10_0_26100_0);
-                    break;
-            }
-
-            switch(target.Optimization)
-            {
-                case Optimization.Debug:
-                    conf.Options.Add(Sharpmake.Options.Vc.Compiler.RuntimeLibrary.MultiThreadedDebugDLL);
-                    conf.DefaultOption = Options.DefaultTarget.Debug;
-                    break;
-                default:
-                    conf.Options.Add(Sharpmake.Options.Vc.Compiler.RuntimeLibrary.MultiThreadedDLL);
-                    conf.DefaultOption = Options.DefaultTarget.Release;
-                    break;
-            }
+            conf.Defines.Add("VADON_DEFAULT_ASSERT_LEVEL=2");
         }
 
+        #region Platforms
+        [ConfigurePriority(ConfigurePriorities.Platform)]
+        [Configure(Platform.win64)]
+        public virtual void ConfigureWin64(Configuration conf, Target target)
+        {
+            conf.Defines.Add("VADON_PLATFORM_WIN32");
+            conf.Options.Add(Options.Vc.General.PlatformToolset.v143);
+            conf.Options.Add(Options.Vc.General.WindowsTargetPlatformVersion.v10_0_26100_0);
+        }
+        #endregion
+
+        #region Optimizations
+        [ConfigurePriority(ConfigurePriorities.Optimization)]
+        [Configure(Optimization.Debug)]
+        public virtual void ConfigureDebug(Configuration conf, Target target)
+        {
+            conf.Options.Add(Sharpmake.Options.Vc.Compiler.RuntimeLibrary.MultiThreadedDebugDLL);
+            conf.DefaultOption = Options.DefaultTarget.Debug;
+        }
+
+        [ConfigurePriority(ConfigurePriorities.Optimization)]
+        [Configure(Optimization.Dev)]
+        public virtual void ConfigureDev(Configuration conf, Target target)
+        {
+            conf.Options.Add(Sharpmake.Options.Vc.Compiler.RuntimeLibrary.MultiThreadedDLL);
+            conf.DefaultOption = Options.DefaultTarget.Release;
+        }
+
+        [ConfigurePriority(ConfigurePriorities.Optimization)]
+        [Configure(Optimization.Profile)]
+        public virtual void ConfigureProfile(Configuration conf, Target target)
+        {
+            conf.Options.Add(Sharpmake.Options.Vc.Compiler.RuntimeLibrary.MultiThreadedDLL);
+            conf.DefaultOption = Options.DefaultTarget.Release;
+
+            conf.Defines.Add("VADON_ASSERT_LEVEL=1");
+        }
+
+        [ConfigurePriority(ConfigurePriorities.Optimization)]
+        [Configure(Optimization.Release)]
+        public virtual void ConfigureRelease(Configuration conf, Target target)
+        {
+            conf.Options.Add(Sharpmake.Options.Vc.Compiler.RuntimeLibrary.MultiThreaded);
+            conf.DefaultOption = Options.DefaultTarget.Release;
+
+            conf.Defines.Add("VADON_ASSERT_LEVEL=1");
+        }
+        #endregion
+
+        #region Build system
+        [ConfigurePriority(ConfigurePriorities.BuildSystem)]
         [Configure(BuildSystem.FastBuild)]
         virtual public void ConfigureFastBuild(Configuration conf, Target target)
         {
             conf.IsFastBuild = true;
         }
+        #endregion
 
         protected static string EnginePath { get { return Path.Combine(Utilities.ConfigurationParameters.RepositoryPath, "engine"); } }
         protected static string GeneratorPath { get { return Utilities.ConfigurationParameters.GeneratorOutputPath; } }
@@ -274,17 +317,23 @@ namespace Vadon.Engine
         public override void ConfigureAll(Configuration conf, Target target)
         {
             base.ConfigureAll(conf, target);
+        }
 
-            // Link statically in release
-            if(target.Optimization != Optimization.Release)
-            {
-                conf.Output = Configuration.OutputType.Dll;
-                conf.Defines.Add("VADON_LINK_DYNAMIC");
-            }
-            else
-            {                
-                conf.Output = Configuration.OutputType.Lib;
-            }
+        [ConfigurePriority(ConfigurePriorities.Optimization)]
+        [Configure(Optimization.Debug | Optimization.Dev | Optimization.Profile)]
+        public virtual void ConfigureNonReleaseLinking(Configuration conf, Target target)
+        {    
+            // In all non-release builds, we create DLLs and link dynamically
+            conf.Output = Configuration.OutputType.Dll;
+            conf.Defines.Add("VADON_LINK_DYNAMIC");
+        }
+
+        [ConfigurePriority(ConfigurePriorities.Optimization)]
+        [Configure(Optimization.Release)]
+        public virtual void ConfigureReleaseLinking(Configuration conf, Target target)
+        {
+            // In release builds, we link everything statically         
+            conf.Output = Configuration.OutputType.Lib;
         }
     }
  

@@ -40,19 +40,25 @@ namespace Vadon.Demo
 
             conf.ProjectPath += "/common";
             
-            // Link statically in release
-            if(target.Optimization != Engine.Optimization.Release)
-            {
-                conf.Output = Configuration.OutputType.Dll;
-                conf.Defines.Add("VADON_LINK_DYNAMIC");
-                conf.Defines.Add("VADONDEMO_EXPORTS");
-            }
-            else
-            {                
-                conf.Output = Configuration.OutputType.Lib;
-            }
-
             conf.AddPublicDependency<Engine.Render>(target);
+        }
+
+        [ConfigurePriority(Engine.ConfigurePriorities.Optimization)]
+        [Configure(Engine.Optimization.Debug | Engine.Optimization.Dev | Engine.Optimization.Profile)]
+        public virtual void ConfigureNonReleaseLinking(Configuration conf, Engine.Target target)
+        {    
+            // In all non-release builds, we create DLLs and link dynamically            
+            conf.Output = Configuration.OutputType.Dll;
+            conf.Defines.Add("VADON_LINK_DYNAMIC");
+            conf.Defines.Add("VADONDEMO_EXPORTS");
+        }
+
+        [ConfigurePriority(Engine.ConfigurePriorities.Optimization)]
+        [Configure(Engine.Optimization.Release)]
+        public virtual void ConfigureReleaseLinking(Configuration conf, Engine.Target target)
+        {
+            // In release builds, we link everything statically         
+            conf.Output = Configuration.OutputType.Lib;
         }
     }
 
@@ -74,11 +80,6 @@ namespace Vadon.Demo
 
             conf.Output = Configuration.OutputType.Dll;
 
-            if(target.Optimization != Engine.Optimization.Release)
-            {
-                conf.Defines.Add("VADON_LINK_DYNAMIC");
-            }
-
             // Adding macro to export the plugin functions
             conf.Defines.Add("VADON_EDITOR_ASSET_SERVER_PLUGIN_IMPLEMENTATION");
             conf.Defines.Add("VADON_EDITOR_SIMULATOR_PLUGIN_IMPLEMENTATION");
@@ -89,23 +90,21 @@ namespace Vadon.Demo
             conf.AddPrivateDependency<Engine.Core>(target);
             conf.AddPrivateDependency<Vadon.Editor.Common>(target);
 
+            // Copy the plugin import file
+            // FIXME: some way to do this in one step, to ensure that we don't miss it here or in PostResolve?
+            conf.TargetCopyFiles.Add(Tools.Editor.Application.GetEditorPluginImportFilePath(conf));
+
             // NOTE: forcing the files to be copied because the editor needs to load them
             // from the same subdirectory
             conf.ExecuteTargetCopy = true;
         }
 
-        private static void GenerateEditorPluginFile(Configuration conf)
-        {
-            // TODO: find some way for the resolver to generate the JSON contents?
-            string outputFileName = conf.TargetFileFullNameWithExtension + ".vdeplugin";
-
-            string configString = $"{conf.Target.Name}";
-
-            string jsonString = $@"{{
-    ""configuration"" : ""{configString}""
-}}";
- 
-            Utilities.UtilityFunctions.FileWriteIfDifferent(Path.Combine(conf.TargetPath, outputFileName), jsonString);
+        [ConfigurePriority(Engine.ConfigurePriorities.Optimization)]
+        [Configure(Engine.Optimization.Debug | Engine.Optimization.Dev | Engine.Optimization.Profile)]
+        public virtual void ConfigureNonReleaseLinking(Configuration conf, Engine.Target target)
+        {    
+            // Link dynamically to engine libraries
+            conf.Defines.Add("VADON_LINK_DYNAMIC");
         }
 
         public override void PostResolve()
@@ -113,8 +112,8 @@ namespace Vadon.Demo
             base.PostResolve();
 
             foreach(var currentConf in Configurations)
-            {
-                GenerateEditorPluginFile(currentConf);
+            {                
+                Tools.Editor.Application.GenerateEditorPluginImportFile(currentConf);
             }
         }
     }
@@ -139,11 +138,6 @@ namespace Vadon.Demo
 
             conf.Output = Configuration.OutputType.Exe;
 
-            if(target.Optimization != Engine.Optimization.Release)
-            {
-                conf.Defines.Add("VADON_LINK_DYNAMIC");
-            }
-
             // Add path to generated shaders
             conf.IncludePrivatePaths.Add(GeneratedShaderFileRoot);
 
@@ -154,20 +148,18 @@ namespace Vadon.Demo
 
             AddShaderCompileStep(conf, target, $"{SourceRootPath}/VadonDemo/Render/CopyShader.hlsl", Engine.ShaderTarget.Vertex, "vs_main", "VadonDemo::Render::ShaderVS", Engine.ShaderExportType.CPP);
             AddShaderCompileStep(conf, target, $"{SourceRootPath}/VadonDemo/Render/CopyShader.hlsl", Engine.ShaderTarget.Pixel, "ps_main", "VadonDemo::Render::ShaderPS", Engine.ShaderExportType.CPP);
+                   
+            // Copy the game exe import file
+            // FIXME: some way to do this in one step, to ensure that we don't miss it here or in PostResolve?
+            conf.TargetCopyFiles.Add(Tools.Editor.Application.GetEditorGameExecutableImportFilePath(conf));
         }
 
-        private static void GenerateEditorExecutableFile(Configuration conf)
-        {
-            // TODO: find some way for the resolver to generate the JSON contents?
-            string outputFileName = conf.TargetFileFullNameWithExtension + ".vdgexe";
-
-            string configString = $"{conf.Target.Name}";
-
-            string jsonString = $@"{{
-    ""configuration"" : ""{configString}""
-}}";
- 
-            Utilities.UtilityFunctions.FileWriteIfDifferent(Path.Combine(conf.TargetPath, outputFileName), jsonString);
+        [ConfigurePriority(Engine.ConfigurePriorities.Optimization)]
+        [Configure(Engine.Optimization.Debug | Engine.Optimization.Dev | Engine.Optimization.Profile)]
+        public virtual void ConfigureNonReleaseLinking(Configuration conf, Engine.Target target)
+        {    
+            // Link dynamically to engine libraries
+            conf.Defines.Add("VADON_LINK_DYNAMIC");
         }
 
         public override void PostResolve()
@@ -176,7 +168,7 @@ namespace Vadon.Demo
 
             foreach(var currentConf in Configurations)
             {
-                GenerateEditorExecutableFile(currentConf);
+                Tools.Editor.Application.GenerateGameExecutableImportFile(currentConf);
             }
         }
     }

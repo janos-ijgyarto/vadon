@@ -18,24 +18,21 @@ namespace Vadon.Engine
 
             conf.ProjectPath += "/graphics_api";
 
-            if(conf.Output == Configuration.OutputType.Dll)
-            {
-                conf.Defines.Add("VADONGRAPHICSAPI_EXPORTS");
-            }
+            conf.Defines.Add("VADONGRAPHICSAPI_EXPORTS");
 
             // TODO: allow client code to override this?
             conf.Defines.Add("VADON_GRAPHICS_API_DEFAULT");
 
             conf.AddPublicDependency<Render>(target);
+        }
 
-            switch(target.Platform)
-            {
-                case Platform.win64:
-                    conf.AddPrivateDependency<ThirdParty.D3D11>(target);
-                    conf.AddPrivateDependency<ThirdParty.DXGI>(target);
-                    conf.AddPrivateDependency<ThirdParty.DXGUID>(target);
-                    break;
-            }
+        public override void ConfigureWin64(Configuration conf, Target target)
+        {
+            base.ConfigureWin64(conf, target);
+
+            conf.AddPrivateDependency<ThirdParty.D3D11>(target);
+            conf.AddPrivateDependency<ThirdParty.DXGI>(target);
+            conf.AddPrivateDependency<ThirdParty.DXGUID>(target);
         }
     }
 }

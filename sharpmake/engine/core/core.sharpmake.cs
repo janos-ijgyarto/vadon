@@ -18,10 +18,7 @@ namespace Vadon.Engine
 
             conf.ProjectPath += "/core";
 
-            if(conf.Output == Configuration.OutputType.Dll)
-            {
-                conf.Defines.Add("VADONCORE_EXPORTS");
-            }
+            conf.Defines.Add("VADONCORE_EXPORTS");
             
             conf.AddPublicDependency<GraphicsAPI>(target);
         }

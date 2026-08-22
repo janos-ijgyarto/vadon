@@ -20,11 +20,8 @@ namespace Vadon.Engine
             base.ConfigureAll(conf, target);
 
             conf.ProjectPath += "/render";
-
-            if(conf.Output == Configuration.OutputType.Dll)
-            {
-                conf.Defines.Add("VADONRENDER_EXPORTS");
-            }
+                       
+            conf.Defines.Add("VADONRENDER_EXPORTS");
 
             // Add path to generated shaders
             conf.IncludePrivatePaths.Add(GeneratedShaderFileRoot);

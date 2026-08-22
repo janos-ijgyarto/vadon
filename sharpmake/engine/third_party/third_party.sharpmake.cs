@@ -13,10 +13,29 @@ namespace Vadon.Engine.ThirdParty
             AddTargets(Target.GetDefaultTargets());
         }
 
+        [ConfigurePriority(ConfigurePriorities.All)]
         [Sharpmake.Configure()]
         virtual public void ConfigureAll(Configuration conf, Target target)
         {
             conf.Name = "[target.Optimization]";
+        }
+
+        [ConfigurePriority(ConfigurePriorities.Platform)]
+        [Configure(Platform.win64)]
+        public virtual void ConfigureWin64(Configuration conf, Target target)
+        {
+        }
+
+        [ConfigurePriority(ConfigurePriorities.Optimization)]
+        [Configure(Optimization.Debug)]
+        public virtual void ConfigureDebug(Configuration conf, Target target)
+        {
+        }
+
+        [ConfigurePriority(ConfigurePriorities.Optimization)]
+        [Configure(Optimization.Dev | Optimization.Profile | Optimization.Release)]
+        public virtual void ConfigureNonDebug(Configuration conf, Target target)
+        {
         }
     }
 
@@ -77,17 +96,12 @@ namespace Vadon.Engine.ThirdParty
         {
         }
 
-        public override void ConfigureAll(Configuration conf, Target target)
+        public override void ConfigureWin64(Configuration conf, Target target)
         {
-            base.ConfigureAll(conf, target);
-            
-            switch(target.Platform)
-            {
-                case Platform.win64:         
-                    conf.IncludePaths.Add($"{EngineInstallPath}/x64-windows/include");
-                    // NOTE: not adding library paths, need to let dependencies decide which optimization uses which build
-                    break;
-            }
+            base.ConfigureWin64(conf, target);
+
+            conf.IncludePaths.Add($"{EngineInstallPath}/x64-windows/include");
+            // NOTE: not adding library paths, need to let dependencies decide which optimization uses which build
         }
     }
 
@@ -152,16 +166,21 @@ namespace Vadon.Engine.ThirdParty
 
         public override void ConfigureAll(Configuration conf, Target target)
         {
-            conf.ExportDefines.Add("GLM_ENABLE_EXPERIMENTAL");
+            conf.ExportDefines.Add("GLM_ENABLE_EXPERIMENTAL");     
+        }
 
-            if(target.Optimization != Optimization.Debug)
-            {
-                conf.LibraryFiles.Add($"{EngineInstallPath}/x64-windows/lib/glm.lib");
-            }
-            else
-            {
-                conf.LibraryFiles.Add($"{EngineInstallPath}/x64-windows/debug/lib/glm.lib");
-            }       
+        public override void ConfigureDebug(Configuration conf, Target target)
+        {
+            base.ConfigureDebug(conf, target);
+                        
+            conf.LibraryFiles.Add($"{EngineInstallPath}/x64-windows/debug/lib/glm.lib");
+        }
+
+        public override void ConfigureNonDebug(Configuration conf, Target target)
+        {
+            base.ConfigureNonDebug(conf, target);
+
+            conf.LibraryFiles.Add($"{EngineInstallPath}/x64-windows/lib/glm.lib");
         }
     }
 
@@ -178,18 +197,24 @@ namespace Vadon.Engine.ThirdParty
             conf.Output = Configuration.OutputType.Dll;
 
             conf.TargetFileName = "freetype";
-            if(target.Optimization != Optimization.Debug)
-            {
-                conf.TargetPath = $"{EngineInstallPath}/x64-windows/bin";
-                conf.TargetLibraryPath = $"{EngineInstallPath}/x64-windows/lib";
-            }
-            else
-            {
-                conf.TargetPath = $"{EngineInstallPath}/x64-windows/debug/bin";
-                conf.TargetLibraryPath = $"{EngineInstallPath}/x64-windows/debug/lib";
+        }
 
-                conf.TargetFileName += "d";
-            }
+        public override void ConfigureDebug(Configuration conf, Target target)
+        {
+            base.ConfigureDebug(conf, target);
+
+            conf.TargetPath = $"{EngineInstallPath}/x64-windows/debug/bin";
+            conf.TargetLibraryPath = $"{EngineInstallPath}/x64-windows/debug/lib";
+
+            conf.TargetFileName += "d";
+        }
+
+        public override void ConfigureNonDebug(Configuration conf, Target target)
+        {
+            base.ConfigureNonDebug(conf, target);
+                                    
+            conf.TargetPath = $"{EngineInstallPath}/x64-windows/bin";
+            conf.TargetLibraryPath = $"{EngineInstallPath}/x64-windows/lib";
         }
     }
     
@@ -217,16 +242,22 @@ namespace Vadon.Engine.ThirdParty
             conf.ExportDefines.Add("SIMDJSON_USING_WINDOWS_DYNAMIC_LIBRARY");
 
             conf.TargetFileName = "simdjson";
-            if(target.Optimization != Optimization.Debug)
-            {
-                conf.TargetPath = $"{EngineInstallPath}/x64-windows/bin";
-                conf.TargetLibraryPath = $"{EngineInstallPath}/x64-windows/lib";
-            }
-            else
-            {
-                conf.TargetPath = $"{EngineInstallPath}/x64-windows/debug/bin";
-                conf.TargetLibraryPath = $"{EngineInstallPath}/x64-windows/debug/lib";
-            }
+        }
+
+        public override void ConfigureDebug(Configuration conf, Target target)
+        {
+            base.ConfigureDebug(conf, target);
+                        
+            conf.TargetPath = $"{EngineInstallPath}/x64-windows/debug/bin";
+            conf.TargetLibraryPath = $"{EngineInstallPath}/x64-windows/debug/lib";
+        }
+
+        public override void ConfigureNonDebug(Configuration conf, Target target)
+        {
+            base.ConfigureNonDebug(conf, target);
+            
+            conf.TargetPath = $"{EngineInstallPath}/x64-windows/bin";
+            conf.TargetLibraryPath = $"{EngineInstallPath}/x64-windows/lib";
         }
     }
 }

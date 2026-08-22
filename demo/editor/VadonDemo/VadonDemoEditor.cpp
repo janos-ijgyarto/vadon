@@ -12,7 +12,7 @@ namespace
 	Vadon::Core::EngineEnvironment* s_engine_environment = nullptr;
 }
 
-VadonEditorSimulatorPluginInterface* VadonEditorPluginEntrypoint(VadonEditorSimulatorInterface* simulator)
+VadonEditorSimulatorPluginInterface* VadonEditorSimulatorPluginEntrypoint(VadonEditorSimulatorInterface* simulator)
 {
 	if (s_engine_environment != nullptr)
 	{
@@ -27,7 +27,7 @@ VadonEditorSimulatorPluginInterface* VadonEditorPluginEntrypoint(VadonEditorSimu
 	return editor;
 }
 
-void VadonEditorPluginExit(VadonEditorSimulatorPluginInterface* interface)
+void VadonEditorSimulatorPluginExit(VadonEditorSimulatorPluginInterface* interface)
 {
 	delete interface;
 

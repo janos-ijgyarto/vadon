@@ -17,11 +17,8 @@ namespace Vadon.Engine
             base.ConfigureAll(conf, target);
             
             conf.ProjectPath += "/common";
-
-            if(conf.Output == Configuration.OutputType.Dll)
-            {
-                conf.Defines.Add("VADONCOMMON_EXPORTS");
-            }
+            
+            conf.Defines.Add("VADONCOMMON_EXPORTS");
             
             conf.AddPublicDependency<Foundation>(target, DependencySetting.DefaultWithoutLinking);
 

@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
-    <height>300</height>
+    <width>640</width>
+    <height>480</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -20,6 +20,24 @@
    <bool>true</bool>
   </property>
   <layout class="QVBoxLayout" name="mainLayout">
+   <item>
+    <layout class="QHBoxLayout" name="filterHBox">
+     <item>
+      <widget class="QLabel" name="label">
+       <property name="text">
+        <string>Filter:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="filterLineEdit">
+       <property name="clearButtonEnabled">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
    <item>
     <widget class="QListWidget" name="componentList"/>
    </item>
@@ -41,7 +59,7 @@
    <sender>buttonBox</sender>
    <signal>accepted()</signal>
    <receiver>AddComponentDialog</receiver>
-   <slot>finalize_component_selection()</slot>
+   <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
      <x>248</x>
@@ -85,9 +103,25 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>filterLineEdit</sender>
+   <signal>textChanged(QString)</signal>
+   <receiver>AddComponentDialog</receiver>
+   <slot>filter_text_changed(QString)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>337</x>
+     <y>21</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>319</x>
+     <y>239</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>component_selection_changed()</slot>
-  <slot>finalize_component_selection()</slot>
+  <slot>filter_text_changed(QString)</slot>
  </slots>
 </ui>

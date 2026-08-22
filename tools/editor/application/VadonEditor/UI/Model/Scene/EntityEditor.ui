@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
-    <height>300</height>
+    <width>640</width>
+    <height>480</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -24,8 +24,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>380</width>
-        <height>250</height>
+        <width>620</width>
+        <height>430</height>
        </rect>
       </property>
       <layout class="QVBoxLayout" name="componentScrollMainVBox">
@@ -54,6 +54,24 @@
          </item>
          <item row="0" column="1">
           <widget class="QLineEdit" name="nameLineEdit"/>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="componentFilterHBox">
+         <item>
+          <widget class="QLabel" name="componentFilterLabel">
+           <property name="text">
+            <string>Search component:</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLineEdit" name="componentFilterLineEdit">
+           <property name="clearButtonEnabled">
+            <bool>true</bool>
+           </property>
+          </widget>
          </item>
         </layout>
        </item>
@@ -121,9 +139,26 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>componentFilterLineEdit</sender>
+   <signal>textChanged(QString)</signal>
+   <receiver>EntityEditor</receiver>
+   <slot>component_filter_text_changed(QString)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>374</x>
+     <y>85</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>319</x>
+     <y>239</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>internal_name_changed(QString)</slot>
   <slot>add_component_clicked()</slot>
+  <slot>component_filter_text_changed(QString)</slot>
  </slots>
 </ui>

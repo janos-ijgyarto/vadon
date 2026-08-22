@@ -42,17 +42,6 @@ namespace Vadon.Application
         { 
             base.ConfigureAll(conf, target);
 
-            if(target.Optimization != Engine.Optimization.Release)
-            {
-                conf.Output = Configuration.OutputType.Dll;
-                conf.Defines.Add("VADON_LINK_DYNAMIC");
-                conf.Defines.Add("VADONAPP_EXPORTS");
-            }
-            else
-            {                
-                conf.Output = Configuration.OutputType.Lib;
-            }
-
             // Add path to generated shaders
             conf.IncludePrivatePaths.Add(GeneratedShaderFileRoot);
             
@@ -66,6 +55,24 @@ namespace Vadon.Application
 
             AddShaderCompileStep(conf, target, $"{SourceRootPath}/VadonApp/Private/UI/Developer/ImGui/GUIShader.hlsl", Engine.ShaderTarget.Vertex, "vs_main", "VadonApp::Private::UI::Developer::ImGUI::ShaderVS", Engine.ShaderExportType.CPP);
             AddShaderCompileStep(conf, target, $"{SourceRootPath}/VadonApp/Private/UI/Developer/ImGui/GUIShader.hlsl", Engine.ShaderTarget.Pixel, "ps_main", "VadonApp::Private::UI::Developer::ImGUI::ShaderPS", Engine.ShaderExportType.CPP);
+        }
+
+        [ConfigurePriority(Engine.ConfigurePriorities.Optimization)]
+        [Configure(Engine.Optimization.Debug | Engine.Optimization.Dev | Engine.Optimization.Profile)]
+        public virtual void ConfigureNonReleaseLinking(Configuration conf, Engine.Target target)
+        {    
+            // In all non-release builds, we create DLLs and link dynamically            
+            conf.Output = Configuration.OutputType.Dll;
+            conf.Defines.Add("VADON_LINK_DYNAMIC");
+            conf.Defines.Add("VADONAPP_EXPORTS");
+        }
+
+        [ConfigurePriority(Engine.ConfigurePriorities.Optimization)]
+        [Configure(Engine.Optimization.Release)]
+        public virtual void ConfigureReleaseLinking(Configuration conf, Engine.Target target)
+        {
+            // In release builds, we link everything statically         
+            conf.Output = Configuration.OutputType.Lib;
         }
     }
 }

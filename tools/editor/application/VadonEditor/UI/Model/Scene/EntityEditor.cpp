@@ -28,6 +28,26 @@ namespace VadonEditor::UI
 		update_title();
 	}
 
+	void EntityEditor::component_filter_text_changed(const QString& text)
+	{
+		for (int item_index = 0; item_index < m_ui.componentListVBox->count(); ++item_index)
+		{
+			QWidget* current_widget = m_ui.componentListVBox->itemAt(item_index)->widget();
+			ComponentWidget* component_widget = qobject_cast<ComponentWidget*>(current_widget);
+			if (component_widget != nullptr)
+			{
+				if (text.isEmpty() == true)
+				{
+					component_widget->setVisible(true);
+				}
+				else
+				{
+					component_widget->setVisible(component_widget->get_name_label().contains(text, Qt::CaseSensitivity::CaseInsensitive) == true);
+				}
+			}
+		}
+	}
+
 	void EntityEditor::add_component_clicked()
 	{
 		const QList<QUuid> component_id_list = m_entity->get_component_id_list();
@@ -84,6 +104,9 @@ namespace VadonEditor::UI
 					delete layout_item;
 
 					m_entity->remove_component(component_id);
+
+					// Sort the widgets since we removed a component
+					sort_component_widgets();
 					return;
 				}
 			}
@@ -210,7 +233,44 @@ namespace VadonEditor::UI
 		const int spacer_index = m_ui.componentListVBox->indexOf(m_ui.componentListSpacer);
 		m_ui.componentListVBox->insertWidget(spacer_index, component_widget);
 
+		// Sort widgets since we added a new one
+		sort_component_widgets();
+
 		return true;
+	}
+
+	void EntityEditor::sort_component_widgets()
+	{
+		// First gather all widgets
+		QList<ComponentWidget*> component_widgets;
+
+		for (int item_index = 0; item_index < m_ui.componentListVBox->count(); ++item_index)
+		{
+			QWidget* current_widget = m_ui.componentListVBox->itemAt(item_index)->widget();
+			ComponentWidget* component_widget = qobject_cast<ComponentWidget*>(current_widget);
+			if (component_widget != nullptr)
+			{
+				component_widgets.push_back(component_widget);
+			}
+		}
+
+		std::sort(component_widgets.begin(), component_widgets.end(),
+			[](const ComponentWidget* left, const ComponentWidget* right) -> bool 
+			{
+				return left->get_name_label() < right->get_name_label();
+			}
+		);
+
+		for (int item_index = 0; item_index < component_widgets.count(); ++item_index)
+		{
+			ComponentWidget* current_widget = component_widgets[item_index];
+
+			// First remove from layout
+			m_ui.componentListVBox->removeWidget(current_widget);
+
+			// Then re-add at new position
+			m_ui.componentListVBox->insertWidget(item_index, current_widget);
+		}
 	}
 
 	void EntityEditor::store_entity_data()

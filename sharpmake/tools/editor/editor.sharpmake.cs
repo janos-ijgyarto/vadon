@@ -58,32 +58,26 @@ namespace Vadon.Tools.Editor
             conf.TargetFileName = "VadonEditorCommon";
             conf.ProjectPath += "/common";
 
-            if(target.Optimization != Optimization.Release)
-            {
-                conf.Output = Configuration.OutputType.Dll;
-                conf.Defines.Add("VADON_LINK_DYNAMIC");
-                conf.Defines.Add("VADONEDITORCOMMON_EXPORTS");
-
-                // Use Release options by default, except in Debug
-                if(target.Optimization != Optimization.Debug)
-                {
-                    conf.DefaultOption = Options.DefaultTarget.Release;
-                }
-                else
-                {
-                    conf.DefaultOption = Options.DefaultTarget.Debug;
-                }
-            }
-            else
-            {                
-                conf.Output = Configuration.OutputType.Lib;
-                
-                // Use Release options by default
-                conf.DefaultOption = Options.DefaultTarget.Release;
-            }
-
             conf.AddPublicDependency<Foundation>(target, DependencySetting.DefaultWithoutLinking);
             conf.AddPublicDependency<ThirdParty.AsioLib>(target);
+        }
+
+        [ConfigurePriority(ConfigurePriorities.Optimization)]
+        [Configure(Optimization.Debug)]
+        public virtual void ConfigureNonReleaseLinking(Configuration conf, Target target)
+        {    
+            // In all non-release builds, we create DLLs and link dynamically
+            conf.Output = Configuration.OutputType.Dll;
+            conf.Defines.Add("VADON_LINK_DYNAMIC");
+            conf.Defines.Add("VADONEDITORCOMMON_EXPORTS");
+        }
+
+        [ConfigurePriority(ConfigurePriorities.Optimization)]
+        [Configure(Optimization.Release)]
+        public virtual void ConfigureReleaseLinking(Configuration conf, Target target)
+        {
+            // In release builds, we link everything statically         
+            conf.Output = Configuration.OutputType.Lib;
         }
     }
 
@@ -106,11 +100,6 @@ namespace Vadon.Tools.Editor
 
             conf.Output = Configuration.OutputType.Exe;
 
-            if(target.Optimization != Optimization.Release)
-            {
-                conf.Defines.Add("VADON_LINK_DYNAMIC");
-            }
-
             conf.AddPrivateDependency<Common>(target);
 
             // FIXME: need to add this explicitly because for some reason Common did not propagate
@@ -126,20 +115,28 @@ namespace Vadon.Tools.Editor
             // FIXME: have to enable RTTI to make Qt work
             // Need to compile Qt with RTTI turned off!
             conf.Options.Add(Sharpmake.Options.Vc.Compiler.RTTI.Enable);
+        }
 
-            switch(target.Platform)
-            {
-                case Platform.win64:
-                    string platformDLLName = target.Optimization == Optimization.Debug ? "qwindowsd" : "qwindows";
-                    conf.TargetCopyFilesToSubDirectory.Add(
-                        new System.Collections.Generic.KeyValuePair<string, string>(
-                            Path.Combine(ThirdParty.QtModule.QtPath, $"plugins/platforms/{platformDLLName}.dll"), 
-                            "plugins/platforms"
-                        )
-                    );
-                    // TODO: copy PDB as well?
-                    break;
-            }
+        [ConfigurePriority(ConfigurePriorities.Optimization)]
+        [Configure(Optimization.Debug)]
+        public virtual void ConfigureNonReleaseLinking(Configuration conf, Target target)
+        {    
+            // In all non-release builds, we create DLLs and link dynamically            
+            conf.Defines.Add("VADON_LINK_DYNAMIC");
+        }
+
+        public override void ConfigureWin64(Configuration conf, Target target)
+        {
+            base.ConfigureWin64(conf, target);
+                        
+            string platformDLLName = target.Optimization == Optimization.Debug ? "qwindowsd" : "qwindows";
+            conf.TargetCopyFilesToSubDirectory.Add(
+                new System.Collections.Generic.KeyValuePair<string, string>(
+                    Path.Combine(ThirdParty.QtModule.QtPath, $"plugins/platforms/{platformDLLName}.dll"), 
+                    "plugins/platforms"
+                )
+            );
+            // TODO: copy PDB as well?
         }
 
         public override void ConfigureFastBuild(Configuration conf, Target target)
@@ -149,6 +146,66 @@ namespace Vadon.Tools.Editor
             // FIXME: Qt Moc/Uic/etc. causing issues with blobbing
             // Figure out a fix later
             conf.FastBuildBlobbed = false;
+        }
+
+        public const string EditorPluginFileExtension = "vdeplugin";
+
+        public static string GetEditorPluginImportFilePath(Configuration conf)
+        {            
+            string outputPath = "[conf.IntermediatePath]/generated/editor_plugin_import/";
+            string outputFileName = "[conf.TargetFileFullNameWithExtension]." + EditorPluginFileExtension;
+
+            return Path.Combine(outputPath, outputFileName);
+        }
+
+        public static string GetResolvedEditorPluginImportFilePath(Configuration conf)
+        {            
+            string outputPath = $"{conf.IntermediatePath}/generated/editor_plugin_import/";
+            string outputFileName = conf.TargetFileFullNameWithExtension + "." + EditorPluginFileExtension;
+
+            return Path.Combine(outputPath, outputFileName);
+        }
+
+        public static void GenerateEditorPluginImportFile(Configuration conf)
+        {
+            // TODO: find some way for the resolver to generate the JSON contents?
+            string configString = $"{conf.Target.Name}";
+            
+            string jsonString = $@"{{
+    ""configuration"" : ""{configString}""
+}}";
+ 
+            Utilities.UtilityFunctions.FileWriteIfDifferent(GetResolvedEditorPluginImportFilePath(conf), jsonString);
+        }
+
+        public const string EditorGameExecutableFileExtension = "vdgexe";
+
+        public static string GetEditorGameExecutableImportFilePath(Configuration conf)
+        {            
+            string outputPath = "[conf.IntermediatePath]/generated/editor_game_import/";
+            string outputFileName = "[conf.TargetFileFullNameWithExtension]." + EditorGameExecutableFileExtension;
+
+            return Path.Combine(outputPath, outputFileName);
+        }
+
+        public static string GetResolvedEditorGameExecutableImportFilePath(Configuration conf)
+        {            
+            string outputPath = $"{conf.IntermediatePath}/generated/editor_game_import/";
+            string outputFileName = conf.TargetFileFullNameWithExtension + "." + EditorGameExecutableFileExtension;
+
+            return Path.Combine(outputPath, outputFileName);
+        }
+
+        public static void GenerateGameExecutableImportFile(Configuration conf)
+        {
+            // TODO: find some way for the resolver to generate the JSON contents?
+            string configString = $"{conf.Target.Name}";
+            
+            string jsonString = $@"{{
+    ""configuration"" : ""{configString}""
+}}";
+ 
+            Utilities.UtilityFunctions.FileWriteIfDifferent(GetResolvedEditorGameExecutableImportFilePath(conf), jsonString);
         }
     }
 }

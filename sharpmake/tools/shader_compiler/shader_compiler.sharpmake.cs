@@ -35,14 +35,14 @@ namespace Vadon.Tools
             conf.ProjectPath += "/shader_compiler";
 
             conf.Output = Configuration.OutputType.Exe;
+        }
 
-            switch(target.Platform)
-            {
-                case Platform.win64:
-                    conf.AddPrivateDependency<ThirdParty.D3DCompiler>(target);
-                    conf.Defines.Add("VADON_D3D_COMPILER");
-                    break;
-            }
+        public override void ConfigureWin64(Configuration conf, Target target)
+        {
+            base.ConfigureWin64(conf, target);
+
+            conf.AddPrivateDependency<ThirdParty.D3DCompiler>(target);
+            conf.Defines.Add("VADON_D3D_COMPILER");
         }
 
         public override void PostResolve()
