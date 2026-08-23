@@ -16,7 +16,7 @@ namespace VadonDemo::Platform
         , m_actions_pressed{}
         , m_action_strengths{}
     {
-
+        m_window.platform_handle = 0;
     }
 
     bool EditorPlatform::initialize()

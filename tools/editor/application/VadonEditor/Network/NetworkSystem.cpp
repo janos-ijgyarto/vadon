@@ -168,7 +168,7 @@ namespace VadonEditor::Network
 					poll();
 				}
 			);
-			m_timer->start(200);
+			m_timer->start(50);
 			qDebug() << "Network started";
 		}
 

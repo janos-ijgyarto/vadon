@@ -221,6 +221,12 @@ namespace VadonEditor::UI
 
 	void RenderWidget::keyPressEvent(QKeyEvent* event)
 	{
+		if (event->isAutoRepeat() == true)
+		{
+			event->ignore();
+			return;
+		}
+
 		if (m_client_info.is_valid() == true)
 		{
 			::Vadon::Foundation::EditorPlatformEventHeader platform_event_header;
@@ -242,6 +248,8 @@ namespace VadonEditor::UI
 			memcpy(data_ptr + sizeof(::Vadon::Foundation::EditorPlatformEventHeader), &keyboard_event, sizeof(::Vadon::Foundation::PlatformKeyboardEvent));
 
 			m_client_info.application->get_network_system().send_message(message_serializer);
+
+			return;
 		}
 
 		QWidget::keyPressEvent(event);
@@ -276,6 +284,8 @@ namespace VadonEditor::UI
 			memcpy(data_ptr + sizeof(::Vadon::Foundation::EditorPlatformEventHeader), &keyboard_event, sizeof(::Vadon::Foundation::PlatformKeyboardEvent));
 
 			m_client_info.application->get_network_system().send_message(message_serializer);
+
+			return;
 		}
 
 		QWidget::keyReleaseEvent(event);
