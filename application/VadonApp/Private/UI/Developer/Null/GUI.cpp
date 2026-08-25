@@ -1,4 +1,3 @@
-#include <VadonApp/Private/PCH/VadonApp.hpp>
 #include <VadonApp/Private/UI/Developer/Null/GUI.hpp>
 
 #include <VadonApp/Private/Core/Application.hpp>

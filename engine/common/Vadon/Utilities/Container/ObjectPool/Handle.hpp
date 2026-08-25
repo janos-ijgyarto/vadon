@@ -1,5 +1,6 @@
 #ifndef VADON_UTILITIES_CONTAINER_OBJECTPOOL_HANDLE_HPP
 #define VADON_UTILITIES_CONTAINER_OBJECTPOOL_HANDLE_HPP
+#include <cstdint>
 namespace Vadon::Utilities
 {
 	struct ObjectPoolHandle

@@ -1,0 +1,467 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>ProjectSettings</class>
+ <widget class="QDialog" name="ProjectSettings">
+  <property name="windowModality">
+   <enum>Qt::WindowModality::ApplicationModal</enum>
+  </property>
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>640</width>
+    <height>480</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Project Settings</string>
+  </property>
+  <property name="modal">
+   <bool>true</bool>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="QTabWidget" name="settingsTabs">
+     <property name="currentIndex">
+      <number>0</number>
+     </property>
+     <widget class="QWidget" name="generalTab">
+      <attribute name="title">
+       <string>General</string>
+      </attribute>
+      <layout class="QFormLayout" name="generalTabForm">
+       <item row="0" column="0">
+        <widget class="QLabel" name="nameLabel">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="text">
+          <string>Name:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1">
+        <widget class="QLabel" name="nameValueLabel">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="text">
+          <string>NONE</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="rootPathLabel">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="text">
+          <string>Root path:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QLabel" name="rootPathValueLabel">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="text">
+          <string>NONE</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="0">
+        <widget class="QLabel" name="customDataLabel">
+         <property name="text">
+          <string>Custom data resource:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="1">
+        <layout class="QHBoxLayout" name="customDataHeaderHBox">
+         <item>
+          <widget class="QLabel" name="customDataHeaderLabel">
+           <property name="text">
+            <string>N/A</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QToolButton" name="customDataToolButton">
+           <property name="text">
+            <string/>
+           </property>
+           <property name="popupMode">
+            <enum>QToolButton::ToolButtonPopupMode::InstantPopup</enum>
+           </property>
+           <property name="arrowType">
+            <enum>Qt::ArrowType::DownArrow</enum>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="editorPluginTab">
+      <attribute name="title">
+       <string>Editor Plugin</string>
+      </attribute>
+      <layout class="QFormLayout" name="pluginTabForm">
+       <item row="0" column="0">
+        <widget class="QLabel" name="pluginPathOverrideLabel">
+         <property name="text">
+          <string>Custom search path:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1">
+        <layout class="QHBoxLayout" name="pluginCustomPathHBox">
+         <item>
+          <widget class="QLineEdit" name="pluginCustomPathEdit">
+           <property name="readOnly">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="pluginCustomPathBrowseButton">
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset theme="QIcon::ThemeIcon::FolderOpen"/>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="pluginCustomPathClearButton">
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset theme="QIcon::ThemeIcon::EditClear"/>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="pluginConfigurationLabel">
+         <property name="text">
+          <string>Selected configuration:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QComboBox" name="pluginConfigurationCombo"/>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="gameTab">
+      <attribute name="title">
+       <string>Game</string>
+      </attribute>
+      <layout class="QFormLayout" name="gameTabForm">
+       <item row="0" column="0">
+        <widget class="QLabel" name="gameCustomPathLabel">
+         <property name="text">
+          <string>Custom search path:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1">
+        <layout class="QHBoxLayout" name="gameCustomPathHBox">
+         <item>
+          <widget class="QLineEdit" name="gameCustomPathEdit"/>
+         </item>
+         <item>
+          <widget class="QPushButton" name="gameCustomPathBrowseButton">
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset theme="QIcon::ThemeIcon::FolderOpen"/>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="gameCustomPathClearButton">
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset theme="QIcon::ThemeIcon::EditClear"/>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="gameConfigurationLabel">
+         <property name="text">
+          <string>Selected configuration:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QComboBox" name="gameConfigurationCombo"/>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+   </item>
+   <item>
+    <widget class="QDialogButtonBox" name="buttonBox">
+     <property name="orientation">
+      <enum>Qt::Orientation::Horizontal</enum>
+     </property>
+     <property name="standardButtons">
+      <set>QDialogButtonBox::StandardButton::Cancel|QDialogButtonBox::StandardButton::Ok</set>
+     </property>
+    </widget>
+   </item>
+  </layout>
+  <action name="actionLoadResource">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::DocumentOpen"/>
+   </property>
+   <property name="text">
+    <string>Load Resource</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::MenuRole::TextHeuristicRole</enum>
+   </property>
+  </action>
+  <action name="actionClear">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::EditClear"/>
+   </property>
+   <property name="text">
+    <string>Clear</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::MenuRole::TextHeuristicRole</enum>
+   </property>
+  </action>
+ </widget>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>accepted()</signal>
+   <receiver>ProjectSettings</receiver>
+   <slot>accept()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>248</x>
+     <y>254</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>157</x>
+     <y>274</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>rejected()</signal>
+   <receiver>ProjectSettings</receiver>
+   <slot>reject()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>316</x>
+     <y>260</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>286</x>
+     <y>274</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>pluginConfigurationCombo</sender>
+   <signal>activated(int)</signal>
+   <receiver>ProjectSettings</receiver>
+   <slot>plugin_configuration_activated(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>383</x>
+     <y>152</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>319</x>
+     <y>239</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>pluginCustomPathEdit</sender>
+   <signal>textChanged(QString)</signal>
+   <receiver>ProjectSettings</receiver>
+   <slot>plugin_custom_path_text_changed(QString)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>340</x>
+     <y>121</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>319</x>
+     <y>239</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>pluginCustomPathBrowseButton</sender>
+   <signal>clicked()</signal>
+   <receiver>ProjectSettings</receiver>
+   <slot>plugin_custom_path_browse_clicked()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>577</x>
+     <y>121</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>319</x>
+     <y>239</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>gameConfigurationCombo</sender>
+   <signal>activated(int)</signal>
+   <receiver>ProjectSettings</receiver>
+   <slot>game_configuration_activated(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>388</x>
+     <y>152</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>319</x>
+     <y>239</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>gameCustomPathEdit</sender>
+   <signal>textChanged(QString)</signal>
+   <receiver>ProjectSettings</receiver>
+   <slot>game_custom_path_text_changed(QString)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>345</x>
+     <y>121</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>319</x>
+     <y>239</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>gameCustomPathBrowseButton</sender>
+   <signal>clicked()</signal>
+   <receiver>ProjectSettings</receiver>
+   <slot>game_custom_path_browse_clicked()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>577</x>
+     <y>121</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>319</x>
+     <y>239</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>pluginCustomPathClearButton</sender>
+   <signal>clicked()</signal>
+   <receiver>ProjectSettings</receiver>
+   <slot>plugin_custom_path_clear_clicked()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>599</x>
+     <y>121</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>319</x>
+     <y>239</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>gameCustomPathClearButton</sender>
+   <signal>clicked()</signal>
+   <receiver>ProjectSettings</receiver>
+   <slot>game_custom_path_clear_clicked()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>603</x>
+     <y>121</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>319</x>
+     <y>239</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionLoadResource</sender>
+   <signal>triggered()</signal>
+   <receiver>ProjectSettings</receiver>
+   <slot>load_custom_data_resource_triggered()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>319</x>
+     <y>239</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionClear</sender>
+   <signal>triggered()</signal>
+   <receiver>ProjectSettings</receiver>
+   <slot>clear_custom_data_resource_triggered()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>319</x>
+     <y>239</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+ <slots>
+  <slot>plugin_custom_path_browse_clicked()</slot>
+  <slot>plugin_custom_path_clear_clicked()</slot>
+  <slot>plugin_custom_path_text_changed(QString)</slot>
+  <slot>game_custom_path_browse_clicked()</slot>
+  <slot>game_custom_path_clear_clicked()</slot>
+  <slot>game_custom_path_text_changed(QString)</slot>
+  <slot>plugin_configuration_activated(int)</slot>
+  <slot>game_configuration_activated(int)</slot>
+  <slot>load_custom_data_resource_triggered()</slot>
+  <slot>clear_custom_data_resource_triggered()</slot>
+ </slots>
+</ui>

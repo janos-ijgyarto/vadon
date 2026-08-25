@@ -126,9 +126,10 @@ namespace VadonEditor::View
 			return;
 		}
 
-		Vadon::Utilities::Property keyframe_property_data;
-		keyframe_property_data.data_type = Vadon::Scene::AnimationChannel::get_data_type_id(view_channel.data_type);
-		keyframe_property_data.name = "Keyframe value";
+		// NOTE: currently we only support trivial types
+		Model::Property keyframe_property_data;
+		keyframe_property_data.type = { .category = Model::PropertyDataType::TRIVIAL, .type_id = Vadon::Scene::AnimationChannel::get_data_type_id(view_channel.data_type) };
+		keyframe_property_data.label = "Keyframe value";
 		keyframe_property_data.value = keyframe_cell.value;
 
 		ViewSystem& view_system = parent_window.m_editor.get_system<ViewSystem>();
@@ -161,7 +162,7 @@ namespace VadonEditor::View
 					// TODO: make proper use of this and only update once explicitly requested (and only the modified elements)?
 					property_editor->clear_modified();
 
-					const Vadon::Utilities::Property& property_data = property_editor->get_property();
+					const Model::Property& property_data = property_editor->get_property();
 
 					Channel& view_channel = parent_window.m_channels[selected_frame_coords.y];
 					KeyframeTableCell& keyframe_cell = view_channel.cells[selected_frame_coords.x];
@@ -300,7 +301,7 @@ namespace VadonEditor::View
 								{
 									if (dev_gui.add_menu_item(m_add_keyframe_menu_item) == true)
 									{
-										const Vadon::Utilities::ErasedDataTypeID type_id = Vadon::Scene::AnimationChannel::get_data_type_id(channel.data_type);
+										const Vadon::Utilities::TypeID type_id = Vadon::Scene::AnimationChannel::get_data_type_id(channel.data_type);
 										channel.cells[keyframe_index].value = Vadon::Utilities::get_erased_type_default_value(type_id);
 
 										modified = true;

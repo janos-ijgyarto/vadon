@@ -1,10 +1,13 @@
 #ifndef VADON_UTILITIES_DATA_VARIANTBASE_HPP
 #define VADON_UTILITIES_DATA_VARIANTBASE_HPP
-#include <Vadon/Scene/Resource/Resource.hpp>
 #include <Vadon/Math/Color.hpp>
 #include <Vadon/Math/Vector.hpp>
 #include <Vadon/Utilities/Container/Box.hpp>
-#include <Vadon/Utilities/TypeInfo/TypeList/VariantTypeList.hpp>
+
+#include <Vadon/Foundation/Utilities/UUID.hpp>
+
+#include <string>
+#include <variant>
 namespace Vadon::Utilities
 {
 	// Used by function bindings to indicate a void function
@@ -19,60 +22,56 @@ namespace Vadon::Utilities
 	using Variant = std::variant<std::monostate, int, uint32_t, float, bool, std::string,
 		Math::Vector2, Math::Vector2i, Math::Vector3, Math::Vector3i, Math::Vector4,
 		Math::ColorRGBA,
-		Vadon::Scene::ResourceHandle, Utilities::UUID,
+		::Vadon::Foundation::UUID, // TODO: allow handles?
 		BoxedVariantArray, BoxedVariantDictionary, NoReturnValue>;
 
 	template<typename T>
-	concept is_trivial_variant_type = type_list_has_type_v<T, Variant>;
+	struct VariantTypeTrait
+	{
+		static Variant to_variant(const T& value)
+		{
+			static_assert(false, "Type not supported!");
+			return Variant();
+		}
+
+		static T from_variant(const Variant& variant)
+		{
+			static_assert(false, "Type not supported!");
+			return T();
+		}
+	};
 
 	template<typename T>
-	Variant to_variant(const T& value)
-	{
-		static_assert(false, "Type not supported!");
-		return Variant();
-	}
+	concept is_trivial_variant_type = std::is_same_v<T, std::monostate> 
+		|| std::is_same_v<T, int>
+		|| std::is_same_v<T, uint32_t>
+		|| std::is_same_v<T, float>
+		|| std::is_same_v<T, bool>
+		|| std::is_same_v<T, std::string>
+		|| std::is_same_v<T, int>
+		|| std::is_same_v<T, ::Vadon::Math::Vector2>
+		|| std::is_same_v<T, ::Vadon::Math::Vector2i>
+		|| std::is_same_v<T, ::Vadon::Math::Vector3>
+		|| std::is_same_v<T, ::Vadon::Math::Vector3i>
+		|| std::is_same_v<T, ::Vadon::Math::Vector4>
+		|| std::is_same_v<T, ::Vadon::Math::ColorRGBA>
+		|| std::is_same_v<T, ::Vadon::Foundation::UUID>
+		|| std::is_same_v<T, ::Vadon::Utilities::BoxedVariantArray>
+		|| std::is_same_v<T, ::Vadon::Utilities::BoxedVariantDictionary>
+		|| std::is_same_v<T, ::Vadon::Utilities::NoReturnValue>;
 
 	template<is_trivial_variant_type T>
-	Variant to_variant(const T& value)
+	struct VariantTypeTrait<T>
 	{
-		return Variant(value);
-	}
+		static Variant to_variant(const T& value)
+		{
+			return Variant(value);
+		}
 
-	template<Vadon::Scene::is_resource_id T>
-	Variant to_variant(const T& value)
-	{
-		return to_variant<Vadon::Scene::ResourceID>(value);
-	}
-
-	template<Vadon::Scene::is_resource_handle T>
-	Variant to_variant(const T& value)
-	{
-		return to_variant<Vadon::Scene::ResourceHandle>(value);
-	}
-
-	template<typename T>
-	T from_variant(const Variant& variant)
-	{
-		static_assert(false, "Type not supported!");
-		return T();
-	}
-	
-	template<is_trivial_variant_type T>
-	T from_variant(const Variant& variant)
-	{
-		return std::get<T>(variant);
-	}
-
-	template<Vadon::Scene::is_resource_id T>
-	T from_variant(const Variant& variant)
-	{
-		return T(from_variant<Vadon::Scene::ResourceID>(variant));
-	}
-
-	template<Vadon::Scene::is_resource_handle T>
-	T from_variant(const Variant& variant)
-	{
-		return T(from_variant<Vadon::Scene::ResourceHandle>(variant));
-	}
+		static T from_variant(const Variant& variant)
+		{
+			return std::get<T>(variant);
+		}
+	};
 }
 #endif

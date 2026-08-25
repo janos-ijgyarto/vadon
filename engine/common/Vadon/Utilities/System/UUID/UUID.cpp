@@ -1,8 +1,9 @@
-#include <Vadon/Private/PCH/Common.hpp>
 #include <Vadon/Utilities/System/UUID/UUID.hpp>
 
 #include <Vadon/Core/Logger.hpp>
+
 #include <Vadon/Utilities/Data/Encoding/Base64.hpp>
+#include <Vadon/Utilities/Debugging/Assert.hpp>
 
 // UUID generation implementation taken from: http://graemehill.ca/minimalist-cross-platform-uuid-guid-generation-in-c++/
 #ifdef VADON_PLATFORM_WIN32
@@ -11,10 +12,12 @@
 #include <uuid/uuid.h>
 #endif
 
+#include <vector>
+
 namespace
 {
 #ifdef VADON_PLATFORM_WIN32
-    Vadon::Utilities::UUID generate_uuid_impl()
+    ::Vadon::Foundation::UUID generate_uuid_impl()
 	{
 		// TODO: report if error occurs?
 		GUID guid;
@@ -23,10 +26,10 @@ namespace
         if (FAILED(result))
         {
             Vadon::Core::Logger::log_error("UUID: failed to generate GUID!\n");
-            return Vadon::Utilities::UUID{};
+            return ::Vadon::Foundation::UUID{};
         }
 
-        return Vadon::Utilities::UUID{
+        return ::Vadon::Foundation::UUID{
             .data = {
                 static_cast<unsigned char>((guid.Data1 >> 24) & 0xFF),
                 static_cast<unsigned char>((guid.Data1 >> 16) & 0xFF),
@@ -67,21 +70,22 @@ namespace
 
 namespace Vadon::Utilities
 {
-	UUID UUID::generate()
+	::Vadon::Foundation::UUID generate_uuid()
 	{
 		return generate_uuid_impl();
 	}
 
-    std::string UUID::to_base64_string() const
+    std::string uuid_to_base64_string(const ::Vadon::Foundation::UUID& uuid)
     {
-        return is_valid() ? Base64::encode(data) : "";
+        return uuid.is_valid() ? Base64::encode(uuid.data) : "";
     }
 
-    bool UUID::from_base64_string(std::string_view data_string)
+    bool uuid_from_base64_string(std::string_view data_string, ::Vadon::Foundation::UUID& uuid)
     {
+        // NOTE: empty is considered a valid parse as a "null" UUID
         if (data_string.empty())
         {
-            invalidate();
+            uuid.invalidate();
             return true;
         }
 
@@ -91,8 +95,8 @@ namespace Vadon::Utilities
             return false;
         }
 
-        VADON_ASSERT(decoded_data.size() == data.size(), "UUID decoded data is incorrect size!");
-        std::copy(decoded_data.begin(), decoded_data.end(), data.begin());
+        VADON_ASSERT(decoded_data.size() == ::Vadon::Foundation::UUID::c_uuid_width, "UUID decoded data is incorrect size!");
+        std::copy(decoded_data.begin(), decoded_data.end(), uuid.data);
         return true;
     }
 }

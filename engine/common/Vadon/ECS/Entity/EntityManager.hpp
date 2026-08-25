@@ -2,6 +2,7 @@
 #define VADON_ECS_ENTITY_ENTITYMANAGER_HPP
 #include <Vadon/ECS/Entity/Entity.hpp>
 #include <Vadon/Utilities/Container/ObjectPool/Pool.hpp>
+#include <Vadon/Foundation/Utilities/UUID.hpp>
 namespace Vadon::ECS
 {
 	class EntityManager
@@ -9,9 +10,6 @@ namespace Vadon::ECS
 	public:
 		VADONCOMMON_API EntityHandle create_entity();
 		bool is_entity_valid(EntityHandle entity_handle) const { return m_entity_pool.is_handle_valid(entity_handle); }
-
-		VADONCOMMON_API std::string get_entity_name(EntityHandle entity_handle) const;
-		VADONCOMMON_API void set_entity_name(EntityHandle entity_handle, std::string_view name);
 
 		VADONCOMMON_API EntityHandle get_entity_parent(EntityHandle entity) const;
 		VADONCOMMON_API EntityHandle get_entity_root(EntityHandle entity) const;
@@ -26,7 +24,6 @@ namespace Vadon::ECS
 	private:
 		struct EntityData
 		{
-			std::string name;
 			EntityHandle parent;
 			EntityList children;
 

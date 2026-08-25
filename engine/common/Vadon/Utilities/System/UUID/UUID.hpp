@@ -1,47 +1,203 @@
 #ifndef VADON_UTILITIES_SYSTEM_UUID_UUID_HPP
 #define VADON_UTILITIES_SYSTEM_UUID_UUID_HPP
+#include <Vadon/Foundation/Utilities/UUID.hpp>
 #include <Vadon/Common.hpp>
-#include <array>
 #include <string>
 namespace Vadon::Utilities
 {
-	// FIXME: use std::byte?
-	using UUIDData = std::array<unsigned char, 16>;
+	// TODO: create UUID wrapper object which also contains a debug string!
+	// AND/OR have some kind of debug lookup where the UUID is mapped to a debug string!
 
-	struct UUID
+	VADONCOMMON_API ::Vadon::Foundation::UUID generate_uuid();
+
+	// FIXME: these will always produce the same length string
+	// replace with a type that avoids dynamic allocation?
+
+	// TODO: replace with to_chars?
+	constexpr char uuid_half_byte_to_hex(const char c)
 	{
-		static constexpr UUIDData c_invalid_uuid_data = {};
-
-		UUIDData data = c_invalid_uuid_data;
-
-		VADONCOMMON_API static UUID generate();
-
-		bool operator==(const UUID& other) const
+		if (c < 10)
 		{
-			return std::memcmp(data.data(), other.data.data(), data.size()) == 0;
+			return char('0' + c);
 		}
-
-		bool is_valid() const
+		else
 		{
-			return std::memcmp(data.data(), c_invalid_uuid_data.data(), data.size()) != 0;
+			return char('A' + (c - 10));
 		}
+	}
 
-		void invalidate() { data = c_invalid_uuid_data; }
-
-		VADONCOMMON_API std::string to_base64_string() const;
-		VADONCOMMON_API bool from_base64_string(std::string_view data_string);
-	};
-}
-
-// Specialize std::hash to allow use in std::unordered_map
-namespace std {
-	template<> struct hash<::Vadon::Utilities::UUID>
+	// TODO: replace with from_chars?
+	// constexpr function to convert one hex char -> 0..15
+	constexpr Vadon::Foundation::UUIDDataType uuid_hex_char_to_value(const char c) 
 	{
-		size_t operator()(const ::Vadon::Utilities::UUID& uuid) const noexcept {
-			const std::uint64_t* p = reinterpret_cast<const std::uint64_t*>(uuid.data.data());
-			std::hash<std::uint64_t> hash;
-			return hash(p[0]) ^ hash(p[1]);
+		// TODO: assert if invalid character is encountered!
+		return static_cast<Vadon::Foundation::UUIDDataType>(
+			(c >= '0' && c <= '9') ? (c - '0') :
+			(c >= 'a' && c <= 'f') ? (10 + (c - 'a')) :
+			(c >= 'A' && c <= 'F') ? (10 + (c - 'A')) : 0);
+	}
+
+	constexpr ::Vadon::Foundation::UUIDString uuid_to_string(const ::Vadon::Foundation::UUID& uuid)
+	{
+		::Vadon::Foundation::UUIDString result_data = {};
+
+		constexpr char c_separator = '-';
+		constexpr size_t c_separator_offsets[4] = { 8, 13, 18, 23 };
+
+		constexpr char half_byte_mask = ((1 << 4) - 1);
+		size_t char_index = 0;
+		size_t separator_index = 0;
+		for (size_t index = 0; index < ::Vadon::Foundation::UUID::c_uuid_width; ++index)
+		{
+			if ((separator_index < 4) && (char_index == c_separator_offsets[separator_index]))
+			{
+				// Write separator
+				result_data.string[char_index] = c_separator;
+				++char_index;
+				++separator_index;
+			}
+
+			const char uuid_byte = uuid.data[index];
+
+			result_data.string[char_index] = uuid_half_byte_to_hex((uuid_byte >> 4) & half_byte_mask);
+			result_data.string[char_index + 1] = uuid_half_byte_to_hex(uuid_byte & half_byte_mask);
+			char_index += 2;
+		}
+
+		return result_data;
+	}
+
+	constexpr std::string uuid_to_hex_string(const ::Vadon::Foundation::UUID& uuid)
+	{
+		std::string uuid_string;
+		uuid_string.resize(::Vadon::Foundation::UUID::c_uuid_width * 2);
+
+		constexpr char half_byte_mask = ((1 << 4) - 1);
+		size_t char_index = 0;
+		for (size_t index = 0; index < ::Vadon::Foundation::UUID::c_uuid_width; ++index)
+		{
+			const char uuid_byte = uuid.data[index];
+
+			uuid_string[char_index] = uuid_half_byte_to_hex((uuid_byte >> 4) & half_byte_mask);
+			uuid_string[char_index + 1] = uuid_half_byte_to_hex(uuid_byte & half_byte_mask);
+			char_index += 2;
+		}
+
+		return uuid_string;
+	}
+
+	constexpr ::Vadon::Foundation::UUID uuid_from_hex_string(std::string_view hex_string)
+	{
+		constexpr size_t uuid_string_length = ::Vadon::Foundation::UUID::c_uuid_width * 2;
+		if (hex_string.size() != uuid_string_length)
+		{
+			// TODO: assert!
+			return ::Vadon::Foundation::UUID{};
+		}
+
+		constexpr char half_byte_mask = ((1 << 4) - 1);
+		size_t char_index = 0;
+		::Vadon::Foundation::UUID result;
+		for (size_t index = 0; index < ::Vadon::Foundation::UUID::c_uuid_width; ++index)
+		{
+			char uuid_byte = (uuid_hex_char_to_value(hex_string[char_index]) & half_byte_mask) << 4;
+			uuid_byte |= uuid_hex_char_to_value(hex_string[char_index + 1]) & half_byte_mask;
+
+			result.data[index] = uuid_byte;
+
+			char_index += 2;
+		}
+
+		return result;
+	}
+
+	VADONCOMMON_API std::string uuid_to_base64_string(const ::Vadon::Foundation::UUID& uuid);
+	VADONCOMMON_API bool uuid_from_base64_string(std::string_view data_string, ::Vadon::Foundation::UUID& uuid);
+
+	// Source: https://stackoverflow.com/a/79657606
+	template <std::size_t N>
+	struct UUIDLiteral 
+	{
+		static_assert(N == 37,  // buffer contains \0
+			"UUID literal must be exactly 36 chars (8-4-4-4-12)");
+
+		Vadon::Foundation::UUID result{};
+
+		constexpr UUIDLiteral(char const (&str)[N])
+		{
+			if ((str[8] == '-' && str[13] == '-' && str[18] == '-' && str[23] == '-') == false)
+			{
+				// TODO: assert!
+				// Dashes must be at 8,13,18,23!
+				return;
+			}
+
+			auto idx = 0;
+			for (Vadon::Foundation::UUIDDataType& byte : result.data) {
+				// skip dash if present
+				if (str[idx] == '-') ++idx;
+				auto hi = uuid_hex_char_to_value(str[idx++]);
+
+				if (str[idx] == '-') ++idx;
+				auto lo = uuid_hex_char_to_value(str[idx++]);
+
+				byte = static_cast<Vadon::Foundation::UUIDDataType>((hi << 4) | lo);
+			}
 		}
 	};
+
+	template <UUIDLiteral U>
+	constexpr ::Vadon::Foundation::UUID operator"" _uuid()
+	{
+		return U.result;
+	}
+
+	constexpr ::Vadon::Foundation::UUID string_to_uuid(const ::Vadon::Foundation::UUIDString& string)
+	{
+		return UUIDLiteral(string.string).result;
+	}
+
+	inline std::string sanitize_uuid_label(std::string_view input)
+	{
+		std::string output;
+		output.reserve(input.size());
+
+		for (char current_char : input)
+		{
+			if (std::isalpha(current_char) != 0)
+			{
+				output.push_back(static_cast<char>(std::tolower(current_char)));
+			}
+			else
+			{
+				output.push_back('_');
+			}
+		}
+
+		return output;
+	}
+
+	inline std::string serialize_labeled_uuid(std::string_view label, const ::Vadon::Foundation::UUID& uuid)
+	{
+		const std::string sanitized_label = sanitize_uuid_label(label);
+		return sanitized_label + "|" + uuid_to_base64_string(uuid);
+	}
+
+	inline ::Vadon::Foundation::UUID parse_labeled_uuid(std::string_view uuid_string)
+	{
+		const size_t separator_index = uuid_string.find('|');
+		::Vadon::Foundation::UUID output;
+		if (separator_index != std::string::npos)
+		{
+			uuid_from_base64_string(uuid_string.substr(separator_index + 1), output);
+		}
+		else
+		{
+			// Assume it's a regular UUID string
+			uuid_from_base64_string(uuid_string, output);
+		}
+
+		return output;
+	}
 }
 #endif

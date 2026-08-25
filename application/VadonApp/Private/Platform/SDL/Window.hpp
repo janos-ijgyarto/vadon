@@ -1,7 +1,7 @@
 #ifndef VADONAPP_PRIVATE_PLATFORM_SDL_WINDOW_HPP
 #define VADONAPP_PRIVATE_PLATFORM_SDL_WINDOW_HPP
 #include <VadonApp/Platform/Window/Window.hpp>
-#include <SDL.h>
+#include <SDL2/SDL.h>
 namespace VadonApp::Private::Platform::SDL
 {
 	using WindowFlags = VadonApp::Platform::WindowFlags;

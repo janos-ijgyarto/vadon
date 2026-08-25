@@ -1,4 +1,3 @@
-#include <Vadon/Private/PCH/Common.hpp>
 #include <Vadon/ECS/World/World.hpp>
 
 namespace Vadon::ECS

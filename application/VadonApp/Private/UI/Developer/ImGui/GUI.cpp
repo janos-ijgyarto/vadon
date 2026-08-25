@@ -1,4 +1,4 @@
-#include <VadonApp/Private/PCH/VadonApp.hpp>
+#if defined(VADON_DEVELOPER_GUI_IMGUI)
 #include <VadonApp/Private/UI/Developer/ImGui/GUI.hpp>
 
 #include <VadonApp/Private/Core/Application.hpp>
@@ -10,6 +10,7 @@
 
 #include <VadonApp/UI/Developer/IconsFontAwesome7.h>
 
+#include <Vadon/Core/Configuration.hpp>
 #include <Vadon/Core/Task/TaskSystem.hpp>
 
 #include <Vadon/Math/Matrix.hpp>
@@ -38,7 +39,7 @@
 #endif
 
 #include <imgui.h>
-#include <misc/cpp/imgui_stdlib.h> // NOTE: required to allow using std::string with input text
+#include <imgui_stdlib.h> // NOTE: required to allow using std::string with input text
 
 namespace VadonApp::Private::UI::Developer::ImGUI
 {
@@ -675,7 +676,7 @@ namespace VadonApp::Private::UI::Developer::ImGUI
 #ifdef _WIN32
         // Set platform dependent data in viewport
         VadonApp::Platform::PlatformInterface& platform_interface = m_application.get_system<VadonApp::Platform::PlatformInterface>();
-        ImGui::GetMainViewport()->PlatformHandleRaw = platform_interface.get_platform_window_handle(window_handle);
+        ImGui::GetMainViewport()->PlatformHandleRaw = (void*)platform_interface.get_platform_window_handle(window_handle);
 #endif
     }
 
@@ -1279,6 +1280,16 @@ namespace VadonApp::Private::UI::Developer::ImGUI
 
     bool GUISystem::init_renderer()
     {
+        // FIXME: this requires CanvasSystem to be explicitly aware of the renderer config
+        // Could instead make it agnostic and accept null handles from the Null backend?
+        // That approach would risk delaying an error until after initialization!
+        Vadon::Core::EngineCoreInterface& engine_core = m_application.get_engine_core();
+        const bool is_renderer_disabled = Vadon::Utilities::to_bool(engine_core.get_config().render_config.flags & Vadon::Core::RenderConfigurationFlags::DISABLE_RENDERING);
+        if (is_renderer_disabled == true)
+        {
+            return true;
+        }
+
         ImGuiIO& io = ImGui::GetIO();
         IM_ASSERT(io.BackendRendererUserData == nullptr);
 
@@ -1287,7 +1298,6 @@ namespace VadonApp::Private::UI::Developer::ImGUI
         io.BackendRendererName = "imgui_impl_renderer_vadon";
         io.BackendFlags |= ImGuiBackendFlags_RendererHasVtxOffset;  // We can honor the ImDrawCmd::VtxOffset field, allowing for large meshes.
 
-        Vadon::Core::EngineCoreInterface& engine_core = m_application.get_engine_core();
         {
             // Create shaders
             Vadon::Render::GraphicsAPI& graphics_api = engine_core.get_system<Vadon::Render::GraphicsAPI>();
@@ -1787,3 +1797,4 @@ namespace VadonApp::Private::UI::Developer::ImGUI
         platform_interface.set_clipboard_text(text);
     }
 }
+#endif

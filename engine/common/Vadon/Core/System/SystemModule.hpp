@@ -6,15 +6,15 @@ namespace Vadon::Render
 	class RenderModule;
 	class GraphicsModule;
 }
-namespace Vadon::Scene
+namespace Vadon::Model
 {
-	class SceneModule;
+	class ModelSystemModule;
 }
 namespace Vadon::Core
 {
 	template<typename ModuleList, typename ModuleImpl, typename... Types>
 	using SystemModule = Utilities::SingletonModule<ModuleList, ModuleImpl, Types...>;
 
-	using SystemModuleList = Vadon::Utilities::TypeList<class CoreModule, Render::RenderModule, Render::GraphicsModule, Scene::SceneModule>;
+	using SystemModuleList = Vadon::Utilities::TypeList<class CoreModule, Render::RenderModule, Render::GraphicsModule, Model::ModelSystemModule>;
 }
 #endif

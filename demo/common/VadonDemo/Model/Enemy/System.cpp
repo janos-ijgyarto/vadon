@@ -9,8 +9,8 @@
 
 #include <Vadon/ECS/World/World.hpp>
 
-#include <Vadon/Scene/SceneSystem.hpp>
-#include <Vadon/Scene/Resource/ResourceSystem.hpp>
+#include <Vadon/Model/Scene/SceneSystem.hpp>
+#include <Vadon/Model/Resource/ResourceSystem.hpp>
 
 #include <numbers>
 
@@ -23,21 +23,21 @@ namespace VadonDemo::Model
 
 	}
 
-	void EnemySystem::register_types()
+	void EnemySystem::register_types(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry)
 	{
-		EnemyDefinition::register_resource();
-		EnemyMovementDefinition::register_resource();
-		EnemyMovementLookahead::register_resource();
-		EnemyMovementWeaving::register_resource();
-		EnemyWeaponAttackDefinition::register_resource();
-		EnemyContactDamageDefinition::register_resource();
+		EnemyDefinition::register_resource(metadata_registry);
+		EnemyMovementDefinition::register_resource(metadata_registry);
+		EnemyMovementLookahead::register_resource(metadata_registry);
+		EnemyMovementWeaving::register_resource(metadata_registry);
+		EnemyWeaponAttackDefinition::register_resource(metadata_registry);
+		EnemyContactDamageDefinition::register_resource(metadata_registry);
 
-		EnemyBase::register_component();
-		EnemyMovement::register_component();
-		EnemyWeapon::register_component();
-		EnemyContactDamage::register_component();
+		EnemyBase::register_component(metadata_registry);
+		EnemyMovement::register_component(metadata_registry);
+		EnemyWeapon::register_component(metadata_registry);
+		EnemyContactDamage::register_component(metadata_registry);
 		
-		Spawner::register_component();
+		Spawner::register_component(metadata_registry);
 	}
 
 	bool EnemySystem::init_collisions(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle entity)
@@ -144,7 +144,7 @@ namespace VadonDemo::Model
 			const auto movement_component = enemy_it.get_component<EnemyMovement>();
 			if ((player_entity.is_valid() == true) && (velocity_component.is_valid() == true) && (movement_component.is_valid() == true))
 			{
-				Vadon::Scene::ResourceSystem& resource_system = m_core.get_engine_core().get_system<Vadon::Scene::ResourceSystem>();
+				Vadon::Model::ResourceSystem& resource_system = m_core.get_engine_core().get_system<Vadon::Model::ResourceSystem>();
 				const EnemyMovementDefinition* movement_def = resource_system.get_resource(movement_component->def_handle);
 
 				velocity_component->velocity = movement_def->get_movement_direction(ecs_world, enemy_it.get_entity(), player_entity, delta_time) * velocity_component->top_speed;
@@ -168,7 +168,7 @@ namespace VadonDemo::Model
 			}
 		}
 
-		Vadon::Scene::ResourceSystem& resource_system = m_core.get_engine_core().get_system<Vadon::Scene::ResourceSystem>();
+		Vadon::Model::ResourceSystem& resource_system = m_core.get_engine_core().get_system<Vadon::Model::ResourceSystem>();
 		auto enemy_weapon_query = component_manager.run_component_query<EnemyWeapon&, WeaponVolleyComponent*>();
 		for (auto weapon_it = enemy_weapon_query.get_iterator(); weapon_it.is_valid() == true; weapon_it.next())
 		{
@@ -274,9 +274,9 @@ namespace VadonDemo::Model
 	void EnemySystem::spawn_enemy(Vadon::ECS::World& ecs_world, const Vadon::ECS::TypedComponentHandle<Spawner>& spawner, const Vadon::Math::Vector2& position)
 	{
 		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
-		Vadon::Scene::SceneSystem& scene_system = m_core.get_engine_core().get_system<Vadon::Scene::SceneSystem>();
+		Vadon::Model::SceneSystem& scene_system = m_core.get_engine_core().get_system<Vadon::Model::SceneSystem>();
 
-		const Vadon::Scene::SceneHandle enemy_prefab_scene = scene_system.load_scene(spawner->enemy_prefab);
+		const Vadon::Model::SceneHandle enemy_prefab_scene = scene_system.load_scene(spawner->enemy_prefab);
 		const Vadon::ECS::EntityHandle spawned_enemy = scene_system.instantiate_scene(enemy_prefab_scene, ecs_world);
 
 		// FIXME: make a parent entity for enemies?
@@ -305,7 +305,7 @@ namespace VadonDemo::Model
 		{
 			if (movement_component->definition.is_valid() == true)
 			{
-				Vadon::Scene::ResourceSystem& resource_system = m_core.get_engine_core().get_system<Vadon::Scene::ResourceSystem>();
+				Vadon::Model::ResourceSystem& resource_system = m_core.get_engine_core().get_system<Vadon::Model::ResourceSystem>();
 				movement_component->def_handle = resource_system.load_resource(movement_component->definition);
 			}
 		}
@@ -350,7 +350,7 @@ namespace VadonDemo::Model
 		}
 
 		// FIXME: Cache handle instead of having to check each time?
-		Vadon::Scene::ResourceSystem& resource_system = m_core.get_engine_core().get_system<Vadon::Scene::ResourceSystem>();
+		Vadon::Model::ResourceSystem& resource_system = m_core.get_engine_core().get_system<Vadon::Model::ResourceSystem>();
 		EnemyContactDamageDefHandle contact_damage_def_handle = resource_system.load_resource(contact_damage->definition);
 
 		const EnemyContactDamageDefinition* contact_damage_def = resource_system.get_resource(contact_damage_def_handle);

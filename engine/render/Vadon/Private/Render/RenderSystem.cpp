@@ -1,4 +1,3 @@
-#include <Vadon/Private/PCH/Render.hpp>
 #include <Vadon/Private/Render/RenderSystem.hpp>
 
 #include <Vadon/Core/Environment.hpp>

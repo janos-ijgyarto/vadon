@@ -5,6 +5,7 @@ namespace Vadon::Private::Core
 {
 	using FileID = Vadon::Core::FileID;
 
+	using FileMetadata = Vadon::Core::FileMetadata;
 	using FileInfo = Vadon::Core::FileInfo;
 
 	using RawFileDataBuffer = Vadon::Core::RawFileDataBuffer;

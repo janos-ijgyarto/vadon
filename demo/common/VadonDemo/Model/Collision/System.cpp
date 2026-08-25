@@ -26,9 +26,9 @@ namespace VadonDemo::Model
 
 	}
 
-	void CollisionSystem::register_types()
+	void CollisionSystem::register_types(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry)
 	{
-		Collision::register_component();
+		Collision::register_component(metadata_registry);
 	}
 
 	void CollisionSystem::update(Vadon::ECS::World& ecs_world, float /*delta_time*/)

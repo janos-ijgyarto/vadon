@@ -2,6 +2,7 @@
 #define VADONAPP_CORE_CONFIGURATION_HPP
 #include <VadonApp/Platform/Configuration.hpp>
 #include <VadonApp/UI/Configuration.hpp>
+#include <string>
 namespace VadonApp::Core
 {
 	struct AppConfiguration

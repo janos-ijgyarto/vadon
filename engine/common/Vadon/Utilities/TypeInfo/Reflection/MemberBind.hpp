@@ -10,17 +10,23 @@ namespace Vadon::Utilities
 		using _ObjectType = T;
 		using _MemberType = TMember;
 
+		static void* get_member_address(void* object, TMember T::* member_ptr)
+		{
+			T* cast_object = static_cast<T*>(object);
+			return &(cast_object->*member_ptr);
+		}
+
 		static Variant invoke_getter(void* object, TMember T::* member_ptr)
 		{
 			T* cast_object = static_cast<T*>(object);
-			return to_variant(cast_object->*member_ptr);
+			return VariantTypeTrait<_MemberType>::to_variant(cast_object->*member_ptr);
 		}
 
 		template <typename T, typename TMember>
 		static void invoke_setter(void* object, TMember T::* member_ptr, const Variant& value)
 		{
 			T* cast_object = static_cast<T*>(object);
-			cast_object->*member_ptr = from_variant<TMember>(value);
+			cast_object->*member_ptr = VariantTypeTrait<_MemberType>::from_variant(value);
 		}
 	};
 
@@ -28,6 +34,16 @@ namespace Vadon::Utilities
 	constexpr auto get_member_pointer_info(TMember T::*)
 	{
 		return MemberPointerInfo<T, TMember>{};
+	}
+
+	template<auto MemberPtr>
+	ErasedMemberAddressGetter erase_member_address_getter()
+	{
+		using MemberInfo = decltype(get_member_pointer_info(MemberPtr));
+		return +[](void* obj)
+			{
+				return MemberInfo::get_member_address(obj, MemberPtr);
+			};
 	}
 
 	template<auto MemberPtr>
@@ -56,7 +72,14 @@ namespace Vadon::Utilities
 		constexpr MemberVariableBind()
 		{
 			using MemberInfo = decltype(get_member_pointer_info(MemberPtr));
-			data_type = get_erased_data_type_id<MemberInfo::_MemberType>();
+			constexpr auto type_list_array = TypeErasureTrait<MemberInfo::_MemberType>::get_type_list();
+			type_list = std::vector<::Vadon::Foundation::UUID>(type_list_array.begin(), type_list_array.end());
+		}
+
+		MemberVariableBind& bind_member_address_getter()
+		{
+			address_getter = erase_member_address_getter<MemberPtr>();
+			return *this;
 		}
 
 		MemberVariableBind& bind_member_getter()
@@ -90,5 +113,13 @@ namespace Vadon::Utilities
 			return *this;
 		}
 	};
+
+	template<typename T, auto MemberPtr>
+	constexpr MemberVariableBind<MemberPtr> create_member_variable_bind()
+	{
+		using MemberInfo = decltype(get_member_pointer_info(MemberPtr));
+		static_assert(std::is_same_v<typename MemberInfo::_ObjectType, T>, "A type may only register its own members!");
+		return MemberVariableBind<MemberPtr>();
+	}
 }
 #endif

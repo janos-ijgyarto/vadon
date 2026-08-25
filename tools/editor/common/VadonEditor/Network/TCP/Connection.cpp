@@ -78,7 +78,11 @@ namespace VadonEditor::Network::TCP
             {
                 if (error)
                 {
-                    m_logging_interface.log_error(std::format("Connection::do_read() error: {}", error.message()));
+                    // FIXME: is EOF always equivalent to the connection being closed?
+                    if (error.value() != asio::error::eof && error.value() != asio::error::operation_aborted)
+                    {
+                        m_logging_interface.log_error(std::format("Connection::do_read() error: {}", error.message()));
+                    }
                     close();
                     return;
                 }
@@ -98,7 +102,11 @@ namespace VadonEditor::Network::TCP
             {
                 if (error)
                 {
-                    m_logging_interface.log_error(std::format("Connection::do_write() error: {}", error.message()));
+                    // FIXME: is EOF always equivalent to the connection being closed?
+                    if (error.value() != asio::error::eof && error.value() != asio::error::operation_aborted)
+                    {
+                        m_logging_interface.log_error(std::format("Connection::do_write() error: {}", error.message()));
+                    }
                     close();
                     return;
                 }

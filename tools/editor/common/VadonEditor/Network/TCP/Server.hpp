@@ -14,6 +14,7 @@ namespace VadonEditor::Network::TCP
 		};
 
 		VADONEDITORCOMMON_API Server(asio::io_context& io_context, Observer& observer, LoggingInterface& logging_interface);
+		VADONEDITORCOMMON_API ~Server();
 
 		VADONEDITORCOMMON_API bool listen(const asio::ip::tcp& protocol, uint16_t port);
 		VADONEDITORCOMMON_API void start_accepting_connections();

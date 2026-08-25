@@ -1,5 +1,6 @@
-#include <Vadon/Private/PCH/Common.hpp>
 #include <Vadon/Utilities/Container/ObjectPool/Manager.hpp>
+
+#include <Vadon/Utilities/Debugging/Assert.hpp>
 
 namespace Vadon::Utilities
 {

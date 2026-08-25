@@ -1,34 +1,44 @@
 #include <VadonEditor/Core/Application.hpp>
 
-#include <VadonEditor/Core/Logger.hpp>
-#include <VadonEditor/Core/Settings.hpp>
+#include <VadonEditor/Core/CommandLine.hpp>
+#include <VadonEditor/Core/Configuration.hpp>
 
-#include <VadonEditor/Network/MessageSystem.hpp>
+#include <VadonEditor/Core/Asset/AssetManager.hpp>
+#include <VadonEditor/Core/asset/AssetServer.hpp>
+
+#include <VadonEditor/Core/Logger.hpp>
+#include <VadonEditor/Core/Plugin/PluginManager.hpp>
+#include <VadonEditor/Core/Project/ProjectManager.hpp>
+
+#include <VadonEditor/Model/ModelSystem.hpp>
+
 #include <VadonEditor/Network/NetworkSystem.hpp>
 
-#include <VadonEditor/Simulator/API/Plugin.hpp>
-#include <VadonEditor/Simulator/Plugin/PluginManager.hpp>
+#include <VadonEditor/Simulator/Simulator.hpp>
 
-#include <VadonEditor/UI/MainWindow.hpp>
+#include <VadonEditor/UI/UISystem.hpp>
 
 #include <VadonEditor/Network/Message/MessageSerializer.hpp>
 
+#include <Vadon/Foundation/Editor/Network/Message/Plugin.hpp>
+
 #include <QCommandLineParser>
 #include <QtWidgets/QApplication>
-#include <QProcess>
-#include <QStyleFactory>
+#include <QSettings>
+
+// TODO: make this always available in debug builds, activated via command line argument!
+//#define VADON_EDITOR_ENABLE_DEBUGBREAK_ON_INIT
+#if defined(VADON_EDITOR_ENABLE_DEBUGBREAK_ON_INIT)
+#include <Windows.h>
 #include <QThread>
-
-#include <QTimer>
-
-#include <iostream>
+#endif
 
 namespace
 {
 	VadonEditor::Core::Logger* s_logger_instance = nullptr;
 	QtMessageHandler s_original_message_handler = nullptr;
 
-	VadonEditor::Core::EditorSettings parse_command_line(const QCoreApplication& application)
+	VadonEditor::Core::CommandLineState parse_command_line(const QCoreApplication& application)
 	{
 		// Add the main command line options
 		QCommandLineParser command_line_parser;
@@ -36,24 +46,85 @@ namespace
 		command_line_parser.addHelpOption();
 		command_line_parser.addVersionOption();
 
-		QCommandLineOption simulator_option("simulator",
+		QCommandLineOption asset_server_option(VadonEditor::Core::CommandLineState::get_parameter_key(VadonEditor::Core::CommandLineParameter::IS_ASSET_SERVER),
+			QCoreApplication::translate("main", "Run as asset server"));
+
+		command_line_parser.addOption(asset_server_option);
+
+		QCommandLineOption simulator_option(VadonEditor::Core::CommandLineState::get_parameter_key(VadonEditor::Core::CommandLineParameter::IS_SIMULATOR),
 			QCoreApplication::translate("main", "Run as simulator"));
 
 		command_line_parser.addOption(simulator_option);
 
-		QCommandLineOption plugin_path_option("plugin_path",
-			QCoreApplication::translate("main", "Override path to plugin DLL"),
+		QCommandLineOption schema_exporter_option(VadonEditor::Core::CommandLineState::get_parameter_key(VadonEditor::Core::CommandLineParameter::IS_SCHEMA_EXPORTER),
+			QCoreApplication::translate("main", "Run as data schema exporter"));
+
+		command_line_parser.addOption(schema_exporter_option);
+
+		QCommandLineOption debug_break_on_init_option(VadonEditor::Core::CommandLineState::get_parameter_key(VadonEditor::Core::CommandLineParameter::DEBUG_BREAK_ON_INIT),
+			QCoreApplication::translate("main", "Force app to pause during initialization to allow attaching debugger"));
+
+		command_line_parser.addOption(debug_break_on_init_option);
+
+		QCommandLineOption startup_project_option(VadonEditor::Core::CommandLineState::get_parameter_key(VadonEditor::Core::CommandLineParameter::STARTUP_PROJECT_PATH),
+			QCoreApplication::translate("main", "Path to project to load on startup"),
 			QCoreApplication::translate("main", "path"));
 
-		command_line_parser.addOption(plugin_path_option);
+		command_line_parser.addOption(startup_project_option);
+
+		QCommandLineOption plugin_config_option(VadonEditor::Core::CommandLineState::get_parameter_key(VadonEditor::Core::CommandLineParameter::PLUGIN_CONFIG_NAME),
+			QCoreApplication::translate("main", "Editor plugin configuration name to use"),
+			QCoreApplication::translate("main", "name"));
+
+		command_line_parser.addOption(plugin_config_option);
 
 		command_line_parser.process(application);
 
-		VadonEditor::Core::EditorSettings settings;
-		settings.is_simulator = command_line_parser.isSet(simulator_option);
-		settings.plugin_path = command_line_parser.value(plugin_path_option);
+		VadonEditor::Core::CommandLineState command_line_state;
+		command_line_state.is_asset_server = command_line_parser.isSet(asset_server_option);
+		command_line_state.is_simulator = command_line_parser.isSet(simulator_option);
+		command_line_state.is_schema_exporter = command_line_parser.isSet(schema_exporter_option);
+		command_line_state.debug_break_on_init = command_line_parser.isSet(debug_break_on_init_option);
+		command_line_state.startup_project_path = command_line_parser.value(startup_project_option);
+		command_line_state.plugin_config_name = command_line_parser.value(plugin_config_option);
 
-		return settings;
+		return command_line_state;
+	}
+
+	VadonEditor::Core::Configuration get_app_configuration(const VadonEditor::Core::CommandLineState& command_line_state)
+	{
+		VadonEditor::Core::Configuration configuration;
+
+		if (command_line_state.is_asset_server == true)
+		{
+			configuration.mode = VadonEditor::Core::ApplicationMode::ASSET_SERVER;
+		}
+		if (command_line_state.is_simulator == true)
+		{
+			configuration.mode = VadonEditor::Core::ApplicationMode::SIMULATOR;
+		}
+		else if (command_line_state.is_schema_exporter == true)
+		{
+			configuration.mode = VadonEditor::Core::ApplicationMode::SCHEMA_EXPORTER;
+		}
+
+		configuration.startup_project_path = command_line_state.startup_project_path;
+		configuration.plugin_config_name = command_line_state.plugin_config_name;
+
+		return configuration;
+	}
+
+	constexpr const char* get_editor_log_message_source_label(::Vadon::Foundation::EditorPluginMessageSource source)
+	{
+		switch (source)
+		{
+		case ::Vadon::Foundation::EditorPluginMessageSource::ASSET_SERVER:
+			return "[ASSET_SERVER]";
+		case ::Vadon::Foundation::EditorPluginMessageSource::SIMULATOR:
+			return "[SIMULATOR]";
+		}
+
+		return nullptr;
 	}
 }
 
@@ -62,32 +133,39 @@ namespace VadonEditor::Core
 	struct Application::Internal
 	{
 		QScopedPointer<QCoreApplication> m_qt_application;
-		EditorSettings m_settings;
+		Configuration m_configuration;
 
-		QProcess m_process;
-		QThread m_network_thread;
+		AssetManager m_asset_manager;
+		PluginManager m_plugin_manager;
+		ProjectManager m_project_manager;
 
 		Core::Logger m_logger;
 
-		Network::NetworkSystem* m_network_system;
-		Network::MessageSystem m_message_system;
+		Model::ModelSystem m_model_system;
 
-		Simulator::PluginManager m_plugin_manager; // FIXME: only create if we're actually using it!
+		Network::NetworkSystem m_network_system;
 
-		UI::MainWindow* m_main_window;
+		Core::AssetServer m_asset_server;
+		Simulator::Simulator m_simulator;
+
+		UI::UISystem m_ui_system;
 
 		static void message_handler(QtMsgType type, const QMessageLogContext& context, const QString& message)
 		{
-			s_logger_instance->internal_log_message(message);
-			s_original_message_handler(type, context, message);
+			s_logger_instance->handle_message(type, context, message);
 		}
 
-		Internal(Application& application, QCoreApplication* qt_application, const EditorSettings settings)
+		Internal(Application& application, QCoreApplication* qt_application, const Configuration& configuration)
 			: m_qt_application(qt_application)
-			, m_settings(settings)
-			, m_network_system(nullptr)
-			, m_main_window(nullptr)
+			, m_configuration(configuration)
+			, m_asset_manager(application)
+			, m_asset_server(application)
+			, m_project_manager(application)
+			, m_model_system(application)
+			, m_network_system(application)
 			, m_plugin_manager(application)
+			, m_simulator(application)
+			, m_ui_system(application)
 		{
 			// Before anything else, we register the message handler
 			Q_ASSERT_X(s_logger_instance == nullptr, "Application::Internal", "Logger already initialized");
@@ -96,148 +174,16 @@ namespace VadonEditor::Core
 			s_original_message_handler = qInstallMessageHandler(&Internal::message_handler);
 
 			// Make sure we can clean up before quitting
-			QObject::connect(m_qt_application.data(), &QCoreApplication::aboutToQuit, [this]() { about_to_quit(); });
-
-			// Create network system (will be moved to thread, so we allocate dynamically)
-			m_network_system = new Network::NetworkSystem(application);
-		}
-
-		bool initialize(Application& application)
-		{
-			if (m_settings.is_simulator == false)
-			{
-				// Main GUI application, create the main window
-				// Make it early so we can display logs, etc.
-				if (init_main_window() == false)
-				{
-					return false;
-				}
-
-				// After 3 seconds, launch the client app
-				// FIXME: do this by opening a project!
-				QTimer::singleShot(3000, [this]() { test_embed(); });
-			}
-			else
-			{
-				// Simulator application
-				// TODO: anything specific?
-			}
-
-			if (init_network(application) == false)
-			{
-				return false;
-			}
-			
-			if (m_settings.is_simulator == true)
-			{
-				// Only initialize the plugin manager if we are in simulator mode
-				// FIXME: refactor this!
-				if (m_plugin_manager.initialize() == false)
-				{
-					return false;
-				}
-			}
-
-			// Start the network thread
-			m_network_thread.start();
-
-			return true;
-		}
-
-		// FIXME: move this to a "GUISystem" that encapsulates all of this
-		bool init_main_window()
-		{
-			// TODO: initialization function for MainWindow? (e.g using command line args to set certain parameters?)
-			QApplication* qt_widgets_app = qobject_cast<QApplication*>(m_qt_application.data());
-
-			// Use fusion style (allows us to add dark mode)
-			qt_widgets_app->setStyle(QStyleFactory::create("Fusion"));
-
-			m_main_window = new UI::MainWindow();
-
-			QObject::connect(&m_logger, &Logger::log_message, m_main_window, &UI::MainWindow::log_message);
-
-			QObject::connect(m_main_window, &UI::MainWindow::menu_test,
-				[this]()
-				{
-					VadonEditor::Network::TestMessage test_message;
-					test_message.number = 123;
-					test_message.other_number = 4.567f;
-
-					std::vector<char> message_data;
-					VadonEditor::Network::MessageSerializer::write_message(test_message, message_data);
-
-					QByteArray message_buffer;
-					message_buffer.append(message_data.data(), message_data.size());
-
-					m_message_system.send_message(message_buffer);
+			QObject::connect(m_qt_application.data(), &QCoreApplication::aboutToQuit, 
+				[this]() 
+				{ 
+					about_to_quit(); 
 				}
 			);
-
-			m_main_window->show();
-
-			return true;
-		}
-
-		// FIXME: move this to a "NetworkSystem" that encapsulates all of this
-		bool init_network(Application& application)
-		{
-			if (m_network_system->initialize() == false)
-			{
-				return false;
-			}
-
-			// TODO: initialization function for Network (make use of command line, etc.)
-
-			m_network_system->moveToThread(&m_network_thread);
-
-			QObject::connect(&m_network_thread, &QThread::started, m_network_system, &Network::NetworkSystem::start);
-			QObject::connect(&m_network_thread, &QThread::finished, m_network_system, &Network::NetworkSystem::close);
-			QObject::connect(&m_network_thread, &QThread::finished, m_network_system, &QObject::deleteLater);
-
-			QObject::connect(&m_message_system, &Network::MessageSystem::message_dispatched, m_network_system, &Network::NetworkSystem::send_message);
-
-			QObject::connect(m_network_system, &Network::NetworkSystem::received_message, &m_message_system, &Network::MessageSystem::internal_received_message);
-
-			QObject::connect(&m_message_system, &Network::MessageSystem::received_message,
-				[&](const QByteArray& data)
-				{
-					const VadonEditor::Network::MessageHeader* message_header = reinterpret_cast<const VadonEditor::Network::MessageHeader*>(data.data());
-					const VadonEditor::Network::MessageCategory category = static_cast<VadonEditor::Network::MessageCategory>(message_header->category);
-
-					switch (category)
-					{
-					case VadonEditor::Network::MessageCategory::TEST:
-					{
-						if (m_settings.is_simulator == false)
-						{
-							VadonEditor::Network::TestMessage client_test;
-							VadonEditor::Network::MessageSerializer::deserialize_message(client_test, data.data() + sizeof(VadonEditor::Network::MessageHeader));
-
-							qInfo() << "Client test message: number = " << client_test.number << ", other number = " << client_test.other_number << Qt::endl;
-						}
-						else
-						{
-							// Send to plugin
-							// FIXME: move to other system!
-							application.get_plugin_manager().get_plugin()->process_message_from_editor(*message_header, data.data() + sizeof(VadonEditor::Network::MessageHeader));
-						}
-					}
-					break;
-					}
-				}
-			);
-
-			return true;
 		}
 
 		~Internal()
 		{
-			cleanup();
-
-			Q_ASSERT_X(m_network_system == nullptr, "Application::~Internal", "Network system was not cleaned up");
-			Q_ASSERT_X(m_main_window == nullptr, "Application::~Internal", "Main window was not cleaned up");
-
 			if (s_logger_instance != nullptr)
 			{
 				qInstallMessageHandler(s_original_message_handler);
@@ -246,91 +192,325 @@ namespace VadonEditor::Core
 			}
 		}
 
-		void cleanup()
+		bool initialize()
 		{
-			m_plugin_manager.shutdown();
-
-			if (m_network_thread.isRunning() == true)
-			{
-				m_network_thread.quit();
-				m_network_thread.wait();
-
-				// The thread will already clean up the network system
-				m_network_system = nullptr;
-			}
-
-			if (m_network_system != nullptr)
-			{
-				// In case we never moved it to the network thread
-				m_network_system->deleteLater();
-				m_network_system = nullptr;
-			}
-
-			if (m_main_window != nullptr)
-			{
-				m_main_window->deleteLater();
-				m_main_window = nullptr;
-			}
-		}
-
-		void test_embed()
-		{
-			if (m_settings.is_simulator == true)
-			{
-				return;
-			}
-
-			QString program_path = QCoreApplication::applicationFilePath();
-			m_process.setProgram(program_path);
-			m_process.setArguments({ "--simulator" });
-
-			QObject::connect(&m_process, &QProcess::aboutToClose, [this]() {cleanup_process(); });
-			QObject::connect(&m_process, &QProcess::errorOccurred, [this](QProcess::ProcessError error) { process_error(error); });
-
-			QObject::connect(&m_process, &QProcess::readyReadStandardOutput,
+			QObject::connect(&m_project_manager, &ProjectManager::project_loaded,
 				[this]()
 				{
-					qInfo() << qPrintable(m_process.readAllStandardOutput());
+					project_loaded();
 				}
 			);
 
-			m_process.start(QIODevice::ReadOnly);
+			switch(m_configuration.mode)
+			{
+			case ApplicationMode::EDITOR:
+			{
+				QObject::connect(&m_network_system, &Network::NetworkSystem::received_message,
+					[&](const QByteArray& data)
+					{
+						received_message(data);
+					}
+				);
+			}
+			break;
+			case ApplicationMode::ASSET_SERVER:
+			{
+				// On startup, the asset server needs to connect to the editor, then we can load the project
+				QObject::connect(&m_network_system, &Network::NetworkSystem::connected_to_server,
+					[&]()
+					{
+						editor_connected();
+					}
+				);
+			}
+			break;
+			case ApplicationMode::SIMULATOR:
+			{
+				// On startup, the simulator needs to connect to the editor, then we can load the project
+				QObject::connect(&m_network_system, &Network::NetworkSystem::connected_to_server,
+					[this]()
+					{
+						editor_connected();
+					}
+				);
+			}
+			break;
+			}
+
+			// Initialize UI system first (allows main window to hook into logger)
+			if (m_ui_system.initialize() == false)
+			{
+				return false;
+			}
+
+			if (m_project_manager.initialize() == false)
+			{
+				return false;
+			}
+
+			if (m_asset_manager.initialize() == false)
+			{
+				return false;
+			}
+
+			if (m_model_system.initialize() == false)
+			{
+				return false;
+			}
+
+			if (m_network_system.initialize() == false)
+			{
+				return false;
+			}
+
+			if (m_asset_server.initialize() == false)
+			{
+				return false;
+			}
+
+			if (m_simulator.initialize() == false)
+			{
+				return false;
+			}
+
+			return true;
 		}
 
-		void cleanup_process()
+		bool load_startup_project()
 		{
-			qInfo() << "Process shutting down" << Qt::endl;
+			switch (m_configuration.mode)
+			{
+			case ApplicationMode::ASSET_SERVER:
+			{
+				// Asset server should run network right away to be able to notify editor server 
+				m_network_system.run_network();
+			}
+			break;
+			case ApplicationMode::SIMULATOR:
+			{
+				// Simulator should run network right away to be able to notify editor server 
+				m_network_system.run_network();
+			}
+			break;
+			}
+
+			if (m_configuration.startup_project_path.isEmpty() == false)
+			{
+				qInfo() << "Loading startup project";
+				if (m_project_manager.load_project(m_configuration.startup_project_path) == false)
+				{
+					return false;
+				}
+			}
+
+			return true;
 		}
 
-		void process_error(QProcess::ProcessError error)
+		void editor_connected()
 		{
-			qCritical() << "Error running process: " << error << Qt::endl;
+			switch (m_configuration.mode)
+			{
+			case ApplicationMode::ASSET_SERVER:
+			{
+				// Asset server is connected to editor, now we can run the plugin
+				AssetServerSettings settings;
+				settings.configuration_name = m_configuration.plugin_config_name;
+				// TODO: other settings?
+				if (m_asset_server.run_asset_server(settings) == false)
+				{
+					// Failed to load plugin, exit!
+					request_quit(1);
+				}
+			}
+			break;
+			case ApplicationMode::SIMULATOR:
+			{
+				// Simulator is connected to editor, now we can run the plugin
+				Simulator::SimulatorSettings settings;
+				settings.configuration_name = m_configuration.plugin_config_name;
+				// TODO: other settings?
+				if (m_simulator.run_simulator(settings) == false)
+				{
+					// Failed to load plugin, exit!
+					request_quit(1);
+				}
+			}
+			break;
+			}
+		}
+
+		void cleanup()
+		{
+			m_model_system.shutdown();
+			m_simulator.shutdown();
+			m_asset_server.shutdown();
+			m_network_system.shutdown();
+			m_project_manager.shutdown();
+
+			m_ui_system.shutdown();
 		}
 
 		void about_to_quit()
 		{
 			cleanup();
 		}
+
+		void request_quit(int exit_code)
+		{
+			QMetaObject::invokeMethod(m_qt_application.data(), &QCoreApplication::exit, Qt::QueuedConnection, exit_code);
+		}
+
+		void project_loaded()
+		{
+			switch (m_configuration.mode)
+			{
+			case ApplicationMode::EDITOR:
+			{
+				// Show main window
+				m_ui_system.show_main_window();
+			}
+				break;
+			case ApplicationMode::SCHEMA_EXPORTER:
+			{
+				if (m_project_manager.generate_project_data_schema(m_configuration.plugin_config_name) == true)
+				{
+					request_quit(0);
+				}
+				else
+				{
+					request_quit(1);
+				}
+				return;
+			}
+			}
+
+			// Start network to allow communicating with plugins and other tools
+			m_network_system.run_network();
+
+			// Load the project assets
+			m_asset_manager.project_loaded();
+
+			// Have model validate project contents
+			m_model_system.project_loaded();
+		}
+
+		void received_message(const QByteArray& data)
+		{
+			::Vadon::Foundation::EditorMessageReader message_reader(data.constData(), data.size());
+
+			const ::Vadon::Foundation::EditorMessageCategory category = message_reader.get_current_category();
+			switch (category)
+			{
+			case ::Vadon::Foundation::EditorMessageCategory::TEST:
+			{
+				const ::Vadon::Foundation::EditorMessageTest* client_test = reinterpret_cast<const ::Vadon::Foundation::EditorMessageTest*>(message_reader.get_current_message_data());
+
+				qInfo() << "Client test message: number = " << client_test->number << ", other number = " << client_test->other_number;
+			}
+			break;
+			case ::Vadon::Foundation::EditorMessageCategory::PLUGIN:
+			{
+				const char* message_data = message_reader.get_current_message_data();
+				const ::Vadon::Foundation::EditorPluginMessageHeader* plugin_message_header = reinterpret_cast<const ::Vadon::Foundation::EditorPluginMessageHeader*>(message_data);
+				switch (plugin_message_header->message_type)
+				{
+				case ::Vadon::Foundation::EditorPluginMessageType::PLUGIN_INIT:
+				{
+					const ::Vadon::Foundation::EditorPluginMessageInit* plugin_init_message = reinterpret_cast<const ::Vadon::Foundation::EditorPluginMessageInit*>(message_reader.get_current_message_data());
+					if (plugin_init_message->error_code != 0)
+					{
+						qCritical() << "Plugin initialized, but with error code:" << plugin_init_message->error_code;
+						return;
+					}
+
+					switch (plugin_message_header->plugin_type)
+					{
+					case ::Vadon::Foundation::EditorPluginMessageSource::ASSET_SERVER:
+					{
+						asset_server_initialized();
+					}
+					break;
+					case ::Vadon::Foundation::EditorPluginMessageSource::SIMULATOR:
+					{
+						simulator_initialized();
+					}
+					break;
+					}
+				}
+				break;
+				case ::Vadon::Foundation::EditorPluginMessageType::PLUGIN_LOG:
+				{
+					const ::Vadon::Foundation::EditorPluginMessageLog* plugin_log_message = reinterpret_cast<const ::Vadon::Foundation::EditorPluginMessageLog*>(message_reader.get_current_message_data());
+					const QString log_message_string = QByteArray(message_reader.get_current_message_data() + sizeof(::Vadon::Foundation::EditorPluginMessageLog), plugin_log_message->length);
+
+					switch (plugin_log_message->log_type)
+					{
+					case ::Vadon::Foundation::EditorPluginMessageLog::Type::LOG_INFO:
+						qInfo().noquote() << get_editor_log_message_source_label(plugin_log_message->plugin_type) << log_message_string;
+						break;
+					case ::Vadon::Foundation::EditorPluginMessageLog::Type::LOG_WARNING:
+						qWarning().noquote() << get_editor_log_message_source_label(plugin_log_message->plugin_type) << log_message_string;
+						break;
+					case ::Vadon::Foundation::EditorPluginMessageLog::Type::LOG_ERROR:
+						qCritical().noquote() << get_editor_log_message_source_label(plugin_log_message->plugin_type) << log_message_string;
+						break;
+					}
+				}
+				break;
+				}
+			}
+			break;
+			}
+		}
+
+		void asset_server_initialized()
+		{
+			// TODO: anything?
+		}
+
+		void simulator_initialized()
+		{
+			// NOTE: have to process it this way to ensure model sends out messages first
+			m_model_system.simulator_initialized();
+			m_ui_system.simulator_initialized();
+		}
 	};
+
+	QSettings Application::get_app_settings()
+	{
+		return QSettings(QSettings::Format::IniFormat, QSettings::Scope::UserScope, Application::c_org_name, Application::c_app_name);
+	}
 
 	Application::Application(int argc, char* argv[])
 	{
 		// Create Qt core application to allow parsing command line args
 		QCoreApplication* qt_application = new QCoreApplication(argc, argv);
-		const EditorSettings& settings = parse_command_line(*qt_application);
+		const CommandLineState command_line_state = parse_command_line(*qt_application);
 
-		if (settings.is_simulator == false)
+#if defined(VADON_EDITOR_ENABLE_DEBUGBREAK_ON_INIT)
+		if (command_line_state.debug_break_on_init == true)
+		{
+			// TODO: make this properly platform-independent!
+			while (IsDebuggerPresent() == 0)
+			{
+				QThread::sleep(std::chrono::seconds{ 1 });
+			}
+		}
+#endif
+
+		const Configuration app_configuration = get_app_configuration(command_line_state);
+
+		if (app_configuration.mode == ApplicationMode::EDITOR)
 		{
 			// Replace with Widgets Application
 			delete qt_application;
 			qt_application = new QApplication(argc, argv);
 		}
-		else
-		{
-			QCoreApplication::setApplicationName("Vadon Editor (Simulator)");
-		}
 
-		m_internal = std::make_unique<Internal>(*this, qt_application, settings);
+		QCoreApplication::setOrganizationName(c_org_name);
+		QCoreApplication::setApplicationName(c_app_name);
+
+		m_internal = std::make_unique<Internal>(*this, qt_application, app_configuration);
 	}
 
 	Application::~Application()
@@ -344,36 +524,76 @@ namespace VadonEditor::Core
 			return -1;
 		}
 
+		if (m_internal->load_startup_project() == false)
+		{
+			return -2;
+		}
+
 		return m_internal->m_qt_application->exec();
 	}
 
-	const EditorSettings& Application::get_settings() const
+	const Configuration& Application::get_configuration() const
 	{
-		return m_internal->m_settings;
+		return m_internal->m_configuration;
 	}
 
-	Network::MessageSystem& Application::get_message_system()
+	AssetManager& Application::get_asset_manager()
 	{
-		return m_internal->m_message_system;
+		return m_internal->m_asset_manager;
 	}
 
-	Network::NetworkSystem& Application::get_network_system()
+	AssetServer& Application::get_asset_server()
 	{
-		return *m_internal->m_network_system;
+		return m_internal->m_asset_server;
 	}
 
-	Simulator::PluginManager& Application::get_plugin_manager()
+	Logger& Application::get_logger()
+	{
+		return m_internal->m_logger;
+	}
+
+	PluginManager& Application::get_plugin_manager()
 	{
 		return m_internal->m_plugin_manager;
 	}
 
-	UI::MainWindow* Application::get_main_window()
+	ProjectManager& Application::get_project_manager()
 	{
-		return m_internal->m_main_window;
+		return m_internal->m_project_manager;
+	}
+
+	Model::ModelSystem& Application::get_model_system()
+	{
+		return m_internal->m_model_system;
+	}
+
+	Network::NetworkSystem& Application::get_network_system()
+	{
+		return m_internal->m_network_system;
+	}
+
+	Simulator::Simulator& Application::get_simulator()
+	{
+		return m_internal->m_simulator;
+	}
+
+	UI::UISystem& Application::get_ui_system()
+	{
+		return m_internal->m_ui_system;
+	}
+
+	QCoreApplication* Application::get_qt_application() const
+	{
+		return m_internal->m_qt_application.data();
+	}
+
+	void Application::request_quit(int exit_code)
+	{
+		m_internal->request_quit(exit_code);
 	}
 
 	bool Application::initialize()
 	{
-		return m_internal->initialize(*this);
+		return m_internal->initialize();
 	}
 }

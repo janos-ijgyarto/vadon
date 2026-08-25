@@ -1,53 +1,51 @@
-#include <Vadon/Private/PCH/Common.hpp>
 #include <Vadon/Utilities/TypeInfo/TypeErasure.hpp>
 
-namespace
-{
-	Vadon::Utilities::Variant get_trivial_type_default_value(const Vadon::Utilities::ErasedDataTypeID& type_id)
-	{
-		switch (type_id.id)
-		{
-		case Vadon::Utilities::type_list_index_v<int, Vadon::Utilities::Variant>:
-			return Vadon::Utilities::Variant(0);
-		case Vadon::Utilities::type_list_index_v<uint32_t, Vadon::Utilities::Variant>:
-			return Vadon::Utilities::Variant(0u);
-		case Vadon::Utilities::type_list_index_v<float, Vadon::Utilities::Variant>:
-			return Vadon::Utilities::Variant(0.0f);
-		case Vadon::Utilities::type_list_index_v<bool, Vadon::Utilities::Variant>:
-			return Vadon::Utilities::Variant(false);
-		case Vadon::Utilities::type_list_index_v<std::string, Vadon::Utilities::Variant>:
-			return Vadon::Utilities::Variant(std::string());
-		case Vadon::Utilities::type_list_index_v<Vadon::Math::Vector2, Vadon::Utilities::Variant>:
-			return Vadon::Utilities::Variant(Vadon::Math::Vector2_Zero);
-		case Vadon::Utilities::type_list_index_v<Vadon::Math::Vector2i, Vadon::Utilities::Variant>:
-			return Vadon::Utilities::Variant(Vadon::Math::Vector2i{0, 0});
-		case Vadon::Utilities::type_list_index_v<Vadon::Math::Vector3, Vadon::Utilities::Variant>:
-			return Vadon::Utilities::Variant(Vadon::Math::Vector3_Zero);
-		case Vadon::Utilities::type_list_index_v<Vadon::Math::Vector3i, Vadon::Utilities::Variant>:
-			return Vadon::Utilities::Variant(Vadon::Math::Vector3i{0, 0, 0});
-		case Vadon::Utilities::type_list_index_v<Vadon::Math::Vector4, Vadon::Utilities::Variant>:
-			return Vadon::Utilities::Variant(Vadon::Math::Vector4_Zero);
-		case Vadon::Utilities::type_list_index_v<Vadon::Math::ColorRGBA, Vadon::Utilities::Variant>:
-			return Vadon::Utilities::Variant(Vadon::Math::Color_White);
-		default:
-			break;
-		}
+#include <Vadon/Utilities/Debugging/Assert.hpp>
 
-		VADON_UNREACHABLE;
-	}
-}
+#include <Vadon/Utilities/TypeInfo/Registry.hpp>
 
 namespace Vadon::Utilities
 {
-	Variant get_erased_type_default_value(const ErasedDataTypeID& type_id)
+	TypeID get_erased_data_type_id(TypeID type_id)
 	{
-		switch (type_id.type)
+		// FIXME: find a way to delegate this logic to places that need it!
+		const TypeID uuid_type_id = Vadon::Utilities::TypeRegistry::get_type_id<Vadon::Foundation::UUID>();
+		if (Vadon::Utilities::TypeRegistry::is_base_of(uuid_type_id, type_id) == true)
 		{
-		case ErasedDataType::TRIVIAL:
-			return get_trivial_type_default_value(type_id);
-		case ErasedDataType::RESOURCE_ID:
-			return Variant(Vadon::Scene::ResourceID());
-		// NOTE: for containers, we expect client code to drill down to value types and request default values
+			return uuid_type_id;
+		}
+
+		return type_id;
+	}
+
+	Variant get_erased_type_default_value(TypeID type_id)
+	{
+		// NOTE: this assumes we register the trivial types first!
+		const Vadon::Foundation::BaseType base_type = static_cast<Vadon::Foundation::BaseType>(type_id);
+		switch (base_type)
+		{
+		case Vadon::Foundation::BaseType::INT32:
+			return Vadon::Utilities::Variant(0);
+		case Vadon::Foundation::BaseType::UINT32:
+			return Vadon::Utilities::Variant(0u);
+		case Vadon::Foundation::BaseType::FLOAT:
+			return Vadon::Utilities::Variant(0.0f);
+		case Vadon::Foundation::BaseType::BOOL:
+			return Vadon::Utilities::Variant(false);
+		case Vadon::Foundation::BaseType::STRING:
+			return Vadon::Utilities::Variant(std::string());
+		case Vadon::Foundation::BaseType::VECTOR2:
+			return Vadon::Utilities::Variant(Vadon::Math::Vector2_Zero);
+		case Vadon::Foundation::BaseType::VECTOR2I:
+			return Vadon::Utilities::Variant(Vadon::Math::Vector2i{ 0, 0 });
+		case Vadon::Foundation::BaseType::VECTOR3:
+			return Vadon::Utilities::Variant(Vadon::Math::Vector3_Zero);
+		case Vadon::Foundation::BaseType::VECTOR3I:
+			return Vadon::Utilities::Variant(Vadon::Math::Vector3i{ 0, 0, 0 });
+		case Vadon::Foundation::BaseType::VECTOR4:
+			return Vadon::Utilities::Variant(Vadon::Math::Vector4_Zero);
+		case Vadon::Foundation::BaseType::COLORRGBA:
+			return Vadon::Utilities::Variant(Vadon::Math::Color_White);
 		default:
 			break;
 		}

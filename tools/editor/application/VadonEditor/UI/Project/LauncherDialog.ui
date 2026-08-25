@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>LauncherDialog</class>
+ <widget class="QDialog" name="LauncherDialog">
+  <property name="windowModality">
+   <enum>Qt::WindowModality::ApplicationModal</enum>
+  </property>
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>800</width>
+    <height>600</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Project Manager</string>
+  </property>
+  <property name="modal">
+   <bool>true</bool>
+  </property>
+  <layout class="QHBoxLayout" name="horizontalLayout">
+   <item>
+    <layout class="QVBoxLayout" name="mainVBox">
+     <item>
+      <layout class="QHBoxLayout" name="mainButtonsHBox">
+       <item>
+        <widget class="QPushButton" name="newButton">
+         <property name="text">
+          <string>New</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="importButton">
+         <property name="text">
+          <string>Import</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="uuidGeneratorButton">
+         <property name="text">
+          <string>UUID Generator</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="horizontalSpacer">
+         <property name="orientation">
+          <enum>Qt::Orientation::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
+     </item>
+     <item>
+      <layout class="QHBoxLayout" name="projectListHBox">
+       <item>
+        <widget class="QListWidget" name="projectListWidget"/>
+       </item>
+       <item>
+        <layout class="QVBoxLayout" name="selectedProjectButtonVBox">
+         <item>
+          <widget class="QPushButton" name="runButton">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="text">
+            <string>Run</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="removeButton">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="text">
+            <string>Remove</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="verticalSpacer">
+           <property name="orientation">
+            <enum>Qt::Orientation::Vertical</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>20</width>
+             <height>40</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+        </layout>
+       </item>
+      </layout>
+     </item>
+    </layout>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>importButton</sender>
+   <signal>clicked()</signal>
+   <receiver>LauncherDialog</receiver>
+   <slot>import_clicked()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>349</x>
+     <y>96</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>199</x>
+     <y>149</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>newButton</sender>
+   <signal>clicked()</signal>
+   <receiver>LauncherDialog</receiver>
+   <slot>new_clicked()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>138</x>
+     <y>22</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>399</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>projectListWidget</sender>
+   <signal>itemSelectionChanged()</signal>
+   <receiver>LauncherDialog</receiver>
+   <slot>project_selection_changed()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>328</x>
+     <y>315</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>399</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>projectListWidget</sender>
+   <signal>itemDoubleClicked(QListWidgetItem*)</signal>
+   <receiver>LauncherDialog</receiver>
+   <slot>project_double_clicked(QListWidgetItem*)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>328</x>
+     <y>315</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>399</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>runButton</sender>
+   <signal>clicked()</signal>
+   <receiver>LauncherDialog</receiver>
+   <slot>run_clicked()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>720</x>
+     <y>83</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>399</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>removeButton</sender>
+   <signal>clicked()</signal>
+   <receiver>LauncherDialog</receiver>
+   <slot>remove_clicked()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>720</x>
+     <y>113</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>399</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>uuidGeneratorButton</sender>
+   <signal>clicked()</signal>
+   <receiver>LauncherDialog</receiver>
+   <slot>uuid_generator_clicked()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>227</x>
+     <y>22</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>399</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+ <slots>
+  <slot>test_clicked()</slot>
+  <slot>import_clicked()</slot>
+  <slot>new_clicked()</slot>
+  <slot>project_selection_changed()</slot>
+  <slot>project_double_clicked(QListWidgetItem*)</slot>
+  <slot>run_clicked()</slot>
+  <slot>remove_clicked()</slot>
+  <slot>uuid_generator_clicked()</slot>
+ </slots>
+</ui>

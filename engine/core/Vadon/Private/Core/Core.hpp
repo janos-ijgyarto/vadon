@@ -9,8 +9,8 @@
 #include <Vadon/Private/Render/RenderSystem.hpp>
 #include <Vadon/Private/Render/GraphicsAPI/GraphicsAPI.hpp>
 
-#include <Vadon/Private/Scene/Resource/ResourceSystem.hpp>
-#include <Vadon/Private/Scene/SceneSystem.hpp>
+#include <Vadon/Private/Model/Resource/ResourceSystem.hpp>
+#include <Vadon/Private/Model/Scene/SceneSystem.hpp>
 
 namespace Vadon::Private::Core
 {
@@ -19,6 +19,9 @@ namespace Vadon::Private::Core
 	public:
 		EngineCore();
 		~EngineCore();
+
+		static void register_types();
+		static void register_type_metadata(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry);
 
 		bool initialize(const Vadon::Core::CoreConfiguration& config) override;
 		void shutdown() override;
@@ -33,8 +36,8 @@ namespace Vadon::Private::Core
 		Render::RenderSystem m_render_system;
 		Render::GraphicsAPIBase::Implementation m_graphics_api;
 
-		Scene::ResourceSystem m_resource_system;
-		Scene::SceneSystem m_scene_system;
+		Model::ResourceSystem m_resource_system;
+		Model::SceneSystem m_scene_system;
 	};
 }
 #endif

@@ -1,7 +1,8 @@
-#include <Vadon/Private/PCH/Common.hpp>
 #include <Vadon/ECS/Component/Registry.hpp>
 
 #include <Vadon/Core/Environment.hpp>
+
+#include <Vadon/Utilities/Debugging/Assert.hpp>
 
 namespace Vadon::ECS
 {
@@ -26,7 +27,7 @@ namespace Vadon::ECS
 		return pool_info_it->second.factory_function();
 	}
 
-	Vadon::Utilities::Variant ComponentRegistry::get_component_property_default_value(Vadon::Utilities::TypeID type_id, std::string_view property_name)
+	Vadon::Utilities::Variant ComponentRegistry::get_component_property_default_value(Vadon::Utilities::TypeID type_id, const ::Vadon::Foundation::UUID& property_uuid)
 	{
 		const ComponentRegistry& registry_instance = get_registry_instance();
 		auto pool_info_it = registry_instance.m_pool_info_lookup.find(type_id);
@@ -35,7 +36,7 @@ namespace Vadon::ECS
 			return Vadon::Utilities::Variant();
 		}
 
-		return Vadon::Utilities::TypeRegistry::get_property(pool_info_it->second.prototype->get_data(), type_id, property_name);
+		return Vadon::Utilities::TypeRegistry::get_property(pool_info_it->second.prototype->get_data(), type_id, property_uuid);
 	}
 
 	std::vector<Vadon::Utilities::TypeID> ComponentRegistry::get_component_types()

@@ -1,9 +1,10 @@
-#include <Vadon/Private/PCH/Render.hpp>
 #include <Vadon/Private/Render/Text/TextSystem.hpp>
 
 #include <Vadon/Render/GraphicsAPI/Texture/TextureSystem.hpp>
 
 #include <Vadon/Utilities/Data/DataUtilities.hpp>
+
+#include <algorithm>
 
 namespace
 {

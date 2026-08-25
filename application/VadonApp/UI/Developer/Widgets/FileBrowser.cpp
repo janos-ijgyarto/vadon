@@ -1,4 +1,3 @@
-#include <VadonApp/Private/PCH/VadonApp.hpp>
 #include <VadonApp/UI/Developer/Widgets/FileBrowser.hpp>
 
 #include <VadonApp/UI/Developer/GUI.hpp>

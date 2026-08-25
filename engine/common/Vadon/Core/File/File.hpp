@@ -1,10 +1,18 @@
 #ifndef VADON_CORE_FILE_FILE_HPP
 #define VADON_CORE_FILE_FILE_HPP
-#include <Vadon/Utilities/System/UUID/UUID.hpp>
+#include <Vadon/Foundation/Utilities/UUID.hpp>
+#include <chrono>
+#include <string>
 #include <vector>
 namespace Vadon::Core
 {
-	using FileID = Vadon::Utilities::UUID;
+	using FileID = ::Vadon::Foundation::UUID;
+	using FileTimeType = std::chrono::time_point<std::chrono::file_clock>;
+
+	struct FileMetadata
+	{
+		FileTimeType last_write_time; // Time since epoch
+	};
 
 	struct FileInfo
 	{
@@ -12,6 +20,7 @@ namespace Vadon::Core
 		// TODO: ensure that valid offset and size are always stored?
 		int offset = 0;
 		int size = 0;
+		FileMetadata metadata;
 
 		bool is_valid() const
 		{

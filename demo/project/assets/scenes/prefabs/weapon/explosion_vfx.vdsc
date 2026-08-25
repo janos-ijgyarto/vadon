@@ -1,0 +1,50 @@
+{
+    "id|GQz9/KcMRyO2QDl117Z1/A==": "4fZSfrcmQim9sq+xEq/g+g==",
+    "properties|CFSRIDI8SO6QhvW/UsQ14g==": {
+        "entities|uR4B50m5RBqQkrvaSPr84Q==": [
+            {
+                "components|9cQpDtvNQR2TuN32Yr4+ig==": [
+                    {
+                        "properties|u44mUNyiRwC1OQLF16ALxw==": {
+                            "looping|Z+bsn2yBTd+5Bdra2UgnUw==": false,
+                            "time_scale|e52C4XadRsOms3hvEZxjIQ==": 1
+                        },
+                        "type|3gp3e1BaQs62II7kqSg75Q==": "FPvAEwvQT2mcldgF/kDJZw=="
+                    },
+                    {
+                        "properties|u44mUNyiRwC1OQLF16ALxw==": {
+                            "color|Glrl/ZXqT6CePhXWqxYwhA==": "#ffffffff",
+                            "resource|7shLdI3LS6u2dXQC1eeJhA==": "H5rhkHtuSQG4hoRxWdyPNA=="
+                        },
+                        "type|3gp3e1BaQs62II7kqSg75Q==": "sjalUl7xRXao1LdVshKhZQ=="
+                    },
+                    {
+                        "properties|u44mUNyiRwC1OQLF16ALxw==": {
+                            "layer_definition|AAaiU0zzRHqPcyRD0Fx4cw==": "6eryAxE7RRiJ7Qha4pEc6w==",
+                            "visible|+3cT9okgSKCBHYsYRXiN4Q==": true,
+                            "z_order|1B8AA6j2THuNo4Lyv7vCoA==": 3
+                        },
+                        "type|3gp3e1BaQs62II7kqSg75Q==": "evRaUx1PRDCq/ZjDL/CNog=="
+                    },
+                    {
+                        "properties|u44mUNyiRwC1OQLF16ALxw==": {
+                            "position|ongWu0nIRtW5wNCGPsR3/A==": [
+                                0,
+                                0
+                            ],
+                            "rotation|OzY064E6S/OJJzWyP8YrnA==": 0,
+                            "scale|lvSRINl3STSFWQhlKbbX+Q==": 1
+                        },
+                        "type|3gp3e1BaQs62II7kqSg75Q==": "6jMjrAaCSLuTptd9Ksh5EA=="
+                    }
+                ],
+                "id|w1YNg+p2SOONiuIpi7ZbzQ==": "6lRUI5cgRwC0785g1nnRxw==",
+                "name|6epoQsUyRBe/0Hfauf1F+w==": "Explosion",
+                "parent|JwTgxEDoTym6qKas9DaVMA==": "AAAAAAAAAAAAAAAAAAAAAA==",
+                "scene|euKxwNp2Rt+fX3Ismk8HQg==": "AAAAAAAAAAAAAAAAAAAAAA=="
+            }
+        ],
+        "name|J8hzJXX3TDKzCQ3Vb4zF2Q==": ""
+    },
+    "type|GVZdrAVASKi15caSyF2TGA==": "xDIJS9XyToCclSzWaajtHg=="
+}

@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>AssetBrowserWidget</class>
+ <widget class="QWidget" name="AssetBrowserWidget">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>400</width>
+    <height>300</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Browse Assets</string>
+  </property>
+  <layout class="QVBoxLayout" name="mainLayout">
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <widget class="QPushButton" name="prevButton">
+       <property name="text">
+        <string/>
+       </property>
+       <property name="icon">
+        <iconset theme="QIcon::ThemeIcon::GoPrevious"/>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="nextButton">
+       <property name="text">
+        <string/>
+       </property>
+       <property name="icon">
+        <iconset theme="QIcon::ThemeIcon::GoNext"/>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="upButton">
+       <property name="text">
+        <string/>
+       </property>
+       <property name="icon">
+        <iconset theme="QIcon::ThemeIcon::GoUp"/>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="pathLabel">
+       <property name="text">
+        <string>Path:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="pathLineEdit">
+       <property name="readOnly">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="QListView" name="assetList"/>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="fileNameHBox">
+     <item>
+      <widget class="QLabel" name="fileNameLabel">
+       <property name="text">
+        <string>File:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="fileNameLineEdit"/>
+     </item>
+    </layout>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>upButton</sender>
+   <signal>clicked()</signal>
+   <receiver>AssetBrowserWidget</receiver>
+   <slot>up_clicked()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>91</x>
+     <y>21</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>199</x>
+     <y>149</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>prevButton</sender>
+   <signal>clicked()</signal>
+   <receiver>AssetBrowserWidget</receiver>
+   <slot>prev_clicked()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>23</x>
+     <y>21</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>199</x>
+     <y>149</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>nextButton</sender>
+   <signal>clicked()</signal>
+   <receiver>AssetBrowserWidget</receiver>
+   <slot>next_clicked()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>57</x>
+     <y>21</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>199</x>
+     <y>149</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>fileNameLineEdit</sender>
+   <signal>textChanged(QString)</signal>
+   <receiver>AssetBrowserWidget</receiver>
+   <slot>name_line_edit_changed(QString)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>213</x>
+     <y>277</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>199</x>
+     <y>149</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>assetList</sender>
+   <signal>doubleClicked(QModelIndex)</signal>
+   <receiver>AssetBrowserWidget</receiver>
+   <slot>asset_double_clicked(QModelIndex)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>199</x>
+     <y>149</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>199</x>
+     <y>149</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+ <slots>
+  <signal>asset_opened(QModelIndex)</signal>
+  <signal>asset_selected(QModelIndex)</signal>
+  <signal>file_name_changed(QString)</signal>
+  <slot>up_clicked()</slot>
+  <slot>prev_clicked()</slot>
+  <slot>next_clicked()</slot>
+  <slot>name_line_edit_changed(QString)</slot>
+  <slot>asset_double_clicked(QModelIndex)</slot>
+ </slots>
+</ui>

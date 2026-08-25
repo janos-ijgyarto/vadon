@@ -1,4 +1,3 @@
-#include <VadonApp/Private/PCH/VadonApp.hpp>
 #include <VadonApp/Private/Platform/Input/InputSystem.hpp>
 
 #include <VadonApp/Platform/PlatformInterface.hpp>

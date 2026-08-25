@@ -1,0 +1,50 @@
+{
+	"name": "vadon-engine-dependencies",
+	"version": "0.0.1",
+	"dependencies": [
+		{
+			"name": "concurrentqueue",
+			"host": true
+		},
+		{
+			"name": "freetype",
+			"host": true,
+			"default-features": false
+		},
+		{
+			"name": "glm",
+			"host": true
+		},
+		{
+			"name": "nlohmann-json",
+			"host": true
+		},
+		{
+			"name": "simdjson",
+			"host": true
+		}
+	],
+	"builtin-baseline": "2c356da17069ed4ce4d793d03a60bf87b3e5cf2a",
+	"overrides": [
+    { 
+        "name": "concurrentqueue", 
+        "version": "1.0.4"
+    },
+	{ 
+        "name": "freetype", 
+        "version": "2.13.2"
+    },
+	{ 
+        "name": "glm", 
+        "version": "1.0.3"
+    },
+	{ 
+        "name": "nlohmann-json", 
+        "version": "3.11.2"
+    },
+	{ 
+        "name": "simdjson", 
+        "version": "4.6.6"
+    }
+  ]	
+}

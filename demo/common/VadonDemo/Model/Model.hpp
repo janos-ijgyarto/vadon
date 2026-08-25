@@ -6,8 +6,12 @@
 #include <VadonDemo/Model/Weapon/System.hpp>
 
 #include <Vadon/Math/Vector.hpp>
-#include <Vadon/Scene/Scene.hpp>
+#include <Vadon/Model/Scene/Scene.hpp>
 #include <random>
+namespace Vadon::Foundation
+{
+	class TypeMetadataRegistry;
+}
 namespace Vadon::ECS
 {
 	class World;
@@ -27,9 +31,9 @@ namespace VadonDemo::Model
 	class Model
 	{
 	public:
-		static void register_types();
+		static void register_types(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry);
 
-		VADONDEMO_API bool init_simulation(Vadon::ECS::World& ecs_world, Vadon::Scene::SceneID level_scene_id);
+		VADONDEMO_API bool init_simulation(Vadon::ECS::World& ecs_world, Vadon::Model::SceneID level_scene_id);
 		VADONDEMO_API void update(Vadon::ECS::World& ecs_world, float delta_time);
 		VADONDEMO_API bool is_in_end_state(Vadon::ECS::World& ecs_world) const;
 		VADONDEMO_API void end_simulation(Vadon::ECS::World& ecs_world);
@@ -46,8 +50,8 @@ namespace VadonDemo::Model
 		bool initialize();
 		void global_config_updated();
 
-		bool internal_init_simulation(Vadon::ECS::World& ecs_world, Vadon::Scene::SceneID level_scene_id);
-		bool load_level(Vadon::ECS::World& ecs_world, Vadon::Scene::SceneID level_scene_id);
+		bool internal_init_simulation(Vadon::ECS::World& ecs_world, Vadon::Model::SceneID level_scene_id);
+		bool load_level(Vadon::ECS::World& ecs_world, Vadon::Model::SceneID level_scene_id);
 
 		bool validate_sim_state(Vadon::ECS::World& ecs_world);
 

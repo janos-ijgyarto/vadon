@@ -1,10 +1,13 @@
-#include <Vadon/Private/PCH/Common.hpp>
 #include <Vadon/Utilities/TypeInfo/Registry.hpp>
 
 #include <Vadon/Core/Environment.hpp>
 #include <Vadon/Core/Logger.hpp>
 
+#include <Vadon/Utilities/Data/Object.hpp>
 #include <Vadon/Utilities/Enum/EnumClass.hpp>
+#include <Vadon/Utilities/System/UUID/UUID.hpp>
+
+#include <Vadon/Utilities/Debugging/Assert.hpp>
 
 #include <format>
 
@@ -12,11 +15,13 @@ namespace Vadon::Utilities
 {
 	namespace
 	{
-		PropertyInfo make_property_info(std::string_view name, const MemberVariableBindBase& property)
+		PropertyInfo make_property_info(const ::Vadon::Foundation::Property& property_info, const MemberVariableBindBase& property)
 		{
-			return PropertyInfo{ .name = std::string(name), .data_type = property.data_type,
+			return PropertyInfo{ .base_info = property_info,
+				.type_list = property.type_list,
 				.has_getter = property.member_getter || property.getter_function,
-				.has_setter = property.member_setter || property.setter_function };
+				.has_setter = property.member_setter || property.setter_function
+			};
 		}
 
 		TypeRegistry& get_registry_instance()
@@ -55,33 +60,68 @@ namespace Vadon::Utilities
 		}
 	}
 
-	bool TypeRegistry::TypeData::bind_method(std::string_view method_name, MemberFunctionBind method)
+	TypeRegistry::TypeRegistry()
 	{
-		if (has_method(method_name) == true)
+	}
+
+	bool TypeRegistry::initialize()
+	{
+		if (m_initialized == true)
 		{
-			Vadon::Core::Logger::log_error(std::format("Type registry error: \"{}\" already has method registered with name \"{}\"!\n", info.name, method_name));
-			return false;
+			return true;
 		}
 
-		methods.emplace(std::string(method_name), method);
+		m_initialized = true;
+
+		// Register all base types first to ensure that their TypeIDs are added first
+		register_type<int>();
+		register_type<uint32_t>();
+		register_type<float>();
+		register_type<bool>();
+		register_type<std::string>();
+		register_type<Vadon::Math::Vector2>();
+		register_type<Vadon::Math::Vector2i>();
+		register_type<Vadon::Math::Vector3>();
+		register_type<Vadon::Math::Vector3i>();
+		register_type<Vadon::Math::Vector4>();
+		register_type<Vadon::Math::ColorRGBA>();
+		register_type<::Vadon::Foundation::UUID>();
+
+		register_type<BoxedVariantArray>();
+		register_type<BoxedVariantDictionary>();
+		register_type<DataObject>();
+		register_type<ObjectWrapper>();
+
 		return true;
 	}
 
-	bool TypeRegistry::TypeData::add_property(std::string_view name, MemberVariableBindBase property)
+	bool TypeRegistry::TypeData::bind_method(const MemberFunctionUUID& method_uuid, MemberFunctionBind method)
 	{
-		if (has_property(name) == true)
+		if (has_method(method_uuid) == true)
 		{
-			Vadon::Core::Logger::log_error(std::format("Type registry error: \"{}\" already has property registered with name \"{}\"!\n", info.name, name));
+			Vadon::Core::Logger::log_error(std::format("Type registry error: \"{}\" already has method registered with name \"{}\"!\n", uuid_to_string(info.id).string, uuid_to_string(method_uuid).string));
 			return false;
 		}
 
-		properties.emplace(std::string(name), property);
+		methods.emplace(method_uuid, method);
 		return true;
 	}
 
-	bool TypeRegistry::TypeData::has_method(std::string_view method_name) const
+	bool TypeRegistry::TypeData::add_property(const PropertyUUID& property_uuid, const ::Vadon::Foundation::Property& property_info, MemberVariableBindBase member_bind)
 	{
-		auto method_it = methods.find(std::string(method_name));
+		if (has_property(property_uuid) == true)
+		{
+			Vadon::Core::Logger::log_error(std::format("Type registry error: \"{}\" already has property registered with name \"{}\"!\n", uuid_to_string(info.id).string, uuid_to_string(property_uuid).string));
+			return false;
+		}
+
+		properties.emplace(property_uuid, PropertyData{ .info = property_info, .member_bind = member_bind });
+		return true;
+	}
+
+	bool TypeRegistry::TypeData::has_method(const MemberFunctionUUID& method_uuid) const
+	{
+		auto method_it = methods.find(method_uuid);
 		if (method_it != methods.end())
 		{
 			return true;
@@ -90,9 +130,9 @@ namespace Vadon::Utilities
 		return false;
 	}
 
-	bool TypeRegistry::TypeData::has_property(std::string_view property_name) const
+	bool TypeRegistry::TypeData::has_property(const PropertyUUID& property_uuid) const
 	{
-		auto property_it = properties.find(std::string(property_name));
+		auto property_it = properties.find(property_uuid);
 		if (property_it != properties.end())
 		{
 			return true;
@@ -101,19 +141,55 @@ namespace Vadon::Utilities
 		return false;
 	}
 
-	TypeID TypeRegistry::get_type_id(std::string_view type_name)
+	ObjectWrapper TypeRegistry::create_object(TypeID type_id)
 	{
-		const std::string type_name_str(type_name);
+		TypeRegistry& instance = get_registry_instance();
+		auto type_data_it = instance.m_type_lookup.find(type_id);
+		if (type_data_it == instance.m_type_lookup.end())
+		{
+			type_not_found_error(type_id);
+			return ObjectWrapper{};
+		}
+
+		const TypeData& type_data = type_data_it->second;
+		VADON_ASSERT(type_data.object_factory.factory_function != nullptr, "Invalid factory function!");
+
+		return ObjectWrapper(type_id, type_data.object_factory.factory_function());
+	}
+
+	void TypeRegistry::destroy_object(const ObjectWrapper& object)
+	{
+		TypeRegistry& instance = get_registry_instance();
+		auto type_data_it = instance.m_type_lookup.find(object.get_type());
+		if (type_data_it == instance.m_type_lookup.end())
+		{
+			type_not_found_error(object.get_type());
+			return;
+		}
+
+		const TypeData& type_data = type_data_it->second;
+		VADON_ASSERT(type_data.object_factory.destructor_function != nullptr, "Invalid factory function!");
+
+		type_data.object_factory.destructor_function(object.get_data());
+	}
+
+	TypeID TypeRegistry::get_type_id(const TypeUUID& type_uuid)
+	{
 		TypeRegistry& instance = get_registry_instance();
 
-		auto type_id_it = instance.m_id_lookup.find(type_name_str);
+		auto type_id_it = instance.m_id_lookup.find(type_uuid);
 		if (type_id_it == instance.m_id_lookup.end())
 		{
-			Vadon::Core::Logger::log_error(std::format("Type registry error: {} not present in registry!\n", type_name));
+			Vadon::Core::Logger::log_error(std::format("Type registry error: {} not present in registry!\n", uuid_to_string(type_uuid).string));
 			return Vadon::Utilities::TypeID::INVALID;
 		}
 
 		return type_id_it->second;
+	}
+
+	bool TypeRegistry::is_base_of(const TypeUUID& base_uuid, const TypeUUID& type_uuid)
+	{
+		return is_base_of(get_type_id(base_uuid), get_type_id(type_uuid));
 	}
 
 	bool TypeRegistry::is_base_of(TypeID base_id, TypeID type_id)
@@ -127,6 +203,11 @@ namespace Vadon::Utilities
 		TypeID current_type_id = type_id;
 		while (current_type_id != Vadon::Utilities::TypeID::INVALID)
 		{
+			if (current_type_id == base_id)
+			{
+				return true;
+			}
+
 			auto current_data_it = instance.m_type_lookup.find(current_type_id);
 			if (current_data_it == instance.m_type_lookup.end())
 			{
@@ -135,18 +216,13 @@ namespace Vadon::Utilities
 			}
 
 			const TypeData& current_type_data = current_data_it->second;
-			if (current_type_data.info.id == base_id)
-			{
-				return true;
-			}
-
-			current_type_id = current_type_data.info.base_id;
+			current_type_id = current_type_data.base_id;
 		}
 
 		return false;
 	}
 
-	TypeInfo TypeRegistry::get_type_info(TypeID type_id)
+	::Vadon::Foundation::TypeInfo TypeRegistry::get_type_info(TypeID type_id)
 	{
 		TypeRegistry& instance = get_registry_instance();
 
@@ -154,7 +230,7 @@ namespace Vadon::Utilities
 		if (type_data_it == instance.m_type_lookup.end())
 		{
 			type_not_found_error(type_id);
-			return TypeInfo();
+			return ::Vadon::Foundation::TypeInfo();
 		}
 
 		return type_data_it->second.info;
@@ -202,7 +278,27 @@ namespace Vadon::Utilities
 		return properties;
 	}
 
-	Variant TypeRegistry::get_property(void* object, TypeID type_id, std::string_view property_name)
+	PropertyInfo TypeRegistry::get_property_info(TypeID type_id, const PropertyUUID& property_uuid)
+	{
+		TypeRegistry& instance = get_registry_instance();
+		auto type_data_it = instance.m_type_lookup.find(type_id);
+		if (type_data_it == instance.m_type_lookup.end())
+		{
+			type_not_found_error(type_id);
+			return PropertyInfo();
+		}
+
+		const PropertyData* property_data = instance.internal_find_property(type_data_it->second, property_uuid);
+		if (property_data == nullptr)
+		{
+			// TODO: error?
+			return PropertyInfo();
+		}
+
+		return make_property_info(property_data->info, property_data->member_bind);
+	}
+
+	Variant TypeRegistry::get_property(void* object, TypeID type_id, const PropertyUUID& property_uuid)
 	{
 		TypeRegistry& instance = get_registry_instance();
 		auto type_data_it = instance.m_type_lookup.find(type_id);
@@ -213,17 +309,17 @@ namespace Vadon::Utilities
 		}
 
 		const TypeData& type_data = type_data_it->second;
-		const MemberVariableBindBase* property_bind = instance.internal_find_property(type_data, property_name);
-		if (property_bind == nullptr)
+		const PropertyData* property_data = instance.internal_find_property(type_data, property_uuid);
+		if (property_data == nullptr)
 		{
-			Vadon::Core::Logger::log_error(std::format("Type registry error: property \"{}\" not found in type \"{}\"!\n", property_name, type_data.info.name));
+			Vadon::Core::Logger::log_error(std::format("Type registry error: property \"{}\" not found in type \"{}\"!\n", uuid_to_string(property_uuid).string, uuid_to_string(type_data.info.id).string));
 			return Variant();
 		}
 
-		return invoke_property_getter(object, *property_bind);
+		return invoke_property_getter(object, property_data->member_bind);
 	}
 
-	void TypeRegistry::set_property(void* object, TypeID type_id, std::string_view property_name, const Variant& value)
+	void TypeRegistry::set_property(void* object, TypeID type_id, const PropertyUUID& property_uuid, const Variant& value)
 	{
 		TypeRegistry& instance = get_registry_instance();
 		auto type_data_it = instance.m_type_lookup.find(type_id);
@@ -234,7 +330,7 @@ namespace Vadon::Utilities
 		}
 
 		const TypeData& type_data = type_data_it->second;
-		instance.internal_apply_property_value(type_data, object, property_name, value);
+		instance.internal_apply_property_value(type_data, object, property_uuid, value);
 	}
 
 	void TypeRegistry::apply_property_values(void* object, TypeID type_id, const PropertyList& properties)
@@ -250,26 +346,41 @@ namespace Vadon::Utilities
 		const TypeData& type_data = type_data_it->second;
 		for (const Property& current_property : properties)
 		{
-			instance.internal_apply_property_value(type_data, object, current_property.name, current_property.value);
+			instance.internal_apply_property_value(type_data, object, current_property.info.id, current_property.value);
 		}
 	}
 
-	void TypeRegistry::internal_register_type(std::string_view type_name, std::string_view hint_string, size_t size, size_t alignment, TypeID base_type_id)
+	std::vector<TypeUUID> TypeRegistry::get_all_registered_types()
 	{
-		const std::string type_name_str(type_name);
+		std::vector<TypeUUID> type_list;
+
+		TypeRegistry& instance = get_registry_instance();
+		for (const auto& type_id_pair : instance.m_id_lookup)
+		{
+			type_list.push_back(type_id_pair.first);
+		}
+
+		return type_list;
+	}
+
+	void TypeRegistry::internal_register_type(const TypeUUID& type_uuid, size_t size, size_t alignment, TypeID base_type_id)
+	{
 		TypeRegistry& instance = get_registry_instance();
 
-		VADON_ASSERT(instance.m_id_lookup.find(type_name_str) == instance.m_id_lookup.end(), std::format("Type registry error: \"{}\" already exists in registry!\n", type_name));
+		if (instance.m_id_lookup.find(type_uuid) != instance.m_id_lookup.end())
+		{
+			VADON_ERROR(std::format("Type registry error: \"{}\" already exists in registry!\n", uuid_to_string(type_uuid).string));
+			return;
+		}
 
 		const TypeID new_type_id = to_enum<TypeID>(instance.m_id_counter++);
-		instance.m_id_lookup.emplace(type_name_str, new_type_id);
+		instance.m_id_lookup.emplace(type_uuid, new_type_id);
 
 		TypeData& new_type_data = instance.m_type_lookup.insert(std::make_pair(new_type_id, TypeData{})).first->second;
-		new_type_data.info.id = new_type_id;
-		new_type_data.info.name = type_name;
-		new_type_data.info.hint_string = hint_string.empty() ? "" : hint_string;
+		new_type_data.info.id = type_uuid;
 		new_type_data.info.size = size;
 		new_type_data.info.alignment = alignment;
+		new_type_data.info.property_count = 0;
 
 		if (base_type_id != Vadon::Utilities::TypeID::INVALID)
 		{
@@ -277,9 +388,26 @@ namespace Vadon::Utilities
 		}
 	}
 
-	bool TypeRegistry::internal_add_property(TypeID type_id, std::string_view name, MemberVariableBindBase property_bind)
+	void TypeRegistry::internal_register_type_factory(TypeID type_id, ObjectFactory factory)
 	{
 		TypeRegistry& instance = get_registry_instance();
+
+		auto type_data_it = instance.m_type_lookup.find(type_id);
+		VADON_ASSERT(type_data_it != instance.m_type_lookup.end(), "Type not found!");
+		if (type_data_it == instance.m_type_lookup.end())
+		{
+			type_not_found_error(type_id);
+			return;
+		}
+
+		TypeData& type_data = type_data_it->second;
+		type_data.object_factory = factory;
+	}
+
+	bool TypeRegistry::internal_add_property(TypeID type_id, const PropertyUUID& property_uuid, MemberVariableBindBase property_bind)
+	{
+		TypeRegistry& instance = get_registry_instance();
+
 		auto type_data_it = instance.m_type_lookup.find(type_id);
 		VADON_ASSERT(type_data_it != instance.m_type_lookup.end(), "Type not found!");
 		if (type_data_it == instance.m_type_lookup.end())
@@ -288,10 +416,34 @@ namespace Vadon::Utilities
 			return false;
 		}
 
-		return type_data_it->second.add_property(name, std::move(property_bind));
+		// Make sure the property is itself a registered type
+		for (const ::Vadon::Foundation::UUID& property_type_uuid : property_bind.type_list)
+		{
+			if (property_type_uuid.is_valid() == false)
+			{
+				VADON_ERROR("Property type is invalid!");
+			}
+
+			const TypeID property_type_id = get_type_id(property_type_uuid);
+			auto property_type_it = instance.m_type_lookup.find(property_type_id);
+			if (property_type_it == instance.m_type_lookup.end())
+			{
+				type_not_found_error(type_id);
+				return false;
+			}
+		}
+
+		const TypeID front_type_id = get_type_id(property_bind.type_list.front());
+		auto property_type_it = instance.m_type_lookup.find(front_type_id);
+
+		const TypeData& property_type_data = property_type_it->second;
+		::Vadon::Foundation::Property property_info = { .id = property_uuid, .root_type = property_type_data.info.id, .type_list_length = property_bind.type_list.size()};
+		VADON_ASSERT(property_info.type_list_length > 0, "Invalid type list!");
+
+		return type_data_it->second.add_property(property_uuid, property_info, std::move(property_bind));
 	}
 
-	bool TypeRegistry::internal_bind_method(TypeID type_id, std::string_view name, MemberFunctionBind method_bind)
+	bool TypeRegistry::internal_bind_method(TypeID type_id, const MemberFunctionUUID& method_uuid, MemberFunctionBind method_bind)
 	{
 		TypeRegistry& instance = get_registry_instance();
 		auto type_data_it = instance.m_type_lookup.find(type_id);
@@ -301,7 +453,7 @@ namespace Vadon::Utilities
 			return false;
 		}
 
-		return type_data_it->second.bind_method(name, std::move(method_bind));
+		return type_data_it->second.bind_method(method_uuid, std::move(method_bind));
 	}
 
 	void TypeRegistry::register_type_with_base(TypeID /*type_id*/, TypeRegistry::TypeData& data, TypeID base_id)
@@ -309,16 +461,17 @@ namespace Vadon::Utilities
 		auto base_data_it = m_type_lookup.find(base_id);
 		if (base_data_it == m_type_lookup.end())
 		{
-			Vadon::Core::Logger::log_error(std::format("Type registry error: base class with type ID {} provided for \"{}\" is not present in registry!\n", Vadon::Utilities::to_integral(base_id), data.info.name));
+			Vadon::Core::Logger::log_error(std::format("Type registry error: base class with type ID {} provided for \"{}\" is not present in registry!\n", Vadon::Utilities::to_integral(base_id), uuid_to_string(data.info.id).string));
 			return;
 		}
 
-		data.info.base_id = base_id;
+		data.info.base_id = base_data_it->second.info.id;
+		data.base_id = base_id;
 
 		// TODO: build up LUTs to improve lookups for properties, etc.?
 	}
 
-	bool TypeRegistry::has_method(TypeID type_id, std::string_view method_name) const
+	bool TypeRegistry::has_method(TypeID type_id, const MemberFunctionUUID& method_uuid) const
 	{
 		// FIXME: have a faster way to look this up?
 		TypeID current_type_id = type_id;
@@ -332,18 +485,18 @@ namespace Vadon::Utilities
 			}
 
 			const TypeData& current_type_data = current_data_it->second;
-			if (current_type_data.has_method(method_name) == true)
+			if (current_type_data.has_method(method_uuid) == true)
 			{
 				return true;
 			}
 
-			current_type_id = current_type_data.info.base_id;
+			current_type_id = current_type_data.base_id;
 		}
 
 		return false;
 	}
 
-	bool TypeRegistry::has_property(TypeID type_id, std::string_view property_name) const
+	bool TypeRegistry::has_property(TypeID type_id, const PropertyUUID& property_uuid) const
 	{
 		// FIXME: have a faster way to look this up?
 		TypeID current_type_id = type_id;
@@ -357,12 +510,12 @@ namespace Vadon::Utilities
 			}
 
 			const TypeData& current_type_data = current_data_it->second;
-			if (current_type_data.has_property(property_name) == true)
+			if (current_type_data.has_property(property_uuid) == true)
 			{
 				return true;
 			}
 
-			current_type_id = current_type_data.info.base_id;
+			current_type_id = current_type_data.base_id;
 		}
 
 		return false;
@@ -378,14 +531,15 @@ namespace Vadon::Utilities
 		}
 
 		const TypeData& type_data = type_data_it->second;
-		if (type_data.info.base_id != Vadon::Utilities::TypeID::INVALID)
+		if (type_data.base_id != Vadon::Utilities::TypeID::INVALID)
 		{
-			internal_get_type_properties(type_data.info.base_id, property_list);
+			internal_get_type_properties(type_data.base_id, property_list);
 		}
 
-		for (const auto& property_data : type_data.properties)
+		for (const auto& property_data_pair : type_data.properties)
 		{
-			property_list.push_back(make_property_info(property_data.first, property_data.second));
+			const PropertyData& current_property_data = property_data_pair.second;
+			property_list.push_back(make_property_info(current_property_data.info, current_property_data.member_bind));
 		}
 	}
 
@@ -399,41 +553,41 @@ namespace Vadon::Utilities
 		}
 
 		const TypeData& type_data = type_data_it->second;
-		if (type_data.info.base_id != Vadon::Utilities::TypeID::INVALID)
+		if (type_data.base_id != Vadon::Utilities::TypeID::INVALID)
 		{
-			internal_get_properties(object, type_data.info.base_id, property_list);
+			internal_get_properties(object, type_data.base_id, property_list);
 		}
 
 		for (const auto& current_property : type_data.properties)
 		{
-			const MemberVariableBindBase& property_bind = current_property.second;
-			if (property_bind.has_getter() == false)
+			const PropertyData& current_property_data = current_property.second;
+			if (current_property_data.member_bind.has_getter() == false)
 			{
 				continue;
 			}
 
-			property_list.emplace_back(current_property.first, current_property.second.data_type, invoke_property_getter(object, property_bind));
+			property_list.emplace_back(current_property_data.info, invoke_property_getter(object, current_property_data.member_bind));
 		}
 	}
 
-	const MemberVariableBindBase* TypeRegistry::internal_find_property(const TypeData& type_data, std::string_view name) const
+	const TypeRegistry::PropertyData* TypeRegistry::internal_find_property(const TypeData& type_data, const PropertyUUID& property_uuid) const
 	{
-		auto property_it = type_data.properties.find(std::string(name));
+		auto property_it = type_data.properties.find(property_uuid);
 		if (property_it != type_data.properties.end())
 		{
 			return &property_it->second;
 		}
 
-		if (type_data.info.base_id != Vadon::Utilities::TypeID::INVALID)
+		if (type_data.base_id != Vadon::Utilities::TypeID::INVALID)
 		{
-			auto base_data_it = m_type_lookup.find(type_data.info.base_id);
+			auto base_data_it = m_type_lookup.find(type_data.base_id);
 			if (base_data_it == m_type_lookup.end())
 			{
-				type_not_found_error(type_data.info.base_id);
+				type_not_found_error(type_data.base_id);
 				return nullptr;
 			}
 
-			const MemberVariableBindBase* base_property = internal_find_property(base_data_it->second, name);
+			const PropertyData* base_property = internal_find_property(base_data_it->second, property_uuid);
 			if (base_property != nullptr)
 			{
 				return base_property;
@@ -443,15 +597,15 @@ namespace Vadon::Utilities
 		return nullptr;
 	}
 
-	void TypeRegistry::internal_apply_property_value(const TypeData& type_data, void* object, std::string_view property_name, const Variant& value)
+	void TypeRegistry::internal_apply_property_value(const TypeData& type_data, void* object, const PropertyUUID& property_uuid, const Variant& value)
 	{
-		const MemberVariableBindBase* property_bind = internal_find_property(type_data, property_name);
-		if (property_bind == nullptr)
+		const PropertyData* property = internal_find_property(type_data, property_uuid);
+		if (property == nullptr)
 		{
-			Vadon::Core::Logger::log_error(std::format("Type registry error: property \"{}\" not found in type \"{}\"!\n", property_name, type_data.info.name));
+			Vadon::Core::Logger::log_error(std::format("Type registry error: property \"{}\" not found in type \"{}\"!\n", Vadon::Utilities::uuid_to_string(property_uuid).string, Vadon::Utilities::uuid_to_string(type_data.info.id).string));
 			return;
 		}
 
-		invoke_property_setter(object, *property_bind, value);
+		invoke_property_setter(object, property->member_bind, value);
 	}
 }

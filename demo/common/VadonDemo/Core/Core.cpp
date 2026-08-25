@@ -6,7 +6,7 @@
 
 #include <Vadon/ECS/World/World.hpp>
 
-#include <Vadon/Scene/Resource/ResourceSystem.hpp>
+#include <Vadon/Model/Resource/ResourceSystem.hpp>
 
 namespace VadonDemo::Core
 {
@@ -24,22 +24,22 @@ namespace VadonDemo::Core
 		Vadon::Core::EngineEnvironment::initialize(environment);
 	}
 
-	void Core::register_types()
+	void Core::register_types(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry)
 	{
-		GlobalConfiguration::register_type();
+		GlobalConfiguration::register_type(metadata_registry);
 
-		Model::Model::register_types();
-		Render::Render::register_types();
-		UI::UI::register_types();
-		View::View::register_types();
+		Model::Model::register_types(metadata_registry);
+		Render::Render::register_types(metadata_registry);
+		UI::UI::register_types(metadata_registry);
+		View::View::register_types(metadata_registry);
 	}
 
 	bool Core::initialize(const Vadon::Core::Project& project_info)
 	{
-		if (project_info.custom_data_id.is_valid() == true)
+		if (project_info.custom_data_resource_id.is_valid() == true)
 		{
-			Vadon::Scene::ResourceSystem& resource_system = m_engine_core.get_system<Vadon::Scene::ResourceSystem>();
-			Vadon::Scene::ResourceHandle custom_data_resource = resource_system.load_resource_base(project_info.custom_data_id);
+			Vadon::Model::ResourceSystem& resource_system = m_engine_core.get_system<Vadon::Model::ResourceSystem>();
+			Vadon::Model::ResourceHandle custom_data_resource = resource_system.load_resource_base(project_info.custom_data_resource_id);
 
 			VADON_ASSERT(resource_system.get_resource_info(custom_data_resource).type_id == Vadon::Utilities::TypeRegistry::get_type_id<GlobalConfiguration>(), "Custom data is not GlobalConfiguration!");
 
@@ -73,8 +73,8 @@ namespace VadonDemo::Core
 	{
 		if (global_config_id.is_valid() == true)
 		{
-			Vadon::Scene::ResourceSystem& resource_system = m_engine_core.get_system<Vadon::Scene::ResourceSystem>();
-			Vadon::Scene::ResourceHandle custom_data_resource = resource_system.load_resource_base(global_config_id);
+			Vadon::Model::ResourceSystem& resource_system = m_engine_core.get_system<Vadon::Model::ResourceSystem>();
+			Vadon::Model::ResourceHandle custom_data_resource = resource_system.load_resource_base(global_config_id);
 
 			VADON_ASSERT(resource_system.get_resource_info(custom_data_resource).type_id == Vadon::Utilities::TypeRegistry::get_type_id<GlobalConfiguration>(), "Custom data is not GlobalConfiguration!");
 
@@ -92,7 +92,7 @@ namespace VadonDemo::Core
 	{
 		if(m_global_config.is_valid() == true)
 		{
-			Vadon::Scene::ResourceSystem& resource_system = m_engine_core.get_system<Vadon::Scene::ResourceSystem>();
+			Vadon::Model::ResourceSystem& resource_system = m_engine_core.get_system<Vadon::Model::ResourceSystem>();
 			return *resource_system.get_resource(m_global_config);
 		}
 		else

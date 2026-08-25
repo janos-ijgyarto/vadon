@@ -1,0 +1,17 @@
+{
+	"name": "vadon-tools-dependencies",
+	"version": "0.0.1",
+	"dependencies": [
+		{
+			"name": "asio",
+			"host": true
+		}
+	],
+	"builtin-baseline": "2c356da17069ed4ce4d793d03a60bf87b3e5cf2a",
+	"overrides": [
+    { 
+        "name": "asio", 
+        "version": "1.32.0"
+    }
+  ]	
+}

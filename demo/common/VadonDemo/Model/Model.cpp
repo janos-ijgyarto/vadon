@@ -8,30 +8,30 @@
 #include <Vadon/ECS/World/World.hpp>
 #include <Vadon/ECS/Component/Registry.hpp>
 
-#include <Vadon/Scene/Resource/ResourceSystem.hpp>
-#include <Vadon/Scene/SceneSystem.hpp>
+#include <Vadon/Model/Resource/ResourceSystem.hpp>
+#include <Vadon/Model/Scene/SceneSystem.hpp>
 
 namespace VadonDemo::Model
 {
-	void Model::register_types()
+	void Model::register_types(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry)
 	{
 		Vadon::ECS::ComponentRegistry::register_tag_type<LevelRootTag>();
 		Vadon::ECS::ComponentRegistry::register_tag_type<DestroyEntityTag>();
 
 		// FIXME: have to do this first because it gets referenced by player component
 		// Need to create a system where we can set initialization order based on dependencies!
-		WeaponSystem::register_types();
-		EnemySystem::register_types();
-		CollisionSystem::register_types();
+		WeaponSystem::register_types(metadata_registry);
+		EnemySystem::register_types(metadata_registry);
+		CollisionSystem::register_types(metadata_registry);
 
-		Transform2D::register_component();
-		Velocity2D::register_component();
-		Health::register_component();
-		Player::register_component();
-		Map::register_component();
+		Transform2D::register_component(metadata_registry);
+		Velocity2D::register_component(metadata_registry);
+		Health::register_component(metadata_registry);
+		Player::register_component(metadata_registry);
+		Map::register_component(metadata_registry);
 	}
 
-	bool Model::init_simulation(Vadon::ECS::World& ecs_world, Vadon::Scene::SceneID level_scene_id)
+	bool Model::init_simulation(Vadon::ECS::World& ecs_world, Vadon::Model::SceneID level_scene_id)
 	{
 		if (internal_init_simulation(ecs_world, level_scene_id) == false)
 		{
@@ -174,7 +174,7 @@ namespace VadonDemo::Model
 		// TODO: anything?
 	}
 
-	bool Model::internal_init_simulation(Vadon::ECS::World& ecs_world, Vadon::Scene::SceneID level_scene_id)
+	bool Model::internal_init_simulation(Vadon::ECS::World& ecs_world, Vadon::Model::SceneID level_scene_id)
 	{
 		if (load_level(ecs_world, level_scene_id) == false)
 		{
@@ -207,13 +207,13 @@ namespace VadonDemo::Model
 		return true;
 	}
 
-	bool Model::load_level(Vadon::ECS::World& ecs_world, Vadon::Scene::SceneID level_scene_id)
+	bool Model::load_level(Vadon::ECS::World& ecs_world, Vadon::Model::SceneID level_scene_id)
 	{
 		Vadon::ECS::EntityHandle root_entity = get_root_entity(ecs_world);
 		VADON_ASSERT(root_entity.is_valid() == false, "Cannot load a level while a game is already in progress!");
 
-		Vadon::Scene::SceneSystem& scene_system = m_core.get_engine_core().get_system<Vadon::Scene::SceneSystem>();
-		const Vadon::Scene::SceneHandle level_scene_handle = scene_system.load_scene(level_scene_id);
+		Vadon::Model::SceneSystem& scene_system = m_core.get_engine_core().get_system<Vadon::Model::SceneSystem>();
+		const Vadon::Model::SceneHandle level_scene_handle = scene_system.load_scene(level_scene_id);
 		if (level_scene_handle.is_valid() == false)
 		{
 			// Something went wrong

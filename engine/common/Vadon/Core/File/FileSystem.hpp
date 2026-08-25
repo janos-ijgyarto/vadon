@@ -26,6 +26,7 @@ namespace Vadon::Core
 		virtual bool add_existing_file(FileDatabaseHandle db_handle, const FileID& file_id, const FileInfo& info) = 0;
 		virtual FileInfo get_file_info(FileDatabaseHandle db_handle, const FileID& file_id) const = 0;
 		virtual bool does_file_exist(FileDatabaseHandle db_handle, const FileID& file_id) const = 0;
+		virtual FileID find_file(FileDatabaseHandle db_handle, std::string_view path) const = 0;
 		virtual void remove_file(FileDatabaseHandle db_handle, const FileID& file_id) = 0;
 
 		virtual std::vector<FileID> get_all_files(FileDatabaseHandle db_handle) const = 0;
@@ -42,6 +43,9 @@ namespace Vadon::Core
 
 		// FIXME: this is meant to be something set by client code, for the time being we'll just return std::filesystem::current_path
 		virtual std::string get_current_path() const = 0;
+
+		virtual bool does_file_exist(std::string_view absolute_path) const = 0;
+		virtual FileMetadata get_file_metadata(std::string_view absolute_path) const = 0;
 	protected:
 		FileSystem(EngineCoreInterface& core)
 			: System(core)

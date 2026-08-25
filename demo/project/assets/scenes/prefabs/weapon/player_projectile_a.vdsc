@@ -1,0 +1,87 @@
+{
+    "id|GQz9/KcMRyO2QDl117Z1/A==": "3q/UKK16R0iQR2o7qPPjTw==",
+    "properties|CFSRIDI8SO6QhvW/UsQ14g==": {
+        "entities|uR4B50m5RBqQkrvaSPr84Q==": [
+            {
+                "components|9cQpDtvNQR2TuN32Yr4+ig==": [
+                    {
+                        "properties|u44mUNyiRwC1OQLF16ALxw==": {
+                            "aimed_on_launch|+hk/wEszTf+6UvR+Gs0ejA==": true,
+                            "turn_speed|H4p5XgxITnihwoURaEndzA==": 1.5
+                        },
+                        "type|3gp3e1BaQs62II7kqSg75Q==": "K5hNRKx/S4Cv+pB7EovLyQ=="
+                    },
+                    {
+                        "properties|u44mUNyiRwC1OQLF16ALxw==": {
+                            "color|Glrl/ZXqT6CePhXWqxYwhA==": "#ffffffff",
+                            "resource|7shLdI3LS6u2dXQC1eeJhA==": "EBiw6LpjSWuX6ixmF5/c5Q=="
+                        },
+                        "type|3gp3e1BaQs62II7kqSg75Q==": "sjalUl7xRXao1LdVshKhZQ=="
+                    },
+                    {
+                        "properties|u44mUNyiRwC1OQLF16ALxw==": {
+                            "layer_definition|AAaiU0zzRHqPcyRD0Fx4cw==": "6eryAxE7RRiJ7Qha4pEc6w==",
+                            "visible|+3cT9okgSKCBHYsYRXiN4Q==": true,
+                            "z_order|1B8AA6j2THuNo4Lyv7vCoA==": 2
+                        },
+                        "type|3gp3e1BaQs62II7kqSg75Q==": "evRaUx1PRDCq/ZjDL/CNog=="
+                    },
+                    {
+                        "properties|u44mUNyiRwC1OQLF16ALxw==": {
+                        },
+                        "type|3gp3e1BaQs62II7kqSg75Q==": "3CLYU/wWTgSeCOsa1opqww=="
+                    },
+                    {
+                        "properties|u44mUNyiRwC1OQLF16ALxw==": {
+                            "position|ongWu0nIRtW5wNCGPsR3/A==": [
+                                0,
+                                0
+                            ],
+                            "rotation|OzY064E6S/OJJzWyP8YrnA==": 0,
+                            "scale|lvSRINl3STSFWQhlKbbX+Q==": 1
+                        },
+                        "type|3gp3e1BaQs62II7kqSg75Q==": "6jMjrAaCSLuTptd9Ksh5EA=="
+                    },
+                    {
+                        "properties|u44mUNyiRwC1OQLF16ALxw==": {
+                            "radius|mp44pkAFST6k7PBMKtjuFw==": 1
+                        },
+                        "type|3gp3e1BaQs62II7kqSg75Q==": "uZB7ua6wS5aT80N2ToQVuQ=="
+                    },
+                    {
+                        "properties|u44mUNyiRwC1OQLF16ALxw==": {
+                            "acceleration|vhxlZPOzRMSgUgdyqxLwMw==": 0,
+                            "top_speed|2gUHxVlbRliGTIk3lOCjkg==": 300
+                        },
+                        "type|3gp3e1BaQs62II7kqSg75Q==": "6nYj0xdKQlyqUMqcgdJhDA=="
+                    },
+                    {
+                        "properties|u44mUNyiRwC1OQLF16ALxw==": {
+                            "position|6prZ/u5dT/eP3ePdhRz4QQ==": [
+                                0,
+                                0
+                            ],
+                            "rotation|lFzDEAn7Rci+yA1AR0LpYw==": 0,
+                            "scale|rKfmHgUWTxicQY9+12gunA==": 1
+                        },
+                        "type|3gp3e1BaQs62II7kqSg75Q==": "4Mfp00eITyaCNkSWmMNEFQ=="
+                    },
+                    {
+                        "properties|u44mUNyiRwC1OQLF16ALxw==": {
+                            "damage|vicJFRSWSJOVSffgdOyS5Q==": 10,
+                            "knockback|N/x2qqOQS76KH8CBk/stjQ==": 0,
+                            "range|D5FJ0LpPSEWVC95Hw0AkNA==": 300
+                        },
+                        "type|3gp3e1BaQs62II7kqSg75Q==": "a+ia3yOxSKaOGzK+9oyKJA=="
+                    }
+                ],
+                "id|w1YNg+p2SOONiuIpi7ZbzQ==": "Bm4khSw9T9OMVTqfzpJ59w==",
+                "name|6epoQsUyRBe/0Hfauf1F+w==": "Projectile_A",
+                "parent|JwTgxEDoTym6qKas9DaVMA==": "AAAAAAAAAAAAAAAAAAAAAA==",
+                "scene|euKxwNp2Rt+fX3Ismk8HQg==": "AAAAAAAAAAAAAAAAAAAAAA=="
+            }
+        ],
+        "name|J8hzJXX3TDKzCQ3Vb4zF2Q==": ""
+    },
+    "type|GVZdrAVASKi15caSyF2TGA==": "xDIJS9XyToCclSzWaajtHg=="
+}

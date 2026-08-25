@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>PropertyVector4</class>
+ <widget class="QWidget" name="PropertyVector4">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>400</width>
+    <height>132</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>PropertyVector4</string>
+  </property>
+  <layout class="QGridLayout" name="mainLayout" columnstretch="0,1">
+   <item row="1" column="0">
+    <widget class="QLabel" name="yLabel">
+     <property name="text">
+      <string>Y</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="1">
+    <widget class="QDoubleSpinBox" name="ySpinBox"/>
+   </item>
+   <item row="2" column="0">
+    <widget class="QLabel" name="zLabel">
+     <property name="text">
+      <string>Z</string>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="1">
+    <widget class="QDoubleSpinBox" name="zSpinBox"/>
+   </item>
+   <item row="0" column="1">
+    <widget class="QDoubleSpinBox" name="xSpinBox"/>
+   </item>
+   <item row="0" column="0">
+    <widget class="QLabel" name="xLabel">
+     <property name="text">
+      <string>X</string>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="0">
+    <widget class="QLabel" name="wLabel">
+     <property name="text">
+      <string>W</string>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="1">
+    <widget class="QDoubleSpinBox" name="wSpinBox"/>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

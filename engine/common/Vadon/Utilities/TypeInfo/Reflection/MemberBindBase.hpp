@@ -3,12 +3,15 @@
 #include <Vadon/Utilities/TypeInfo/Reflection/FunctionBindBase.hpp>
 namespace Vadon::Utilities
 {
+	using ErasedMemberAddressGetter = void*(*)(void*);
 	using ErasedMemberGetter = Variant(*)(void*);
 	using ErasedMemberSetter = void(*)(void*, const Variant&);
 
 	struct MemberVariableBindBase
 	{
-		ErasedDataTypeID data_type;
+		std::vector<::Vadon::Foundation::UUID> type_list; // NOTE: required for nested types!
+
+		ErasedMemberAddressGetter address_getter = nullptr;
 
 		ErasedMemberGetter member_getter = nullptr;
 		ErasedMemberFunction getter_function = nullptr;

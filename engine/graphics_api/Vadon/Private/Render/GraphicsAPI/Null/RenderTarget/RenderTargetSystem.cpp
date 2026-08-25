@@ -1,4 +1,3 @@
-#include <Vadon/Private/PCH/GraphicsAPI.hpp>
 #include <Vadon/Private/Render/GraphicsAPI/Null/RenderTarget/RenderTargetSystem.hpp>
 
 namespace Vadon::Private::Render::Null

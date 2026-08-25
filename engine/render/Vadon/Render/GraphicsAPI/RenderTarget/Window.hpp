@@ -6,11 +6,11 @@
 #include <Vadon/Utilities/Enum/EnumClassBitFlag.hpp>
 namespace Vadon::Render
 {
-	using PlatformWindowHandle = void*; // Platform-dependent window handle
+	using PlatformWindowHandle = uintptr_t; // Platform-dependent window handle
 
 	struct WindowInfo
 	{
-		PlatformWindowHandle platform_handle = nullptr;
+		PlatformWindowHandle platform_handle = 0;
 		Math::Vector2u size = { 0,0 };
 		GraphicsAPIDataFormat format = GraphicsAPIDataFormat::UNKNOWN;
 		uint32_t buffer_count = 2;

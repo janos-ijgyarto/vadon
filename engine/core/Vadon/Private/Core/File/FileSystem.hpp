@@ -34,6 +34,7 @@ namespace Vadon::Private::Core
 		bool add_existing_file(FileDatabaseHandle db_handle, const FileID& file_id, const FileInfo& info) override;
 		FileInfo get_file_info(FileDatabaseHandle db_handle, const FileID& file_id) const override;
 		bool does_file_exist(FileDatabaseHandle db_handle, const FileID& file_id) const override;
+		FileID find_file(FileDatabaseHandle db_handle, std::string_view path) const override;
 		void remove_file(FileDatabaseHandle db_handle, const FileID& file_id) override;
 
 		std::vector<FileID> get_all_files(FileDatabaseHandle db_handle) const override;
@@ -47,6 +48,9 @@ namespace Vadon::Private::Core
 		bool copy_file(FileDatabaseHandle source_db, const FileID& source_file, FileDatabaseHandle dest_db, const FileID& dest_file) override;
 
 		std::string get_current_path() const override { return std::filesystem::current_path().generic_string(); }
+
+		bool does_file_exist(std::string_view absolute_path) const override;
+		FileMetadata get_file_metadata(std::string_view absolute_path) const override;
 	protected:
 		// TODO: have some way to create DB subclasses that can implement save/load/copy/etc.
 		// This will enable interactions between DBs without needing to know the backend
@@ -58,6 +62,7 @@ namespace Vadon::Private::Core
 			// TODO: anything else?
 
 			const FileInfo* find_file(const FileID& file_id) const;
+			FileID find_file(std::string_view path) const;
 		};
 
 		FileSystem(Vadon::Core::EngineCoreInterface& core);
@@ -73,6 +78,8 @@ namespace Vadon::Private::Core
 		bool internal_load_file(const std::filesystem::path& path, RawFileDataBuffer& file_data);
 
 		bool serialize_database(Vadon::Utilities::Serializer& serializer, FileDatabaseData& database);
+
+		FileMetadata internal_get_file_metadata(const std::filesystem::path& file_path) const;
 
 		Vadon::Utilities::ObjectPool<Vadon::Core::FileDatabase, FileDatabaseData> m_database_pool;
 

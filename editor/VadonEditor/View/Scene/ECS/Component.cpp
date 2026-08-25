@@ -40,11 +40,12 @@ namespace VadonEditor::View
 		m_component_type_list.items.clear();
 		m_component_type_ids.clear();
 
-		const Vadon::Utilities::TypeInfoList component_info_list = entity.get_available_component_list();
-		for (const Vadon::Utilities::TypeInfo& current_component_type_info : component_info_list)
+		const std::vector<Model::ComponentInfo> component_type_list = entity.get_available_component_list();
+		
+		for (const Model::ComponentInfo& current_component_info : component_type_list)
 		{
-			m_component_type_list.items.push_back(current_component_type_info.name);
-			m_component_type_ids.push_back(current_component_type_info.id);
+			m_component_type_list.items.push_back(current_component_info.name);
+			m_component_type_ids.push_back(current_component_info.type_id);
 		}
 
 		return false;
@@ -74,7 +75,7 @@ namespace VadonEditor::View
 		property_editor_info.read_only = false;
 		property_editor_info.owner = entity.get_owning_scene()->get_scene_resource(); // Use the owning scene as the owner for any embedded resources
 
-		for (const Vadon::Utilities::Property& current_property : component_data.properties)
+		for (const Model::Property& current_property : component_data.properties)
 		{
 			m_property_editors.emplace_back(PropertyEditor::create_property_editor(editor, current_property, property_editor_info));
 		}
@@ -91,13 +92,13 @@ namespace VadonEditor::View
 				if (current_property->render(dev_gui) == true)
 				{
 					// Property edited, send update to scene tree
-					const Vadon::Utilities::Property& property_data = current_property->get_property();
-					entity.edit_component_property(m_type_id, property_data.name, property_data.value);
+					const Model::Property& property_data = current_property->get_property();
+					entity.edit_component_property(m_type_id, property_data.id, property_data.value);
 
 					// Re-enter the value from the property into the editor (in case something changed it, e.g constraints)
 					// FIXME: this will cause redundant refreshes of the UI!
 					// TODO: make proper use of the "modified" flag and only update once explicitly requested (and only the modified elements)?
-					current_property->set_value(entity.get_component_property(m_type_id, property_data.name));
+					current_property->set_value(entity.get_component_property(m_type_id, property_data.id));
 				}
 			}
 

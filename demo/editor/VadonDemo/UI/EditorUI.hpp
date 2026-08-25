@@ -14,6 +14,7 @@ namespace VadonDemo::UI
 		EditorUI(Core::Editor& editor);
 		
 		bool initialize();
+
 		void update();
 
 		void update_dirty_entities();

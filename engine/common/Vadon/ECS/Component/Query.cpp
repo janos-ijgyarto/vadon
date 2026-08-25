@@ -1,4 +1,3 @@
-#include <Vadon/Private/PCH/Common.hpp>
 #include <Vadon/ECS/Component/Query.hpp>
 
 namespace Vadon::ECS

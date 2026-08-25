@@ -1,6 +1,7 @@
 #ifndef VADONEDITOR_MODEL_MODELSYSTEM_HPP
 #define VADONEDITOR_MODEL_MODELSYSTEM_HPP
 #include <VadonEditor/Model/Module.hpp>
+#include <VadonEditor/Model/Property.hpp>
 #include <memory>
 namespace Vadon::ECS
 {
@@ -24,6 +25,8 @@ namespace VadonEditor::Model
 		VADONEDITOR_API Vadon::ECS::World& get_ecs_world();
 		VADONEDITOR_API ResourceSystem& get_resource_system();
 		VADONEDITOR_API SceneSystem& get_scene_system();
+
+		Property get_editor_property(Vadon::Utilities::TypeID owner_type_id, const Vadon::Utilities::Property& property) const;
 	private:
 		ModelSystem(Core::Editor& editor);
 

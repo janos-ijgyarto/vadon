@@ -22,7 +22,7 @@
 
 #include <Vadon/ECS/World/World.hpp>
 
-#include <Vadon/Scene/SceneSystem.hpp>
+#include <Vadon/Model/Scene/SceneSystem.hpp>
 
 #include <Vadon/Core/Environment.hpp>
 #include <Vadon/Utilities/Data/Visitor.hpp>
@@ -474,9 +474,9 @@ namespace VadonDemo::UI
 		const Core::GlobalConfiguration& global_config = m_game_core.get_core().get_global_config();
 		VADON_ASSERT(global_config.main_menu_scene.is_valid() == true, "Need a valid main menu scene!");
 
-		Vadon::Scene::SceneSystem& scene_system = m_game_core.get_engine_app().get_engine_core().get_system<Vadon::Scene::SceneSystem>();
+		Vadon::Model::SceneSystem& scene_system = m_game_core.get_engine_app().get_engine_core().get_system<Vadon::Model::SceneSystem>();
 		Vadon::ECS::World& ecs_world = m_game_core.get_ecs_world();
-		Vadon::Scene::SceneHandle main_menu_scene = scene_system.load_scene(global_config.main_menu_scene);
+		Vadon::Model::SceneHandle main_menu_scene = scene_system.load_scene(global_config.main_menu_scene);
 		m_main_menu_entity = scene_system.instantiate_scene(main_menu_scene, ecs_world);
 
 		// Dispatch events

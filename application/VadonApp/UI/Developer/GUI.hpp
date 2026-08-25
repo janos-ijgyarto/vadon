@@ -196,6 +196,6 @@ namespace VadonApp::UI::Developer
 		GUISystem(Core::Application& application) : System(application) {}
 	};
 }
-VADON_ENABLE_BITWISE_OPERATORS(VadonApp::UI::Developer::GUISystem::IOFlags)
-VADON_ENABLE_BITWISE_OPERATORS(VadonApp::UI::Developer::GUISystem::TreeNodeFlags)
+VADON_ENABLE_BITWISE_OPERATORS(VadonApp::UI::Developer::GUISystem::IOFlags);
+VADON_ENABLE_BITWISE_OPERATORS(VadonApp::UI::Developer::GUISystem::TreeNodeFlags);
 #endif

@@ -1,6 +1,7 @@
 #include <VadonEditor/Model/Scene/Entity.hpp>
 
 #include <VadonEditor/Core/Editor.hpp>
+#include <VadonEditor/Core/TypeInfo/MetadataRegistry.hpp>
 
 #include <VadonEditor/Model/ModelSystem.hpp>
 #include <VadonEditor/Model/Scene/Scene.hpp>
@@ -231,19 +232,38 @@ namespace VadonEditor::Model
 		Vadon::ECS::World& ecs_world = m_editor.get_system<Model::ModelSystem>().get_ecs_world();
 		Vadon::ECS::ComponentManager& component_manager = ecs_world.get_component_manager();
 
+		Core::MetadataRegistry& metadata_registry = m_editor.get_metadata_registry();
+
+		const Vadon::Utilities::TypeUUID component_type_uuid = Vadon::Utilities::TypeRegistry::get_type_info(component_id).id;
+
+		const char* component_name = metadata_registry.get_type_metadata(component_type_uuid, "name");
+
+		// TODO: have proper fallbacks!
+		if (component_name == nullptr)
+		{
+			VADON_ERROR("Must provide type metadata!");
+		}
+
 		Component component;
-		component.name = Vadon::Utilities::TypeRegistry::get_type_info(component_id).name;
+		component.name = component_name;
 
 		Vadon::ECS::ComponentHandle component_handle = component_manager.get_component(get_handle(), component_id);
 
-		component.properties = Vadon::Utilities::TypeRegistry::get_properties(component_handle.get_raw(), component_id);
+		Vadon::Utilities::PropertyList properties = Vadon::Utilities::TypeRegistry::get_properties(component_handle.get_raw(), component_id);
+
+		Model::ModelSystem& model_system = m_editor.get_system<Model::ModelSystem>();
+
+		for (const Vadon::Utilities::Property& current_property : properties)
+		{
+			component.properties.push_back(model_system.get_editor_property(component_id, current_property));
+		}
 
 		return component;
 	}
 
-	Vadon::Utilities::TypeInfoList Entity::get_available_component_list() const
+	std::vector<ComponentInfo> Entity::get_available_component_list() const
 	{
-		Vadon::Utilities::TypeInfoList component_type_list;
+		std::vector<ComponentInfo> component_type_list;
 
 		// Get only the component types which haven't been added yet
 		// Also exclude certain utility components (e.g Scene Component)
@@ -264,30 +284,50 @@ namespace VadonEditor::Model
 				continue;
 			}
 
-			component_type_list.push_back(Vadon::Utilities::TypeRegistry::get_type_info(current_type_id));
+			ComponentInfo component_info;
+			component_info.type_id = current_type_id;
+
+			const Vadon::Utilities::TypeUUID component_type_uuid = Vadon::Utilities::TypeRegistry::get_type_info(current_type_id).id;
+
+			Core::MetadataRegistry& metadata_registry = m_editor.get_metadata_registry();
+			const char* component_name = metadata_registry.get_type_metadata(component_type_uuid, "name");
+
+			if (component_name != nullptr)
+			{
+				component_info.name = component_name;
+			}
+			else
+			{
+				// As fallback, use UUID as name
+				component_info.name = Vadon::Utilities::uuid_to_string(Vadon::Utilities::TypeRegistry::get_type_info(current_type_id).id);
+			}
+
+			// TODO: any other metadata?
+
+			component_type_list.push_back(component_info);
 		}
 
 		return component_type_list;
 	}
 
-	Vadon::Utilities::Variant Entity::get_component_property(Vadon::ECS::ComponentID component_type_id, std::string_view property_name) const
+	Vadon::Utilities::Variant Entity::get_component_property(Vadon::ECS::ComponentID component_type_id, const Vadon::Utilities::PropertyUUID& property_uuid) const
 	{
 		Vadon::ECS::World& world = get_ecs_world();
 		Vadon::ECS::ComponentManager& component_manager = world.get_component_manager();
 
 		// FIXME: wrap this in the ECS?
 		Vadon::ECS::ComponentHandle component_handle = component_manager.get_component(m_entity_handle, component_type_id);
-		return Vadon::Utilities::TypeRegistry::get_property(component_handle.get_raw(), component_type_id, property_name);
+		return Vadon::Utilities::TypeRegistry::get_property(component_handle.get_raw(), component_type_id, property_uuid);
 	}
 
-	void Entity::edit_component_property(Vadon::ECS::ComponentID component_type_id, std::string_view property_name, const Vadon::Utilities::Variant& value)
+	void Entity::edit_component_property(Vadon::ECS::ComponentID component_type_id, const Vadon::Utilities::PropertyUUID& property_uuid, const Vadon::Utilities::Variant& value)
 	{
 		Vadon::ECS::World& world = get_ecs_world();
 		Vadon::ECS::ComponentManager& component_manager = world.get_component_manager();
 
 		// FIXME: wrap this in the ECS?
 		Vadon::ECS::ComponentHandle component_handle = component_manager.get_component(m_entity_handle, component_type_id);
-		Vadon::Utilities::TypeRegistry::set_property(component_handle.get_raw(), component_type_id, property_name, value);
+		Vadon::Utilities::TypeRegistry::set_property(component_handle.get_raw(), component_type_id, property_uuid, value);
 
 		// Dispatch event
 		m_editor.get_system<ModelSystem>().get_scene_system().component_edited(*this, component_type_id);

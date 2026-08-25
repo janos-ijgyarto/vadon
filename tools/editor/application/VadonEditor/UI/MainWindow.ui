@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>800</width>
-    <height>600</height>
+    <width>1024</width>
+    <height>768</height>
    </rect>
   </property>
   <property name="focusPolicy">
@@ -26,29 +26,78 @@
    <property name="focusPolicy">
     <enum>Qt::FocusPolicy::StrongFocus</enum>
    </property>
-   <layout class="QVBoxLayout" name="verticalLayout" stretch="3,0,1">
+   <layout class="QVBoxLayout" name="mainLayout">
     <item>
-     <widget class="QWidget" name="container" native="true">
-      <property name="focusPolicy">
-       <enum>Qt::FocusPolicy::StrongFocus</enum>
+     <widget class="QSplitter" name="mainSplitter">
+      <property name="orientation">
+       <enum>Qt::Orientation::Horizontal</enum>
       </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QLabel" name="consoleLabel">
-      <property name="text">
-       <string>Console</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QPlainTextEdit" name="console">
-      <property name="documentTitle">
-       <string/>
-      </property>
-      <property name="readOnly">
-       <bool>true</bool>
-      </property>
+      <widget class="QSplitter" name="assetSplitter">
+       <property name="orientation">
+        <enum>Qt::Orientation::Vertical</enum>
+       </property>
+       <widget class="QWidget" name="verticalLayoutWidget_3">
+        <layout class="QVBoxLayout" name="sceneTreeVBox" stretch="0,0">
+         <item>
+          <widget class="QLabel" name="sceneTreeLabel">
+           <property name="text">
+            <string>Scene Tree</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QTabWidget" name="sceneTabWidget">
+           <property name="currentIndex">
+            <number>-1</number>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+       <widget class="QWidget" name="verticalLayoutWidget_2">
+        <layout class="QVBoxLayout" name="assetBrowserVBox" stretch="0,1">
+         <item>
+          <widget class="QLabel" name="assetBrowserLabel">
+           <property name="text">
+            <string>Asset Browser</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="VadonEditor::UI::AssetBrowserTree" name="assetBrowser" native="true"/>
+         </item>
+        </layout>
+       </widget>
+      </widget>
+      <widget class="QSplitter" name="viewportSplitter">
+       <property name="orientation">
+        <enum>Qt::Orientation::Vertical</enum>
+       </property>
+       <widget class="QWidget" name="verticalLayoutWidget_4">
+        <layout class="QVBoxLayout" name="viewportVBox"/>
+       </widget>
+       <widget class="QWidget" name="verticalLayoutWidget">
+        <layout class="QVBoxLayout" name="consoleVBox">
+         <item>
+          <widget class="QLabel" name="consoleLabel">
+           <property name="text">
+            <string>Console</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPlainTextEdit" name="console">
+           <property name="documentTitle">
+            <string/>
+           </property>
+           <property name="readOnly">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </widget>
      </widget>
     </item>
    </layout>
@@ -58,7 +107,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>800</width>
+     <width>1024</width>
      <height>21</height>
     </rect>
    </property>
@@ -66,18 +115,37 @@
     <property name="title">
      <string>File</string>
     </property>
-    <addaction name="actionNew"/>
+    <widget class="QMenu" name="menuNew">
+     <property name="title">
+      <string>New</string>
+     </property>
+     <addaction name="actionNewResource"/>
+     <addaction name="actionNewScene"/>
+    </widget>
+    <addaction name="menuNew"/>
     <addaction name="separator"/>
     <addaction name="actionSave"/>
-    <addaction name="actionLoad"/>
+    <addaction name="actionOpen"/>
+    <addaction name="actionImport"/>
     <addaction name="separator"/>
-    <addaction name="actionExit"/>
+    <addaction name="actionQuit"/>
    </widget>
    <widget class="QMenu" name="menuProject">
     <property name="title">
      <string>Project</string>
     </property>
-    <addaction name="actionProperties"/>
+    <widget class="QMenu" name="menuProject_Plugin">
+     <property name="title">
+      <string>Project Plugin</string>
+     </property>
+     <addaction name="actionRun_Plugin"/>
+     <addaction name="actionShutdown_Plugin"/>
+     <addaction name="actionGenerate_Data_Schema"/>
+     <addaction name="actionExportProjectData"/>
+    </widget>
+    <addaction name="actionProjectSettings"/>
+    <addaction name="actionProject_Data_Schema"/>
+    <addaction name="menuProject_Plugin"/>
    </widget>
    <widget class="QMenu" name="menuUtilities">
     <property name="title">
@@ -89,38 +157,334 @@
    <addaction name="menuProject"/>
    <addaction name="menuUtilities"/>
   </widget>
-  <widget class="QStatusBar" name="statusbar"/>
-  <action name="actionNew">
-   <property name="text">
-    <string>New</string>
+  <widget class="QStatusBar" name="statusbar">
+   <property name="enabled">
+    <bool>true</bool>
    </property>
-  </action>
+  </widget>
   <action name="actionSave">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::DocumentSave"/>
+   </property>
    <property name="text">
     <string>Save</string>
    </property>
   </action>
-  <action name="actionLoad">
+  <action name="actionOpen">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::FolderOpen"/>
+   </property>
    <property name="text">
-    <string>Load</string>
+    <string>Open</string>
    </property>
   </action>
-  <action name="actionExit">
+  <action name="actionQuit">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::SystemShutdown"/>
+   </property>
    <property name="text">
-    <string>Exit</string>
+    <string>Quit</string>
    </property>
   </action>
-  <action name="actionProperties">
+  <action name="actionProjectSettings">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::DocumentProperties"/>
+   </property>
    <property name="text">
-    <string>Properties</string>
+    <string>Project Settings</string>
    </property>
   </action>
   <action name="actionGenerate_UUID">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::ContactNew"/>
+   </property>
    <property name="text">
     <string>Generate UUID</string>
    </property>
   </action>
+  <action name="actionRun_Plugin">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::MediaPlaybackStart"/>
+   </property>
+   <property name="text">
+    <string>Run Plugin</string>
+   </property>
+  </action>
+  <action name="actionShutdown_Plugin">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::MediaPlaybackStop"/>
+   </property>
+   <property name="text">
+    <string>Shutdown Plugin</string>
+   </property>
+  </action>
+  <action name="actionGenerate_Data_Schema">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::SystemReboot"/>
+   </property>
+   <property name="text">
+    <string>Generate Data Schema</string>
+   </property>
+  </action>
+  <action name="actionProject_Data_Schema">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::MailMessageNew"/>
+   </property>
+   <property name="text">
+    <string>Project Data Schema</string>
+   </property>
+  </action>
+  <action name="actionImport">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::DocumentOpen"/>
+   </property>
+   <property name="text">
+    <string>Import</string>
+   </property>
+  </action>
+  <action name="actionNewResource">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::DocumentNew"/>
+   </property>
+   <property name="text">
+    <string>Resource</string>
+   </property>
+  </action>
+  <action name="actionNewScene">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::CameraVideo"/>
+   </property>
+   <property name="text">
+    <string>Scene</string>
+   </property>
+  </action>
+  <action name="actionExportProjectData">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::DriveHarddisk"/>
+   </property>
+   <property name="text">
+    <string>Export Project Data</string>
+   </property>
+  </action>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>VadonEditor::UI::AssetBrowserTree</class>
+   <extends>QWidget</extends>
+   <header>VadonEditor/UI/Project/Asset/AssetBrowser.hpp</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
  <resources/>
- <connections/>
+ <connections>
+  <connection>
+   <sender>actionProjectSettings</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>project_settings_triggered()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>399</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionGenerate_UUID</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>generate_uuid_triggered()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>399</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionQuit</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>quit_triggered()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>399</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionRun_Plugin</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>run_plugin_triggered()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>511</x>
+     <y>383</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionShutdown_Plugin</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>shutdown_plugin_triggered()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>511</x>
+     <y>383</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionGenerate_Data_Schema</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>generate_data_schema_triggered()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>511</x>
+     <y>383</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionProject_Data_Schema</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>project_data_schema_triggered()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>511</x>
+     <y>383</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionNewResource</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>new_resource_triggered()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>511</x>
+     <y>383</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionNewScene</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>new_scene_triggered()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>511</x>
+     <y>383</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionOpen</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>open_triggered()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>511</x>
+     <y>383</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionImport</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>import_triggered()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>511</x>
+     <y>383</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionExportProjectData</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>export_project_data_triggered()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>511</x>
+     <y>383</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+ <slots>
+  <slot>schema_editor_triggered()</slot>
+  <slot>project_settings_triggered()</slot>
+  <slot>generate_uuid_triggered()</slot>
+  <slot>new_resource_triggered()</slot>
+  <slot>quit_triggered()</slot>
+  <slot>run_plugin_triggered()</slot>
+  <slot>shutdown_plugin_triggered()</slot>
+  <slot>generate_data_schema_triggered()</slot>
+  <slot>project_data_schema_triggered()</slot>
+  <slot>new_scene_triggered()</slot>
+  <slot>save_triggered()</slot>
+  <slot>open_triggered()</slot>
+  <slot>import_triggered()</slot>
+  <slot>anim_editor_prototype_triggered()</slot>
+  <slot>export_project_data_triggered()</slot>
+ </slots>
 </ui>

@@ -1,6 +1,7 @@
 #include <VadonEditor/Core/Editor.hpp>
 
 #include <VadonEditor/Core/Project/ProjectManager.hpp>
+#include <VadonEditor/Core/TypeInfo/MetadataRegistry.hpp>
 
 #include <VadonEditor/Model/ModelSystem.hpp>
 #include <VadonEditor/Platform/PlatformInterface.hpp>
@@ -17,6 +18,8 @@ namespace VadonEditor::Core
 	{
 		Vadon::Core::EngineCoreInterface& m_engine_core;
 		Editor& m_editor;
+
+		MetadataRegistry m_metadata_registry;
 
 		ProjectManager m_project_manager;
 
@@ -108,6 +111,11 @@ namespace VadonEditor::Core
 		return get_engine_app().get_engine_core();
 	}
 	
+	MetadataRegistry& Editor::get_metadata_registry()
+	{
+		return m_internal->m_metadata_registry;
+	}
+
 	bool Editor::initialize(const Configuration& editor_config)
 	{
 		return m_internal->initialize(editor_config);

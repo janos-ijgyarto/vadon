@@ -1,7 +1,7 @@
 #ifndef VADONEDITOR_MODEL_RESOURCE_RESOURCE_HPP
 #define VADONEDITOR_MODEL_RESOURCE_RESOURCE_HPP
+#include <VadonEditor/Model/Property.hpp>
 #include <Vadon/Scene/Resource/Resource.hpp>
-#include <Vadon/Utilities/TypeInfo/Reflection/Property.hpp>
 namespace VadonEditor::Core
 {
 	class Editor;
@@ -36,9 +36,9 @@ namespace VadonEditor::Model
 
 		bool is_loaded() const { return m_handle.is_valid(); }
 
-		Vadon::Utilities::PropertyList get_properties() const;
-		Vadon::Utilities::Variant get_property(std::string_view property_name) const;
-		void edit_property(std::string_view property_name, const Vadon::Utilities::Variant& value);
+		std::vector<Property> get_properties() const;
+		Vadon::Utilities::Variant get_property(const Vadon::Utilities::PropertyUUID& property_uuid) const;
+		void edit_property(const Vadon::Utilities::PropertyUUID& property_uuid, const Vadon::Utilities::Variant& value);
 
 		void add_embedded_resource(Resource* resource);
 		bool is_embedded() const { return m_owner != nullptr; }

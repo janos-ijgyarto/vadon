@@ -8,8 +8,8 @@
 #include <Vadon/ECS/World/World.hpp>
 #include <Vadon/ECS/Component/Registry.hpp>
 
-#include <Vadon/Scene/Resource/ResourceSystem.hpp>
-#include <Vadon/Scene/SceneSystem.hpp>
+#include <Vadon/Model/Resource/ResourceSystem.hpp>
+#include <Vadon/Model/Scene/SceneSystem.hpp>
 
 #include <Vadon/Math/Vector/Rotate.hpp>
 
@@ -31,16 +31,16 @@ namespace VadonDemo::Model
 
 	}
 
-	void WeaponSystem::register_types()
+	void WeaponSystem::register_types(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry)
 	{
-		WeaponDefinition::register_resource();
+		WeaponDefinition::register_resource(metadata_registry);
 
-		WeaponComponent::register_component();
-		WeaponVolleyComponent::register_component();
+		WeaponComponent::register_component(metadata_registry);
+		WeaponVolleyComponent::register_component(metadata_registry);
 
-		ProjectileComponent::register_component();
-		ProjectileHomingComponent::register_component();
-		ProjectileAOEComponent::register_component();
+		ProjectileComponent::register_component(metadata_registry);
+		ProjectileHomingComponent::register_component(metadata_registry);
+		ProjectileAOEComponent::register_component(metadata_registry);
 
 		Vadon::ECS::ComponentRegistry::register_tag_type<ProjectileExplosionTag>();
 	}
@@ -78,7 +78,7 @@ namespace VadonDemo::Model
 				}
 
 				// Reset firing timer
-				Vadon::Scene::ResourceSystem& resource_system = engine_core.get_system<Vadon::Scene::ResourceSystem>();
+				Vadon::Model::ResourceSystem& resource_system = engine_core.get_system<Vadon::Model::ResourceSystem>();
 
 				const WeaponDefHandle weapon_def_handle = resource_system.load_resource(current_weapon->definition);
 				const WeaponDefinition* weapon_def = resource_system.get_resource(weapon_def_handle);
@@ -234,12 +234,12 @@ namespace VadonDemo::Model
 	void WeaponSystem::create_projectile(Vadon::ECS::World& ecs_world, Vadon::ECS::EntityHandle weapon_entity, const WeaponDefinition* weapon_def, float time_offset)
 	{
 		Vadon::Core::EngineCoreInterface& engine_core = m_core.get_engine_core();
-		Vadon::Scene::SceneSystem& scene_system = engine_core.get_system<Vadon::Scene::SceneSystem>();
+		Vadon::Model::SceneSystem& scene_system = engine_core.get_system<Vadon::Model::SceneSystem>();
 
 		// Spawn projectile
 		// FIXME: at the moment we make an entity for every projectile
 		// Could use a special "pool" Entity that contains projectile instances
-		const Vadon::Scene::SceneHandle spawned_projectile_scene = scene_system.load_scene(weapon_def->projectile_prefab);
+		const Vadon::Model::SceneHandle spawned_projectile_scene = scene_system.load_scene(weapon_def->projectile_prefab);
 		const Vadon::ECS::EntityHandle spawned_projectile = scene_system.instantiate_scene(spawned_projectile_scene, ecs_world);
 
 		// FIXME: make a parent entity for projectiles?

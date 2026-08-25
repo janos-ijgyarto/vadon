@@ -4,7 +4,9 @@
 #include <VadonEditor/Model/Resource/Resource.hpp>
 #include <Vadon/Core/File/Database.hpp>
 #include <Vadon/Scene/Resource/Database.hpp>
+
 #include <functional>
+#include <array>
 namespace VadonEditor::Core
 {
 	class Editor;

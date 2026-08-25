@@ -1,8 +1,10 @@
-#include <Vadon/Private/PCH/Common.hpp>
 #include <Vadon/Core/Logger.hpp>
 #include <Vadon/Core/Project/Project.hpp>
 
 #include <Vadon/Utilities/Serialization/Serializer.hpp>
+#include <Vadon/Utilities/System/UUID/UUID.hpp>
+
+#include <Vadon/Foundation/Project/Project.hpp>
 
 #include <filesystem>
 #include <format>
@@ -44,29 +46,25 @@ namespace Vadon::Core
 	{
 		using SerializerResult = Vadon::Utilities::Serializer::Result;
 
-		if (serializer.initialize() == false)
-		{
-			Logger::log_error("Project: unable to initialize serializer for project file!\n");
-			return false;
-		}
+		constexpr ::Vadon::Foundation::UUID c_name_uuid = Utilities::string_to_uuid(::Vadon::Foundation::ProjectInfoSchema::c_name_property.id);
+		constexpr ::Vadon::Foundation::UUID c_custom_data_resource_uuid = Utilities::string_to_uuid(::Vadon::Foundation::ProjectInfoSchema::c_custom_data_resource_property.id);
 
-		if (serializer.serialize("name", project_data.name) != SerializerResult::SUCCESSFUL)
+		// Serialize project name
+		if (serializer.serialize(c_name_uuid, project_data.name) != SerializerResult::SUCCESSFUL)
 		{
 			project_serialization_error_log();
 			return false;
 		}
 
-		// Serialize any custom data to a separate object
-		if (serializer.serialize("custom_project_data", project_data.custom_data_id) != SerializerResult::SUCCESSFUL)
+		// Serialize UUID of custom data resource (project-dependent)
+		const bool serialize_custom_data = (serializer.is_reading() && serializer.has_key(c_custom_data_resource_uuid)) || ((serializer.is_reading() == false) && (project_data.custom_data_resource_id.is_valid() == true));
+		if(serialize_custom_data == true)
 		{
-			project_serialization_error_log();
-			return false;
-		}
-
-		if (serializer.finalize() == false)
-		{
-			Logger::log_error("Project: failed to finalize serializer for project file!\n");
-			return false;
+			if (serializer.serialize(c_custom_data_resource_uuid, project_data.custom_data_resource_id) != SerializerResult::SUCCESSFUL)
+			{
+				project_serialization_error_log();
+				return false;
+			}
 		}
 	
 		return true;

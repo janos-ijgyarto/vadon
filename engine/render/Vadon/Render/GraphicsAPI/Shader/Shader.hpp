@@ -3,6 +3,7 @@
 #include <Vadon/Render/GraphicsAPI/Defines.hpp>
 #include <Vadon/Utilities/Container/ObjectPool/Handle.hpp>
 #include <string>
+#include <vector>
 namespace Vadon::Render
 {
 	enum class ShaderType

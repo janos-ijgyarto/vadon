@@ -27,3 +27,6 @@ Below is a list of all third-party code in the engine, and the relevant license 
 ## StaticMurmur
 - Upstream: https://github.com/AntonJohansson/StaticMurmur
 - License: Unlicense
+## simdjson
+- Upstream: https://github.com/simdjson/simdjson
+- License: MIT

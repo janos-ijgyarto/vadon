@@ -3,6 +3,8 @@
 #include <Vadon/Math/Color.hpp>
 #include <Vadon/Utilities/Container/ObjectPool/Handle.hpp>
 #include <Vadon/Utilities/Enum/EnumClassBitFlag.hpp>
+
+#include <string>
 namespace Vadon::Render::Canvas
 {
 	struct MaterialInfo

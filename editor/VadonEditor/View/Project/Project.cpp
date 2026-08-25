@@ -1,6 +1,7 @@
 #include <VadonEditor/View/Project/Project.hpp>
 
 #include <VadonEditor/Core/Project/ProjectManager.hpp>
+#include <VadonEditor/Core/TypeInfo/MetadataRegistry.hpp>
 
 #include <VadonEditor/Model/ModelSystem.hpp>
 #include <VadonEditor/Model/Resource/ResourceSystem.hpp>
@@ -311,8 +312,14 @@ namespace VadonEditor::View
 				resource_path = "UNSAVED";
 			}
 
-			const Vadon::Utilities::TypeInfo resource_type_info = Vadon::Utilities::TypeRegistry::get_type_info(resource->get_info().type_id);
-			m_resource_label = std::format("{} ({})", resource_path, resource_type_info.name);
+			Core::MetadataRegistry& metadata_registry = m_editor.get_metadata_registry();
+			const char* resource_type_name = metadata_registry.get_type_metadata(resource->get_info().id, "name");
+			if (resource_type_name == nullptr)
+			{
+				VADON_ERROR("Must provide type metadata!");
+			}
+
+			m_resource_label = std::format("{} ({})", resource_path, resource_type_name);
 		}
 		else
 		{

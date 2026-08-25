@@ -1,4 +1,3 @@
-#include <Vadon/Private/PCH/GraphicsAPI.hpp>
 #include <Vadon/Private/Render/GraphicsAPI/DirectX/Buffer/BufferSystem.hpp>
 
 #include <Vadon/Private/Render/GraphicsAPI/DirectX/GraphicsAPI.hpp>
@@ -404,9 +403,7 @@ namespace Vadon::Private::Render::DirectX
 	{
 		log_message("Shutting down Buffer system (DirectX).\n");
 
-		// Clear buffers
-		// TODO: add warning in case of leftover buffers?
-		m_buffer_pool.reset();
+		// TODO: anything?
 
 		log_message("Buffer system (DirectX) shut down successfully.\n");
 	}

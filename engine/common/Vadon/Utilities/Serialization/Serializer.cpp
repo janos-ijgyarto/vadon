@@ -41,6 +41,8 @@ namespace Vadon::Utilities
 			{
 			}
 
+			Type get_type() const override { return Type::BINARY; }
+
 			bool initialize() override
 			{
 				Object& root_object = m_object_stack.emplace_back();
@@ -143,6 +145,11 @@ namespace Vadon::Utilities
 				}
 			}
 
+			bool is_array() const override
+			{
+				return get_parent_ref().type == ReferenceType::ARRAY;
+			}
+
 			Result close_array() override 
 			{
 				if (get_parent_ref().type != ReferenceType::ARRAY)
@@ -207,6 +214,11 @@ namespace Vadon::Utilities
 				// Pop array from stack
 				m_array_stack.pop_back();
 				return Result::SUCCESSFUL;
+			}
+
+			bool is_object() const override
+			{
+				return get_parent_ref().type == ReferenceType::OBJECT;
 			}
 			
 			Result close_object() override 
@@ -287,6 +299,29 @@ namespace Vadon::Utilities
 				const Object& object = m_object_stack[parent_ref.stack_index];
 				return object.values.find(string_id) != object.values.end();
 			}
+
+			// FIXME: use UUIDs directly instead of strings!
+			bool has_key(const ::Vadon::Foundation::UUID& key) const override
+			{
+				return has_key(uuid_to_base64_string(key));
+			}
+
+			KeyVector get_keys() const override
+			{
+				VADON_ASSERT(is_object(), "Invalid serializer state!");
+				KeyVector keys;
+
+				const ValueReference& parent_ref = get_parent_ref();
+				const Object& object = m_object_stack[parent_ref.stack_index];
+
+				for (auto obj_it = object.values.begin(); obj_it != object.values.end(); ++obj_it)
+				{
+					const std::string current_key_string(get_string(obj_it->first));
+					keys.push_back(current_key_string);
+				}
+				
+				return keys;
+			}
 		protected:
 			enum class ReferenceType
 			{
@@ -358,19 +393,19 @@ namespace Vadon::Utilities
 			Result serialize_color(Vadon::Math::ColorRGBA& color_value) override { return serialize_direct(color_value.value); }
 
 			// TODO: find a way to generalize where we just provide a data pointer and a size?
-			Result serialize_uuid(Vadon::Utilities::UUID& value) override
+			Result serialize_uuid(::Vadon::Foundation::UUID& value) override
 			{
 				if (is_reading() == true)
 				{
 					const std::byte* data_ptr = m_buffer.data() + m_current_ref.value;
-					memcpy(value.data.data(), data_ptr, sizeof(Vadon::Utilities::UUIDData));
+					memcpy(value.data, data_ptr, ::Vadon::Foundation::UUID::c_uuid_width);
 				}
 				else
 				{
 					const size_t prev_size = m_buffer.size();
-					m_buffer.insert(m_buffer.end(), sizeof(Vadon::Utilities::UUIDData), std::byte{0});
+					m_buffer.insert(m_buffer.end(), ::Vadon::Foundation::UUID::c_uuid_width, std::byte{0});
 
-					memcpy(m_buffer.data() + prev_size, value.data.data(), sizeof(Vadon::Utilities::UUIDData));
+					memcpy(m_buffer.data() + prev_size, value.data, ::Vadon::Foundation::UUID::c_uuid_width);
 
 					write_value_entry(static_cast<uint32_t>(prev_size));
 				}
@@ -502,6 +537,12 @@ namespace Vadon::Utilities
 				}
 
 				return Result::SUCCESSFUL; 
+			}
+
+			// FIXME: use UUIDs directly instead of strings!
+			Result set_value_reference(const ::Vadon::Foundation::UUID& uuid_key) override
+			{
+				return set_value_reference(uuid_to_base64_string(uuid_key));
 			}
 
 			Result set_value_reference(size_t index) override 
@@ -745,6 +786,8 @@ namespace Vadon::Utilities
 			{
 			}
 
+			Type get_type() const override { return Type::JSON; }
+
 			bool initialize() override
 			{
 				if (is_reading() == true)
@@ -785,6 +828,11 @@ namespace Vadon::Utilities
 				m_finalized = true;
 				return true;
 			}
+
+			bool is_array() const override
+			{
+				return get_current_value().is_array();
+			}
 			
 			Result close_array() override
 			{
@@ -799,6 +847,11 @@ namespace Vadon::Utilities
 					return Result::INVALID_CONTAINER;
 				}
 				return Result::SUCCESSFUL;
+			}
+
+			bool is_object() const override
+			{
+				return get_current_value().is_object();
 			}
 
 			Result close_object() override
@@ -819,12 +872,34 @@ namespace Vadon::Utilities
 			bool has_key(std::string_view key) const override
 			{
 				// Only allow if we were in an object to begin with
+				VADON_ASSERT(is_object() == true, "Invalid serializer state!");
 				const JSON& current_object = get_current_value();
 				if (current_object.is_object() == true)
 				{
 					return current_object.find(key) != current_object.end();
 				}
 				return false;
+			}
+
+			// FIXME: use UUIDs directly instead of strings!
+			bool has_key(const ::Vadon::Foundation::UUID& key) const override
+			{
+				return has_key(uuid_to_base64_string(key));
+			}
+
+			KeyVector get_keys() const override
+			{
+				VADON_ASSERT(is_object() == true, "Invalid serializer state!");
+				KeyVector keys;
+				const JSON& current_object = get_current_value();
+				if (current_object.is_object() == true)
+				{
+					for (auto obj_it = current_object.begin(); obj_it != current_object.end(); ++obj_it)
+					{
+						keys.push_back(obj_it.key());
+					}
+				}
+				return keys;
 			}
 		protected:
 			Result set_value_reference(std::string_view key) override
@@ -851,6 +926,12 @@ namespace Vadon::Utilities
 				}				
 
 				return Result::SUCCESSFUL;
+			}
+
+			// FIXME: use UUIDs directly instead of strings!
+			Result set_value_reference(const ::Vadon::Foundation::UUID& uuid_key) override
+			{
+				return set_value_reference(uuid_to_base64_string(uuid_key));
 			}
 
 			Result set_value_reference(size_t index) override
@@ -972,7 +1053,7 @@ namespace Vadon::Utilities
 				}
 			}
 
-			Result serialize_uuid(Vadon::Utilities::UUID& value) override
+			Result serialize_uuid(::Vadon::Foundation::UUID& value) override
 			{
 				std::string base64_uuid;
 				if (is_reading() == true)
@@ -982,14 +1063,15 @@ namespace Vadon::Utilities
 					{
 						return parse_result;
 					}
-					if (value.from_base64_string(base64_uuid) == false)
+
+					if (uuid_from_base64_string(base64_uuid, value) == false)
 					{
 						return Result::INVALID_DATA;
 					}
 				}
 				else
 				{
-					base64_uuid = value.to_base64_string();
+					base64_uuid = uuid_to_base64_string(value);
 					return internal_serialize_value(base64_uuid);
 				}
 
@@ -1076,6 +1158,12 @@ namespace Vadon::Utilities
 		return key_result;
 	}
 
+	// FIXME: use UUIDs directly instead of strings!
+	Serializer::Result Serializer::open_array(const ::Vadon::Foundation::UUID& key)
+	{
+		return open_array(uuid_to_base64_string(key));
+	}
+
 	Serializer::Result Serializer::open_array(size_t index)
 	{
 		const Result index_result = set_value_reference(index);
@@ -1096,6 +1184,12 @@ namespace Vadon::Utilities
 		}
 
 		return key_result;
+	}
+
+	// FIXME: use UUIDs directly instead of strings!
+	Serializer::Result Serializer::open_object(const ::Vadon::Foundation::UUID& key)
+	{
+		return open_object(uuid_to_base64_string(key));
 	}
 
 	Serializer::Result Serializer::open_object(size_t index)

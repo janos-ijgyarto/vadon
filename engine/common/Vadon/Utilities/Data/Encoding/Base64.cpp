@@ -1,7 +1,8 @@
-#include <Vadon/Private/PCH/Common.hpp>
 #include <Vadon/Utilities/Data/Encoding/Base64.hpp>
 
 #include <Vadon/Core/Logger.hpp>
+
+#include <vector>
 
 namespace Vadon::Utilities
 {

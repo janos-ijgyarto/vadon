@@ -1,7 +1,8 @@
-#include <Vadon/Private/PCH/Render.hpp>
 #include <Vadon/Private/Render/Frame/FrameSystem.hpp>
 
 #include <Vadon/Core/CoreInterface.hpp>
+
+#include <algorithm>
 
 namespace Vadon::Private::Render
 {

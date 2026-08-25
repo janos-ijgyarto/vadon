@@ -5,13 +5,13 @@
 #include <Vadon/Render/Frame/Graph.hpp>
 #include <Vadon/Render/GraphicsAPI/RenderTarget/Window.hpp>
 #include <unordered_map>
-namespace VadonEditor::Model
-{
-	class Scene;
-}
 namespace VadonDemo::Core
 {
 	class Editor;
+}
+namespace VadonEditor::Model
+{
+	class Scene;
 }
 namespace Vadon::Render::Canvas
 {
@@ -35,6 +35,8 @@ namespace VadonDemo::Render
 		bool initialize();
 		bool init_frame_graph();
 
+		void process_message(const char* data, size_t size);
+
 		bool project_loaded();
 
 		void update();
@@ -49,11 +51,11 @@ namespace VadonDemo::Render
 		void update_dirty_layers();
 		void update_editor_layer();
 
-		void process_platform_events();
-
 		Core::Editor& m_editor;
 		
 		Vadon::Render::FrameGraphHandle m_frame_graph;
+
+		// TODO: more flexible system to allow multiple windows, etc.
 		Vadon::Render::WindowHandle m_render_window;
 		
 		std::unordered_map<const VadonEditor::Model::Scene*, CanvasContextHandle> m_scene_canvas_contexts;

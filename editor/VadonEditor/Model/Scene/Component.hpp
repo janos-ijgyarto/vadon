@@ -1,13 +1,20 @@
 #ifndef VADONEDITOR_MODEL_SCENE_COMPONENT_HPP
 #define VADONEDITOR_MODEL_SCENE_COMPONENT_HPP
-#include <Vadon/Utilities/TypeInfo/Reflection/Property.hpp>
-#include <map>
+#include <VadonEditor/Model/Property.hpp>
+#include <Vadon/ECS/Component/Component.hpp>
 namespace VadonEditor::Model
 {
+	struct ComponentInfo
+	{
+		Vadon::ECS::ComponentID type_id;
+		std::string name;
+		// TODO: other metadata?
+	};
+
 	struct Component
 	{
 		std::string name;
-		Vadon::Utilities::PropertyList properties;
+		std::vector<Property> properties;
 	};
 }
 #endif

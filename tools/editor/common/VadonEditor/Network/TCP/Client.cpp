@@ -16,6 +16,11 @@ namespace VadonEditor::Network::TCP
     {
     }
 
+    Client::~Client()
+    {
+
+    }
+
     void Client::connect(const asio::ip::tcp::endpoint& endpoint) 
     {
         if (m_connection) 

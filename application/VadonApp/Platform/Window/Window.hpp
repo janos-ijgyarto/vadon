@@ -36,7 +36,7 @@ namespace VadonApp::Platform
 
 	VADON_DECLARE_TYPED_POOL_HANDLE(Window, WindowHandle);
 
-	using PlatformWindowHandle = void*; // Platform-dependent window handle
+	using PlatformWindowHandle = uintptr_t; // Platform-dependent window handle
 }
 
 namespace Vadon::Utilities

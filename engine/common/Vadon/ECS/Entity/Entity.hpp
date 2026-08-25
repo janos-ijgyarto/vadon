@@ -2,6 +2,7 @@
 #define VADON_ECS_ENTITY_ENTITY_HPP
 #include <Vadon/Utilities/Container/ObjectPool/Handle.hpp>
 #include <span>
+#include <vector>
 namespace Vadon::ECS
 {
 	VADON_DECLARE_TYPED_POOL_HANDLE(Entity, EntityHandle);
