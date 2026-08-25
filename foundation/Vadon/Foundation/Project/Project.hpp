@@ -13,7 +13,7 @@ namespace Vadon
 				TypeInfo::get_base_type_uuid_string(BaseType::STRING)
 			};
 
-			static constexpr PropertySchema c_custom_data_id_property{
+			static constexpr PropertySchema c_custom_data_resource_property{
 				UUIDString{"327fccb8-726d-4e25-9270-6c9060d7c8c7"},
 				TypeInfo::get_base_type_uuid_string(BaseType::UUID)
 			};

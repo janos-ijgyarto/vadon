@@ -398,18 +398,18 @@ namespace Vadon::Private::Model
 
 		using SerializerResult = Vadon::Utilities::Serializer::Result;
 
-		constexpr ::Vadon::Foundation::UUID c_id_uuid = Vadon::Utilities::Property::property_schema_to_uuid(::Vadon::Foundation::ResourceSchema::c_id_property);
-		constexpr ::Vadon::Foundation::UUID c_type_uuid = Vadon::Utilities::Property::property_schema_to_uuid(::Vadon::Foundation::ResourceSchema::c_type_property);
-		constexpr ::Vadon::Foundation::UUID c_properties_uuid = Vadon::Utilities::Property::property_schema_to_uuid(::Vadon::Foundation::ResourceSchema::c_properties_property);
-		constexpr ::Vadon::Foundation::UUID c_embedded_uuid = Vadon::Utilities::Property::property_schema_to_uuid(::Vadon::Foundation::ResourceSchema::c_embedded_property);
+		constexpr ::Vadon::Foundation::UUID c_id_property_uuid = Vadon::Utilities::Property::property_schema_to_uuid(::Vadon::Foundation::ResourceSchema::c_id_property);
+		constexpr ::Vadon::Foundation::UUID c_type_property_uuid = Vadon::Utilities::Property::property_schema_to_uuid(::Vadon::Foundation::ResourceSchema::c_type_property);
+		constexpr ::Vadon::Foundation::UUID c_properties_property_uuid = Vadon::Utilities::Property::property_schema_to_uuid(::Vadon::Foundation::ResourceSchema::c_properties_property);
+		constexpr ::Vadon::Foundation::UUID c_embedded_property_uuid = Vadon::Utilities::Property::property_schema_to_uuid(::Vadon::Foundation::ResourceSchema::c_embedded_property);
 
 		{
-			auto resource_id_it = resource_data.data.find(Utilities::uuid_to_base64_string(c_id_uuid));
+			auto resource_id_it = resource_data.data.find(Utilities::uuid_to_base64_string(c_id_property_uuid));
 			VADON_ASSERT(resource_id_it != resource_data.data.end(), "Invalid resource data!");
 
 			ResourceID resource_id = std::get<::Vadon::Foundation::UUID>(resource_id_it->second);
 
-			if (serializer.serialize(c_type_uuid, resource_id) != SerializerResult::SUCCESSFUL)
+			if (serializer.serialize(c_id_property_uuid, resource_id) != SerializerResult::SUCCESSFUL)
 			{
 				resource_info_failed_to_serialize();
 				return false;
@@ -418,11 +418,11 @@ namespace Vadon::Private::Model
 
 		Utilities::TypeUUID resource_type_uuid;
 		{
-			auto resource_type_it = resource_data.data.find(Utilities::uuid_to_base64_string(c_type_uuid));
+			auto resource_type_it = resource_data.data.find(Utilities::uuid_to_base64_string(c_type_property_uuid));
 			VADON_ASSERT(resource_type_it != resource_data.data.end(), "Invalid resource data!");
 
 			resource_type_uuid = std::get<::Vadon::Foundation::UUID>(resource_type_it->second);
-			if (serializer.serialize(c_id_uuid, resource_type_uuid) != SerializerResult::SUCCESSFUL)
+			if (serializer.serialize(c_type_property_uuid, resource_type_uuid) != SerializerResult::SUCCESSFUL)
 			{
 				resource_info_failed_to_serialize();
 				return false;
@@ -430,7 +430,7 @@ namespace Vadon::Private::Model
 		}
 
 		{
-			auto resource_properties_it = resource_data.data.find(Utilities::uuid_to_base64_string(c_properties_uuid));
+			auto resource_properties_it = resource_data.data.find(Utilities::uuid_to_base64_string(c_properties_property_uuid));
 			VADON_ASSERT(resource_properties_it != resource_data.data.end(), "Invalid resource data!");
 
 			Utilities::BoxedVariantDictionary& resource_property_data = std::get<Utilities::BoxedVariantDictionary>(resource_properties_it->second);
@@ -442,12 +442,12 @@ namespace Vadon::Private::Model
 			}
 		}
 
-		auto embedded_it = resource_data.data.find(Utilities::uuid_to_base64_string(c_embedded_uuid));
+		auto embedded_it = resource_data.data.find(Utilities::uuid_to_base64_string(c_embedded_property_uuid));
 		if (embedded_it != resource_data.data.end())
 		{
 			Utilities::BoxedVariantArray& embedded_resource_array = std::get<Utilities::BoxedVariantArray>(embedded_it->second);
 
-			if (serializer.open_array(c_embedded_uuid) != SerializerResult::SUCCESSFUL)
+			if (serializer.open_array(c_embedded_property_uuid) != SerializerResult::SUCCESSFUL)
 			{
 				resource_data_failed_to_serialize();
 				return false;

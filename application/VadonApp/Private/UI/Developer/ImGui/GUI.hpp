@@ -1,5 +1,6 @@
 #ifndef VADONAPP_PRIVATE_UI_DEVELOPER_IMGUI_GUI_HPP
 #define VADONAPP_PRIVATE_UI_DEVELOPER_IMGUI_GUI_HPP
+#if defined(VADON_DEVELOPER_GUI_IMGUI)
 #include <VadonApp/Private/UI/Developer/GUI.hpp>
 #include <VadonApp/Private/UI/Developer/ImGui/GUIElements.hpp>
 
@@ -210,4 +211,5 @@ namespace VadonApp::Private::UI::Developer::ImGUI
 		std::unique_ptr<Internal> m_internal;
 	};
 }
+#endif
 #endif

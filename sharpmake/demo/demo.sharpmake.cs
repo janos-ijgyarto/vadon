@@ -162,6 +162,15 @@ namespace Vadon.Demo
             conf.Defines.Add("VADON_LINK_DYNAMIC");
         }
 
+        [ConfigurePriority(Engine.ConfigurePriorities.Optimization)]
+        [Configure(Platform.win64, Engine.Optimization.Release)]
+        public virtual void ConfigureSubSystem(Configuration conf, Engine.Target target)
+        {
+            // Remove the console in release builds, but also don't set Windows as we don't use WinMain
+            conf.Options.Add(Options.Vc.Linker.SubSystem.Windows);
+            conf.AdditionalLinkerOptions.Add("/ENTRY:\"mainCRTStartup\"");
+        }
+
         public override void PostResolve()
         {
             base.PostResolve();

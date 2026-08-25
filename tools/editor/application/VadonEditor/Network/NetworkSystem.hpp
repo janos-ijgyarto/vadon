@@ -53,6 +53,7 @@ namespace VadonEditor::Network
 		void disconnected_from_server();
 	private slots:
 		void internal_received_message(const QByteArray& data);
+		void internal_disconnected_from_server();
 	private:
 		bool initialize();
 		void shutdown();

@@ -124,7 +124,7 @@ namespace VadonDemo::Core
                     {
                         // Global config resource, check if it's the one in the current project config
                         const Vadon::Core::Project& active_project = m_common_editor.get_project_manager().get_active_project();
-                        if (active_project.custom_data_id == resource_event.resource)
+                        if (active_project.custom_data_resource_id == resource_event.resource)
                         {
                             m_core->update_global_config(GlobalConfigurationID::from_resource_id(resource_event.resource));
                             m_render.update_editor_layer();

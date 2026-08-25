@@ -9,6 +9,7 @@ namespace VadonEditor::Core
 }
 namespace VadonEditor::UI
 {
+	class ResourceEditor;
 	class ProjectSettingsDialog : public QDialog
 	{
 		Q_OBJECT
@@ -17,6 +18,10 @@ namespace VadonEditor::UI
 
 		void accept() override;
 	private slots:
+		void load_custom_data_resource_triggered();
+		void clear_custom_data_resource_triggered();
+		void custom_data_resource_selected(const QUuid& resource_id);
+
 		void plugin_custom_path_browse_clicked();
 		void plugin_custom_path_clear_clicked();
 		void plugin_custom_path_text_changed(const QString& text);
@@ -29,6 +34,9 @@ namespace VadonEditor::UI
 
 		void game_configuration_activated(int index);
 	private:
+		void update_custom_data_resource_widget();
+		void clear_custom_data_resource_widget();
+
 		void update_editor_plugin_list();
 		void update_game_executable_list();
 
@@ -39,6 +47,7 @@ namespace VadonEditor::UI
 		Ui::ProjectSettings m_ui;
 
 		Core::ProjectInfo m_project_info;
+		ResourceEditor* m_custom_data_resource_editor;
 	};
 }
 #endif

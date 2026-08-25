@@ -237,9 +237,41 @@ namespace VadonEditor::Core
 
 		bool export_data(std::string_view output_path)
 		{
+			// Export project assets
 			if (m_exporter.export_data(output_path) == false)
 			{
 				return false;
+			}
+
+			// Export the project file
+			{
+				Vadon::Core::RawFileDataBuffer project_file_data;
+				Vadon::Utilities::Serializer::Instance serializer = Vadon::Utilities::Serializer::create_serializer(project_file_data, Vadon::Utilities::Serializer::Type::BINARY, Vadon::Utilities::Serializer::Mode::WRITE);
+				if (serializer->initialize() == false)
+				{
+					Vadon::Core::Logger::log_error("Asset server exporter: failed to initialize project serializer!\n");
+					return false;
+				}
+
+				Vadon::Core::Project project_info = m_project_manager.get_active_project();
+				if (Vadon::Core::Project::serialize_project_data(*serializer, project_info) == false)
+				{
+					Vadon::Core::Logger::log_error("Asset server: error serializing project data!\n");
+					return false;
+				}
+
+				if (serializer->finalize() == false)
+				{
+					Vadon::Core::Logger::log_error("Asset server exporter: failed to finalize project serializer!\n");
+					return false;
+				}
+
+				const std::string file_path = (std::filesystem::path(output_path) / Vadon::Core::Project::c_project_file_name).generic_string();
+				if (m_engine_core.get_system<Vadon::Core::FileSystem>().save_file(file_path, project_file_data) == false)
+				{
+					Vadon::Core::Logger::log_error("Asset server: error exporting project file!\n");
+					return false;
+				}
 			}
 
 			return true;

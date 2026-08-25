@@ -144,7 +144,7 @@ namespace
 		}
 
 		const QUuid project_name_property_id = VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::ProjectInfoSchema::c_name_property.id);
-		const QUuid custom_data_id_property_id = VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::ProjectInfoSchema::c_custom_data_id_property.id);
+		const QUuid custom_data_resource_property_id = VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::ProjectInfoSchema::c_custom_data_resource_property.id);
 
 		// TODO: validate JSON data!
 		const QJsonObject project_info_root = json_doc.object();
@@ -156,9 +156,9 @@ namespace
 			{
 				project_info.name = property_it.value().toString();
 			}
-			else if (property_uuid == custom_data_id_property_id)
+			else if (property_uuid == custom_data_resource_property_id)
 			{
-				project_info.custom_data_id = VadonEditor::Utilities::base64_string_to_uuid(property_it.value().toString());
+				project_info.custom_data_resource_id = VadonEditor::Utilities::base64_string_to_uuid(property_it.value().toString());
 			}
 		}
 		
@@ -852,13 +852,13 @@ namespace VadonEditor::Core
 		}
 
 		const QUuid project_name_property_id = Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::ProjectInfoSchema::c_name_property.id);
-		const QUuid custom_data_id_property_id = Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::ProjectInfoSchema::c_custom_data_id_property.id);
+		const QUuid custom_data_resource_id = Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::ProjectInfoSchema::c_custom_data_resource_property.id);
 
 		QJsonObject project_data_root;
 		project_data_root[Utilities::serialize_labeled_uuid(L"name", project_name_property_id)] = project_info.name;
-		if (Utilities::is_uuid_valid(project_info.custom_data_id) == true)
+		if (Utilities::is_uuid_valid(project_info.custom_data_resource_id) == true)
 		{
-			project_data_root[Utilities::serialize_labeled_uuid(L"custom_data_id", custom_data_id_property_id)] = Utilities::uuid_to_base64_string(project_info.custom_data_id);
+			project_data_root[Utilities::serialize_labeled_uuid(L"custom_data_resource", custom_data_resource_id)] = Utilities::uuid_to_base64_string(project_info.custom_data_resource_id);
 		}
 
 		project_file.write(QJsonDocument(project_data_root).toJson());

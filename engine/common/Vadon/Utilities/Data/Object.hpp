@@ -53,25 +53,29 @@ namespace Vadon::Utilities
 
 		// TODO: also implement versions which accept a subclass of the type!
 		explicit TypedObjectWrapper(const ObjectWrapper& other)
-			: TypedObjectWrapper(other.get_data())
+			: ObjectWrapper(other.get_type(), other.get_data())
 		{
-			VADON_ASSERT(other.get_type() == TypeRegistry::get_type_id<T>(), "Object type is not compatible!");
+			VADON_ASSERT(TypeRegistry::is_base_of(TypeRegistry::get_type_id<T>(), other.get_type()) == true, "Object type is not compatible!");
 		}
 
 		TypedObjectWrapper(const TypedObjectWrapper<T>& other)
-			: TypedObjectWrapper(other.m_data)
+			: ObjectWrapper(other.get_type(), other.m_data)
 		{
+			VADON_ASSERT(TypeRegistry::is_base_of(TypeRegistry::get_type_id<T>(), other.get_type()) == true, "Object type is not compatible!");
 		}
 
 		TypedObjectWrapper<T>& operator=(const TypedObjectWrapper& other)
 		{
+			VADON_ASSERT(TypeRegistry::is_base_of(TypeRegistry::get_type_id<T>(), other.get_type()) == true, "Object type is not compatible!");
+			m_type = other.get_type();
 			m_data = other.m_data;
 			return *this;
 		}
 
 		TypedObjectWrapper<T>& operator=(const ObjectWrapper& other)
 		{
-			VADON_ASSERT(other.get_type() == m_type, "Object type is not compatible!");
+			VADON_ASSERT(TypeRegistry::is_base_of(TypeRegistry::get_type_id<T>(), other.get_type()) == true, "Object type is not compatible!");
+			m_type = other.get_type();
 			m_data = other.get_data();
 			return *this;
 		}

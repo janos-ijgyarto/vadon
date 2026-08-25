@@ -18,7 +18,7 @@ namespace Vadon::Core
 
 		std::string name;
 		std::string root_path;
-		::Vadon::Foundation::UUID custom_data_id; // NOTE: can be used to store a ResourceID to any project-specific data
+		::Vadon::Foundation::UUID custom_data_resource_id; // NOTE: can be used to store a ResourceID to any project-specific data
 
 		VADONCOMMON_API static bool is_valid_project_path(std::string_view path);
 

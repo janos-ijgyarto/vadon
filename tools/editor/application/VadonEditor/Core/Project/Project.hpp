@@ -42,7 +42,7 @@ namespace VadonEditor::Core
 		GameExecutableSettings game_settings;
 		QList<GameExecutableInfo> game_entries;
 
-		QUuid custom_data_id;
+		QUuid custom_data_resource_id;
 		// TODO: anything else?
 
 		QString get_project_file_path() const

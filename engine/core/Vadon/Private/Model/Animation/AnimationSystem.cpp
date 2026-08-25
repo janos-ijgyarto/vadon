@@ -8,6 +8,7 @@
 #include <Vadon/Utilities/TypeInfo/Metadata.hpp>
 
 #define VADON_REGISTER_ANIMATION_CHANNEL_TYPE(_type_name, _member_name) TypeRegistry::register_type<_type_name, AnimationChannel>();\
+TypeRegistry::register_type_factory<_type_name>();\
 TypeRegistry::add_property<_type_name>(VADON_GET_MEMBER_UUID(AnimationChannel, _member_name), Vadon::Utilities::MemberVariableBind<&_type_name::key_data>().bind_member_getter().bind_member_setter())
 
 #define VADON_REGISTER_ANIMATION_CHANNEL_METADATA(_registry, _type_name, _member_name) {\

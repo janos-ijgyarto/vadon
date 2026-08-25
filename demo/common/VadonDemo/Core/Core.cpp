@@ -36,10 +36,10 @@ namespace VadonDemo::Core
 
 	bool Core::initialize(const Vadon::Core::Project& project_info)
 	{
-		if (project_info.custom_data_id.is_valid() == true)
+		if (project_info.custom_data_resource_id.is_valid() == true)
 		{
 			Vadon::Model::ResourceSystem& resource_system = m_engine_core.get_system<Vadon::Model::ResourceSystem>();
-			Vadon::Model::ResourceHandle custom_data_resource = resource_system.load_resource_base(project_info.custom_data_id);
+			Vadon::Model::ResourceHandle custom_data_resource = resource_system.load_resource_base(project_info.custom_data_resource_id);
 
 			VADON_ASSERT(resource_system.get_resource_info(custom_data_resource).type_id == Vadon::Utilities::TypeRegistry::get_type_id<GlobalConfiguration>(), "Custom data is not GlobalConfiguration!");
 

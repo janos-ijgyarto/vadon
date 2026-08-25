@@ -46,13 +46,12 @@ namespace VadonEditor::Network
 		std::unique_ptr<TCP::Client> m_tcp_client;
 		QTimer* m_timer = nullptr;
 
-		int m_connection_id;
+		QSet<int> m_connection_set;
 		QByteArray m_buffer;
 
 		Internal(Core::Application& application, NetworkThreadWorker& thread_worker)
 			: m_application(application)
 			, m_thread_worker(thread_worker)
-			, m_connection_id(0)
 		{
 
 		}
@@ -79,21 +78,21 @@ namespace VadonEditor::Network
 		// Server observer methods:
 		void on_connection_accepted(int connection_id) override
 		{
-			Q_ASSERT_X(m_connection_id == 0, "Server", "More than one connection");
-			m_connection_id = connection_id;
+			Q_ASSERT_X(m_connection_set.contains(connection_id) == false, "Server", "Connection already added");
+			m_connection_set.insert(connection_id);
 		}
 
 		void on_server_received(int connection_id, const char* data, size_t size) override
 		{
-			Q_ASSERT_X(m_connection_id == connection_id, "Server", "Connection mismatch");
+			Q_ASSERT_X(m_connection_set.contains(connection_id) == true, "Server", "Connection not found");
 			internal_on_data_received(data, size);
 		}
 
 		void on_connection_closed(int connection_id) override
 		{
-			Q_ASSERT_X(m_connection_id == connection_id, "Server", "Connection mismatch");
+			Q_ASSERT_X(m_connection_set.contains(connection_id) == true, "Server", "Connection mismatch");
 			// TODO: assume app shut down?
-			m_connection_id = 0;
+			m_connection_set.remove(connection_id);
 		}
 
 		// Client observer methods:
@@ -213,9 +212,12 @@ namespace VadonEditor::Network
 
 	void NetworkThreadWorker::send_message(const QByteArray& data)
 	{
-		if (m_internal->m_tcp_server != nullptr && (m_internal->m_connection_id != 0))
+		if (m_internal->m_tcp_server != nullptr && (m_internal->m_connection_set.isEmpty() == false))
 		{
-			m_internal->m_tcp_server->send(m_internal->m_connection_id, data.data(), data.size());
+			for (const int current_connection_id : m_internal->m_connection_set)
+			{
+				m_internal->m_tcp_server->send(current_connection_id, data.data(), data.size());
+			}
 		}
 
 		if (m_internal->m_tcp_client != nullptr)
@@ -267,7 +269,7 @@ namespace VadonEditor::Network
 			NetworkSystem* network_system = &m_application.get_network_system();
 			QObject::connect(&m_worker_object, &NetworkThreadWorker::received_message, network_system, &NetworkSystem::internal_received_message);
 			QObject::connect(&m_worker_object, &NetworkThreadWorker::connected, network_system, &NetworkSystem::connected_to_server);
-			QObject::connect(&m_worker_object, &NetworkThreadWorker::disconnected, network_system, &NetworkSystem::disconnected_from_server);
+			QObject::connect(&m_worker_object, &NetworkThreadWorker::disconnected, network_system, &NetworkSystem::internal_disconnected_from_server);
 
 			return true;
 		}
@@ -327,6 +329,11 @@ namespace VadonEditor::Network
 	void NetworkSystem::internal_received_message(const QByteArray& data)
 	{
 		emit received_message(data);
+	}
+
+	void NetworkSystem::internal_disconnected_from_server()
+	{
+		emit(disconnected_from_server());
 	}
 
 	bool NetworkSystem::initialize()

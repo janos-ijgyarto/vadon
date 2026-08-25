@@ -1,3 +1,4 @@
+#if defined(VADON_DEVELOPER_GUI_IMGUI)
 #include <VadonApp/Private/UI/Developer/ImGui/GUI.hpp>
 
 #include <VadonApp/Private/Core/Application.hpp>
@@ -1796,3 +1797,4 @@ namespace VadonApp::Private::UI::Developer::ImGUI
         platform_interface.set_clipboard_text(text);
     }
 }
+#endif

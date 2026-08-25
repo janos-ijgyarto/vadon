@@ -75,6 +75,7 @@ namespace VadonDemo::Model
 
 		Vadon::Utilities::TypeMetadata player_metadata(metadata_registry, VADON_GET_TYPE_UUID(Player));
 		player_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "VadonDemo::Model::Player");
+		player_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::COMPONENT, "VadonDemo/Model");
 
 		{
 			Vadon::Utilities::TypePropertyMetadata damage_delay_property(player_metadata, VADON_GET_MEMBER_UUID(Player, damage_delay));

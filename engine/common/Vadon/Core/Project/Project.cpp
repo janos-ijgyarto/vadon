@@ -47,7 +47,7 @@ namespace Vadon::Core
 		using SerializerResult = Vadon::Utilities::Serializer::Result;
 
 		constexpr ::Vadon::Foundation::UUID c_name_uuid = Utilities::string_to_uuid(::Vadon::Foundation::ProjectInfoSchema::c_name_property.id);
-		constexpr ::Vadon::Foundation::UUID c_custom_data_uuid = Utilities::string_to_uuid(::Vadon::Foundation::ProjectInfoSchema::c_custom_data_id_property.id);
+		constexpr ::Vadon::Foundation::UUID c_custom_data_resource_uuid = Utilities::string_to_uuid(::Vadon::Foundation::ProjectInfoSchema::c_custom_data_resource_property.id);
 
 		// Serialize project name
 		if (serializer.serialize(c_name_uuid, project_data.name) != SerializerResult::SUCCESSFUL)
@@ -56,11 +56,11 @@ namespace Vadon::Core
 			return false;
 		}
 
-		// Serialize UUID of custom data (project-dependent)
-		const bool serialize_custom_data = (serializer.is_reading() && serializer.has_key(c_custom_data_uuid)) || ((serializer.is_reading() == false) && (project_data.custom_data_id.is_valid() == true));
+		// Serialize UUID of custom data resource (project-dependent)
+		const bool serialize_custom_data = (serializer.is_reading() && serializer.has_key(c_custom_data_resource_uuid)) || ((serializer.is_reading() == false) && (project_data.custom_data_resource_id.is_valid() == true));
 		if(serialize_custom_data == true)
 		{
-			if (serializer.serialize(c_custom_data_uuid, project_data.custom_data_id) != SerializerResult::SUCCESSFUL)
+			if (serializer.serialize(c_custom_data_resource_uuid, project_data.custom_data_resource_id) != SerializerResult::SUCCESSFUL)
 			{
 				project_serialization_error_log();
 				return false;

@@ -51,7 +51,7 @@ namespace VadonEditor::Core
 
 		const std::string project_file_path = fs_root_path.generic_string();
 		Vadon::Core::Project& project_info = m_active_project;
-		project_info.custom_data_id.invalidate(); // Reset custom properties
+		project_info.custom_data_resource_id.invalidate(); // Reset custom properties
 
 		Vadon::Core::RawFileDataBuffer project_file_data;
 

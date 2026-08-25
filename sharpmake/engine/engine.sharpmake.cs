@@ -122,10 +122,17 @@ namespace Vadon.Engine
         [Configure(Optimization.Release)]
         public virtual void ConfigureRelease(Configuration conf, Target target)
         {
-            conf.Options.Add(Sharpmake.Options.Vc.Compiler.RuntimeLibrary.MultiThreaded);
+            conf.Options.Add(Sharpmake.Options.Vc.Compiler.RuntimeLibrary.MultiThreadedDLL);
             conf.DefaultOption = Options.DefaultTarget.Release;
 
             conf.Defines.Add("VADON_ASSERT_LEVEL=1");
+        }
+
+        [ConfigurePriority(ConfigurePriorities.Optimization)]
+        [Configure(Optimization.Debug | Optimization.Dev | Optimization.Profile)]
+        public virtual void ConfigureDeveloperBuild(Configuration conf, Target target)
+        {
+            conf.Defines.Add("VADON_DEVELOPMENT");
         }
         #endregion
 

@@ -242,7 +242,7 @@ namespace VadonEditor::UI
 			ResourceEditor* resource_editor = new ResourceEditor(resource, this);
 			if (resource_editor->initialize() == false)
 			{
-				Q_ASSERT_X(false, "VadonEditor::UI::PropertyResource::generate_resource_widgets", "Cannot find resource!");
+				Q_ASSERT_X(false, "VadonEditor::UI::PropertyResource::generate_resource_widgets", "Failed to initialize resource editor!");
 				clear_resource_widgets();
 			}
 
