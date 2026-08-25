@@ -1,0 +1,133 @@
+{
+    "embedded_resources|USApq0y8SueJlhtSDr+JUQ==": [
+        {
+            "id|GQz9/KcMRyO2QDl117Z1/A==": "lLr+fTymSO2+ctN1jIQ0Aw==",
+            "properties|CFSRIDI8SO6QhvW/UsQ14g==": {
+                "damage|QVOjIL47SZay8/m4rQmbyw==": 20,
+                "name|J8hzJXX3TDKzCQ3Vb4zF2Q==": ""
+            },
+            "type|GVZdrAVASKi15caSyF2TGA==": "SLFfWs8DTDq23zP0DSNQPA=="
+        },
+        {
+            "id|GQz9/KcMRyO2QDl117Z1/A==": "9hL/8UiQQLmGOXRUu6HqaA==",
+            "properties|CFSRIDI8SO6QhvW/UsQ14g==": {
+                "color|NxzbW2eVRsyKrgy15hQPXA==": "#0000ffff",
+                "name|J8hzJXX3TDKzCQ3Vb4zF2Q==": "",
+                "radius|XGhiCmvwSeyqkS1ZxotfOw==": 20,
+                "type|HS4Q/UAlRkSRPVXhy9EyVg==": 1
+            },
+            "type|GVZdrAVASKi15caSyF2TGA==": "14B/7aD7Ss2wMsQhxZuHWg=="
+        },
+        {
+            "id|GQz9/KcMRyO2QDl117Z1/A==": "fH5NjcsGS4a0euFEKoKJBA==",
+            "properties|CFSRIDI8SO6QhvW/UsQ14g==": {
+                "cycle_duration|NHa+AC1iSXeS1EOw4dNEJw==": 2,
+                "name|J8hzJXX3TDKzCQ3Vb4zF2Q==": "",
+                "weave_factor|tpLrjcdEQL6+k6a9QUblqQ==": 0.75
+            },
+            "type|GVZdrAVASKi15caSyF2TGA==": "+u9/Mg4oRsahl65PYNg45w=="
+        },
+        {
+            "id|GQz9/KcMRyO2QDl117Z1/A==": "f4NVwhLYQ3mP7YGMgD32fg==",
+            "properties|CFSRIDI8SO6QhvW/UsQ14g==": {
+                "name|J8hzJXX3TDKzCQ3Vb4zF2Q==": "",
+                "score_reward|fRxN+bwbTQqAMGNvXY5xiw==": 100
+            },
+            "type|GVZdrAVASKi15caSyF2TGA==": "GqwRzCd5SxGKpx07N5jCVA=="
+        }
+    ],
+    "id|GQz9/KcMRyO2QDl117Z1/A==": "+6qHzxorQ8K2HwO7qM1ooA==",
+    "properties|CFSRIDI8SO6QhvW/UsQ14g==": {
+        "entities|uR4B50m5RBqQkrvaSPr84Q==": [
+            {
+                "components|9cQpDtvNQR2TuN32Yr4+ig==": [
+                    {
+                        "properties|u44mUNyiRwC1OQLF16ALxw==": {
+                            "max_health|4O51S+LoTfSONIHI1+VPNA==": 100
+                        },
+                        "type|3gp3e1BaQs62II7kqSg75Q==": "5Li3IT5uRbmY058lEXbznQ=="
+                    },
+                    {
+                        "properties|u44mUNyiRwC1OQLF16ALxw==": {
+                            "color|Glrl/ZXqT6CePhXWqxYwhA==": "#ffffffff",
+                            "resource|7shLdI3LS6u2dXQC1eeJhA==": "9hL/8UiQQLmGOXRUu6HqaA=="
+                        },
+                        "type|3gp3e1BaQs62II7kqSg75Q==": "sjalUl7xRXao1LdVshKhZQ=="
+                    },
+                    {
+                        "properties|u44mUNyiRwC1OQLF16ALxw==": {
+                            "layer_definition|AAaiU0zzRHqPcyRD0Fx4cw==": "6eryAxE7RRiJ7Qha4pEc6w==",
+                            "visible|+3cT9okgSKCBHYsYRXiN4Q==": true,
+                            "z_order|1B8AA6j2THuNo4Lyv7vCoA==": 1
+                        },
+                        "type|3gp3e1BaQs62II7kqSg75Q==": "evRaUx1PRDCq/ZjDL/CNog=="
+                    },
+                    {
+                        "properties|u44mUNyiRwC1OQLF16ALxw==": {
+                        },
+                        "type|3gp3e1BaQs62II7kqSg75Q==": "3CLYU/wWTgSeCOsa1opqww=="
+                    },
+                    {
+                        "properties|u44mUNyiRwC1OQLF16ALxw==": {
+                            "definition|Scj2lLhsRnqYP/NeMqOQiw==": "lLr+fTymSO2+ctN1jIQ0Aw=="
+                        },
+                        "type|3gp3e1BaQs62II7kqSg75Q==": "M91Qff+GQGKK93saescLSg=="
+                    },
+                    {
+                        "properties|u44mUNyiRwC1OQLF16ALxw==": {
+                            "position|ongWu0nIRtW5wNCGPsR3/A==": [
+                                0,
+                                0
+                            ],
+                            "rotation|OzY064E6S/OJJzWyP8YrnA==": 0,
+                            "scale|lvSRINl3STSFWQhlKbbX+Q==": 1
+                        },
+                        "type|3gp3e1BaQs62II7kqSg75Q==": "6jMjrAaCSLuTptd9Ksh5EA=="
+                    },
+                    {
+                        "properties|u44mUNyiRwC1OQLF16ALxw==": {
+                            "definition|Xikp1UdiRW2OdeLkoI7siQ==": "f4NVwhLYQ3mP7YGMgD32fg=="
+                        },
+                        "type|3gp3e1BaQs62II7kqSg75Q==": "qs1rrreCQjK6E4YPDllfAQ=="
+                    },
+                    {
+                        "properties|u44mUNyiRwC1OQLF16ALxw==": {
+                            "radius|mp44pkAFST6k7PBMKtjuFw==": 20
+                        },
+                        "type|3gp3e1BaQs62II7kqSg75Q==": "uZB7ua6wS5aT80N2ToQVuQ=="
+                    },
+                    {
+                        "properties|u44mUNyiRwC1OQLF16ALxw==": {
+                            "acceleration|vhxlZPOzRMSgUgdyqxLwMw==": 0,
+                            "top_speed|2gUHxVlbRliGTIk3lOCjkg==": 100
+                        },
+                        "type|3gp3e1BaQs62II7kqSg75Q==": "6nYj0xdKQlyqUMqcgdJhDA=="
+                    },
+                    {
+                        "properties|u44mUNyiRwC1OQLF16ALxw==": {
+                            "position|6prZ/u5dT/eP3ePdhRz4QQ==": [
+                                0,
+                                0
+                            ],
+                            "rotation|lFzDEAn7Rci+yA1AR0LpYw==": 0,
+                            "scale|rKfmHgUWTxicQY9+12gunA==": 1
+                        },
+                        "type|3gp3e1BaQs62II7kqSg75Q==": "4Mfp00eITyaCNkSWmMNEFQ=="
+                    },
+                    {
+                        "properties|u44mUNyiRwC1OQLF16ALxw==": {
+                            "definition|604tcMyeQp28ydqLzE/8PQ==": "fH5NjcsGS4a0euFEKoKJBA=="
+                        },
+                        "type|3gp3e1BaQs62II7kqSg75Q==": "+YiG1wHJTJq21kkp7mZT8g=="
+                    }
+                ],
+                "id|w1YNg+p2SOONiuIpi7ZbzQ==": "hq6mZTvtSz+NCSt0HGrMCQ==",
+                "name|6epoQsUyRBe/0Hfauf1F+w==": "WeavingEnemy",
+                "parent|JwTgxEDoTym6qKas9DaVMA==": "AAAAAAAAAAAAAAAAAAAAAA==",
+                "scene|euKxwNp2Rt+fX3Ismk8HQg==": "AAAAAAAAAAAAAAAAAAAAAA=="
+            }
+        ],
+        "name|J8hzJXX3TDKzCQ3Vb4zF2Q==": ""
+    },
+    "type|GVZdrAVASKi15caSyF2TGA==": "xDIJS9XyToCclSzWaajtHg=="
+}

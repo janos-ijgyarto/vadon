@@ -1,0 +1,41 @@
+{
+    "id|GQz9/KcMRyO2QDl117Z1/A==": "1CoWuLEISLalq1xwbiSp3w==",
+    "properties|CFSRIDI8SO6QhvW/UsQ14g==": {
+        "channels|3LA93I//Rz2tkmgk5BC4pw==": [
+            {
+                "properties|u44mUNyiRwC1OQLF16ALxw==": {
+                    "data|WENE1kdaTyqOaMnZGf92sg==": [
+                        0,
+                        1
+                    ],
+                    "id|K/sMQ8caQ5S5bKJIARhtSg==": "4mmfYK3vRkCrAIp9JlMmJA==",
+                    "key_times|z9gRhxPbT+6RRuKKc3caFw==": [
+                        0,
+                        1
+                    ],
+                    "tag|MIJ2yE5PQ6ObVyDNQ5jc9g==": "radius"
+                },
+                "type|3gp3e1BaQs62II7kqSg75Q==": "h1NKFenhSC6/dcxJ8p8YfA=="
+            },
+            {
+                "properties|u44mUNyiRwC1OQLF16ALxw==": {
+                    "data|WENE1kdaTyqOaMnZGf92sg==": [
+                        1,
+                        1,
+                        0
+                    ],
+                    "id|K/sMQ8caQ5S5bKJIARhtSg==": "ZdrQEXagTsuycNyfOhPsvg==",
+                    "key_times|z9gRhxPbT+6RRuKKc3caFw==": [
+                        0,
+                        0.5619999766349792,
+                        1
+                    ],
+                    "tag|MIJ2yE5PQ6ObVyDNQ5jc9g==": "opacity"
+                },
+                "type|3gp3e1BaQs62II7kqSg75Q==": "h1NKFenhSC6/dcxJ8p8YfA=="
+            }
+        ],
+        "name|J8hzJXX3TDKzCQ3Vb4zF2Q==": ""
+    },
+    "type|GVZdrAVASKi15caSyF2TGA==": "RfMETQEARK+USf7gRZDODQ=="
+}

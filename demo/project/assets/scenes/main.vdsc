@@ -1,0 +1,81 @@
+{
+    "id|GQz9/KcMRyO2QDl117Z1/A==": "ZeEcO392TzKknsKSWTEBHg==",
+    "properties|CFSRIDI8SO6QhvW/UsQ14g==": {
+        "entities|uR4B50m5RBqQkrvaSPr84Q==": [
+            {
+                "components|9cQpDtvNQR2TuN32Yr4+ig==": [
+                ],
+                "id|w1YNg+p2SOONiuIpi7ZbzQ==": "Z0axHIN7QTmA6qYmpdVlZw==",
+                "name|6epoQsUyRBe/0Hfauf1F+w==": "Root",
+                "parent|JwTgxEDoTym6qKas9DaVMA==": "AAAAAAAAAAAAAAAAAAAAAA==",
+                "scene|euKxwNp2Rt+fX3Ismk8HQg==": "AAAAAAAAAAAAAAAAAAAAAA=="
+            },
+            {
+                "components|9cQpDtvNQR2TuN32Yr4+ig==": [
+                ],
+                "id|w1YNg+p2SOONiuIpi7ZbzQ==": "xCxtHzk6Ri21U8tvSrsjUw==",
+                "name|6epoQsUyRBe/0Hfauf1F+w==": "Map",
+                "parent|JwTgxEDoTym6qKas9DaVMA==": "Z0axHIN7QTmA6qYmpdVlZw==",
+                "scene|euKxwNp2Rt+fX3Ismk8HQg==": "eoypMJYTTOOazQu5c4XqYg=="
+            },
+            {
+                "components|9cQpDtvNQR2TuN32Yr4+ig==": [
+                ],
+                "id|w1YNg+p2SOONiuIpi7ZbzQ==": "x1spYmN4RDqVc3TKvD6Cxw==",
+                "name|6epoQsUyRBe/0Hfauf1F+w==": "Player",
+                "parent|JwTgxEDoTym6qKas9DaVMA==": "Z0axHIN7QTmA6qYmpdVlZw==",
+                "scene|euKxwNp2Rt+fX3Ismk8HQg==": "KwaQBp/dQ3qzJGt3TJoSkQ=="
+            },
+            {
+                "components|9cQpDtvNQR2TuN32Yr4+ig==": [
+                ],
+                "id|w1YNg+p2SOONiuIpi7ZbzQ==": "zJ+kJgK8SEaKWW7tYA8qfA==",
+                "name|6epoQsUyRBe/0Hfauf1F+w==": "Controller",
+                "parent|JwTgxEDoTym6qKas9DaVMA==": "Z0axHIN7QTmA6qYmpdVlZw==",
+                "scene|euKxwNp2Rt+fX3Ismk8HQg==": "GOoOcJcxQxqIN3/FQmUa1A=="
+            },
+            {
+                "components|9cQpDtvNQR2TuN32Yr4+ig==": [
+                    {
+                        "properties|u44mUNyiRwC1OQLF16ALxw==": {
+                            "activation_delay|yqV/wPQIQPSjdX9ot7FF6Q==": 1,
+                            "enemy_prefab|ywOzn2oaTrubtAhndKpW4Q==": "WJutSSLaQK+7vtr2MsL70g==",
+                            "level_up_delay|3tbFhoKQRC2Sst8oemYlzw==": 10,
+                            "level_up_multiplier|vvV88ss2SjqbwQEv2gT41g==": 2,
+                            "max_level|fqavQP7qRmexkch5rxUdPA==": 1,
+                            "min_spawn_delay|1IcGon4yQ3q8VHnla03ifw==": 5,
+                            "start_spawn_count|PIkaJ8PhTjW3PjtuVICJwg==": 1
+                        },
+                        "type|3gp3e1BaQs62II7kqSg75Q==": "OeRtXRahSuG76GmXWIkKmw=="
+                    }
+                ],
+                "id|w1YNg+p2SOONiuIpi7ZbzQ==": "haBQNN+xQnKFLA+ZFT+xMQ==",
+                "name|6epoQsUyRBe/0Hfauf1F+w==": "BasicEnemySpawner",
+                "parent|JwTgxEDoTym6qKas9DaVMA==": "Z0axHIN7QTmA6qYmpdVlZw==",
+                "scene|euKxwNp2Rt+fX3Ismk8HQg==": "AAAAAAAAAAAAAAAAAAAAAA=="
+            },
+            {
+                "components|9cQpDtvNQR2TuN32Yr4+ig==": [
+                    {
+                        "properties|u44mUNyiRwC1OQLF16ALxw==": {
+                            "activation_delay|yqV/wPQIQPSjdX9ot7FF6Q==": 1,
+                            "enemy_prefab|ywOzn2oaTrubtAhndKpW4Q==": "+6qHzxorQ8K2HwO7qM1ooA==",
+                            "level_up_delay|3tbFhoKQRC2Sst8oemYlzw==": 10,
+                            "level_up_multiplier|vvV88ss2SjqbwQEv2gT41g==": 2,
+                            "max_level|fqavQP7qRmexkch5rxUdPA==": 1,
+                            "min_spawn_delay|1IcGon4yQ3q8VHnla03ifw==": 5,
+                            "start_spawn_count|PIkaJ8PhTjW3PjtuVICJwg==": 1
+                        },
+                        "type|3gp3e1BaQs62II7kqSg75Q==": "OeRtXRahSuG76GmXWIkKmw=="
+                    }
+                ],
+                "id|w1YNg+p2SOONiuIpi7ZbzQ==": "thJc2EhiQ1e5ZNidgso+Mw==",
+                "name|6epoQsUyRBe/0Hfauf1F+w==": "WeavingEnemySpawner",
+                "parent|JwTgxEDoTym6qKas9DaVMA==": "Z0axHIN7QTmA6qYmpdVlZw==",
+                "scene|euKxwNp2Rt+fX3Ismk8HQg==": "AAAAAAAAAAAAAAAAAAAAAA=="
+            }
+        ],
+        "name|J8hzJXX3TDKzCQ3Vb4zF2Q==": ""
+    },
+    "type|GVZdrAVASKi15caSyF2TGA==": "xDIJS9XyToCclSzWaajtHg=="
+}

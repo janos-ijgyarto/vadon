@@ -1,0 +1,50 @@
+{
+    "id|GQz9/KcMRyO2QDl117Z1/A==": "aQLGD2lfTqSAR9Ao7FMyPQ==",
+    "properties|CFSRIDI8SO6QhvW/UsQ14g==": {
+        "entities|uR4B50m5RBqQkrvaSPr84Q==": [
+            {
+                "components|9cQpDtvNQR2TuN32Yr4+ig==": [
+                    {
+                        "properties|u44mUNyiRwC1OQLF16ALxw==": {
+                            "color|aMI2jQ7KQ2ymj+CiqCN7og==": "#ffffffff",
+                            "offset|7aRQrjp/QD6Wj8/UrSFolw==": [
+                                0,
+                                0
+                            ],
+                            "text|pnsO3tdwQCa92AgqN0qwzg==": "Label"
+                        },
+                        "type|3gp3e1BaQs62II7kqSg75Q==": "Gkn+CSmnTCeNv0pQsX2DJA=="
+                    },
+                    {
+                        "properties|u44mUNyiRwC1OQLF16ALxw==": {
+                            "dimensions|i1qKE36kQ1y6HlpXGit0Cg==": [
+                                110,
+                                16
+                            ],
+                            "enabled|QxH91iL6TZOxZi4He+8JLw==": true,
+                            "position|yasmTpzcQ3ast4tsmstU6Q==": [
+                                0,
+                                0
+                            ]
+                        },
+                        "type|3gp3e1BaQs62II7kqSg75Q==": "6RecQDukQL2v3WCZszTaIA=="
+                    },
+                    {
+                        "properties|u44mUNyiRwC1OQLF16ALxw==": {
+                            "layer_definition|AAaiU0zzRHqPcyRD0Fx4cw==": "oSaqTbBiSnCUgN4W6BvDrQ==",
+                            "visible|+3cT9okgSKCBHYsYRXiN4Q==": true,
+                            "z_order|1B8AA6j2THuNo4Lyv7vCoA==": 0
+                        },
+                        "type|3gp3e1BaQs62II7kqSg75Q==": "evRaUx1PRDCq/ZjDL/CNog=="
+                    }
+                ],
+                "id|w1YNg+p2SOONiuIpi7ZbzQ==": "qj/s+2C+QDiQINOobt3h5A==",
+                "name|6epoQsUyRBe/0Hfauf1F+w==": "Label",
+                "parent|JwTgxEDoTym6qKas9DaVMA==": "AAAAAAAAAAAAAAAAAAAAAA==",
+                "scene|euKxwNp2Rt+fX3Ismk8HQg==": "AAAAAAAAAAAAAAAAAAAAAA=="
+            }
+        ],
+        "name|J8hzJXX3TDKzCQ3Vb4zF2Q==": ""
+    },
+    "type|GVZdrAVASKi15caSyF2TGA==": "xDIJS9XyToCclSzWaajtHg=="
+}
