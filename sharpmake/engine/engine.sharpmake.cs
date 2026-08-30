@@ -236,9 +236,9 @@ namespace Vadon.Engine
             return Path.Combine("[conf.IntermediatePath]/", Path.ChangeExtension(input, ".obj"));
         }
  
-        protected const string GeneratedShaderFileRoot = "[conf.IntermediatePath]/shaders";
+        public const string GeneratedShaderFileRoot = "[conf.IntermediatePath]/shaders";
 
-        protected static Tools.Target GetShaderCompilerTarget(Target target)
+        public static Tools.Target GetShaderCompilerTarget(Target target)
         {
             return new Tools.Target { 
                         DevEnvironment = target.DevEnvironment,
