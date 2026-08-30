@@ -1,8 +1,8 @@
-#include <VadonDemo/Core/Logger.hpp>
+#include <VadonEditor/Core/Logger.hpp>
 
-#include <VadonDemo/Network/Message/MessageSerializer.hpp>
+#include <VadonEditor/Network/Message/MessageSerializer.hpp>
 
-namespace VadonDemo::Core
+namespace VadonEditor::Core
 {
     void Logger::log_message(std::string_view message)
     {
@@ -43,7 +43,7 @@ namespace VadonDemo::Core
         log_message.log_type = type;
         log_message.length = static_cast<::Vadon::Foundation::uint32>(message_trimmed.size());
 
-        Network::MessageSerializer message_serializer;
+        VadonEditor::Network::MessageSerializer message_serializer;
         char* message_data = message_serializer.allocate_message(::Vadon::Foundation::EditorMessageCategory::PLUGIN, sizeof(::Vadon::Foundation::EditorPluginMessageLog) + message_trimmed.size());
 
         memcpy(message_data, &log_message, sizeof(::Vadon::Foundation::EditorPluginMessageLog));

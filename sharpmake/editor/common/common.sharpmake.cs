@@ -21,13 +21,12 @@ namespace Vadon.Editor
             conf.AddPublicDependency<Engine.Common>(target);
         }
 
-        [ConfigurePriority(Engine.ConfigurePriorities.Optimization)]
-        [Configure(Engine.Optimization.Debug | Engine.Optimization.Dev | Engine.Optimization.Profile)]
-        public virtual void ConfigureNonReleaseLinking(Configuration conf, Engine.Target target)
+        public override void ConfigureNonReleaseLinking(Configuration conf, Engine.Target target)
         {    
+            base.ConfigureNonReleaseLinking(conf, target);
+
             // In all non-release builds, we create DLLs and link dynamically            
             conf.Output = Configuration.OutputType.Dll;
-            conf.Defines.Add("VADON_LINK_DYNAMIC");
             conf.Defines.Add("VADONEDITOR_EXPORTS");
         }
 

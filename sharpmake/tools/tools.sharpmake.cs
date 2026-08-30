@@ -60,6 +60,7 @@ namespace Vadon.Tools
         {
             conf.Name = "[target.Optimization]";
             conf.ProjectFileName = "[project.Name]_[target.DevEnvironment]_[target.Platform]_[target.BuildSystem]";
+            conf.SolutionFolder = "Vadon";
         }
 
         #region Platforms
@@ -120,7 +121,7 @@ namespace Vadon.Tools
             base.ConfigureAll(conf, target);
 
             conf.ProjectPath = $"{GeneratorPath}/engine";
-            conf.SolutionFolder = "Foundation";
+            conf.SolutionFolder = "Vadon/Foundation";
 
             conf.IncludePaths.Add(SourceRootPath);
 
@@ -140,7 +141,7 @@ namespace Vadon.Tools
             base.ConfigureAll(conf, target);
                         
             conf.ProjectPath = $"{GeneratorPath}/tools";
-            conf.SolutionFolder = "Tools";
+            conf.SolutionFolder += "/Tools";
 
             conf.TargetPath = $"{BuildPath}/tools/[project.Name]/[target.Platform]/[target.Optimization]/[target.BuildSystem]";
             conf.IntermediatePath = $"{BuildPath}/tools/obj/[project.Name]/[target.Platform]/[target.Optimization]/[target.BuildSystem]";

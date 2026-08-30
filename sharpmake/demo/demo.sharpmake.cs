@@ -15,7 +15,7 @@ namespace Vadon.Demo
             base.ConfigureAll(conf, target);
                         
             conf.ProjectPath += "/demo";
-            conf.SolutionFolder = "Demo";
+            conf.SolutionFolder += "/Demo";
 
             conf.TargetPath = $"{BuildPath}/demo/[project.Name]/[target.Platform]/[target.Optimization]/[target.BuildSystem]";
             conf.IntermediatePath = $"{BuildPath}/demo/obj/[project.Name]/[target.Platform]/[target.Optimization]/[target.BuildSystem]";
@@ -43,13 +43,12 @@ namespace Vadon.Demo
             conf.AddPublicDependency<Engine.Render>(target);
         }
 
-        [ConfigurePriority(Engine.ConfigurePriorities.Optimization)]
-        [Configure(Engine.Optimization.Debug | Engine.Optimization.Dev | Engine.Optimization.Profile)]
-        public virtual void ConfigureNonReleaseLinking(Configuration conf, Engine.Target target)
+        public override void ConfigureNonReleaseLinking(Configuration conf, Engine.Target target)
         {    
+            base.ConfigureNonReleaseLinking(conf, target);
+
             // In all non-release builds, we create DLLs and link dynamically            
             conf.Output = Configuration.OutputType.Dll;
-            conf.Defines.Add("VADON_LINK_DYNAMIC");
             conf.Defines.Add("VADONDEMO_EXPORTS");
         }
 
@@ -99,14 +98,6 @@ namespace Vadon.Demo
             conf.ExecuteTargetCopy = true;
         }
 
-        [ConfigurePriority(Engine.ConfigurePriorities.Optimization)]
-        [Configure(Engine.Optimization.Debug | Engine.Optimization.Dev | Engine.Optimization.Profile)]
-        public virtual void ConfigureNonReleaseLinking(Configuration conf, Engine.Target target)
-        {    
-            // Link dynamically to engine libraries
-            conf.Defines.Add("VADON_LINK_DYNAMIC");
-        }
-
         public override void PostResolve()
         {
             base.PostResolve();
@@ -152,14 +143,6 @@ namespace Vadon.Demo
             // Copy the game exe import file
             // FIXME: some way to do this in one step, to ensure that we don't miss it here or in PostResolve?
             conf.TargetCopyFiles.Add(Tools.Editor.Application.GetEditorGameExecutableImportFilePath(conf));
-        }
-
-        [ConfigurePriority(Engine.ConfigurePriorities.Optimization)]
-        [Configure(Engine.Optimization.Debug | Engine.Optimization.Dev | Engine.Optimization.Profile)]
-        public virtual void ConfigureNonReleaseLinking(Configuration conf, Engine.Target target)
-        {    
-            // Link dynamically to engine libraries
-            conf.Defines.Add("VADON_LINK_DYNAMIC");
         }
 
         [ConfigurePriority(Engine.ConfigurePriorities.Optimization)]

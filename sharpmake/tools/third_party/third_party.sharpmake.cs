@@ -165,7 +165,7 @@ namespace Vadon.Tools.ThirdParty
             // No need to include its own path
             conf.IncludePaths.Clear();
 
-            conf.SolutionFolder = "ThirdParty";
+            conf.SolutionFolder += "/ThirdParty";
 
             conf.EventPreBuildExe.Add(
                 new Configuration.BuildStepExecutable(
@@ -204,7 +204,7 @@ namespace Vadon.Tools.ThirdParty
             base.ConfigureAll(conf, target);
 
             conf.ProjectPath += "/third_party";
-            conf.SolutionFolder = "ThirdParty";
+            conf.SolutionFolder += "/ThirdParty";
 
             // No need to include its own path
             conf.IncludePaths.Clear();

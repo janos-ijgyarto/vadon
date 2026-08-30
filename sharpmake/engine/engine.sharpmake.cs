@@ -76,6 +76,7 @@ namespace Vadon.Engine
         {
             conf.Name = "[target.Optimization]";
             conf.ProjectFileName = "[project.Name]_[target.DevEnvironment]_[target.Platform]_[target.BuildSystem]";
+            conf.SolutionFolder = "Vadon";
 
             conf.Defines.Add("VADON_DEFAULT_ASSERT_LEVEL=2");
         }
@@ -165,7 +166,7 @@ namespace Vadon.Engine
             base.ConfigureAll(conf, target);
 
             conf.ProjectPath = $"{GeneratorPath}/engine/foundation";
-            conf.SolutionFolder = "Foundation";
+            conf.SolutionFolder += "/Foundation";
 
             conf.IncludePaths.Add(SourceRootPath);
 
@@ -185,7 +186,7 @@ namespace Vadon.Engine
             base.ConfigureAll(conf, target);
                         
             conf.ProjectPath = $"{GeneratorPath}/engine";
-            conf.SolutionFolder = "Engine";
+            conf.SolutionFolder += "/Engine";
 
             conf.TargetFileName = "vadon[project.Name]";
             conf.TargetPath = $"{BuildPath}/engine/[project.Name]/[target.Platform]/[target.Optimization]/[target.BuildSystem]";
@@ -196,13 +197,6 @@ namespace Vadon.Engine
             conf.Options.Add(Sharpmake.Options.Vc.Compiler.CppLanguageStandard.CPP20);
             conf.Options.Add(Sharpmake.Options.Vc.Compiler.Exceptions.Enable); // FIXME: we should probably disable exceptions!
             conf.Options.Add(Sharpmake.Options.Vc.General.TreatWarningsAsErrors.Enable);
-            {
-                string[] warningsToDisable =
-                {
-                    "4251" // Type needs to have dll-interface to be used by clients
-                };
-                conf.Options.Add(new Sharpmake.Options.Vc.Compiler.DisableSpecificWarnings(warningsToDisable));
-            }
 
             conf.ObjectFileName = ObjectFileName;
         }
@@ -216,6 +210,24 @@ namespace Vadon.Engine
             // Force writing to pdb from different cl.exe process to go through the pdb server
             // FIXME: only do this with MSVC!
             conf.AdditionalCompilerOptions.Add("/FS");
+        }
+
+        [ConfigurePriority(ConfigurePriorities.Optimization)]
+        [Configure(Optimization.Debug | Optimization.Dev | Optimization.Profile)]
+        public virtual void ConfigureNonReleaseLinking(Configuration conf, Target target)
+        {    
+            // Add macro for linking dynamically
+            conf.Defines.Add("VADON_LINK_DYNAMIC");
+
+            // When using DLLs, we have to disable this warning, which is created by STL types
+            // Not necessary in release
+            {
+                string[] warningsToDisable =
+                {
+                    "4251"
+                };
+                conf.Options.Add(new Sharpmake.Options.Vc.Compiler.DisableSpecificWarnings(warningsToDisable));
+            }
         }
 
         private string ObjectFileName(string input)
@@ -326,13 +338,12 @@ namespace Vadon.Engine
             base.ConfigureAll(conf, target);
         }
 
-        [ConfigurePriority(ConfigurePriorities.Optimization)]
-        [Configure(Optimization.Debug | Optimization.Dev | Optimization.Profile)]
-        public virtual void ConfigureNonReleaseLinking(Configuration conf, Target target)
+        public override void ConfigureNonReleaseLinking(Configuration conf, Target target)
         {    
+            base.ConfigureNonReleaseLinking(conf, target);
+
             // In all non-release builds, we create DLLs and link dynamically
             conf.Output = Configuration.OutputType.Dll;
-            conf.Defines.Add("VADON_LINK_DYNAMIC");
         }
 
         [ConfigurePriority(ConfigurePriorities.Optimization)]

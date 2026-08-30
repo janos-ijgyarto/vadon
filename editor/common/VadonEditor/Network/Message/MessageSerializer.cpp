@@ -1,6 +1,6 @@
-#include <VadonDemo/Network/Message/MessageSerializer.hpp>
+#include <VadonEditor/Network/Message/MessageSerializer.hpp>
 
-namespace VadonDemo::Network
+namespace VadonEditor::Network
 {
 	char* MessageSerializer::allocate_message(::Vadon::Foundation::EditorMessageCategory category, size_t message_size)
 	{

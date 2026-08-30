@@ -1,14 +1,14 @@
-#ifndef VADONDEMO_NETWORK_MESSAGE_MESSAGESERIALIZER_HPP
-#define VADONDEMO_NETWORK_MESSAGE_MESSAGESERIALIZER_HPP
+#ifndef VADONEDITOR_NETWORK_MESSAGE_MESSAGESERIALIZER_HPP
+#define VADONEDITOR_NETWORK_MESSAGE_MESSAGESERIALIZER_HPP
+#include <VadonEditor/VadonEditor.hpp>
 #include <Vadon/Foundation/Editor/Network/Message/Message.hpp>
 #include <vector>
-namespace VadonDemo::Network
+namespace VadonEditor::Network
 {
-	// FIXME: move to Foundation to be useable from both editor and engine?
 	class MessageSerializer
 	{
 	public:
-		char* allocate_message(::Vadon::Foundation::EditorMessageCategory category, size_t message_size);
+		VADONEDITOR_API char* allocate_message(::Vadon::Foundation::EditorMessageCategory category, size_t message_size);
 
 		template<typename T>
 		void write_message_trivial(::Vadon::Foundation::EditorMessageCategory category, const T& message)

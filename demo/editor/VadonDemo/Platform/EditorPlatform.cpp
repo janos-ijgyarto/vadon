@@ -2,7 +2,7 @@
 
 #include <VadonDemo/Core/Editor.hpp>
 
-#include <VadonDemo/Network/Message/MessageSerializer.hpp>
+#include <VadonEditor/Network/Message/MessageSerializer.hpp>
 
 #include <Vadon/Foundation/Editor/Simulator/SimulatorInterface.hpp>
 
@@ -119,7 +119,7 @@ namespace VadonDemo::Platform
 
     void EditorPlatform::request_main_viewport()
     {
-        Network::MessageSerializer message_serializer;
+        VadonEditor::Network::MessageSerializer message_serializer;
 
         // FIXME: actually make use of ID!
         ::Vadon::Foundation::EditorPlatformManagerWindowRequest window_request;

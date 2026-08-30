@@ -17,7 +17,7 @@ namespace Vadon.Editor
             base.ConfigureAll(conf, target);
                         
             conf.ProjectPath += "/editor";
-            conf.SolutionFolder = "Editor";
+            conf.SolutionFolder += "/Editor";
 
             conf.TargetPath = $"{BuildPath}/editor/[project.Name]/[target.Platform]/[target.Optimization]/[target.BuildSystem]";
             conf.IntermediatePath = $"{BuildPath}/editor/obj/[project.Name]/[target.Platform]/[target.Optimization]/[target.BuildSystem]";

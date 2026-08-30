@@ -1,7 +1,8 @@
 #ifndef VADONDEMO_CORE_ASSETSERVER_HPP
 #define VADONDEMO_CORE_ASSETSERVER_HPP
-#include <VadonDemo/Core/Logger.hpp>
 #include <VadonEditor/Core/AssetServer.hpp>
+#include <VadonEditor/Core/Logger.hpp>
+
 #include <Vadon/Core/Core.hpp>
 
 #include <Vadon/Foundation/Editor/Asset/PluginInterface.hpp>
@@ -11,7 +12,7 @@ namespace Vadon::Core
 }
 namespace VadonDemo::Core
 {
-	class AssetServerLogger : public Logger
+	class AssetServerLogger : public VadonEditor::Core::Logger
 	{
 	public:
 		AssetServerLogger(::Vadon::Foundation::EditorAssetServerInterface& asset_server);

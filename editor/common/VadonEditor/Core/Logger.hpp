@@ -1,17 +1,19 @@
-#ifndef VADONDEMO_CORE_LOGGER_HPP
-#define VADONDEMO_CORE_LOGGER_HPP
+#ifndef VADONEDITOR_CORE_LOGGER_HPP
+#define VADONEDITOR_CORE_LOGGER_HPP
+#include <VadonEditor/VadonEditor.hpp>
 #include <Vadon/Core/Logger.hpp>
 #include <Vadon/Foundation/Editor/Network/Message/Plugin.hpp>
-namespace VadonDemo::Core
+namespace VadonEditor::Core
 {
+    // A simple logger interface that will also convert the log message to a package for the editor app
     class Logger : public Vadon::Core::DefaultLogger
     {
     public:
         Logger(::Vadon::Foundation::EditorPluginMessageSource source) : m_source(source) {}
 
-        void log_message(std::string_view message) override;
-        void log_warning(std::string_view message) override;
-        void log_error(std::string_view message) override;
+        VADONEDITOR_API void log_message(std::string_view message) override;
+        VADONEDITOR_API void log_warning(std::string_view message) override;
+        VADONEDITOR_API void log_error(std::string_view message) override;
     protected:
         // NOTE: to be implemented by plugin interfaces
         virtual void dispatch_message_data(const char* data, size_t size) = 0;
