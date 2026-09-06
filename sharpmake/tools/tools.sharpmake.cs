@@ -152,6 +152,8 @@ namespace Vadon.Tools
             conf.Options.Add(Sharpmake.Options.Vc.General.TreatWarningsAsErrors.Enable);
             conf.Options.Add(Sharpmake.Options.Vc.Compiler.Exceptions.Enable);
 
+            conf.Options.Add(Sharpmake.Options.Vc.General.ExternalWarningLevel.Level1);
+
             conf.ObjectFileName = ObjectFileName;
         }
 

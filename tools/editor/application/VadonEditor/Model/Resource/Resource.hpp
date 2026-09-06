@@ -36,6 +36,8 @@ namespace VadonEditor::Model
 		void notify_modifed();
 
 		QVariant get_property(const PropertyID& property_id) const { return m_data.get_property(property_id); }
+		QVariant get_property_default_value(const PropertyID& property_id) const { return m_data.get_property_default_value(property_id); }
+		bool has_property(const PropertyID& property_id) const { return m_data.has_property(property_id); }
 		void set_property(const PropertyID& property_id, const QVariant& value);
 
 		const Resource* get_owner() const { return m_owner; }

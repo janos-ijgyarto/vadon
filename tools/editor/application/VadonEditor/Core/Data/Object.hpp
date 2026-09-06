@@ -40,6 +40,8 @@ namespace VadonEditor::Core
 		const QUuid& get_type_id() const { return m_type_id; }
 
 		QVariant get_property(const PropertyID& property_id) const;
+		QVariant get_property_default_value(const PropertyID& property_id) const;
+		bool has_property(const PropertyID& property_id) const;
 		void set_property(const PropertyID& property_id, const QVariant& value);
 
 		QVariant get_property(PropertyPath property_path) const;

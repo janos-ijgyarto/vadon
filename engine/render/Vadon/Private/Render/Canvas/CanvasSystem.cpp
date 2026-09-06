@@ -1175,6 +1175,10 @@ namespace Vadon::Private::Render::Canvas
 				{
 					return true;
 				}
+				else if ((left_item.visible == false) && (right_item.visible == true))
+				{
+					return false;
+				}
 
 				return left_item.info.z_order < right_item.info.z_order;
 			}

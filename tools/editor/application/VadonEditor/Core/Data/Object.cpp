@@ -153,7 +153,7 @@ namespace
 		}
 	}
 
-	bool get_property_default_value(VadonEditor::Core::Application& application, const VadonEditor::Core::PropertyData& property_data, qsizetype type_list_offset, QVariant& value, bool shallow)
+	bool get_data_object_property_default_value(VadonEditor::Core::Application& application, const VadonEditor::Core::PropertyData& property_data, qsizetype type_list_offset, QVariant& value, bool shallow)
 	{
 		const QUuid element_type = property_data.type_list[type_list_offset];
 		const ::Vadon::Foundation::Property::Category property_category = VadonEditor::Core::PropertyData::get_category(element_type);
@@ -1123,7 +1123,7 @@ namespace VadonEditor::Core
 				const Core::PropertyData& type_property_data = property_it.value();
 
 				QVariant property_value;
-				if (get_property_default_value(m_application, type_property_data, 0, property_value, false) == false)
+				if (get_data_object_property_default_value(m_application, type_property_data, 0, property_value, false) == false)
 				{
 					return false;
 				}
@@ -1183,6 +1183,32 @@ namespace VadonEditor::Core
 		Q_ASSERT_X(property_it != m_properties.end(), "VadonEditor::Core::DataObject::get_property", "Cannot find property data");
 
 		return property_it.value();
+	}
+
+	QVariant DataObject::get_property_default_value(const PropertyID& property_id) const
+	{
+		const DataSchema& data_schema = m_application.get_project_manager().get_project_data_schema();
+		const PropertyData* property_data = data_schema.find_type_property_data(m_type_id, property_id);
+		if (property_data == nullptr)
+		{
+			Q_ASSERT_X(false, "VadonEditor::Core::DataObject::get_property_default_value", "Cannot find property!");
+			return QVariant();
+		}
+
+		QVariant property_default_value;
+		if (get_data_object_property_default_value(m_application, *property_data, 0, property_default_value, false) == false)
+		{
+			Q_ASSERT_X(false, "VadonEditor::Core::DataObject::get_property_default_value", "Failed to create default value!");
+			return QVariant();
+		}
+
+		return property_default_value;
+	}
+
+	bool DataObject::has_property(const PropertyID& property_id) const
+	{
+		auto property_it = m_properties.find(Utilities::uuid_to_base64_string(property_id));
+		return property_it != m_properties.end();
 	}
 
 	void DataObject::set_property(const PropertyID& property_id, const QVariant& value)
@@ -1255,7 +1281,7 @@ namespace VadonEditor::Core
 			// NOTE: this time we create it "shallow" because we only intend to add the properties along the path,
 			// so we don't want sub-objects to be fully filled in
 			QVariant property_value;
-			if (get_property_default_value(m_application, *property_data, 0, property_value, true) == false)
+			if (get_data_object_property_default_value(m_application, *property_data, 0, property_value, true) == false)
 			{
 				Q_ASSERT_X(false, "VadonEditor::Core::DataObject::add_property", "Failed to initialize property!");
 				return;

@@ -12,7 +12,7 @@ TypeRegistry::register_type_factory<_type_name>();\
 TypeRegistry::add_property<_type_name>(VADON_GET_MEMBER_UUID(AnimationChannel, _member_name), Vadon::Utilities::MemberVariableBind<&_type_name::key_data>().bind_member_getter().bind_member_setter())
 
 #define VADON_REGISTER_ANIMATION_CHANNEL_METADATA(_registry, _type_name, _member_name) {\
-Vadon::Utilities::TypeMetadata animation_channel_metadata(_registry, VADON_GET_TYPE_UUID(_type_name)); \
+Vadon::Utilities::TypeMetadata<_type_name> animation_channel_metadata(_registry); \
 animation_channel_metadata.add_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, #_type_name)\
 .add_property(VADON_GET_MEMBER_UUID(_type_name, _member_name))\
 .add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Data")\
@@ -107,13 +107,13 @@ namespace Vadon::Private::Model
 	void AnimationSystem::register_type_metadata(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry)
 	{
 		{
-			Vadon::Utilities::TypeMetadata animation_metadata(metadata_registry, VADON_GET_TYPE_UUID(Animation));
+			Vadon::Utilities::TypeMetadata<Animation> animation_metadata(metadata_registry);
 			animation_metadata.add_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "Vadon::Model::Animation")
 				.add_property(VADON_GET_MEMBER_UUID(Animation, channels))
 					.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Channels")
 					.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::FLAGS, ::Vadon::Foundation::CommonPropertyMetadata::flag_string(::Vadon::Foundation::CommonPropertyMetadata::Flags::EDITOR_HIDDEN));
 			
-			Vadon::Utilities::TypeMetadata animation_channel_metadata(metadata_registry, VADON_GET_TYPE_UUID(AnimationChannel));
+			Vadon::Utilities::TypeMetadata<AnimationChannel> animation_channel_metadata(metadata_registry);
 			animation_channel_metadata.add_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "Vadon::Model::AnimationChannel")
 				.add_property(VADON_GET_MEMBER_UUID(AnimationChannel, id))
 					.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "ID")

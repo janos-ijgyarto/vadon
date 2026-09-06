@@ -13,7 +13,7 @@ namespace VadonDemo::Model
 
 		Vadon::Utilities::TypeRegistry::add_property<WeaponComponent>(VADON_GET_MEMBER_UUID(WeaponComponent, definition), Vadon::Utilities::MemberVariableBind<&WeaponComponent::definition>().bind_member_getter().bind_member_setter());
 
-		Vadon::Utilities::TypeMetadata weapon_component_metadata(metadata_registry, VADON_GET_TYPE_UUID(WeaponComponent));
+		Vadon::Utilities::TypeMetadata<WeaponComponent> weapon_component_metadata(metadata_registry);
 		weapon_component_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "VadonDemo::Model::WeaponComponent");
 		weapon_component_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::COMPONENT, "VadonDemo/Model");
 
@@ -29,7 +29,7 @@ namespace VadonDemo::Model
 
 		Vadon::Utilities::TypeRegistry::add_property<WeaponVolleyComponent>(VADON_GET_MEMBER_UUID(WeaponVolleyComponent, fire_count), Vadon::Utilities::MemberVariableBind<&WeaponVolleyComponent::fire_count>().bind_member_getter().bind_member_setter());
 
-		Vadon::Utilities::TypeMetadata volley_component_metadata(metadata_registry, VADON_GET_TYPE_UUID(WeaponVolleyComponent));
+		Vadon::Utilities::TypeMetadata<WeaponVolleyComponent> volley_component_metadata(metadata_registry);
 		volley_component_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "VadonDemo::Model::WeaponVolleyComponent");
 		volley_component_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::COMPONENT, "VadonDemo/Model");
 
@@ -47,7 +47,7 @@ namespace VadonDemo::Model
 		Vadon::Utilities::TypeRegistry::add_property<ProjectileComponent>(VADON_GET_MEMBER_UUID(ProjectileComponent, damage), Vadon::Utilities::MemberVariableBind<&ProjectileComponent::damage>().bind_member_getter().bind_member_setter());
 		Vadon::Utilities::TypeRegistry::add_property<ProjectileComponent>(VADON_GET_MEMBER_UUID(ProjectileComponent, knockback), Vadon::Utilities::MemberVariableBind<&ProjectileComponent::knockback>().bind_member_getter().bind_member_setter());
 
-		Vadon::Utilities::TypeMetadata projectile_component_metadata(metadata_registry, VADON_GET_TYPE_UUID(ProjectileComponent));
+		Vadon::Utilities::TypeMetadata<ProjectileComponent> projectile_component_metadata(metadata_registry);
 		projectile_component_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "VadonDemo::Model::ProjectileComponent");
 		projectile_component_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::COMPONENT, "VadonDemo/Model");
 
@@ -72,7 +72,7 @@ namespace VadonDemo::Model
 		Vadon::Utilities::TypeRegistry::add_property<ProjectileHomingComponent>(VADON_GET_MEMBER_UUID(ProjectileHomingComponent, turn_speed), Vadon::Utilities::MemberVariableBind<&ProjectileHomingComponent::turn_speed>().bind_member_getter().bind_member_setter());
 		Vadon::Utilities::TypeRegistry::add_property<ProjectileHomingComponent>(VADON_GET_MEMBER_UUID(ProjectileHomingComponent, aimed_on_launch), Vadon::Utilities::MemberVariableBind<&ProjectileHomingComponent::aimed_on_launch>().bind_member_getter().bind_member_setter());
 
-		Vadon::Utilities::TypeMetadata homing_component_metadata(metadata_registry, VADON_GET_TYPE_UUID(ProjectileHomingComponent));
+		Vadon::Utilities::TypeMetadata<ProjectileHomingComponent> homing_component_metadata(metadata_registry);
 		homing_component_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "VadonDemo::Model::ProjectileHomingComponent");
 		homing_component_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::COMPONENT, "VadonDemo/Model");
 
@@ -93,7 +93,7 @@ namespace VadonDemo::Model
 
 		Vadon::Utilities::TypeRegistry::add_property<ProjectileAOEComponent>(VADON_GET_MEMBER_UUID(ProjectileAOEComponent, radius), Vadon::Utilities::MemberVariableBind<&ProjectileAOEComponent::radius>().bind_member_getter().bind_member_setter());
 
-		Vadon::Utilities::TypeMetadata aoe_component_metadata(metadata_registry, VADON_GET_TYPE_UUID(ProjectileAOEComponent));
+		Vadon::Utilities::TypeMetadata<ProjectileAOEComponent> aoe_component_metadata(metadata_registry);
 		aoe_component_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "VadonDemo::Model::ProjectileAOEComponent");
 		aoe_component_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::COMPONENT, "VadonDemo/Model");
 

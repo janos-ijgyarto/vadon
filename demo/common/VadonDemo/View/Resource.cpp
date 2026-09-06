@@ -13,7 +13,7 @@ namespace VadonDemo::View
 
 		ResourceRegistry::register_resource_type<RenderResource, Vadon::Model::Resource>();
 
-		Vadon::Utilities::TypeMetadata(metadata_registry, VADON_GET_TYPE_UUID(RenderResource))
+		Vadon::Utilities::TypeMetadata<RenderResource>(metadata_registry)
 			.add_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "VadonDemo::View::RenderResource");
 	}
 
@@ -28,7 +28,7 @@ namespace VadonDemo::View
 		TypeRegistry::add_property<Shape>(VADON_GET_MEMBER_UUID(Shape, radius), Vadon::Utilities::MemberVariableBind<&Shape::radius>().bind_member_getter().bind_member_setter());
 		TypeRegistry::add_property<Shape>(VADON_GET_MEMBER_UUID(Shape, color), Vadon::Utilities::MemberVariableBind<&Shape::color>().bind_member_getter().bind_member_setter());
 
-		Vadon::Utilities::TypeMetadata(metadata_registry, VADON_GET_TYPE_UUID(Shape))
+		Vadon::Utilities::TypeMetadata<Shape>(metadata_registry)
 			.add_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "VadonDemo::View::Shape")
 			.add_property(VADON_GET_MEMBER_UUID(Shape, type))
 				.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Type")
@@ -50,7 +50,7 @@ namespace VadonDemo::View
 
 		TypeRegistry::add_property<Sprite>(VADON_GET_MEMBER_UUID(Sprite, texture), Vadon::Utilities::MemberVariableBind<&Sprite::texture>().bind_member_getter().bind_member_setter());
 
-		Vadon::Utilities::TypeMetadata(metadata_registry, VADON_GET_TYPE_UUID(Sprite))
+		Vadon::Utilities::TypeMetadata<Sprite>(metadata_registry)
 			.add_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "VadonDemo::View::Sprite")
 			.add_property(VADON_GET_MEMBER_UUID(Sprite, texture))
 				.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Texture")

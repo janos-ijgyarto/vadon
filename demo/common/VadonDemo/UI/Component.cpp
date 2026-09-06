@@ -14,7 +14,7 @@ namespace VadonDemo::UI
 		Vadon::Utilities::TypeRegistry::add_property<Base>(VADON_GET_MEMBER_UUID(Base, position), Vadon::Utilities::MemberVariableBind<&Base::position>().bind_member_getter().bind_member_setter());
 		Vadon::Utilities::TypeRegistry::add_property<Base>(VADON_GET_MEMBER_UUID(Base, dimensions), Vadon::Utilities::MemberVariableBind<&Base::dimensions>().bind_member_getter().bind_member_setter());
 
-		Vadon::Utilities::TypeMetadata(metadata_registry, VADON_GET_TYPE_UUID(Base))
+		Vadon::Utilities::TypeMetadata<Base>(metadata_registry)
 			.add_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "VadonDemo::UI::Base")
 			.add_metadata(::Vadon::Foundation::CommonTypeMetadata::COMPONENT, "VadonDemo/UI")
 			.add_property(VADON_GET_MEMBER_UUID(Base, enabled))
@@ -37,7 +37,7 @@ namespace VadonDemo::UI
 		Vadon::Utilities::TypeRegistry::add_property<Frame>(VADON_GET_MEMBER_UUID(Frame, fill_color), Vadon::Utilities::MemberVariableBind<&Frame::fill_color>().bind_member_getter().bind_member_setter());
 		Vadon::Utilities::TypeRegistry::add_property<Frame>(VADON_GET_MEMBER_UUID(Frame, fill_enable), Vadon::Utilities::MemberVariableBind<&Frame::fill_enable>().bind_member_getter().bind_member_setter());
 
-		Vadon::Utilities::TypeMetadata(metadata_registry, VADON_GET_TYPE_UUID(Frame))
+		Vadon::Utilities::TypeMetadata<Frame>(metadata_registry)
 			.add_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "VadonDemo::UI::Frame")
 			.add_metadata(::Vadon::Foundation::CommonTypeMetadata::COMPONENT, "VadonDemo/UI")
 			.add_property(VADON_GET_MEMBER_UUID(Frame, outline_color))
@@ -62,7 +62,7 @@ namespace VadonDemo::UI
 		Vadon::Utilities::TypeRegistry::add_property<Text>(VADON_GET_MEMBER_UUID(Text, color), Vadon::Utilities::MemberVariableBind<&Text::color>().bind_member_getter().bind_member_setter());
 		Vadon::Utilities::TypeRegistry::add_property<Text>(VADON_GET_MEMBER_UUID(Text, offset), Vadon::Utilities::MemberVariableBind<&Text::offset>().bind_member_getter().bind_member_setter());
 
-		Vadon::Utilities::TypeMetadata(metadata_registry, VADON_GET_TYPE_UUID(Text))
+		Vadon::Utilities::TypeMetadata<Text>(metadata_registry)
 			.add_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "VadonDemo::UI::Text")
 			.add_metadata(::Vadon::Foundation::CommonTypeMetadata::COMPONENT, "VadonDemo/UI")
 			.add_property(VADON_GET_MEMBER_UUID(Text, text))
@@ -82,7 +82,7 @@ namespace VadonDemo::UI
 
 		Vadon::Utilities::TypeRegistry::add_property<Selectable>(VADON_GET_MEMBER_UUID(Selectable, clicked_key), Vadon::Utilities::MemberVariableBind<&Selectable::clicked_key>().bind_member_getter().bind_member_setter());
 
-		Vadon::Utilities::TypeMetadata(metadata_registry, VADON_GET_TYPE_UUID(Selectable))
+		Vadon::Utilities::TypeMetadata<Selectable>(metadata_registry)
 			.add_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "VadonDemo::UI::Selectable")
 			.add_metadata(::Vadon::Foundation::CommonTypeMetadata::COMPONENT, "VadonDemo/UI")
 			.add_property(VADON_GET_MEMBER_UUID(Selectable, clicked_key))

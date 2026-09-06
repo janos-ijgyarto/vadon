@@ -131,12 +131,15 @@ namespace Vadon.Tools.ThirdParty
         public override void ConfigureWin64(Configuration conf, Target target)
         {
             base.ConfigureWin64(conf, target);
-            
-            conf.IncludePaths.Add($"{ToolsInstallPath}/x64-windows/include");
+
+            // NOTE: using system paths since this is 3rd party code
+            conf.IncludeSystemPaths.Add($"{ToolsInstallPath}/x64-windows/include");
             // NOTE: not adding library paths, need to let dependencies decide which optimization uses which build
         }
     }
 
+    
+    // FIXME: replace with CustomFileBuildStep once FastBuild issue is resolved!
     [Sharpmake.Generate]
     public class InstallDependencies : ToolsProject
     {
@@ -163,7 +166,7 @@ namespace Vadon.Tools.ThirdParty
             conf.ProjectPath += "/third_party";
 
             // No need to include its own path
-            conf.IncludePaths.Clear();
+            conf.IncludeSystemPaths.Clear();
 
             conf.SolutionFolder += "/ThirdParty";
 
@@ -176,6 +179,15 @@ namespace Vadon.Tools.ThirdParty
                 )
             );
             conf.ExecuteTargetCopy = true;
+        }
+
+        public override void ConfigureFastBuild(Configuration conf, Target target)
+        {
+            // FIXME: this needs to be a non-FastBuild project to run the utility script
+            // Should instead find a way to add as a pre-build dependency before building
+            // any other node
+            base.ConfigureFastBuild(conf, target);
+            conf.IsFastBuild = false; // Make this non-FastBuild to ensure it can run
         }
     }
 

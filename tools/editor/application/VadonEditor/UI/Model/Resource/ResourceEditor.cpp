@@ -94,7 +94,17 @@ namespace VadonEditor::UI
 				PropertyWidgetInfo widget_info;
 				widget_info.property_id = Utilities::vadon_uuid_to_qt_uuid(property_uuid);
 				widget_info.type_list = property_data->type_list;
-				widget_info.init_value = m_resource->get_property(widget_info.property_id);
+
+				QVariant init_value;
+				if (m_resource->has_property(widget_info.property_id) == true)
+				{
+					init_value = m_resource->get_property(widget_info.property_id);
+				}
+				else
+				{
+					init_value = m_resource->get_property_default_value(widget_info.property_id);
+				}
+				widget_info.init_value = init_value;
 
 				PropertyWidget* property_widget = PropertyWidget::create_widget(widget_info, this, m_resource);
 				if (property_widget == nullptr)

@@ -649,14 +649,14 @@ namespace Vadon::Private::Model
 
 	void ResourceSystem::register_type_metadata(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry)
 	{
-		Vadon::Utilities::TypeMetadata resource_metadata(metadata_registry, VADON_GET_TYPE_UUID(Vadon::Model::Resource));
+		Vadon::Utilities::TypeMetadata<Vadon::Model::Resource> resource_metadata(metadata_registry);
 
 		resource_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "Vadon::Model::Resource");
 
 		Vadon::Utilities::TypePropertyMetadata name_property(resource_metadata, VADON_GET_MEMBER_UUID(Vadon::Model::Resource, name));
 		name_property.set_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Name");
 
-		Vadon::Utilities::TypeMetadata(metadata_registry, VADON_GET_TYPE_UUID(Vadon::Model::FileResource))
+		Vadon::Utilities::TypeMetadata<Vadon::Model::FileResource>(metadata_registry)
 			.add_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "Vadon::Model::FileResource");
 	}
 

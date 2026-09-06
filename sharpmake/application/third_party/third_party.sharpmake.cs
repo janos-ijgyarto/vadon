@@ -57,7 +57,8 @@ namespace Vadon.Application.ThirdParty
 
         public override void ConfigureWin64(Configuration conf, Engine.Target target)
         {
-            conf.IncludePaths.Add($"{ApplicationInstallPath}/x64-windows/include");
+            // NOTE: using system paths since this is 3rd party code
+            conf.IncludeSystemPaths.Add($"{ApplicationInstallPath}/x64-windows/include");
             // NOTE: not adding library paths, need to let dependencies decide which optimization uses which build
         }
     }
@@ -88,7 +89,7 @@ namespace Vadon.Application.ThirdParty
             conf.ProjectPath += "/third_party";
 
             // No need to include its own path
-            conf.IncludePaths.Clear();
+            conf.IncludeSystemPaths.Clear();
 
             conf.SolutionFolder += "/ThirdParty";
 
@@ -101,6 +102,15 @@ namespace Vadon.Application.ThirdParty
                 )
             );
             conf.ExecuteTargetCopy = true;
+        }
+
+        public override void ConfigureFastBuild(Configuration conf, Engine.Target target)
+        {
+            // FIXME: this needs to be a non-FastBuild project to run the utility script
+            // Should instead find a way to add as a pre-build dependency before building
+            // any other node
+            base.ConfigureFastBuild(conf, target);
+            conf.IsFastBuild = false;
         }
     }
 

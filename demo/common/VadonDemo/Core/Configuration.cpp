@@ -18,7 +18,7 @@ namespace VadonDemo::Core
 		TypeRegistry::add_property<GlobalConfiguration>(VADON_GET_MEMBER_UUID(GlobalConfiguration, default_start_level), Vadon::Utilities::MemberVariableBind<&GlobalConfiguration::default_start_level>().bind_member_getter().bind_member_setter());
 		TypeRegistry::add_property<GlobalConfiguration>(VADON_GET_MEMBER_UUID(GlobalConfiguration, viewport_size), Vadon::Utilities::MemberVariableBind<&GlobalConfiguration::viewport_size>().bind_member_getter().bind_member_setter());
 
-		Vadon::Utilities::TypeMetadata global_config_metadata(metadata_registry, VADON_GET_TYPE_UUID(GlobalConfiguration));
+		Vadon::Utilities::TypeMetadata<GlobalConfiguration> global_config_metadata(metadata_registry);
 		global_config_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "VadonDemo::Core::GlobalConfiguration");
 
 		global_config_metadata.add_property(VADON_GET_MEMBER_UUID(GlobalConfiguration, main_menu_scene))

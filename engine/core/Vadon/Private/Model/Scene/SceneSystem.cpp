@@ -106,7 +106,7 @@ namespace Vadon::Private::Model
 
 	void SceneSystem::register_type_metadata(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry)
 	{
-		Vadon::Utilities::TypeMetadata entitydata_metadata(metadata_registry, VADON_GET_TYPE_UUID(EntityData));
+		Vadon::Utilities::TypeMetadata<EntityData> entitydata_metadata(metadata_registry);
 		entitydata_metadata.add_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "Vadon::Private::Model::EntityData")
 			.add_property(EntityData::c_id_member_id)
 				.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "ID")
@@ -123,7 +123,7 @@ namespace Vadon::Private::Model
 			.add_property(EntityData::c_name_member_id)
 				.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Name");
 
-		Vadon::Utilities::TypeMetadata scene_metadata(metadata_registry, VADON_GET_TYPE_UUID(Vadon::Model::Scene));
+		Vadon::Utilities::TypeMetadata<Vadon::Model::Scene> scene_metadata(metadata_registry);
 		scene_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "Vadon::Model::Scene");
 
 		scene_metadata.add_property(Vadon::Utilities::Property::property_schema_to_uuid(::Vadon::Foundation::SceneSchema::c_entities_property))

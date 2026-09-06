@@ -59,68 +59,68 @@ namespace Vadon::Private::Core
         // FIXME: is this even needed? These types are already expected to be handled separately
         {
             {
-                Vadon::Utilities::TypeMetadata int_metadata(metadata_registry, VADON_GET_TYPE_UUID(int));
+                Vadon::Utilities::TypeMetadata<int> int_metadata(metadata_registry);
                 int_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "integer");
             }
 
             {
-                Vadon::Utilities::TypeMetadata uint_metadata(metadata_registry, VADON_GET_TYPE_UUID(uint32_t));
+                Vadon::Utilities::TypeMetadata<uint32_t> uint_metadata(metadata_registry);
                 uint_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "unsigned integer");
             }
 
             {
-                Vadon::Utilities::TypeMetadata float_metadata(metadata_registry, VADON_GET_TYPE_UUID(float));
+                Vadon::Utilities::TypeMetadata<float> float_metadata(metadata_registry);
                 float_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "float");
             }
 
             {
-                Vadon::Utilities::TypeMetadata bool_metadata(metadata_registry, VADON_GET_TYPE_UUID(bool));
+                Vadon::Utilities::TypeMetadata<bool> bool_metadata(metadata_registry);
                 bool_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "boolean");
             }
 
             {
-                Vadon::Utilities::TypeMetadata string_metadata(metadata_registry, VADON_GET_TYPE_UUID(std::string));
+                Vadon::Utilities::TypeMetadata<std::string> string_metadata(metadata_registry);
                 string_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "string");
             }
 
             {
-                Vadon::Utilities::TypeMetadata vec2_metadata(metadata_registry, VADON_GET_TYPE_UUID(Vadon::Math::Vector2));
+                Vadon::Utilities::TypeMetadata<Vadon::Math::Vector2> vec2_metadata(metadata_registry);
                 vec2_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "Vector2");
             }
 
             {
-                Vadon::Utilities::TypeMetadata vec2i_metadata(metadata_registry, VADON_GET_TYPE_UUID(Vadon::Math::Vector2i));
+                Vadon::Utilities::TypeMetadata<Vadon::Math::Vector2i> vec2i_metadata(metadata_registry);
                 vec2i_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "Vector2i");
             }
 
             {
-                Vadon::Utilities::TypeMetadata vec3_metadata(metadata_registry, VADON_GET_TYPE_UUID(Vadon::Math::Vector3));
+                Vadon::Utilities::TypeMetadata<Vadon::Math::Vector3> vec3_metadata(metadata_registry);
                 vec3_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "Vector3");
             }
 
             {
-                Vadon::Utilities::TypeMetadata vec3i_metadata(metadata_registry, VADON_GET_TYPE_UUID(Vadon::Math::Vector3i));
+                Vadon::Utilities::TypeMetadata<Vadon::Math::Vector3i> vec3i_metadata(metadata_registry);
                 vec3i_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "Vector3i");
             }
 
             {
-                Vadon::Utilities::TypeMetadata vec4_metadata(metadata_registry, VADON_GET_TYPE_UUID(Vadon::Math::Vector4));
+                Vadon::Utilities::TypeMetadata<Vadon::Math::Vector4> vec4_metadata(metadata_registry);
                 vec4_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "Vector4");
             }
 
             {
-                Vadon::Utilities::TypeMetadata color_metadata(metadata_registry, VADON_GET_TYPE_UUID(Vadon::Math::ColorRGBA));
+                Vadon::Utilities::TypeMetadata<Vadon::Math::ColorRGBA> color_metadata(metadata_registry);
                 color_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "ColorRGBA");
             }
 
             {
-                Vadon::Utilities::TypeMetadata uuid_metadata(metadata_registry, VADON_GET_TYPE_UUID(::Vadon::Foundation::UUID));
+                Vadon::Utilities::TypeMetadata<::Vadon::Foundation::UUID> uuid_metadata(metadata_registry);
                 uuid_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "UUID");
             }
         }
 
         {
-            Vadon::Utilities::TypeMetadata data_object_metadata(metadata_registry, VADON_GET_TYPE_UUID(Vadon::Utilities::DataObject));
+            Vadon::Utilities::TypeMetadata<Vadon::Utilities::DataObject> data_object_metadata(metadata_registry);
             data_object_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "DataObject");
         }
 

@@ -100,7 +100,8 @@ namespace Vadon.Engine.ThirdParty
         {
             base.ConfigureWin64(conf, target);
 
-            conf.IncludePaths.Add($"{EngineInstallPath}/x64-windows/include");
+            // NOTE: using system paths since this is 3rd party code
+            conf.IncludeSystemPaths.Add($"{EngineInstallPath}/x64-windows/include");
             // NOTE: not adding library paths, need to let dependencies decide which optimization uses which build
         }
     }
@@ -144,6 +145,54 @@ namespace Vadon.Engine.ThirdParty
                 )
             );
             conf.ExecuteTargetCopy = true;
+        }
+
+        public override void ConfigureFastBuild(Configuration conf, Engine.Target target)
+        {
+            // FIXME: this needs to be a non-FastBuild project to run the utility script
+            // Should instead find a way to add as a pre-build dependency before building
+            // any other node
+            base.ConfigureFastBuild(conf, target);
+            conf.IsFastBuild = false;
+        }
+    }
+
+    public static class InstallEngineDependencies
+    {
+        public static string VcpkgPath { get { return Path.Combine(Utilities.ConfigurationParameters.VcpkgPath, "vcpkg.exe"); } }
+
+        private static string EngineManifestFile { get { return "vcpkg.json"; } }
+
+        private static string EngineStatusFile { get { return "vcpkg/status"; } }
+
+        // FIXME: currently this doesn't work with FastBuild, need environment variables!
+        public static void AddInstallStep(Sharpmake.Project.Configuration conf, Target target)
+        {
+            conf.CustomFileBuildSteps.Add(new Sharpmake.Project.Configuration.CustomFileBuildStep
+            {
+                KeyInput = $"{InstalledProject.EngineThirdPartyPath}/{EngineManifestFile}",
+                Output = $"{InstalledProject.EngineInstallPath}/{EngineStatusFile}",
+                Description = $"InstallEngineDependencies",
+                Executable = VcpkgPath,
+                ExecutableArguments = $"install --x-manifest-root={InstalledProject.EngineThirdPartyPath} --x-install-root={InstalledProject.EngineInstallPath}"
+            }
+            );
+        }
+
+        public static string GetInstallScript(Platform platform)
+        {
+            switch(platform)
+            {
+                case Platform.win64:
+                    return GetWin64InstallScript();
+                default:
+                    throw new System.NotImplementedException();
+            }
+        }
+
+        private static string GetWin64InstallScript()
+        {
+            return @$"call {VcpkgPath} install --x-manifest-root={InstalledProject.EngineThirdPartyPath} --x-install-root={InstalledProject.EngineInstallPath}";
         }
     }
 

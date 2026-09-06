@@ -12,15 +12,7 @@
 
 // FIXME: this is a quick hacky solution!
 // Long-term we should replace nlohmann with simdjson since it can now both read and write documents!
-#if defined(_MSC_VER)
-# pragma warning(push)
-# pragma warning(disable: 4100) // unreferenced formal parameter
-# pragma warning(disable: 4244) // 'return': conversion from 'simdjson::error_code' to 'char', possible loss of data
-#endif
 #include <simdjson.h>
-#if defined(_MSC_VER)
-# pragma warning(pop)
-#endif
 
 #include <filesystem>
 

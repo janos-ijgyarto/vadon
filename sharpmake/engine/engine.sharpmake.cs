@@ -198,6 +198,8 @@ namespace Vadon.Engine
             conf.Options.Add(Sharpmake.Options.Vc.Compiler.Exceptions.Enable); // FIXME: we should probably disable exceptions!
             conf.Options.Add(Sharpmake.Options.Vc.General.TreatWarningsAsErrors.Enable);
 
+            conf.Options.Add(Sharpmake.Options.Vc.General.ExternalWarningLevel.Level1);
+
             conf.ObjectFileName = ObjectFileName;
         }
 
