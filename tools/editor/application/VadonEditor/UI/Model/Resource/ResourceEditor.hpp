@@ -34,6 +34,7 @@ namespace VadonEditor::UI
 		void reload_triggered();
 	private:
 		void update_title();
+		QVBoxLayout* get_property_list_vbox() const;
 
 		PropertyWidget* find_property_widget(const QUuid& property_id) const;
 		

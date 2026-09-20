@@ -168,14 +168,11 @@ namespace VadonEditor::UI
 
 	void PropertyArray::internal_add_array_entry(PropertyWidget* property_widget)
 	{
-		// Insert new item just before the spacer
-		const int spacer_index = m_ui.arrayContentsVBox->indexOf(m_ui.arrayContentsSpacer);
-
 		PropertyArrayEntry* new_array_entry = new PropertyArrayEntry(this, property_widget);
 		connect(new_array_entry, &PropertyArrayEntry::value_changed, this, &PropertyArray::array_entry_value_changed);
 		connect(new_array_entry, &PropertyArrayEntry::remove_requested, this, &PropertyArray::array_entry_remove_requested);
 
-		m_ui.arrayContentsVBox->insertWidget(spacer_index, new_array_entry);
+		m_ui.arrayContentsVBox->addWidget(new_array_entry);
 	}
 
 	void PropertyArray::update_entry_layout()
@@ -191,7 +188,5 @@ namespace VadonEditor::UI
 				++entry_index;
 			}
 		}
-
-		setMinimumHeight(qMin(entry_index * 100, 400));
 	}
 }

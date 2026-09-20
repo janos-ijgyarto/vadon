@@ -76,12 +76,11 @@ namespace VadonEditor::UI
 				{
 					current_type_name = QString("Component type %1").arg(Utilities::vadon_uuid_to_qt_uuid(current_type->info.id).toString());
 				}
-				const int spacer_index = m_ui.propertiesVBox->indexOf(m_ui.propertiesSpacer);
 
 				QLabel* section_label = new QLabel(current_type_name, this);
 				section_label->setAlignment(Qt::AlignmentFlag::AlignCenter);
 
-				m_ui.propertiesVBox->insertWidget(spacer_index, section_label);
+				m_ui.propertiesVBox->addWidget(section_label);
 			}
 
 			for (const ::Vadon::Foundation::UUID& property_uuid : current_type->property_list)
@@ -111,8 +110,7 @@ namespace VadonEditor::UI
 
 				PropertyListEntry* list_entry = new PropertyListEntry(this, property_widget, property_name);
 
-				const int spacer_index = m_ui.propertiesVBox->indexOf(m_ui.propertiesSpacer);
-				m_ui.propertiesVBox->insertWidget(spacer_index, list_entry);
+				m_ui.propertiesVBox->addWidget(list_entry);
 			}
 		}
 

@@ -22,6 +22,11 @@ namespace VadonEditor::UI
 	{
 		m_ui.setupUi(this);
 		setAttribute(Qt::WidgetAttribute::WA_DeleteOnClose, true);
+
+		if (windowType() != Qt::WindowType::Window)
+		{
+			m_ui.propertyScrollArea->setVisible(false);
+		}
 	}
 
 	bool ResourceEditor::initialize()
@@ -55,8 +60,7 @@ namespace VadonEditor::UI
 			}
 
 			// Insert before the spacer at the end
-			const int spacer_index = m_ui.propertyListVBox->indexOf(m_ui.propertyListSpacer);
-			m_ui.propertyListVBox->insertWidget(spacer_index, current_widget);
+			get_property_list_vbox()->addWidget(current_widget);
 		}
 
 		// TODO: add list of embedded resources, and the option to delete
@@ -194,11 +198,26 @@ namespace VadonEditor::UI
 		}
 	}
 
+	QVBoxLayout* ResourceEditor::get_property_list_vbox() const
+	{
+		if (windowType() == Qt::WindowType::Window)
+		{
+			// Opened as separate window, use scroll area
+			return m_ui.propertyScrollVBox;
+		}
+		else
+		{
+			// Opened as nested widget, use regular vbox
+			return m_ui.propertyListVBox;
+		}
+	}
+
 	PropertyWidget* ResourceEditor::find_property_widget(const QUuid& property_id) const
 	{
-		for (int item_index = 0; item_index < m_ui.propertyListVBox->count(); ++item_index)
+		QVBoxLayout* property_vbox = get_property_list_vbox();
+		for (int item_index = 0; item_index < property_vbox->count(); ++item_index)
 		{
-			QWidget* current_widget = m_ui.propertyListVBox->itemAt(item_index)->widget();
+			QWidget* current_widget = property_vbox->itemAt(item_index)->widget();
 			PropertyListEntry* list_entry = qobject_cast<PropertyListEntry*>(current_widget);
 			if (list_entry != nullptr)
 			{

@@ -21,9 +21,9 @@ namespace VadonEditor::UI
 
 	void ObjectEditor::set_read_only(bool read_only)
 	{
-		for (int item_index = 0; item_index < m_ui.scrollContentsLayout->count(); ++item_index)
+		for (int item_index = 0; item_index < m_ui.mainLayout->count(); ++item_index)
 		{
-			QWidget* current_widget = m_ui.scrollContentsLayout->itemAt(item_index)->widget();
+			QWidget* current_widget = m_ui.mainLayout->itemAt(item_index)->widget();
 			PropertyListEntry* list_entry = qobject_cast<PropertyListEntry*>(current_widget);
 			if (list_entry != nullptr)
 			{
@@ -140,17 +140,15 @@ namespace VadonEditor::UI
 				connect(property_list_entry->get_property_widget(), &PropertyWidget::value_changed, this, &ObjectEditor::internal_property_edited);
 			}
 
-			// Insert before the spacer at the end
-			const int spacer_index = m_ui.scrollContentsLayout->indexOf(m_ui.propertySpacer);
-			m_ui.scrollContentsLayout->insertWidget(spacer_index, current_widget);
+			m_ui.mainLayout->addWidget(current_widget);
 		}
 	}
 
 	PropertyWidget* ObjectEditor::find_property_widget(const QUuid& property_id) const
 	{
-		for (int item_index = 0; item_index < m_ui.scrollContentsLayout->count(); ++item_index)
+		for (int item_index = 0; item_index < m_ui.mainLayout->count(); ++item_index)
 		{
-			QWidget* current_widget = m_ui.scrollContentsLayout->itemAt(item_index)->widget();
+			QWidget* current_widget = m_ui.mainLayout->itemAt(item_index)->widget();
 			PropertyListEntry* list_entry = qobject_cast<PropertyListEntry*>(current_widget);
 			if (list_entry != nullptr)
 			{
