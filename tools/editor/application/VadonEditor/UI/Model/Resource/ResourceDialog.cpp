@@ -1,9 +1,8 @@
 #include <VadonEditor/UI/Model/Resource/ResourceDialog.hpp>
 
 #include <VadonEditor/Core/Application.hpp>
-#include <VadonEditor/Core/Asset/AssetManager.hpp>
 #include <VadonEditor/Core/Project/ProjectManager.hpp>
-#include <VadonEditor/Core/Data/Schema.hpp>
+#include <VadonEditor/Core/Asset/AssetManager.hpp>
 
 #include <VadonEditor/Model/ModelSystem.hpp>
 #include <VadonEditor/Model/Resource/ResourceSystem.hpp>
@@ -13,14 +12,11 @@
 
 #include <VadonEditor/UI/Project/Asset/AssetDialog.hpp>
 
-#include <VadonEditor/Utilities/UUID.hpp>
-
 #include <Vadon/Foundation/Model/Resource/File.hpp>
 #include <Vadon/Foundation/Model/Resource/Resource.hpp>
 #include <Vadon/Foundation/Model/Scene/Scene.hpp>
 
 #include <QMessageBox>
-#include <QPushButton>
 
 namespace
 {
@@ -44,13 +40,20 @@ namespace
 
 namespace VadonEditor::UI
 {
-	NewResourceDialog::NewResourceDialog(Core::Application& application, const QUuid& base_type, QWidget* parent)
-		: QDialog(parent)
-		, m_filter_model(nullptr)
+	SelectResourceTypeDialog::SelectResourceTypeDialog(Core::Application& application, const QUuid& base_type, QWidget* parent)
+		: NewObjectDialog(application, base_type, parent)
 	{
-		setAttribute(Qt::WA_DeleteOnClose, true);
+		Q_ASSERT_X(Model::Resource::is_resource_base_of_type(application, base_type), "VadonEditor::UI::SelectResourceTypeDialog::SelectResourceTypeDialog", "Base type must be subclass of Resource!");
+		setWindowTitle("Select Resource Type");
+	}
 
+	NewResourceDialog::NewResourceDialog(Core::Application& application, const QUuid& base_type, const QModelIndex& root_asset, QWidget* parent)
+		: QDialog(parent)
+		, m_application(application)
+		, m_root_asset(root_asset)
+	{
 		m_ui.setupUi(this);
+		setAttribute(Qt::WidgetAttribute::WA_DeleteOnClose, true);
 
 		QUuid validated_base_type = base_type;
 		if (Model::Resource::is_resource_base_of_type(application, validated_base_type) == false)
@@ -60,165 +63,22 @@ namespace VadonEditor::UI
 			validated_base_type = resource_base_type;
 		}
 
-		const Core::DataSchema& data_schema = application.get_project_manager().get_project_data_schema();
-		const_cast<QStandardItemModel*>(&data_schema.get_qt_model());
-
-		m_filter_model = new Core::TypeFilterModel(data_schema, this);
-		m_filter_model->setSourceModel(const_cast<QStandardItemModel*>(&data_schema.get_qt_model()));
-		m_filter_model->set_root_type(validated_base_type);
-		m_filter_model->setFilterCaseSensitivity(Qt::CaseSensitivity::CaseInsensitive);
-
-		m_ui.typeTreeView->setModel(m_filter_model);
-
-		const QModelIndex root_type_index = data_schema.find_type_index(validated_base_type);
-		if (root_type_index.isValid() == true)
-		{
-			const QModelIndex parent_index = root_type_index.parent();
-			const QModelIndex filtered_parent_index = m_filter_model->mapFromSource(parent_index);
-			m_ui.typeTreeView->setRootIndex(filtered_parent_index);
-		}
-
-		m_ui.typeTreeView->expandAll();
-
-		connect(m_ui.typeTreeView->selectionModel(), &QItemSelectionModel::selectionChanged, this, &NewResourceDialog::selection_changed);
+		m_base_type = validated_base_type;
 
 		update_controls();
 	}
 
-	void NewResourceDialog::type_double_clicked(const QModelIndex& index)
+	void NewResourceDialog::accept()
 	{
-		const QUuid selected_type = get_selected_type(index);
-		finalize_selection(selected_type);
-	}
+		Q_ASSERT_X(Utilities::is_uuid_valid(m_new_resource_type) == true, "VadonEditor::UI::NewResourceDialog::accept", "Resource type not set");
 
-	void NewResourceDialog::filter_text_changed(const QString& text)
-	{
-		m_filter_model->setFilterFixedString(text);
-		m_ui.typeTreeView->expandAll();
-	}
-
-	void NewResourceDialog::selection_changed(const QItemSelection& selected, const QItemSelection& deselected)
-	{
-		Q_UNUSED(selected);
-		Q_UNUSED(deselected);
-		update_controls();
-	}
-
-	void NewResourceDialog::selection_accepted()
-	{
-		const QUuid selected_type = get_selected_type(get_current_selection());
-		finalize_selection(selected_type);
-	}
-
-	void NewResourceDialog::update_controls()
-	{
-		QPushButton* ok_button = m_ui.buttonBox->button(QDialogButtonBox::StandardButton::Ok);
-
-		const QUuid selected_type = get_selected_type(get_current_selection());
-		if (Utilities::is_uuid_valid(selected_type) == true)
-		{
-			ok_button->setEnabled(true);
-		}
-		else
-		{
-			ok_button->setEnabled(false);
-		}
-	}
-
-	QModelIndex NewResourceDialog::get_current_selection() const
-	{
-		const QModelIndexList selected_indexes = m_ui.typeTreeView->selectionModel()->selectedIndexes();
-		if (selected_indexes.isEmpty() == false)
-		{
-			return selected_indexes.first();
-		}
-
-		return QModelIndex();
-	}
-
-	QUuid NewResourceDialog::get_selected_type(const QModelIndex& index) const
-	{
-		if (index.isValid() == true)
-		{
-			return m_ui.typeTreeView->model()->data(index, static_cast<Qt::ItemDataRole>(Core::TypeTreeDataRole::TYPE_UUID)).toUuid();
-		}
-		else
-		{
-			return QUuid();
-		}
-	}
-
-	void NewResourceDialog::finalize_selection(const QUuid& type_uuid)
-	{
-		Q_ASSERT_X(Utilities::is_uuid_valid(type_uuid) == true, "VadonEditor::UI::NewResourceDialog::finalize_selection", "Must select a valid resource type");
-
-		emit(resource_type_selected(type_uuid));
-		accept();
-	}
-
-	NewResourceDialogBackend::NewResourceDialogBackend(Core::Application& application, QWidget* dialog_parent, const QModelIndex& root_asset)
-		: m_application(application)
-		, m_dialog_parent(dialog_parent)
-		, m_root_asset(root_asset)
-	{
-		if (m_dialog_parent == nullptr)
-		{
-			// If no parent is provided, use main window
-			m_dialog_parent = m_application.get_ui_system().get_main_window();
-		}
-
-		const QUuid resource_base_type = Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::ResourceSchema::c_type_uuid);
-		NewResourceDialog* dialog = new NewResourceDialog(application, resource_base_type, m_dialog_parent);
-		connect(dialog, &NewResourceDialog::resource_type_selected, this, &NewResourceDialogBackend::resource_type_selected);
-		
-		// Make sure when the dialog is rejected, this object is also cleaned up
-		connect(dialog, &NewResourceDialog::rejected, this, &NewResourceDialogBackend::end_workflow);
-
-		dialog->open();
-	}
-
-	void NewResourceDialogBackend::resource_type_selected(const QUuid& type_uuid)
-	{
-		if (is_resource_dialog_excluded_type(type_uuid) == true)
-		{
-			QMessageBox::warning(m_dialog_parent, "Resource System Warning", "This resource type can only be created via the dedicated workflows!");
-			end_workflow();
-			return;
-		}
-
-		m_new_resource_type = type_uuid;
-
-		SaveAssetDialog* save_dialog = new SaveAssetDialog(m_application, m_dialog_parent, m_root_asset);
-		connect(save_dialog, &SaveAssetDialog::asset_saved, this, &NewResourceDialogBackend::file_path_selected);
-		connect(save_dialog, &SaveAssetDialog::rejected, this, &NewResourceDialogBackend::end_workflow);
-
-		save_dialog->setWindowTitle("Save Resource As");
-
-		save_dialog->open();
-	}
-
-	void NewResourceDialogBackend::file_path_selected(const QString& asset_path)
-	{
-		create_resource_asset(asset_path);
-		end_workflow();
-	}
-
-	void NewResourceDialogBackend::end_workflow()
-	{
-		// End of workflow, clean up object
-		QObject::deleteLater();
-	}
-
-	void NewResourceDialogBackend::create_resource_asset(const QString& asset_path)
-	{
-		Q_ASSERT_X(asset_path.isEmpty() == false, "VadonEditor::UI::NewResourceDialogBackend::create_resource_asset", "Invalid path");
-		Q_ASSERT_X(Utilities::is_uuid_valid(m_new_resource_type) == true, "VadonEditor::UI::NewResourceDialogBackend::create_resource_asset", "Resource type not set");
+		Q_ASSERT_X(m_new_resource_path.isEmpty() == false, "VadonEditor::UI::NewResourceDialog::accept", "Invalid path");
 
 		// First verify that the asset doesn't already exist
 		Core::AssetManager& asset_manager = m_application.get_asset_manager();
-		if (asset_manager.find_asset_index_by_path(Core::AssetInfo::get_file_path(asset_path, Core::AssetType::RESOURCE)).isValid() == true)
+		if (asset_manager.find_asset_index_by_path(Core::AssetInfo::get_file_path(m_new_resource_path, Core::AssetType::RESOURCE)).isValid() == true)
 		{
-			QMessageBox::critical(m_dialog_parent, "Asset Manager Error", "Asset file already exists!");
+			QMessageBox::critical(this, "Asset Manager Error", "Asset file already exists!");
 			return;
 		}
 
@@ -228,21 +88,105 @@ namespace VadonEditor::UI
 
 		if (new_resource == nullptr)
 		{
-			QMessageBox::critical(m_dialog_parent, "Resource System Error", "Failed to create resource!");
+			QMessageBox::critical(this, "Resource System Error", "Failed to create resource!");
 			return;
 		}
 
 		// Create asset
-		const int asset_id = resource_system.create_resource_asset(new_resource->get_info().id, asset_path);
+		const int asset_id = resource_system.create_resource_asset(new_resource->get_info().id, m_new_resource_path);
 		if (asset_id == Core::AssetInfo::c_invalid_file_id)
 		{
-			QMessageBox::critical(m_dialog_parent, "Resource System Error", "Failed to create resource asset!");
+			// TODO: delete resource?
+			QMessageBox::critical(this, "Resource System Error", "Failed to create resource asset!");
 			return;
 		}
 
 		// TODO: also print type!
 		const QModelIndex asset_index = asset_manager.find_asset_index(asset_id);
 		qDebug() << "Resource created at" << asset_manager.get_asset_info(asset_index).path;
+
+		QDialog::accept();
+	}
+
+	void NewResourceDialog::select_type_clicked()
+	{
+		SelectResourceTypeDialog* select_type_dialog = new SelectResourceTypeDialog(m_application, m_base_type, this);
+		connect(select_type_dialog, &NewObjectDialog::object_type_selected, this, &NewResourceDialog::resource_type_selected);
+
+		select_type_dialog->open();
+	}
+
+	void NewResourceDialog::resource_type_selected(const QUuid& type_uuid)
+	{
+		if (is_resource_dialog_excluded_type(type_uuid) == true)
+		{
+			QMessageBox::warning(this, "Resource System Warning", "This resource type can only be created via the dedicated workflows!");
+			return;
+		}
+
+		m_new_resource_type = type_uuid;
+
+		const Core::DataSchema& data_schema = m_application.get_project_manager().get_project_data_schema();
+		const Core::TypeData* type_data = data_schema.find_type_data(m_base_type);
+		QString resource_type_name = type_data->find_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME);
+		if (resource_type_name.isEmpty())
+		{
+			resource_type_name = QString("Resource type %1").arg(m_base_type.toString());
+		}
+
+		m_ui.typeLineEdit->setText(resource_type_name);
+
+		// Clear path, user should select it again
+		m_new_resource_path.clear();
+
+		update_controls();
+	}
+
+	void NewResourceDialog::browse_file_path_clicked()
+	{
+		SaveAssetDialog* save_dialog = new SaveAssetDialog(m_application, this, m_root_asset);
+		connect(save_dialog, &SaveAssetDialog::asset_saved, this, &NewResourceDialog::file_path_selected);
+
+		save_dialog->setWindowTitle("Select Resource File Path");
+
+		save_dialog->open();
+	}
+
+	void NewResourceDialog::file_path_selected(const QString& asset_path)
+	{
+		m_new_resource_path = asset_path;
+		update_controls();
+	}
+
+	void NewResourceDialog::update_controls()
+	{
+		const bool is_type_valid = Utilities::is_uuid_valid(m_new_resource_type);
+		QPushButton* ok_button = m_ui.buttonBox->button(QDialogButtonBox::StandardButton::Ok);
+
+		if (m_new_resource_path.isEmpty() == false)
+		{
+			m_ui.filePathLineEdit->setText(Core::AssetInfo::get_file_path(m_new_resource_path, Core::AssetType::RESOURCE));
+		}
+		else
+		{
+			m_ui.filePathLineEdit->clear();
+		}
+
+		if (is_type_valid == false)
+		{
+			m_ui.filePathBrowseButton->setEnabled(false);
+			ok_button->setEnabled(false);
+			return;
+		}
+
+		m_ui.filePathBrowseButton->setEnabled(true);
+		if (m_new_resource_path.isEmpty() == true)
+		{
+			ok_button->setEnabled(false);
+			return;
+		}
+
+		ok_button->setEnabled(true);
 	}
 
 	ResourceAssetFilterModel::ResourceAssetFilterModel(Core::Application& application, const QUuid& resource_type, QObject* parent)

@@ -14,6 +14,11 @@ namespace Vadon
 				UUIDString{"b91e01e7-49b9-441a-9092-bbda48fafce1"},
 				TypeInfo::get_base_type_uuid_string(BaseType::ARRAY)
 			};
+
+			static constexpr PropertySchema c_base_scene_property{
+				UUIDString{"060676f5-4d94-44b2-84bd-cf99007c4215"},
+				TypeInfo::get_base_type_uuid_string(BaseType::UUID)
+			};
 		};
 
 		struct SceneEntitySchema

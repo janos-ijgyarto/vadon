@@ -31,6 +31,9 @@ namespace VadonEditor::Core
 
 		bool init_type(const QUuid& type_id);
 		bool default_initialize(const QUuid& type_id);
+		void clear_data();
+
+		Core::Application& get_application() const { return m_application; }
 
 		bool is_valid() const { return Utilities::is_uuid_valid(m_type_id); }
 

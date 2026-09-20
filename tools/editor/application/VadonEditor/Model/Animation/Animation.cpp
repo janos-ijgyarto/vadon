@@ -148,7 +148,7 @@ namespace VadonEditor::Model
 		const QUuid tag_property_id = Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::AnimationChannelSchema::c_tag_property.id);
 		const QUuid key_times_property_id = Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::AnimationChannelSchema::c_key_times_property.id);
 
-		const QVariantList channels = m_resource->get_property(channels_property_id).toList();
+		const QVariantList channels = m_resource->get_data_object().get_property(channels_property_id).toList();
 		for (const QVariant& current_channel_variant : channels)
 		{
 			Core::DataObject channel_object(m_resource->get_application());

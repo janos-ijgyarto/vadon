@@ -1146,16 +1146,42 @@ namespace VadonEditor::Core
 		return true;
 	}
 
+	void DataObject::clear_data()
+	{
+		m_type_id = QUuid();
+		m_properties.clear();
+	}
+
 	bool DataObject::import_data(const QVariantMap& data_map)
 	{
-		const QUuid type_id = data_map[Utilities::uuid_to_base64_string(get_type_property_uuid())].toUuid();
+		if (data_map.isEmpty() == true)
+		{
+			// Empty dictionary means null object
+			clear_data();
+			return true;
+		}
 
+		auto type_id_it = data_map.find(Utilities::uuid_to_base64_string(get_type_property_uuid()));
+		if (type_id_it == data_map.end())
+		{
+			// TODO: log error!
+			return false;
+		}
+
+		const QUuid type_id = type_id_it.value().toUuid();
 		if (init_type(type_id) == false)
 		{
 			return false;
 		}
 
-		const QVariantMap properties = data_map[Utilities::uuid_to_base64_string(get_properties_property_uuid())].toMap();
+		auto properties_it = data_map.find(Utilities::uuid_to_base64_string(get_properties_property_uuid()));
+		if (properties_it == data_map.end())
+		{
+			// TODO: log error!
+			return false;
+		}
+
+		const QVariantMap properties = properties_it.value().toMap();
 		load_properties(properties);
 
 		return true;
@@ -1457,7 +1483,7 @@ namespace VadonEditor::Core
 			if (type_property_data == nullptr)
 			{
 				// Ignore property
-				qWarning() << "Stale property" << property_uuid << "loaded for object type" << m_type_id;
+				qWarning() << "Stale property" << Utilities::get_labeled_uuid_label(property_it.key()) << property_uuid.toString() << "loaded for object type" << m_type_id.toString();
 				continue;
 			}
 

@@ -51,6 +51,7 @@ namespace Vadon::ECS
 
 	ComponentHandle ComponentManager::get_component(EntityHandle entity, ComponentID type_id) const
 	{
+		VADON_ASSERT(entity.is_valid() == true, "Invalid entity ID!");
 		ComponentPoolInterface* pool = find_component_pool(type_id);
 		return ComponentHandle(pool, entity);
 	}

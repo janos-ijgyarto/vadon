@@ -219,8 +219,7 @@ namespace VadonEditor::UI
 
 	bool EntityEditor::internal_add_component_widget(Model::Component* component)
 	{
-		const bool is_sub_scene = Utilities::is_uuid_valid(m_entity->get_sub_scene_id());
-		ComponentWidget* component_widget = new ComponentWidget(component, is_sub_scene);
+		ComponentWidget* component_widget = new ComponentWidget(component);
 		if (component_widget->initialize(m_scene) == false)
 		{
 			Q_ASSERT_X(false, "VadonEditor::UI::EntityEditor::internal_add_component_widget", "Failed to initialize component widget!");

@@ -47,11 +47,10 @@ namespace Vadon::Model
 	struct Scene : public Resource
 	{
 		std::vector<Vadon::Private::Model::EntityData> entities;
+		SceneID base_scene;
 
 		VADON_DECLARE_MEMBER_UUID(entities, ::Vadon::Foundation::SceneSchema::c_entities_property.id.string);
-
-		static void register_type_info();
-		static void register_type_metadata(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry);
+		VADON_DECLARE_MEMBER_UUID(base_scene, ::Vadon::Foundation::SceneSchema::c_base_scene_property.id.string);
 	};
 }
 #endif

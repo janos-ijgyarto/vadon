@@ -74,6 +74,19 @@ namespace VadonEditor::UI
 		connect(m_ui.actionClear, &QAction::triggered, this, &PropertyResource::clear_triggered);
 
 		generate_resource_widgets();
+
+		// Set the label in the header
+		{
+			const Core::DataSchema& data_schema = m_owner_resource->get_application().get_project_manager().get_project_data_schema();
+			const Core::TypeData* type_data = data_schema.find_type_data(m_base_type);
+			QString current_type_name = type_data->find_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME);
+			if (current_type_name.isEmpty())
+			{
+				current_type_name = QString("Resource type %1").arg(m_base_type.toString());
+			}
+
+			m_ui.resourceNameLabel->setText(current_type_name);
+		}
 	}
 
 	void PropertyResource::set_read_only(bool read_only)
@@ -113,10 +126,10 @@ namespace VadonEditor::UI
 
 	void PropertyResource::new_triggered()
 	{
-		NewResourceDialog* new_resource_dialog = new NewResourceDialog(m_owner_resource->get_application(), m_base_type, this);
-		connect(new_resource_dialog, &NewResourceDialog::resource_type_selected, this, &PropertyResource::new_resource_type_selected);
+		SelectResourceTypeDialog* select_type_dialog = new SelectResourceTypeDialog(m_owner_resource->get_application(), m_base_type, this);
+		connect(select_type_dialog, &SelectResourceTypeDialog::object_type_selected, this, &PropertyResource::new_resource_type_selected);
 
-		new_resource_dialog->open();
+		select_type_dialog->open();
 	}
 
 	void PropertyResource::load_triggered()
@@ -315,15 +328,5 @@ namespace VadonEditor::UI
 		m_ui.resourceGroupBox->adjustSize();
 		setMinimumSize(QSize(0, 0));
 		adjustSize();
-
-		const Core::DataSchema& data_schema = m_owner_resource->get_application().get_project_manager().get_project_data_schema();
-		const Core::TypeData* type_data = data_schema.find_type_data(m_base_type);
-		QString current_type_name = type_data->find_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME);
-		if (current_type_name.isEmpty())
-		{
-			current_type_name = QString("Resource type %1").arg(m_base_type.toString());
-		}
-
-		m_ui.resourceNameLabel->setText(current_type_name);
 	}
 }

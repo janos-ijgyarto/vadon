@@ -31,6 +31,7 @@ namespace VadonEditor::UI
 
 		virtual void set_read_only(bool read_only) = 0;
 	signals:
+		// FIXME: emit a "path" so the owning object can update the nested property in a targeted way (instead of updating the whole sub-object)
 		void value_changed(QUuid id);
 	protected:
 		PropertyWidget(const QUuid& id, const QVariant& init_value, QWidget* parent)

@@ -27,6 +27,7 @@ namespace VadonEditor::Model
 		bool initialize();
 
 		bool load_data(const QVariant& data);
+		bool import_data(const QVariant& data);
 
 		Core::Application& get_application() { return m_application; }
 
@@ -38,6 +39,9 @@ namespace VadonEditor::Model
 
 		QString get_label() const;
 
+		// NOTE: this indicates that the entity is in an inherited scene
+		// It restricts what kind of changes are allowed
+		const QUuid& get_base_scene_id() const { return m_base_scene; }
 		SceneID get_sub_scene_id() const;
 
 		Component* add_component(const QUuid& component_id);
@@ -58,14 +62,18 @@ namespace VadonEditor::Model
 		void internal_component_property_edited(const QUuid& component_id, const QUuid& property_id);
 	private:
 		bool internal_load_data();
+		void internal_store_component_data(QVariantList& component_data_list) const;
 
 		void internal_set_name(const QString& name);
 		void set_id(const QUuid& id);
 
 		void internal_add_component(Component* component);
 
+		void inherit_entity(Entity* inherited_entity) const;
+
 		Core::Application& m_application;
 		Core::DataObject m_data;
+		QUuid m_base_scene;
 
 		QList<Component*> m_components;
 		bool m_components_modified; // FIXME: replace this by having components write directly via property paths, reducing the overhead
@@ -98,7 +106,7 @@ namespace VadonEditor::Model
 		void remove_entity(const QUuid& id);
 
 		bool save_data(QVariantList& entity_list) const;
-		bool load_data(const QVariantList& entity_list);
+		bool load_data(const QVariantList& entity_list, const SceneID& base_scene_id);
 	signals:
 		void entity_added(const QUuid& id);
 		void entity_removed(const QUuid& id);

@@ -153,7 +153,8 @@ namespace Vadon::Private::Core
 		if (db_file_info != nullptr)
 		{
 			file_info = *db_file_info;
-			file_info.metadata = get_file_metadata(get_absolute_path(db_handle, db_file_info->path));
+			file_info.path = get_absolute_path(db_handle, db_file_info->path);
+			file_info.metadata = get_file_metadata(file_info.path);
 		}
 
 		return file_info;

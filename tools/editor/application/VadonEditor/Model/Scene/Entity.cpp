@@ -54,6 +54,19 @@ namespace
 
 		return nullptr;
 	}
+
+	QUuid get_entity_id_property_uuid()
+	{
+		return VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::SceneEntitySchema::c_id_property.id);
+	}
+
+	QUuid get_entity_id_from_property_data(const QVariantMap& data)
+	{
+		auto entity_id_it = data.find(VadonEditor::Utilities::uuid_to_base64_string(get_entity_id_property_uuid()));
+		Q_ASSERT_X(entity_id_it != data.end(), "get_entity_id_from_property_data", "Cannot find entity ID");
+		
+		return entity_id_it.value().toUuid();
+	}
 }
 
 namespace VadonEditor::Model
@@ -77,10 +90,52 @@ namespace VadonEditor::Model
 		return internal_load_data();
 	}
 
+	bool Entity::import_data(const QVariant& data)
+	{
+		const QVariantMap entity_data_map = data.toMap();
+
+		// Gather the component data for this entity
+		auto component_data_it = entity_data_map.find(Utilities::uuid_to_base64_string(components_property_uuid()));
+		Q_ASSERT_X(component_data_it != entity_data_map.end(), "VadonEditor::Model::Entity::import_data", "Component data not found");
+
+		const QVariantList component_data_list = component_data_it.value().toList();
+		for (const QVariant& component_data : component_data_list)
+		{
+			const QVariantMap component_obj_data = component_data.toMap();
+
+			Core::DataObject component_data_obj(m_application);
+			if (component_data_obj.import_data(component_obj_data) == false)
+			{
+				return false;
+			}
+
+			Component* component = get_component(component_data_obj.get_type_id());
+			if (component == nullptr)
+			{
+				// Component is added by inherited scene
+				Component* appended_component = new Component(m_application, false);
+				// FIXME: could we just copy the underlying DataObject itself?
+				if (appended_component->import_data(component_obj_data) == false)
+				{
+					Q_ASSERT_X(false, "VadonEditor::Model::Entity::import_data", "Failed to append component!");
+					delete appended_component;
+					continue;
+				}
+
+				internal_add_component(appended_component);
+			}
+			else
+			{
+				component->import_properties(component_data_obj.get_property_map());
+			}
+		}
+
+		return true;
+	}
+
 	QUuid Entity::get_id() const
 	{
-		const QUuid id_property_uuid = Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::SceneEntitySchema::c_id_property.id);
-		return m_data.get_property(id_property_uuid).toUuid();
+		return m_data.get_property(get_entity_id_property_uuid()).toUuid();
 	}
 
 	QUuid Entity::get_parent() const
@@ -130,7 +185,7 @@ namespace VadonEditor::Model
 			return nullptr;
 		}
 
-		Component* new_component = new Component(m_application);
+		Component* new_component = new Component(m_application, false);
 		if (new_component->initialize(component_id) == false)
 		{
 			Q_ASSERT_X(false, "VadonEditor::Model::Entity::add_component", "Failed to initialize component");
@@ -165,6 +220,7 @@ namespace VadonEditor::Model
 			Q_ASSERT_X(false, "VadonEditor::Model::Entity::remove_component", "Component not found");
 			return;
 		}
+		Q_ASSERT_X(component_to_remove->is_mandatory() == false, "VadonEditor::Model::Entity::remove_component", "Trying to remove mandatory component!");
 
 		m_components.removeOne(component_to_remove);
 		delete component_to_remove;
@@ -186,55 +242,7 @@ namespace VadonEditor::Model
 	void Entity::store_component_data()
 	{
 		QVariantList component_data_list;
-
-		const Entity* sub_scene_entity = nullptr;
-		const SceneID sub_scene_id = get_sub_scene_id();
-		if (Utilities::is_uuid_valid(sub_scene_id) == true)
-		{
-			SceneSystem& scene_system = m_application.get_model_system().get_scene_system();
-			Scene* sub_scene = scene_system.get_scene(sub_scene_id);
-
-			sub_scene_entity = sub_scene->get_entity_model().get_root_entity();
-		}
-
-		for (Component* current_component : m_components)
-		{
-			QVariantMap component_data = current_component->export_data();
-			if (sub_scene_entity != nullptr)
-			{
-				const Component* ref_component = sub_scene_entity->get_component(current_component->get_type_id());
-				Q_ASSERT_X(ref_component != nullptr, "VadonEditor::Model::Entity::store_component_data", "Cannot find ref component");
-
-				const QString properties_key_string = Utilities::uuid_to_base64_string(Core::DataObject::get_properties_property_uuid());
-				auto properties_it = component_data.find(properties_key_string);
-				QVariantMap component_properties = properties_it->toMap();
-
-				for (auto property_entry_it = component_properties.begin(); property_entry_it != component_properties.end();)
-				{
-					const QVariant ref_value = ref_component->get_property(Utilities::base64_string_to_uuid(property_entry_it.key()));
-					if (property_entry_it.value() == ref_value)
-					{
-						// Property value is the same, so we can remove it from the map
-						property_entry_it = component_properties.erase(property_entry_it);
-					}
-					else
-					{
-						// Property is different from original, so we keep it
-						++property_entry_it;
-					}
-				}
-
-				if (component_properties.isEmpty())
-				{
-					// No difference from source scene, skip component
-					continue;
-				}
-
-				component_data.insert(properties_key_string, component_properties);
-			}
-
-			component_data_list.push_back(component_data);
-		}
+		internal_store_component_data(component_data_list);
 
 		m_data.set_property(components_property_uuid(), component_data_list);
 		m_components_modified = false;
@@ -263,7 +271,7 @@ namespace VadonEditor::Model
 			const Entity* sub_scene_entity = sub_scene->get_entity_model().get_root_entity();
 			for (const Component* ref_component : sub_scene_entity->m_components)
 			{
-				Component* copied_component = new Component(m_application);
+				Component* copied_component = new Component(m_application, true);
 				if (copied_component->import_data(ref_component->export_data()) == false)
 				{
 					Q_ASSERT_X(false, "VadonEditor::Model::EntityModel::internal_load_data", "Failed to import ref component data");
@@ -283,7 +291,7 @@ namespace VadonEditor::Model
 
 			if (Utilities::is_uuid_valid(sub_scene_id) == false)
 			{
-				Component* new_component = new Component(m_application);
+				Component* new_component = new Component(m_application, false);
 				if (new_component->import_data(component_obj_data) == false)
 				{
 					Q_ASSERT_X(false, "VadonEditor::Model::EntityModel::create_component_list", "Failed to create component object!");
@@ -315,6 +323,72 @@ namespace VadonEditor::Model
 		return true;
 	}
 
+	void Entity::internal_store_component_data(QVariantList& component_data_list) const
+	{
+		SceneSystem& scene_system = m_application.get_model_system().get_scene_system();
+		const Entity* reference_entity = nullptr;
+		if (Utilities::is_uuid_valid(m_base_scene) == true)
+		{
+			const Scene* base_scene = scene_system.get_scene(m_base_scene);
+			reference_entity = base_scene->get_entity_model().find_entity_by_id(get_id());
+			Q_ASSERT_X(reference_entity != nullptr, "VadonEditor::Model::Entity::internal_store_component_data", "Cannot find base scene entity");
+		}
+		else if (Utilities::is_uuid_valid(get_sub_scene_id()) == true)
+		{
+			const Scene* sub_scene = scene_system.get_scene(get_sub_scene_id());
+			reference_entity = sub_scene->get_entity_model().get_root_entity();
+		}
+
+		for (const Component* current_component : m_components)
+		{
+			QVariantMap component_data = current_component->export_data();
+			if (reference_entity != nullptr)
+			{
+				// If a reference component is present, we only need to save the differences
+				// Otherwise if an inherited scene has a component that the base does not,
+				// we save the component as-is
+				const Component* reference_component = reference_entity->get_component(current_component->get_type_id());
+				if (reference_component != nullptr)
+				{
+					const QString properties_key_string = Utilities::uuid_to_base64_string(Core::DataObject::get_properties_property_uuid());
+					auto properties_it = component_data.find(properties_key_string);
+					QVariantMap component_properties = properties_it->toMap();
+
+					for (auto property_entry_it = component_properties.begin(); property_entry_it != component_properties.end();)
+					{
+						const QVariant ref_value = reference_component->get_property(Utilities::base64_string_to_uuid(property_entry_it.key()));
+						if (property_entry_it.value() == ref_value)
+						{
+							// Property value is the same, so we can remove it from the map
+							property_entry_it = component_properties.erase(property_entry_it);
+						}
+						else
+						{
+							// Property is different from original, so we keep it
+							++property_entry_it;
+						}
+					}
+
+					if (component_properties.isEmpty())
+					{
+						// No difference from reference scene, skip component
+						continue;
+					}
+
+					// Overwrite the property map in the component data
+					component_data.insert(properties_key_string, component_properties);
+				}
+				else if (Utilities::is_uuid_valid(m_base_scene) == false)
+				{
+					// Cannot add/remove components if it's a sub-scene!
+					Q_ASSERT_X(false, "VadonEditor::Model::Entity::internal_store_component_data", "Cannot find reference component");
+				}
+			}
+
+			component_data_list.push_back(component_data);
+		}
+	}
+
 	void Entity::internal_set_name(const QString& name)
 	{
 		const QUuid name_property_uuid = Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::SceneEntitySchema::c_name_property.id);
@@ -341,6 +415,26 @@ namespace VadonEditor::Model
 				return lhs->get_type_id() < rhs->get_type_id();
 			}
 		);
+	}
+
+	void Entity::inherit_entity(Entity* inherited_entity) const
+	{
+		inherited_entity->set_id(get_id());
+		inherited_entity->internal_set_name(get_name());
+
+		for (const Component* current_component : m_components)
+		{
+			Component* inherited_component = new Component(m_application, true);
+			// FIXME: could we just copy the underlying DataObject itself?
+			if (inherited_component->import_data(current_component->export_data()) == false)
+			{
+				Q_ASSERT_X(false, "VadonEditor::Model::Entity::inherit_entity", "Failed to inherit component!");
+				delete inherited_component;
+				continue;
+			}
+
+			inherited_entity->internal_add_component(inherited_component);
+		}
 	}
 
 	EntityModel::EntityModel(Core::Application& application)
@@ -437,22 +531,104 @@ namespace VadonEditor::Model
 		return true;
 	}
 
-	bool EntityModel::load_data(const QVariantList& entity_list)
+	bool EntityModel::load_data(const QVariantList& entity_list, const SceneID& base_scene_id)
 	{
 		QHash<QUuid, Entity*> new_entity_lookup;
-		Entity* new_root_entity = internal_create_entity();
-		if (new_root_entity->load_data(entity_list.front()) == false)
+		Entity* new_root_entity = nullptr;
+		QStandardItem* new_root_item = nullptr;
+		if (Utilities::is_uuid_valid(base_scene_id) == true)
 		{
-			return false;
+			const Scene* base_scene = m_application.get_model_system().get_scene_system().get_scene(base_scene_id);
+			Q_ASSERT_X(base_scene != nullptr, "VadonEditor::Model::EntityModel::load_data", "Failed to load base scene!");
+
+			const EntityModel& base_entity_model = base_scene->get_entity_model();
+			const Entity* root_entity = base_entity_model.get_root_entity();
+
+			QList<QUuid> entity_queue;
+			entity_queue.push_back(root_entity->get_id());
+
+			int entity_queue_index = 0;
+			while(entity_queue_index < entity_queue.size())
+			{
+				const QUuid base_entity_id = entity_queue[entity_queue_index];
+				const Entity* base_entity = base_entity_model.find_entity_by_id(base_entity_id);
+
+				QModelIndex base_entity_index = base_entity_model.find_entity_item_by_id(base_entity_id);
+				Q_ASSERT_X(base_entity_index.isValid() == true, "VadonEditor::Model::EntityModel::load_data", "Cannot find base item");
+
+				QStandardItem* base_entity_item = base_entity_model.m_qt_model.itemFromIndex(base_entity_index);
+				for (int current_row = 0; current_row < base_entity_item->rowCount(); ++current_row)
+				{
+					entity_queue.push_back(get_entity_item_data(base_entity_item->child(current_row), EntityDataRole::ID).toUuid());
+				}
+
+				Entity* inherited_entity = internal_create_entity();
+				base_entity->inherit_entity(inherited_entity);
+
+				inherited_entity->m_base_scene = base_scene_id;
+
+				internal_add_entity(inherited_entity, new_entity_lookup);
+
+				const QUuid parent_id = base_entity->get_parent();
+				QStandardItem* current_entity_item = create_scene_tree_standard_item(inherited_entity->get_label(), inherited_entity->get_id());
+
+				if (base_entity_id == root_entity->get_id())
+				{
+					new_root_entity = inherited_entity;
+					new_root_item = current_entity_item;
+				}
+				else if (parent_id == root_entity->get_id())
+				{
+					new_root_item->appendRow(current_entity_item);
+				}
+				else
+				{
+					QStandardItem* parent_item = find_entity_by_id_recursive(new_root_item, parent_id);
+					Q_ASSERT_X(parent_item != nullptr, "VadonEditor::Model::EntityModel::load_data", "Cannot find parent");
+
+					parent_item->appendRow(current_entity_item);
+				}
+
+				++entity_queue_index;
+			}
+			Q_ASSERT_X(new_root_entity != nullptr, "VadonEditor::Model::EntityModel::load_data", "No root entity loaded!");
+		}
+		else
+		{
+			new_root_entity = internal_create_entity();
+			if (new_root_entity->load_data(entity_list.front()) == false)
+			{
+				return false;
+			}
+
+			internal_add_entity(new_root_entity, new_entity_lookup);
+
+			new_root_item = create_scene_tree_standard_item(new_root_entity->get_label(), new_root_entity->get_id());
 		}
 
-		internal_add_entity(new_root_entity, new_entity_lookup);
-		QStandardItem* new_root_item = create_scene_tree_standard_item(new_root_entity->get_label(), new_root_entity->get_id());
-
-		for (int entity_index = 1; entity_index < entity_list.size(); ++entity_index)
+		// NOTE: we iterate over all entities when loading a derived scene, but we skip the first one otherwise (since it's the root)
+		for (int entity_index = Utilities::is_uuid_valid(base_scene_id) ? 0 : 1; entity_index < entity_list.size(); ++entity_index)
 		{
+			const QVariant& current_entity_data_variant = entity_list[entity_index];
+			if (Utilities::is_uuid_valid(base_scene_id) == true)
+			{
+				// Check whether entity is part of the base scene (in which case we load overrides)
+				// or if it's an entity defined by derived scene (then we add it as normal)
+				const QVariantMap current_entity_data = current_entity_data_variant.toMap();
+				const QUuid entity_id = get_entity_id_from_property_data(current_entity_data);
+				Q_ASSERT_X(Utilities::is_uuid_valid(entity_id) == true, "VadonEditor::Model::EntityModel::load_data", "Invalid entity ID");
+
+				auto entity_it = new_entity_lookup.find(entity_id);
+				if (entity_it != new_entity_lookup.end())
+				{
+					Entity* current_entity = entity_it.value();
+					current_entity->import_data(current_entity_data);
+					continue;
+				}
+			}
+
 			Entity* current_entity = internal_create_entity();
-			if (current_entity->load_data(entity_list[entity_index]) == false)
+			if (current_entity->load_data(current_entity_data_variant) == false)
 			{
 				clear_entity_lookup(new_entity_lookup);
 				delete new_root_item;
@@ -615,8 +791,28 @@ namespace VadonEditor::Model
 			parent_entity->store_component_data();
 		}
 
-		// First add self to the list
-		entity_list.append(parent_entity->m_data.get_property_map());
+		auto does_entity_have_valid_scene_data = +[](const Entity* entity)
+			{
+				if (VadonEditor::Utilities::is_uuid_valid(entity->get_base_scene_id()) == true)
+				{
+					const QVariant components_variant = entity->m_data.get_property(Entity::components_property_uuid());
+					const QVariantList components = components_variant.toList();
+
+					if (components.isEmpty() == true)
+					{
+						// We don't save the entity if it has no overrides for its components
+						return false;
+					}
+				}
+
+				return true;
+			};
+
+		if (does_entity_have_valid_scene_data(parent_entity) == true)
+		{
+			// First add self to the list
+			entity_list.append(parent_entity->m_data.get_property_map());
+		}
 
 		// Recursively add all children
 		QStandardItem* entity_item = internal_find_entity_item(parent_entity->get_id());

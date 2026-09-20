@@ -1,14 +1,13 @@
 #ifndef VADONEDITOR_UI_MODEL_RESOURCE_RESOURCEDIALOG_HPP
 #define VADONEDITOR_UI_MODEL_RESOURCE_RESOURCEDIALOG_HPP
+#include <VadonEditor/UI/Model/Object/ObjectDialog.hpp>
 #include <VadonEditor/UI/Model/Resource/ui_NewResourceDialog.h>
 #include <VadonEditor/UI/Model/Resource/ui_SelectResourceDialog.h>
-#include <QDialog>
 #include <QSortFilterProxyModel>
 #include <QUuid>
 namespace VadonEditor::Core
 {
 	class Application;
-	class TypeFilterModel;
 }
 namespace VadonEditor::Model
 {
@@ -16,53 +15,37 @@ namespace VadonEditor::Model
 }
 namespace VadonEditor::UI
 {
+	class SelectResourceTypeDialog : public NewObjectDialog
+	{
+		Q_OBJECT
+	public:
+		SelectResourceTypeDialog(Core::Application& application, const QUuid& base_type, QWidget* parent = nullptr);
+	};
+
 	class NewResourceDialog : public QDialog
 	{
 		Q_OBJECT
 	public:
-		NewResourceDialog(Core::Application& application, const QUuid& base_type, QWidget* parent = nullptr);
-	signals:
-		void resource_type_selected(const QUuid& type_uuid);
-	private slots:
-		void type_double_clicked(const QModelIndex& index);
-		void filter_text_changed(const QString& text);
+		NewResourceDialog(Core::Application& application, const QUuid& base_type, const QModelIndex& root_asset = QModelIndex(), QWidget* parent = nullptr);
 
-		void selection_changed(const QItemSelection& selected, const QItemSelection& deselected);
-		void selection_accepted();
+		void accept() override;
+	private slots:
+		void select_type_clicked();
+		void resource_type_selected(const QUuid& type_uuid);
+
+		void browse_file_path_clicked();
+		void file_path_selected(const QString& asset_path);
 	private:
 		void update_controls();
 
-		QModelIndex get_current_selection() const;
-		QUuid get_selected_type(const QModelIndex& index) const;
-
-		void finalize_selection(const QUuid& type_uuid);
-
+		Core::Application& m_application;
 		Ui::NewResourceDialog m_ui;
 
-		Core::TypeFilterModel* m_filter_model;
-	};
-
-	// NOTE: this is a utility object for NewResourceDialog which encapsulates
-	// the logic of creating the new resource asset based on the user's selection
-	// This helps keep the implementation of the UI objects (including the dialog) simpler
-	class NewResourceDialogBackend : public QObject
-	{
-		Q_OBJECT
-	public:
-		NewResourceDialogBackend(Core::Application& application, QWidget* dialog_parent, const QModelIndex& root_asset = QModelIndex());
-	private slots:
-		void resource_type_selected(const QUuid& type_uuid);
-		void file_path_selected(const QString& asset_path);
-
-		void end_workflow();
-	private:
-		void create_resource_asset(const QString& asset_path);
-
-		Core::Application& m_application;
-
-		QWidget* m_dialog_parent;
-		QUuid m_new_resource_type;
+		QUuid m_base_type;
 		QModelIndex m_root_asset;
+
+		QUuid m_new_resource_type;
+		QString m_new_resource_path;
 	};
 
 	class ResourceAssetFilterModel : public QSortFilterProxyModel

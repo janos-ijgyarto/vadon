@@ -16,7 +16,7 @@ namespace VadonEditor::Model
 		// NOTE: if a scene object exists, that implies its data was already loaded
 		// TODO: use refcount system to ensure resource can't be unloaded while
 		// Scene object still exists!
-		Scene* create_scene();
+		Scene* create_scene(const SceneID& base_scene_id = SceneID{});
 		Scene* get_scene(const SceneID& scene_id);
 		void remove_scene(Scene* scene);
 

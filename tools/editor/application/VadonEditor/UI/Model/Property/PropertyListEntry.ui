@@ -13,9 +13,9 @@
   <property name="windowTitle">
    <string>PropertyListEntry</string>
   </property>
-  <layout class="QVBoxLayout" name="mainLayout" stretch="2">
+  <layout class="QVBoxLayout" name="mainLayout" stretch="0">
    <item>
-    <layout class="QHBoxLayout" name="headerHBox" stretch="1,2">
+    <layout class="QHBoxLayout" name="headerHBox" stretch="1,3">
      <item>
       <widget class="QLabel" name="label">
        <property name="text">

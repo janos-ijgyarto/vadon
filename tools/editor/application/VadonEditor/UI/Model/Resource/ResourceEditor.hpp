@@ -26,6 +26,7 @@ namespace VadonEditor::UI
 
 		void set_read_only(bool read_only);
 	signals:
+		// FIXME: emit a "path" so the owning object can update the nested property in a targeted way (instead of updating the whole sub-object)
 		void resource_property_edited(const QUuid& property_id);
 	private slots:
 		void internal_property_edited(const QUuid& property_id);

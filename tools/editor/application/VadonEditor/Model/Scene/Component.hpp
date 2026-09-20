@@ -16,9 +16,11 @@ namespace VadonEditor::Model
 	{
 		Q_OBJECT
 	public:
-		Component(Core::Application& application);
+		Component(Core::Application& application, bool is_mandatory);
 
 		bool initialize(const QUuid& type_id);
+
+		bool is_mandatory() const { return m_is_mandatory; }
 
 		bool import_data(const QVariantMap& data_map) { return m_data.import_data(data_map); }
 		QVariantMap export_data() const { return m_data.export_data(); }
@@ -40,6 +42,7 @@ namespace VadonEditor::Model
 	private:
 		Core::Application& m_application;
 		Core::DataObject m_data;
+		bool m_is_mandatory;
 
 		friend Entity;
 	};

@@ -28,6 +28,7 @@ namespace VadonEditor::UI
 
 		void generate_resource_widgets();
 		void clear_resource_widgets();
+		void update_type_label();
 
 		Ui::PropertyResource m_ui;
 

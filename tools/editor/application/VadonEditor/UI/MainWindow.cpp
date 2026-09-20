@@ -66,8 +66,8 @@ namespace VadonEditor::UI
 
 	void MainWindow::new_resource_triggered()
 	{
-		// NOTE: we can fire-and-forget this object, it will clean itself up when the dialog closes
-		new NewResourceDialogBackend(m_application, this);
+		NewResourceDialog* new_resource_dialog = new NewResourceDialog(m_application, Model::Resource::get_base_resource_type(), QModelIndex(), this);
+		new_resource_dialog->open();
 	}
 
 	void MainWindow::new_scene_triggered()

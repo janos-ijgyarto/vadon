@@ -39,8 +39,11 @@ namespace VadonEditor::UI
 		// Initialize with the loaded project info
 		m_project_info = m_application.get_project_manager().get_project_info();
 
-		m_ui.customDataToolButton->addAction(m_ui.actionLoadResource);
-		m_ui.customDataToolButton->addAction(m_ui.actionClear);
+		if (m_application.get_project_manager().get_project_data_schema().is_valid() == true)
+		{
+			m_ui.customDataToolButton->addAction(m_ui.actionLoadResource);
+			m_ui.customDataToolButton->addAction(m_ui.actionClear);
+		}
 
 		m_ui.nameValueLabel->setText(m_project_info.name);
 		m_ui.rootPathValueLabel->setText(m_project_info.root_path);
@@ -183,6 +186,12 @@ namespace VadonEditor::UI
 
 	void ProjectSettingsDialog::update_custom_data_resource_widget()
 	{
+		if (m_application.get_project_manager().get_project_data_schema().is_valid() == false)
+		{
+			QMessageBox::warning(this, "Project Settings", "Project does not have a valid data schema! Make sure to generate one before attempting to set resources, etc.!");
+			return;
+		}
+
 		int global_config_row = 0;
 		m_ui.generalTabForm->getWidgetPosition(m_ui.customDataLabel, &global_config_row, nullptr);
 		
@@ -222,7 +231,6 @@ namespace VadonEditor::UI
 			m_custom_data_resource_editor->set_read_only(true);
 
 			m_ui.generalTabForm->insertRow(global_config_row + 1, m_custom_data_resource_editor);
-
 
 			// Update label
 			const Model::ResourceInfo resource_info = resource->get_info();

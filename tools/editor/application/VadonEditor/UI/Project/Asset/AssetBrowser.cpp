@@ -4,6 +4,8 @@
 #include <VadonEditor/Core/Asset/AssetManager.hpp>
 #include <VadonEditor/Core/Project/ProjectManager.hpp>
 
+#include <VadonEditor/Model/Resource/Resource.hpp>
+
 #include <VadonEditor/UI/Model/Resource/ResourceDialog.hpp>
 #include <VadonEditor/UI/Model/Scene/SceneDialog.hpp>
 
@@ -62,7 +64,21 @@ namespace VadonEditor::UI
 		create_asset_menu->addAction(m_ui.actionCreateResource);
 		create_asset_menu->addAction(m_ui.actionCreateScene);
 
-		// TODO: add elements if right-click was on existing asset
+		QModelIndex item_index = m_ui.assetTree->indexAt(position);
+		if (item_index.isValid() == true)
+		{
+			Core::AssetManager& asset_manager = m_application->get_asset_manager();
+			const Core::AssetInfo asset_info = asset_manager.get_asset_info(item_index);
+			Q_ASSERT_X(asset_info.is_valid() == true, "VadonEditor::UI::AssetBrowserTree::asset_tree_context_menu_requested", "Invalid asset");
+
+			switch (asset_info.type)
+			{
+			case Core::AssetType::SCENE:
+				create_asset_menu->addAction(m_ui.actionCreateInheritedScene);
+				break;
+				// TODO: options for other asset types?
+			}
+		}
 
 		menu.exec(m_ui.assetTree->mapToGlobal(position));
 #else
@@ -78,14 +94,20 @@ namespace VadonEditor::UI
 
 	void AssetBrowserTree::new_resource_triggered()
 	{
-		// NOTE: we can fire-and-forget this object, it will clean itself up when the dialog closes
-		new NewResourceDialogBackend(*m_application, this, get_selected_asset());
+		NewResourceDialog* new_resource_dialog = new NewResourceDialog(*m_application, Model::Resource::get_base_resource_type(), get_selected_asset(), this);
+		new_resource_dialog->open();
 	}
 
 	void AssetBrowserTree::new_scene_triggered()
 	{
 		NewSceneDialog* scene_dialog = new NewSceneDialog(*m_application, this, get_selected_asset());
 		scene_dialog->open();
+	}
+
+	void AssetBrowserTree::inherited_scene_triggered()
+	{
+		InheritedSceneDialog* inherited_dialog = new InheritedSceneDialog(*m_application, get_selected_asset(), this);
+		inherited_dialog->open();
 	}
 
 	void AssetBrowserTree::selection_changed(const QItemSelection& selected, const QItemSelection& deselected)

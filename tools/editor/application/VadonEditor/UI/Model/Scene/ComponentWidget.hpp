@@ -1,6 +1,7 @@
 #ifndef VADONEDITOR_UI_MODEL_SCENE_COMPONENTWIDGET_HPP
 #define VADONEDITOR_UI_MODEL_SCENE_COMPONENTWIDGET_HPP
 #include <VadonEditor/UI/Model/Scene/ui_ComponentWidget.h>
+#include <QUuid>
 namespace VadonEditor::Core
 {
 	class Application;
@@ -17,7 +18,7 @@ namespace VadonEditor::UI
 	{
 		Q_OBJECT
 	public:
-		ComponentWidget(Model::Component* component, bool is_sub_scene, QWidget* parent = nullptr);
+		ComponentWidget(Model::Component* component, QWidget* parent = nullptr);
 
 		bool initialize(Model::Scene* scene);
 
@@ -25,7 +26,8 @@ namespace VadonEditor::UI
 
 		QString get_name_label() const { return m_ui.componentNameLabel->text(); }
 	signals:
-		void remove_requested(const QUuid& component_id);
+		// NOTE: using pass-by-value to ensure the ID remains valid (since the widget itself will be destroyed)
+		void remove_requested(QUuid component_id);
 	private slots:
 		void internal_property_edited(const QUuid& property_id);
 		void remove_clicked();

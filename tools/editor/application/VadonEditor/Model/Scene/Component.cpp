@@ -10,9 +10,10 @@
 
 namespace VadonEditor::Model
 {
-	Component::Component(Core::Application& application)
+	Component::Component(Core::Application& application, bool is_mandatory)
 		: m_application(application)
 		, m_data(application)
+		, m_is_mandatory(is_mandatory)
 	{
 	}
 

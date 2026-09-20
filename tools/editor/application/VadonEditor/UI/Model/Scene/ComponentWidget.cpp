@@ -15,23 +15,23 @@
 
 namespace VadonEditor::UI
 {
-	ComponentWidget::ComponentWidget(Model::Component* component, bool is_sub_scene, QWidget* parent)
+	ComponentWidget::ComponentWidget(Model::Component* component, QWidget* parent)
 		: QWidget(parent)
 		, m_component(component)
 	{
 		m_ui.setupUi(this);
-
-		if (is_sub_scene == true)
-		{
-			m_ui.removeButton->setEnabled(false);
-			m_ui.removeButton->setVisible(false);
-		}
 	}
 
 	bool ComponentWidget::initialize(Model::Scene* scene)
 	{
 		const Core::DataSchema& data_schema = m_component->get_application().get_project_manager().get_project_data_schema();
 		const Core::TypeData* type_data = data_schema.find_type_data(m_component->get_type_id());
+
+		if (m_component->is_mandatory() == true)
+		{
+			m_ui.removeButton->setEnabled(false);
+			m_ui.removeButton->setVisible(false);
+		}
 
 		if (type_data == nullptr)
 		{
@@ -55,6 +55,11 @@ namespace VadonEditor::UI
 			if (component_type_name.isEmpty())
 			{
 				component_type_name = QString("Component type %1").arg(Utilities::vadon_uuid_to_qt_uuid(type_data->info.id).toString());
+			}
+
+			if (m_component->is_mandatory() == true)
+			{
+				component_type_name += " (mandatory)";
 			}
 
 			m_ui.componentNameLabel->setText(component_type_name);

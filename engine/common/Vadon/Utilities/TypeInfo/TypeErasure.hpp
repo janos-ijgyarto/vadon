@@ -119,7 +119,11 @@ namespace Vadon::Utilities
 
 // Define for both the "bare" object and the typed wrapper version
 #define VADON_DEFINE_OBJECT_TYPE_ERASURE(_type) template<>\
-struct Vadon::Utilities::TypeErasureTrait<_type> : public Vadon::Utilities::ObjectTypeErasureTrait<_type> {};\
-template<>\
-struct Vadon::Utilities::TypeErasureTrait<Vadon::Utilities::TypedObjectWrapper<_type>> : public TypedObjectWrapperTypeErasureTrait<_type> {};
+struct Vadon::Utilities::TypeErasureTrait<_type> : public Vadon::Utilities::ObjectTypeErasureTrait<_type> {}
+
+#define VADON_DEFINE_TYPED_OBJECT_WRAPPER_TYPE_ERASURE(_type) template<>\
+struct Vadon::Utilities::TypeErasureTrait<Vadon::Utilities::TypedObjectWrapper<_type>> : public TypedObjectWrapperTypeErasureTrait<_type> {}
+
+#define VADON_DEFINE_OBJECT_AND_WRAPPER_TYPE_ERASURE(_type) VADON_DEFINE_OBJECT_TYPE_ERASURE(_type);\
+VADON_DEFINE_TYPED_OBJECT_WRAPPER_TYPE_ERASURE(_type)
 #endif

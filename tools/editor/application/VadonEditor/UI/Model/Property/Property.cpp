@@ -9,12 +9,15 @@
 #include <VadonEditor/UI/Model/Property/Array.hpp>
 #include <VadonEditor/UI/Model/Property/CheckBox.hpp>
 #include <VadonEditor/UI/Model/Property/Color.hpp>
+#include <VadonEditor/UI/Model/Property/Object.hpp>
 #include <VadonEditor/UI/Model/Property/Numeric.hpp>
 #include <VadonEditor/UI/Model/Property/Resource.hpp>
 #include <VadonEditor/UI/Model/Property/Text.hpp>
 #include <VadonEditor/UI/Model/Property/Vector.hpp>
 
 #include <VadonEditor/Utilities/UUID.hpp>
+
+#include <Vadon/Foundation/TypeInfo/Object.hpp>
 
 namespace VadonEditor::UI
 {
@@ -68,7 +71,37 @@ namespace VadonEditor::UI
 			// TODO!
 			break;
 		case ::Vadon::Foundation::Property::Category::OBJECT:
-			// TODO!
+		{
+			// Check if the property uses ObjectWrapper
+			const QUuid property_type = info.type_list[info.type_list_offset];
+			if (property_type == VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::ObjectWrapperSchema::c_type_uuid))
+			{
+				// Check whether an explicit type is provided
+				const qsizetype object_type_offset = info.type_list_offset + 1;
+				if (object_type_offset >= info.type_list.size())
+				{
+					// No type specified, so it's a generic object
+					return new PropertyObject(info.property_id, info.init_value.toMap(), owner_resource, QUuid{}, false, parent_widget);
+				}
+				else
+				{
+					// Constrain to the type specified in the type list
+					const QUuid object_type = info.type_list[object_type_offset];
+					return new PropertyObject(info.property_id, info.init_value.toMap(), owner_resource, object_type, true, parent_widget);
+				}
+			}
+			// FIXME: this is a bit convoluted, find a way to deduplicate this logic!
+			else if (property_type == VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::DataObjectSchema::c_type_uuid))
+			{
+				// DataObject is handled as generic object
+				return new PropertyObject(info.property_id, info.init_value.toMap(), owner_resource, QUuid{}, false, parent_widget);
+			}
+			else
+			{
+				// Specific type, non-nullable member
+				return new PropertyObject(info.property_id, info.init_value.toMap(), owner_resource, property_type, false, parent_widget);
+			}
+		}
 			break;
 		case ::Vadon::Foundation::Property::Category::RESOURCE:
 		{

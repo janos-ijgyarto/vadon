@@ -55,6 +55,9 @@ namespace VadonEditor::UI
 
 	void PropertyArray::set_read_only(bool read_only)
 	{
+		m_ui.addButton->setVisible(read_only == false);
+		m_ui.addButton->setEnabled(read_only == false);
+
 		for (int item_index = 0; item_index < m_ui.arrayContentsVBox->count(); ++item_index)
 		{
 			QWidget* current_widget = m_ui.arrayContentsVBox->itemAt(item_index)->widget();

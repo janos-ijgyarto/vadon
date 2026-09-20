@@ -124,5 +124,5 @@ VADON_REGISTER_TYPE_UUID(Vadon::Model::AnimationVector3iChannel, ::Vadon::Founda
 VADON_REGISTER_TYPE_UUID(Vadon::Model::AnimationVector4Channel, ::Vadon::Foundation::AnimationChannelSchema::get_channel_type_uuid_string(Vadon::Model::AnimationChannelType::VECTOR4).string);
 VADON_REGISTER_TYPE_UUID(Vadon::Model::AnimationColorRGBAChannel, ::Vadon::Foundation::AnimationChannelSchema::get_channel_type_uuid_string(Vadon::Model::AnimationChannelType::COLORRGBA).string);
 
-VADON_DEFINE_OBJECT_TYPE_ERASURE(Vadon::Model::AnimationChannel);
+VADON_DEFINE_OBJECT_AND_WRAPPER_TYPE_ERASURE(Vadon::Model::AnimationChannel);
 #endif

@@ -59,14 +59,19 @@ namespace VadonEditor::Model
 		return Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::SceneSchema::c_type_uuid);
 	}
 
-	QUuid Scene::get_scene_entities_uuid()
+	QUuid Scene::get_entities_property_uuid()
 	{
 		return Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::SceneSchema::c_entities_property.id);
 	}
 
+	QUuid Scene::get_base_scene_property_uuid()
+	{
+		return Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::SceneSchema::c_base_scene_property.id);
+	}
+
 	void Scene::open_scene()
 	{
-		message_scene_opened(false);
+		message_scene_opened();
 	}
 
 	bool Scene::save_scene() const
@@ -82,15 +87,17 @@ namespace VadonEditor::Model
 
 	bool Scene::load_scene()
 	{
-		const QUuid scene_entities_uuid = Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::SceneSchema::c_entities_property.id);
-		QVariant entity_list_variant = m_resource->get_property(scene_entities_uuid);
+		QVariant entity_list_variant = m_resource->get_data_object().get_property(get_entities_property_uuid());
 
-		if (m_entity_model.load_data(entity_list_variant.toList()) == false)
+		if (m_resource->get_data_object().has_property(get_base_scene_property_uuid()) == true)
+		{
+			m_base_id = m_resource->get_data_object().get_property(get_base_scene_property_uuid()).toUuid();
+		}
+
+		if (m_entity_model.load_data(entity_list_variant.toList(), m_base_id) == false)
 		{
 			return false;
 		}
-
-		message_scene_opened(true);
 
 		return true;
 	}
@@ -166,8 +173,7 @@ namespace VadonEditor::Model
 			return false;
 		}
 		
-		const QUuid scene_entities_uuid = Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::SceneSchema::c_entities_property.id);
-		m_resource->set_property(scene_entities_uuid, entity_list);
+		m_resource->set_property(get_entities_property_uuid(), entity_list);
 		return true;
 	}
 
@@ -333,11 +339,8 @@ namespace VadonEditor::Model
 		return true;
 	}
 
-	void Scene::message_scene_opened(bool reload)
+	void Scene::message_scene_opened()
 	{
-		// TODO: use the "reload" flag to indicate whether the client should reload scene, or if they should just ensure it's loaded?
-		Q_UNUSED(reload);
-
 		// FIXME: use temp allocator or shared serializer
 		VadonEditor::Network::MessageSerializer message_serializer;
 

@@ -18,6 +18,7 @@ namespace VadonEditor::Model
 		Core::Application& get_application() { return m_application; }
 
 		const SceneID& get_id() const { return m_id; }
+		const SceneID& get_base_scene_id() const { return m_base_id; }
 
 		Resource* get_resource() { return m_resource; }
 		const Resource* get_resource() const { return m_resource; }
@@ -29,8 +30,10 @@ namespace VadonEditor::Model
 		void notify_modified();
 
 		static bool is_scene_base_of_type(VadonEditor::Core::Application& application, const QUuid& type_id);
+
 		static QUuid get_scene_type_uuid();
-		static QUuid get_scene_entities_uuid();
+		static QUuid get_entities_property_uuid();
+		static QUuid get_base_scene_property_uuid();
 
 		void open_scene();
 
@@ -54,11 +57,12 @@ namespace VadonEditor::Model
 
 		bool is_sub_scene_acyclic(const QUuid& scene_id);
 
-		void message_scene_opened(bool reload);
+		void message_scene_opened();
 
 		Core::Application& m_application;
 
 		SceneID m_id;
+		SceneID m_base_id;
 		Resource* m_resource;
 		EntityModel m_entity_model;
 
