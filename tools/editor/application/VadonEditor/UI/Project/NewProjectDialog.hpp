@@ -4,7 +4,7 @@
 #include <VadonEditor/UI/Project/ui_NewProjectDialog.h>
 namespace VadonEditor::Core
 {
-	struct ProjectInfo;
+	struct SourceProjectInfo;
 }
 namespace VadonEditor::UI
 {
@@ -12,13 +12,18 @@ namespace VadonEditor::UI
 	{
 		Q_OBJECT
 	public:
-		NewProjectDialog(QWidget* parent);
+		NewProjectDialog(const Core::SourceProjectInfo& source_info, QWidget* parent);
 
-		VadonEditor::Core::ProjectInfo get_project_info() const;
+		Core::SourceProjectInfo get_source_info() const;
+		QString get_output_path() const { return m_ui.outputPathLineEdit->text(); }
 	private slots:
 		void name_edited(const QString& text);
-		void root_path_edited(const QString& text);
-		void browse_clicked();
+
+		void root_path_changed(const QString& text);
+		void root_path_browse_clicked();
+
+		void output_path_changed(const QString& text);
+		void output_path_browse_clicked();
 	private:
 		void validate_state();
 

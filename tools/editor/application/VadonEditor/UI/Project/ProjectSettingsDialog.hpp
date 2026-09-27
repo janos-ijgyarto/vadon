@@ -22,17 +22,15 @@ namespace VadonEditor::UI
 		void clear_custom_data_resource_triggered();
 		void custom_data_resource_selected(const QUuid& resource_id);
 
-		void plugin_custom_path_browse_clicked();
-		void plugin_custom_path_clear_clicked();
-		void plugin_custom_path_text_changed(const QString& text);
-
+		void plugin_binaries_path_browse_clicked();
+		void plugin_binaries_path_changed(const QString& text);
 		void plugin_configuration_activated(int index);
+		void plugin_configurations_refresh_clicked();
 
-		void game_custom_path_browse_clicked();
-		void game_custom_path_clear_clicked();
-		void game_custom_path_text_changed(const QString& text);
-
+		void game_binaries_path_browse_clicked();
+		void game_binaries_path_changed(const QString& text);
 		void game_configuration_activated(int index);
+		void game_configurations_refresh_clicked();
 	private:
 		void update_custom_data_resource_widget();
 		void clear_custom_data_resource_widget();
@@ -46,7 +44,8 @@ namespace VadonEditor::UI
 		Core::Application& m_application;
 		Ui::ProjectSettings m_ui;
 
-		Core::ProjectInfo m_project_info;
+		Core::SourceProject m_source_project;
+		Core::EditorProject m_editor_project;
 		ResourceEditor* m_custom_data_resource_editor;
 	};
 }

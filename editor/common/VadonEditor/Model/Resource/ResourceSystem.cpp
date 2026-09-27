@@ -20,6 +20,11 @@ namespace VadonEditor::Model
 		VADON_ASSERT(m_resource_lookup.empty() == true, "Resources were not cleared");
 	}
 
+	void ResourceSystem::set_temp_file_root_path(std::string_view temp_file_root_path)
+	{
+		m_database.set_temp_file_root_path(temp_file_root_path);
+	}
+
 	const Resource* ResourceSystem::find_resource(const Vadon::Model::ResourceID& resource_id) const
 	{
 		auto resource_it = m_resource_lookup.find(resource_id);

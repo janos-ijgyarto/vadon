@@ -37,7 +37,9 @@ namespace VadonEditor::UI
 		m_ui.setupUi(this);
 
 		// Initialize with the loaded project info
-		m_project_info = m_application.get_project_manager().get_project_info();
+		const Core::ProjectManager& project_manager = m_application.get_project_manager();
+		m_source_project = project_manager.get_source_project();
+		m_editor_project = project_manager.get_editor_project();
 
 		if (m_application.get_project_manager().get_project_data_schema().is_valid() == true)
 		{
@@ -45,21 +47,22 @@ namespace VadonEditor::UI
 			m_ui.customDataToolButton->addAction(m_ui.actionClear);
 		}
 
-		m_ui.nameValueLabel->setText(m_project_info.name);
-		m_ui.rootPathValueLabel->setText(m_project_info.root_path);
+		m_ui.nameValueLabel->setText(m_source_project.info.name);
+		m_ui.rootPathValueLabel->setText(m_source_project.info.root_path);
+		m_ui.outputPathValueLabel->setText(m_editor_project.info.output_path);
 
 		update_custom_data_resource_widget();
 		
-		set_line_edit_no_signal(m_ui.pluginCustomPathEdit, m_project_info.plugin_settings.custom_search_path);
-		reset_plugin_config_combo();
+		set_line_edit_no_signal(m_ui.pluginBinariesPathEdit, m_editor_project.plugin_settings.binaries_path);
+		set_line_edit_no_signal(m_ui.gameBinariesPathEdit, m_editor_project.game_settings.binaries_path);
 
-		set_line_edit_no_signal(m_ui.gameCustomPathEdit, m_project_info.game_settings.custom_search_path);
+		reset_plugin_config_combo();
 		reset_game_config_combo();
 	}
 
 	void ProjectSettingsDialog::accept()
 	{
-		m_application.get_project_manager().set_project_info(m_project_info);
+		m_application.get_project_manager().update_project_info(m_source_project, m_editor_project);
 		QDialog::accept();
 	}
 
@@ -78,67 +81,80 @@ namespace VadonEditor::UI
 
 	void ProjectSettingsDialog::custom_data_resource_selected(const QUuid& resource_id)
 	{
-		m_project_info.custom_data_resource_id = resource_id;
+		m_source_project.custom_data_resource_id = resource_id;
 		update_custom_data_resource_widget();
 	}
 
-	void ProjectSettingsDialog::plugin_custom_path_browse_clicked()
+	void ProjectSettingsDialog::plugin_binaries_path_browse_clicked()
 	{
-		const QString selected_dir = QFileDialog::getExistingDirectory(this, "Select Editor Plugin Custom Search Path", m_application.get_project_manager().get_project_info().root_path);
-		if (selected_dir.isEmpty() == false)
+		QString start_dir = m_editor_project.plugin_settings.binaries_path;
+		if (start_dir.isEmpty() == true)
 		{
-			m_ui.pluginCustomPathEdit->setText(selected_dir);
+			start_dir = m_source_project.info.root_path;
+		}
+
+		QString binaries_path = QFileDialog::getExistingDirectory(this, "Select Editor Plugin Binaries Path", start_dir, QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
+
+		if (binaries_path.isEmpty() == false)
+		{
+			m_ui.pluginBinariesPathEdit->setText(binaries_path);
 		}
 	}
 
-	void ProjectSettingsDialog::plugin_custom_path_clear_clicked()
+	void ProjectSettingsDialog::plugin_binaries_path_changed(const QString& text)
 	{
-		m_ui.pluginCustomPathEdit->clear();
+		m_editor_project.plugin_settings.binaries_path = text;
+		update_editor_plugin_list();
 	}
 
-	void ProjectSettingsDialog::plugin_custom_path_text_changed(const QString& text)
+	void ProjectSettingsDialog::game_binaries_path_browse_clicked()
 	{
-		m_project_info.plugin_settings.custom_search_path = text;
-		m_project_info.plugin_settings.selected_configuration.clear();
+		QString start_dir = m_editor_project.game_settings.binaries_path;
+		if (start_dir.isEmpty() == true)
+		{
+			start_dir = m_source_project.info.root_path;
+		}
 
-		update_editor_plugin_list();
+		QString binaries_path = QFileDialog::getExistingDirectory(this, "Select Game Binaries Path", start_dir, QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
+
+		if (binaries_path.isEmpty() == false)
+		{
+			m_ui.gameBinariesPathEdit->setText(binaries_path);
+		}
+	}
+
+	void ProjectSettingsDialog::game_binaries_path_changed(const QString& text)
+	{
+		m_editor_project.game_settings.binaries_path = text;
+		update_game_executable_list();
 	}
 
 	void ProjectSettingsDialog::plugin_configuration_activated(int index)
 	{
-		m_project_info.plugin_settings.selected_configuration = m_ui.pluginConfigurationCombo->itemText(index);
+		m_editor_project.plugin_settings.selected_configuration = m_ui.pluginConfigurationCombo->itemText(index);
 	}
 
-	void ProjectSettingsDialog::game_custom_path_browse_clicked()
+	void ProjectSettingsDialog::plugin_configurations_refresh_clicked()
 	{
-		const QString selected_dir = QFileDialog::getExistingDirectory(this, "Select Game Executable Custom Search Path", m_application.get_project_manager().get_project_info().root_path);
-		if (selected_dir.isEmpty() == false)
-		{
-			m_ui.gameCustomPathEdit->setText(selected_dir);
-		}
-	}
-
-	void ProjectSettingsDialog::game_custom_path_clear_clicked()
-	{
-		m_ui.gameCustomPathEdit->clear();
+		update_editor_plugin_list();
 	}
 
 	void ProjectSettingsDialog::reset_plugin_config_combo()
 	{
 		m_ui.pluginConfigurationCombo->clear();
 
-		if (m_project_info.plugin_entries.isEmpty())
+		if (m_editor_project.plugin_entries.isEmpty())
 		{
 			return;
 		}
 
 		int selected_index = 0;
-		for (int current_index = 0; current_index < m_project_info.plugin_entries.count(); ++current_index)
+		for (int current_index = 0; current_index < m_editor_project.plugin_entries.count(); ++current_index)
 		{
-			const Core::EditorPluginInfo& plugin_info = m_project_info.plugin_entries[current_index];
+			const Core::EditorPluginInfo& plugin_info = m_editor_project.plugin_entries[current_index];
 			m_ui.pluginConfigurationCombo->addItem(plugin_info.configuration_name);
 
-			if (plugin_info.configuration_name == m_project_info.plugin_settings.selected_configuration)
+			if (plugin_info.configuration_name == m_editor_project.plugin_settings.selected_configuration)
 			{
 				selected_index = current_index;
 			}
@@ -147,22 +163,27 @@ namespace VadonEditor::UI
 		m_ui.pluginConfigurationCombo->setCurrentIndex(selected_index);
 	}
 
+	void ProjectSettingsDialog::game_configurations_refresh_clicked()
+	{
+		update_game_executable_list();
+	}
+
 	void ProjectSettingsDialog::reset_game_config_combo()
 	{
 		m_ui.gameConfigurationCombo->clear();
 
-		if (m_project_info.game_entries.isEmpty())
+		if (m_editor_project.game_entries.isEmpty())
 		{
 			return;
 		}
 
 		int selected_index = 0;
-		for (int current_index = 0; current_index < m_project_info.game_entries.count(); ++current_index)
+		for (int current_index = 0; current_index < m_editor_project.game_entries.count(); ++current_index)
 		{
-			const Core::GameExecutableInfo& game_info = m_project_info.game_entries[current_index];
+			const Core::GameExecutableInfo& game_info = m_editor_project.game_entries[current_index];
 			m_ui.gameConfigurationCombo->addItem(game_info.configuration_name);
 
-			if (game_info.configuration_name == m_project_info.game_settings.selected_configuration)
+			if (game_info.configuration_name == m_editor_project.game_settings.selected_configuration)
 			{
 				selected_index = current_index;
 			}
@@ -171,17 +192,9 @@ namespace VadonEditor::UI
 		m_ui.gameConfigurationCombo->setCurrentIndex(selected_index);
 	}
 
-	void ProjectSettingsDialog::game_custom_path_text_changed(const QString& text)
-	{
-		m_project_info.game_settings.custom_search_path = text;
-		m_project_info.game_settings.selected_configuration.clear();
-
-		update_game_executable_list();
-	}
-
 	void ProjectSettingsDialog::game_configuration_activated(int index)
 	{
-		m_project_info.game_settings.selected_configuration = m_ui.gameConfigurationCombo->itemText(index);
+		m_editor_project.game_settings.selected_configuration = m_ui.gameConfigurationCombo->itemText(index);
 	}
 
 	void ProjectSettingsDialog::update_custom_data_resource_widget()
@@ -197,11 +210,11 @@ namespace VadonEditor::UI
 		
 		Q_ASSERT_X(global_config_row >= 0, "VadonEditor::UI::ProjectSettingsDialog::update_custom_data_resource_widget", "Cannot find custom data row!");
 
-		if (Utilities::is_uuid_valid(m_project_info.custom_data_resource_id) == true)
+		if (Utilities::is_uuid_valid(m_source_project.custom_data_resource_id) == true)
 		{
 			if (m_custom_data_resource_editor != nullptr)
 			{
-				if (m_custom_data_resource_editor->get_resource()->get_info().id == m_project_info.custom_data_resource_id)
+				if (m_custom_data_resource_editor->get_resource()->get_info().id == m_source_project.custom_data_resource_id)
 				{
 					// Editor already shows the same resource
 					return;
@@ -212,14 +225,14 @@ namespace VadonEditor::UI
 				}
 			}
 
-			Model::Resource* resource = m_application.get_model_system().get_resource_system().get_resource(m_project_info.custom_data_resource_id);
+			Model::Resource* resource = m_application.get_model_system().get_resource_system().get_resource(m_source_project.custom_data_resource_id);
 			if (resource == nullptr)
 			{
 				Q_ASSERT_X(false, "VadonEditor::UI::ProjectSettingsDialog::update_global_config_widget", "Cannot find resource!");
 				return;
 			}
 
-			m_custom_data_resource_editor = new ResourceEditor(resource, this);
+			m_custom_data_resource_editor = new ResourceEditor(resource, m_ui.customDataScrollContents);
 			if (m_custom_data_resource_editor->initialize() == false)
 			{
 				Q_ASSERT_X(false, "VadonEditor::UI::ProjectSettingsDialog::update_global_config_widget", "Failed to initialize resource editor!");
@@ -230,7 +243,7 @@ namespace VadonEditor::UI
 
 			m_custom_data_resource_editor->set_read_only(true);
 
-			m_ui.generalTabForm->insertRow(global_config_row + 1, m_custom_data_resource_editor);
+			m_ui.customDataScrollVBox->addWidget(m_custom_data_resource_editor);
 
 			// Update label
 			const Model::ResourceInfo resource_info = resource->get_info();
@@ -284,10 +297,8 @@ namespace VadonEditor::UI
 
 	void ProjectSettingsDialog::update_editor_plugin_list()
 	{
-		const QString search_path = m_project_info.plugin_settings.custom_search_path.isEmpty() ? m_project_info.root_path : m_project_info.plugin_settings.custom_search_path;
-
-		m_project_info.plugin_entries = m_application.get_project_manager().find_editor_plugins(search_path);
-		if (m_project_info.plugin_entries.isEmpty() == true)
+		m_editor_project.plugin_entries = m_application.get_project_manager().find_editor_plugins(m_editor_project.get_plugin_binaries_path());
+		if (m_editor_project.plugin_entries.isEmpty() == true)
 		{
 			QMessageBox::warning(this, "Editor Plugin Settings", "No plugins found at path");
 		}
@@ -297,10 +308,8 @@ namespace VadonEditor::UI
 
 	void ProjectSettingsDialog::update_game_executable_list()
 	{
-		const QString search_path = m_project_info.game_settings.custom_search_path.isEmpty() ? m_project_info.root_path : m_project_info.game_settings.custom_search_path;
-
-		m_project_info.game_entries = m_application.get_project_manager().find_game_executables(search_path);
-		if (m_project_info.game_entries.isEmpty() == true)
+		m_editor_project.game_entries = m_application.get_project_manager().find_game_executables(m_editor_project.get_game_binaries_path());
+		if (m_editor_project.game_entries.isEmpty() == true)
 		{
 			QMessageBox::warning(this, "Game Settings", "No game executables found at path");
 		}

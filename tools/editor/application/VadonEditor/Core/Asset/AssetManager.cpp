@@ -20,20 +20,6 @@ namespace
 		IS_MODIFIED,
 	};
 
-	constexpr const char* c_project_metadata_folder_name = ".vadon";
-
-	bool is_excluded_asset_directory(const QFileInfo& dir_info)
-	{
-		QDir directory(dir_info.absoluteFilePath());
-		if (directory.dirName() == c_project_metadata_folder_name)
-		{
-			return true;
-		}
-
-		// TODO: check for "ignore" file?
-		return false;
-	}
-
 	QStandardItem* find_asset_by_id_recursive(const QStandardItem* parent, int id)
 	{
 		for (int child_index = 0; child_index < parent->rowCount(); ++child_index)
@@ -120,11 +106,6 @@ namespace
 			qCritical() << "Cannot import file outside project root!";
 			return false;
 		}
-		else if (relative_path.startsWith(c_project_metadata_folder_name) == true)
-		{
-			qCritical() << "Cannot import file from project metadata directory!";
-			return false;
-		}
 
 		const QFileInfo file_info(relative_path);
 		for (int asset_type_index = 0; asset_type_index < static_cast<int>(VadonEditor::Core::AssetType::TYPE_COUNT); ++asset_type_index)
@@ -137,9 +118,9 @@ namespace
 			}
 		}
 
-		if (file_info.fileName() == VadonEditor::Core::ProjectInfo::c_project_file_name)
+		if (file_info.fileName() == VadonEditor::Core::SourceProjectInfo::c_project_file_name)
 		{
-			qCritical() << "Cannot import the project metadata file!";
+			qCritical() << "Cannot import the project file!";
 			return false;
 		}
 		
@@ -220,7 +201,7 @@ namespace VadonEditor::Core
 
 	QModelIndex AssetManager::import_asset_file(const QString& file_path)
 	{
-		const ProjectInfo& project_info = m_application.get_project_manager().get_project_info();
+		const SourceProjectInfo& project_info = m_application.get_project_manager().get_source_project().info;
 
 		const QFileInfo file_info(file_path);
 		if (file_info.exists() == false)
@@ -349,10 +330,31 @@ namespace VadonEditor::Core
 
 	bool AssetManager::save_temp_file_data(QStringView temp_file_relative_path, QByteArrayView data)
 	{
-		const ProjectInfo& project_info = m_application.get_project_manager().get_project_info();
-		const QString file_absolute_path = QDir::cleanPath(project_info.root_path + QString("/%1/temp/%2").arg(c_project_metadata_folder_name).arg(temp_file_relative_path));
+		const EditorProject& editor_project = m_application.get_project_manager().get_editor_project();
+		const QString file_absolute_path = QDir::cleanPath(editor_project.info.output_path + QString("/%1/%2").arg(AssetInfo::c_temp_root_folder).arg(temp_file_relative_path));
 
 		return asset_manager_do_write_file(file_absolute_path, data);
+	}
+
+	void AssetManager::clear_temp_files(QStringView relative_path)
+	{
+		const EditorProject& editor_project = m_application.get_project_manager().get_editor_project();
+
+		const QString temp_dir_path = QDir::cleanPath(editor_project.info.output_path + QString("/%1/%2").arg(AssetInfo::c_temp_root_folder).arg(relative_path));
+
+		const QFileInfo file_info(temp_dir_path);
+		if ((file_info.exists() == true) && (file_info.isDir() == true))
+		{
+			QDir temp_file_dir(temp_dir_path);
+			if (temp_file_dir.removeRecursively() == true)
+			{
+				qDebug() << "Cleared temp files from" << temp_dir_path;
+			}
+			else
+			{
+				qCritical() << "Failed to clear temp files in" << temp_dir_path;
+			}
+		}
 	}
 
 	bool AssetManager::load_asset_data(int asset_id, QByteArray& data) const
@@ -458,7 +460,7 @@ namespace VadonEditor::Core
 			return;
 		}
 
-		const ProjectInfo& project_info = project_manager.get_project_info();
+		const SourceProjectInfo& project_info = project_manager.get_source_project().info;
 
 		QHash<QString, AssetType> asset_type_lookup;
 		for (int type_index = 0; type_index < static_cast<int>(AssetType::TYPE_COUNT); ++type_index)
@@ -486,11 +488,6 @@ namespace VadonEditor::Core
 	{
 		if (file_info.isDir() == true)
 		{
-			if (is_excluded_asset_directory(file_info))
-			{
-				return;
-			}
-
 			// Add the folder as an asset
 			InternalAssetInfo folder_info;
 			folder_info.type = AssetType::FOLDER;
@@ -627,13 +624,13 @@ namespace VadonEditor::Core
 
 	QString AssetManager::get_asset_absolute_file_path(const QString& asset_path) const
 	{
-		const ProjectInfo& project_info = m_application.get_project_manager().get_project_info();
+		const SourceProjectInfo& project_info = m_application.get_project_manager().get_source_project().info;
 		return QDir::cleanPath(project_info.root_path + AssetInfo::c_dir_separator + asset_path);
 	}
 
 	QString AssetManager::get_asset_relative_path(const QString& asset_path) const
 	{
-		const ProjectInfo& project_info = m_application.get_project_manager().get_project_info();
+		const SourceProjectInfo& project_info = m_application.get_project_manager().get_source_project().info;
 		QDir project_root_dir(project_info.root_path);
 		return QDir::cleanPath(project_root_dir.relativeFilePath(asset_path));
 	}

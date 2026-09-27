@@ -27,52 +27,45 @@
 
 namespace
 {
-	constexpr const char* c_project_cache_prefix = "ProjectManager/project_cache/projects";
-
+	constexpr const char* c_project_manager_setting_prefix = "ProjectManager";
 	constexpr const char* c_editor_plugin_suffix = "vdeplugin";
 	constexpr const char* c_game_executable_suffix = "vdgexe";
 
-	enum class ApplicationSetting
+	enum class ProjectManagerSetting
 	{
-		NAME,
+		PROJECT_CACHE,
+		SETTINGS_COUNT
+	};
+
+	constexpr const char* c_project_manager_settings_keys[static_cast<size_t>(ProjectManagerSetting::SETTINGS_COUNT)] = {
+		"project_cache"
+	};
+
+	constexpr const char* get_project_manager_settings_key(ProjectManagerSetting setting) { return c_project_manager_settings_keys[static_cast<size_t>(setting)]; }
+
+	enum class ProjectCacheSetting
+	{
+		PROJECTS,
+		SETTINGS_COUNT
+	};
+
+	constexpr const char* c_project_cache_settings_keys[static_cast<size_t>(ProjectCacheSetting::SETTINGS_COUNT)] = {
+		"projects"
+	};
+
+	constexpr const char* get_project_cache_settings_key(ProjectCacheSetting setting) { return c_project_cache_settings_keys[static_cast<size_t>(setting)]; }
+
+	enum class ProjectCacheEntrySetting
+	{
 		PATH,
 		SETTINGS_COUNT
 	};
 
-	constexpr const char* c_app_settings_keys[static_cast<size_t>(ApplicationSetting::SETTINGS_COUNT)] = {
-		"name",
+	constexpr const char* c_project_cache_entry_settings_keys[static_cast<size_t>(ProjectCacheEntrySetting::SETTINGS_COUNT)] = {
 		"path"
 	};
 
-	constexpr const char* get_app_settings_key(ApplicationSetting setting) { return c_app_settings_keys[static_cast<size_t>(setting)]; }
-
-	enum class ProjectEditorPluginSetting
-	{
-		CUSTOM_SEARCH_PATH,
-		SELECTED_CONFIGURATION,
-		SETTINGS_COUNT
-	};
-
-	constexpr const char* c_project_editor_plugin_settings_keys[static_cast<size_t>(ProjectEditorPluginSetting::SETTINGS_COUNT)] = {
-		"editor_plugin_custom_search_path",
-		"editor_plugin_selected_configuration"
-	};
-
-	constexpr const char* get_editor_plugin_settings_key(ProjectEditorPluginSetting setting) { return c_project_editor_plugin_settings_keys[static_cast<size_t>(setting)]; }
-
-	enum class ProjectGameExecutableSetting
-	{
-		CUSTOM_SEARCH_PATH,
-		SELECTED_CONFIGURATION,
-		SETTINGS_COUNT
-	};
-
-	constexpr const char* c_project_game_executable_settings_keys[static_cast<size_t>(ProjectGameExecutableSetting::SETTINGS_COUNT)] = {
-		"game_executable_custom_search_path",
-		"game_executable_selected_configuration"
-	};
-
-	constexpr const char* get_game_executable_settings_key(ProjectGameExecutableSetting setting) { return c_project_game_executable_settings_keys[static_cast<size_t>(setting)]; }
+	constexpr const char* get_project_cache_entry_settings_key(ProjectCacheEntrySetting setting) { return c_project_cache_entry_settings_keys[static_cast<size_t>(setting)]; }
 
 	bool validate_project_name(const QString& name)
 	{
@@ -85,19 +78,19 @@ namespace
 		return true;
 	}
 
-	bool validate_project_file(const QFileInfo& project_file)
+	bool validate_source_project_file(const QFileInfo& project_file)
 	{
-		if (project_file.exists() != true)
+		if (project_file.exists() == false)
 		{
 			return false;
 		}
 
-		if (project_file.isFile() != true)
+		if (project_file.isFile() == false)
 		{
 			return false;
 		}
 
-		if (project_file.suffix() != "vdpr")
+		if (project_file.fileName() != VadonEditor::Core::SourceProjectInfo::c_project_file_name)
 		{
 			return false;
 		}
@@ -105,22 +98,19 @@ namespace
 		return true;
 	}
 
-	bool validate_project_plugin_path(const QString& plugin_path)
+	bool validate_editor_project_file(const QFileInfo& project_file)
 	{
-		if (plugin_path.isEmpty() == true)
-		{
-			// No plugin path is valid!
-			return true;
-		}
-
-		const QFileInfo plugin_info(plugin_path);
-		if ((plugin_info.exists() == false) || (plugin_info.isFile() == false))
+		if (project_file.exists() == false)
 		{
 			return false;
 		}
 
-		// FIXME: allow other platforms to use a different suffix!
-		if (plugin_info.completeSuffix() != "dll")
+		if (project_file.isFile() == false)
+		{
+			return false;
+		}
+
+		if (project_file.fileName() != VadonEditor::Core::EditorProjectInfo::c_file_name)
 		{
 			return false;
 		}
@@ -128,23 +118,16 @@ namespace
 		return true;
 	}
 
-	bool validate_project_info(const VadonEditor::Core::ProjectInfo& project_info)
-	{
-		// TODO: anything else to validate?
-		return validate_project_name(project_info.name);
-	}
-
-	bool load_project_info(const QJsonDocument& json_doc, VadonEditor::Core::ProjectInfo& project_info)
+	bool load_source_project_info(const QJsonDocument& json_doc, VadonEditor::Core::SourceProjectInfo& project_info)
 	{
 		if (json_doc.isNull() == true)
 		{
 			// TODO: more detailed error!
-			qCritical() << "Project file contains invalid data!";
+			qCritical() << "Source project file contains invalid data!";
 			return false;
 		}
 
 		const QUuid project_name_property_id = VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::ProjectInfoSchema::c_name_property.id);
-		const QUuid custom_data_resource_property_id = VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::ProjectInfoSchema::c_custom_data_resource_property.id);
 
 		// TODO: validate JSON data!
 		const QJsonObject project_info_root = json_doc.object();
@@ -156,9 +139,43 @@ namespace
 			{
 				project_info.name = property_it.value().toString();
 			}
-			else if (property_uuid == custom_data_resource_property_id)
+		}
+
+		return true;
+	}
+
+	bool load_source_project_file(VadonEditor::Core::SourceProject& source_project)
+	{
+		QFileInfo project_file_info(source_project.info.get_project_file_path());
+
+		QFile project_file(project_file_info.absoluteFilePath());
+		if (project_file.open(QIODevice::ReadOnly) == false)
+		{
+			qCritical() << "Failed to open editor project file!";
+			return false;
+		}
+
+		const QByteArray project_file_buffer = project_file.readAll();
+		project_file.close();
+
+		QJsonDocument project_document(QJsonDocument::fromJson(project_file_buffer));
+
+		if (load_source_project_info(project_document, source_project.info) == false)
+		{
+			return false;
+		}
+
+		const QUuid custom_data_resource_property_id = VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::ProjectInfoSchema::c_custom_data_resource_property.id);
+
+		// TODO: validate JSON data!
+		const QJsonObject project_info_root = project_document.object();
+
+		for (auto property_it = project_info_root.begin(); property_it != project_info_root.end(); ++property_it)
+		{
+			const QUuid property_uuid = VadonEditor::Utilities::parse_labeled_uuid(property_it.key());
+			if (property_uuid == custom_data_resource_property_id)
 			{
-				project_info.custom_data_resource_id = VadonEditor::Utilities::base64_string_to_uuid(property_it.value().toString());
+				source_project.custom_data_resource_id = VadonEditor::Utilities::base64_string_to_uuid(property_it.value().toString());
 			}
 		}
 		
@@ -215,50 +232,283 @@ namespace
 		return true;
 	}
 
-	QString get_project_data_schema_path(const VadonEditor::Core::ProjectInfo& project_info)
+	QString format_command_line_argument_key(const QString& key)
 	{
-		return QString("%1/.vadon/data_schema.json").arg(project_info.root_path);
+		return QString("--%1").arg(key);
+	}
+
+	QString get_editor_project_data_schema_path(const VadonEditor::Core::EditorProjectInfo& project_info)
+	{
+		return QDir::cleanPath(project_info.output_path + "/metadata/data_schema.json");
+	}
+
+	bool save_editor_project_data(const VadonEditor::Core::EditorProject& project)
+	{
+		QFileInfo project_file_info(project.info.get_project_file_path());
+
+		// Make sure path exists
+		const QDir project_dir;
+		if (project_dir.mkpath(project_file_info.absolutePath()) == false)
+		{
+			qCritical() << "Failed to create editor project directory!";
+			return false;
+		}
+
+		QFile project_file(project_file_info.absoluteFilePath());
+		if (project_file.open(QIODevice::WriteOnly) == false)
+		{
+			qCritical() << "Failed to write editor project file!";
+			return false;
+		}
+
+		QJsonObject project_root_obj;
+
+		{
+			QJsonObject project_info_obj;
+			project_info_obj["source_path"] = project.info.source_path;
+
+			project_root_obj["info"] = project_info_obj;
+		}
+		{
+			QJsonObject plugin_settings_obj;
+			plugin_settings_obj["binaries_path"] = project.plugin_settings.binaries_path;
+			plugin_settings_obj["selected_config"] = project.plugin_settings.selected_configuration;
+
+			project_root_obj["plugin_settings"] = plugin_settings_obj;
+		}
+		{
+			QJsonObject game_settings_obj;
+			game_settings_obj["binaries_path"] = project.game_settings.binaries_path;
+			game_settings_obj["selected_config"] = project.game_settings.selected_configuration;
+
+			project_root_obj["game_settings"] = game_settings_obj;
+		}
+
+		project_file.write(QJsonDocument(project_root_obj).toJson());
+		project_file.close();
+
+		return true;
+	}
+
+	bool load_editor_project_data(VadonEditor::Core::EditorProject& project)
+	{
+		QFileInfo project_file_info(project.info.get_project_file_path());
+
+		QFile project_file(project_file_info.absoluteFilePath());
+		if (project_file.open(QIODevice::ReadOnly) == false)
+		{
+			qCritical() << "Failed to open editor project file!";
+			return false;
+		}
+
+		const QByteArray project_file_buffer = project_file.readAll();
+		project_file.close();
+
+		QJsonDocument project_document(QJsonDocument::fromJson(project_file_buffer));
+		const QJsonObject project_root_obj = project_document.object();
+
+		if (const QJsonValue info_value = project_root_obj["info"]; info_value.isObject())
+		{
+			const QJsonObject info_obj = info_value.toObject();
+
+			if (const QJsonValue source_path_value = info_obj["source_path"]; source_path_value.isString())
+			{
+				project.info.source_path = source_path_value.toString();
+			}
+		}
+
+		if (const QJsonValue plugin_settings_value = project_root_obj["plugin_settings"]; plugin_settings_value.isObject())
+		{
+			const QJsonObject plugin_settings_obj = plugin_settings_value.toObject();
+
+			if (const QJsonValue binaries_path_value = plugin_settings_obj["binaries_path"]; binaries_path_value.isString())
+			{
+				project.plugin_settings.binaries_path = binaries_path_value.toString();
+			}
+
+			if (const QJsonValue selected_config_value = plugin_settings_obj["selected_config"]; selected_config_value.isString())
+			{
+				project.plugin_settings.selected_configuration = selected_config_value.toString();
+			}
+		}
+
+		if (const QJsonValue game_settings_value = project_root_obj["game_settings"]; game_settings_value.isObject())
+		{
+			const QJsonObject game_settings_obj = game_settings_value.toObject();
+
+			if (const QJsonValue binaries_path_value = game_settings_obj["binaries_path"]; binaries_path_value.isString())
+			{
+				project.game_settings.binaries_path = binaries_path_value.toString();
+			}
+
+			if (const QJsonValue selected_config_value = game_settings_obj["selected_config"]; selected_config_value.isString())
+			{
+				project.game_settings.selected_configuration = selected_config_value.toString();
+			}
+		}
+
+		// TODO: anything else?
+		return true;
+	}
+
+	bool save_source_project_data(const VadonEditor::Core::SourceProject& project)
+	{
+		const QFileInfo project_file_info(project.info.get_project_file_path());
+
+		// Make sure path exists
+		const QDir project_dir;
+		if (project_dir.mkpath(project_file_info.absolutePath()) == false)
+		{
+			qCritical() << "Failed to create project directory!";
+			return false;
+		}
+
+		QFile project_file(project_file_info.absoluteFilePath());
+		if (project_file.open(QIODevice::WriteOnly) == false)
+		{
+			qCritical() << "Failed to write project file!";
+			return false;
+		}
+
+		const QUuid project_name_property_id = VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::ProjectInfoSchema::c_name_property.id);
+		const QUuid custom_data_resource_id = VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::ProjectInfoSchema::c_custom_data_resource_property.id);
+
+		QJsonObject project_data_root;
+		project_data_root[VadonEditor::Utilities::serialize_labeled_uuid(L"name", project_name_property_id)] = project.info.name;
+		if (VadonEditor::Utilities::is_uuid_valid(project.custom_data_resource_id) == true)
+		{
+			project_data_root[VadonEditor::Utilities::serialize_labeled_uuid(L"custom_data_resource", custom_data_resource_id)] = VadonEditor::Utilities::uuid_to_base64_string(project.custom_data_resource_id);
+		}
+
+		project_file.write(QJsonDocument(project_data_root).toJson());
+		project_file.close();
+
+		return true;
+	}
+
+	bool load_editor_project_metadata(VadonEditor::Core::EditorProject& editor_project)
+	{
+		// Load plugins and game executables
+		{
+			const QString& search_path = editor_project.get_plugin_binaries_path();
+			Q_ASSERT_X(search_path.isEmpty() == false, "load_editor_project_metadata", "Search path must not be empty!");
+			editor_project.plugin_entries = VadonEditor::Core::ProjectManager::find_editor_plugins(search_path);
+
+			if (editor_project.plugin_settings.selected_configuration.isEmpty() == false)
+			{
+				bool cached_config_found = false;
+				for (const VadonEditor::Core::EditorPluginInfo& current_entry : editor_project.plugin_entries)
+				{
+					if (current_entry.configuration_name == editor_project.plugin_settings.selected_configuration)
+					{
+						cached_config_found = true;
+						break;
+					}
+				}
+				if (cached_config_found == false)
+				{
+					qWarning() << "Cannot find editor plugin configuration" << editor_project.plugin_settings.selected_configuration << "among available plugins!";
+				}
+			}
+		}
+
+		{
+			const QString& search_path = editor_project.get_game_binaries_path();
+			Q_ASSERT_X(search_path.isEmpty() == false, "load_editor_project_metadata", "Search path must not be empty!");
+			editor_project.game_entries = VadonEditor::Core::ProjectManager::find_game_executables(search_path);
+
+			if (editor_project.game_settings.selected_configuration.isEmpty() == false)
+			{
+				bool cached_config_found = false;
+				for (const VadonEditor::Core::GameExecutableInfo& current_entry : editor_project.game_entries)
+				{
+					if (current_entry.configuration_name == editor_project.game_settings.selected_configuration)
+					{
+						cached_config_found = true;
+						break;
+					}
+				}
+				if (cached_config_found == false)
+				{
+					qWarning() << "Cannot find game executable configuration" << editor_project.game_settings.selected_configuration << "among available executables!";
+				}
+			}
+		}
+
+		return true;
+	}
+
+	bool validate_folder_path(const QString& path)
+	{
+		if (path.isEmpty() == true)
+		{
+			return false;
+		}
+
+		return QFileInfo(path).isDir() == true;
+	}
+
+	bool validate_source_project_info(const VadonEditor::Core::SourceProjectInfo& project_info)
+	{
+		if (project_info.is_valid() == false)
+		{
+			return false;
+		}
+
+		return validate_folder_path(project_info.root_path);
+	}
+
+	bool validate_source_project_data(const VadonEditor::Core::SourceProject& project)
+	{
+		return validate_source_project_info(project.info);
+	}
+
+	bool validate_editor_project_info(const VadonEditor::Core::EditorProjectInfo& project_info)
+	{
+		if (project_info.is_valid() == false)
+		{
+			return false;
+		}
+
+		return validate_folder_path(project_info.source_path) && validate_folder_path(project_info.output_path);
+	}
+
+	bool validate_editor_project_data(const VadonEditor::Core::EditorProject& project)
+	{
+		if (project.is_valid() == false)
+		{
+			return false;
+		}
+
+		return validate_editor_project_info(project.info);
 	}
 }
 
 namespace VadonEditor::Core
 {
-	void ProjectManager::set_project_info(const ProjectInfo& project_info)
+	void ProjectManager::update_project_info(const SourceProject& source_project, const EditorProject& editor_project)
 	{
-		Q_ASSERT_X(is_project_loaded() == true, "ProjectManager::set_project_info", "Project not loaded");
-		Q_ASSERT_X(validate_project_name(project_info.name), "ProjectManager::set_project_info", "Invalid name");
+		Q_ASSERT_X(is_project_loaded() == true, "VadonEditor::Core::ProjectManager::update_project_info", "Project not loaded");
+		Q_ASSERT_X(validate_source_project_data(source_project), "VadonEditor::Core::ProjectManager::update_project_info", "Invalid source project data!");
+		Q_ASSERT_X(validate_editor_project_data(editor_project), "VadonEditor::Core::ProjectManager::update_project_info", "Invalid editor project data!");
 
-		m_loaded_project_info = project_info;
+		m_source_project.custom_data_resource_id = source_project.custom_data_resource_id;
 
-		save_current_project_data();
+		m_editor_project.plugin_entries = editor_project.plugin_entries;
+		m_editor_project.plugin_settings = editor_project.plugin_settings;
 
-		// Update cache entry
-		{
-			auto cache_it = m_project_cache.find(project_info.root_path);
-			if (cache_it == m_project_cache.end())
-			{
-				qCritical() << "Project not in cache!";
-				return;
-			}
+		m_editor_project.game_entries = editor_project.game_entries;
+		m_editor_project.game_settings = editor_project.game_settings;
 
-			// TODO: also save selected config!
-			CachedProjectInfo& cached_info = cache_it.value();
-			cached_info.plugin_settings.custom_search_path = project_info.plugin_settings.custom_search_path;
-			cached_info.plugin_settings.selected_config = project_info.plugin_settings.selected_configuration;
-
-			cached_info.game_settings.custom_search_path = project_info.game_settings.custom_search_path;
-			cached_info.game_settings.selected_config = project_info.game_settings.selected_configuration;
-
-			save_project_cache();
-		}
+		internal_save_project_data();
 	}
 
 	bool ProjectManager::generate_project_data_schema(const QString& plugin_config)
 	{
 		Q_ASSERT_X(is_project_loaded() == true, "ProjectManager::generate_project_data_schema", "Project not loaded");
-		const Core::ProjectInfo& project_info = get_project_info();
+		const Core::EditorProject& editor_project = get_editor_project();
 
-		const EditorPluginInfo* editor_plugin_info = project_info.find_plugin_entry(plugin_config);
+		const EditorPluginInfo* editor_plugin_info = editor_project.find_plugin_entry(plugin_config);
 		if (editor_plugin_info == nullptr)
 		{
 			qCritical() << "Invalid setting for project editor plugin!";
@@ -275,14 +525,14 @@ namespace VadonEditor::Core
 			QString program_path = QCoreApplication::applicationFilePath();
 			exporter_process.setProgram(program_path);
 
-			QStringList arguments{ QString("--%1").arg(Core::CommandLineState::get_parameter_key(Core::CommandLineParameter::IS_SCHEMA_EXPORTER)) };
-			arguments.push_back(QString("--%1").arg(Core::CommandLineState::get_parameter_key(Core::CommandLineParameter::STARTUP_PROJECT_PATH)));
-			arguments.push_back(project_info.get_project_file_path());
+			QStringList arguments{ format_command_line_argument_key(CommandLineState::get_parameter_key(CommandLineParameter::IS_SCHEMA_EXPORTER)) };
+			arguments.push_back(format_command_line_argument_key(CommandLineState::get_parameter_key(CommandLineParameter::STARTUP_PROJECT_PATH)));
+			arguments.push_back(editor_project.info.get_project_file_path());
 
-			arguments.push_back(QString("--%1").arg(Core::CommandLineState::get_parameter_key(Core::CommandLineParameter::PLUGIN_CONFIG_NAME)));
+			arguments.push_back(format_command_line_argument_key(CommandLineState::get_parameter_key(CommandLineParameter::PLUGIN_CONFIG_NAME)));
 			arguments.push_back(plugin_config);
 
-			arguments.push_back(QString("--%1").arg(Core::CommandLineState::get_parameter_key(Core::CommandLineParameter::DEBUG_BREAK_ON_INIT)));
+			arguments.push_back(format_command_line_argument_key(CommandLineState::get_parameter_key(CommandLineParameter::DEBUG_BREAK_ON_INIT)));
 
 			exporter_process.setArguments(arguments);
 
@@ -305,7 +555,7 @@ namespace VadonEditor::Core
 			// Wait for process to finish
 			if (exporter_process.waitForFinished() == false)
 			{
-				qCritical() << "Error shutting down simulator!";
+				qCritical() << "Error shutting down schema exporter!";
 			}
 
 			if (exporter_process.exitStatus() == QProcess::ExitStatus::NormalExit)
@@ -324,15 +574,15 @@ namespace VadonEditor::Core
 			}
 		}
 		break;
-		case Core::ApplicationMode::SCHEMA_EXPORTER:
+		case ApplicationMode::SCHEMA_EXPORTER:
 		{
-			VadonEditor::Core::PluginManager& plugin_manager = m_application.get_plugin_manager();
+			PluginManager& plugin_manager = m_application.get_plugin_manager();
 
-			Core::PluginInfo plugin_info;
+			PluginInfo plugin_info;
 			plugin_info.path = editor_plugin_info->path;
 
-			Core::PluginHandle plugin_handle = plugin_manager.load_plugin(plugin_info);
-			if (plugin_handle == Core::PluginManager::c_invalid_plugin_handle)
+			PluginHandle plugin_handle = plugin_manager.load_plugin(plugin_info);
+			if (plugin_handle == PluginManager::c_invalid_plugin_handle)
 			{
 				qCritical() << "Failed to load plugin to export data schema!";
 				return false;
@@ -352,7 +602,7 @@ namespace VadonEditor::Core
 			// Data is exported, we can unload the plugin
 			plugin_manager.unload_plugin(plugin_handle);
 
-			if (m_loaded_project_schema.save_schema(get_project_data_schema_path(project_info)) == false)
+			if (m_loaded_project_schema.save_schema(get_editor_project_data_schema_path(editor_project.info)) == false)
 			{
 				qCritical() << "Failed to save data schema!";
 				return false;
@@ -367,10 +617,10 @@ namespace VadonEditor::Core
 	bool ProjectManager::load_project_data_schema()
 	{
 		Q_ASSERT_X(is_project_loaded() == true, "ProjectManager::load_project_data_schema", "Project not loaded");
-		const Core::ProjectInfo& project_info = get_project_info();
+		const Core::EditorProject& editor_project = get_editor_project();
 
 		// NOTE: load into temporary object, only replace the one in system if the load was successful
-		if (m_loaded_project_schema.load_schema(get_project_data_schema_path(project_info)) == false)
+		if (m_loaded_project_schema.load_schema(get_editor_project_data_schema_path(editor_project.info)) == false)
 		{
 			qCritical() << "Failed to load data schema!";
 			return false;
@@ -379,9 +629,9 @@ namespace VadonEditor::Core
 		return true;
 	}
 
-	const QList<ProjectManager::CachedProjectInfo> ProjectManager::get_cached_project_list() const
+	const ProjectManager::ProjectCacheEntryList ProjectManager::get_cached_project_list() const
 	{
-		QList<ProjectManager::CachedProjectInfo> project_list;
+		ProjectCacheEntryList project_list;
 		for (auto cache_it = m_project_cache.begin(); cache_it != m_project_cache.end(); ++cache_it)
 		{
 			project_list.append(cache_it.value());
@@ -390,53 +640,54 @@ namespace VadonEditor::Core
 		return project_list;
 	}
 
-	bool ProjectManager::create_project(const ProjectInfo& project_info)
+	bool ProjectManager::create_project(const QString& name, const EditorProjectInfo& editor_info)
 	{
-		if (validate_project_info(project_info) == false)
+		if (validate_editor_project_info(editor_info) == false)
 		{
 			qCritical() << "Invalid project info!";
 			return false;
 		}
 
-		const QFileInfo path_info(project_info.root_path);
-
-		if (path_info.isDir() == false)
+		if (m_project_cache.find(editor_info.output_path) != m_project_cache.end())
 		{
-			qCritical() << "Invalid root path!";
+			qCritical() << "Project already in cache!";
 			return false;
 		}
 
-		const QFileInfo project_file_info(path_info.absoluteFilePath() + "/project.vdpr");
-
-		const QString project_file_path = project_file_info.absoluteFilePath();
-		for (const CachedProjectInfo& cached_project : m_project_cache)
+		const QFileInfo source_project_file(editor_info.get_source_project_file_path());
+		if (source_project_file.exists() && source_project_file.isFile())
 		{
-			if (cached_project.path == project_file_path)
-			{
-				qCritical() << "Project already in cache!";
-				return false;
-			}
-		}
-
-		if ((project_file_info.exists() == true) && (project_file_info.isFile() == true))
-		{
-			// Project already exists!
-			qCritical() << "Project already exists at destination!";
+			qCritical() << "Source project already exists!";
 			return false;
 		}
 
-		// Create file by saving project info
-		if (internal_save_project(project_file_info, project_info) == false)
+		const QFileInfo editor_project_file_info(editor_info.get_project_file_path());
+		if ((editor_project_file_info.exists() == true) && (editor_project_file_info.isFile() == true))
 		{
+			qCritical() << "Editor project already exists!";
+			return false;
+		}
+
+		// Create files by saving temp project info
+		SourceProject temp_source_project;
+		temp_source_project.info.name = name;
+		temp_source_project.info.root_path = editor_info.source_path;
+		if (save_source_project_data(temp_source_project) == false)
+		{
+			qCritical() << "Failed to create new source project file!";
+			return false;
+		}
+
+		EditorProject temp_editor_project;
+		temp_editor_project.info = editor_info;
+		if (save_editor_project_data(temp_editor_project) == false)
+		{
+			qCritical() << "Failed to create new editor project file!";
 			return false;
 		}
 
 		// Add to project cache
-		CachedProjectInfo cached_info;
-		cached_info.name = project_info.name;
-		cached_info.path = project_file_path;
-
-		if(add_project_to_cache(project_file_info.absolutePath(), cached_info) == false)
+		if(add_project_to_cache(editor_info) == false)
 		{
 			// TODO: report error?
 		}
@@ -444,55 +695,49 @@ namespace VadonEditor::Core
 		return true;
 	}
 
-	bool ProjectManager::import_project(const QString& project_path)
+	bool ProjectManager::import_project(const EditorProjectInfo& project_info)
 	{
-		const QFileInfo path_info(project_path);
-
-		if (validate_project_file(path_info) == false)
+		if (validate_editor_project_info(project_info) == false)
 		{
-			qCritical() << "Invalid project path!";
+			qCritical() << "Invalid project info!";
 			return false;
 		}
 
-		ProjectInfo imported_project_info;
-		imported_project_info.root_path = path_info.absolutePath();
-
-		auto cache_it = m_project_cache.find(imported_project_info.root_path);
+		auto cache_it = m_project_cache.find(project_info.output_path);
 		if (cache_it != m_project_cache.end())
 		{
 			qCritical() << "Project already imported!";
 			return false;
 		}
 
-		QFile project_file(path_info.absoluteFilePath());
-		if (project_file.open(QIODevice::ReadOnly) == false)
+		// Make sure source project file exists
+		const QFileInfo source_project_file_info(project_info.get_source_project_file_path());
+		if (validate_source_project_file(source_project_file_info) == false)
 		{
-			qCritical() << "Failed to open project file!";
+			qCritical() << "Invalid source project file!";
 			return false;
 		}
 
-		const QByteArray project_data = project_file.readAll();
-		project_file.close();
-
-		QJsonDocument project_document(QJsonDocument::fromJson(project_data));
-		if (load_project_info(project_document, imported_project_info) == false)
+		// Create the editor project at the destination, will be needed to load the project
+		EditorProject temp_editor_project;
+		temp_editor_project.info = project_info;
+		if (save_editor_project_data(temp_editor_project) == false)
 		{
+			qCritical() << "Failed to create new editor project file!";
 			return false;
 		}
 
-		CachedProjectInfo cached_info;
-		cached_info.name = imported_project_info.name;
-		cached_info.path = project_path;
-
-		if (add_project_to_cache(imported_project_info.root_path, cached_info) == false)
+		if (add_project_to_cache(project_info) == false)
 		{
 			// TODO: report error?
+			qCritical() << "Failed to add imported project to cache!";
+			return false;
 		}
 
 		return true;
 	}
 
-	bool ProjectManager::load_project(const QString& project_path)
+	bool ProjectManager::load_project(const QString& editor_project_path)
 	{
 		if (is_project_loaded() == true)
 		{
@@ -500,10 +745,49 @@ namespace VadonEditor::Core
 			return false;
 		}
 
-		const QFileInfo project_file_info(project_path);
-		if (internal_load_project(project_file_info, m_loaded_project_info) == false)
+		const QFileInfo editor_file_info(editor_project_path);
+		if (validate_editor_project_file(editor_file_info) == false)
 		{
+			qCritical() << "Editor project file is invalid!";
 			return false;
+		}
+
+		EditorProject temp_editor_project;
+		temp_editor_project.info.output_path = editor_file_info.absolutePath();
+		if (load_editor_project_data(temp_editor_project) == false)
+		{
+			qCritical() << "Failed to load editor project file!";
+			return false;
+		}
+
+		const QFileInfo source_file_info(SourceProjectInfo::get_project_file_path(temp_editor_project.info.source_path));
+		if (validate_source_project_file(source_file_info) == false)
+		{
+			qCritical() << "Source project file is invalid!";
+			return false;
+		}
+
+		SourceProject temp_source_project;
+		temp_source_project.info.root_path = source_file_info.absolutePath();
+		if (load_source_project_file(temp_source_project) == false)
+		{
+			qCritical() << "Failed to load source project file!";
+			return false;
+		}
+
+		if (load_editor_project_metadata(temp_editor_project) == false)
+		{
+			qCritical() << "Failed to load project metadata!";
+			return false;
+		}
+
+		m_editor_project = temp_editor_project;
+		m_source_project = temp_source_project;
+
+		// NOTE: only attempt to load data schema in Editor mode
+		if (m_application.get_configuration().mode == ApplicationMode::EDITOR)
+		{
+			load_project_data_schema();
 		}
 
 		emit project_loaded();
@@ -520,21 +804,51 @@ namespace VadonEditor::Core
 		}
 
 		QFileInfo project_file_info(project_path);
-		if (validate_project_file(project_file_info) == false)
+		auto cache_it = m_project_cache.find(project_file_info.absolutePath());
+		if (cache_it == m_project_cache.end())
 		{
-			qCritical() << "Project path not valid!";
+			qCritical() << "Project not found in cache!";
 			return;
 		}
 
-		auto cache_it = m_project_cache.find(project_file_info.absolutePath());
-		if (cache_it != m_project_cache.end())
-		{
-			m_project_cache.erase(cache_it);
-		}
+		m_project_cache.erase(cache_it);
 		save_project_cache();
 	}
 
-	QList<EditorPluginInfo> ProjectManager::find_editor_plugins(const QString& search_path) const
+	SourceProjectInfo ProjectManager::load_source_project_info(const QString& project_path)
+	{
+		const QFileInfo source_file_info(project_path);
+		if (validate_source_project_file(source_file_info) == false)
+		{
+			qCritical() << "Source project file is invalid!";
+			return SourceProjectInfo{};
+		}
+
+		SourceProject temp_project;
+		temp_project.info.root_path = source_file_info.absolutePath();
+		if (load_source_project_file(temp_project) == false)
+		{
+			qCritical() << "Failed to load source project!";
+			return SourceProjectInfo{};
+		}
+
+		return temp_project.info;
+	}
+
+	EditorProjectInfo ProjectManager::load_editor_project_info(const QString& project_path)
+	{
+		EditorProject temp_project;
+		temp_project.info.output_path = project_path;
+		if (load_editor_project_data(temp_project) == false)
+		{
+			qCritical() << "Failed to load editor project!";
+			return EditorProjectInfo{};
+		}
+
+		return temp_project.info;
+	}
+
+	QList<EditorPluginInfo> ProjectManager::find_editor_plugins(const QString& search_path)
 	{
 		QList<EditorPluginInfo> plugin_entries;
 		QDirIterator dir_iterator(search_path, QStringList() << QString("*.%1").arg(c_editor_plugin_suffix), QDir::Filter::Files, QDirIterator::IteratorFlag::Subdirectories);
@@ -569,7 +883,7 @@ namespace VadonEditor::Core
 		return plugin_entries;
 	}
 
-	QList<GameExecutableInfo> ProjectManager::find_game_executables(const QString& search_path) const
+	QList<GameExecutableInfo> ProjectManager::find_game_executables(const QString& search_path)
 	{
 		QList<GameExecutableInfo> executable_entries;
 		QDirIterator dir_iterator(search_path, QStringList() << QString("*.%1").arg(c_game_executable_suffix), QDir::Filter::Files, QDirIterator::IteratorFlag::Subdirectories);
@@ -631,43 +945,29 @@ namespace VadonEditor::Core
 
 		QSettings app_settings = Application::get_app_settings();
 
-		int project_count = app_settings.beginReadArray(c_project_cache_prefix);
+		app_settings.beginGroup(c_project_manager_setting_prefix);
+		app_settings.beginGroup(get_project_manager_settings_key(ProjectManagerSetting::PROJECT_CACHE));
+
+		int project_count = app_settings.beginReadArray(get_project_cache_settings_key(ProjectCacheSetting::PROJECTS));
 		for (int project_index = 0; project_index < project_count; ++project_index)
 		{
 			app_settings.setArrayIndex(project_index);
 
-			const QString project_path = app_settings.value(get_app_settings_key(ApplicationSetting::PATH)).toString();
-			const QString root_path = QFileInfo(project_path).absolutePath();
-			if (m_project_cache.contains(root_path) == true)
+			const QString editor_project_path = app_settings.value(get_project_cache_entry_settings_key(ProjectCacheEntrySetting::PATH)).toString();
+			if (m_project_cache.contains(editor_project_path) == true)
 			{
-				qCritical() << "Duplicate project UUID!";
+				qCritical() << "Duplicate project in cache!";
 				continue;
 			}
 
-			CachedProjectInfo cached_info;
-			cached_info.name = app_settings.value(get_app_settings_key(ApplicationSetting::NAME)).toString();
-			cached_info.path = project_path;
-			if (app_settings.contains(get_editor_plugin_settings_key(ProjectEditorPluginSetting::CUSTOM_SEARCH_PATH)) == true)
-			{
-				cached_info.plugin_settings.custom_search_path = app_settings.value(get_editor_plugin_settings_key(ProjectEditorPluginSetting::CUSTOM_SEARCH_PATH)).toString();
-			}
-			if (app_settings.contains(get_editor_plugin_settings_key(ProjectEditorPluginSetting::SELECTED_CONFIGURATION)) == true)
-			{
-				cached_info.plugin_settings.selected_config = app_settings.value(get_editor_plugin_settings_key(ProjectEditorPluginSetting::SELECTED_CONFIGURATION)).toString();
-			}
+			ProjectCacheEntry cached_info;
+			cached_info.path = editor_project_path;
 
-			if (app_settings.contains(get_game_executable_settings_key(ProjectGameExecutableSetting::CUSTOM_SEARCH_PATH)) == true)
-			{
-				cached_info.game_settings.custom_search_path = app_settings.value(get_game_executable_settings_key(ProjectGameExecutableSetting::CUSTOM_SEARCH_PATH)).toString();
-			}
-			if (app_settings.contains(get_game_executable_settings_key(ProjectGameExecutableSetting::SELECTED_CONFIGURATION)) == true)
-			{
-				cached_info.game_settings.selected_config = app_settings.value(get_game_executable_settings_key(ProjectGameExecutableSetting::SELECTED_CONFIGURATION)).toString();
-			}
-
-			m_project_cache[root_path] = cached_info;
+			m_project_cache[editor_project_path] = cached_info;
 		}
 		app_settings.endArray();
+		app_settings.endGroup();
+		app_settings.endGroup();
 
 		return true;
 	}
@@ -676,212 +976,54 @@ namespace VadonEditor::Core
 	{
 		QSettings settings(QSettings::Format::IniFormat, QSettings::Scope::UserScope, Application::c_org_name, Application::c_app_name);
 
-		settings.beginWriteArray(c_project_cache_prefix, m_project_cache.size());
+		settings.beginGroup(c_project_manager_setting_prefix);
+		settings.beginGroup(get_project_manager_settings_key(ProjectManagerSetting::PROJECT_CACHE));
+
+		settings.beginWriteArray(get_project_cache_settings_key(ProjectCacheSetting::PROJECTS), m_project_cache.size());
 		int array_index = 0;
 		for (auto cache_it = m_project_cache.begin(); cache_it != m_project_cache.end(); ++cache_it)
 		{
 			settings.setArrayIndex(array_index);
 
-			const CachedProjectInfo& current_proj_info = cache_it.value();
+			const ProjectCacheEntry& current_cache_entry = cache_it.value();
 
-			settings.setValue("name", current_proj_info.name);
-			settings.setValue("path", current_proj_info.path);
-
-			if (current_proj_info.plugin_settings.custom_search_path.isEmpty() == false)
-			{
-				settings.setValue(get_editor_plugin_settings_key(ProjectEditorPluginSetting::CUSTOM_SEARCH_PATH), current_proj_info.plugin_settings.custom_search_path);
-			}
-			else
-			{
-				settings.remove(get_editor_plugin_settings_key(ProjectEditorPluginSetting::CUSTOM_SEARCH_PATH));
-			}
-
-			if (current_proj_info.plugin_settings.selected_config.isEmpty() == false)
-			{
-				settings.setValue(get_editor_plugin_settings_key(ProjectEditorPluginSetting::SELECTED_CONFIGURATION), current_proj_info.plugin_settings.selected_config);
-			}
-			else
-			{
-				settings.remove(get_editor_plugin_settings_key(ProjectEditorPluginSetting::SELECTED_CONFIGURATION));
-			}
-
-			if (current_proj_info.game_settings.custom_search_path.isEmpty() == false)
-			{
-				settings.setValue(get_game_executable_settings_key(ProjectGameExecutableSetting::CUSTOM_SEARCH_PATH), current_proj_info.game_settings.custom_search_path);
-			}
-			else
-			{
-				settings.remove(get_game_executable_settings_key(ProjectGameExecutableSetting::CUSTOM_SEARCH_PATH));
-			}
-
-			if (current_proj_info.game_settings.selected_config.isEmpty() == false)
-			{
-				settings.setValue(get_game_executable_settings_key(ProjectGameExecutableSetting::SELECTED_CONFIGURATION), current_proj_info.game_settings.selected_config);
-			}
-			else
-			{
-				settings.remove(get_game_executable_settings_key(ProjectGameExecutableSetting::SELECTED_CONFIGURATION));
-			}
+			settings.setValue(get_project_cache_entry_settings_key(ProjectCacheEntrySetting::PATH), current_cache_entry.path);
 
 			++array_index;
 		}
 		settings.endArray();
+		settings.endGroup();
+		settings.endGroup();
+
 		settings.sync();
 
 		return true;
 	}
 
-	bool ProjectManager::internal_load_project(const QFileInfo& project_file_info, ProjectInfo& project_info)
+	bool ProjectManager::add_project_to_cache(const EditorProjectInfo& project_info)
 	{
-		if (validate_project_file(project_file_info) == false)
-		{
-			return false;
-		}
+		ProjectCacheEntry cache_entry;
+		cache_entry.path = project_info.output_path;
 
-		QFile project_file(project_file_info.absoluteFilePath());
-		if (project_file.open(QIODevice::ReadOnly) == false)
-		{
-			qCritical() << "Failed to open project file!";
-			return false;
-		}
+		m_project_cache[project_info.output_path] = cache_entry;
 
-		const QByteArray project_data = project_file.readAll();
-		project_file.close();
-
-		QJsonDocument project_document(QJsonDocument::fromJson(project_data));
-		if (load_project_info(project_document, project_info) == false)
-		{
-			return false;
-		}
-
-		project_info.root_path = project_file_info.absolutePath();
-
-		// NOTE: only load data schema in Editor mode
-		if (m_application.get_configuration().mode == ApplicationMode::EDITOR)
-		{
-			load_project_data_schema();
-		}
-
-		auto cached_project_it = m_project_cache.find(project_info.root_path);
-		if (cached_project_it != m_project_cache.end())
-		{
-			// Add metadata from cache
-			project_info.plugin_settings.custom_search_path = cached_project_it->plugin_settings.custom_search_path;
-			project_info.plugin_settings.selected_configuration = cached_project_it->plugin_settings.selected_config;
-
-			project_info.game_settings.custom_search_path = cached_project_it->game_settings.custom_search_path;
-			project_info.game_settings.selected_configuration = cached_project_it->game_settings.selected_config;
-		}
-		else
-		{
-			// Add to cache
-			CachedProjectInfo cached_info;
-			cached_info.name = project_info.name;
-			cached_info.path = project_file_info.absoluteFilePath();
-
-			if (add_project_to_cache(project_info.root_path, cached_info) == false)
-			{
-				// TODO: log error?
-			}
-		}
-
-		// Load plugins and game executables
-		{
-			const QString search_path = project_info.plugin_settings.custom_search_path.isEmpty() ? project_info.root_path : project_info.plugin_settings.custom_search_path;
-			project_info.plugin_entries = find_editor_plugins(search_path);
-
-			if (project_info.plugin_settings.selected_configuration.isEmpty() == false)
-			{
-				bool cached_config_found = false;
-				for (const EditorPluginInfo& current_entry : project_info.plugin_entries)
-				{
-					if (current_entry.configuration_name == project_info.plugin_settings.selected_configuration)
-					{
-						cached_config_found = true;
-						break;
-					}
-				}
-				if (cached_config_found == false)
-				{
-					qWarning() << "Cannot find editor plugin configuration" << project_info.plugin_settings.selected_configuration << "among available plugins!";
-				}
-			}
-		}
-
-		{
-			const QString search_path = project_info.game_settings.custom_search_path.isEmpty() ? project_info.root_path : project_info.game_settings.custom_search_path;
-			project_info.game_entries = find_game_executables(search_path);
-
-			if (project_info.game_settings.selected_configuration.isEmpty() == false)
-			{
-				bool cached_config_found = false;
-				for (const GameExecutableInfo& current_entry : project_info.game_entries)
-				{
-					if (current_entry.configuration_name == project_info.game_settings.selected_configuration)
-					{
-						cached_config_found = true;
-						break;
-					}
-				}
-				if (cached_config_found == false)
-				{
-					qWarning() << "Cannot find game executable configuration" << project_info.game_settings.selected_configuration << "among available executables!";
-				}
-			}
-		}
-
-		// TODO: anything else?
-		return true;
-	}
-
-	bool ProjectManager::internal_save_project(const QFileInfo& project_file_info, const ProjectInfo& project_info)
-	{
-		// Make sure path exists
-		const QDir project_dir;
-		if (project_dir.mkpath(project_file_info.absolutePath()) == false)
-		{
-			qCritical() << "Failed to create project directory!";
-			return false;
-		}
-
-		QFile project_file(project_file_info.absoluteFilePath());
-		if (project_file.open(QIODevice::WriteOnly) == false)
-		{
-			qCritical() << "Failed to write project file!";
-			return false;
-		}
-
-		const QUuid project_name_property_id = Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::ProjectInfoSchema::c_name_property.id);
-		const QUuid custom_data_resource_id = Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::ProjectInfoSchema::c_custom_data_resource_property.id);
-
-		QJsonObject project_data_root;
-		project_data_root[Utilities::serialize_labeled_uuid(L"name", project_name_property_id)] = project_info.name;
-		if (Utilities::is_uuid_valid(project_info.custom_data_resource_id) == true)
-		{
-			project_data_root[Utilities::serialize_labeled_uuid(L"custom_data_resource", custom_data_resource_id)] = Utilities::uuid_to_base64_string(project_info.custom_data_resource_id);
-		}
-
-		project_file.write(QJsonDocument(project_data_root).toJson());
-		project_file.close();
-
-		return true;
-	}
-
-	bool ProjectManager::add_project_to_cache(const QString& root_path, const CachedProjectInfo& cached_info)
-	{
-		m_project_cache[root_path] = cached_info;
 		return save_project_cache();
 	}
 
-	void ProjectManager::save_current_project_data()
+	bool ProjectManager::internal_save_project_data() const
 	{
-		auto project_it = m_project_cache.find(m_loaded_project_info.root_path);
-		if (project_it == m_project_cache.end())
+		if (save_source_project_data(m_source_project) == false)
 		{
-			qCritical() << "Project not in cache!";
-			return;
+			qCritical() << "Failed to save source project!";
+			return false;
 		}
 
-		internal_save_project(QFileInfo(project_it->path), m_loaded_project_info);
+		if (save_editor_project_data(m_editor_project) == false)
+		{
+			qCritical() << "Failed to save editor project!";
+			return false;
+		}
+
+		return true;
 	}
 }

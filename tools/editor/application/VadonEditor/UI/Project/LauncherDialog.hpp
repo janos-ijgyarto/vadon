@@ -25,6 +25,7 @@ namespace VadonEditor::UI
 		void project_double_clicked(QListWidgetItem* item);
 
 		void new_project_created();
+		void project_imported();
 		void new_project_dialog_destroyed() { m_new_project_dialog = nullptr; }
 	private:
 		LauncherDialog(Core::Application& application, QWidget* parent = nullptr);

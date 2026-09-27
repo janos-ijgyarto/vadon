@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
-    <height>300</height>
+    <width>640</width>
+    <height>480</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -19,15 +19,21 @@
   <property name="modal">
    <bool>true</bool>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout">
+  <layout class="QVBoxLayout" name="mainLayout">
    <item>
-    <layout class="QGridLayout" name="mainGrid">
+    <layout class="QFormLayout" name="mainForm">
+     <property name="formAlignment">
+      <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignTop</set>
+     </property>
      <item row="0" column="0">
       <widget class="QLabel" name="nameLabel">
        <property name="text">
         <string>Name</string>
        </property>
       </widget>
+     </item>
+     <item row="0" column="1">
+      <widget class="QLineEdit" name="nameLineEdit"/>
      </item>
      <item row="1" column="0">
       <widget class="QLabel" name="rootPathLabel">
@@ -37,17 +43,53 @@
       </widget>
      </item>
      <item row="1" column="1">
-      <widget class="QLineEdit" name="rootPathLineEdit"/>
+      <layout class="QHBoxLayout" name="rootPathHBox">
+       <item>
+        <widget class="QLineEdit" name="rootPathLineEdit">
+         <property name="readOnly">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="rootPathBrowseButton">
+         <property name="text">
+          <string/>
+         </property>
+         <property name="icon">
+          <iconset theme="QIcon::ThemeIcon::FolderOpen"/>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </item>
-     <item row="1" column="2">
-      <widget class="QPushButton" name="browseButton">
+     <item row="2" column="0">
+      <widget class="QLabel" name="outputPathLabel">
        <property name="text">
-        <string>Browse</string>
+        <string>Output Path</string>
        </property>
       </widget>
      </item>
-     <item row="0" column="1" colspan="2">
-      <widget class="QLineEdit" name="nameLineEdit"/>
+     <item row="2" column="1">
+      <layout class="QHBoxLayout" name="outputPathHBox">
+       <item>
+        <widget class="QLineEdit" name="outputPathLineEdit">
+         <property name="readOnly">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="outputPathBrowseButton">
+         <property name="text">
+          <string/>
+         </property>
+         <property name="icon">
+          <iconset theme="QIcon::ThemeIcon::FolderOpen"/>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </item>
     </layout>
    </item>
@@ -117,7 +159,7 @@
    <sender>rootPathLineEdit</sender>
    <signal>textChanged(QString)</signal>
    <receiver>NewProjectDialog</receiver>
-   <slot>root_path_edited(QString)</slot>
+   <slot>root_path_changed(QString)</slot>
    <hints>
     <hint type="sourcelabel">
      <x>185</x>
@@ -130,10 +172,10 @@
    </hints>
   </connection>
   <connection>
-   <sender>browseButton</sender>
+   <sender>rootPathBrowseButton</sender>
    <signal>clicked()</signal>
    <receiver>NewProjectDialog</receiver>
-   <slot>browse_clicked()</slot>
+   <slot>root_path_browse_clicked()</slot>
    <hints>
     <hint type="sourcelabel">
      <x>349</x>
@@ -145,10 +187,44 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>outputPathBrowseButton</sender>
+   <signal>clicked()</signal>
+   <receiver>NewProjectDialog</receiver>
+   <slot>output_path_browse_clicked()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>614</x>
+     <y>84</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>319</x>
+     <y>239</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>outputPathLineEdit</sender>
+   <signal>textChanged(QString)</signal>
+   <receiver>NewProjectDialog</receiver>
+   <slot>output_path_changed(QString)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>338</x>
+     <y>84</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>319</x>
+     <y>239</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>name_edited(QString)</slot>
-  <slot>root_path_edited(QString)</slot>
-  <slot>browse_clicked()</slot>
+  <slot>root_path_changed(QString)</slot>
+  <slot>root_path_browse_clicked()</slot>
+  <slot>output_path_changed(QString)</slot>
+  <slot>output_path_browse_clicked()</slot>
  </slots>
 </ui>

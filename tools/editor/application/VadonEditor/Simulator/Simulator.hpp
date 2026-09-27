@@ -29,6 +29,8 @@ namespace VadonEditor::Simulator
 
 		void dispatch_message_to_editor(const char* data, size_t size) override;
 
+		::Vadon::Foundation::SimulatorToolchainConfiguration get_toolchain_configuration() const override;
+
 		bool run_simulator(const SimulatorSettings& settings);
 		bool is_running() const;
 		void stop_simulator();

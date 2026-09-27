@@ -14,6 +14,8 @@ namespace VadonEditor::Core
 		bool is_project_loaded() const { return m_active_project.root_path.empty() == false; }
 
 		const Vadon::Core::Project& get_active_project() const { return m_active_project; }
+
+		static bool load_project_data(Vadon::Core::EngineCoreInterface& engine_core, std::string_view root_path, Vadon::Core::Project& project_data);
 	private:
 		ProjectManager();
 

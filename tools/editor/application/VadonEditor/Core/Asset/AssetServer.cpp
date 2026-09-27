@@ -20,6 +20,20 @@
 
 #include <QCoreApplication>
 #include <QProcess>
+#include <QTimer>
+
+namespace
+{
+	struct AssetServerToolchainConfig
+	{
+		QByteArray export_path;
+	};
+
+	QString format_command_line_argument_key(const QString& key)
+	{
+		return QString("--%1").arg(key);
+	}
+}
 
 namespace VadonEditor::Core
 {
@@ -35,6 +49,12 @@ namespace VadonEditor::Core
 		VADONEDITOR_API_FUNCTION_POINTER(VadonEditorAssetServerPluginExit) m_exit_func;
 
 		::Vadon::Foundation::EditorAssetServerPluginInterface* m_plugin_interface;
+
+		// NOTE: have to create an object where we can store the UTF8-converted QStrings
+		// because the struct used by the plugin uses const char*
+		AssetServerToolchainConfig m_toolchain_config;
+
+		QTimer m_plugin_timer;
 
 		Internal(Core::Application& application)
 			: m_application(application)
@@ -53,11 +73,11 @@ namespace VadonEditor::Core
 
 		bool load_plugin(const QString& configuration_name)
 		{
-			VadonEditor::Core::PluginManager& plugin_manager = m_application.get_plugin_manager();
-			const VadonEditor::Core::ProjectManager& project_manager = m_application.get_project_manager();
-			const VadonEditor::Core::ProjectInfo& project_info = project_manager.get_project_info();
+			PluginManager& plugin_manager = m_application.get_plugin_manager();
+			const ProjectManager& project_manager = m_application.get_project_manager();
+			const EditorProject& editor_project = project_manager.get_editor_project();
 
-			const Core::EditorPluginInfo* editor_plugin_info = project_info.find_plugin_entry(configuration_name);
+			const Core::EditorPluginInfo* editor_plugin_info = editor_project.find_plugin_entry(configuration_name);
 			if (editor_plugin_info == nullptr)
 			{
 				qCritical() << "Invalid setting for project editor plugin!";
@@ -114,9 +134,10 @@ namespace VadonEditor::Core
 				return false;
 			}
 
-			const VadonEditor::Core::ProjectManager& project_manager = m_application.get_project_manager();
-			const VadonEditor::Core::ProjectInfo& project_info = project_manager.get_project_info();
-			if (m_plugin_interface->initialize(project_info.get_project_file_path().toUtf8().constData()) == false)
+			// NOTE: the plugin itself interacts with the source project file
+			const ProjectManager& project_manager = m_application.get_project_manager();
+			const SourceProject& source_project = project_manager.get_source_project();
+			if (m_plugin_interface->initialize(source_project.info.get_project_file_path().toUtf8().constData()) == false)
 			{
 				qCritical() << "Plugin failed to initialize!";
 				return false;
@@ -151,6 +172,7 @@ namespace VadonEditor::Core
 						{
 							// TODO: run shutdown code in plugin
 							// Stop timer so it doesn't try to update during shutdown
+							m_plugin_timer.stop();
 							m_application.request_quit(0);
 							return;
 						}
@@ -184,6 +206,11 @@ namespace VadonEditor::Core
 
 			return true;
 		}
+		
+		void update()
+		{
+			m_plugin_interface->update();
+		}
 
 		void shutdown()
 		{
@@ -193,12 +220,12 @@ namespace VadonEditor::Core
 
 		bool run_asset_server(const AssetServerSettings& settings)
 		{
-			const Core::Configuration& configuration = m_application.get_configuration();
+			const Configuration& configuration = m_application.get_configuration();
 
-			Core::ProjectManager& project_manager = m_application.get_project_manager();
-			const Core::ProjectInfo& project_info = project_manager.get_project_info();
+			ProjectManager& project_manager = m_application.get_project_manager();
+			const EditorProject& editor_project = project_manager.get_editor_project();
 
-			const Core::EditorPluginInfo* editor_plugin_info = project_info.find_plugin_entry(settings.configuration_name);
+			const EditorPluginInfo* editor_plugin_info = editor_project.find_plugin_entry(settings.configuration_name);
 			if (editor_plugin_info == nullptr)
 			{
 				qCritical() << "Invalid setting for project editor plugin!";
@@ -218,16 +245,17 @@ namespace VadonEditor::Core
 				QString program_path = QCoreApplication::applicationFilePath();
 				m_asset_server_process.setProgram(program_path);
 
-				QStringList arguments{ QString("--%1").arg(Core::CommandLineState::get_parameter_key(Core::CommandLineParameter::IS_ASSET_SERVER)) };
-				arguments.push_back(QString("--%1").arg(Core::CommandLineState::get_parameter_key(Core::CommandLineParameter::STARTUP_PROJECT_PATH)));
-				arguments.push_back(project_info.get_project_file_path());
+				QStringList arguments{ format_command_line_argument_key(Core::CommandLineState::get_parameter_key(Core::CommandLineParameter::IS_ASSET_SERVER)) };
+				
+				arguments.push_back(format_command_line_argument_key(Core::CommandLineState::get_parameter_key(Core::CommandLineParameter::STARTUP_PROJECT_PATH)));
+				arguments.push_back(editor_project.info.get_project_file_path());
 
-				arguments.push_back(QString("--%1").arg(Core::CommandLineState::get_parameter_key(Core::CommandLineParameter::PLUGIN_CONFIG_NAME)));
+				arguments.push_back(format_command_line_argument_key(Core::CommandLineState::get_parameter_key(Core::CommandLineParameter::PLUGIN_CONFIG_NAME)));
 				arguments.push_back(settings.configuration_name);
 
 				if (settings.debug_break_on_init == true)
 				{
-					arguments.push_back(QString("--%1").arg(Core::CommandLineState::get_parameter_key(Core::CommandLineParameter::DEBUG_BREAK_ON_INIT)));
+					arguments.push_back(format_command_line_argument_key(Core::CommandLineState::get_parameter_key(Core::CommandLineParameter::DEBUG_BREAK_ON_INIT)));
 				}
 
 				m_asset_server_process.setArguments(arguments);
@@ -242,11 +270,30 @@ namespace VadonEditor::Core
 			break;
 			case Core::ApplicationMode::ASSET_SERVER:
 			{
+				// Cache the export path so the asset server can request it
+				QString output_path = m_application.get_project_manager().get_editor_project().info.output_path;
+				if (output_path.isEmpty() == true)
+				{
+					qCritical() << "Asset server needs valid output path!";
+					return false;
+				}
+
+				m_toolchain_config.export_path = QDir::cleanPath(output_path + "/data").toUtf8();
+
 				// We are the asset server, load plugin!
 				if (run_plugin(settings.configuration_name) == false)
 				{
 					return false;
 				}
+
+				// Start timer to update the plugin
+				QObject::connect(&m_plugin_timer, &QTimer::timeout,
+					[this]()
+					{
+						update();
+					}
+				);
+				m_plugin_timer.start();
 			}
 			break;
 			}
@@ -375,27 +422,12 @@ namespace VadonEditor::Core
 			qCritical() << "Error running asset server process: " << error;
 		}
 
-		void export_project_data(const QString& output_path)
+		::Vadon::Foundation::AssetServerToolchainConfiguration get_toolchain_configuration() const
 		{
-			const Core::Configuration& configuration = m_application.get_configuration();
-			if (configuration.mode != Core::ApplicationMode::EDITOR)
-			{
-				return;
-			}
+			::Vadon::Foundation::AssetServerToolchainConfiguration toolchain_config;
+			toolchain_config.export_path = m_toolchain_config.export_path.constData();
 
-			// Send message to plugin
-			VadonEditor::Network::MessageSerializer serializer;
-
-			::Vadon::Foundation::EditorAssetServerMessageExportData export_data_message;
-			export_data_message.message_type = ::Vadon::Foundation::EditorAssetServerMessageType::EXPORT_DATA;
-			export_data_message.output_path_length = output_path.size();
-
-			// FIXME: create a more elegant way to add a string to a message
-			char* message_data = serializer.allocate_message(::Vadon::Foundation::EditorMessageCategory::ASSET_SERVER, sizeof(::Vadon::Foundation::EditorAssetServerMessageExportData) + export_data_message.output_path_length);
-			memcpy(message_data, &export_data_message, sizeof(::Vadon::Foundation::EditorAssetServerMessageExportData));
-			memcpy(message_data + sizeof(::Vadon::Foundation::EditorAssetServerMessageExportData), output_path.toUtf8().constData(), export_data_message.output_path_length);
-
-			m_application.get_network_system().send_message(serializer);
+			return toolchain_config;
 		}
 	};
 
@@ -404,6 +436,11 @@ namespace VadonEditor::Core
 	void AssetServer::dispatch_message_to_editor(const char* data, size_t size)
 	{
 		m_internal->m_application.get_network_system().send_message(QByteArrayView(data, size));
+	}
+
+	::Vadon::Foundation::AssetServerToolchainConfiguration AssetServer::get_toolchain_configuration() const
+	{
+		return m_internal->get_toolchain_configuration();
 	}
 
 	bool AssetServer::run_asset_server(const AssetServerSettings& settings)
@@ -419,11 +456,6 @@ namespace VadonEditor::Core
 	void AssetServer::stop_asset_server()
 	{
 		m_internal->stop_asset_server();
-	}
-
-	void AssetServer::export_project_data(const QString& output_path)
-	{
-		m_internal->export_project_data(output_path);
 	}
 
 	AssetServer::AssetServer(Core::Application& application)

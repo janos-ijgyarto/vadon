@@ -141,7 +141,7 @@
      <addaction name="actionRun_Plugin"/>
      <addaction name="actionShutdown_Plugin"/>
      <addaction name="actionGenerate_Data_Schema"/>
-     <addaction name="actionExportProjectData"/>
+     <addaction name="actionRun_Asset_Server"/>
     </widget>
     <addaction name="actionProjectSettings"/>
     <addaction name="actionProject_Data_Schema"/>
@@ -258,12 +258,12 @@
     <string>Scene</string>
    </property>
   </action>
-  <action name="actionExportProjectData">
+  <action name="actionRun_Asset_Server">
    <property name="icon">
     <iconset theme="QIcon::ThemeIcon::DriveHarddisk"/>
    </property>
    <property name="text">
-    <string>Export Project Data</string>
+    <string>Run Asset Server</string>
    </property>
   </action>
  </widget>
@@ -454,10 +454,10 @@
    </hints>
   </connection>
   <connection>
-   <sender>actionExportProjectData</sender>
+   <sender>actionRun_Asset_Server</sender>
    <signal>triggered()</signal>
    <receiver>MainWindow</receiver>
-   <slot>export_project_data_triggered()</slot>
+   <slot>run_asset_server_triggered()</slot>
    <hints>
     <hint type="sourcelabel">
      <x>-1</x>
@@ -485,6 +485,6 @@
   <slot>open_triggered()</slot>
   <slot>import_triggered()</slot>
   <slot>anim_editor_prototype_triggered()</slot>
-  <slot>export_project_data_triggered()</slot>
+  <slot>run_asset_server_triggered()</slot>
  </slots>
 </ui>

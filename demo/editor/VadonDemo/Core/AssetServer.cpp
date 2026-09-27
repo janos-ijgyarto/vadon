@@ -82,6 +82,11 @@ namespace VadonDemo::Core
         return true;
 	}
 
+	void AssetServer::update()
+	{
+		// TODO: file watcher, or other logic to re-export modified files from project
+	}
+
 	void AssetServer::shutdown()
 	{
 
@@ -105,7 +110,14 @@ namespace VadonDemo::Core
 
 	bool AssetServer::project_loaded()
 	{
-		// TODO: anything?
+		const ::Vadon::Foundation::AssetServerToolchainConfiguration toolchain_config = get_editor_interface().get_toolchain_configuration();
+		if (m_common_asset_server.start_exporter(toolchain_config.export_path) == false)
+		{
+			return false;
+		}
+
+		// TODO: set up a file watcher to queue re-exporting updated assets
+
 		return true;
 	}
 }

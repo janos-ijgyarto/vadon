@@ -4,6 +4,7 @@
 #include <VadonEditor/Core/Logger.hpp>
 
 #include <VadonEditor/Core/Asset/AssetManager.hpp>
+#include <VadonEditor/Core/Asset/AssetServer.hpp>
 #include <VadonEditor/Core/Project/ProjectManager.hpp>
 
 #include <VadonEditor/Model/ModelSystem.hpp>
@@ -17,7 +18,6 @@
 #include <VadonEditor/UI/Model/Resource/ResourceDialog.hpp>
 #include <VadonEditor/UI/Model/Scene/SceneDialog.hpp>
 
-#include <VadonEditor/UI/Project/Asset/ExportProjectDataDialog.hpp>
 #include <VadonEditor/UI/Project/DataSchemaDialog.hpp>
 #include <VadonEditor/UI/Project/ProjectSettingsDialog.hpp>
 
@@ -93,7 +93,7 @@ namespace VadonEditor::UI
 
 	void MainWindow::import_triggered()
 	{
-		const QString selected_file = QFileDialog::getOpenFileName(this, "Select File To Import", m_application.get_project_manager().get_project_info().root_path, QString(), nullptr, QFileDialog::Option::ReadOnly);
+		const QString selected_file = QFileDialog::getOpenFileName(this, "Select File To Import", m_application.get_project_manager().get_source_project().info.root_path, QString(), nullptr, QFileDialog::Option::ReadOnly);
 		if (selected_file.isEmpty() == false)
 		{
 			Core::AssetManager& asset_manager = m_application.get_asset_manager();
@@ -150,7 +150,7 @@ namespace VadonEditor::UI
 	void MainWindow::generate_data_schema_triggered()
 	{
 		Core::ProjectManager& project_manager = m_application.get_project_manager();
-		if (project_manager.generate_project_data_schema(m_application.get_project_manager().get_project_info().plugin_settings.selected_configuration) == false)
+		if (project_manager.generate_project_data_schema(m_application.get_project_manager().get_editor_project().plugin_settings.selected_configuration) == false)
 		{
 			QMessageBox::critical(this, "Project manager error", "Failed to generate project data schema!");
 		}
@@ -161,18 +161,26 @@ namespace VadonEditor::UI
 		}
 	}
 
-	void MainWindow::export_project_data_triggered()
+	void MainWindow::run_asset_server_triggered()
 	{
 		Core::ProjectManager& project_manager = m_application.get_project_manager();
-		const Core::ProjectInfo project_info = project_manager.get_project_info();
-		if (project_info.plugin_settings.selected_configuration.isEmpty() == true)
+		const Core::EditorProject& editor_project = project_manager.get_editor_project();
+		if (editor_project.info.output_path.isEmpty() == true)
 		{
-			QMessageBox::critical(this, "Project manager error", "Must select a valid plugin configuration before running asset server!");
+			QMessageBox::critical(this, "Asset server error", "Asset server requires a valid output path!");
 			return;
 		}
 
-		ExportProjectDataDialog* export_data_dialog = new ExportProjectDataDialog(m_application, this);
-		export_data_dialog->open();
+		Core::AssetServerSettings asset_server_settings;
+		asset_server_settings.debug_break_on_init = true;
+
+		asset_server_settings.configuration_name = editor_project.plugin_settings.selected_configuration;
+
+		if (m_application.get_asset_server().run_asset_server(asset_server_settings) == false)
+		{
+			QMessageBox::critical(this, "Asset server error", "Failed to start asset server!");
+			return;
+		}
 	}
 
 	void MainWindow::asset_opened(const QString& asset_path)

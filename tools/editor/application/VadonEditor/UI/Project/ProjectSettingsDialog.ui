@@ -83,13 +83,27 @@
         </widget>
        </item>
        <item row="2" column="0">
+        <widget class="QLabel" name="outputPathLabel">
+         <property name="text">
+          <string>Output path:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="1">
+        <widget class="QLabel" name="outputPathValueLabel">
+         <property name="text">
+          <string>NONE</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="0">
         <widget class="QLabel" name="customDataLabel">
          <property name="text">
           <string>Custom data resource:</string>
          </property>
         </widget>
        </item>
-       <item row="2" column="1">
+       <item row="3" column="1">
         <layout class="QHBoxLayout" name="customDataHeaderHBox">
          <item>
           <widget class="QLabel" name="customDataHeaderLabel">
@@ -113,6 +127,24 @@
          </item>
         </layout>
        </item>
+       <item row="4" column="0" colspan="2">
+        <widget class="QScrollArea" name="customDataScrollArea">
+         <property name="widgetResizable">
+          <bool>true</bool>
+         </property>
+         <widget class="QWidget" name="customDataScrollContents">
+          <property name="geometry">
+           <rect>
+            <x>0</x>
+            <y>0</y>
+            <width>598</width>
+            <height>285</height>
+           </rect>
+          </property>
+          <layout class="QVBoxLayout" name="customDataScrollVBox"/>
+         </widget>
+        </widget>
+       </item>
       </layout>
      </widget>
      <widget class="QWidget" name="editorPluginTab">
@@ -120,44 +152,6 @@
        <string>Editor Plugin</string>
       </attribute>
       <layout class="QFormLayout" name="pluginTabForm">
-       <item row="0" column="0">
-        <widget class="QLabel" name="pluginPathOverrideLabel">
-         <property name="text">
-          <string>Custom search path:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="1">
-        <layout class="QHBoxLayout" name="pluginCustomPathHBox">
-         <item>
-          <widget class="QLineEdit" name="pluginCustomPathEdit">
-           <property name="readOnly">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="pluginCustomPathBrowseButton">
-           <property name="text">
-            <string/>
-           </property>
-           <property name="icon">
-            <iconset theme="QIcon::ThemeIcon::FolderOpen"/>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="pluginCustomPathClearButton">
-           <property name="text">
-            <string/>
-           </property>
-           <property name="icon">
-            <iconset theme="QIcon::ThemeIcon::EditClear"/>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
        <item row="1" column="0">
         <widget class="QLabel" name="pluginConfigurationLabel">
          <property name="text">
@@ -166,29 +160,40 @@
         </widget>
        </item>
        <item row="1" column="1">
-        <widget class="QComboBox" name="pluginConfigurationCombo"/>
+        <layout class="QHBoxLayout" name="pluginConfigurationHBox" stretch="1,0">
+         <item>
+          <widget class="QComboBox" name="pluginConfigurationCombo"/>
+         </item>
+         <item>
+          <widget class="QPushButton" name="pluginConfigurationRefreshButton">
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset theme="QIcon::ThemeIcon::ViewRefresh"/>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </item>
-      </layout>
-     </widget>
-     <widget class="QWidget" name="gameTab">
-      <attribute name="title">
-       <string>Game</string>
-      </attribute>
-      <layout class="QFormLayout" name="gameTabForm">
        <item row="0" column="0">
-        <widget class="QLabel" name="gameCustomPathLabel">
+        <widget class="QLabel" name="pluginBinariesPathLabel">
          <property name="text">
-          <string>Custom search path:</string>
+          <string>Binaries path:</string>
          </property>
         </widget>
        </item>
        <item row="0" column="1">
-        <layout class="QHBoxLayout" name="gameCustomPathHBox">
+        <layout class="QHBoxLayout" name="pluginBinariesPathHBox">
          <item>
-          <widget class="QLineEdit" name="gameCustomPathEdit"/>
+          <widget class="QLineEdit" name="pluginBinariesPathEdit">
+           <property name="readOnly">
+            <bool>true</bool>
+           </property>
+          </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="gameCustomPathBrowseButton">
+          <widget class="QPushButton" name="pluginBinariesPathBrowseButton">
            <property name="text">
             <string/>
            </property>
@@ -197,13 +202,27 @@
            </property>
           </widget>
          </item>
+        </layout>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="gameTab">
+      <attribute name="title">
+       <string>Game</string>
+      </attribute>
+      <layout class="QFormLayout" name="gameTabForm">
+       <item row="1" column="1">
+        <layout class="QHBoxLayout" name="gameConfigurationHBox" stretch="1,0">
          <item>
-          <widget class="QPushButton" name="gameCustomPathClearButton">
+          <widget class="QComboBox" name="gameConfigurationCombo"/>
+         </item>
+         <item>
+          <widget class="QPushButton" name="gameConfigurationRefreshButton">
            <property name="text">
             <string/>
            </property>
            <property name="icon">
-            <iconset theme="QIcon::ThemeIcon::EditClear"/>
+            <iconset theme="QIcon::ThemeIcon::ViewRefresh"/>
            </property>
           </widget>
          </item>
@@ -216,8 +235,33 @@
          </property>
         </widget>
        </item>
-       <item row="1" column="1">
-        <widget class="QComboBox" name="gameConfigurationCombo"/>
+       <item row="0" column="0">
+        <widget class="QLabel" name="gameBinariesPathLabel">
+         <property name="text">
+          <string>Binaries path:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1">
+        <layout class="QHBoxLayout" name="gameBinariesPathHBox">
+         <item>
+          <widget class="QLineEdit" name="gameBinariesPathEdit">
+           <property name="readOnly">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="gameBinariesPathBrowseButton">
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset theme="QIcon::ThemeIcon::FolderOpen"/>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </item>
       </layout>
      </widget>
@@ -308,38 +352,6 @@
    </hints>
   </connection>
   <connection>
-   <sender>pluginCustomPathEdit</sender>
-   <signal>textChanged(QString)</signal>
-   <receiver>ProjectSettings</receiver>
-   <slot>plugin_custom_path_text_changed(QString)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>340</x>
-     <y>121</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>319</x>
-     <y>239</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>pluginCustomPathBrowseButton</sender>
-   <signal>clicked()</signal>
-   <receiver>ProjectSettings</receiver>
-   <slot>plugin_custom_path_browse_clicked()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>577</x>
-     <y>121</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>319</x>
-     <y>239</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
    <sender>gameConfigurationCombo</sender>
    <signal>activated(int)</signal>
    <receiver>ProjectSettings</receiver>
@@ -348,70 +360,6 @@
     <hint type="sourcelabel">
      <x>388</x>
      <y>152</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>319</x>
-     <y>239</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>gameCustomPathEdit</sender>
-   <signal>textChanged(QString)</signal>
-   <receiver>ProjectSettings</receiver>
-   <slot>game_custom_path_text_changed(QString)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>345</x>
-     <y>121</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>319</x>
-     <y>239</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>gameCustomPathBrowseButton</sender>
-   <signal>clicked()</signal>
-   <receiver>ProjectSettings</receiver>
-   <slot>game_custom_path_browse_clicked()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>577</x>
-     <y>121</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>319</x>
-     <y>239</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>pluginCustomPathClearButton</sender>
-   <signal>clicked()</signal>
-   <receiver>ProjectSettings</receiver>
-   <slot>plugin_custom_path_clear_clicked()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>599</x>
-     <y>121</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>319</x>
-     <y>239</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>gameCustomPathClearButton</sender>
-   <signal>clicked()</signal>
-   <receiver>ProjectSettings</receiver>
-   <slot>game_custom_path_clear_clicked()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>603</x>
-     <y>121</y>
     </hint>
     <hint type="destinationlabel">
      <x>319</x>
@@ -451,17 +399,113 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>gameConfigurationRefreshButton</sender>
+   <signal>clicked()</signal>
+   <receiver>ProjectSettings</receiver>
+   <slot>game_configurations_refresh_clicked()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>75</x>
+     <y>60</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>319</x>
+     <y>239</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>pluginConfigurationRefreshButton</sender>
+   <signal>clicked()</signal>
+   <receiver>ProjectSettings</receiver>
+   <slot>plugin_configurations_refresh_clicked()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>604</x>
+     <y>58</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>319</x>
+     <y>239</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>gameBinariesPathBrowseButton</sender>
+   <signal>clicked()</signal>
+   <receiver>ProjectSettings</receiver>
+   <slot>game_binaries_path_browse_clicked()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>604</x>
+     <y>58</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>319</x>
+     <y>239</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>gameBinariesPathEdit</sender>
+   <signal>textChanged(QString)</signal>
+   <receiver>ProjectSettings</receiver>
+   <slot>game_binaries_path_changed(QString)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>366</x>
+     <y>58</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>319</x>
+     <y>239</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>pluginBinariesPathBrowseButton</sender>
+   <signal>clicked()</signal>
+   <receiver>ProjectSettings</receiver>
+   <slot>plugin_binaries_path_browse_clicked()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>604</x>
+     <y>58</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>319</x>
+     <y>239</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>pluginBinariesPathEdit</sender>
+   <signal>textChanged(QString)</signal>
+   <receiver>ProjectSettings</receiver>
+   <slot>plugin_binaries_path_changed(QString)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>366</x>
+     <y>58</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>319</x>
+     <y>239</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
-  <slot>plugin_custom_path_browse_clicked()</slot>
-  <slot>plugin_custom_path_clear_clicked()</slot>
-  <slot>plugin_custom_path_text_changed(QString)</slot>
-  <slot>game_custom_path_browse_clicked()</slot>
-  <slot>game_custom_path_clear_clicked()</slot>
-  <slot>game_custom_path_text_changed(QString)</slot>
   <slot>plugin_configuration_activated(int)</slot>
   <slot>game_configuration_activated(int)</slot>
   <slot>load_custom_data_resource_triggered()</slot>
   <slot>clear_custom_data_resource_triggered()</slot>
+  <slot>plugin_binaries_path_browse_clicked()</slot>
+  <slot>plugin_binaries_path_changed(QString)</slot>
+  <slot>plugin_configurations_refresh_clicked()</slot>
+  <slot>game_configurations_refresh_clicked()</slot>
+  <slot>game_binaries_path_browse_clicked()</slot>
+  <slot>game_binaries_path_changed(QString)</slot>
  </slots>
 </ui>

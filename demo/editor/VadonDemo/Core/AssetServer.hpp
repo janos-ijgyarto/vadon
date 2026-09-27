@@ -31,6 +31,7 @@ namespace VadonDemo::Core
 		static void init_environment(Vadon::Core::EngineEnvironment& environment);
 
 		bool initialize(const char* project_path) override;
+		void update() override;
 		void shutdown() override;
 
 		VadonEditor::Core::AssetServer& get_common_asset_server() { return m_common_asset_server; }

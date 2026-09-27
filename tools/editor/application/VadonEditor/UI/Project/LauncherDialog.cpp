@@ -33,20 +33,43 @@ namespace VadonEditor::UI
 
 		Core::ProjectManager& project_manager = m_application.get_project_manager();
 
-		const QList<VadonEditor::Core::ProjectManager::CachedProjectInfo> cached_projects = project_manager.get_cached_project_list();
+		const Core::ProjectManager::ProjectCacheEntryList cached_projects = project_manager.get_cached_project_list();
 
-		for (const VadonEditor::Core::ProjectManager::CachedProjectInfo& current_project : cached_projects)
+		QStringList invalid_projects;
+
+		for (const Core::ProjectManager::ProjectCacheEntry& current_entry : cached_projects)
 		{
-			const QString project_item_label = QString("%1 (%2)").arg(current_project.name).arg(current_project.path);
+			const Core::EditorProjectInfo editor_project_info = Core::ProjectManager::load_editor_project_info(current_entry.path);
+			if (editor_project_info.is_valid() == false)
+			{
+				invalid_projects << QString("Editor project not found: %1").arg(current_entry.path);
+				continue;
+			}
+
+			const QString source_project_file_path = Core::SourceProjectInfo::get_project_file_path(editor_project_info.source_path);
+			const Core::SourceProjectInfo source_project_info = Core::ProjectManager::load_source_project_info(source_project_file_path);
+			if (source_project_info.is_valid() == false)
+			{
+				invalid_projects << QString("Source project not found: %1").arg(source_project_info.get_project_file_path());
+				continue;
+			}
+
+			const QString project_item_label = QString("%1 (%2) -> %3").arg(source_project_info.name).arg(source_project_info.root_path).arg(editor_project_info.output_path);
 			QListWidgetItem* current_item = new QListWidgetItem(project_item_label, m_ui.projectListWidget);
 
-			current_item->setData(c_project_path_role, current_project.path);
+			current_item->setData(c_project_path_role, editor_project_info.get_project_file_path());
+		}
+
+		if (invalid_projects.isEmpty() == false)
+		{
+			const QString message = "The following projects were in the cache, but are no longer valid:\n\n" + invalid_projects.join('\n');
+			QMessageBox::warning(this, "Project Manager Warning", message);
 		}
 	}
 
 	void LauncherDialog::new_clicked()
 	{
-		m_new_project_dialog = new NewProjectDialog(this);
+		m_new_project_dialog = new NewProjectDialog(Core::SourceProjectInfo{}, this);
 		connect(m_new_project_dialog, &QDialog::accepted, this, &LauncherDialog::new_project_created);
 		connect(m_new_project_dialog, &QObject::destroyed, this, &LauncherDialog::new_project_dialog_destroyed);
 
@@ -58,15 +81,18 @@ namespace VadonEditor::UI
 		QString project_file = QFileDialog::getOpenFileName(this, "Select Project File", QDir::currentPath(), tr("Project Files (*.vdpr)"));
 		if (project_file.isEmpty() == false)
 		{
-			if (m_application.get_project_manager().import_project(project_file) == true)
+			const Core::SourceProjectInfo imported_project_info = Core::ProjectManager::load_source_project_info(project_file);
+			if (imported_project_info.is_valid() == false)
 			{
-				// Import successful, add to list
-				init_ui();
+				QMessageBox::critical(this, "Project Manager Error", "Invalid project file!");
+				return;
 			}
-			else
-			{
-				QMessageBox::critical(this, "Project Manager Error", tr("Failed to import project!"));
-			}
+
+			m_new_project_dialog = new NewProjectDialog(imported_project_info, this);
+			connect(m_new_project_dialog, &QDialog::accepted, this, &LauncherDialog::project_imported);
+			connect(m_new_project_dialog, &QObject::destroyed, this, &LauncherDialog::new_project_dialog_destroyed);
+
+			m_new_project_dialog->open();
 		}
 	}
 
@@ -111,8 +137,13 @@ namespace VadonEditor::UI
 
 	void LauncherDialog::new_project_created()
 	{
-		const VadonEditor::Core::ProjectInfo new_project_info = m_new_project_dialog->get_project_info();
-		if (m_application.get_project_manager().create_project(new_project_info) == true)
+		const Core::SourceProjectInfo new_project_info = m_new_project_dialog->get_source_info();
+
+		Core::EditorProjectInfo editor_info;
+		editor_info.source_path = new_project_info.root_path;
+		editor_info.output_path = m_new_project_dialog->get_output_path();
+
+		if (m_application.get_project_manager().create_project(new_project_info.name, editor_info) == true)
 		{
 			// Creation successful, add to list
 			init_ui();
@@ -120,6 +151,25 @@ namespace VadonEditor::UI
 		else
 		{
 			QMessageBox::critical(this, "Project Manager Error", tr("Failed to create new project!"));
+		}
+	}
+
+	void LauncherDialog::project_imported()
+	{
+		const Core::SourceProjectInfo new_project_info = m_new_project_dialog->get_source_info();
+
+		Core::EditorProjectInfo editor_info;
+		editor_info.source_path = new_project_info.root_path;
+		editor_info.output_path = m_new_project_dialog->get_output_path();
+
+		if (m_application.get_project_manager().import_project(editor_info) == true)
+		{
+			// Creation successful, add to list
+			init_ui();
+		}
+		else
+		{
+			QMessageBox::critical(this, "Project Manager Error", tr("Failed to import project!"));
 		}
 	}
 

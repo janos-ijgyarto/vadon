@@ -23,6 +23,11 @@
 
 namespace
 {
+	struct SimulatorToolchainConfig
+	{
+		QByteArray temp_path;
+	};
+
 	// NOTE: null implementation of plugin in case no plugin path was provided (useful for testing)
 	class NullPlugin : public Vadon::Foundation::EditorSimulatorPluginInterface
 	{
@@ -109,6 +114,11 @@ namespace VadonEditor::Simulator
 		VADONEDITOR_API_FUNCTION_POINTER(VadonEditorSimulatorPluginExit) m_exit_func;
 
 		::Vadon::Foundation::EditorSimulatorPluginInterface* m_plugin_interface;
+
+		// NOTE: have to create an object where we can store the UTF8-converted QStrings
+		// because the struct used by the plugin uses const char*
+		SimulatorToolchainConfig m_toolchain_config;
+
 		QTimer m_plugin_timer;
 
 		Internal(Core::Application& application)
@@ -130,9 +140,9 @@ namespace VadonEditor::Simulator
 		{
 			VadonEditor::Core::PluginManager& plugin_manager = m_application.get_plugin_manager();
 			const VadonEditor::Core::ProjectManager& project_manager = m_application.get_project_manager();
-			const VadonEditor::Core::ProjectInfo& project_info = project_manager.get_project_info();
+			const VadonEditor::Core::EditorProject& editor_project = project_manager.get_editor_project();
 
-			const Core::EditorPluginInfo* editor_plugin_info = project_info.find_plugin_entry(configuration_name);
+			const Core::EditorPluginInfo* editor_plugin_info = editor_project.find_plugin_entry(configuration_name);
 			if (editor_plugin_info == nullptr)
 			{
 				qCritical() << "Invalid setting for project editor plugin!";
@@ -190,8 +200,8 @@ namespace VadonEditor::Simulator
 			}
 
 			const VadonEditor::Core::ProjectManager& project_manager = m_application.get_project_manager();
-			const VadonEditor::Core::ProjectInfo& project_info = project_manager.get_project_info();
-			if (m_plugin_interface->initialize(project_info.get_project_file_path().toUtf8().constData()) == false)
+			const VadonEditor::Core::SourceProjectInfo& source_project_info = project_manager.get_source_project().info;
+			if (m_plugin_interface->initialize(source_project_info.get_project_file_path().toUtf8().constData()) == false)
 			{
 				qCritical() << "Plugin failed to initialize!";
 				return false;
@@ -277,9 +287,9 @@ namespace VadonEditor::Simulator
 			const Core::Configuration& configuration = m_application.get_configuration();
 
 			Core::ProjectManager& project_manager = m_application.get_project_manager();
-			const Core::ProjectInfo& project_info = project_manager.get_project_info();
+			const Core::EditorProject& editor_project = project_manager.get_editor_project();
 
-			const Core::EditorPluginInfo* editor_plugin_info = project_info.find_plugin_entry(settings.configuration_name);
+			const Core::EditorPluginInfo* editor_plugin_info = editor_project.find_plugin_entry(settings.configuration_name);
 			if (editor_plugin_info == nullptr)
 			{
 				qCritical() << "Invalid setting for project editor plugin!";
@@ -300,8 +310,9 @@ namespace VadonEditor::Simulator
 				m_simulator_process.setProgram(program_path);
 
 				QStringList arguments{ QString("--%1").arg(Core::CommandLineState::get_parameter_key(Core::CommandLineParameter::IS_SIMULATOR)) };
+
 				arguments.push_back(QString("--%1").arg(Core::CommandLineState::get_parameter_key(Core::CommandLineParameter::STARTUP_PROJECT_PATH)));
-				arguments.push_back(project_info.get_project_file_path());
+				arguments.push_back(editor_project.info.get_project_file_path());
 
 				arguments.push_back(QString("--%1").arg(Core::CommandLineState::get_parameter_key(Core::CommandLineParameter::PLUGIN_CONFIG_NAME)));
 				arguments.push_back(settings.configuration_name);
@@ -323,6 +334,16 @@ namespace VadonEditor::Simulator
 			break;
 			case Core::ApplicationMode::SIMULATOR:
 			{
+				// Cache the export path so the asset server can request it
+				QString output_path = m_application.get_project_manager().get_editor_project().info.output_path;
+				if (output_path.isEmpty() == true)
+				{
+					qCritical() << "Simulator needs valid output path!";
+					return false;
+				}
+
+				m_toolchain_config.temp_path = QDir::cleanPath(output_path + "/temp").toUtf8();
+
 				// We are the simulator, load plugin!
 				if (run_plugin(settings.configuration_name) == false)
 				{
@@ -464,6 +485,14 @@ namespace VadonEditor::Simulator
 			// TODO: anything else?
 			qCritical() << "Error running simulator process: " << error;
 		}
+
+		::Vadon::Foundation::SimulatorToolchainConfiguration get_toolchain_configuration() const
+		{
+			::Vadon::Foundation::SimulatorToolchainConfiguration toolchain_config;
+			toolchain_config.temp_path = m_toolchain_config.temp_path.constData();
+
+			return toolchain_config;
+		}
 	};
 
 	Simulator::~Simulator() = default;
@@ -491,6 +520,11 @@ namespace VadonEditor::Simulator
 	void Simulator::dispatch_message_to_editor(const char* data, size_t size)
 	{
 		m_internal->m_application.get_network_system().send_message(QByteArrayView(data, size));
+	}
+
+	::Vadon::Foundation::SimulatorToolchainConfiguration Simulator::get_toolchain_configuration() const
+	{
+		return m_internal->get_toolchain_configuration();
 	}
 
 	Simulator::Simulator(Core::Application& application)
