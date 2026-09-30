@@ -13,6 +13,8 @@
 
 #include <VadonEditor/Network/NetworkSystem.hpp>
 
+#include <VadonEditor/Simulator/Simulator.hpp>
+
 #include <VadonEditor/UI/UISystem.hpp>
 
 #include <VadonEditor/UI/Model/Resource/ResourceDialog.hpp>
@@ -20,6 +22,8 @@
 
 #include <VadonEditor/UI/Project/DataSchemaDialog.hpp>
 #include <VadonEditor/UI/Project/ProjectSettingsDialog.hpp>
+
+#include <VadonEditor/UI/Simulator/SimulatorSettingsDialog.hpp>
 
 #include <VadonEditor/UI/Utilities/UUIDDialog.hpp>
 
@@ -195,6 +199,19 @@ namespace VadonEditor::UI
 		}
 
 		asset_manager.open_asset(asset_index);
+	}
+
+	void MainWindow::simulator_settings_clicked()
+	{
+		Simulator::Simulator& simulator = m_application.get_simulator();
+		if (simulator.is_running() == false)
+		{
+			qCritical() << "Simulator is not running!";
+			return;
+		}
+
+		SimulatorSettingsDialog* settings_dialog = new SimulatorSettingsDialog(m_application, this);
+		settings_dialog->open();
 	}
 
 	void MainWindow::closeEvent(QCloseEvent* event)

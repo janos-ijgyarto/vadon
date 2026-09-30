@@ -111,8 +111,18 @@ namespace VadonEditor::UI
 			return;
 		}
 
-		m_scene->get_entity_model().remove_entity(selected_entity->get_id());
-		set_modified();
+		if (selected_entity->is_inherited_entity() == true)
+		{
+			QMessageBox::critical(this, "Scene Tree Error", "Cannot remove inherited entity!");
+			return;
+		}
+
+		const QMessageBox::StandardButton user_response = QMessageBox::question(this, "Remove Entity", QString("Are you sure you want to remove Entity %1?").arg(selected_entity->get_label()));
+		if (user_response == QMessageBox::StandardButton::Yes)
+		{
+			m_scene->get_entity_model().remove_entity(selected_entity->get_id());
+			set_modified();
+		}
 	}
 
 	void SceneTree::entity_context_menu_requested(const QPoint& position)
@@ -128,7 +138,13 @@ namespace VadonEditor::UI
 
 		menu.addAction(m_ui.actionAddEntity);
 		menu.addAction(m_ui.actionInstantiateScene);
-		menu.addAction(m_ui.actionRemoveEntity);
+
+		const Model::Entity* selected_entity = m_scene->get_entity_model().get_entity_by_model_index(entity_index);
+		Q_ASSERT_X(selected_entity != nullptr, "VadonEditor::UI::SceneTree::entity_context_menu_requested", "Cannot find model entity");
+		if (selected_entity->is_inherited_entity() == false)
+		{
+			menu.addAction(m_ui.actionRemoveEntity);
+		}
 
 		menu.exec(m_ui.treeView->mapToGlobal(position));
 #else

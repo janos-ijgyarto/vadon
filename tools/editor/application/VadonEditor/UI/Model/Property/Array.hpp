@@ -31,7 +31,7 @@ namespace VadonEditor::UI
 	{
 		Q_OBJECT
 	public:
-		PropertyArray(const PropertyWidgetInfo& info, QWidget* parent, Model::Resource* owner_resource);
+		PropertyArray(Core::Application& application, const PropertyWidgetInfo& info, QWidget* parent, Model::Resource* owner_resource);
 
 		void set_read_only(bool read_only) override;
 	private slots:
@@ -47,6 +47,7 @@ namespace VadonEditor::UI
 
 		Ui::PropertyArray m_ui;
 
+		Core::Application& m_application;
 		PropertyWidgetInfo m_info;
 		Model::Resource* m_owner_resource;
 	};

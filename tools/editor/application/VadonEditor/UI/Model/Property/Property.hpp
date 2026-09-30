@@ -3,6 +3,10 @@
 #include <VadonEditor/Core/Data/Property.hpp>
 #include <VadonEditor/UI/Model/Property/ui_PropertyListEntry.h>
 #include <QUuid>
+namespace VadonEditor::Core
+{
+	class Application;
+}
 namespace VadonEditor::Model
 {
 	class Resource;
@@ -27,7 +31,7 @@ namespace VadonEditor::UI
 		// TODO: add a "metadata" parameter
 		// DataSchema will contain user-provided metadata to adjust editor UI (e.g range for numeric property)
 		// and we'll also need it for other contexts!
-		static PropertyWidget* create_widget(const PropertyWidgetInfo& info, QWidget* parent_widget, Model::Resource* owner_resource);
+		static PropertyWidget* create_widget(Core::Application& application, const PropertyWidgetInfo& info, QWidget* parent_widget, Model::Resource* owner_resource);
 
 		virtual void set_read_only(bool read_only) = 0;
 	signals:

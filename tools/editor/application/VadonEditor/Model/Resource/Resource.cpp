@@ -267,9 +267,16 @@ namespace VadonEditor::Model
 
 		if (m_embedded_resources.isEmpty() == false)
 		{
+			// Sort embedded resource keys so they have a deterministic order in the file
+			QList<ResourceID> embedded_resource_ids = m_embedded_resources.keys();
+			std::sort(embedded_resource_ids.begin(), embedded_resource_ids.end());
+
 			QJsonArray embedded_array;
-			for (auto embedded_it = m_embedded_resources.begin(); embedded_it != m_embedded_resources.end(); ++embedded_it)
+			for (const ResourceID& current_embedded_id : embedded_resource_ids)
 			{
+				auto embedded_it = m_embedded_resources.find(current_embedded_id);
+				Q_ASSERT_X(embedded_it != m_embedded_resources.end(), "VadonEditor::Model::Resource::internal_save", "Cannot find embedded resource!");
+
 				QJsonObject current_embedded_obj;
 				if (embedded_it.value()->internal_save(current_embedded_obj, labeled) == false)
 				{

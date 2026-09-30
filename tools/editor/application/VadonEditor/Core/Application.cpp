@@ -326,10 +326,10 @@ namespace VadonEditor::Core
 			case ApplicationMode::SIMULATOR:
 			{
 				// Simulator is connected to editor, now we can run the plugin
-				Simulator::SimulatorSettings settings;
-				settings.configuration_name = m_configuration.plugin_config_name;
+				Simulator::SimulatorStartupOptions startup_options;
+				startup_options.configuration_name = m_configuration.plugin_config_name;
 				// TODO: other settings?
-				if (m_simulator.run_simulator(settings) == false)
+				if (m_simulator.run_simulator(startup_options) == false)
 				{
 					// Failed to load plugin, exit!
 					request_quit(1);

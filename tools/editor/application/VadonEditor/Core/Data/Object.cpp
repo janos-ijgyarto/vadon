@@ -204,7 +204,9 @@ namespace
 			const QJsonObject json_object = json_value.toObject();
 			if (json_object.isEmpty() == true)
 			{
+				// Null object
 				value = QVariantMap();
+				return true;
 			}
 
 			if (VadonEditor::Utilities::is_uuid_valid(object_type) == true)

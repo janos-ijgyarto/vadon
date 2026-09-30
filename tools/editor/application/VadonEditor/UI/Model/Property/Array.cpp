@@ -42,12 +42,12 @@ namespace VadonEditor::UI
 		emit(remove_requested());
 	}
 
-	PropertyArray::PropertyArray(const PropertyWidgetInfo& info, QWidget* parent, Model::Resource* owner_resource)
+	PropertyArray::PropertyArray(Core::Application& application, const PropertyWidgetInfo& info, QWidget* parent, Model::Resource* owner_resource)
 		: PropertyWidget(info.property_id, info.init_value, parent)
+		, m_application(application)
 		, m_info(info)
 		, m_owner_resource(owner_resource)
 	{
-		Q_ASSERT_X(owner_resource != nullptr, "VadonEditor::UI::PropertyArray::PropertyArray", "Owner resource must not be null!");
 		m_ui.setupUi(this);
 
 		initialize();
@@ -123,7 +123,7 @@ namespace VadonEditor::UI
 
 		new_entry_info.init_value = QVariant(); // FIXME: get default value based on type list?
 
-		PropertyWidget* new_entry_widget = PropertyWidget::create_widget(new_entry_info, this, m_owner_resource);
+		PropertyWidget* new_entry_widget = PropertyWidget::create_widget(m_application, new_entry_info, this, m_owner_resource);
 		if (new_entry_widget == nullptr)
 		{
 			return;
@@ -154,7 +154,7 @@ namespace VadonEditor::UI
 		{
 			array_entry_info.init_value = current_value;
 
-			PropertyWidget* array_entry_widget = PropertyWidget::create_widget(array_entry_info, this, m_owner_resource);
+			PropertyWidget* array_entry_widget = PropertyWidget::create_widget(m_application, array_entry_info, this, m_owner_resource);
 			if (array_entry_widget == nullptr)
 			{
 				continue;

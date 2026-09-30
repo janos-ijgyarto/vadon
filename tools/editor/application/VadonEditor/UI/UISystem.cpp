@@ -62,7 +62,8 @@ namespace VadonEditor::UI
 				m_viewport_widget = new RenderWidget(m_main_window);
 				m_viewport_widget->register_client(client_info);
 
-				viewport_layout->addWidget(m_viewport_widget);
+				viewport_layout->addWidget(m_viewport_widget, 1);
+				viewport_layout->setStretch(0, 0);
 
 				// Adjust splitter so the viewport is more clearly visible
 				{
@@ -245,11 +246,11 @@ namespace VadonEditor::UI
 		}
 
 		// TODO: gather settings!
-		Simulator::SimulatorSettings settings;
-		settings.debug_break_on_init = true;
+		Simulator::SimulatorStartupOptions startup_options;
+		startup_options.debug_break_on_init = true;
 
-		settings.configuration_name = m_application.get_project_manager().get_editor_project().plugin_settings.selected_configuration;
-		if (simulator.run_simulator(settings) == false)
+		startup_options.configuration_name = m_application.get_project_manager().get_editor_project().plugin_settings.selected_configuration;
+		if (simulator.run_simulator(startup_options) == false)
 		{
 			// TODO: error popup?
 		}

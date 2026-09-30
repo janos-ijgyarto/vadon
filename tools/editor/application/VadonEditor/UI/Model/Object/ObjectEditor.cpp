@@ -98,7 +98,7 @@ namespace VadonEditor::UI
 				}
 				widget_info.init_value = init_value;
 
-				PropertyWidget* property_widget = PropertyWidget::create_widget(widget_info, parent_widget, owner_resource);
+				PropertyWidget* property_widget = PropertyWidget::create_widget(application, widget_info, parent_widget, owner_resource);
 				if (property_widget == nullptr)
 				{
 					continue;

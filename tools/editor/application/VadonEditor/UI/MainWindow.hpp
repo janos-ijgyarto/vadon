@@ -45,6 +45,8 @@ namespace VadonEditor::UI
         void run_asset_server_triggered();
 
         void asset_opened(const QString& asset_path);
+
+        void simulator_settings_clicked();
     protected:
         void closeEvent(QCloseEvent* event) override;
     private:

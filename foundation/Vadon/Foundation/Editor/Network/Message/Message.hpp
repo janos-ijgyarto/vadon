@@ -9,6 +9,7 @@ namespace Vadon
 		{
 			PLUGIN,
 			ASSET_SERVER,
+			SIMULATOR,
 			MODEL,
 			PLATFORM,
 			TEST

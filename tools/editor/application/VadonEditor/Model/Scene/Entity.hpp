@@ -42,6 +42,7 @@ namespace VadonEditor::Model
 		// NOTE: this indicates that the entity is in an inherited scene
 		// It restricts what kind of changes are allowed
 		const QUuid& get_base_scene_id() const { return m_base_scene; }
+		bool is_inherited_entity() const { return Utilities::is_uuid_valid(get_base_scene_id()); }
 		SceneID get_sub_scene_id() const;
 
 		Component* add_component(const QUuid& component_id);

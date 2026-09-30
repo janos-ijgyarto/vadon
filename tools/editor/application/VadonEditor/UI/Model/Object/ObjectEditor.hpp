@@ -4,6 +4,7 @@
 #include <QUuid>
 namespace VadonEditor::Core
 {
+	class Application;
 	class DataObject;
 }
 namespace VadonEditor::Model

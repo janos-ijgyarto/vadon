@@ -12,8 +12,9 @@
 
 namespace VadonEditor::UI
 {
-	PropertyObject::PropertyObject(const QUuid& id, const QVariantMap& data_map, Model::Resource* owner_resource, const QUuid& base_type, bool allow_subclass, QWidget* parent)
+	PropertyObject::PropertyObject(Core::Application& application, const QUuid& id, const QVariantMap& data_map, Model::Resource* owner_resource, const QUuid& base_type, bool allow_subclass, QWidget* parent)
 		: PropertyWidget(id, data_map, parent)
+		, m_application(application)
 		, m_object(owner_resource->get_application())
 		, m_owner_resource(owner_resource)
 		, m_base_type(base_type)
@@ -83,20 +84,7 @@ namespace VadonEditor::UI
 		Q_UNUSED(id);
 
 		// FIXME: instead of always updating the whole object, we should use "targeted" property updates!
-		QVariantMap object_data;
-		if (is_nullable() == true)
-		{
-			if (m_object.is_valid() == true)
-			{
-				object_data = m_object.export_data();
-			}
-		}
-		else
-		{
-			object_data = m_object.get_property_map();
-		}
-
-		internal_set_value(object_data);
+		store_object_data();
 	}
 
 	void PropertyObject::new_triggered()
@@ -114,7 +102,7 @@ namespace VadonEditor::UI
 		Q_ASSERT_X(is_nullable() == true, "VadonEditor::UI::PropertyObject::clear_triggered", "Property must be nullable!");
 
 		m_object.clear_data();
-		internal_set_value(QVariantMap());
+		store_object_data();
 
 		clear_property_widgets();
 	}
@@ -123,7 +111,7 @@ namespace VadonEditor::UI
 	{
 		Q_ASSERT_X(is_nullable() == true, "VadonEditor::UI::PropertyObject::new_object_type_selected", "Property must be nullable!");
 
-		if (Core::TypeData::is_base_type(object_type) == false)
+		if (Core::TypeData::is_base_type(object_type) == true)
 		{
 			QMessageBox::critical(this, "Object Property Error", "Object must not be base type!");
 			return;
@@ -137,6 +125,8 @@ namespace VadonEditor::UI
 			return;
 		}
 
+		store_object_data();
+
 		generate_property_widgets();
 	}
 
@@ -145,6 +135,7 @@ namespace VadonEditor::UI
 		if (m_object.is_valid() == true)
 		{
 			QVBoxLayout* vbox_layout = new QVBoxLayout();
+			vbox_layout->setSizeConstraint(QLayout::SizeConstraint::SetMinAndMaxSize);
 
 			ObjectEditor* object_editor = new ObjectEditor(m_object, m_owner_resource, this);
 			connect(object_editor, &ObjectEditor::object_property_edited, this, &PropertyObject::object_property_value_changed);
@@ -154,7 +145,7 @@ namespace VadonEditor::UI
 
 			set_read_only(m_read_only);
 
-			setMinimumSize(QSize(400, 300));
+			m_ui.propertyGroupBox->adjustSize();
 
 			update_type_label();
 		}
@@ -162,6 +153,8 @@ namespace VadonEditor::UI
 		{
 			clear_property_widgets();
 		}
+
+		adjustSize();
 	}
 
 	void PropertyObject::clear_property_widgets()
@@ -193,7 +186,7 @@ namespace VadonEditor::UI
 	{
 		const QUuid type_id = m_object.is_valid() == true ? m_object.get_type_id() : m_base_type;
 
-		const Core::DataSchema& data_schema = m_owner_resource->get_application().get_project_manager().get_project_data_schema();
+		const Core::DataSchema& data_schema = m_application.get_project_manager().get_project_data_schema();
 		const Core::TypeData* type_data = data_schema.find_type_data(type_id);
 		QString current_type_name = type_data->find_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME);
 		if (current_type_name.isEmpty())
@@ -207,5 +200,23 @@ namespace VadonEditor::UI
 	bool PropertyObject::is_nullable()
 	{
 		return (Utilities::is_uuid_valid(m_base_type) == false) || ((Utilities::is_uuid_valid(m_base_type) == true) && (m_allow_subclass == true));
+	}
+
+	void PropertyObject::store_object_data()
+	{
+		QVariantMap object_data;
+		if (is_nullable() == true)
+		{
+			if (m_object.is_valid() == true)
+			{
+				object_data = m_object.export_data();
+			}
+		}
+		else
+		{
+			object_data = m_object.get_property_map();
+		}
+
+		internal_set_value(object_data);
 	}
 }

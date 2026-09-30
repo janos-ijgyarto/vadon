@@ -1,5 +1,6 @@
 #ifndef VADON_FOUNDATION_EDITOR_SIMULATOR_SIMULATORINTERFACE_HPP
 #define VADON_FOUNDATION_EDITOR_SIMULATOR_SIMULATORINTERFACE_HPP
+#include <Vadon/Foundation/Utilities/UUID.hpp>
 namespace Vadon
 {
 	namespace Foundation
@@ -7,6 +8,12 @@ namespace Vadon
 		struct SimulatorToolchainConfiguration
 		{
 			const char* temp_path;
+		};
+
+		struct SimulatorSetting
+		{
+			UUID id;
+			UUID type;
 		};
 
 		class EditorSimulatorInterface

@@ -14,8 +14,15 @@
    <string>Resource Name</string>
   </property>
   <layout class="QVBoxLayout" name="mainLayout">
+   <property name="sizeConstraint">
+    <enum>QLayout::SizeConstraint::SetMinAndMaxSize</enum>
+   </property>
    <item>
-    <layout class="QVBoxLayout" name="propertyListVBox"/>
+    <layout class="QVBoxLayout" name="propertyListVBox">
+     <property name="sizeConstraint">
+      <enum>QLayout::SizeConstraint::SetMinAndMaxSize</enum>
+     </property>
+    </layout>
    </item>
    <item>
     <widget class="QScrollArea" name="propertyScrollArea">
@@ -31,7 +38,11 @@
         <height>452</height>
        </rect>
       </property>
-      <layout class="QVBoxLayout" name="propertyScrollVBox"/>
+      <layout class="QVBoxLayout" name="propertyScrollVBox">
+       <property name="sizeConstraint">
+        <enum>QLayout::SizeConstraint::SetMinAndMaxSize</enum>
+       </property>
+      </layout>
      </widget>
     </widget>
    </item>

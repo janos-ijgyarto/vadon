@@ -23,12 +23,17 @@ namespace
 		item->setData(data, static_cast<int>(role));
 	}
 
-	QStandardItem* create_scene_tree_standard_item(const QString& label, const QUuid& entity_id)
+	QStandardItem* create_scene_tree_standard_item(const QString& label, const QUuid& entity_id, bool inherited)
 	{
 		QStandardItem* new_item = new QStandardItem(label);
 		new_item->setCheckable(false);
 		new_item->setEditable(false);
 		new_item->setDragEnabled(false);
+
+		// FIXME: replace with more fitting icons!
+		QIcon::ThemeIcon theme_icon = inherited ? QIcon::ThemeIcon::ContactNew : QIcon::ThemeIcon::UserAvailable;
+
+		new_item->setIcon(QIcon::fromTheme(theme_icon));
 
 		set_entity_item_data(new_item, entity_id, VadonEditor::Model::EntityDataRole::ID);
 
@@ -494,6 +499,15 @@ namespace VadonEditor::Model
 
 	void EntityModel::remove_entity(const QUuid& id)
 	{
+		// Make sure entity is not inherited
+		const Entity* entity_to_remove = find_entity_by_id(id);
+		Q_ASSERT_X(entity_to_remove != nullptr, "VadonEditor::Model::EntityModel::remove_entity", "Cannot find entity");
+		if (entity_to_remove->is_inherited_entity() == true)
+		{
+			qCritical() << "Cannot remove inherited entity!";
+			return;
+		}
+
 		const bool is_root = m_root_entity->get_id() == id;
 
 		// FIXME: find a way to instead just remove the model item, and connect to signals to know which Entity objects to remove?
@@ -570,7 +584,7 @@ namespace VadonEditor::Model
 				internal_add_entity(inherited_entity, new_entity_lookup);
 
 				const QUuid parent_id = base_entity->get_parent();
-				QStandardItem* current_entity_item = create_scene_tree_standard_item(inherited_entity->get_label(), inherited_entity->get_id());
+				QStandardItem* current_entity_item = create_scene_tree_standard_item(inherited_entity->get_label(), inherited_entity->get_id(), true);
 
 				if (base_entity_id == root_entity->get_id())
 				{
@@ -603,7 +617,7 @@ namespace VadonEditor::Model
 
 			internal_add_entity(new_root_entity, new_entity_lookup);
 
-			new_root_item = create_scene_tree_standard_item(new_root_entity->get_label(), new_root_entity->get_id());
+			new_root_item = create_scene_tree_standard_item(new_root_entity->get_label(), new_root_entity->get_id(), false);
 		}
 
 		// NOTE: we iterate over all entities when loading a derived scene, but we skip the first one otherwise (since it's the root)
@@ -623,6 +637,11 @@ namespace VadonEditor::Model
 				{
 					Entity* current_entity = entity_it.value();
 					current_entity->import_data(current_entity_data);
+
+					// NOTE: once we've imported the data, we also need to re-save the result
+					// in the inherited Entity. This ensures that we store all the differences
+					// from the base scene
+					current_entity->store_component_data();
 					continue;
 				}
 			}
@@ -638,7 +657,7 @@ namespace VadonEditor::Model
 			internal_add_entity(current_entity, new_entity_lookup);
 
 			const QUuid parent_id = current_entity->get_parent();
-			QStandardItem* current_entity_item = create_scene_tree_standard_item(current_entity->get_label(), current_entity->get_id());
+			QStandardItem* current_entity_item = create_scene_tree_standard_item(current_entity->get_label(), current_entity->get_id(), current_entity->is_inherited_entity());
 			if (parent_id == new_root_entity->get_id())
 			{
 				new_root_item->appendRow(current_entity_item);
@@ -720,7 +739,7 @@ namespace VadonEditor::Model
 
 		const QUuid new_entity_id = new_entity->get_id();
 
-		QStandardItem* new_entity_item = create_scene_tree_standard_item(new_entity->get_label(), new_entity_id);
+		QStandardItem* new_entity_item = create_scene_tree_standard_item(new_entity->get_label(), new_entity_id, new_entity->is_inherited_entity());
 
 		const QModelIndex parent_item_index = find_entity_item_by_id(parent_id);
 		Q_ASSERT_X(parent_item_index.isValid() == true, "VadonEditor::Model::EntityModel::add_entity", "Cannot find parent item");
@@ -767,7 +786,7 @@ namespace VadonEditor::Model
 		m_root_entity = internal_create_entity(m_entity_lookup);
 		m_root_entity->internal_set_name("Root");
 
-		QStandardItem* root_item = create_scene_tree_standard_item(m_root_entity->get_label(), m_root_entity->get_id());
+		QStandardItem* root_item = create_scene_tree_standard_item(m_root_entity->get_label(), m_root_entity->get_id(), false);
 		m_qt_model.invisibleRootItem()->appendRow(root_item);
 	}
 

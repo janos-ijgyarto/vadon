@@ -8,7 +8,7 @@ namespace VadonEditor::UI
 	{
 		Q_OBJECT
 	public:
-		PropertyResource(const QUuid& id, Model::Resource* resource, Model::Resource* owner_resource, const QUuid& base_type, QWidget* parent);
+		PropertyResource(Core::Application& application, const QUuid& id, Model::Resource* resource, Model::Resource* owner_resource, const QUuid& base_type, QWidget* parent);
 
 		void set_read_only(bool read_only) override;
 	private slots:
@@ -31,6 +31,8 @@ namespace VadonEditor::UI
 		void update_type_label();
 
 		Ui::PropertyResource m_ui;
+
+		Core::Application& m_application;
 
 		Model::Resource* m_resource;
 		Model::Resource* m_owner_resource;

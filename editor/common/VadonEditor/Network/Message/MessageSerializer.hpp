@@ -18,6 +18,7 @@ namespace VadonEditor::Network
 		}
 
 		const std::vector<char>& get_buffer() const { return m_buffer; }
+		void clear() { m_buffer.clear(); }
 	private:
 		std::vector<char> m_buffer;
 	};

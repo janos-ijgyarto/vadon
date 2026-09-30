@@ -19,7 +19,11 @@
   <property name="windowTitle">
    <string>Object Editor</string>
   </property>
-  <layout class="QVBoxLayout" name="mainLayout"/>
+  <layout class="QVBoxLayout" name="mainLayout">
+   <property name="sizeConstraint">
+    <enum>QLayout::SizeConstraint::SetMinAndMaxSize</enum>
+   </property>
+  </layout>
  </widget>
  <resources/>
  <connections/>

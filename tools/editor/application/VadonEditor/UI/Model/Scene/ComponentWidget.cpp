@@ -92,7 +92,7 @@ namespace VadonEditor::UI
 				widget_info.type_list = property_data->type_list;
 				widget_info.init_value = m_component->get_property(widget_info.property_id);
 
-				PropertyWidget* property_widget = PropertyWidget::create_widget(widget_info, this, scene->get_resource());
+				PropertyWidget* property_widget = PropertyWidget::create_widget(m_component->get_application(), widget_info, this, scene->get_resource());
 				if (property_widget == nullptr)
 				{
 					continue;

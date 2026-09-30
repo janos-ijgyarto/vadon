@@ -21,7 +21,7 @@
 
 namespace VadonEditor::UI
 {
-	PropertyWidget* PropertyWidget::create_widget(const PropertyWidgetInfo& info, QWidget* parent_widget, Model::Resource* owner_resource)
+	PropertyWidget* PropertyWidget::create_widget(Core::Application& application, const PropertyWidgetInfo& info, QWidget* parent_widget, Model::Resource* owner_resource)
 	{
 		// TODO: check if offset is still within type list
 		// e.g for an Array going past the bounds means "generic"
@@ -66,7 +66,7 @@ namespace VadonEditor::UI
 		}
 		break;
 		case ::Vadon::Foundation::Property::Category::ARRAY:
-			return new PropertyArray(info, parent_widget, owner_resource);
+			return new PropertyArray(application, info, parent_widget, owner_resource);
 		case ::Vadon::Foundation::Property::Category::DICTIONARY:
 			// TODO!
 			break;
@@ -81,25 +81,25 @@ namespace VadonEditor::UI
 				if (object_type_offset >= info.type_list.size())
 				{
 					// No type specified, so it's a generic object
-					return new PropertyObject(info.property_id, info.init_value.toMap(), owner_resource, QUuid{}, false, parent_widget);
+					return new PropertyObject(application, info.property_id, info.init_value.toMap(), owner_resource, QUuid{}, false, parent_widget);
 				}
 				else
 				{
 					// Constrain to the type specified in the type list
 					const QUuid object_type = info.type_list[object_type_offset];
-					return new PropertyObject(info.property_id, info.init_value.toMap(), owner_resource, object_type, true, parent_widget);
+					return new PropertyObject(application, info.property_id, info.init_value.toMap(), owner_resource, object_type, true, parent_widget);
 				}
 			}
 			// FIXME: this is a bit convoluted, find a way to deduplicate this logic!
 			else if (property_type == VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::DataObjectSchema::c_type_uuid))
 			{
 				// DataObject is handled as generic object
-				return new PropertyObject(info.property_id, info.init_value.toMap(), owner_resource, QUuid{}, false, parent_widget);
+				return new PropertyObject(application, info.property_id, info.init_value.toMap(), owner_resource, QUuid{}, false, parent_widget);
 			}
 			else
 			{
 				// Specific type, non-nullable member
-				return new PropertyObject(info.property_id, info.init_value.toMap(), owner_resource, property_type, false, parent_widget);
+				return new PropertyObject(application, info.property_id, info.init_value.toMap(), owner_resource, property_type, false, parent_widget);
 			}
 		}
 			break;
@@ -109,12 +109,11 @@ namespace VadonEditor::UI
 			QUuid resource_id = info.init_value.toUuid();
 			if (Utilities::is_uuid_valid(resource_id) == true)
 			{
-				Core::Application& application = owner_resource->get_application();
 				resource = application.get_model_system().get_resource_system().get_resource(resource_id);
 			}
 
 			const QUuid resource_type = info.type_list[info.type_list_offset + 1];
-			return new PropertyResource(info.property_id, resource, owner_resource, resource_type, parent_widget);
+			return new PropertyResource(application, info.property_id, resource, owner_resource, resource_type, parent_widget);
 		}
 		}
 
