@@ -159,6 +159,11 @@ namespace Vadon::Utilities
 
 	void TypeRegistry::destroy_object(const ObjectWrapper& object)
 	{
+		if (object.is_valid() == false)
+		{
+			return;
+		}
+
 		TypeRegistry& instance = get_registry_instance();
 		auto type_data_it = instance.m_type_lookup.find(object.get_type());
 		if (type_data_it == instance.m_type_lookup.end())

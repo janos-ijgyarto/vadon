@@ -54,6 +54,8 @@ namespace VadonEditor::Core
 		const TypeMetadataRegistry& get_registry() const { return m_registry; }
 
 		const TypeData* find_type_data(const QUuid& type_uuid) const;
+		bool has_type_data(const QUuid& type_uuid) const { return find_type_data(type_uuid) != nullptr; }
+
 		const PropertyData* find_type_property_data(const QUuid& type_uuid, const QUuid& property_uuid) const;
 
 		bool save_schema(const QString& schema_file_path);

@@ -118,6 +118,10 @@ namespace
 
 			if (Vadon::Utilities::ObjectSerializer::serialize_object(serializer, object_dictionary) == false)
 			{
+				if (serializer.close_object() != Vadon::Utilities::Serializer::Result::SUCCESSFUL)
+				{
+					VADON_ERROR("Serializer in invalid state!");
+				}
 				return false;
 			}
 		}
@@ -249,7 +253,16 @@ namespace
 
 			if (serialize_object_array_property_element(serializer, index, property_info, 1, array_element_value) == false)
 			{
-				return false;
+				if (serializer.is_reading() == true)
+				{
+					// Arrays can skip elements that failed to deserialize
+					// TODO: log warning?
+					continue;
+				}
+				else
+				{
+					return false;
+				}
 			}
 
 			if (serializer.is_reading() == true)
@@ -487,7 +500,9 @@ namespace Vadon::Utilities
 				Variant property_value;
 				if (serialize_object_property_value(serializer, current_key, property_info, property_value) == false)
 				{
-					return false;
+					// For objects, we can simply skip the property that failed to deserialize
+					// TODO: warning?
+					continue;
 				}
 
 				const std::string property_uuid_key = uuid_to_base64_string(current_property_id);
@@ -511,6 +526,7 @@ namespace Vadon::Utilities
 				Variant& property_value = property_data_it->second;
 				if (serialize_object_property_value(serializer, current_key, current_property_info, property_value) == false)
 				{
+					// Failure to serialize here is actually considered fatal!
 					return false;
 				}
 			}

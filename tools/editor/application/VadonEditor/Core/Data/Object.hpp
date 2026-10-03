@@ -41,6 +41,7 @@ namespace VadonEditor::Core
 		QVariantMap export_data() const;
 
 		const QUuid& get_type_id() const { return m_type_id; }
+		static QUuid extract_data_type_id(const QVariantMap& data_map);
 
 		QVariant get_property(const PropertyID& property_id) const;
 		QVariant get_property_default_value(const PropertyID& property_id) const;

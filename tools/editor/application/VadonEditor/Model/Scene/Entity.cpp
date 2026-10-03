@@ -2,6 +2,7 @@
 
 #include <VadonEditor/Core/Application.hpp>
 #include <VadonEditor/Core/Data/Type.hpp>
+#include <VadonEditor/Core/Project/ProjectManager.hpp>
 
 #include <VadonEditor/Model/ModelSystem.hpp>
 #include <VadonEditor/Model/Scene/SceneSystem.hpp>
@@ -288,14 +289,35 @@ namespace VadonEditor::Model
 			}
 		}
 
+		const Core::DataSchema& data_schema = m_application.get_project_manager().get_project_data_schema();
+
 		// Gather the component data for this entity
 		const QVariantList component_data_list = m_data.get_property(components_property_uuid()).toList();
 		for (const QVariant& component_data : component_data_list)
 		{
 			const QVariantMap component_obj_data = component_data.toMap();
+			
+			// Check to make sure the loaded component type is still valid, otherwise we can skip it
+			const QUuid component_type_uuid = Core::DataObject::extract_data_type_id(component_obj_data);
+			Q_ASSERT_X(Utilities::is_uuid_valid(component_type_uuid) == true, "VadonEditor::Model::EntityModel::create_component_list", "Invalid component data");
+			{
+				if (data_schema.has_type_data(component_type_uuid) == false)
+				{
+					qWarning() << "Stale component type" << component_type_uuid << "loaded for Entity" << get_label();
+					continue;
+				}
+			}
 
+			// Check whether this is a unique entity, or an instantiated scene
 			if (Utilities::is_uuid_valid(sub_scene_id) == false)
 			{
+				// Adding loaded component
+				if (get_component(component_type_uuid) != nullptr)
+				{
+					Q_ASSERT_X(false, "VadonEditor::Model::EntityModel::create_component_list", "Duplicate component data!");
+					continue;
+				}
+
 				Component* new_component = new Component(m_application, false);
 				if (new_component->import_data(component_obj_data) == false)
 				{
@@ -308,17 +330,18 @@ namespace VadonEditor::Model
 			}
 			else
 			{
+				// Entity is sub-scene, so we should be overwriting the contents of an existing component
+				Component* component = get_component(component_type_uuid);
+				if (component == nullptr)
+				{
+					qWarning() << "Stale component entry" << component_type_uuid << "in Entity" << get_id();
+					continue;
+				}
+
 				Core::DataObject component_data_obj(m_application);
 				if (component_data_obj.import_data(component_obj_data) == false)
 				{
 					return false;
-				}
-
-				Component* component = get_component(component_data_obj.get_type_id());
-				if (component == nullptr)
-				{
-					qWarning() << "Stale component type" << component_data_obj.get_type_id() << "in Entity" << get_id();
-					continue;
 				}
 
 				component->import_properties(component_data_obj.get_property_map());
@@ -690,7 +713,7 @@ namespace VadonEditor::Model
 
 	Entity* EntityModel::internal_create_entity()
 	{
-		VadonEditor::Model::Entity* entity = new VadonEditor::Model::Entity(m_application);
+		Entity* entity = new Entity(m_application);
 		if (entity->initialize() == false)
 		{
 			delete entity;

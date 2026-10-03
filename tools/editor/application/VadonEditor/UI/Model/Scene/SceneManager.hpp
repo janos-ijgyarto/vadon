@@ -1,7 +1,9 @@
 #ifndef VADONEDITOR_UI_MODEL_SCENE_SCENEMANAGER_HPP
 #define VADONEDITOR_UI_MODEL_SCENE_SCENEMANAGER_HPP
 #include <VadonEditor/UI/Project/Asset/AssetMessageBox.hpp>
+
 #include <QSortFilterProxyModel>
+#include <QUuid>
 namespace VadonEditor::Core
 {
 	class Application;
@@ -40,7 +42,14 @@ namespace VadonEditor::UI
 		void scene_saved(const QUuid& scene_id);
 
 		void current_scene_changed(int tab_index);
+		void scene_tab_close_requested(int tab_index);
 	private:
+		struct SceneTreeTab
+		{
+			QString label;
+			SceneTree* scene_tree;
+		};
+
 		SceneManager(Core::Application& application);
 
 		bool initialize();
@@ -49,12 +58,17 @@ namespace VadonEditor::UI
 		bool request_close();
 		void force_close();
 
+		void internal_add_tab(const QUuid& scene_id, const SceneTreeTab& tab_data);
+
 		SceneTree* find_scene_tab(const QUuid& scene_id) const;
 		void update_scene_tab_label(SceneTree* scene_tree) const;
+
+		bool reopen_closed_tab(const QUuid& scene_id);
 
 		void simulator_initialized();
 
 		Core::Application& m_application;
+		QHash<QUuid, SceneTreeTab> m_closed_tabs; // FIXME: for now we just remove the tabs and store them here until we need to re-add
 
 		friend class UISystem;
 	};

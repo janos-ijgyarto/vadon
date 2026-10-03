@@ -116,6 +116,12 @@ namespace VadonEditor::UI
 		Q_ASSERT_X(opened_scene != nullptr, "VadonEditor::UI::SceneManager::asset_opened", "Failed to get scene");
 		opened_scene->open_scene();
 
+		if (reopen_closed_tab(resource_info.id) == true)
+		{
+			// Found a tab to reopen
+			return;
+		}
+
 		QTabWidget* scene_tab_widget = m_application.get_ui_system().get_main_window()->get_scene_tab_widget();
 		SceneTree* scene_tree = find_scene_tab(resource_info.id);
 		if (scene_tree != nullptr)
@@ -129,10 +135,11 @@ namespace VadonEditor::UI
 		connect(new_scene_tree, &SceneTree::scene_modified, this, &SceneManager::scene_modified);
 		connect(new_scene_tree, &SceneTree::scene_saved, this, &SceneManager::scene_saved);
 
-		const int new_tab_index = scene_tab_widget->addTab(new_scene_tree, asset_info.path);
+		SceneTreeTab tab_data;
+		tab_data.label = asset_info.path;
+		tab_data.scene_tree = new_scene_tree;
 
-		QTabBar* scene_tab_bar = scene_tab_widget->tabBar();
-		scene_tab_bar->setTabData(new_tab_index, resource_info.id);
+		internal_add_tab(resource_info.id, tab_data);
 	}
 
 	void SceneManager::scene_modified(const QUuid& scene_id)
@@ -161,11 +168,18 @@ namespace VadonEditor::UI
 
 	void SceneManager::current_scene_changed(int tab_index)
 	{
+		if (tab_index < 0)
+		{
+			// No tabs, nothing to do
+			return;
+		}
+
 		QTabWidget* scene_tab_widget = m_application.get_ui_system().get_main_window()->get_scene_tab_widget();
 
 		QWidget* selected_tab = scene_tab_widget->widget(tab_index);
 		SceneTree* selected_scene_tree = qobject_cast<SceneTree*>(selected_tab);
 
+		if(selected_scene_tree != nullptr)
 		{
 			// FIXME: use temp allocator or shared serializer
 			VadonEditor::Network::MessageSerializer message_serializer;
@@ -181,6 +195,33 @@ namespace VadonEditor::UI
 		}
 	}
 
+	void SceneManager::scene_tab_close_requested(int tab_index)
+	{
+		QTabWidget* scene_tab_widget = m_application.get_ui_system().get_main_window()->get_scene_tab_widget();
+
+		QWidget* closed_tab = scene_tab_widget->widget(tab_index);
+		SceneTree* closed_scene_tree = qobject_cast<SceneTree*>(closed_tab);
+		if (closed_scene_tree != nullptr)
+		{
+			QTabBar* scene_tab_bar = scene_tab_widget->tabBar();
+			const QUuid tab_scene_uuid = scene_tab_bar->tabData(tab_index).toUuid();
+
+			SceneTreeTab tab_data;
+			tab_data.label = scene_tab_bar->tabText(tab_index);
+			tab_data.scene_tree = closed_scene_tree;
+
+			m_closed_tabs.insert(tab_scene_uuid, tab_data);
+		}
+
+		scene_tab_widget->removeTab(tab_index);
+
+		if(closed_scene_tree == nullptr)
+		{
+			// If not a scene tree, destroy widget
+			closed_tab->deleteLater();
+		}
+	}
+
 	SceneManager::SceneManager(Core::Application& application)
 		: m_application(application)
 	{
@@ -193,6 +234,7 @@ namespace VadonEditor::UI
 		
 		QTabWidget* scene_tab_widget = m_application.get_ui_system().get_main_window()->get_scene_tab_widget();
 		connect(scene_tab_widget, &QTabWidget::currentChanged, this, &SceneManager::current_scene_changed);
+		connect(scene_tab_widget, &QTabWidget::tabCloseRequested, this, &SceneManager::scene_tab_close_requested);
 
 		return true;
 	}
@@ -265,6 +307,15 @@ namespace VadonEditor::UI
 		}
 	}
 
+	void SceneManager::internal_add_tab(const QUuid& scene_id, const SceneTreeTab& tab_data)
+	{
+		QTabWidget* scene_tab_widget = m_application.get_ui_system().get_main_window()->get_scene_tab_widget();
+		const int new_tab_index = scene_tab_widget->addTab(tab_data.scene_tree, tab_data.label);
+
+		QTabBar* scene_tab_bar = scene_tab_widget->tabBar();
+		scene_tab_bar->setTabData(new_tab_index, scene_id);
+	}
+
 	SceneTree* SceneManager::find_scene_tab(const QUuid& scene_id) const
 	{
 		QTabWidget* scene_tab_widget = m_application.get_ui_system().get_main_window()->get_scene_tab_widget();
@@ -295,6 +346,22 @@ namespace VadonEditor::UI
 		const int tab_index = scene_tab_widget->indexOf(scene_tab);
 
 		scene_tab_widget->setTabText(tab_index, scene_tab_label);
+	}
+
+	bool SceneManager::reopen_closed_tab(const QUuid& scene_id)
+	{
+		auto closed_tab_it = m_closed_tabs.find(scene_id);
+		if (closed_tab_it != m_closed_tabs.end())
+		{
+			const SceneTreeTab& tab_data = closed_tab_it.value();
+
+			internal_add_tab(scene_id, tab_data);
+
+			m_closed_tabs.erase(closed_tab_it);
+			return true;
+		}
+
+		return false;
 	}
 
 	void SceneManager::simulator_initialized()
