@@ -262,7 +262,11 @@ namespace Vadon::Private::Render::Canvas
 	void CanvasSystem::set_item_layer(ItemHandle item_handle, LayerHandle layer_handle)
 	{
 		ItemData& item = m_item_pool.get(item_handle);
-		if (item.info.layer == layer_handle)
+
+		LayerHandle prev_layer_handle = get_layer_or_default(item.info.layer);
+		LayerHandle new_layer_handle = get_layer_or_default(layer_handle);
+
+		if (prev_layer_handle == new_layer_handle)
 		{
 			// Nothing to do
 			return;
@@ -270,16 +274,14 @@ namespace Vadon::Private::Render::Canvas
 
 		// Remove from previous layer
 		{
-			LayerHandle prev_layer_handle = get_layer_or_default(item.info.layer);
 			LayerData& prev_layer = m_layer_pool.get(prev_layer_handle);
 			prev_layer.remove_item(item_handle);
 		}
 
 		// Add to new layer
 		{
-			LayerHandle new_layer_handle = layer_handle.is_valid() ? layer_handle : m_default_layer;
 			LayerData& new_layer = m_layer_pool.get(new_layer_handle);
-			new_layer.remove_item(item_handle);
+			new_layer.add_item(item_handle);
 		}
 	}
 
