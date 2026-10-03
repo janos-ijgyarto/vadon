@@ -378,23 +378,28 @@ namespace VadonEditor::Model
 				const Component* reference_component = reference_entity->get_component(current_component->get_type_id());
 				if (reference_component != nullptr)
 				{
+					const Core::DataObject& reference_component_data = reference_component->get_data_object();
+
 					const QString properties_key_string = Utilities::uuid_to_base64_string(Core::DataObject::get_properties_property_uuid());
 					auto properties_it = component_data.find(properties_key_string);
 					QVariantMap component_properties = properties_it->toMap();
 
 					for (auto property_entry_it = component_properties.begin(); property_entry_it != component_properties.end();)
 					{
-						const QVariant ref_value = reference_component->get_property(Utilities::base64_string_to_uuid(property_entry_it.key()));
-						if (property_entry_it.value() == ref_value)
+						const QUuid property_id = Utilities::base64_string_to_uuid(property_entry_it.key());
+						if (reference_component_data.has_property(property_id) == true)
 						{
-							// Property value is the same, so we can remove it from the map
-							property_entry_it = component_properties.erase(property_entry_it);
+							const QVariant ref_value = reference_component_data.get_property(property_id);
+							if (property_entry_it.value() == ref_value)
+							{
+								// Property value is the same, so we can remove it from the map
+								property_entry_it = component_properties.erase(property_entry_it);
+								continue;
+							}
 						}
-						else
-						{
-							// Property is different from original, so we keep it
-							++property_entry_it;
-						}
+
+						// Property is different from original, so we keep it
+						++property_entry_it;
 					}
 
 					if (component_properties.isEmpty())
