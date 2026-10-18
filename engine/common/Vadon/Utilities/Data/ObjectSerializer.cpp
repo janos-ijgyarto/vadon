@@ -202,6 +202,22 @@ namespace
 		return true;
 	}
 
+	bool serialize_object_array_enum_element(Vadon::Utilities::Serializer& serializer, size_t index, const Vadon::Utilities::PropertyInfo& property_info, size_t type_list_offset, Vadon::Utilities::Variant& array_element_value)
+	{
+		const size_t enum_type_offset = type_list_offset + 1;
+		VADON_ASSERT(enum_type_offset < property_info.type_list.size(), "Missing enum type!");
+
+		// Serialize the array element itself
+		if (serialize_base_type<size_t>(serializer, ::Vadon::Foundation::BaseType::UUID, index, array_element_value) == false)
+		{
+			return false;
+		}
+
+		// TODO: find a way to validate the enum value ID?
+
+		return true;
+	}
+
 	bool serialize_object_array_property_element(Vadon::Utilities::Serializer& serializer, size_t index, const Vadon::Utilities::PropertyInfo& property_info, size_t type_list_offset, Vadon::Utilities::Variant& array_element_value)
 	{
 		const ::Vadon::Foundation::UUID element_type = property_info.type_list[type_list_offset];
@@ -221,6 +237,8 @@ namespace
 			return serialize_object_array_subobject_element(serializer, index, property_info, type_list_offset, array_element_value);
 		case ::Vadon::Foundation::Property::Category::RESOURCE:
 			return serialize_object_array_resource_element(serializer, index, property_info, type_list_offset, array_element_value);
+		case ::Vadon::Foundation::Property::Category::ENUM:
+			return serialize_object_array_enum_element(serializer, index, property_info, type_list_offset, array_element_value);
 		default:
 			// Unsupported category!
 			return false;
@@ -340,6 +358,21 @@ namespace
 		return true;
 	}
 
+	bool serialize_object_enum_property(Vadon::Utilities::Serializer& serializer, std::string_view key, const Vadon::Utilities::PropertyInfo& property_info, Vadon::Utilities::Variant& property_value)
+	{
+		VADON_ASSERT(property_info.type_list.size() >= 2, "Missing enum type!");
+
+		// Serialize the UUID property itself
+		if (serialize_base_type<std::string_view>(serializer, ::Vadon::Foundation::BaseType::UUID, key, property_value) == false)
+		{
+			return false;
+		}
+
+		// TODO: find a way to validate the enum value ID?
+
+		return true;
+	}
+
 	bool serialize_object_property_value(Vadon::Utilities::Serializer& serializer, std::string_view key, const Vadon::Utilities::PropertyInfo& property_info, Vadon::Utilities::Variant& property_value)
 	{
 		const ::Vadon::Foundation::Property::Category property_category = Vadon::Utilities::PropertyInfo::get_category(property_info.type_list.front());
@@ -355,6 +388,8 @@ namespace
 			return serialize_object_subobject_property(serializer, key, property_info, property_value);
 		case ::Vadon::Foundation::Property::Category::RESOURCE:
 			return serialize_object_resource_property(serializer, key, property_info, property_value);
+		case ::Vadon::Foundation::Property::Category::ENUM:
+			return serialize_object_enum_property(serializer, key, property_info, property_value);
 		default:
 			// Unsupported category!
 			return false;
@@ -669,6 +704,7 @@ namespace Vadon::Utilities
 		}
 			break;
 		case ::Vadon::Foundation::Property::Category::RESOURCE:
+		case ::Vadon::Foundation::Property::Category::ENUM:
 		{
 			constexpr const char* key = ::Vadon::Foundation::DataObjectSchema::get_path_serializer_key(::Vadon::Foundation::DataObjectSchema::PathSerializerKey::TRIVIAL);
 			if (serialize_base_type<std::string_view>(serializer, ::Vadon::Foundation::BaseType::UUID, key, property_data) == false)

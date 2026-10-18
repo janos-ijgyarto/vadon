@@ -48,10 +48,13 @@ namespace Vadon::ECS
 
 		}
 
-		const T& operator *() const;
+		const T* get_ptr() const;
+		T* get_ptr() { return const_cast<T*>(std::as_const(*this).get_ptr()); }
+
+		const T& operator *() const { return *(get_ptr()); }
 		T& operator *() { return const_cast<T&>(std::as_const(*this).operator*()); }
 
-		const T* operator->() const;
+		const T* operator->() const { return get_ptr(); }
 		T* operator->() { return const_cast<T*>(std::as_const(*this).operator->()); }
 	private:
 		TypedComponentHandle(ComponentPoolInterface* pool, EntityHandle owner)

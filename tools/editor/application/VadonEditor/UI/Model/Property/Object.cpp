@@ -94,7 +94,7 @@ namespace VadonEditor::UI
 		NewObjectDialog* new_object_dialog = new NewObjectDialog(m_object.get_application(), m_base_type, this);
 		connect(new_object_dialog, &NewObjectDialog::object_type_selected, this, &PropertyObject::new_object_type_selected);
 
-		new_object_dialog->open();
+		new_object_dialog->show();
 	}
 	
 	void PropertyObject::clear_triggered()

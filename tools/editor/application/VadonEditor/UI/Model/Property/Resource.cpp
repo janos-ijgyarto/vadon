@@ -128,7 +128,7 @@ namespace VadonEditor::UI
 		SelectResourceTypeDialog* select_type_dialog = new SelectResourceTypeDialog(m_application, m_base_type, this);
 		connect(select_type_dialog, &SelectResourceTypeDialog::object_type_selected, this, &PropertyResource::new_resource_type_selected);
 
-		select_type_dialog->open();
+		select_type_dialog->show();
 	}
 
 	void PropertyResource::load_triggered()
@@ -136,7 +136,7 @@ namespace VadonEditor::UI
 		SelectResourceDialog* select_dialog = new SelectResourceDialog(m_application, m_base_type, this);
 		connect(select_dialog, &SelectResourceDialog::resource_asset_selected, this, &PropertyResource::resource_asset_opened);
 
-		select_dialog->open();
+		select_dialog->show();
 	}
 
 	void PropertyResource::clear_triggered()

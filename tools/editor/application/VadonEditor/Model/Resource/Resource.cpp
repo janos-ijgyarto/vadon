@@ -210,6 +210,11 @@ namespace VadonEditor::Model
 		return Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::FileResourceSchema::c_type_uuid);
 	}
 
+	QUuid Resource::get_name_property_id()
+	{
+		return Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::ResourceSchema::c_name_property.id);
+	}
+
 	Resource::Resource(Core::Application& application)
 		: m_application(application)
 		, m_owner(nullptr)

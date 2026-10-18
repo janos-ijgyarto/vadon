@@ -54,6 +54,7 @@ namespace VadonEditor::Model
 		void entity_component_added(const QUuid& entity_id, const QUuid& component_id);
 		void entity_component_removed(const QUuid& entity_id, const QUuid& component_id);
 		void entity_component_property_edited(const QUuid& entity_id, const QUuid& component_id, const QUuid& property_id);
+		void entity_component_modified(const QUuid& entity_id, const QUuid& component_id);
 
 		bool is_sub_scene_acyclic(const QUuid& scene_id);
 

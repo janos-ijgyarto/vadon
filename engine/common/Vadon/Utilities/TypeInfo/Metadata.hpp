@@ -99,5 +99,91 @@ namespace Vadon::Utilities
 	{
 		return TypePropertyMetadata(*this, property_uuid);
 	}
+
+	struct EnumValueMetadata;
+
+	struct EnumMetadataBase
+	{
+		::Vadon::Foundation::TypeMetadataRegistry& registry;
+		const ::Vadon::Foundation::UUID uuid;
+
+		// NOTE: using TypeID to ensure it's a registered type
+		EnumMetadataBase(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry, const Vadon::Utilities::TypeID type_id)
+			: registry(metadata_registry)
+			, uuid(TypeRegistry::get_enum_uuid(type_id))
+		{
+			registry.register_enum(uuid);
+		}
+
+		void set_metadata(const char* key, const char* value)
+		{
+			registry.set_enum_metadata(uuid, key, value);
+		}
+
+		EnumMetadataBase& add_metadata(const char* key, const char* value)
+		{
+			set_metadata(key, value);
+			return *this;
+		}
+
+		void set_metadata(::Vadon::Foundation::CommonTypeMetadata::Key key, const char* value)
+		{
+			set_metadata(::Vadon::Foundation::CommonTypeMetadata::key_string(key), value);
+		}
+
+		EnumMetadataBase& add_metadata(::Vadon::Foundation::CommonTypeMetadata::Key key, const char* value)
+		{
+			set_metadata(key, value);
+			return *this;
+		}
+
+		EnumValueMetadata add_value(const ::Vadon::Foundation::UUID& value_uuid);
+	};
+
+	template<EnumType T>
+	class EnumMetadata : public EnumMetadataBase
+	{
+	public:
+		EnumMetadata(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry)
+			: EnumMetadataBase(metadata_registry, Vadon::Utilities::TypeRegistry::get_type_id<T>())
+		{
+
+		}
+	};
+
+	struct EnumValueMetadata
+	{
+		EnumMetadataBase& enum_metadata;
+		const ::Vadon::Utilities::TypeUUID uuid;
+
+		EnumValueMetadata(EnumMetadataBase& enum_metadata_obj, const ::Vadon::Foundation::UUID& value_uuid)
+			: enum_metadata(enum_metadata_obj)
+			, uuid(value_uuid)
+		{
+			enum_metadata.registry.register_enum_value(enum_metadata.uuid, uuid);
+		}
+
+		void set_metadata(const char* key, const char* value)
+		{
+			enum_metadata.registry.set_enum_value_metadata(enum_metadata.uuid, uuid, key, value);
+		}
+
+		EnumValueMetadata& add_metadata(const char* key, const char* value) { set_metadata(key, value); return *this; }
+
+		void set_metadata(::Vadon::Foundation::CommonPropertyMetadata::Key key, const char* value)
+		{
+			set_metadata(::Vadon::Foundation::CommonPropertyMetadata::key_string(key), value);
+		}
+
+		EnumValueMetadata& add_metadata(::Vadon::Foundation::CommonPropertyMetadata::Key key, const char* value) { set_metadata(key, value); return *this; }
+
+		// NOTE: this is intended as the "end" for the initialization sequence, returning to the EnumMetadataBase to add other metadata/properties
+		EnumMetadataBase& commit_value() { return enum_metadata; }
+	};
+
+	inline EnumValueMetadata EnumMetadataBase::add_value(const ::Vadon::Foundation::UUID& value_uuid)
+	{
+		return EnumValueMetadata(*this, value_uuid);
+	}
 }
 #endif

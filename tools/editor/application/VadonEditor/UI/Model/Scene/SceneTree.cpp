@@ -99,7 +99,7 @@ namespace VadonEditor::UI
 		SelectResourceDialog* select_dialog = new SelectResourceDialog(m_scene->get_application(), Model::Scene::get_scene_type_uuid(), this);
 		connect(select_dialog, &SelectResourceDialog::resource_asset_selected, this, &SceneTree::scene_asset_selected);
 
-		select_dialog->open();
+		select_dialog->show();
 	}
 
 	void SceneTree::remove_entity_triggered()
@@ -199,6 +199,7 @@ namespace VadonEditor::UI
 			connect(entity, &Model::Entity::component_added, this, &SceneTree::internal_scene_modified);
 			connect(entity, &Model::Entity::component_removed, this, &SceneTree::internal_scene_modified);
 			connect(entity, &Model::Entity::component_property_edited, this, &SceneTree::internal_scene_modified);
+			connect(entity, &Model::Entity::component_modified, this, &SceneTree::internal_scene_modified);
 
 			new_entity_editor->show();
 		}

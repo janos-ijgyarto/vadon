@@ -27,6 +27,9 @@ namespace Vadon::Utilities
 
 	template<typename T>
 	struct BaseDataTypeTrait : public std::false_type {};
+
+	template<typename T>
+	concept EnumType = std::is_enum_v<T>;
 }
 
 #define VADON_REGISTER_TYPE_UUID(_type, _uuid_str) template<> \
@@ -96,6 +99,8 @@ namespace Vadon::Utilities
 
 	VADON_REGISTER_TYPE_UUID(BoxedVariantDictionary, ::Vadon::Foundation::TypeInfo::get_base_type_uuid_string(::Vadon::Foundation::BaseType::DICTIONARY).string);
 	VADON_DECLARE_BASE_DATA_TYPE(BoxedVariantDictionary);
+
+	VADON_REGISTER_TYPE_UUID(::Vadon::Foundation::EnumSchema, ::Vadon::Foundation::EnumSchema::c_type_uuid.string);
 
 	constexpr ::Vadon::Foundation::UUID get_base_type_uuid(::Vadon::Foundation::BaseType base_type)
 	{

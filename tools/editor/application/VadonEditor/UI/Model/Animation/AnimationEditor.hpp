@@ -51,10 +51,8 @@ namespace VadonEditor::UI
 	{
 		Q_OBJECT
 	public:
-        AnimationEditor(Model::Resource* resource, QWidget* parent = nullptr);
+        AnimationEditor(const Model::Animation& animation, QWidget* parent = nullptr);
         ~AnimationEditor();
-
-        bool initialize();
 
         const Model::Animation& get_animation() const { return m_animation; }
         const AnimationEditorTheme& get_theme() const { return m_theme; }
@@ -70,6 +68,9 @@ namespace VadonEditor::UI
         void key_moved(const QUuid& channel_id, int key_id);
 
         void channel_context_menu_requested(const QUuid& channel_id, const QPoint& screen_pos, const QPointF& item_pos);
+    signals:
+        void new_channel_requested(const QUuid& animation_id);
+        void remove_channel_requested(const QUuid& animation_id, const QUuid& channel_id);
     private slots:
         void playback_start_triggered();
         void playback_stop_triggered();
@@ -82,18 +83,18 @@ namespace VadonEditor::UI
 
         void timeline_zoom_changed();
 
-        void save_triggered();
+        void channel_added(const QUuid& animation_id, const QUuid& channel_id);
+        void channel_edited(const QUuid& animation_id, const QUuid& channel_id);
+        void channel_removed(const QUuid& animation_id, const QUuid& channel_id);
 
-        void animation_edited();
-
-        void animation_name_changed(const QString& text);
         void channel_tag_text_changed(const QString& text);
+        void channel_sample_method_changed(QUuid id);
         void key_time_changed(double value);
         void key_value_changed();
 
         void item_selection_changed();
 	private:
-        void update_title();
+        void initialize();
 
         void transform_updated();
         void time_updated();
@@ -101,11 +102,9 @@ namespace VadonEditor::UI
         void playback_timer_update();
         void reset_playback();
 
-        Model::Resource* m_resource;
-        Model::Animation m_animation;
-
 		Ui::AnimationEditor m_ui;
 
+        const Model::Animation& m_animation;
         AnimationEditorTheme m_theme;
 
         QGraphicsScene m_graphics_scene;

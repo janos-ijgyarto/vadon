@@ -183,6 +183,7 @@ namespace
 		}
 		break;
 		case ::Vadon::Foundation::Property::Category::RESOURCE:
+		case ::Vadon::Foundation::Property::Category::ENUM:
 		{
 			value = VadonEditor::Utilities::get_base_type_default_value(::Vadon::Foundation::BaseType::UUID);
 		}
@@ -377,6 +378,22 @@ namespace
 		return true;
 	}
 
+	bool serialize_object_array_enum_element(QJsonValue& json_value, const VadonEditor::Core::PropertyData& property_data, qsizetype type_list_offset, const QVariant& array_element_value)
+	{
+		const qsizetype enum_type_offset = type_list_offset + 1;
+		Q_ASSERT_X(enum_type_offset < property_data.type_list.size(), "serialize_object_array_enum_element", "Missing enum type!");
+
+		// Serialize the array element itself
+		if (serialize_object_trivial_property(json_value, VadonEditor::Core::TypeData::get_base_type_uuid(::Vadon::Foundation::BaseType::UUID), array_element_value) == false)
+		{
+			return false;
+		}
+
+		// TODO: find a way to validate the enum value ID?
+
+		return true;
+	}
+
 	bool deserialize_object_array_resource_element(const QJsonValueConstRef& json_value, const VadonEditor::Core::PropertyData& property_data, qsizetype type_list_offset, QVariant& array_element_value)
 	{
 		const qsizetype resource_type_offset = type_list_offset + 1;
@@ -390,6 +407,22 @@ namespace
 
 		// TODO: find a way to validate that the resource ID points to a compatible resource?
 		//const Vadon::Utilities::TypeUUID resource_type_uuid = property_info.type_list[resource_type_offset];
+
+		return true;
+	}
+
+	bool deserialize_object_array_enum_element(const QJsonValueConstRef& json_value, const VadonEditor::Core::PropertyData& property_data, qsizetype type_list_offset, QVariant& array_element_value)
+	{
+		const qsizetype enum_type_offset = type_list_offset + 1;
+		Q_ASSERT_X(enum_type_offset < property_data.type_list.size(), "deserialize_object_array_enum_element", "Missing enum type!");
+
+		// Serialize the array element itself
+		if (deserialize_object_trivial_property(json_value, VadonEditor::Core::TypeData::get_base_type_uuid(::Vadon::Foundation::BaseType::UUID), array_element_value) == false)
+		{
+			return false;
+		}
+
+		// TODO: find a way to validate the enum value ID?
 
 		return true;
 	}
@@ -410,6 +443,8 @@ namespace
 			return serialize_object_array_subobject_element(application, json_value, property_data, type_list_offset, array_element_value, labeled);
 		case ::Vadon::Foundation::Property::Category::RESOURCE:
 			return serialize_object_array_resource_element(json_value, property_data, type_list_offset, array_element_value);
+		case ::Vadon::Foundation::Property::Category::ENUM:
+			return serialize_object_array_enum_element(json_value, property_data, type_list_offset, array_element_value);
 		default:
 			// Unsupported category!
 			return false;
@@ -432,6 +467,8 @@ namespace
 			return deserialize_object_array_subobject_element(application, json_value, property_data, type_list_offset, array_element_value);
 		case ::Vadon::Foundation::Property::Category::RESOURCE:
 			return deserialize_object_array_resource_element(json_value, property_data, type_list_offset, array_element_value);
+		case ::Vadon::Foundation::Property::Category::ENUM:
+			return deserialize_object_array_enum_element(json_value, property_data, type_list_offset, array_element_value);
 		default:
 			// Unsupported category!
 			return false;
@@ -582,6 +619,22 @@ namespace
 		return true;
 	}
 
+	bool serialize_object_enum_property(QJsonValue& json_value, const VadonEditor::Core::PropertyData& property_data, const QVariant& property_value)
+	{
+		Q_ASSERT_X(property_data.type_list.size() >= 2, "serialize_object_enum_property", "Missing enum type!");
+		Q_UNUSED(property_data);
+
+		// Serialize the UUID property itself
+		if (serialize_object_trivial_property(json_value, VadonEditor::Core::TypeData::get_base_type_uuid(::Vadon::Foundation::BaseType::UUID), property_value) == false)
+		{
+			return false;
+		}
+
+		// TODO: find a way to validate the enum value ID?
+
+		return true;
+	}
+
 	bool deserialize_object_resource_property(const QJsonValueConstRef& json_value, const VadonEditor::Core::PropertyData& property_data, QVariant& property_value)
 	{
 		Q_ASSERT_X(property_data.type_list.size() >= 2, "deserialize_object_resource_property", "Missing resource type!");
@@ -594,6 +647,22 @@ namespace
 		}
 
 		// TODO: find a way to validate that the resource ID points to a compatible resource?
+
+		return true;
+	}
+
+	bool deserialize_object_enum_property(const QJsonValueConstRef& json_value, const VadonEditor::Core::PropertyData& property_data, QVariant& property_value)
+	{
+		Q_ASSERT_X(property_data.type_list.size() >= 2, "deserialize_object_enum_property", "Missing resource type!");
+		Q_UNUSED(property_data);
+
+		// Serialize the UUID property itself
+		if (deserialize_object_trivial_property(json_value, VadonEditor::Core::TypeData::get_base_type_uuid(::Vadon::Foundation::BaseType::UUID), property_value) == false)
+		{
+			return false;
+		}
+
+		// TODO: find a way to validate the enum value ID?
 
 		return true;
 	}
@@ -613,6 +682,8 @@ namespace
 			return serialize_object_subobject_property(application, json_value, property_data, property_value, labeled);
 		case ::Vadon::Foundation::Property::Category::RESOURCE:
 			return serialize_object_resource_property(json_value, property_data, property_value);
+		case ::Vadon::Foundation::Property::Category::ENUM:
+			return serialize_object_enum_property(json_value, property_data, property_value);
 		default:
 			// Unsupported category!
 			return false;
@@ -634,6 +705,8 @@ namespace
 			return deserialize_object_subobject_property(application, json_value, property_data, property_value);
 		case ::Vadon::Foundation::Property::Category::RESOURCE:
 			return deserialize_object_resource_property(json_value, property_data, property_value);
+		case ::Vadon::Foundation::Property::Category::ENUM:
+			return deserialize_object_enum_property(json_value, property_data, property_value);
 		default:
 			// Unsupported category!
 			return false;
@@ -656,6 +729,8 @@ namespace
 		case ::Vadon::Foundation::Property::Category::OBJECT:
 			return QMetaType::Type::QVariantMap;
 		case ::Vadon::Foundation::Property::Category::RESOURCE:
+			return QMetaType::Type::QUuid;
+		case ::Vadon::Foundation::Property::Category::ENUM:
 			return QMetaType::Type::QUuid;
 		default:
 			// Unsupported category!
@@ -1629,6 +1704,7 @@ namespace VadonEditor::Core
 		}
 		break;
 		case ::Vadon::Foundation::Property::Category::RESOURCE:
+		case ::Vadon::Foundation::Property::Category::ENUM:
 		{
 			QJsonValue json_value;
 			if (serialize_object_trivial_property(json_value, VadonEditor::Core::TypeData::get_base_type_uuid(::Vadon::Foundation::BaseType::UUID), property_value) == false)

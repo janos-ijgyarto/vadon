@@ -112,7 +112,7 @@ namespace VadonEditor::UI
 		SelectResourceDialog* select_dialog = new SelectResourceDialog(m_application, Model::Scene::get_scene_type_uuid(), this);
 		connect(select_dialog, &SelectResourceDialog::resource_asset_selected, this, &InheritedSceneDialog::base_scene_selected);
 
-		select_dialog->open();
+		select_dialog->show();
 	}
 
 	void InheritedSceneDialog::base_scene_selected(const QUuid& scene_uuid)
@@ -145,7 +145,7 @@ namespace VadonEditor::UI
 
 		save_dialog->setWindowTitle("Select Inherited Scene Path");
 
-		save_dialog->open();
+		save_dialog->show();
 	}
 
 	void InheritedSceneDialog::inherited_scene_path_selected(const QString& asset_path)

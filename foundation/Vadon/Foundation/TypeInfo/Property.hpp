@@ -14,6 +14,7 @@ namespace Vadon
 				DICTIONARY, // Dictionary of underlying type (generic if not specified)
 				OBJECT, // Object of underlying type (generic if not specified)
 				RESOURCE, // UUID of Resource
+				ENUM, // UUID pointing to an enum value
 				GENERIC, // Data type is determined at runtime
 				CATEGORY_COUNT,
 				INVALID = CATEGORY_COUNT

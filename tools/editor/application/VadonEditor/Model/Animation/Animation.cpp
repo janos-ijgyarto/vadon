@@ -3,8 +3,7 @@
 #include <VadonEditor/Core/Application.hpp>
 #include <VadonEditor/Core/Project/ProjectManager.hpp>
 
-#include <VadonEditor/Model/ModelSystem.hpp>
-#include <VadonEditor/Model/Resource/ResourceSystem.hpp>
+#include <VadonEditor/Model/Resource/Resource.hpp>
 
 #include <VadonEditor/Utilities/UUID.hpp>
 
@@ -36,6 +35,8 @@ namespace
 			return QVariant(QVector4D());
 		case VadonEditor::Model::AnimationChannelType::COLORRGBA:
 			return QVariant(QColor());
+		case VadonEditor::Model::AnimationChannelType::UUID:
+			return QVariant(QUuid());
 		default:
 			return QVariant();
 		}
@@ -44,6 +45,11 @@ namespace
 	QUuid get_animation_channel_type_uuid(VadonEditor::Model::AnimationChannelType channel_type)
 	{
 		return VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::AnimationChannelSchema::get_channel_type_uuid_string(channel_type));
+	}
+
+	QUuid get_animation_channels_property_uuid()
+	{
+		return VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::AnimationSchema::c_channels_property.id);
 	}
 
 	VadonEditor::Model::AnimationChannelType get_animation_channel_type_from_uuid(const QUuid& channel_type_uuid)
@@ -70,6 +76,12 @@ namespace
 
 namespace VadonEditor::Model
 {
+	void AnimationChannel::set_sample_method(AnimationChannelSampleMethod sample_method)
+	{
+		m_sample_method = sample_method;
+		emit(channel_edited(m_id));
+	}
+
 	int AnimationChannel::add_key()
 	{
 		AnimationKey new_key;
@@ -133,25 +145,98 @@ namespace VadonEditor::Model
 		std::sort(m_keys.begin(), m_keys.end());
 	}
 
+	QUuid AnimationChannel::get_sample_method_id(AnimationChannelSampleMethod sample_method)
+	{
+		return Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::AnimationChannelSchema::get_sample_method_uuid_string(sample_method));
+	}
+
+	AnimationChannelSampleMethod AnimationChannel::get_sample_method_from_id(const QUuid& sample_method_id)
+	{
+		for (qsizetype sample_method_index = 0; sample_method_index < static_cast<qsizetype>(AnimationChannelSampleMethod::METHOD_COUNT); ++sample_method_index)
+		{
+			const AnimationChannelSampleMethod current_sample_method = static_cast<AnimationChannelSampleMethod>(sample_method_index);
+			if (sample_method_id == get_sample_method_id(current_sample_method))
+			{
+				return current_sample_method;
+			}
+		}
+
+		return AnimationChannelSampleMethod::INVALID_METHOD;
+	}
+
+	Animation::Animation(Core::Application& application)
+		: m_application(application)
+	{
+	}
+
 	Animation::~Animation()
 	{
 		clear_channels();
 	}
 
-	bool Animation::load_data()
+	bool Animation::store_data(QVariant& data) const
 	{
-		clear_channels();
-
-		const QUuid channels_property_id = Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::AnimationSchema::c_channels_property.id);
-
 		const QUuid id_property_id = Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::AnimationChannelSchema::c_id_property.id);
+		const QUuid sample_method_property_id = Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::AnimationChannelSchema::c_sample_method_property.id);
 		const QUuid tag_property_id = Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::AnimationChannelSchema::c_tag_property.id);
 		const QUuid key_times_property_id = Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::AnimationChannelSchema::c_key_times_property.id);
 
-		const QVariantList channels = m_resource->get_data_object().get_property(channels_property_id).toList();
+		QVariantList channel_list;
+
+		for (AnimationChannel* current_channel : m_channels)
+		{
+			current_channel->sort_keys();
+
+			QVariantList key_times_list;
+			QVariantList key_data_list;
+
+			for (const AnimationKey& current_key : current_channel->get_keys())
+			{
+				key_times_list.push_back(static_cast<float>(current_key.start_time));
+				key_data_list.push_back(current_key.value);
+			}
+
+			const QUuid channel_type_uuid = get_animation_channel_type_uuid(current_channel->get_type());
+
+			Core::DataObject channel_object(m_application);
+			if (channel_object.init_type(channel_type_uuid) == false)
+			{
+				Q_ASSERT_X(false, "VadonEditor::Model::Animation::store_data", "Failed to initialize channel object");
+				return false;
+			}
+
+			const QUuid sample_method_id = AnimationChannel::get_sample_method_id(current_channel->get_sample_method());
+
+			channel_object.set_property(id_property_id, current_channel->get_id());
+			channel_object.set_property(key_times_property_id, key_times_list);
+			channel_object.set_property(sample_method_property_id, sample_method_id);
+			channel_object.set_property(tag_property_id, current_channel->get_tag());
+
+			const Core::PropertyID data_property_id = get_animation_channel_type_data_property_id(current_channel->get_type());
+			channel_object.set_property(data_property_id, key_data_list);
+
+			channel_list.push_back(channel_object.export_data());
+		}
+
+		data = channel_list;
+		return true;
+	}
+
+	bool Animation::load_from_resource(const Model::Resource* resource)
+	{
+		clear_channels();
+
+		m_id = resource->get_info().id;
+
+		const QUuid id_property_id = Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::AnimationChannelSchema::c_id_property.id);
+		const QUuid sample_method_property_id = Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::AnimationChannelSchema::c_sample_method_property.id);
+		const QUuid tag_property_id = Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::AnimationChannelSchema::c_tag_property.id);
+		const QUuid key_times_property_id = Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::AnimationChannelSchema::c_key_times_property.id);
+
+		const QVariantList channels = resource->get_data_object().get_property(get_animation_channels_property_uuid()).toList();
 		for (const QVariant& current_channel_variant : channels)
 		{
-			Core::DataObject channel_object(m_resource->get_application());
+			Core::DataObject channel_object(m_application);
 			if (channel_object.import_data(current_channel_variant.toMap()) == false)
 			{
 				return false;
@@ -160,7 +245,15 @@ namespace VadonEditor::Model
 			const QUuid channel_id = channel_object.get_property(id_property_id).toUuid();
 			const AnimationChannelType channel_type = get_animation_channel_type_from_uuid(channel_object.get_type_id());
 
-			AnimationChannel* new_channel = new AnimationChannel(channel_id, channel_type);
+			AnimationChannel* new_channel = new AnimationChannel(channel_id, channel_type, AnimationChannelMetadata{});
+
+			const QUuid sample_method_id = channel_object.get_property(sample_method_property_id).toUuid();
+			AnimationChannelSampleMethod sample_method = AnimationChannel::get_sample_method_from_id(sample_method_id);
+			if (sample_method == AnimationChannelSampleMethod::INVALID_METHOD)
+			{
+				sample_method = AnimationChannelSampleMethod::LINEAR;
+			}
+			new_channel->set_sample_method(sample_method);
 
 			const QString tag_string = channel_object.get_property(tag_property_id).toString();
 			new_channel->set_tag(tag_string);
@@ -191,65 +284,19 @@ namespace VadonEditor::Model
 		return true;
 	}
 
-	void Animation::store_data()
+	bool Animation::store_to_resource(Model::Resource* resource) const
 	{
-		const QUuid id_property_id = Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::AnimationChannelSchema::c_id_property.id);
-		const QUuid tag_property_id = Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::AnimationChannelSchema::c_tag_property.id);
-		const QUuid key_times_property_id = Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::AnimationChannelSchema::c_key_times_property.id);
-
-		QVariantList channel_list;
-
-		for (AnimationChannel* current_channel : m_channels)
+		QVariant animation_data;
+		if (store_data(animation_data) == false)
 		{
-			current_channel->sort_keys();
-
-			QVariantList key_times_list;
-			QVariantList key_data_list;
-
-			for (const AnimationKey& current_key : current_channel->get_keys())
-			{
-				key_times_list.push_back(static_cast<float>(current_key.start_time));
-				key_data_list.push_back(current_key.value);
-			}
-
-			const QUuid channel_type_uuid = get_animation_channel_type_uuid(current_channel->get_type());
-
-			Core::DataObject channel_object(m_resource->get_application());
-			if (channel_object.init_type(channel_type_uuid) == false)
-			{
-				Q_ASSERT_X(false, "VadonEditor::Model::Animation::store_data", "Failed to initialize channel object");
-				return;
-			}
-
-			channel_object.set_property(id_property_id, current_channel->get_id());
-			channel_object.set_property(key_times_property_id, key_times_list);
-			channel_object.set_property(tag_property_id, current_channel->get_tag());
-
-			const Core::PropertyID data_property_id = get_animation_channel_type_data_property_id(current_channel->get_type());
-			channel_object.set_property(data_property_id, key_data_list);
-
-			channel_list.push_back(channel_object.export_data());
+			return false;
 		}
 
-		const QUuid channels_property_id = Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::AnimationSchema::c_channels_property.id);
-
-		m_resource->set_property(channels_property_id, channel_list);
+		resource->set_property(get_animation_channels_property_uuid(), animation_data);
+		return true;
 	}
 
-	void Animation::save_to_resource()
-	{
-		// First make sure the data is up-to-date
-		store_data();
-
-		// Then save in the resource
-		Model::ResourceSystem& resource_system = m_resource->get_application().get_model_system().get_resource_system();
-		if (resource_system.save_resource(m_resource) == false)
-		{
-			Q_ASSERT_X(false, "VadonEditor::Model::Animation::save_to_resource", "Failed to save resource!");
-		}
-	}
-
-	AnimationChannel* Animation::add_channel(AnimationChannelType type)
+	AnimationChannel* Animation::add_channel(AnimationChannelType type, const AnimationChannelMetadata& metadata)
 	{
 		QUuid new_uuid = QUuid::createUuid();
 		while (find_channel(new_uuid) != nullptr)
@@ -257,10 +304,10 @@ namespace VadonEditor::Model
 			new_uuid = QUuid::createUuid();
 		}
 
-		AnimationChannel* new_channel = new AnimationChannel(new_uuid, type);
+		AnimationChannel* new_channel = new AnimationChannel(new_uuid, type, metadata);
 		internal_add_channel(new_channel);
 
-		emit(channel_added(m_resource->get_info().id, new_uuid));
+		emit(channel_added(m_id, new_uuid));
 
 		return new_channel;
 	}
@@ -285,9 +332,11 @@ namespace VadonEditor::Model
 			const AnimationChannel* current_channel = m_channels[index];
 			if (current_channel->get_id() == channel_id)
 			{
+				// Notify first before removing
+				emit(channel_removed(m_id, channel_id));
+
 				m_channels.removeAt(index);
 				delete current_channel;
-				emit(channel_removed(m_resource->get_info().id, channel_id));
 				return;
 			}
 		}
@@ -317,9 +366,29 @@ namespace VadonEditor::Model
 		return application.get_project_manager().get_project_data_schema().is_base_of(get_animation_type_uuid(), type_id);
 	}
 
+	QUuid Animation::get_animation_library_type_uuid()
+	{
+		return Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::AnimationLibrarySchema::c_type_uuid);
+	}
+
+	QUuid Animation::get_entity_animation_type_uuid()
+	{
+		return Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::EntityAnimationSchema::c_type_uuid);
+	}
+
+	QUuid Animation::get_entity_animation_entry_type_uuid()
+	{
+		return Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::EntityAnimationEntrySchema::c_type_uuid);
+	}
+
+	QUuid Animation::get_animation_component_type_uuid()
+	{
+		return Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::AnimationComponentSchema::c_type_uuid);
+	}
+
 	void Animation::internal_channel_edited(const QUuid& channel_id)
 	{
-		emit(Animation::channel_edited(m_resource->get_info().id, channel_id));
+		emit(Animation::channel_edited(m_id, channel_id));
 	}
 
 	void Animation::internal_add_channel(AnimationChannel* channel)

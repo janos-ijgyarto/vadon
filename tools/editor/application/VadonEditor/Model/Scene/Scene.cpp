@@ -161,6 +161,12 @@ namespace VadonEditor::Model
 				entity_component_property_edited(entity_id, component_id, property_id);
 			}
 		);
+		QObject::connect(&m_entity_model, &EntityModel::entity_component_modified,
+			[this](const QUuid& entity_id, const QUuid& component_id)
+			{
+				entity_component_modified(entity_id, component_id);
+			}
+		);
 
 		return true;
 	}
@@ -309,6 +315,13 @@ namespace VadonEditor::Model
 		memcpy(message_data + sizeof(::Vadon::Foundation::EditorModelMessageComponentPropertyEdited), json_data.constData(), json_data.size());
 
 		m_application.get_network_system().send_message(message_serializer);
+	}
+
+	void Scene::entity_component_modified(const QUuid& entity_id, const QUuid& component_id)
+	{
+		Q_UNUSED(entity_id);
+		Q_UNUSED(component_id);
+		notify_modified();
 	}
 
 	bool Scene::is_sub_scene_acyclic(const QUuid& scene_id)

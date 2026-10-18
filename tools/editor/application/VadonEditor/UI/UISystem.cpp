@@ -151,7 +151,7 @@ namespace VadonEditor::UI
 					launcher_accepted();
 				}
 			);
-			m_launcher_dialog->open();
+			m_launcher_dialog->show();
 		}
 		else
 		{

@@ -30,6 +30,11 @@ namespace Vadon::Utilities
 			return ::Vadon::Foundation::Property::Category::RESOURCE;
 		}
 
+		if (type_uuid == Vadon::Utilities::string_to_uuid(::Vadon::Foundation::EnumSchema::c_type_uuid))
+		{
+			return ::Vadon::Foundation::Property::Category::ENUM;
+		}
+
 		if (is_base_type(type_uuid))
 		{
 			return ::Vadon::Foundation::Property::Category::TRIVIAL;

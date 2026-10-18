@@ -71,7 +71,7 @@ namespace VadonEditor::UI
 		SelectResourceDialog* select_dialog = new SelectResourceDialog(m_application, Model::Resource::get_base_resource_type(), this);
 		connect(select_dialog, &SelectResourceDialog::resource_asset_selected, this, &ProjectSettingsDialog::custom_data_resource_selected);
 
-		select_dialog->open();
+		select_dialog->show();
 	}
 
 	void ProjectSettingsDialog::clear_custom_data_resource_triggered()

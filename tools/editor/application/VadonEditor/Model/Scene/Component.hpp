@@ -33,12 +33,14 @@ namespace VadonEditor::Model
 
 		const Core::DataObject& get_data_object() const { return m_data; }
 		void set_property(const Core::PropertyID& property_id, const QVariant& value) { m_data.set_property(property_id, value); emit(property_edited(get_type_id(), property_id)); }
+		void notify_modified() { emit(component_modified(get_type_id())); }
 
 		bool serialize_property(const Core::PropertyID& property_id, QJsonObject& json_obj, bool labeled) const { return m_data.serialize_property_data(property_id, json_obj, labeled); }
 
 		static bool is_type_component(Core::Application& application, const QUuid& type_id);
 	signals:
 		void property_edited(const QUuid& component_id, const QUuid& property_id);
+		void component_modified(const QUuid& component_id);
 	private:
 		Core::Application& m_application;
 		Core::DataObject m_data;

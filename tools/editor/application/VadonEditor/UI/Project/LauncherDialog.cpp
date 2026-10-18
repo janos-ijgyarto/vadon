@@ -73,7 +73,7 @@ namespace VadonEditor::UI
 		connect(m_new_project_dialog, &QDialog::accepted, this, &LauncherDialog::new_project_created);
 		connect(m_new_project_dialog, &QObject::destroyed, this, &LauncherDialog::new_project_dialog_destroyed);
 
-		m_new_project_dialog->open();
+		m_new_project_dialog->show();
 	}
 
 	void LauncherDialog::import_clicked()
@@ -92,14 +92,14 @@ namespace VadonEditor::UI
 			connect(m_new_project_dialog, &QDialog::accepted, this, &LauncherDialog::project_imported);
 			connect(m_new_project_dialog, &QObject::destroyed, this, &LauncherDialog::new_project_dialog_destroyed);
 
-			m_new_project_dialog->open();
+			m_new_project_dialog->show();
 		}
 	}
 
 	void LauncherDialog::uuid_generator_clicked()
 	{
 		UUIDDialog* uuid_dialog = new UUIDDialog(this);
-		uuid_dialog->open();
+		uuid_dialog->show();
 	}
 
 	void LauncherDialog::run_clicked()

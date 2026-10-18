@@ -36,6 +36,7 @@ namespace
 			}
 			else
 			{
+				// Halt here, we don't search the sub-scene
 				return Vadon::ECS::EntityHandle{};
 			}
 		}

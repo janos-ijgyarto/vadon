@@ -113,7 +113,7 @@ namespace VadonEditor::UI
 		SelectResourceTypeDialog* select_type_dialog = new SelectResourceTypeDialog(m_application, m_base_type, this);
 		connect(select_type_dialog, &NewObjectDialog::object_type_selected, this, &NewResourceDialog::resource_type_selected);
 
-		select_type_dialog->open();
+		select_type_dialog->show();
 	}
 
 	void NewResourceDialog::resource_type_selected(const QUuid& type_uuid)
@@ -127,11 +127,11 @@ namespace VadonEditor::UI
 		m_new_resource_type = type_uuid;
 
 		const Core::DataSchema& data_schema = m_application.get_project_manager().get_project_data_schema();
-		const Core::TypeData* type_data = data_schema.find_type_data(m_base_type);
+		const Core::TypeData* type_data = data_schema.find_type_data(m_new_resource_type);
 		QString resource_type_name = type_data->find_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME);
 		if (resource_type_name.isEmpty())
 		{
-			resource_type_name = QString("Resource type %1").arg(m_base_type.toString());
+			resource_type_name = QString("Resource type %1").arg(m_new_resource_type.toString());
 		}
 
 		m_ui.typeLineEdit->setText(resource_type_name);
@@ -149,7 +149,7 @@ namespace VadonEditor::UI
 
 		save_dialog->setWindowTitle("Select Resource File Path");
 
-		save_dialog->open();
+		save_dialog->show();
 	}
 
 	void NewResourceDialog::file_path_selected(const QString& asset_path)

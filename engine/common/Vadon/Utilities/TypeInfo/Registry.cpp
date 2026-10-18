@@ -92,6 +92,9 @@ namespace Vadon::Utilities
 		register_type<DataObject>();
 		register_type<ObjectWrapper>();
 
+		// NOTE: have to register this as a "placeholder type" to ensure that we get a valid TypeID when processing properties
+		register_type<::Vadon::Foundation::EnumSchema>();
+
 		return true;
 	}
 
@@ -368,18 +371,100 @@ namespace Vadon::Utilities
 		return type_list;
 	}
 
+	void TypeRegistry::register_enum_type(const TypeUUID& enum_type_uuid)
+	{
+		TypeRegistry& instance = get_registry_instance();
+		const TypeID enum_type_id = instance.internal_register_type_uuid(enum_type_uuid);
+
+		EnumData& enum_data = instance.m_enum_lookup.insert(std::make_pair(enum_type_id, EnumData{})).first->second;
+		enum_data.id = enum_type_uuid;
+	}
+
+	TypeUUID Vadon::Utilities::TypeRegistry::get_enum_uuid(TypeID enum_type_id)
+	{
+		const TypeRegistry& instance = get_registry_instance();
+
+		const auto enum_data_it = instance.m_enum_lookup.find(enum_type_id);
+		VADON_ASSERT(enum_data_it != instance.m_enum_lookup.end(), "Enum type not found!");
+		if (enum_data_it == instance.m_enum_lookup.end())
+		{
+			type_not_found_error(enum_type_id);
+			return TypeUUID{};
+		}
+
+		return enum_data_it->second.id;
+	}
+
+	size_t TypeRegistry::get_enum_value(const TypeUUID& enum_type_uuid, const ::Vadon::Foundation::UUID& value_uuid)
+	{
+		const TypeID enum_type_id = get_type_id(enum_type_uuid);
+
+		const TypeRegistry& instance = get_registry_instance();
+
+		auto enum_data_it = instance.m_enum_lookup.find(enum_type_id);
+		VADON_ASSERT(enum_data_it != instance.m_enum_lookup.end(), "Enum type not found!");
+		if (enum_data_it == instance.m_enum_lookup.end())
+		{
+			type_not_found_error(enum_type_id);
+			return 0;
+		}
+
+		const EnumData& enum_data = enum_data_it->second;
+		auto enum_value_it = enum_data.values.find(value_uuid);
+		if (enum_value_it == enum_data.values.end())
+		{
+			// TODO: return default value instead (or first in registered values if no default is set)
+			Vadon::Core::Logger::log_error(std::format("Type registry error: enum \"{}\" does not have value with UUID \"{}\"!\n", uuid_to_string(enum_data.id).string, uuid_to_string(value_uuid).string));
+			return 0;
+		}
+
+		return enum_value_it->second;
+	}
+
+	::Vadon::Foundation::UUID TypeRegistry::get_enum_value_id(const TypeUUID& enum_type_uuid, size_t enum_value)
+	{
+		const TypeID enum_type_id = get_type_id(enum_type_uuid);
+
+		const TypeRegistry& instance = get_registry_instance();
+
+		auto enum_data_it = instance.m_enum_lookup.find(enum_type_id);
+		VADON_ASSERT(enum_data_it != instance.m_enum_lookup.end(), "Enum type not found!");
+		if (enum_data_it == instance.m_enum_lookup.end())
+		{
+			type_not_found_error(enum_type_id);
+			return ::Vadon::Foundation::UUID{};
+		}
+
+		const EnumData& enum_data = enum_data_it->second;
+		auto value_id_it = enum_data.value_ids.find(enum_value);
+		if (value_id_it == enum_data.value_ids.end())
+		{
+			Vadon::Core::Logger::log_error(std::format("Type registry error: enum \"{}\" does not have UUID for value {}!\n", uuid_to_string(enum_data.id).string, enum_value));
+			return ::Vadon::Foundation::UUID{};
+		}
+
+		return value_id_it->second;
+	}
+
+	TypeID TypeRegistry::internal_register_type_uuid(const TypeUUID& type_uuid)
+	{
+		if (m_id_lookup.find(type_uuid) != m_id_lookup.end())
+		{
+			VADON_ERROR(std::format("Type registry error: \"{}\" already exists in registry!\n", uuid_to_string(type_uuid).string));
+			return TypeID::INVALID;
+		}
+
+		const TypeID new_type_id = to_enum<TypeID>(m_id_counter++);
+		m_id_lookup.emplace(type_uuid, new_type_id);
+
+		return new_type_id;
+	}
+
 	void TypeRegistry::internal_register_type(const TypeUUID& type_uuid, size_t size, size_t alignment, TypeID base_type_id)
 	{
 		TypeRegistry& instance = get_registry_instance();
 
-		if (instance.m_id_lookup.find(type_uuid) != instance.m_id_lookup.end())
-		{
-			VADON_ERROR(std::format("Type registry error: \"{}\" already exists in registry!\n", uuid_to_string(type_uuid).string));
-			return;
-		}
-
-		const TypeID new_type_id = to_enum<TypeID>(instance.m_id_counter++);
-		instance.m_id_lookup.emplace(type_uuid, new_type_id);
+		const TypeID new_type_id = instance.internal_register_type_uuid(type_uuid);
 
 		TypeData& new_type_data = instance.m_type_lookup.insert(std::make_pair(new_type_id, TypeData{})).first->second;
 		new_type_data.info.id = type_uuid;
@@ -433,8 +518,13 @@ namespace Vadon::Utilities
 			auto property_type_it = instance.m_type_lookup.find(property_type_id);
 			if (property_type_it == instance.m_type_lookup.end())
 			{
-				type_not_found_error(type_id);
-				return false;
+				// Check in case it's an enum
+				auto property_enum_it = instance.m_enum_lookup.find(property_type_id);
+				if (property_enum_it == instance.m_enum_lookup.end())
+				{
+					type_not_found_error(property_type_id);
+					return false;
+				}
 			}
 		}
 
@@ -459,6 +549,30 @@ namespace Vadon::Utilities
 		}
 
 		return type_data_it->second.bind_method(method_uuid, std::move(method_bind));
+	}
+
+	bool TypeRegistry::internal_add_enum_value(TypeID type_id, const::Vadon::Foundation::UUID& value_uuid, size_t value)
+	{
+		TypeRegistry& instance = get_registry_instance();
+
+		auto enum_data_it = instance.m_enum_lookup.find(type_id);
+		VADON_ASSERT(enum_data_it != instance.m_enum_lookup.end(), "Enum type not found!");
+		if (enum_data_it == instance.m_enum_lookup.end())
+		{
+			type_not_found_error(type_id);
+			return false;
+		}
+
+		EnumData& enum_data = enum_data_it->second;
+		auto enum_value_it = enum_data.values.find(value_uuid);
+		if (enum_value_it != enum_data.values.end())
+		{
+			Vadon::Core::Logger::log_error(std::format("Type registry error: enum \"{}\" already has value registered with UUID \"{}\"!\n", uuid_to_string(enum_data.id).string, uuid_to_string(value_uuid).string));
+			return false;
+		}
+
+		enum_data.values.insert(std::make_pair(value_uuid, value));
+		return true;
 	}
 
 	void TypeRegistry::register_type_with_base(TypeID /*type_id*/, TypeRegistry::TypeData& data, TypeID base_id)

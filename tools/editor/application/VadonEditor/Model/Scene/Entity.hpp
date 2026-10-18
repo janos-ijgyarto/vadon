@@ -29,7 +29,7 @@ namespace VadonEditor::Model
 		bool load_data(const QVariant& data);
 		bool import_data(const QVariant& data);
 
-		Core::Application& get_application() { return m_application; }
+		Core::Application& get_application() const { return m_application; }
 
 		QUuid get_id() const;
 		QUuid get_parent() const;
@@ -59,8 +59,10 @@ namespace VadonEditor::Model
 		void component_added(const QUuid& entity_id, const QUuid& component_id);
 		void component_removed(const QUuid& entity_id, const QUuid& component_id);
 		void component_property_edited(const QUuid& entity_id, const QUuid& component_id, const QUuid& property_id);
+		void component_modified(const QUuid& entity_id, const QUuid& component_id);
 	private slots:
 		void internal_component_property_edited(const QUuid& component_id, const QUuid& property_id);
+		void internal_component_modified(const QUuid& component_id);
 	private:
 		bool internal_load_data();
 		void internal_store_component_data(QVariantList& component_data_list) const;
@@ -108,6 +110,8 @@ namespace VadonEditor::Model
 
 		bool save_data(QVariantList& entity_list) const;
 		bool load_data(const QVariantList& entity_list, const SceneID& base_scene_id);
+
+		QList<QUuid> get_entity_path(const QUuid& id) const;
 	signals:
 		void entity_added(const QUuid& id);
 		void entity_removed(const QUuid& id);
@@ -116,6 +120,7 @@ namespace VadonEditor::Model
 		void entity_component_added(const QUuid& entity_id, const QUuid& component_id);
 		void entity_component_removed(const QUuid& entity_id, const QUuid& component_id);
 		void entity_component_property_edited(const QUuid& entity_id, const QUuid& component_id, const QUuid& property_id);
+		void entity_component_modified(const QUuid& entity_id, const QUuid& component_id);
 	private:
 		QUuid instantiate_scene(const SceneID& scene_id, Entity* parent);
 
@@ -137,6 +142,7 @@ namespace VadonEditor::Model
 		void internal_entity_component_added(const QUuid& entity_id, const QUuid& component_id);
 		void internal_entity_component_removed(const QUuid& entity_id, const QUuid& component_id);
 		void internal_entity_component_property_edited(const QUuid& entity_id, const QUuid& component_id, const QUuid& property_id);
+		void internal_entity_component_modified(const QUuid& entity_id, const QUuid& component_id);
 
 		Core::Application& m_application;
 

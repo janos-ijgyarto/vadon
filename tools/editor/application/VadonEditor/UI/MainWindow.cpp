@@ -71,13 +71,13 @@ namespace VadonEditor::UI
 	void MainWindow::new_resource_triggered()
 	{
 		NewResourceDialog* new_resource_dialog = new NewResourceDialog(m_application, Model::Resource::get_base_resource_type(), QModelIndex(), this);
-		new_resource_dialog->open();
+		new_resource_dialog->show();
 	}
 
 	void MainWindow::new_scene_triggered()
 	{
 		NewSceneDialog* new_scene_dialog = new NewSceneDialog(m_application, this);
-		new_scene_dialog->open();
+		new_scene_dialog->show();
 	}
 
 	void MainWindow::save_triggered()
@@ -92,7 +92,7 @@ namespace VadonEditor::UI
 		OpenAssetDialog* open_asset_dialog = new OpenAssetDialog(m_application, this);
 		connect(open_asset_dialog, &OpenAssetDialog::asset_opened, this, &MainWindow::asset_opened);
 
-		open_asset_dialog->open();
+		open_asset_dialog->show();
 	}
 
 	void MainWindow::import_triggered()
@@ -126,13 +126,13 @@ namespace VadonEditor::UI
 	void MainWindow::generate_uuid_triggered()
 	{
 		UUIDDialog* uuid_dialog = new UUIDDialog(this);
-		uuid_dialog->open();
+		uuid_dialog->show();
 	}
 
 	void MainWindow::project_settings_triggered()
 	{
 		ProjectSettingsDialog* project_settings_dialog = new ProjectSettingsDialog(m_application, this);
-		project_settings_dialog->open();
+		project_settings_dialog->show();
 	}
 
 	void MainWindow::run_plugin_triggered()
@@ -148,7 +148,7 @@ namespace VadonEditor::UI
 	void MainWindow::project_data_schema_triggered()
 	{
 		DataSchemaDialog* data_schema_dialog = new DataSchemaDialog(m_application, this);
-		data_schema_dialog->open();
+		data_schema_dialog->show();
 	}
 
 	void MainWindow::generate_data_schema_triggered()
@@ -211,7 +211,7 @@ namespace VadonEditor::UI
 		}
 
 		SimulatorSettingsDialog* settings_dialog = new SimulatorSettingsDialog(m_application, this);
-		settings_dialog->open();
+		settings_dialog->show();
 	}
 
 	void MainWindow::closeEvent(QCloseEvent* event)

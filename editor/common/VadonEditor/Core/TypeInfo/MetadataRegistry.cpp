@@ -18,6 +18,17 @@ namespace
 		std::unordered_map<Vadon::Utilities::PropertyUUID, PropertyMetadata> property_lookup;
 	};
 
+	struct EnumValueMetadata
+	{
+		std::unordered_map<std::string, std::string> metadata_lookup;
+	};
+
+	struct EnumMetadata
+	{
+		std::unordered_map<std::string, std::string> metadata_lookup;
+		std::unordered_map<::Vadon::Foundation::UUID, EnumValueMetadata> value_lookup;
+	};
+
 	struct TypePropertyListCache
 	{
 		Vadon::Utilities::TypeUUID cached_type;
@@ -50,6 +61,7 @@ namespace VadonEditor::Core
 		std::vector<Vadon::Utilities::TypeUUID> m_registered_types;
 
 		std::unordered_map<Vadon::Utilities::TypeUUID, TypeMetadata> m_type_metadata_lookup;
+		std::unordered_map<::Vadon::Foundation::UUID, EnumMetadata> m_enum_metadata_lookup;
 	};
 
 	MetadataRegistry::~MetadataRegistry() = default;
@@ -271,6 +283,144 @@ namespace VadonEditor::Core
 		const PropertyMetadata& property_metadata = property_it->second;
 		auto metadata_string_it = property_metadata.metadata_lookup.find(key);
 		if (metadata_string_it == property_metadata.metadata_lookup.end())
+		{
+			return nullptr;
+		}
+
+		return metadata_string_it->second.c_str();
+	}
+
+	void MetadataRegistry::register_enum(const ::Vadon::Foundation::UUID& enum_type_uuid)
+	{
+		VADON_ASSERT(enum_type_uuid.is_valid() == true, "Invalid UUID!");
+
+		if (m_internal->m_enum_metadata_lookup.find(enum_type_uuid) != m_internal->m_enum_metadata_lookup.end())
+		{
+			// TODO: log warning that enum was already registered!
+			return;
+		}
+
+		EnumMetadata metadata;
+
+		m_internal->m_enum_metadata_lookup.insert(std::make_pair(enum_type_uuid, metadata));
+	}
+
+	void MetadataRegistry::set_enum_metadata(const ::Vadon::Foundation::UUID& enum_type_uuid, const char* key, const char* value)
+	{
+		VADON_ASSERT(enum_type_uuid.is_valid(), "Invalid enum UUID!");
+		VADON_ASSERT(key != nullptr, "Invalid key!");
+		VADON_ASSERT(std::string_view(key).empty() == false, "Invalid key!");
+
+		auto enum_metadata_it = m_internal->m_enum_metadata_lookup.find(enum_type_uuid);
+		if (enum_metadata_it == m_internal->m_enum_metadata_lookup.end())
+		{
+			VADON_ERROR("Enum not registered!");
+			return;
+		}
+
+		EnumMetadata& enum_metadata = enum_metadata_it->second;
+		enum_metadata.metadata_lookup[key] = value;
+	}
+
+	const char* MetadataRegistry::get_enum_metadata(const ::Vadon::Foundation::UUID& enum_type_uuid, const char* key)
+	{
+		VADON_ASSERT(enum_type_uuid.is_valid(), "Invalid enum UUID!");
+		VADON_ASSERT(key != nullptr, "Invalid key!");
+		VADON_ASSERT(std::string_view(key).empty() == false, "Invalid key!");
+
+		auto enum_metadata_it = m_internal->m_enum_metadata_lookup.find(enum_type_uuid);
+		if (enum_metadata_it == m_internal->m_enum_metadata_lookup.end())
+		{
+			VADON_ERROR("Enum not registered!");
+			// TODO: log warning/error?
+			return nullptr;
+		}
+
+		const EnumMetadata& enum_metadata = enum_metadata_it->second;
+		auto metadata_string_it = enum_metadata.metadata_lookup.find(std::string(key));
+		if (metadata_string_it != enum_metadata.metadata_lookup.end())
+		{
+			return metadata_string_it->second.c_str();
+		}
+
+		return nullptr;
+	}
+
+	void MetadataRegistry::register_enum_value(const ::Vadon::Foundation::UUID& enum_type_uuid, const ::Vadon::Foundation::UUID& enum_value_uuid)
+	{
+		VADON_ASSERT(enum_type_uuid.is_valid() == true, "Invalid enum UUID!");
+		VADON_ASSERT(enum_value_uuid.is_valid() == true, "Invalid enum value UUID!");
+
+		auto enum_it = m_internal->m_enum_metadata_lookup.find(enum_type_uuid);
+		if (enum_it == m_internal->m_enum_metadata_lookup.end())
+		{
+			VADON_ERROR("Enum not registered!");
+			return;
+		}
+
+		EnumMetadata& enum_metadata = enum_it->second;
+		auto value_it = enum_metadata.value_lookup.find(enum_value_uuid);
+		if (value_it != enum_metadata.value_lookup.end())
+		{
+			// TODO: log warning!
+			return;
+		}
+
+		EnumValueMetadata value_data;
+		enum_metadata.value_lookup.insert(std::make_pair(enum_value_uuid, value_data));
+	}
+
+	void MetadataRegistry::set_enum_value_metadata(const ::Vadon::Foundation::UUID& enum_type_uuid, const ::Vadon::Foundation::UUID& enum_value_uuid, const char* key, const char* value)
+	{
+		VADON_ASSERT(enum_type_uuid.is_valid(), "Invalid enum UUID!");
+		VADON_ASSERT(enum_value_uuid.is_valid() == true, "Invalid property UUID!");
+		VADON_ASSERT(key != nullptr, "Invalid key!");
+		VADON_ASSERT(std::string_view(key).empty() == false, "Invalid key!");
+
+		auto enum_metadata_it = m_internal->m_enum_metadata_lookup.find(enum_type_uuid);
+		if (enum_metadata_it == m_internal->m_enum_metadata_lookup.end())
+		{
+			VADON_ERROR("Enum not registered!");
+			return;
+		}
+
+		EnumMetadata& enum_metadata = enum_metadata_it->second;
+		auto enum_value_it = enum_metadata.value_lookup.find(enum_value_uuid);
+		if (enum_value_it == enum_metadata.value_lookup.end())
+		{
+			VADON_ERROR("Enum value not registered!");
+			return;
+		}
+
+		EnumValueMetadata& enum_value_metadata = enum_value_it->second;
+		enum_value_metadata.metadata_lookup.insert(std::make_pair(std::string(key), std::string(value)));
+	}
+
+	const char* MetadataRegistry::get_enum_value_metadata(const ::Vadon::Foundation::UUID& enum_type_uuid, const ::Vadon::Foundation::UUID& enum_value_uuid, const char* key)
+	{
+		VADON_ASSERT(enum_type_uuid.is_valid(), "Invalid enum ID!");
+		VADON_ASSERT(enum_value_uuid.is_valid() == true, "Invalid enum value UUID!");
+		VADON_ASSERT(key != nullptr, "Invalid key!");
+		VADON_ASSERT(std::string_view(key).empty() == false, "Invalid key!");
+
+		auto enum_metadata_it = m_internal->m_enum_metadata_lookup.find(enum_type_uuid);
+		if (enum_metadata_it == m_internal->m_enum_metadata_lookup.end())
+		{
+			VADON_ERROR("Enum not registered!");
+			return nullptr;
+		}
+
+		const EnumMetadata& enum_metadata = enum_metadata_it->second;
+		auto value_it = enum_metadata.value_lookup.find(enum_value_uuid);
+		if (value_it == enum_metadata.value_lookup.end())
+		{
+			VADON_ERROR("Enum value not registered!");
+			return nullptr;
+		}
+
+		const EnumValueMetadata& value_metadata = value_it->second;
+		auto metadata_string_it = value_metadata.metadata_lookup.find(key);
+		if (metadata_string_it == value_metadata.metadata_lookup.end())
 		{
 			return nullptr;
 		}

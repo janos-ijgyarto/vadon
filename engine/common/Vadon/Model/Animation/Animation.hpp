@@ -9,6 +9,7 @@
 namespace Vadon::Model
 {
 	using AnimationChannelType = ::Vadon::Foundation::AnimationChannelSchema::Type;
+	using AnimationChannelSampleMethod = ::Vadon::Foundation::AnimationChannelSchema::SampleMethod;
 
 	struct AnimationKey
 	{
@@ -21,6 +22,7 @@ namespace Vadon::Model
 	struct AnimationChannel
 	{
 		VADON_DECLARE_MEMBER_UUID(id, ::Vadon::Foundation::AnimationChannelSchema::c_id_property.id.string);
+		VADON_DECLARE_MEMBER_UUID(sample_method, ::Vadon::Foundation::AnimationChannelSchema::c_sample_method_property.id.string);
 		VADON_DECLARE_MEMBER_UUID(key_times, ::Vadon::Foundation::AnimationChannelSchema::c_key_times_property.id.string);
 		VADON_DECLARE_MEMBER_UUID(tag, ::Vadon::Foundation::AnimationChannelSchema::c_tag_property.id.string);
 
@@ -33,13 +35,16 @@ namespace Vadon::Model
 		VADON_DECLARE_MEMBER_UUID(vector3i_data, ::Vadon::Foundation::AnimationChannelSchema::get_channel_data_property_uuid_string(Vadon::Model::AnimationChannelType::VECTOR3I).string);
 		VADON_DECLARE_MEMBER_UUID(vector4_data, ::Vadon::Foundation::AnimationChannelSchema::get_channel_data_property_uuid_string(Vadon::Model::AnimationChannelType::VECTOR4).string);
 		VADON_DECLARE_MEMBER_UUID(colorrgba_data, ::Vadon::Foundation::AnimationChannelSchema::get_channel_data_property_uuid_string(Vadon::Model::AnimationChannelType::COLORRGBA).string);
+		VADON_DECLARE_MEMBER_UUID(uuid_data, ::Vadon::Foundation::AnimationChannelSchema::get_channel_data_property_uuid_string(Vadon::Model::AnimationChannelType::UUID).string);
 
 		::Vadon::Foundation::UUID id;
+		AnimationChannelSampleMethod sample_method;
 		std::string tag; // FIXME: temporary solution, we should instead have users of the animation create "links" between channels and the affected properties
 		std::vector<float> key_times;
+
 		// TODO: key durations!
 
-		virtual AnimationChannelType get_type() const { return AnimationChannelType::INVALID; }
+		virtual AnimationChannelType get_type() const { return AnimationChannelType::INVALID_TYPE; }
 		size_t get_key_count() const { return key_times.size(); }
 
 		virtual Vadon::Utilities::Variant get_key_data(size_t index) const = 0;
@@ -73,6 +78,7 @@ namespace Vadon::Model
 	VADON_DECLARE_ANIMATION_CHANNEL_TYPE(Vadon::Math::Vector3i, AnimationChannelType::VECTOR3I, AnimationVector3iChannel);
 	VADON_DECLARE_ANIMATION_CHANNEL_TYPE(Vadon::Math::Vector4, AnimationChannelType::VECTOR4, AnimationVector4Channel);
 	VADON_DECLARE_ANIMATION_CHANNEL_TYPE(Vadon::Math::ColorRGBA, AnimationChannelType::COLORRGBA, AnimationColorRGBAChannel);
+	VADON_DECLARE_ANIMATION_CHANNEL_TYPE(::Vadon::Foundation::UUID, AnimationChannelType::UUID, AnimationUUIDChannel);
 
 	using AnimationChannelWrapper = Vadon::Utilities::TypedObjectWrapper<AnimationChannel>;
 
@@ -108,11 +114,24 @@ namespace Vadon::Model
 
 	VADON_MODEL_DECLARE_TYPED_RESOURCE_ID(Animation, AnimationID);
 	VADON_MODEL_DECLARE_TYPED_RESOURCE_HANDLE(Animation, AnimationHandle);
+
+	struct AnimationLibrary : public Resource
+	{
+		VADON_DECLARE_MEMBER_UUID(animations, ::Vadon::Foundation::AnimationLibrarySchema::c_animations_property.id.string);
+
+		std::vector<AnimationID> animations;
+		std::vector<AnimationHandle> animation_handles; // FIXME: find a way to ensure this is coupled with the other vector!
+	};
+
+	VADON_MODEL_DECLARE_TYPED_RESOURCE_ID(AnimationLibrary, AnimationLibraryID);
+	VADON_MODEL_DECLARE_TYPED_RESOURCE_HANDLE(AnimationLibrary, AnimationLibraryHandle);
 }
 
 VADON_REGISTER_TYPE_UUID(Vadon::Model::Animation, ::Vadon::Foundation::AnimationSchema::c_type_uuid.string);
 
 VADON_REGISTER_TYPE_UUID(Vadon::Model::AnimationChannel, ::Vadon::Foundation::AnimationChannelSchema::c_base_type_uuid.string);
+
+VADON_REGISTER_TYPE_UUID(Vadon::Model::AnimationChannelSampleMethod, ::Vadon::Foundation::AnimationChannelSchema::c_sample_method_enum_uuid.string);
 
 VADON_REGISTER_TYPE_UUID(Vadon::Model::AnimationIntChannel, ::Vadon::Foundation::AnimationChannelSchema::get_channel_type_uuid_string(Vadon::Model::AnimationChannelType::INT).string);
 VADON_REGISTER_TYPE_UUID(Vadon::Model::AnimationUintChannel, ::Vadon::Foundation::AnimationChannelSchema::get_channel_type_uuid_string(Vadon::Model::AnimationChannelType::UINT).string);
@@ -123,6 +142,9 @@ VADON_REGISTER_TYPE_UUID(Vadon::Model::AnimationVector3Channel, ::Vadon::Foundat
 VADON_REGISTER_TYPE_UUID(Vadon::Model::AnimationVector3iChannel, ::Vadon::Foundation::AnimationChannelSchema::get_channel_type_uuid_string(Vadon::Model::AnimationChannelType::VECTOR3I).string);
 VADON_REGISTER_TYPE_UUID(Vadon::Model::AnimationVector4Channel, ::Vadon::Foundation::AnimationChannelSchema::get_channel_type_uuid_string(Vadon::Model::AnimationChannelType::VECTOR4).string);
 VADON_REGISTER_TYPE_UUID(Vadon::Model::AnimationColorRGBAChannel, ::Vadon::Foundation::AnimationChannelSchema::get_channel_type_uuid_string(Vadon::Model::AnimationChannelType::COLORRGBA).string);
+VADON_REGISTER_TYPE_UUID(Vadon::Model::AnimationUUIDChannel, ::Vadon::Foundation::AnimationChannelSchema::get_channel_type_uuid_string(Vadon::Model::AnimationChannelType::UUID).string);
 
 VADON_DEFINE_OBJECT_AND_WRAPPER_TYPE_ERASURE(Vadon::Model::AnimationChannel);
+
+VADON_REGISTER_TYPE_UUID(Vadon::Model::AnimationLibrary, ::Vadon::Foundation::AnimationLibrarySchema::c_type_uuid.string);
 #endif

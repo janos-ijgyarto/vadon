@@ -89,25 +89,25 @@ namespace VadonEditor::UI
 	void AssetBrowserTree::add_folder_triggered()
 	{
 		AddFolderDialog* add_folder_dialog = new AddFolderDialog(*m_application, get_selected_asset(), this);
-		add_folder_dialog->open();
+		add_folder_dialog->show();
 	}
 
 	void AssetBrowserTree::new_resource_triggered()
 	{
 		NewResourceDialog* new_resource_dialog = new NewResourceDialog(*m_application, Model::Resource::get_base_resource_type(), get_selected_asset(), this);
-		new_resource_dialog->open();
+		new_resource_dialog->show();
 	}
 
 	void AssetBrowserTree::new_scene_triggered()
 	{
 		NewSceneDialog* scene_dialog = new NewSceneDialog(*m_application, this, get_selected_asset());
-		scene_dialog->open();
+		scene_dialog->show();
 	}
 
 	void AssetBrowserTree::inherited_scene_triggered()
 	{
 		InheritedSceneDialog* inherited_dialog = new InheritedSceneDialog(*m_application, get_selected_asset(), this);
-		inherited_dialog->open();
+		inherited_dialog->show();
 	}
 
 	void AssetBrowserTree::selection_changed(const QItemSelection& selected, const QItemSelection& deselected)

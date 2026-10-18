@@ -9,6 +9,7 @@
 #include <VadonEditor/UI/Model/Property/Array.hpp>
 #include <VadonEditor/UI/Model/Property/CheckBox.hpp>
 #include <VadonEditor/UI/Model/Property/Color.hpp>
+#include <VadonEditor/UI/Model/Property/Enum.hpp>
 #include <VadonEditor/UI/Model/Property/Object.hpp>
 #include <VadonEditor/UI/Model/Property/Numeric.hpp>
 #include <VadonEditor/UI/Model/Property/Resource.hpp>
@@ -114,6 +115,11 @@ namespace VadonEditor::UI
 
 			const QUuid resource_type = info.type_list[info.type_list_offset + 1];
 			return new PropertyResource(application, info.property_id, resource, owner_resource, resource_type, parent_widget);
+		}
+		case ::Vadon::Foundation::Property::Category::ENUM:
+		{
+			const QUuid enum_type = info.type_list[info.type_list_offset + 1];
+			return new PropertyEnum(application, info.property_id, enum_type, info.init_value.toUuid(), parent_widget);
 		}
 		}
 

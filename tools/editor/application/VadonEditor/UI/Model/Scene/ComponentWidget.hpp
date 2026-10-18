@@ -8,6 +8,7 @@ namespace VadonEditor::Core
 }
 namespace VadonEditor::Model
 {
+	class Entity;
 	class Scene;
 	class Component;
 }
@@ -18,9 +19,9 @@ namespace VadonEditor::UI
 	{
 		Q_OBJECT
 	public:
-		ComponentWidget(Model::Component* component, QWidget* parent = nullptr);
+		ComponentWidget(Model::Scene* owner_scene, Model::Entity* entity, Model::Component* component, QWidget* parent = nullptr);
 
-		bool initialize(Model::Scene* scene);
+		bool initialize();
 
 		const Model::Component* get_component() const { return m_component; }
 
@@ -31,11 +32,15 @@ namespace VadonEditor::UI
 	private slots:
 		void internal_property_edited(const QUuid& property_id);
 		void remove_clicked();
+
+		void edit_animation_clicked();
 	private:
 		PropertyWidget* find_property_widget(const QUuid& property_id) const;
 
 		Ui::ComponentWidget m_ui;
 
+		Model::Scene* m_owner_scene;
+		Model::Entity* m_entity;
 		Model::Component* m_component;
 	};
 }

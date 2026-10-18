@@ -139,6 +139,7 @@ namespace
 		}
 		break;
 		case ::Vadon::Foundation::Property::Category::RESOURCE:
+		case ::Vadon::Foundation::Property::Category::ENUM:
 		{
 			value = ::Vadon::Foundation::UUID{};
 		}

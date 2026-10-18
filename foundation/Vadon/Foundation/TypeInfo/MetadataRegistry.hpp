@@ -26,6 +26,15 @@ namespace Vadon
 
 			virtual void set_property_metadata(const UUID& type_uuid, const UUID& property_uuid, const char* key, const char* value) = 0;
 			virtual const char* get_property_metadata(const UUID& type_uuid, const UUID& property_uuid, const char* key) const = 0;
+
+			virtual void register_enum(const UUID& enum_type_uuid) = 0;
+			
+			virtual void set_enum_metadata(const UUID& enum_type_uuid, const char* key, const char* value) = 0;
+			virtual const char* get_enum_metadata(const UUID& enum_type_uuid, const char* key) = 0;
+
+			virtual void register_enum_value(const UUID& enum_type_uuid, const UUID& enum_value_uuid) = 0;
+			virtual void set_enum_value_metadata(const UUID& enum_type_uuid, const UUID& enum_value_uuid, const char* key, const char* value) = 0;
+			virtual const char* get_enum_value_metadata(const UUID& enum_type_uuid, const UUID& enum_value_uuid, const char* key) = 0;
 		};
 
 		class NullMetadataRegistry : public TypeMetadataRegistry
@@ -48,6 +57,15 @@ namespace Vadon
 
 			void set_property_metadata(const UUID&, const UUID&, const char*, const char*) override {}
 			const char* get_property_metadata(const UUID&, const UUID&, const char*) const override { return nullptr; }
+
+			void register_enum(const UUID&) override {}
+
+			void set_enum_metadata(const UUID&, const char*, const char*) {}
+			const char* get_enum_metadata(const UUID&, const char*) { return nullptr; }
+
+			void register_enum_value(const UUID&, const UUID&) {}
+			void set_enum_value_metadata(const UUID&, const UUID&, const char*, const char*) {}
+			const char* get_enum_value_metadata(const UUID&, const UUID&, const char*) { return nullptr; }
 		};
 	}
 }

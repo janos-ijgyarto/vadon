@@ -1,18 +1,15 @@
 #include <VadonEditor/UI/Model/Animation/AnimationEditor.hpp>
 
 #include <VadonEditor/Core/Application.hpp>
-#include <VadonEditor/Core/Asset/AssetManager.hpp>
 
 #include <VadonEditor/Model/ModelSystem.hpp>
 #include <VadonEditor/Model/Resource/ResourceSystem.hpp>
 
 #include <VadonEditor/UI/Model/Property/Color.hpp>
+#include <VadonEditor/UI/Model/Property/Enum.hpp>
 #include <VadonEditor/UI/Model/Property/Numeric.hpp>
+#include <VadonEditor/UI/Model/Property/Resource.hpp>
 #include <VadonEditor/UI/Model/Property/Vector.hpp>
-
-#include <VadonEditor/Utilities/UUID.hpp>
-
-#include <Vadon/Foundation/Model/Resource/Resource.hpp>
 
 #include <QColor>
 #include <QGraphicsItem>
@@ -21,7 +18,6 @@
 #include <QMenu>
 #include <QPainter>
 #include <QSlider>
-#include <QToolBar>
 #include <QVector2D>
 namespace
 {
@@ -93,12 +89,23 @@ namespace
         "Vector3",
         "Vector3i",
         "Vector4",
-        "ColorRGBA"
+        "ColorRGBA",
+        "UUID"
     };
 
     constexpr const char* get_animation_channel_type_name(VadonEditor::Model::AnimationChannelType channel_type)
     {
         return c_animation_channel_type_names[static_cast<size_t>(channel_type)];
+    }
+
+    QUuid get_animation_channel_sample_method_property_id()
+    {
+        return VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::AnimationChannelSchema::c_sample_method_property.id);
+    }
+
+    QUuid get_animation_channel_sample_method_enum_id()
+    {
+        return VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::AnimationChannelSchema::c_sample_method_enum_uuid);
     }
 
     class AnimationTimelineRulerItem : public QGraphicsItem
@@ -385,8 +392,13 @@ namespace
                 const qreal y_offset = parentItem()->boundingRect().height() * 0.5;
                 new_pos.setY(y_offset);
 
-                update_animation_key(new_pos);
-                m_anim_editor.key_moved(m_channel_id, m_key_id);
+                // NOTE: only send value update if we are dragging
+                // Otherwise assume we are updating from an external source (e.g line edit)
+                if (m_dragging == true)
+                {
+                    update_animation_key(new_pos);
+                    m_anim_editor.key_moved(m_channel_id, m_key_id);
+                }
 
                 return new_pos;
             }
@@ -457,6 +469,8 @@ namespace
 
         void set_key_data(const VadonEditor::Model::AnimationKey& key_data)
         {
+            // FIXME: should we always do this the other way around? Always reposition
+            // visuals and change controls once we have the update data from the model?
             VadonEditor::Model::AnimationChannel* channel_data = m_anim_editor.get_animation().find_channel(m_channel_id);
             Q_ASSERT_X(channel_data != nullptr, "AnimationKeyItem::set_key_data", "Cannot find channel");
 
@@ -505,6 +519,9 @@ namespace
             key_data.start_time = position.x() / rect().width();
 
             add_key_item(key_data);
+
+            // Update key with the time based on the position where we created it
+            channel_data->set_key(key_data);
         }
 
         void add_key_item(const VadonEditor::Model::AnimationKey& key_data)
@@ -597,6 +614,9 @@ namespace VadonEditor::UI
 
             timeline_view->scene()->addItem(m_playhead);
 
+            // TODO: when editing a single animation without any wider context, find way to have
+            // add button pop up context menu for channel type
+#if 0
             for (int channel_type_index = 0; channel_type_index < static_cast<int>(Model::AnimationChannelType::TYPE_COUNT); ++channel_type_index)
             {
                 QAction* add_channel_action = new QAction(&anim_editor);
@@ -610,26 +630,17 @@ namespace VadonEditor::UI
                 connect(add_channel_action, &QAction::triggered, &anim_editor, &AnimationEditor::add_channel_triggered);
 
                 anim_editor.m_ui.addChannelButton->addAction(add_channel_action);
-
-                set_channel_ui_enabled(anim_editor, false);
-                set_key_properties_ui_enabled(anim_editor, false);
             }
+#endif
+
+            set_channel_ui_enabled(anim_editor, false);
+            set_key_properties_ui_enabled(anim_editor, false);
 
             // Add all the channels
             for (const QUuid& current_channel_id : anim_editor.get_animation().get_channel_id_list())
             {
                 add_channel(anim_editor, current_channel_id);
             }
-
-            update_channel_layout();
-        }
-
-        void create_channel(AnimationEditor& anim_editor, Model::AnimationChannelType channel_type)
-        {
-            VadonEditor::Model::AnimationChannel* channel_data = anim_editor.m_animation.add_channel(channel_type);
-            Q_ASSERT_X(channel_data != nullptr, "VadonEditor::UI::AnimationEditor::InternalGraphics::create_channel", "Failed to create channel");
-
-            add_channel(anim_editor, channel_data->get_id());
 
             update_channel_layout();
         }
@@ -723,13 +734,16 @@ namespace VadonEditor::UI
             anim_editor.m_ui.channelIDTextLabel->setText(Utilities::uuid_to_base64_string(channel_id));
             anim_editor.m_ui.channelTypeTextLabel->setText(get_animation_channel_type_name(animation_channel->get_type()));
 
+            PropertyEnum* sample_method_widget = get_sample_method_property_widget(anim_editor);
+            sample_method_widget->set_enum_value(Model::AnimationChannel::get_sample_method_id(animation_channel->get_sample_method()));
+
             // Block signals so we don't get an infinite loop
             anim_editor.m_ui.channelTagLineEdit->blockSignals(true);
             anim_editor.m_ui.channelTagLineEdit->setText(animation_channel->get_tag());
             anim_editor.m_ui.channelTagLineEdit->blockSignals(false);
         }
 
-        Model::AnimationChannel* get_selected_channel(Model::Animation& animation) const
+        Model::AnimationChannel* get_selected_channel(const Model::Animation& animation) const
         {
             if (Utilities::is_uuid_valid(m_selected_channel) == false)
             {
@@ -818,7 +832,7 @@ namespace VadonEditor::UI
             const Model::AnimationChannel* anim_channel = anim_editor.get_animation().find_channel(key_item->get_channel_id());
             Q_ASSERT_X(anim_channel != nullptr, "VadonEditor::UI::AnimationEditor::InternalGraphics::update_key_properties_ui", "Cannot find channel");
 
-            const QUuid animation_id = anim_editor.get_animation().get_resource()->get_info().id;
+            const QUuid animation_id = anim_editor.get_animation().get_id();
             switch (anim_channel->get_type())
             {
                 case Model::AnimationChannelType::INT:
@@ -866,7 +880,26 @@ namespace VadonEditor::UI
                     m_key_value_property_widget = new PropertyColorRGBA(animation_id, anim_key_data.value.value<QColor>(), nullptr);
                 }
                 break;
+                case Model::AnimationChannelType::UUID:
+                {
+                    const QUuid resource_type = anim_channel->get_metadata().resource_type;
+                    if (Utilities::is_uuid_valid(resource_type) == true)
+                    {
+                        Core::Application& application = anim_editor.get_animation().get_application();
+                        Model::Resource* resource = nullptr;
+                        QUuid resource_id = anim_key_data.value.toUuid();
+                        if (Utilities::is_uuid_valid(resource_id) == true)
+                        {
+                            resource = application.get_model_system().get_resource_system().get_resource(resource_id);
+                        }
+
+                        m_key_value_property_widget = new PropertyResource(application, animation_id, resource, nullptr, resource_type, nullptr);
+                    }
+                }
+                break;
             }
+
+            Q_ASSERT_X(m_key_value_property_widget != nullptr, "VadonEditor::UI::AnimationEditor::InternalGraphics::update_key_properties_ui", "Failed to create property widget");
 
             connect(m_key_value_property_widget, &PropertyWidget::value_changed, &anim_editor, &AnimationEditor::key_value_changed);
 
@@ -929,12 +962,25 @@ namespace VadonEditor::UI
             }
             anim_editor.m_graphics_scene.clearSelection();
         }
+
+        PropertyEnum* get_sample_method_property_widget(AnimationEditor& anim_editor)
+        {
+            int sample_method_row_index = 0;
+            QFormLayout::ItemRole sample_method_item_role;
+            anim_editor.m_ui.channelPropertiesLayout->getWidgetPosition(anim_editor.m_ui.channelSampleMethodLabel, &sample_method_row_index, &sample_method_item_role);
+            if (sample_method_row_index == -1)
+            {
+                return nullptr;
+            }
+
+            QWidget* sample_method_widget = anim_editor.m_ui.channelPropertiesLayout->itemAt(sample_method_row_index, QFormLayout::ItemRole::FieldRole)->widget();
+            return qobject_cast<PropertyEnum*>(sample_method_widget);
+        }
     };
 
-    AnimationEditor::AnimationEditor(Model::Resource* resource, QWidget* parent)
+    AnimationEditor::AnimationEditor(const Model::Animation& animation, QWidget* parent)
         : QWidget(parent)
-        , m_resource(resource)
-        , m_animation(resource)
+        , m_animation(animation)
         , m_internal_graphics(std::make_unique<InternalGraphics>())
         , m_horizontal_zoom(1.0)
         , m_vertical_zoom(1.0)
@@ -952,53 +998,6 @@ namespace VadonEditor::UI
     }
 
     AnimationEditor::~AnimationEditor() = default;
-
-    bool AnimationEditor::initialize()
-    {
-        if (m_animation.load_data() == false)
-        {
-            return false;
-        }
-
-        {
-            const QPixmap zoom_in_pixmap = QIcon::fromTheme(QIcon::ThemeIcon::ZoomIn).pixmap(QSize(16, 16));
-            m_ui.timelineHorizontalZoomInLabel->setPixmap(zoom_in_pixmap);
-            m_ui.timelineVerticalZoomInLabel->setPixmap(zoom_in_pixmap);
-
-            const QPixmap zoom_out_pixmap = QIcon::fromTheme(QIcon::ThemeIcon::ZoomOut).pixmap(QSize(16, 16));
-            m_ui.timelineHorizontalZoomOutLabel->setPixmap(zoom_out_pixmap);
-            m_ui.timelineVerticalZoomOutLabel->setPixmap(zoom_out_pixmap);
-        }
-
-        // Add toolbar for buttons
-        QToolBar* toolbar = new QToolBar();
-        toolbar->addAction(m_ui.actionSave);
-
-        m_ui.mainLayout->setMenuBar(toolbar);
-
-        m_ui.timelineView->setScene(&m_graphics_scene);
-
-        m_ui.timelineView->setRenderHint(QPainter::RenderHint::Antialiasing);
-        m_ui.timelineView->setDragMode(QGraphicsView::DragMode::RubberBandDrag);
-        m_ui.timelineView->setAlignment(Qt::AlignmentFlag::AlignLeft | Qt::AlignmentFlag::AlignTop);
-
-        m_internal_graphics->initialize(*this);
-
-        // Set initial zoom
-        timeline_zoom_changed();
-
-        connect(&m_animation, &Model::Animation::channel_added, this, &AnimationEditor::animation_edited);
-        connect(&m_animation, &Model::Animation::channel_removed, this, &AnimationEditor::animation_edited);
-        connect(&m_animation, &Model::Animation::channel_edited, this, &AnimationEditor::animation_edited);
-
-        connect(&m_timer, &QTimer::timeout, this, &AnimationEditor::playback_timer_update);
-
-        connect(&m_graphics_scene, &QGraphicsScene::selectionChanged, this, &AnimationEditor::item_selection_changed);
-
-        update_title();
-
-        return true;
-    }
 
     qreal AnimationEditor::get_timeline_width() const
     {
@@ -1069,6 +1068,9 @@ namespace VadonEditor::UI
 
     void AnimationEditor::add_channel_triggered()
     {
+        // TODO: when editing a single animation without any wider context, allow the
+        // action to set the channel type, and then create the channel
+#if 0
         QObject* sender_action_obj = sender();
         QAction* sender_action = qobject_cast<QAction*>(sender_action_obj);
         if (sender_action != nullptr)
@@ -1076,6 +1078,9 @@ namespace VadonEditor::UI
             const int channel_type_index = sender_action->data().toInt();
             m_internal_graphics->create_channel(*this, static_cast<Model::AnimationChannelType>(channel_type_index));
         }
+#endif
+        // Notify the owner widget to handle the request
+        emit(new_channel_requested(m_animation.get_id()));
     }
 
     void AnimationEditor::remove_channel_triggered()
@@ -1087,21 +1092,8 @@ namespace VadonEditor::UI
             return;
         }
 
-        // To play it safe, clear all selections before deleting
-        m_internal_graphics->clear_key_selection(*this);
-        m_internal_graphics->set_selected_channel(*this, QUuid());
-
-        const QUuid channel_id = selected_channel->get_id();
-        m_animation.remove_channel(channel_id);
-
-        const InternalGraphics::AnimationChannel graphics_channel = m_internal_graphics->find_channel(channel_id);
-        m_graphics_scene.removeItem(graphics_channel.header);
-        m_graphics_scene.removeItem(graphics_channel.lane);
-
-        delete graphics_channel.header;
-        delete graphics_channel.lane;
-
-        m_internal_graphics->update_channel_layout();
+        // Notify owner to handle the request
+        emit(remove_channel_requested(m_animation.get_id(), selected_channel->get_id()));
     }
 
     void AnimationEditor::add_key_triggered()
@@ -1167,25 +1159,37 @@ namespace VadonEditor::UI
         transform_updated();
     }
 
-    void AnimationEditor::save_triggered()
+    void AnimationEditor::channel_added(const QUuid& animation_id, const QUuid& channel_id)
     {
-        m_animation.save_to_resource();
-        update_title();
+        Q_UNUSED(animation_id);
+        m_internal_graphics->add_channel(*this, channel_id);
+        m_internal_graphics->update_channel_layout();
     }
 
-    void AnimationEditor::animation_edited()
+    void AnimationEditor::channel_edited(const QUuid& animation_id, const QUuid& channel_id)
     {
-        // FIXME: at the moment we will update on every change
-        // Implement buffering to make sure we don't spam repeated updates
-        // and/or find a way to only update a very specific part and minimize the overhead
-        m_animation.store_data();
-        update_title();
+        Q_UNUSED(animation_id);
+        Q_UNUSED(channel_id);
+        // TODO: find a way to have this widget only update via the model object
+        // e.g if we move a key via a line edit, the change should only apply via
+        // the model object
     }
 
-    void AnimationEditor::animation_name_changed(const QString& text)
+    void AnimationEditor::channel_removed(const QUuid& animation_id, const QUuid& channel_id)
     {
-        m_animation.get_resource()->set_property(Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::ResourceSchema::c_name_property.id), text);
-        update_title();
+        Q_UNUSED(animation_id);
+        // To play it safe, clear all selections before deleting
+        m_internal_graphics->clear_key_selection(*this);
+        m_internal_graphics->set_selected_channel(*this, QUuid());
+
+        const InternalGraphics::AnimationChannel graphics_channel = m_internal_graphics->find_channel(channel_id);
+        m_graphics_scene.removeItem(graphics_channel.header);
+        m_graphics_scene.removeItem(graphics_channel.lane);
+
+        delete graphics_channel.header;
+        delete graphics_channel.lane;
+
+        m_internal_graphics->update_channel_layout();
     }
 
     void AnimationEditor::channel_tag_text_changed(const QString& text)
@@ -1208,6 +1212,22 @@ namespace VadonEditor::UI
         }
 
         channel_item.header->update_header_text();
+    }
+
+    void AnimationEditor::channel_sample_method_changed(QUuid id)
+    {
+        Q_UNUSED(id);
+        Model::AnimationChannel* selected_channel = m_internal_graphics->get_selected_channel(m_animation);
+        if (selected_channel == nullptr)
+        {
+            Q_ASSERT_X(false, "VadonEditor::UI::AnimationEditor::channel_sample_method_changed", "Should not receive sample method update when no channel is selected");
+            return;
+        }
+
+        const PropertyEnum* sample_method_widget = m_internal_graphics->get_sample_method_property_widget(*this);
+        const QUuid sample_method_id = sample_method_widget->get_value().toUuid();
+
+        selected_channel->set_sample_method(Model::AnimationChannel::get_sample_method_from_id(sample_method_id));
     }
 
     void AnimationEditor::key_time_changed(double value)
@@ -1239,27 +1259,52 @@ namespace VadonEditor::UI
         m_internal_graphics->item_selection_changed(*this);
     }
 
-    void AnimationEditor::update_title()
+    void AnimationEditor::initialize()
     {
-        Model::Resource* anim_resource = m_animation.get_resource();
-        Core::Application& application = anim_resource->get_application();
-
-        const int anim_asset_id = application.get_model_system().get_resource_system().find_resource_asset_id(anim_resource->get_info().id);
-        Q_ASSERT_X(anim_asset_id != Core::AssetInfo::c_invalid_file_id, "VadonEditor::UI::AnimationEditor::update_title", "Cannot find resource asset");
-
-        const Core::AssetManager& asset_manager = application.get_asset_manager();
-        const QModelIndex asset_index = asset_manager.find_asset_index(anim_asset_id);
-        Q_ASSERT_X(asset_index.isValid(), "VadonEditor::UI::AnimationEditor::update_title", "Cannot find resource asset");
-
-        const Core::AssetInfo animation_asset_info = asset_manager.get_asset_info(asset_index);
-
-        QString animation_title = animation_asset_info.path;
-        if (anim_resource->is_modified() == true)
         {
-            animation_title += " (*)";
+            const QPixmap zoom_in_pixmap = QIcon::fromTheme(QIcon::ThemeIcon::ZoomIn).pixmap(QSize(16, 16));
+            m_ui.timelineHorizontalZoomInLabel->setPixmap(zoom_in_pixmap);
+            m_ui.timelineVerticalZoomInLabel->setPixmap(zoom_in_pixmap);
+
+            const QPixmap zoom_out_pixmap = QIcon::fromTheme(QIcon::ThemeIcon::ZoomOut).pixmap(QSize(16, 16));
+            m_ui.timelineHorizontalZoomOutLabel->setPixmap(zoom_out_pixmap);
+            m_ui.timelineVerticalZoomOutLabel->setPixmap(zoom_out_pixmap);
         }
 
-        setWindowTitle(QString("Animation Editor - %1").arg(animation_title));
+        {
+            int sample_method_row_index = 0;
+            QFormLayout::ItemRole sample_method_item_role;
+            m_ui.channelPropertiesLayout->getWidgetPosition(m_ui.channelSampleMethodLabel, &sample_method_row_index, &sample_method_item_role);
+            if (sample_method_row_index != -1)
+            {
+                const QUuid default_sample_method_enum_uuid = Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::AnimationChannelSchema::get_sample_method_uuid_string(::Vadon::Foundation::AnimationChannelSchema::SampleMethod::LINEAR));
+                
+                PropertyEnum* sample_method_enum = new PropertyEnum(m_animation.get_application(), get_animation_channel_sample_method_property_id(), get_animation_channel_sample_method_enum_id(), default_sample_method_enum_uuid);
+                
+                m_ui.channelPropertiesLayout->setWidget(sample_method_row_index, QFormLayout::ItemRole::FieldRole, sample_method_enum);
+
+                connect(sample_method_enum, &PropertyEnum::value_changed, this, &AnimationEditor::channel_sample_method_changed);
+            }
+        }
+
+        m_ui.timelineView->setScene(&m_graphics_scene);
+
+        m_ui.timelineView->setRenderHint(QPainter::RenderHint::Antialiasing);
+        m_ui.timelineView->setDragMode(QGraphicsView::DragMode::RubberBandDrag);
+        m_ui.timelineView->setAlignment(Qt::AlignmentFlag::AlignLeft | Qt::AlignmentFlag::AlignTop);
+
+        m_internal_graphics->initialize(*this);
+
+        // Set initial zoom
+        timeline_zoom_changed();
+
+        connect(&m_animation, &Model::Animation::channel_added, this, &AnimationEditor::channel_added);
+        connect(&m_animation, &Model::Animation::channel_removed, this, &AnimationEditor::channel_removed);
+        connect(&m_animation, &Model::Animation::channel_edited, this, &AnimationEditor::channel_edited);
+
+        connect(&m_timer, &QTimer::timeout, this, &AnimationEditor::playback_timer_update);
+
+        connect(&m_graphics_scene, &QGraphicsScene::selectionChanged, this, &AnimationEditor::item_selection_changed);
     }
 
     void AnimationEditor::transform_updated()

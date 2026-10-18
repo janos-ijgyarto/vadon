@@ -61,6 +61,29 @@ namespace
 		return nullptr;
 	}
 
+	bool find_entity_hierarchy_recursive(const QStandardItem* parent, const QUuid& id, QList<const QStandardItem*>& hierarchy)
+	{
+		// NOTE: have to arrange it this way to exclude the invisible root
+		for (int child_index = 0; child_index < parent->rowCount(); ++child_index)
+		{
+			QStandardItem* current_child = parent->child(child_index);
+			if (get_entity_item_data(current_child, VadonEditor::Model::EntityDataRole::ID).toUuid() != id)
+			{
+				if (find_entity_hierarchy_recursive(current_child, id, hierarchy) == false)
+				{
+					// This sub-tree doesn't contain the entity
+					continue;
+				}
+			}
+
+			// Add to the hierarchy
+			hierarchy.push_front(current_child);
+			return true;
+		}
+
+		return false;
+	}
+
 	QUuid get_entity_id_property_uuid()
 	{
 		return VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::SceneEntitySchema::c_id_property.id);
@@ -265,6 +288,12 @@ namespace VadonEditor::Model
 		emit(component_property_edited(get_id(), component_id, property_id));
 	}
 
+	void Entity::internal_component_modified(const QUuid& component_id)
+	{
+		m_components_modified = true;
+		emit(component_modified(get_id(), component_id));
+	}
+
 	bool Entity::internal_load_data()
 	{
 		const SceneID sub_scene_id = get_sub_scene_id();
@@ -437,6 +466,7 @@ namespace VadonEditor::Model
 	void Entity::internal_add_component(Component* component)
 	{
 		connect(component, &Component::property_edited, this, &Entity::internal_component_property_edited);
+		connect(component, &Component::component_modified, this, &Entity::internal_component_modified);
 
 		m_components.push_back(component);
 
@@ -711,6 +741,23 @@ namespace VadonEditor::Model
 		return true;
 	}
 
+	QList<QUuid> EntityModel::get_entity_path(const QUuid& id) const
+	{
+		QList<const QStandardItem*> entity_item_hierarchy;
+		if (find_entity_hierarchy_recursive(m_qt_model.invisibleRootItem(), id, entity_item_hierarchy) == false)
+		{
+			return QList<QUuid>();
+		}
+
+		QList<QUuid> entity_id_list;
+		for (const QStandardItem* current_item : entity_item_hierarchy)
+		{
+			entity_id_list.push_back(get_entity_item_data(current_item, VadonEditor::Model::EntityDataRole::ID).toUuid());
+		}
+
+		return entity_id_list;
+	}
+
 	QUuid EntityModel::instantiate_scene(const SceneID& scene_id, Entity* parent)
 	{
 		return internal_add_entity(parent, scene_id);
@@ -794,6 +841,7 @@ namespace VadonEditor::Model
 		QObject::connect(entity, &Entity::component_added, this, &EntityModel::internal_entity_component_added);
 		QObject::connect(entity, &Entity::component_removed, this, &EntityModel::internal_entity_component_removed);
 		QObject::connect(entity, &Entity::component_property_edited, this, &EntityModel::internal_entity_component_property_edited);
+		QObject::connect(entity, &Entity::component_modified, this, &EntityModel::internal_entity_component_modified);
 
 		entity_lookup.insert(entity->get_id(), entity);
 	}
@@ -915,5 +963,10 @@ namespace VadonEditor::Model
 	void EntityModel::internal_entity_component_property_edited(const QUuid& entity_id, const QUuid& component_id, const QUuid& property_id)
 	{
 		emit(entity_component_property_edited(entity_id, component_id, property_id));
+	}
+
+	void EntityModel::internal_entity_component_modified(const QUuid& entity_id, const QUuid& component_id)
+	{
+		emit(entity_component_modified(entity_id, component_id));
 	}
 }
