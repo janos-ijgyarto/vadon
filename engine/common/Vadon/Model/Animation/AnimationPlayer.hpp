@@ -27,7 +27,6 @@ namespace Vadon::Model
 		AnimationPlayer()
 			: m_current_time(0.0f)
 			, m_time_scale(1.0f)
-			, m_looping(false)
 		{
 		}
 
@@ -38,9 +37,6 @@ namespace Vadon::Model
 
 		float get_time_scale() const { return m_time_scale; }
 		void set_time_scale(float time_scale) { m_time_scale = time_scale; }
-
-		bool is_looping() const { return m_looping; }
-		void set_looping(bool looping) { m_looping = looping; }
 
 		VADONCOMMON_API void update(Vadon::Core::EngineCoreInterface& engine_core, float delta_time);
 		VADONCOMMON_API void reset();
@@ -55,13 +51,12 @@ namespace Vadon::Model
 			void reset() { sampled_time = -1; }
 		};
 
-		void update_sample_data(Vadon::Core::EngineCoreInterface& engine_core);
+		void update_sample_data(const Animation* animation_data);
 
 		AnimationHandle m_animation;
 
 		float m_current_time;
 		float m_time_scale;
-		bool m_looping;
 
 		SampleData m_sample_data;
 	};

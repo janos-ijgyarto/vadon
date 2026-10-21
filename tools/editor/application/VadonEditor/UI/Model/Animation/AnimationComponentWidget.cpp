@@ -125,6 +125,47 @@ namespace
 
 		return VadonEditor::Model::AnimationChannelType::INVALID_TYPE;
 	}
+
+	QString get_entity_animation_entity_path_string(const VadonEditor::Model::Scene* owner_scene, const QUuid& entity_id)
+	{
+		const VadonEditor::Model::EntityModel& entity_model = owner_scene->get_entity_model();
+		QList<QUuid> entity_id_path = entity_model.get_entity_path(entity_id);
+		Q_ASSERT_X(entity_id_path.isEmpty() == false, "get_entity_animation_entity_path_string", "Invalid entity path");
+
+		QStringList entity_label_path;
+		for (const QUuid& current_id : entity_id_path)
+		{
+			const VadonEditor::Model::Entity* current_entity = entity_model.find_entity_by_id(current_id);
+			Q_ASSERT_X(current_entity != nullptr, "get_entity_animation_entity_path_string", "Invalid entity path");
+			entity_label_path.push_back(current_entity->get_label());
+		}
+
+		return entity_label_path.join('/');
+	}
+
+	QString get_entity_animation_entry_label(const VadonEditor::Model::Scene* owner_scene, const VadonEditor::UI::EntityAnimationChannelEntry& entry)
+	{
+		const QString entity_path = get_entity_animation_entity_path_string(owner_scene, entry.entity_id);
+
+		const VadonEditor::Core::DataSchema& data_schema = owner_scene->get_application().get_project_manager().get_project_data_schema();
+		
+		const VadonEditor::Core::TypeData* component_type_data = data_schema.find_type_data(entry.component_id);
+
+		QString component_type_name = component_type_data->find_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME);
+		if (component_type_name.isEmpty())
+		{
+			component_type_name = QString("Component_%1").arg(entry.component_id.toString());
+		}
+
+		const VadonEditor::Core::PropertyData* property_data = component_type_data->find_property_data(entry.property_id);
+		QString property_name = property_data->find_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME);
+		if (property_name.isEmpty())
+		{
+			property_name = QString("Property_%1").arg(entry.property_id.toString());
+		}
+
+		return QString("%1/%2/%3").arg(entity_path).arg(component_type_name).arg(property_name);
+	}
 }
 
 namespace VadonEditor::UI
@@ -181,21 +222,7 @@ namespace VadonEditor::UI
 
 		m_ui.setupUi(this);
 
-		{
-			const Model::EntityModel& entity_model = owner_scene->get_entity_model();
-			QList<QUuid> entity_id_path = entity_model.get_entity_path(entity->get_id());
-			Q_ASSERT_X(entity_id_path.isEmpty() == false, "VadonEditor::UI::AnimationComponentWidget::AnimationComponentWidget", "Invalid entity path");
-
-			QStringList entity_label_path;
-			for (const QUuid& current_id : entity_id_path)
-			{
-				const Model::Entity* current_entity = entity_model.find_entity_by_id(current_id);
-				Q_ASSERT_X(current_entity != nullptr, "VadonEditor::UI::AnimationComponentWidget::AnimationComponentWidget", "Invalid entity path");
-				entity_label_path.push_back(current_entity->get_label());
-			}
-
-			m_ui.entityPathLabel->setText(entity_label_path.join('/'));
-		}
+		m_ui.entityPathLabel->setText(get_entity_animation_entity_path_string(owner_scene, m_entity->get_id()));
 
 		m_ui.resourceToolButton->addAction(m_ui.actionCreateAnimation);
 		m_ui.resourceToolButton->addAction(m_ui.actionClear);
@@ -273,6 +300,32 @@ namespace VadonEditor::UI
 		remove_resource();
 	}
 
+	void AnimationComponentWidget::time_scale_change_requested(const QUuid& animation_id, float time_scale)
+	{
+		auto editor_it = m_animation_editor_lookup.find(animation_id);
+		if (editor_it == m_animation_editor_lookup.end())
+		{
+			qCritical() << "Cannot find animation editor for" << animation_id;
+			return;
+		}
+
+		AnimationEditorEntry& editor_entry = editor_it.value();
+		editor_entry.model->set_time_scale(time_scale);
+	}
+
+	void AnimationComponentWidget::looping_change_requested(const QUuid& animation_id, bool looping)
+	{
+		auto editor_it = m_animation_editor_lookup.find(animation_id);
+		if (editor_it == m_animation_editor_lookup.end())
+		{
+			qCritical() << "Cannot find animation editor for" << animation_id;
+			return;
+		}
+
+		AnimationEditorEntry& editor_entry = editor_it.value();
+		editor_entry.model->set_looping(looping);
+	}
+
 	void AnimationComponentWidget::new_channel_requested(const QUuid& animation_id)
 	{
 		if (Utilities::is_uuid_valid(m_new_channel_request_id) == true)
@@ -340,7 +393,9 @@ namespace VadonEditor::UI
 			return;
 		}
 
-		const Core::DataSchema& data_schema = m_owner_scene->get_application().get_project_manager().get_project_data_schema();
+		Core::Application& application = m_owner_scene->get_application();
+
+		const Core::DataSchema& data_schema = application.get_project_manager().get_project_data_schema();
 		const Core::TypeData* type_data = data_schema.find_type_data(component_id);
 		Q_ASSERT_X(type_data != nullptr, "VadonEditor::UI::AnimationComponentWidget::new_channel_component_property_selected", "Cannot find type data");
 
@@ -355,6 +410,9 @@ namespace VadonEditor::UI
 		new_channel_entry.component_id = component_id;
 		new_channel_entry.property_id = property_id;
 
+		Model::AnimationChannelMetadata channel_metadata;
+		channel_metadata.label = get_entity_animation_entry_label(m_owner_scene, new_channel_entry);
+
 		switch (Core::PropertyData::get_category(property_data->get_root_type()))
 		{
 		case ::Vadon::Foundation::Property::Category::TRIVIAL:
@@ -368,7 +426,7 @@ namespace VadonEditor::UI
 				return;
 			}
 
-			const Model::AnimationChannel* new_channel = editor_entry.model->add_channel(channel_type);
+			const Model::AnimationChannel* new_channel = editor_entry.model->add_channel(channel_type, channel_metadata);
 
 			new_channel_entry.channel_id = new_channel->get_id();
 		}
@@ -379,7 +437,6 @@ namespace VadonEditor::UI
 
 			Q_ASSERT_X(property_data->type_list.size() > 1, "VadonEditor::UI::AnimationComponentWidget::new_channel_component_property_selected", "Missing resource type!");
 
-			Model::AnimationChannelMetadata channel_metadata;
 			channel_metadata.resource_type = property_data->type_list[1];
 
 			const Model::AnimationChannel* new_channel = editor_entry.model->add_channel(channel_type, channel_metadata);
@@ -476,6 +533,11 @@ namespace VadonEditor::UI
 		m_channel_entry_lookup.erase(channel_entry_it);
 
 		update_animation_list_property_data();
+	}
+
+	void AnimationComponentWidget::animation_settings_modified(const QUuid& animation_id)
+	{
+		store_animation_data(animation_id);
 	}
 
 	void AnimationComponentWidget::animation_channel_added(const QUuid& animation_id, const QUuid& channel_id)
@@ -608,21 +670,24 @@ namespace VadonEditor::UI
 			const Core::PropertyData* property_data = type_data->find_property_data(current_entry.property_id);
 			Q_ASSERT_X(property_data != nullptr, "VadonEditor::UI::AnimationComponentWidget::open_animation", "Cannot find property data");
 
+			Model::AnimationChannelMetadata channel_metadata;
+			channel_metadata.label = get_entity_animation_entry_label(m_owner_scene, current_entry);
+
 			switch (Core::PropertyData::get_category(property_data->get_root_type()))
 			{
 			case ::Vadon::Foundation::Property::Category::RESOURCE:
 			{
 				Q_ASSERT_X(property_data->type_list.size() > 1, "VadonEditor::UI::AnimationComponentWidget::open_animation", "Missing resource type!");
 
-				Model::AnimationChannelMetadata channel_metadata;
 				channel_metadata.resource_type = property_data->type_list[1];
-
-				entry_channel->set_metadata(channel_metadata);
 			}
 			break;
 			}
+
+			entry_channel->set_metadata(channel_metadata);
 		}
 
+		connect(new_animation_model, &Model::Animation::settings_modified, this, &AnimationComponentWidget::animation_settings_modified);
 		connect(new_animation_model, &Model::Animation::channel_added, this, &AnimationComponentWidget::animation_channel_added);
 		connect(new_animation_model, &Model::Animation::channel_edited, this, &AnimationComponentWidget::animation_channel_edited);
 		connect(new_animation_model, &Model::Animation::channel_removed, this, &AnimationComponentWidget::animation_channel_removed);
@@ -633,6 +698,8 @@ namespace VadonEditor::UI
 			m_focused_editor->setVisible(false);
 		}
 
+		connect(new_animation_editor, &AnimationEditor::time_scale_modified, this, &AnimationComponentWidget::time_scale_change_requested);
+		connect(new_animation_editor, &AnimationEditor::looping_modified, this, &AnimationComponentWidget::looping_change_requested);
 		connect(new_animation_editor, &AnimationEditor::new_channel_requested, this, &AnimationComponentWidget::new_channel_requested);
 		connect(new_animation_editor, &AnimationEditor::remove_channel_requested, this, &AnimationComponentWidget::remove_channel_requested);
 

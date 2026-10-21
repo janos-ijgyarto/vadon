@@ -112,6 +112,16 @@ namespace Vadon
 				TypeInfo::get_base_type_uuid_string(BaseType::ARRAY)
 			};
 
+			static constexpr PropertySchema c_time_scale_property {
+				"79a926cb-0aad-4514-86e7-7f2601e9eb46",
+				TypeInfo::get_base_type_uuid_string(BaseType::FLOAT)
+			};
+
+			static constexpr PropertySchema c_looping_property{
+				"d07dc003-d4df-4de3-95e8-55b939ec3419",
+				TypeInfo::get_base_type_uuid_string(BaseType::BOOL)
+			};			
+
 			static constexpr UUIDString c_type_uuid{ "45f3044d-0100-44af-9449-fee04590ce0d" };
 		};
 

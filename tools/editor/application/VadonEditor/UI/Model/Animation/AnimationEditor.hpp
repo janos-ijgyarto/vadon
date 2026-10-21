@@ -69,11 +69,16 @@ namespace VadonEditor::UI
 
         void channel_context_menu_requested(const QUuid& channel_id, const QPoint& screen_pos, const QPointF& item_pos);
     signals:
+        void time_scale_modified(const QUuid& animation_id, float time_scale);
+        void looping_modified(const QUuid& animation_id, bool is_looping);
         void new_channel_requested(const QUuid& animation_id);
         void remove_channel_requested(const QUuid& animation_id, const QUuid& channel_id);
     private slots:
         void playback_start_triggered();
         void playback_stop_triggered();
+
+        void time_scale_changed(double value);
+        void looping_toggled(bool checked);
 
         void add_channel_triggered();
         void remove_channel_triggered();
@@ -101,6 +106,8 @@ namespace VadonEditor::UI
 
         void playback_timer_update();
         void reset_playback();
+
+        void update_looping_button(bool checked);
 
 		Ui::AnimationEditor m_ui;
 

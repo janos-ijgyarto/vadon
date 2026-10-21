@@ -15,7 +15,7 @@ namespace VadonEditor::Model
 	public:
 		~Scene();
 
-		Core::Application& get_application() { return m_application; }
+		Core::Application& get_application() const { return m_application; }
 
 		const SceneID& get_id() const { return m_id; }
 		const SceneID& get_base_scene_id() const { return m_base_id; }

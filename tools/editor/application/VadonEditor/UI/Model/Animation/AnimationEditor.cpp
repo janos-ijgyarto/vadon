@@ -309,7 +309,7 @@ namespace
 
         void update_header_text()
         {
-            VadonEditor::Model::AnimationChannel* channel_data = m_anim_editor.get_animation().find_channel(m_channel_id);
+            const VadonEditor::Model::AnimationChannel* channel_data = m_anim_editor.get_animation().find_channel(m_channel_id);
             Q_ASSERT_X(channel_data != nullptr, "AnimationChannelHeaderItem::AnimationChannelHeaderItem", "Cannot find channel");
 
             QString header_text = channel_data->get_tag();
@@ -734,6 +734,16 @@ namespace VadonEditor::UI
             anim_editor.m_ui.channelIDTextLabel->setText(Utilities::uuid_to_base64_string(channel_id));
             anim_editor.m_ui.channelTypeTextLabel->setText(get_animation_channel_type_name(animation_channel->get_type()));
 
+            const VadonEditor::Model::AnimationChannelMetadata& channel_metadata = animation_channel->get_metadata();
+            if (channel_metadata.label.isEmpty() == false)
+            {
+                anim_editor.m_ui.channelMetadataValueLabel->setText(channel_metadata.label);
+            }
+            else
+            {
+                anim_editor.m_ui.channelMetadataValueLabel->setText("N/A");
+            }
+
             PropertyEnum* sample_method_widget = get_sample_method_property_widget(anim_editor);
             sample_method_widget->set_enum_value(Model::AnimationChannel::get_sample_method_id(animation_channel->get_sample_method()));
 
@@ -1066,6 +1076,17 @@ namespace VadonEditor::UI
         }
     }
 
+    void AnimationEditor::time_scale_changed(double value)
+    {
+        emit(time_scale_modified(m_animation.get_id(), static_cast<float>(value)));
+    }
+
+    void AnimationEditor::looping_toggled(bool checked)
+    {
+        emit(looping_modified(m_animation.get_id(), checked));
+        update_looping_button(checked);
+    }
+
     void AnimationEditor::add_channel_triggered()
     {
         // TODO: when editing a single animation without any wider context, allow the
@@ -1262,6 +1283,17 @@ namespace VadonEditor::UI
     void AnimationEditor::initialize()
     {
         {
+            m_ui.loopButton->blockSignals(true);
+            m_ui.loopButton->setChecked(m_animation.is_looping());
+            update_looping_button(m_animation.is_looping());
+            m_ui.loopButton->blockSignals(false);
+
+            const QPixmap time_pixmap = QIcon::fromTheme(QIcon::ThemeIcon::DocumentOpenRecent).pixmap(QSize(16, 16));
+            m_ui.timeScaleLabel->setPixmap(time_pixmap);
+            m_ui.timeScaleSpinBox->blockSignals(true);
+            m_ui.timeScaleSpinBox->setValue(m_animation.get_time_scale());
+            m_ui.timeScaleSpinBox->blockSignals(false);
+
             const QPixmap zoom_in_pixmap = QIcon::fromTheme(QIcon::ThemeIcon::ZoomIn).pixmap(QSize(16, 16));
             m_ui.timelineHorizontalZoomInLabel->setPixmap(zoom_in_pixmap);
             m_ui.timelineVerticalZoomInLabel->setPixmap(zoom_in_pixmap);
@@ -1317,19 +1349,31 @@ namespace VadonEditor::UI
     void AnimationEditor::time_updated()
     {
         m_internal_graphics->set_time(*this, m_time);
+        m_ui.playbackTimeLabel->setText(QString::number(m_time, 'g', 5));
         m_ui.timelineView->viewport()->update();
     }
 
     void AnimationEditor::playback_timer_update()
     {
-        constexpr qreal c_playback_timestep = (qreal(c_animation_playback_tick_ms) / 1000.0) * 0.3;
+        const qreal c_playback_timestep = (qreal(c_animation_playback_tick_ms) / 1000.0) * m_animation.get_time_scale();
 
-        m_time += c_playback_timestep;
-        if (m_time > 1.0)
+        const float new_time = m_time + c_playback_timestep;
+        
+        if (new_time > 1.0)
         {
-            // Wrap back around
-            // TODO: implement settings for looping, one-shot, etc.
-            m_time -= 1.0;
+            if (m_animation.is_looping() == true)
+            {
+                m_time = std::fmodf(new_time, 1.0);
+            }
+            else
+            {
+                m_time = 1.0f;
+                playback_stop_triggered();
+            }
+        }
+        else
+        {
+            m_time = new_time;
         }
 
         time_updated();
@@ -1339,5 +1383,12 @@ namespace VadonEditor::UI
     {
         m_time = 0.0;
         time_updated();
+    }
+
+    void AnimationEditor::update_looping_button(bool checked)
+    {
+        const QIcon::ThemeIcon button_icon = checked ? QIcon::ThemeIcon::MediaPlaylistRepeat : QIcon::ThemeIcon::MediaPlaylistShuffle;
+        m_ui.loopButton->setIcon(QIcon::fromTheme(button_icon));
+        m_ui.loopButton->setToolTip(checked ? "Looping" : "No Looping");
     }
 }

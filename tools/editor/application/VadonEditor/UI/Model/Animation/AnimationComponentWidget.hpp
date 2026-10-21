@@ -44,6 +44,8 @@ namespace VadonEditor::UI
 		void create_animation_triggered();
 		void clear_animation_triggered();
 
+		void time_scale_change_requested(const QUuid& animation_id, float time_scale);
+		void looping_change_requested(const QUuid& animation_id, bool looping);
 		void new_channel_requested(const QUuid& animation_id);
 		void remove_channel_requested(const QUuid& animation_id, const QUuid& channel_id);
 
@@ -55,6 +57,7 @@ namespace VadonEditor::UI
 		void animation_edited(const QUuid& animation_id);
 		void animation_removed(const QUuid& animation_id);
 
+		void animation_settings_modified(const QUuid& animation_id);
 		void animation_channel_added(const QUuid& animation_id, const QUuid& channel_id);
 		void animation_channel_edited(const QUuid& animation_id, const QUuid& channel_id);
 		void animation_channel_removed(const QUuid& animation_id, const QUuid& channel_id);

@@ -63,6 +63,13 @@
           </widget>
          </item>
          <item>
+          <widget class="QLabel" name="playbackTimeLabel">
+           <property name="text">
+            <string>0.0</string>
+           </property>
+          </widget>
+         </item>
+         <item>
           <spacer name="playbackButtonsSpacer">
            <property name="orientation">
             <enum>Qt::Orientation::Horizontal</enum>
@@ -74,6 +81,42 @@
             </size>
            </property>
           </spacer>
+         </item>
+         <item>
+          <widget class="QLabel" name="timeScaleLabel">
+           <property name="toolTip">
+            <string>Time Scale</string>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QDoubleSpinBox" name="timeScaleSpinBox">
+           <property name="toolTip">
+            <string>Time Scale</string>
+           </property>
+           <property name="singleStep">
+            <double>0.100000000000000</double>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="loopButton">
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset theme="QIcon::ThemeIcon::MediaPlaylistShuffle"/>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+           <property name="checked">
+            <bool>false</bool>
+           </property>
+          </widget>
          </item>
         </layout>
        </item>
@@ -291,6 +334,23 @@
             <widget class="QLabel" name="channelSampleMethodLabel">
              <property name="text">
               <string>Sample method:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="1">
+            <widget class="QLabel" name="channelMetadataValueLabel">
+             <property name="text">
+              <string>N/A</string>
+             </property>
+             <property name="wordWrap">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="0">
+            <widget class="QLabel" name="channelMetadataLabel">
+             <property name="text">
+              <string>Metadata label:</string>
              </property>
             </widget>
            </item>
@@ -584,6 +644,38 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>timeScaleSpinBox</sender>
+   <signal>valueChanged(double)</signal>
+   <receiver>AnimationEditor</receiver>
+   <slot>time_scale_changed(double)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>636</x>
+     <y>44</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>599</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>loopButton</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>AnimationEditor</receiver>
+   <slot>looping_toggled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>649</x>
+     <y>44</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>599</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>add_channel_triggered()</slot>
@@ -596,5 +688,7 @@
   <slot>add_key_triggered()</slot>
   <slot>remove_keys_triggered()</slot>
   <slot>channel_sample_method_changed(int)</slot>
+  <slot>time_scale_changed(double)</slot>
+  <slot>looping_toggled(bool)</slot>
  </slots>
 </ui>

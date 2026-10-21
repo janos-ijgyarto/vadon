@@ -127,6 +127,8 @@ namespace Vadon::Private::Model
 
 		Vadon::Model::ResourceRegistry::register_resource_type<Animation, Vadon::Model::Resource>();
 		TypeRegistry::add_property<Animation>(VADON_GET_MEMBER_UUID(Animation, channels), Vadon::Utilities::MemberVariableBind<&Animation::channels>().bind_member_getter().bind_setter_function<&Animation::set_channels>());
+		TypeRegistry::add_property<Animation>(VADON_GET_MEMBER_UUID(Animation, time_scale), Vadon::Utilities::MemberVariableBind<&Animation::time_scale>().bind_member_getter().bind_member_setter());
+		TypeRegistry::add_property<Animation>(VADON_GET_MEMBER_UUID(Animation, looping), Vadon::Utilities::MemberVariableBind<&Animation::looping>().bind_member_getter().bind_member_setter());
 
 		Vadon::Model::ResourceRegistry::register_resource_type<AnimationLibrary, Vadon::Model::Resource>();
 		TypeRegistry::add_property<AnimationLibrary>(VADON_GET_MEMBER_UUID(AnimationLibrary, animations), Vadon::Utilities::MemberVariableBind<&AnimationLibrary::animations>().bind_member_getter().bind_member_setter());
@@ -155,6 +157,14 @@ namespace Vadon::Private::Model
 				.add_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "Vadon::Model::Animation")
 				.add_property(VADON_GET_MEMBER_UUID(Animation, channels))
 					.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Channels")
+					.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::FLAGS, ::Vadon::Foundation::CommonPropertyMetadata::flag_string(::Vadon::Foundation::CommonPropertyMetadata::Flags::EDITOR_HIDDEN))
+					.commit_property()
+				.add_property(VADON_GET_MEMBER_UUID(Animation, time_scale))
+					.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Time Scale")
+					.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::FLAGS, ::Vadon::Foundation::CommonPropertyMetadata::flag_string(::Vadon::Foundation::CommonPropertyMetadata::Flags::EDITOR_HIDDEN))
+					.commit_property()
+				.add_property(VADON_GET_MEMBER_UUID(Animation, looping))
+					.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Looping")
 					.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::FLAGS, ::Vadon::Foundation::CommonPropertyMetadata::flag_string(::Vadon::Foundation::CommonPropertyMetadata::Flags::EDITOR_HIDDEN));
 			
 			Vadon::Utilities::EnumMetadata<AnimationChannelSampleMethod>(metadata_registry)

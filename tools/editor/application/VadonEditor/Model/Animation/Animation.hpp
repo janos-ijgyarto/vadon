@@ -29,6 +29,7 @@ namespace VadonEditor::Model
     // FIXME: this is a hacky solution, find a more robust way to map between properties and channels!
     struct AnimationChannelMetadata
     {
+        QString label; // NOTE: used to indicate what this channel modifies
         QUuid resource_type; // NOTE: only valid for UUID channel!
     };
 
@@ -99,7 +100,7 @@ namespace VadonEditor::Model
         QUuid get_id() const { return m_id; }
 
         // TODO: load from raw data?
-        bool store_data(QVariant& data) const;
+        bool store_channels_data(QVariant& data) const;
 
         bool load_from_resource(const Model::Resource* resource);
         bool store_to_resource(Model::Resource* resource) const;
@@ -110,6 +111,12 @@ namespace VadonEditor::Model
 
         QList<QUuid> get_channel_id_list() const;
 
+        float get_time_scale() const { return m_time_scale; }
+        void set_time_scale(float time_scale);
+
+        bool is_looping() const { return m_is_looping; }
+        void set_looping(bool looping);
+
         static QUuid get_animation_type_uuid();
         static bool is_animation_base_of_type(VadonEditor::Core::Application& application, const QUuid& type_id);
 
@@ -119,6 +126,8 @@ namespace VadonEditor::Model
 
         static QUuid get_animation_component_type_uuid();
     signals:
+        void settings_modified(const QUuid& animation_id);
+
         void channel_added(const QUuid& animation_id, const QUuid& channel_id);
         void channel_removed(const QUuid& animation_id, const QUuid& channel_id);
         void channel_edited(const QUuid& animation_id, const QUuid& channel_id);
@@ -131,6 +140,8 @@ namespace VadonEditor::Model
         Core::Application& m_application;
         QUuid m_id;
         QList<AnimationChannel*> m_channels;
+        float m_time_scale;
+        bool m_is_looping;
     };
 }
 #endif

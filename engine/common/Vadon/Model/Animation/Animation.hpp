@@ -85,8 +85,12 @@ namespace Vadon::Model
 	struct Animation : public Resource
 	{
 		VADON_DECLARE_MEMBER_UUID(channels, ::Vadon::Foundation::AnimationSchema::c_channels_property.id.string);
+		VADON_DECLARE_MEMBER_UUID(time_scale, ::Vadon::Foundation::AnimationSchema::c_time_scale_property.id.string);
+		VADON_DECLARE_MEMBER_UUID(looping, ::Vadon::Foundation::AnimationSchema::c_looping_property.id.string);
 
 		std::vector<AnimationChannelWrapper> channels;
+		float time_scale = 0.0f;
+		bool looping = false;
 
 		~Animation()
 		{

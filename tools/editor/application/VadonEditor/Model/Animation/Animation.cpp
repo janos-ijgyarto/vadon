@@ -47,6 +47,16 @@ namespace
 		return VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::AnimationChannelSchema::get_channel_type_uuid_string(channel_type));
 	}
 
+	QUuid get_animation_time_scale_property_uuid()
+	{
+		return VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::AnimationSchema::c_time_scale_property.id);
+	}
+	
+	QUuid get_animation_looping_property_uuid()
+	{
+		return VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::AnimationSchema::c_looping_property.id);
+	}
+
 	QUuid get_animation_channels_property_uuid()
 	{
 		return VadonEditor::Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::AnimationSchema::c_channels_property.id);
@@ -166,6 +176,8 @@ namespace VadonEditor::Model
 
 	Animation::Animation(Core::Application& application)
 		: m_application(application)
+		, m_time_scale(0.0f)
+		, m_is_looping(false)
 	{
 	}
 
@@ -174,7 +186,7 @@ namespace VadonEditor::Model
 		clear_channels();
 	}
 
-	bool Animation::store_data(QVariant& data) const
+	bool Animation::store_channels_data(QVariant& data) const
 	{
 		const QUuid id_property_id = Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::AnimationChannelSchema::c_id_property.id);
 		const QUuid sample_method_property_id = Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::AnimationChannelSchema::c_sample_method_property.id);
@@ -233,7 +245,12 @@ namespace VadonEditor::Model
 		const QUuid tag_property_id = Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::AnimationChannelSchema::c_tag_property.id);
 		const QUuid key_times_property_id = Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::AnimationChannelSchema::c_key_times_property.id);
 
-		const QVariantList channels = resource->get_data_object().get_property(get_animation_channels_property_uuid()).toList();
+		const Core::DataObject& animation_data_obj = resource->get_data_object();
+
+		m_time_scale = animation_data_obj.get_property(get_animation_time_scale_property_uuid()).toFloat();
+		m_is_looping = animation_data_obj.get_property(get_animation_looping_property_uuid()).toBool();
+
+		const QVariantList channels = animation_data_obj.get_property(get_animation_channels_property_uuid()).toList();
 		for (const QVariant& current_channel_variant : channels)
 		{
 			Core::DataObject channel_object(m_application);
@@ -286,13 +303,16 @@ namespace VadonEditor::Model
 
 	bool Animation::store_to_resource(Model::Resource* resource) const
 	{
-		QVariant animation_data;
-		if (store_data(animation_data) == false)
+		resource->set_property(get_animation_time_scale_property_uuid(), m_time_scale);
+		resource->set_property(get_animation_looping_property_uuid(), m_is_looping);
+
+		QVariant channels_data;
+		if (store_channels_data(channels_data) == false)
 		{
 			return false;
 		}
 
-		resource->set_property(get_animation_channels_property_uuid(), animation_data);
+		resource->set_property(get_animation_channels_property_uuid(), channels_data);
 		return true;
 	}
 
@@ -354,6 +374,18 @@ namespace VadonEditor::Model
 		}
 
 		return channel_id_list;
+	}
+
+	void Animation::set_time_scale(float time_scale)
+	{
+		m_time_scale = time_scale;
+		emit(settings_modified(m_id));
+	}
+
+	void Animation::set_looping(bool looping)
+	{
+		m_is_looping = looping;
+		emit(settings_modified(m_id));
 	}
 
 	QUuid Animation::get_animation_type_uuid()

@@ -89,9 +89,11 @@ namespace Vadon::Model
 
 	void AnimationPlayer::update(Vadon::Core::EngineCoreInterface& engine_core, float delta_time)
 	{
-		if (is_looping() == true)
+		const Animation* animation_data = engine_core.get_system<AnimationSystem>().get_animation_data(m_animation);
+
+		if (animation_data->looping == true)
 		{
-			m_current_time += m_time_scale * delta_time;
+			m_current_time += m_time_scale * animation_data->time_scale * delta_time;
 			if (m_current_time > 1.0f)
 			{
 				m_current_time = std::fmodf(m_current_time, 1.0f);
@@ -99,10 +101,10 @@ namespace Vadon::Model
 		} 
 		else if(m_current_time < 1.0f)
 		{
-			m_current_time = std::min(m_current_time + (m_time_scale * delta_time), 1.0f);
+			m_current_time = std::min(m_current_time + (m_time_scale * animation_data->time_scale * delta_time), 1.0f);
 		}
 
-		update_sample_data(engine_core);
+		update_sample_data(animation_data);
 	}
 
 	void AnimationPlayer::reset()
@@ -112,7 +114,7 @@ namespace Vadon::Model
 		m_sample_data.reset();
 	}
 
-	void AnimationPlayer::update_sample_data(Vadon::Core::EngineCoreInterface& engine_core)
+	void AnimationPlayer::update_sample_data(const Animation* animation_data)
 	{
 		if (m_animation.is_valid() == false)
 		{
@@ -123,8 +125,6 @@ namespace Vadon::Model
 		{
 			return;
 		}
-
-		const Animation* animation_data = engine_core.get_system<AnimationSystem>().get_animation_data(m_animation);
 
 		for (size_t channel_index = 0; channel_index < animation_data->channels.size(); ++channel_index)
 		{
