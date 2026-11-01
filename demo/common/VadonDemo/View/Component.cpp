@@ -59,26 +59,6 @@ namespace VadonDemo::View
 			.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Color");
 	}
 
-	void AnimationComponent::register_component(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry)
-	{
-		using TypeRegistry = Vadon::Utilities::TypeRegistry;
-
-		Vadon::ECS::ComponentRegistry::register_component_type<AnimationComponent>();
-
-		TypeRegistry::add_property<AnimationComponent>(VADON_GET_MEMBER_UUID(AnimationComponent, time_scale), Vadon::Utilities::MemberVariableBind<&AnimationComponent::time_scale>().bind_member_getter().bind_member_setter());
-		TypeRegistry::add_property<AnimationComponent>(VADON_GET_MEMBER_UUID(AnimationComponent, looping), Vadon::Utilities::MemberVariableBind<&AnimationComponent::looping>().bind_member_getter().bind_member_setter());
-
-		Vadon::Utilities::TypeMetadata<AnimationComponent> animation_metadata(metadata_registry);
-		animation_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "VadonDemo::View::AnimationComponent");
-		animation_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::COMPONENT, "VadonDemo/View");
-
-		animation_metadata.add_property(VADON_GET_MEMBER_UUID(AnimationComponent, time_scale))
-			.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Time Scale");
-
-		animation_metadata.add_property(VADON_GET_MEMBER_UUID(AnimationComponent, looping))
-			.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Looping");
-	}
-
 	void DamageComponent::register_component(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry)
 	{
 		using TypeRegistry = Vadon::Utilities::TypeRegistry;

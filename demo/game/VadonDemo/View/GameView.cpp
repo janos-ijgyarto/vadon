@@ -15,6 +15,8 @@
 
 #include <Vadon/ECS/World/World.hpp>
 
+#include <Vadon/Model/Animation/EntityAnimation.hpp>
+
 #include <Vadon/Model/Animation/AnimationSystem.hpp>
 #include <Vadon/Model/Resource/ResourceSystem.hpp>
 #include <Vadon/Model/Scene/SceneSystem.hpp>
@@ -174,7 +176,7 @@ namespace VadonDemo::View
 			}
 		}
 
-		auto vfx_anim_component = component_manager.add_component<AnimationComponent>(vfx_entity);
+		auto vfx_anim_component = component_manager.add_component<Vadon::Model::AnimationComponent>(vfx_entity);
 		if (vfx_anim_component.is_valid() == true)
 		{
 			if (projectile_vfx->animation.is_valid() == true)
@@ -182,12 +184,8 @@ namespace VadonDemo::View
 				Vadon::Model::AnimationSystem& anim_system = m_game_core.get_engine_core().get_system<Vadon::Model::AnimationSystem>();
 				const Vadon::Model::AnimationHandle anim_handle = anim_system.load_animation(projectile_vfx->animation);
 
-				vfx_anim_component->animation_player.set_animation(m_game_core.get_engine_core(), anim_handle);
+				vfx_anim_component->player.set_animation(m_game_core.get_engine_core(), anim_handle);
 			}
-
-			// TODO: asserts to make sure values are valid!
-			vfx_anim_component->animation_player.set_looping(vfx_anim_component->looping);
-			vfx_anim_component->animation_player.set_time_scale(vfx_anim_component->time_scale);
 		}
 
 		m_game_core.get_core().entity_added(ecs_world, vfx_entity);

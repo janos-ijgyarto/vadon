@@ -40,6 +40,9 @@ namespace Vadon::Utilities
 		using Instance = std::unique_ptr<Serializer>;
 		using KeyVector = std::vector<std::string>;
 
+		// FIXME: this only works if the data already comes in this format,
+		// which forces readers to do extra copies. Revise API so input implies
+		// a reader, null implies a writer, and serializer contains its own buffer for writing
 		VADONCOMMON_API static Instance create_serializer(std::vector<std::byte>& buffer, Type type, Mode mode);
 
 		virtual ~Serializer();

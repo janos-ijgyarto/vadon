@@ -147,9 +147,9 @@ namespace VadonEditor::Model
 				Resource* resource = find_resource(resource_asset_created->resource_id);
 				VADON_ASSERT(resource != nullptr, "Resource was not loaded!");
 
-				const char* data_start = message_data + sizeof(::Vadon::Foundation::EditorModelMessageResourceAssetCreated);
+				const ::Vadon::Foundation::EditorMessageRawDataView asset_path_view = message_reader.get_raw_data_view(resource_asset_created->asset_path);
 
-				std::string_view asset_path_string(data_start, resource_asset_created->asset_path_length);
+				std::string_view asset_path_string(asset_path_view.data, asset_path_view.size);
 
 				const Vadon::Model::ResourceID imported_id = m_database.import_resource(asset_path_string);
 				VADON_ASSERT(imported_id == resource_asset_created->resource_id, "Resource in asset does not match Resource object");
@@ -181,7 +181,7 @@ namespace VadonEditor::Model
 				Resource* resource = find_resource(resource_property_edited->resource_id);
 				VADON_ASSERT(resource != nullptr, "Resource was not loaded!");
 
-				resource->load_property_data(*resource_property_edited, message_data);
+				resource->load_property_data(message_reader, *resource_property_edited);
 			}
 			break;
 			case ::Vadon::Foundation::EditorModelMessageType::RESOURCE_REMOVED:

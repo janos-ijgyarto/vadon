@@ -60,6 +60,7 @@ namespace VadonApp::Platform
 	struct MouseButtonEvent
 	{
 		MouseButton button = MouseButton::INVALID;
+		uint8_t clicks = 0;
 		bool down = false;
 		// TODO: other data?
 	};
@@ -83,7 +84,8 @@ namespace VadonApp::Platform
 
 	struct TextInputEvent
 	{
-		std::string text;
+		static constexpr size_t c_text_input_size = 32;
+		char text[c_text_input_size];
 	};
 
 	struct QuitEvent

@@ -61,15 +61,16 @@ namespace VadonEditor::Model
 		m_embedded_resources.clear();
 	}
 
-	void Resource::load_property_data(const ::Vadon::Foundation::EditorModelMessageResourcePropertyEdited& resource_property_message, const char* data)
+	void Resource::load_property_data(const ::Vadon::Foundation::EditorMessageReader& reader, const ::Vadon::Foundation::EditorModelMessageResourcePropertyEdited& resource_property_message)
 	{
 		VADON_ASSERT(is_loaded() == true, "Resource is not loaded!");
-		const void* data_start = data + sizeof(::Vadon::Foundation::EditorModelMessageResourcePropertyEdited);
+
+		const ::Vadon::Foundation::EditorMessageRawDataView property_value_view = reader.get_raw_data_view(resource_property_message.data);
 
 		Vadon::Core::RawFileDataBuffer json_data_buffer;
-		json_data_buffer.resize(resource_property_message.data_size);
+		json_data_buffer.resize(resource_property_message.data.size);
 
-		memcpy(std::to_address(json_data_buffer.begin()), data_start, resource_property_message.data_size);
+		memcpy(std::to_address(json_data_buffer.begin()), property_value_view.data, property_value_view.size);
 
 		Vadon::Utilities::Serializer::Instance serializer_instance = Vadon::Utilities::Serializer::create_serializer(json_data_buffer, Vadon::Utilities::Serializer::Type::JSON, Vadon::Utilities::Serializer::Mode::READ);
 		if (serializer_instance->initialize() == false)

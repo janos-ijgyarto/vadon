@@ -134,6 +134,7 @@ namespace VadonEditor::UI
 		SceneTree* new_scene_tree = new SceneTree(opened_scene);
 		connect(new_scene_tree, &SceneTree::scene_modified, this, &SceneManager::scene_modified);
 		connect(new_scene_tree, &SceneTree::scene_saved, this, &SceneManager::scene_saved);
+		connect(new_scene_tree, &SceneTree::entity_selected, this, &SceneManager::entity_selected);
 
 		SceneTreeTab tab_data;
 		tab_data.label = asset_info.path;
@@ -166,6 +167,22 @@ namespace VadonEditor::UI
 		update_scene_tab_label(scene_tree);
 	}
 
+	void SceneManager::entity_selected(const QUuid& scene_id, const QUuid& entity_id)
+	{
+		// FIXME: use temp allocator or shared serializer
+		VadonEditor::Network::MessageSerializer message_serializer;
+
+		::Vadon::Foundation::EditorModelMessageEntitySelected entity_selected;
+		entity_selected.message_type = ::Vadon::Foundation::EditorModelMessageType::ENTITY_SELECTED;
+
+		entity_selected.scene_id = Utilities::qt_uuid_to_vadon_uuid(scene_id);
+		entity_selected.entity_id = Utilities::qt_uuid_to_vadon_uuid(entity_id);
+
+		message_serializer.write_message(::Vadon::Foundation::EditorMessageCategory::MODEL, entity_selected);
+
+		m_application.get_network_system().send_message(message_serializer);
+	}
+
 	void SceneManager::current_scene_changed(int tab_index)
 	{
 		if (tab_index < 0)
@@ -189,7 +206,7 @@ namespace VadonEditor::UI
 
 			scene_selected.scene_id = Utilities::qt_uuid_to_vadon_uuid(selected_scene_tree->get_scene()->get_id());
 
-			message_serializer.write_message_trivial(::Vadon::Foundation::EditorMessageCategory::MODEL, scene_selected);
+			message_serializer.write_message(::Vadon::Foundation::EditorMessageCategory::MODEL, scene_selected);
 
 			m_application.get_network_system().send_message(message_serializer);
 		}
@@ -235,6 +252,10 @@ namespace VadonEditor::UI
 		QTabWidget* scene_tab_widget = m_application.get_ui_system().get_main_window()->get_scene_tab_widget();
 		connect(scene_tab_widget, &QTabWidget::currentChanged, this, &SceneManager::current_scene_changed);
 		connect(scene_tab_widget, &QTabWidget::tabCloseRequested, this, &SceneManager::scene_tab_close_requested);
+
+		// If we got a message to select an entity, we notify the UI
+		Network::NetworkSystem& network_system = m_application.get_network_system();
+		connect(&network_system, &Network::NetworkSystem::received_message, this, &SceneManager::received_message);
 
 		return true;
 	}
@@ -394,5 +415,46 @@ namespace VadonEditor::UI
 
 		// Also send out a message for which tab is currently selected
 		current_scene_changed(scene_tab_bar->currentIndex());
+	}
+
+	void SceneManager::received_message(const QByteArray& data)
+	{
+		::Vadon::Foundation::EditorMessageReader message_reader(data.constData(), data.size());
+
+		const ::Vadon::Foundation::EditorMessageCategory category = message_reader.get_current_category();
+		switch (category)
+		{
+		case ::Vadon::Foundation::EditorMessageCategory::MODEL:
+		{
+			const char* message_data = message_reader.get_current_message_data();
+			const ::Vadon::Foundation::EditorModelMessageHeader* model_message_header = reinterpret_cast<const ::Vadon::Foundation::EditorModelMessageHeader*>(message_data);
+			switch (model_message_header->message_type)
+			{
+			case ::Vadon::Foundation::EditorModelMessageType::ENTITY_SELECTED:
+			{
+				const ::Vadon::Foundation::EditorModelMessageEntitySelected* entity_selected_message = reinterpret_cast<const ::Vadon::Foundation::EditorModelMessageEntitySelected*>(message_reader.get_current_message_data());
+				const QUuid scene_id = Utilities::vadon_uuid_to_qt_uuid(entity_selected_message->scene_id);
+
+				SceneTree* scene_tree = find_scene_tab(scene_id);
+				if (scene_tree != nullptr)
+				{
+					const QUuid entity_id = Utilities::vadon_uuid_to_qt_uuid(entity_selected_message->entity_id);
+					scene_tree->set_entity_selected(entity_id);
+
+					// NOTE: we also send a response message, since the expectation is
+					// that the editor is authoritative, and the selection only
+					// applies once the editor acts on notification from plugins
+					entity_selected(scene_id, entity_id);
+				}
+				else
+				{
+					qCritical() << "Requested to select entity in scene" << scene_id.toString() << "but scene is not open!";
+				}
+			}
+			break;
+			}
+		}
+		break;
+		}
 	}
 }

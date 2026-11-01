@@ -19,13 +19,13 @@ namespace Vadon
 		struct EditorSimulatorMessageRegisterSetting : public EditorSimulatorMessageHeader
 		{
 			SimulatorSetting setting;
-			uint32 label_length;
+			EditorMessageRawDataEntry label;
 		};
 
 		struct EditorSimulatorMessageUpdateSetting : public EditorSimulatorMessageHeader
 		{
 			UUID setting_id;
-			uint32 data_size;
+			EditorMessageRawDataEntry data;
 		};
 	}
 }

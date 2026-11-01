@@ -126,7 +126,7 @@ namespace VadonDemo::Platform
         window_request.message_type = ::Vadon::Foundation::EditorPlatformMessageType::MANAGER_WINDOW_REQUEST;
         window_request.id = 1;
 
-        message_serializer.write_message_trivial(::Vadon::Foundation::EditorMessageCategory::PLATFORM, window_request);
+        message_serializer.write_message(::Vadon::Foundation::EditorMessageCategory::PLATFORM, window_request);
 
         m_editor.get_simulator().dispatch_message_to_editor(message_serializer.get_buffer().data(), message_serializer.get_buffer().size());
     }

@@ -19,6 +19,8 @@ namespace Vadon::Model
 	{
 		EntitySceneInfo scene_info; // Info for the Scene that defines this Entity
 		EntitySceneInfo parent_scene_info; // If Entity is sub-scene, this has info for the Scene that this is a sub-scene of
+
+		const EntitySceneInfo& get_instance_scene_info() const { return parent_scene_info.scene_id.is_valid() ? parent_scene_info : scene_info; }
 	};
 }
 

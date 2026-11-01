@@ -33,6 +33,8 @@ namespace Vadon
 		struct EditorPlatformEventHeader : public EditorPlatformMessageHeader
 		{
 			PlatformEventType event_type;
+
+			const char* get_event_data_ptr() const { return reinterpret_cast<const char*>(this) + sizeof(EditorPlatformEventHeader); }
 		};
 	}
 }

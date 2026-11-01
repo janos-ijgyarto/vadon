@@ -27,6 +27,9 @@ namespace VadonEditor::Model
 		bool is_loaded() const { return m_handle.is_valid() && m_root_entity.is_valid(); }
 
 		Vadon::ECS::EntityHandle get_root_entity() const { return m_root_entity; }
+
+		::Vadon::Foundation::UUID get_selected_entity_id() const { return m_selected_entity_id; }
+		void set_selected_entity_id(const ::Vadon::Foundation::UUID& id) { m_selected_entity_id = id; }
 	private:
 		Scene(Core::Editor& editor, Vadon::Model::SceneID id, Resource* resource);
 
@@ -52,6 +55,8 @@ namespace VadonEditor::Model
 		Resource* m_resource;
 
 		Vadon::ECS::EntityHandle m_root_entity;
+
+		::Vadon::Foundation::UUID m_selected_entity_id;
 
 		friend class SceneSystem;
 	};

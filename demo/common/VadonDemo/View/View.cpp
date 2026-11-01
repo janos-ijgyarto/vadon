@@ -9,6 +9,8 @@
 #include <Vadon/ECS/Component/Registry.hpp>
 #include <Vadon/ECS/World/World.hpp>
 
+#include <Vadon/Model/Animation/EntityAnimation.hpp>
+
 #include <Vadon/Render/Canvas/CanvasSystem.hpp>
 #include <Vadon/Render/Canvas/CommandBuffer.hpp>
 
@@ -38,7 +40,6 @@ namespace VadonDemo::View
 		TransformComponent::register_component(metadata_registry);
 		ModelTransformComponent::register_component(metadata_registry);
 		RenderComponent::register_component(metadata_registry);
-		AnimationComponent::register_component(metadata_registry);
 		DamageComponent::register_component(metadata_registry);
 		VFXComponent::register_component(metadata_registry);
 		VFXTimerComponent::register_component(metadata_registry);
@@ -106,14 +107,14 @@ namespace VadonDemo::View
 
 		// Update animations
 		{
-			auto anim_query = component_manager.run_component_query<AnimationComponent&, TransformComponent*, RenderComponent*>();
+			auto anim_query = component_manager.run_component_query<Vadon::Model::AnimationComponent&, TransformComponent*, RenderComponent*>();
 			for (auto anim_it = anim_query.get_iterator(); anim_it.is_valid() == true; anim_it.next())
 			{
-				auto anim_component = anim_it.get_component<AnimationComponent>();
+				auto anim_component = anim_it.get_component<Vadon::Model::AnimationComponent>();
 
-				anim_component->animation_player.update(engine_core, view_delta_time);
+				anim_component->player.update(engine_core, view_delta_time);
 
-				const Vadon::Model::AnimationSample anim_sample = anim_component->animation_player.get_sample();
+				const Vadon::Model::AnimationSample anim_sample = anim_component->player.get_sample();
 
 				for (const Vadon::Model::AnimationChannelSample& current_channel : anim_sample.channels)
 				{

@@ -48,7 +48,7 @@ namespace Vadon
 			};
 
 			Type log_type;
-			uint32 length;
+			EditorMessageRawDataEntry message;
 		};
 	}
 }

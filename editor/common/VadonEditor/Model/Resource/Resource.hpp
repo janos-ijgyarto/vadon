@@ -37,7 +37,7 @@ namespace VadonEditor::Model
 		bool initialize();
 		void shutdown();
 
-		void load_property_data(const ::Vadon::Foundation::EditorModelMessageResourcePropertyEdited& resource_property_message, const char* data);
+		void load_property_data(const ::Vadon::Foundation::EditorMessageReader& reader, const ::Vadon::Foundation::EditorModelMessageResourcePropertyEdited& resource_property_message);
 		bool load_property_data(Vadon::Utilities::Serializer& serializer);
 
 		bool add_embedded_resource(Resource* resource);

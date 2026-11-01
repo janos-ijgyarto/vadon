@@ -75,7 +75,7 @@ namespace
 				test_message_out.other_number = 3 * test_message_in.other_number;
 
 				VadonEditor::Network::MessageSerializer serializer;
-				serializer.write_message_trivial(::Vadon::Foundation::EditorMessageCategory::TEST, test_message_out);
+				serializer.write_message(::Vadon::Foundation::EditorMessageCategory::TEST, test_message_out);
 
 				m_simulator.dispatch_message_to_editor(serializer.get_buffer().data(), serializer.get_buffer().size());
 			}
@@ -150,7 +150,8 @@ namespace VadonEditor::Simulator
 							case ::Vadon::Foundation::EditorSimulatorMessageType::REGISTER_SETTING:
 							{
 								const ::Vadon::Foundation::EditorSimulatorMessageRegisterSetting* register_setting_message = reinterpret_cast<const ::Vadon::Foundation::EditorSimulatorMessageRegisterSetting*>(message_reader.get_current_message_data());
-								register_setting(register_setting_message);
+								const ::Vadon::Foundation::EditorMessageRawDataView label_view = message_reader.get_raw_data_view(register_setting_message->label);
+								register_setting(register_setting_message, label_view);
 							}
 							break;
 							}
@@ -291,7 +292,7 @@ namespace VadonEditor::Simulator
 				init_message.error_code = 0;
 
 				VadonEditor::Network::MessageSerializer serializer;
-				serializer.write_message_trivial(::Vadon::Foundation::EditorMessageCategory::PLUGIN, init_message);
+				serializer.write_message(::Vadon::Foundation::EditorMessageCategory::PLUGIN, init_message);
 
 				m_application.get_simulator().dispatch_message_to_editor(serializer.get_buffer().data(), serializer.get_buffer().size());
 			}
@@ -445,7 +446,7 @@ namespace VadonEditor::Simulator
 					shutdown_message.plugin_type = ::Vadon::Foundation::EditorPluginMessageSource::SIMULATOR;
 					shutdown_message.message_type = ::Vadon::Foundation::EditorPluginMessageType::PLUGIN_SHUTDOWN;
 
-					message_serializer.write_message_trivial(::Vadon::Foundation::EditorMessageCategory::PLUGIN, shutdown_message);
+					message_serializer.write_message(::Vadon::Foundation::EditorMessageCategory::PLUGIN, shutdown_message);
 
 					m_application.get_network_system().send_message(message_serializer);
 				}
@@ -530,15 +531,13 @@ namespace VadonEditor::Simulator
 			return m_settings;
 		}
 
-		void register_setting(const ::Vadon::Foundation::EditorSimulatorMessageRegisterSetting* register_message)
+		void register_setting(const ::Vadon::Foundation::EditorSimulatorMessageRegisterSetting* register_message, const ::Vadon::Foundation::EditorMessageRawDataView& label_view)
 		{
 			SimulatorSetting new_setting;
 			new_setting.id = Utilities::vadon_uuid_to_qt_uuid(register_message->setting.id);
 			new_setting.type = Utilities::vadon_uuid_to_qt_uuid(register_message->setting.type);
 
-			const char* raw_data_ptr = reinterpret_cast<const char*>(register_message) + sizeof(::Vadon::Foundation::EditorSimulatorMessageRegisterSetting);
-
-			new_setting.label = QString::fromLocal8Bit(raw_data_ptr, register_message->label_length);
+			new_setting.label = QString::fromLocal8Bit(label_view.data, label_view.size);
 
 			const ::Vadon::Foundation::BaseType setting_data_type = Core::TypeData::get_base_type(new_setting.type);
 			switch (setting_data_type)
@@ -586,9 +585,14 @@ namespace VadonEditor::Simulator
 					// Message simulator to make sure it shuts down
 					VadonEditor::Network::MessageSerializer message_serializer;
 
-					::Vadon::Foundation::EditorSimulatorMessageUpdateSetting update_message;
-					update_message.setting_id = Utilities::qt_uuid_to_vadon_uuid(current_setting.id);
-					update_message.message_type = ::Vadon::Foundation::EditorSimulatorMessageType::UPDATE_SETTING;
+					using MessageUpdateSetting = ::Vadon::Foundation::EditorSimulatorMessageUpdateSetting;
+					{
+						MessageUpdateSetting update_message;
+						update_message.setting_id = Utilities::qt_uuid_to_vadon_uuid(current_setting.id);
+						update_message.message_type = ::Vadon::Foundation::EditorSimulatorMessageType::UPDATE_SETTING;
+
+						message_serializer.write_message(::Vadon::Foundation::EditorMessageCategory::SIMULATOR, update_message);
+					}
 
 					const ::Vadon::Foundation::BaseType setting_data_type = Core::TypeData::get_base_type(current_setting.type);
 					QByteArray message_data_buffer;
@@ -604,12 +608,7 @@ namespace VadonEditor::Simulator
 						break;
 					}
 
-					update_message.data_size = message_data_buffer.size();
-
-					char* message_data = message_serializer.allocate_message(::Vadon::Foundation::EditorMessageCategory::SIMULATOR, sizeof(::Vadon::Foundation::EditorSimulatorMessageUpdateSetting) + message_data_buffer.size());
-
-					memcpy(message_data, &update_message, sizeof(::Vadon::Foundation::EditorSimulatorMessageUpdateSetting));
-					memcpy(message_data + sizeof(::Vadon::Foundation::EditorSimulatorMessageUpdateSetting), message_data_buffer.constData(), message_data_buffer.size());
+					message_serializer.append_message_raw_data<MessageUpdateSetting>(message_data_buffer.constData(), message_data_buffer.size(), &MessageUpdateSetting::data);
 
 					m_application.get_network_system().send_message(message_serializer);
 

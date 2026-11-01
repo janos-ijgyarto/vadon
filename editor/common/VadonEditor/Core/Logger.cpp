@@ -37,17 +37,15 @@ namespace VadonEditor::Core
             return;
         }
 
-        ::Vadon::Foundation::EditorPluginMessageLog log_message;
+        using MessageLog = ::Vadon::Foundation::EditorPluginMessageLog;
+        MessageLog log_message;
         log_message.message_type = ::Vadon::Foundation::EditorPluginMessageType::PLUGIN_LOG;
         log_message.plugin_type = m_source;
         log_message.log_type = type;
-        log_message.length = static_cast<::Vadon::Foundation::uint32>(message_trimmed.size());
 
         VadonEditor::Network::MessageSerializer message_serializer;
-        char* message_data = message_serializer.allocate_message(::Vadon::Foundation::EditorMessageCategory::PLUGIN, sizeof(::Vadon::Foundation::EditorPluginMessageLog) + message_trimmed.size());
-
-        memcpy(message_data, &log_message, sizeof(::Vadon::Foundation::EditorPluginMessageLog));
-        memcpy(message_data + sizeof(::Vadon::Foundation::EditorPluginMessageLog), message_trimmed.data(), message_trimmed.size());
+        message_serializer.write_message(::Vadon::Foundation::EditorMessageCategory::PLUGIN, log_message);
+        message_serializer.append_message_raw_data<MessageLog>(message_trimmed.data(), message_trimmed.size(), &MessageLog::message);
 
         dispatch_message_data(message_serializer.get_buffer().data(), message_serializer.get_buffer().size());
     }

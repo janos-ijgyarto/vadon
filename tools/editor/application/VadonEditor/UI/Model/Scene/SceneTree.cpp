@@ -21,11 +21,14 @@ namespace VadonEditor::UI
 	SceneTree::SceneTree(Model::Scene* scene, QWidget* parent)
 		: QWidget(parent)
 		, m_scene(scene)
+		, m_ignore_selection_signals(false)
 	{
 		m_ui.setupUi(this);
 
 		m_ui.treeView->addAction(m_ui.actionSave);
 		m_ui.treeView->setModel(&scene->get_entity_model().get_qt_model());
+
+		connect(m_ui.treeView->selectionModel(), &QItemSelectionModel::selectionChanged, this, &SceneTree::entity_selection_changed);
 	}
 
 	QString SceneTree::get_label() const
@@ -40,6 +43,42 @@ namespace VadonEditor::UI
 		const Core::AssetInfo asset_info = asset_manager.get_asset_info(asset_index);
 
 		return asset_info.path;
+	}
+
+	void SceneTree::set_entity_selected(const QUuid& entity_id)
+	{
+		// NOTE: we are changing the selection programmatically,
+		// need to make sure we ignore the signals until we are done
+		m_ignore_selection_signals = true;
+
+		QItemSelectionModel* selection_model = m_ui.treeView->selectionModel();
+		if (Utilities::is_uuid_valid(entity_id) == true)
+		{
+			Model::EntityModel& entity_model = m_scene->get_entity_model();
+			const QModelIndex entity_index = entity_model.find_entity_item_by_id(entity_id);
+			if (entity_index.isValid() == true)
+			{
+				// Set as selected in the tree view
+				if (entity_index != selection_model->currentIndex())
+				{
+					// Clear previous selection
+					selection_model->clear();
+
+					m_ui.treeView->selectionModel()->select(entity_index, QItemSelectionModel::SelectionFlag::SelectCurrent);
+					m_ui.treeView->scrollTo(entity_index);
+				}
+			}
+			else
+			{
+				qCritical() << "Trying to select entity" << entity_id.toString() << "but cannot find it in scene!";
+			}
+		}
+		else
+		{
+			selection_model->clear();
+		}
+
+		m_ignore_selection_signals = false;
 	}
 
 	void SceneTree::entity_double_clicked(const QModelIndex& index)
@@ -64,6 +103,27 @@ namespace VadonEditor::UI
 			m_entity_widgets.remove(entity_it.value());
 			m_widget_reverse_lookup.erase(entity_it);
 		}
+	}
+
+	void SceneTree::entity_selection_changed(const QItemSelection& selected, const QItemSelection& deselected)
+	{
+		Q_UNUSED(selected);
+		Q_UNUSED(deselected);
+
+		if (m_ignore_selection_signals == true)
+		{
+			return;
+		}
+
+		QUuid selected_entity_id;
+
+		Model::Entity* selected_entity = get_selected_entity();
+		if (selected_entity != nullptr)
+		{
+			selected_entity_id = selected_entity->get_id();
+		}
+
+		emit(entity_selected(m_scene->get_id(), selected_entity_id));
 	}
 
 	void SceneTree::save_triggered()

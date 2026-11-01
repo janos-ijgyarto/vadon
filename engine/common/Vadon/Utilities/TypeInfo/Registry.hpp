@@ -88,11 +88,9 @@ namespace Vadon::Utilities
 			return internal_add_property(get_type_id<T>(), property_uuid, std::move(property_bind));
 		}
 
-		// FIXME: extract type from member function?
-		template <typename T, auto Ptr>
-		static bool bind_method(const MemberFunctionUUID& method_uuid)
+		static bool add_property(TypeID type_id, const PropertyUUID& property_uuid, MemberVariableBindBase property_bind)
 		{
-			return internal_bind_method(get_type_id<T>(), method_uuid, std::move(create_member_function_bind<Ptr>()));
+			return internal_add_property(type_id, property_uuid, std::move(property_bind));
 		}
 
 		// TODO: use std::expected so we can check for failure?

@@ -199,7 +199,7 @@ namespace VadonEditor::Core
 				init_message.error_code = 0;
 
 				VadonEditor::Network::MessageSerializer serializer;
-				serializer.write_message_trivial(::Vadon::Foundation::EditorMessageCategory::PLUGIN, init_message);
+				serializer.write_message(::Vadon::Foundation::EditorMessageCategory::PLUGIN, init_message);
 
 				m_application.get_asset_server().dispatch_message_to_editor(serializer.get_buffer().data(), serializer.get_buffer().size());
 			}
@@ -344,13 +344,13 @@ namespace VadonEditor::Core
 
 				// Message process to make sure it shuts down
 				{
-					VadonEditor::Network::MessageSerializer message_serializer;
+					Network::MessageSerializer message_serializer;
 
 					::Vadon::Foundation::EditorPluginMessageShutdown shutdown_message;
 					shutdown_message.plugin_type = ::Vadon::Foundation::EditorPluginMessageSource::ASSET_SERVER;
 					shutdown_message.message_type = ::Vadon::Foundation::EditorPluginMessageType::PLUGIN_SHUTDOWN;
 
-					message_serializer.write_message_trivial(::Vadon::Foundation::EditorMessageCategory::PLUGIN, shutdown_message);
+					message_serializer.write_message(::Vadon::Foundation::EditorMessageCategory::PLUGIN, shutdown_message);
 
 					m_application.get_network_system().send_message(message_serializer);
 				}

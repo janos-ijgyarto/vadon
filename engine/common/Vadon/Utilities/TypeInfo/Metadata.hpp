@@ -2,7 +2,7 @@
 #define VADON_UTILITIES_TYPEINFO_METADATA_HPP
 #include <Vadon/Foundation/TypeInfo/Metadata.hpp>
 #include <Vadon/Foundation/TypeInfo/MetadataRegistry.hpp>
-#include <Vadon/Utilities/TypeInfo/Registry.hpp>
+#include <Vadon/Utilities/TypeInfo/Reflection/MemberBind.hpp>
 namespace Vadon::Utilities
 {
 	// TODO: this could be moved to the MetadataRegistry
@@ -49,6 +49,14 @@ namespace Vadon::Utilities
 		}
 
 		TypePropertyMetadata add_property(const ::Vadon::Foundation::UUID& property_uuid);
+
+		template<auto MemberPtr>
+		TypePropertyMetadata add_property()
+		{
+			using MemberInfo = decltype(get_member_pointer_info(MemberPtr));
+			using ObjectType = typename MemberInfo::_ObjectType;
+			return add_property(ObjectType::template get_property_uuid<MemberPtr>());
+		}
 	};
 
 	template<typename T>

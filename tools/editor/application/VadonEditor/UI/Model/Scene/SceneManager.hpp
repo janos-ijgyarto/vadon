@@ -40,6 +40,7 @@ namespace VadonEditor::UI
 		void asset_opened(const QModelIndex& index);
 		void scene_modified(const QUuid& scene_id);
 		void scene_saved(const QUuid& scene_id);
+		void entity_selected(const QUuid& scene_id, const QUuid& entity_id);
 
 		void current_scene_changed(int tab_index);
 		void scene_tab_close_requested(int tab_index);
@@ -66,6 +67,8 @@ namespace VadonEditor::UI
 		bool reopen_closed_tab(const QUuid& scene_id);
 
 		void simulator_initialized();
+
+		void received_message(const QByteArray& data);
 
 		Core::Application& m_application;
 		QHash<QUuid, SceneTreeTab> m_closed_tabs; // FIXME: for now we just remove the tabs and store them here until we need to re-add

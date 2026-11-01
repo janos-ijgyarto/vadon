@@ -63,22 +63,14 @@ namespace VadonDemo::Platform
 
 	void PlatformInterface::update()
 	{
-		m_dispatch_timer += m_game_core.get_delta_time();
+		VadonApp::Core::Application& engine_app = m_game_core.get_engine_app();
 
-		if (m_dispatch_timer > c_platform_dispatch_interval)
-		{
-			// Reset dispatch timer
-			m_dispatch_timer = 0.0f;
+		VadonApp::Platform::PlatformInterface& platform_interface = engine_app.get_system<VadonApp::Platform::PlatformInterface>();
+		platform_interface.new_frame();
 
-			VadonApp::Core::Application& engine_app = m_game_core.get_engine_app();
-
-			VadonApp::Platform::PlatformInterface& platform_interface = engine_app.get_system<VadonApp::Platform::PlatformInterface>();
-			platform_interface.new_frame();
-
-			// Update inputs (this will poll the platform events)
-			VadonApp::Platform::InputSystem& input_system = engine_app.get_system<VadonApp::Platform::InputSystem>();
-			input_system.update();
-		}
+		// Update inputs (this will poll the platform events)
+		VadonApp::Platform::InputSystem& input_system = engine_app.get_system<VadonApp::Platform::InputSystem>();
+		input_system.update();
 	}
 
 	bool PlatformInterface::init_inputs()

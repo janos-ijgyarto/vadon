@@ -1,11 +1,11 @@
 #ifndef VADON_UTILITIES_TYPEINFO_REFLECTION_MEMBERBIND_HPP
 #define VADON_UTILITIES_TYPEINFO_REFLECTION_MEMBERBIND_HPP
 #include <Vadon/Utilities/TypeInfo/Reflection/FunctionBind.hpp>
-#include <Vadon/Utilities/TypeInfo/Reflection/MemberBindBase.hpp>
+#include <Vadon/Utilities/TypeInfo/Registry.hpp>
 namespace Vadon::Utilities
 {
 	template <typename T, typename TMember>
-	struct MemberPointerInfo
+	struct MemberPointerInvoker
 	{
 		using _ObjectType = T;
 		using _MemberType = TMember;
@@ -31,38 +31,38 @@ namespace Vadon::Utilities
 	};
 
 	template <typename T, typename TMember>
-	constexpr auto get_member_pointer_info(TMember T::*)
+	constexpr auto get_member_pointer_invoker(TMember T::*)
 	{
-		return MemberPointerInfo<T, TMember>{};
+		return MemberPointerInvoker<T, TMember>{};
 	}
 
 	template<auto MemberPtr>
 	ErasedMemberAddressGetter erase_member_address_getter()
 	{
-		using MemberInfo = decltype(get_member_pointer_info(MemberPtr));
+		using MemberInvoker = decltype(get_member_pointer_invoker(MemberPtr));
 		return +[](void* obj)
 			{
-				return MemberInfo::get_member_address(obj, MemberPtr);
+				return MemberInvoker::get_member_address(obj, MemberPtr);
 			};
 	}
 
 	template<auto MemberPtr>
 	ErasedMemberGetter erase_member_getter()
 	{
-		using MemberInfo = decltype(get_member_pointer_info(MemberPtr));
+		using MemberInvoker = decltype(get_member_pointer_invoker(MemberPtr));
 		return +[](void* obj)
 			{
-				return MemberInfo::invoke_getter(obj, MemberPtr);
+				return MemberInvoker::invoke_getter(obj, MemberPtr);
 			};
 	}
 
 	template<auto MemberPtr>
 	ErasedMemberSetter erase_member_setter()
 	{
-		using MemberInfo = decltype(get_member_pointer_info(MemberPtr));
+		using MemberInvoker = decltype(get_member_pointer_invoker(MemberPtr));
 		return +[](void* obj, const Variant& value)
 			{
-				MemberInfo::invoke_setter(obj, MemberPtr, value);
+				MemberInvoker::invoke_setter(obj, MemberPtr, value);
 			};
 	}
 
@@ -71,8 +71,8 @@ namespace Vadon::Utilities
 	{
 		constexpr MemberVariableBind()
 		{
-			using MemberInfo = decltype(get_member_pointer_info(MemberPtr));
-			constexpr auto type_list_array = TypeErasureTrait<MemberInfo::_MemberType>::get_type_list();
+			using MemberInvoker = decltype(get_member_pointer_invoker(MemberPtr));
+			constexpr auto type_list_array = TypeErasureTrait<MemberInvoker::_MemberType>::get_type_list();
 			type_list = std::vector<::Vadon::Foundation::UUID>(type_list_array.begin(), type_list_array.end());
 		}
 
@@ -117,9 +117,17 @@ namespace Vadon::Utilities
 	template<typename T, auto MemberPtr>
 	constexpr MemberVariableBind<MemberPtr> create_member_variable_bind()
 	{
-		using MemberInfo = decltype(get_member_pointer_info(MemberPtr));
-		static_assert(std::is_same_v<typename MemberInfo::_ObjectType, T>, "A type may only register its own members!");
+		using MemberInvoker = decltype(get_member_pointer_invoker(MemberPtr));
+		static_assert(std::is_same_v<typename MemberInvoker::_ObjectType, T>, "A type may only register its own members!");
 		return MemberVariableBind<MemberPtr>();
+	}
+
+	template<auto MemberPtr>
+	static constexpr bool register_object_property(MemberVariableBindBase property_bind)
+	{
+		using MemberInfo = decltype(get_member_pointer_info(MemberPtr));
+		using ObjectType = typename MemberInfo::_ObjectType;
+		return TypeRegistry::add_property(TypeRegistry::get_type_id<ObjectType>(), ObjectType::template get_property_uuid<MemberPtr>(), std::move(property_bind));
 	}
 }
 #endif

@@ -90,7 +90,7 @@ namespace VadonEditor::UI
 				window_request_response.handle = m_viewport_widget->winId();
 
 				VadonEditor::Network::MessageSerializer message_serializer;
-				message_serializer.write_message_trivial(::Vadon::Foundation::EditorMessageCategory::PLATFORM, window_request_response);
+				message_serializer.write_message(::Vadon::Foundation::EditorMessageCategory::PLATFORM, window_request_response);
 
 				m_application.get_network_system().send_message(message_serializer);
 			}

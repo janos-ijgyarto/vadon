@@ -193,10 +193,10 @@ namespace VadonEditor::Model
 			{
 				const ::Vadon::Foundation::EditorModelMessageEntityModified* entity_modified = reinterpret_cast<const ::Vadon::Foundation::EditorModelMessageEntityModified*>(message_data);
 
-				const char* data_start = message_data + sizeof(::Vadon::Foundation::EditorModelMessageEntityModified);
-
+				const ::Vadon::Foundation::EditorMessageRawDataView entity_name_view = message_reader.get_raw_data_view(entity_modified->entity_name);
+								
 				// TODO: propagate name to Scene data!
-				std::string_view name_string_view(data_start, entity_modified->entity_name_length);
+				std::string_view name_string_view(entity_name_view.data, entity_name_view.size);
 				Vadon::Core::Logger::log_message(std::format("Scene {} Entity {} name set to {}", Vadon::Utilities::uuid_to_string(m_id).string, Vadon::Utilities::uuid_to_string(entity_modified->entity_id).string, name_string_view));
 			}
 			break;
@@ -237,12 +237,12 @@ namespace VadonEditor::Model
 
 				VADON_ASSERT(component_handle.is_valid() == true, "Entity does not have component");
 
-				const void* data_start = message_data + sizeof(::Vadon::Foundation::EditorModelMessageComponentPropertyEdited);
+				const ::Vadon::Foundation::EditorMessageRawDataView property_value_view = message_reader.get_raw_data_view(component_property_edited->property_value);
 
 				Vadon::Core::RawFileDataBuffer json_data_buffer;
-				json_data_buffer.resize(component_property_edited->data_size);
+				json_data_buffer.resize(property_value_view.size);
 
-				memcpy(std::to_address(json_data_buffer.begin()), data_start, component_property_edited->data_size);
+				memcpy(std::to_address(json_data_buffer.begin()), property_value_view.data, property_value_view.size);
 
 				Vadon::Utilities::Serializer::Instance serializer_instance = Vadon::Utilities::Serializer::create_serializer(json_data_buffer, Vadon::Utilities::Serializer::Type::JSON, Vadon::Utilities::Serializer::Mode::READ);
 				if (serializer_instance->initialize() == false)
