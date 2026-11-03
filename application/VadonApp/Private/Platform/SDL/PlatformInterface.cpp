@@ -546,7 +546,7 @@ namespace VadonApp::Private::Platform::SDL
 			case SDL_TEXTINPUT:
 			{
 				VadonApp::Platform::TextInputEvent text_input;
-				text_input.text = sdl_event.text.text;
+				memcpy(text_input.text, sdl_event.text.text, VadonApp::Platform::TextInputEvent::c_text_input_size);
 
 				m_event_list.emplace_back(text_input);
 			}
@@ -580,6 +580,7 @@ namespace VadonApp::Private::Platform::SDL
 			{
 				VadonApp::Platform::MouseButtonEvent button_event;
 				button_event.down = (sdl_event.type == SDL_MOUSEBUTTONDOWN);
+				button_event.clicks = sdl_event.button.clicks;
 
 				switch (sdl_event.button.button)
 				{

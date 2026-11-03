@@ -67,7 +67,7 @@ namespace VadonDemo::Model
 
 		TypeRegistry::add_property<EnemyDefinition>(VADON_GET_MEMBER_UUID(EnemyDefinition, score_reward), Vadon::Utilities::MemberVariableBind<&EnemyDefinition::score_reward>().bind_member_getter().bind_member_setter());
 
-		Vadon::Utilities::TypeMetadata(metadata_registry, VADON_GET_TYPE_UUID(EnemyDefinition))
+		Vadon::Utilities::TypeMetadata<EnemyDefinition>(metadata_registry)
 			.add_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "VadonDemo::Model::EnemyDefinition")
 			.add_property(VADON_GET_MEMBER_UUID(EnemyDefinition, score_reward))
 				.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Score Reward")
@@ -80,7 +80,7 @@ namespace VadonDemo::Model
 
 		ResourceRegistry::register_resource_type<EnemyMovementDefinition, Vadon::Model::Resource>();
 
-		Vadon::Utilities::TypeMetadata(metadata_registry, VADON_GET_TYPE_UUID(EnemyMovementDefinition))
+		Vadon::Utilities::TypeMetadata<EnemyMovementDefinition>(metadata_registry)
 			.add_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "VadonDemo::Model::EnemyMovementDefinition");
 	}
 
@@ -93,7 +93,7 @@ namespace VadonDemo::Model
 
 		TypeRegistry::add_property<EnemyMovementLookahead>(VADON_GET_MEMBER_UUID(EnemyMovementLookahead, lookahead_factor), Vadon::Utilities::MemberVariableBind<&EnemyMovementLookahead::lookahead_factor>().bind_member_getter().bind_member_setter());
 
-		Vadon::Utilities::TypeMetadata(metadata_registry, VADON_GET_TYPE_UUID(EnemyMovementLookahead))
+		Vadon::Utilities::TypeMetadata<EnemyMovementLookahead>(metadata_registry)
 			.add_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "VadonDemo::Model::EnemyMovementLookahead")
 			.add_property(VADON_GET_MEMBER_UUID(EnemyMovementLookahead, lookahead_factor))
 				.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Lookahead Factor")
@@ -144,7 +144,7 @@ namespace VadonDemo::Model
 		TypeRegistry::add_property<EnemyMovementWeaving>(VADON_GET_MEMBER_UUID(EnemyMovementWeaving, cycle_duration), Vadon::Utilities::MemberVariableBind<&EnemyMovementWeaving::cycle_duration>().bind_member_getter().bind_member_setter());
 		TypeRegistry::add_property<EnemyMovementWeaving>(VADON_GET_MEMBER_UUID(EnemyMovementWeaving, weave_factor), Vadon::Utilities::MemberVariableBind<&EnemyMovementWeaving::weave_factor>().bind_member_getter().bind_member_setter());
 
-		Vadon::Utilities::TypeMetadata(metadata_registry, VADON_GET_TYPE_UUID(EnemyMovementWeaving))
+		Vadon::Utilities::TypeMetadata<EnemyMovementWeaving>(metadata_registry)
 			.add_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "VadonDemo::Model::EnemyMovementWeaving")
 			.add_property(VADON_GET_MEMBER_UUID(EnemyMovementWeaving, cycle_duration))
 				.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Cycle Duration")
@@ -194,7 +194,7 @@ namespace VadonDemo::Model
 		TypeRegistry::add_property<EnemyWeaponAttackDefinition>(VADON_GET_MEMBER_UUID(EnemyWeaponAttackDefinition, projectile_count), Vadon::Utilities::MemberVariableBind<&EnemyWeaponAttackDefinition::projectile_count>().bind_member_getter().bind_member_setter());
 		TypeRegistry::add_property<EnemyWeaponAttackDefinition>(VADON_GET_MEMBER_UUID(EnemyWeaponAttackDefinition, reload_time), Vadon::Utilities::MemberVariableBind<&EnemyWeaponAttackDefinition::reload_time>().bind_member_getter().bind_member_setter());
 
-		Vadon::Utilities::TypeMetadata(metadata_registry, VADON_GET_TYPE_UUID(EnemyWeaponAttackDefinition))
+		Vadon::Utilities::TypeMetadata<EnemyWeaponAttackDefinition>(metadata_registry)
 			.add_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "VadonDemo::Model::EnemyWeaponAttackDefinition")
 			.add_property(VADON_GET_MEMBER_UUID(EnemyWeaponAttackDefinition, projectile_count))
 				.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Projectile Count")
@@ -213,7 +213,7 @@ namespace VadonDemo::Model
 
 		TypeRegistry::add_property<EnemyContactDamageDefinition>(VADON_GET_MEMBER_UUID(EnemyContactDamageDefinition, damage), Vadon::Utilities::MemberVariableBind<&EnemyContactDamageDefinition::damage>().bind_member_getter().bind_member_setter());
 
-		Vadon::Utilities::TypeMetadata(metadata_registry, VADON_GET_TYPE_UUID(EnemyContactDamageDefinition))
+		Vadon::Utilities::TypeMetadata<EnemyContactDamageDefinition>(metadata_registry)
 			.add_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "VadonDemo::Model::EnemyContactDamageDefinition")
 			.add_property(VADON_GET_MEMBER_UUID(EnemyContactDamageDefinition, damage))
 				.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Damage")

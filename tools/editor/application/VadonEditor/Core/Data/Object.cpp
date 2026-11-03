@@ -153,7 +153,7 @@ namespace
 		}
 	}
 
-	bool get_property_default_value(VadonEditor::Core::Application& application, const VadonEditor::Core::PropertyData& property_data, qsizetype type_list_offset, QVariant& value, bool shallow)
+	bool get_data_object_property_default_value(VadonEditor::Core::Application& application, const VadonEditor::Core::PropertyData& property_data, qsizetype type_list_offset, QVariant& value, bool shallow)
 	{
 		const QUuid element_type = property_data.type_list[type_list_offset];
 		const ::Vadon::Foundation::Property::Category property_category = VadonEditor::Core::PropertyData::get_category(element_type);
@@ -183,6 +183,7 @@ namespace
 		}
 		break;
 		case ::Vadon::Foundation::Property::Category::RESOURCE:
+		case ::Vadon::Foundation::Property::Category::ENUM:
 		{
 			value = VadonEditor::Utilities::get_base_type_default_value(::Vadon::Foundation::BaseType::UUID);
 		}
@@ -204,7 +205,9 @@ namespace
 			const QJsonObject json_object = json_value.toObject();
 			if (json_object.isEmpty() == true)
 			{
+				// Null object
 				value = QVariantMap();
+				return true;
 			}
 
 			if (VadonEditor::Utilities::is_uuid_valid(object_type) == true)
@@ -221,6 +224,8 @@ namespace
 			VadonEditor::Core::DataObject data_object(application);
 			if (data_object.deserialize(json_object) == false)
 			{
+				// Failed to deserialize, fall back to null object
+				value = QVariantMap();
 				return false;
 			}
 
@@ -373,6 +378,22 @@ namespace
 		return true;
 	}
 
+	bool serialize_object_array_enum_element(QJsonValue& json_value, const VadonEditor::Core::PropertyData& property_data, qsizetype type_list_offset, const QVariant& array_element_value)
+	{
+		const qsizetype enum_type_offset = type_list_offset + 1;
+		Q_ASSERT_X(enum_type_offset < property_data.type_list.size(), "serialize_object_array_enum_element", "Missing enum type!");
+
+		// Serialize the array element itself
+		if (serialize_object_trivial_property(json_value, VadonEditor::Core::TypeData::get_base_type_uuid(::Vadon::Foundation::BaseType::UUID), array_element_value) == false)
+		{
+			return false;
+		}
+
+		// TODO: find a way to validate the enum value ID?
+
+		return true;
+	}
+
 	bool deserialize_object_array_resource_element(const QJsonValueConstRef& json_value, const VadonEditor::Core::PropertyData& property_data, qsizetype type_list_offset, QVariant& array_element_value)
 	{
 		const qsizetype resource_type_offset = type_list_offset + 1;
@@ -386,6 +407,22 @@ namespace
 
 		// TODO: find a way to validate that the resource ID points to a compatible resource?
 		//const Vadon::Utilities::TypeUUID resource_type_uuid = property_info.type_list[resource_type_offset];
+
+		return true;
+	}
+
+	bool deserialize_object_array_enum_element(const QJsonValueConstRef& json_value, const VadonEditor::Core::PropertyData& property_data, qsizetype type_list_offset, QVariant& array_element_value)
+	{
+		const qsizetype enum_type_offset = type_list_offset + 1;
+		Q_ASSERT_X(enum_type_offset < property_data.type_list.size(), "deserialize_object_array_enum_element", "Missing enum type!");
+
+		// Serialize the array element itself
+		if (deserialize_object_trivial_property(json_value, VadonEditor::Core::TypeData::get_base_type_uuid(::Vadon::Foundation::BaseType::UUID), array_element_value) == false)
+		{
+			return false;
+		}
+
+		// TODO: find a way to validate the enum value ID?
 
 		return true;
 	}
@@ -406,6 +443,8 @@ namespace
 			return serialize_object_array_subobject_element(application, json_value, property_data, type_list_offset, array_element_value, labeled);
 		case ::Vadon::Foundation::Property::Category::RESOURCE:
 			return serialize_object_array_resource_element(json_value, property_data, type_list_offset, array_element_value);
+		case ::Vadon::Foundation::Property::Category::ENUM:
+			return serialize_object_array_enum_element(json_value, property_data, type_list_offset, array_element_value);
 		default:
 			// Unsupported category!
 			return false;
@@ -428,6 +467,8 @@ namespace
 			return deserialize_object_array_subobject_element(application, json_value, property_data, type_list_offset, array_element_value);
 		case ::Vadon::Foundation::Property::Category::RESOURCE:
 			return deserialize_object_array_resource_element(json_value, property_data, type_list_offset, array_element_value);
+		case ::Vadon::Foundation::Property::Category::ENUM:
+			return deserialize_object_array_enum_element(json_value, property_data, type_list_offset, array_element_value);
 		default:
 			// Unsupported category!
 			return false;
@@ -467,7 +508,9 @@ namespace
 			QVariant array_element_value;
 			if (deserialize_object_array_property_element(application, current_array_value, property_data, 1, array_element_value) == false)
 			{
-				return false;
+				// For arrays, we simply skip the element if it failed to deserialize
+				// It's up to the deserialized type whether we consider it a fatal error
+				continue;
 			}
 			array_value.push_back(array_element_value);
 		}
@@ -576,6 +619,22 @@ namespace
 		return true;
 	}
 
+	bool serialize_object_enum_property(QJsonValue& json_value, const VadonEditor::Core::PropertyData& property_data, const QVariant& property_value)
+	{
+		Q_ASSERT_X(property_data.type_list.size() >= 2, "serialize_object_enum_property", "Missing enum type!");
+		Q_UNUSED(property_data);
+
+		// Serialize the UUID property itself
+		if (serialize_object_trivial_property(json_value, VadonEditor::Core::TypeData::get_base_type_uuid(::Vadon::Foundation::BaseType::UUID), property_value) == false)
+		{
+			return false;
+		}
+
+		// TODO: find a way to validate the enum value ID?
+
+		return true;
+	}
+
 	bool deserialize_object_resource_property(const QJsonValueConstRef& json_value, const VadonEditor::Core::PropertyData& property_data, QVariant& property_value)
 	{
 		Q_ASSERT_X(property_data.type_list.size() >= 2, "deserialize_object_resource_property", "Missing resource type!");
@@ -588,6 +647,22 @@ namespace
 		}
 
 		// TODO: find a way to validate that the resource ID points to a compatible resource?
+
+		return true;
+	}
+
+	bool deserialize_object_enum_property(const QJsonValueConstRef& json_value, const VadonEditor::Core::PropertyData& property_data, QVariant& property_value)
+	{
+		Q_ASSERT_X(property_data.type_list.size() >= 2, "deserialize_object_enum_property", "Missing resource type!");
+		Q_UNUSED(property_data);
+
+		// Serialize the UUID property itself
+		if (deserialize_object_trivial_property(json_value, VadonEditor::Core::TypeData::get_base_type_uuid(::Vadon::Foundation::BaseType::UUID), property_value) == false)
+		{
+			return false;
+		}
+
+		// TODO: find a way to validate the enum value ID?
 
 		return true;
 	}
@@ -607,6 +682,8 @@ namespace
 			return serialize_object_subobject_property(application, json_value, property_data, property_value, labeled);
 		case ::Vadon::Foundation::Property::Category::RESOURCE:
 			return serialize_object_resource_property(json_value, property_data, property_value);
+		case ::Vadon::Foundation::Property::Category::ENUM:
+			return serialize_object_enum_property(json_value, property_data, property_value);
 		default:
 			// Unsupported category!
 			return false;
@@ -628,6 +705,8 @@ namespace
 			return deserialize_object_subobject_property(application, json_value, property_data, property_value);
 		case ::Vadon::Foundation::Property::Category::RESOURCE:
 			return deserialize_object_resource_property(json_value, property_data, property_value);
+		case ::Vadon::Foundation::Property::Category::ENUM:
+			return deserialize_object_enum_property(json_value, property_data, property_value);
 		default:
 			// Unsupported category!
 			return false;
@@ -650,6 +729,8 @@ namespace
 		case ::Vadon::Foundation::Property::Category::OBJECT:
 			return QMetaType::Type::QVariantMap;
 		case ::Vadon::Foundation::Property::Category::RESOURCE:
+			return QMetaType::Type::QUuid;
+		case ::Vadon::Foundation::Property::Category::ENUM:
 			return QMetaType::Type::QUuid;
 		default:
 			// Unsupported category!
@@ -1066,6 +1147,21 @@ namespace
 			return;
 		}
 	}
+
+	QVariantMap::iterator find_data_object_map_entry(QVariantMap& data_map, const QUuid& id)
+	{
+		return data_map.find(VadonEditor::Utilities::uuid_to_base64_string(id));
+	}
+
+	QVariantMap::const_iterator find_data_object_map_entry(const QVariantMap& data_map, const QUuid& id)
+	{
+		return data_map.find(VadonEditor::Utilities::uuid_to_base64_string(id));
+	}
+
+	QVariantMap::iterator set_data_object_map_entry(QVariantMap& data_map, const QUuid& id, const QVariant& value)
+	{
+		return data_map.insert(VadonEditor::Utilities::uuid_to_base64_string(id), value);
+	}
 }
 
 namespace VadonEditor::Core
@@ -1118,17 +1214,15 @@ namespace VadonEditor::Core
 		{
 			for (auto property_it = current_type_data->properties.begin(); property_it != current_type_data->properties.end(); ++property_it)
 			{
-				const QString property_key_string = Utilities::uuid_to_base64_string(property_it.key());
-
 				const Core::PropertyData& type_property_data = property_it.value();
 
 				QVariant property_value;
-				if (get_property_default_value(m_application, type_property_data, 0, property_value, false) == false)
+				if (get_data_object_property_default_value(m_application, type_property_data, 0, property_value, false) == false)
 				{
 					return false;
 				}
 
-				m_properties[property_key_string] = property_value;
+				set_data_object_map_entry(m_properties, property_it.key(), property_value);
 			}
 
 			const QUuid base_uuid = Utilities::vadon_uuid_to_qt_uuid(current_type_data->info.base_id);
@@ -1146,16 +1240,35 @@ namespace VadonEditor::Core
 		return true;
 	}
 
+	void DataObject::clear_data()
+	{
+		m_type_id = QUuid();
+		m_properties.clear();
+	}
+
 	bool DataObject::import_data(const QVariantMap& data_map)
 	{
-		const QUuid type_id = data_map[Utilities::uuid_to_base64_string(get_type_property_uuid())].toUuid();
+		if (data_map.isEmpty() == true)
+		{
+			// Empty dictionary means null object
+			clear_data();
+			return true;
+		}
 
+		const QUuid type_id = extract_data_type_id(data_map);
 		if (init_type(type_id) == false)
 		{
 			return false;
 		}
 
-		const QVariantMap properties = data_map[Utilities::uuid_to_base64_string(get_properties_property_uuid())].toMap();
+		auto properties_it = find_data_object_map_entry(data_map, get_properties_property_uuid());
+		if (properties_it == data_map.end())
+		{
+			// TODO: log error!
+			return false;
+		}
+
+		const QVariantMap properties = properties_it.value().toMap();
 		load_properties(properties);
 
 		return true;
@@ -1171,18 +1284,55 @@ namespace VadonEditor::Core
 
 		QVariantMap object_data_map;
 
-		object_data_map[Utilities::uuid_to_base64_string(get_type_property_uuid())] = m_type_id;
-		object_data_map[Utilities::uuid_to_base64_string(get_properties_property_uuid())] = m_properties;
+		set_data_object_map_entry(object_data_map, get_type_property_uuid(), m_type_id);
+		set_data_object_map_entry(object_data_map, get_properties_property_uuid(), m_properties);
 
 		return object_data_map;
 	}
 
+	QUuid DataObject::extract_data_type_id(const QVariantMap& data_map)
+	{
+		auto type_id_it = find_data_object_map_entry(data_map, get_type_property_uuid());
+		if (type_id_it == data_map.end())
+		{
+			return QUuid{};
+		}
+
+		return type_id_it.value().toUuid();
+	}
+
 	QVariant DataObject::get_property(const PropertyID& property_id) const
 	{
-		auto property_it = m_properties.find(Utilities::uuid_to_base64_string(property_id));
+		auto property_it = find_data_object_map_entry(m_properties, property_id);
 		Q_ASSERT_X(property_it != m_properties.end(), "VadonEditor::Core::DataObject::get_property", "Cannot find property data");
 
 		return property_it.value();
+	}
+
+	QVariant DataObject::get_property_default_value(const PropertyID& property_id) const
+	{
+		const DataSchema& data_schema = m_application.get_project_manager().get_project_data_schema();
+		const PropertyData* property_data = data_schema.find_type_property_data(m_type_id, property_id);
+		if (property_data == nullptr)
+		{
+			Q_ASSERT_X(false, "VadonEditor::Core::DataObject::get_property_default_value", "Cannot find property!");
+			return QVariant();
+		}
+
+		QVariant property_default_value;
+		if (get_data_object_property_default_value(m_application, *property_data, 0, property_default_value, false) == false)
+		{
+			Q_ASSERT_X(false, "VadonEditor::Core::DataObject::get_property_default_value", "Failed to create default value!");
+			return QVariant();
+		}
+
+		return property_default_value;
+	}
+
+	bool DataObject::has_property(const PropertyID& property_id) const
+	{
+		auto property_it = find_data_object_map_entry(m_properties, property_id);
+		return property_it != m_properties.end();
 	}
 
 	void DataObject::set_property(const PropertyID& property_id, const QVariant& value)
@@ -1224,7 +1374,7 @@ namespace VadonEditor::Core
 			return;
 		}
 
-		auto property_it = m_properties.find(Utilities::uuid_to_base64_string(property_path.front().uuid));
+		auto property_it = find_data_object_map_entry(m_properties, property_path.front().uuid);
 
 		// When using set_property with path, it must be for existing data!
 		// To add data that did not exist, use add_property
@@ -1248,20 +1398,20 @@ namespace VadonEditor::Core
 			return;
 		}
 
-		auto property_it = m_properties.find(Utilities::uuid_to_base64_string(property_path.front().uuid));
+		auto property_it = find_data_object_map_entry(m_properties, property_path.front().uuid);
 		if (property_it == m_properties.end())
 		{
 			// First create the property
 			// NOTE: this time we create it "shallow" because we only intend to add the properties along the path,
 			// so we don't want sub-objects to be fully filled in
 			QVariant property_value;
-			if (get_property_default_value(m_application, *property_data, 0, property_value, true) == false)
+			if (get_data_object_property_default_value(m_application, *property_data, 0, property_value, true) == false)
 			{
 				Q_ASSERT_X(false, "VadonEditor::Core::DataObject::add_property", "Failed to initialize property!");
 				return;
 			}
-
-			property_it = m_properties.insert(Utilities::uuid_to_base64_string(property_path.front().uuid), property_value);
+			
+			property_it = set_data_object_map_entry(m_properties, property_path.front().uuid, property_value);
 		}
 
 		set_object_property_value(m_application, property_path, *property_data, property_it.value(), value, DataObjectPropertyEditMode::ADD);
@@ -1282,7 +1432,7 @@ namespace VadonEditor::Core
 			return;
 		}
 
-		auto property_it = m_properties.find(Utilities::uuid_to_base64_string(property_path.front().uuid));
+		auto property_it = find_data_object_map_entry(m_properties, property_path.front().uuid);
 
 		// When using remove_property with path, it must be for existing data!
 		// To add data that did not exist, use add_property
@@ -1368,6 +1518,14 @@ namespace VadonEditor::Core
 			return false;
 		}
 
+		const DataSchema& data_schema = m_application.get_project_manager().get_project_data_schema();
+		const Core::TypeData* type_data = data_schema.find_type_data(m_type_id);
+		if (type_data == nullptr)
+		{
+			qWarning() << "Loaded stale object type" << m_type_id;
+			return false;
+		}
+
 		if (properties_obj_it != root_obj.end())
 		{
 			if (deserialize_properties(properties_obj_it.value().toObject()) == false)
@@ -1398,7 +1556,7 @@ namespace VadonEditor::Core
 			{
 				const Core::PropertyData* type_property_data = type_data->find_property_data(property_it.key());
 
-				auto property_value_it = m_properties.find(Utilities::uuid_to_base64_string(property_it.key()));
+				auto property_value_it = find_data_object_map_entry(m_properties, property_it.key());
 				if (property_value_it == m_properties.end())
 				{
 					// Object has no data for this property
@@ -1431,14 +1589,16 @@ namespace VadonEditor::Core
 			if (type_property_data == nullptr)
 			{
 				// Ignore property
-				qWarning() << "Stale property" << property_uuid << "loaded for object type" << m_type_id;
+				qWarning() << "Stale property" << Utilities::get_labeled_uuid_label(property_it.key()) << property_uuid.toString() << "loaded for object type" << m_type_id.toString();
 				continue;
 			}
 
 			QVariant property_value;
 			if(deserialize_object_property_value(m_application, property_it.value(), *type_property_data, property_value) == false)
 			{
-				return false;
+				// Ignore property, depends on type whether this is considered a fatal error
+				qWarning() << "Failed to deserialize property" << Utilities::get_labeled_uuid_label(property_it.key()) << property_uuid.toString() << "loaded for object type" << m_type_id.toString();
+				continue;
 			}
 
 			set_property(property_uuid, property_value);
@@ -1453,7 +1613,7 @@ namespace VadonEditor::Core
 		const PropertyData* type_property_data = data_schema.find_type_property_data(m_type_id, property_id);
 		Q_ASSERT_X(type_property_data != nullptr, "VadonEditor::Core::DataObject::serialize_property_data", "Cannot find property");
 
-		auto property_value_it = m_properties.find(Utilities::uuid_to_base64_string(property_id));
+		auto property_value_it = find_data_object_map_entry(m_properties, property_id);
 		Q_ASSERT_X(property_value_it != m_properties.end(), "VadonEditor::Core::DataObject::serialize_properties", "Cannot find property value");
 
 		return internal_serialize_property_data(property_obj, *type_property_data, property_value_it.value(), labeled);
@@ -1544,6 +1704,7 @@ namespace VadonEditor::Core
 		}
 		break;
 		case ::Vadon::Foundation::Property::Category::RESOURCE:
+		case ::Vadon::Foundation::Property::Category::ENUM:
 		{
 			QJsonValue json_value;
 			if (serialize_object_trivial_property(json_value, VadonEditor::Core::TypeData::get_base_type_uuid(::Vadon::Foundation::BaseType::UUID), property_value) == false)
@@ -1609,6 +1770,6 @@ namespace VadonEditor::Core
 			return;
 		}
 
-		m_properties.insert(Utilities::uuid_to_base64_string(property_id), value);
+		set_data_object_map_entry(m_properties, property_id, value);
 	}
 }

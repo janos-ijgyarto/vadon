@@ -47,6 +47,7 @@ namespace VadonDemo::UI
 			m_log_child_window.flags |= VadonApp::UI::Developer::WindowFlags::HORIZONTAL_SCROLLBAR;
 
 			m_input.label = "Input";
+			m_input.flags = VadonApp::UI::Developer::InputFlags::ENTER_RETURNS_TRUE;
 
 			Vadon::Core::EngineEnvironment::set_logger(this);
 		}

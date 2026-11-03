@@ -7,17 +7,12 @@ namespace Vadon
 	{
 		enum class EditorAssetServerMessageType : uint32
 		{
-			EXPORT_DATA
+			// TODO: anything?
 		};
 
 		struct EditorAssetServerMessageHeader
 		{
 			EditorAssetServerMessageType message_type;
-		};
-
-		struct EditorAssetServerMessageExportData : public EditorAssetServerMessageHeader
-		{
-			uint32 output_path_length;
 		};
 	}
 }

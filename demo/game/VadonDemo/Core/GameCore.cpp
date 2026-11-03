@@ -379,7 +379,6 @@ namespace VadonDemo::Core
 		VadonApp::Core::Application::Instance m_engine_app;
 
 		Vadon::ECS::World m_ecs_world;
-		Vadon::ECS::EntityHandle m_core_entity;
 
 		// TODO: move to subsystem?
 		Vadon::Core::Project m_project_info;

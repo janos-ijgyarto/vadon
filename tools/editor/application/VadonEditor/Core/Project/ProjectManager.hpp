@@ -14,45 +14,38 @@ namespace VadonEditor::Core
 	{
 		Q_OBJECT
 	public:
-		struct CachedProjectEditorPluginSettings
+		struct ProjectCacheEntry
 		{
-			QString custom_search_path;
-			QString selected_config;
-		};
-
-		struct CachedProjectGameSettings
-		{
-			QString custom_search_path;
-			QString selected_config;
-		};
-
-		struct CachedProjectInfo
-		{
-			QString name;
 			QString path;
-			CachedProjectEditorPluginSettings plugin_settings;
-			CachedProjectGameSettings game_settings;
 		};
+		using ProjectCacheEntryList = QList<ProjectCacheEntry>;
 
-		const ProjectInfo& get_project_info() const { return m_loaded_project_info; }
-		void set_project_info(const ProjectInfo& project_info);
+		const SourceProject& get_source_project() const { return m_source_project; }
+		const EditorProject& get_editor_project() const { return m_editor_project; }
 
-		bool is_project_loaded() const { return m_loaded_project_info.name.isEmpty() == false; }
+		// NOTE: only updates editor metadata, base info is immutable!
+		void update_project_info(const SourceProject& source_project, const EditorProject& editor_project);
+
+		bool is_project_loaded() const { return m_source_project.is_valid() && m_editor_project.is_valid(); }
 
 		const DataSchema& get_project_data_schema() const { return m_loaded_project_schema; }
 
 		bool generate_project_data_schema(const QString& plugin_config);
 		bool load_project_data_schema();
 		
-		const QList<CachedProjectInfo> get_cached_project_list() const;
+		const ProjectCacheEntryList get_cached_project_list() const;
 
-		bool create_project(const ProjectInfo& project_info);
-		bool import_project(const QString& project_path);
-		bool load_project(const QString& project_path);
-		void remove_project(const QString& project_path);
+		// NOTE: create assumes a new unique project is created, import assumes it already exists
+		bool create_project(const QString& name, const EditorProjectInfo& project_info);
+		bool import_project(const EditorProjectInfo& project_info);
+		bool load_project(const QString& editor_project_path);
+		void remove_project(const QString& editor_project_path);
 
-		QList<EditorPluginInfo> find_editor_plugins(const QString& search_path) const;
-		QList<GameExecutableInfo> find_game_executables(const QString& search_path) const;
+		static SourceProjectInfo load_source_project_info(const QString& project_path);
+		static EditorProjectInfo load_editor_project_info(const QString& project_path);
+
+		static QList<EditorPluginInfo> find_editor_plugins(const QString& search_path);
+		static QList<GameExecutableInfo> find_game_executables(const QString& search_path);
 	signals:
 		void project_loaded();
 	private:
@@ -63,20 +56,18 @@ namespace VadonEditor::Core
 
 		bool load_project_cache();
 		bool save_project_cache() const;
+		bool add_project_to_cache(const EditorProjectInfo& project_info);
 
-		bool internal_load_project(const QFileInfo& project_file_info, ProjectInfo& project_info);
-		bool internal_save_project(const QFileInfo& project_file_info, const ProjectInfo& project_info);
-
-		bool add_project_to_cache(const QString& root_path, const CachedProjectInfo& cached_info);
-		void save_current_project_data();
+		bool internal_save_project_data() const;
 
 		Application& m_application;
 
-		ProjectInfo m_loaded_project_info;
+		SourceProject m_source_project;
+		EditorProject m_editor_project;
 		DataSchema m_loaded_project_schema;
 
 		// NOTE: using this for more convenient lookup, serialization is done via QSettings!
-		QHash<QString, CachedProjectInfo> m_project_cache;
+		QHash<QString, ProjectCacheEntry> m_project_cache;
 
 		friend Application;
 	};

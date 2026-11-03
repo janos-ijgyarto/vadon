@@ -2,7 +2,8 @@
 #define VADONEDITOR_SIMULATOR_SIMULATOR_HPP
 #include <Vadon/Foundation/Editor/Simulator/SimulatorInterface.hpp>
 #include <memory>
-#include <QString>
+#include <QUuid>
+#include <QVariant>
 namespace Vadon::Foundation
 {
 	class EditorSimulatorPluginInterface;
@@ -13,10 +14,29 @@ namespace VadonEditor::Core
 }
 namespace VadonEditor::Simulator
 {
-	struct SimulatorSettings
+	struct SimulatorStartupOptions
 	{
 		bool debug_break_on_init = false;
 		QString configuration_name;
+	};
+
+	struct SimulatorSetting
+	{
+		QUuid id;
+		QUuid type;
+		QString label;
+		QVariant value;
+	};
+
+	struct SimulatorSettingsData
+	{
+		// TODO: anything else?
+		QList<SimulatorSetting> settings;
+
+		void clear()
+		{
+			settings.clear();
+		}
 	};
 
 	// TODO: "hide" the simulator interface so it's only available internally?
@@ -29,7 +49,12 @@ namespace VadonEditor::Simulator
 
 		void dispatch_message_to_editor(const char* data, size_t size) override;
 
-		bool run_simulator(const SimulatorSettings& settings);
+		::Vadon::Foundation::SimulatorToolchainConfiguration get_toolchain_configuration() const override;
+
+		const SimulatorSettingsData& get_settings() const;
+		void set_setting_value(const QUuid& id, const QVariant& value);
+
+		bool run_simulator(const SimulatorStartupOptions& startup_options);
 		bool is_running() const;
 		void stop_simulator();
 	private:

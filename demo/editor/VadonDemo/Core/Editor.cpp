@@ -238,6 +238,9 @@ namespace VadonDemo::Core
     {
         // Retrieve config data to make it available to subsystems
         const Vadon::Core::Project& active_project = m_common_editor.get_project_manager().get_active_project();
+        
+        // Get toolchain config and set the root path to the temp files
+        m_common_editor.get_resource_system().set_temp_file_root_path(m_simulator.get_toolchain_configuration().temp_path);
 
         m_core = std::make_unique<Core>(*m_engine_core);
         if (m_core->initialize(active_project) == false)

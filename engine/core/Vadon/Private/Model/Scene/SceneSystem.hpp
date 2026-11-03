@@ -40,7 +40,16 @@ namespace Vadon::Private::Model
 
 		bool internal_is_scene_dependent(SceneID scene_id, std::vector<SceneID>& dependency_stack);
 
-		ECS::EntityHandle internal_instantiate_scene(SceneHandle scene_handle, ECS::World& ecs_world, const SceneID& parent_scene_id);
+		using EntityLookup = std::unordered_map<::Vadon::Foundation::UUID, Vadon::ECS::EntityHandle>;
+		struct InstantiatedSceneResult
+		{
+			ECS::EntityHandle root_entity;
+			EntityLookup entity_lookup;
+
+			bool is_valid() const { return (root_entity.is_valid() == true) && (entity_lookup.empty() == false); }
+		};
+
+		InstantiatedSceneResult internal_instantiate_scene(SceneHandle scene_handle, ECS::World& ecs_world, const SceneID& parent_scene_id, const SceneID& derived_scene_id = SceneID{});
 
 		const Scene* get_scene(SceneHandle scene_handle) const;
 		Scene* get_scene(SceneHandle scene_handle) { return const_cast<Scene*>(std::as_const(*this).get_scene(scene_handle)); }

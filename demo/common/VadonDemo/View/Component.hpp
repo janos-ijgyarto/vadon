@@ -48,19 +48,6 @@ namespace VadonDemo::View
 		static void register_component(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry);
 	};
 
-	struct AnimationComponent
-	{
-		VADON_DECLARE_MEMBER_UUID(time_scale, "7b9d82e1-769d-46c3-a6b3-786f119c6321");
-		VADON_DECLARE_MEMBER_UUID(looping, "67e6ec9f-6c81-4ddf-b905-dadad9482753");
-
-		float time_scale = 1.0f;
-		bool looping = false;
-
-		Vadon::Model::AnimationPlayer animation_player;
-
-		static void register_component(::Vadon::Foundation::TypeMetadataRegistry& metadata_registry);
-	};
-
 	// Visualizes when the entity takes damage
 	struct DamageComponent
 	{
@@ -99,7 +86,6 @@ VADON_REGISTER_TYPE_UUID(VadonDemo::View::EntityDirtyTag, "16fbbc81-5e5a-4b0f-a2
 VADON_REGISTER_TYPE_UUID(VadonDemo::View::TransformComponent, "ea3323ac-0682-48bb-93a6-d77d2ac87910");
 VADON_REGISTER_TYPE_UUID(VadonDemo::View::ModelTransformComponent, "dc22d853-fc16-4e04-9e08-eb1ad68a6ac3");
 VADON_REGISTER_TYPE_UUID(VadonDemo::View::RenderComponent, "b236a552-5ef1-4576-a8d4-b755b212a165");
-VADON_REGISTER_TYPE_UUID(VadonDemo::View::AnimationComponent, "14fbc013-0bd0-4f69-9c95-d805fe40c967");
 VADON_REGISTER_TYPE_UUID(VadonDemo::View::DamageComponent, "1d7bd96d-2b6b-459b-bd9f-ff093142b578");
 VADON_REGISTER_TYPE_UUID(VadonDemo::View::VFXComponent, "6e26c888-4bf9-4006-9f34-ea9f746162b1");
 VADON_REGISTER_TYPE_UUID(VadonDemo::View::VFXTimerComponent, "0de92f74-4943-4d55-94d4-fd44d22a2d69");

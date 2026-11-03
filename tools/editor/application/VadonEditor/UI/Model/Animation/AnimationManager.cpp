@@ -7,7 +7,7 @@
 #include <VadonEditor/Model/Animation/Animation.hpp>
 #include <VadonEditor/Model/Resource/ResourceSystem.hpp>
 
-#include <VadonEditor/UI/Model/Animation/AnimationEditor.hpp>
+#include <VadonEditor/UI/Model/Animation/AnimationResourceWidget.hpp>
 #include <VadonEditor/UI/MainWindow.hpp>
 #include <VadonEditor/UI/UISystem.hpp>
 
@@ -118,14 +118,14 @@ namespace VadonEditor::UI
 			Model::Resource* resource = resource_system.get_resource(resource_info.id);
 			resource->open();
 
-			AnimationEditor* new_editor = new AnimationEditor(resource);
+			AnimationResourceWidget* animation_editor = new AnimationResourceWidget(resource);
 
-			m_animation_widgets.insert(resource_info.id, new_editor);
-			m_widget_reverse_lookup.insert(new_editor, resource_info.id);
+			m_animation_widgets.insert(resource_info.id, animation_editor);
+			m_widget_reverse_lookup.insert(animation_editor, resource_info.id);
 
-			connect(new_editor, &QObject::destroyed, this, &AnimationManager::animation_widget_removed);
+			connect(animation_editor, &QObject::destroyed, this, &AnimationManager::animation_widget_removed);
 
-			new_editor->show();
+			animation_editor->show();
 		}
 		else
 		{
@@ -193,7 +193,7 @@ namespace VadonEditor::UI
 		// Close all widgets
 		for (auto animation_widget_it = m_animation_widgets.begin(); animation_widget_it != m_animation_widgets.end(); ++animation_widget_it)
 		{
-			AnimationEditor* animation_editor = qobject_cast<AnimationEditor*>(animation_widget_it.value());
+			AnimationResourceWidget* animation_editor = qobject_cast<AnimationResourceWidget*>(animation_widget_it.value());
 			if (animation_editor == nullptr)
 			{
 				Q_ASSERT_X(false, "VadonEditor::UI::AnimationManager::request_close", "Invalid widget in lookup");

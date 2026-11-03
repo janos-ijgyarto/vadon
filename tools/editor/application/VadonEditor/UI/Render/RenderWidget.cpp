@@ -190,7 +190,8 @@ namespace VadonEditor::UI
 	{
 		if (m_client_info.is_valid() == true)
 		{
-			::Vadon::Foundation::EditorPlatformEventHeader platform_event_header;
+			using PlatformEventHeader = ::Vadon::Foundation::EditorPlatformEventHeader;
+			PlatformEventHeader platform_event_header;
 			platform_event_header.message_type = ::Vadon::Foundation::EditorPlatformMessageType::PLATFORM_EVENT;
 			platform_event_header.event_type = ::Vadon::Foundation::PlatformEventType::WINDOW;
 
@@ -202,10 +203,8 @@ namespace VadonEditor::UI
 			window_event.data2 = resizeEvent->size().height();
 
 			VadonEditor::Network::MessageSerializer message_serializer;
-			char* data_ptr = message_serializer.allocate_message(::Vadon::Foundation::EditorMessageCategory::PLATFORM, sizeof(::Vadon::Foundation::EditorPlatformEventHeader) + sizeof(::Vadon::Foundation::PlatformWindowEvent));
-
-			memcpy(data_ptr, &platform_event_header, sizeof(::Vadon::Foundation::EditorPlatformEventHeader));
-			memcpy(data_ptr + sizeof(::Vadon::Foundation::EditorPlatformEventHeader), &window_event, sizeof(::Vadon::Foundation::PlatformWindowEvent));
+			message_serializer.write_message(::Vadon::Foundation::EditorMessageCategory::PLATFORM, platform_event_header);
+			message_serializer.append_message_data<PlatformEventHeader>(window_event);
 
 			m_client_info.application->get_network_system().send_message(message_serializer);
 		}
@@ -229,7 +228,8 @@ namespace VadonEditor::UI
 
 		if (m_client_info.is_valid() == true)
 		{
-			::Vadon::Foundation::EditorPlatformEventHeader platform_event_header;
+			using PlatformEventHeader = ::Vadon::Foundation::EditorPlatformEventHeader;
+			PlatformEventHeader platform_event_header;
 			platform_event_header.message_type = ::Vadon::Foundation::EditorPlatformMessageType::PLATFORM_EVENT;
 			platform_event_header.event_type = ::Vadon::Foundation::PlatformEventType::KEYBOARD;
 
@@ -242,10 +242,8 @@ namespace VadonEditor::UI
 			keyboard_event.native_scancode = event->nativeScanCode();
 
 			VadonEditor::Network::MessageSerializer message_serializer;
-			char* data_ptr = message_serializer.allocate_message(::Vadon::Foundation::EditorMessageCategory::PLATFORM, sizeof(::Vadon::Foundation::EditorPlatformEventHeader) + sizeof(::Vadon::Foundation::PlatformKeyboardEvent));
-
-			memcpy(data_ptr, &platform_event_header, sizeof(::Vadon::Foundation::EditorPlatformEventHeader));
-			memcpy(data_ptr + sizeof(::Vadon::Foundation::EditorPlatformEventHeader), &keyboard_event, sizeof(::Vadon::Foundation::PlatformKeyboardEvent));
+			message_serializer.write_message(::Vadon::Foundation::EditorMessageCategory::PLATFORM, platform_event_header);
+			message_serializer.append_message_data<PlatformEventHeader>(keyboard_event);
 
 			m_client_info.application->get_network_system().send_message(message_serializer);
 
@@ -265,7 +263,8 @@ namespace VadonEditor::UI
 
 		if (m_client_info.is_valid() == true)
 		{
-			::Vadon::Foundation::EditorPlatformEventHeader platform_event_header;
+			using PlatformEventHeader = ::Vadon::Foundation::EditorPlatformEventHeader;
+			PlatformEventHeader platform_event_header;
 			platform_event_header.message_type = ::Vadon::Foundation::EditorPlatformMessageType::PLATFORM_EVENT;
 			platform_event_header.event_type = ::Vadon::Foundation::PlatformEventType::KEYBOARD;
 
@@ -278,10 +277,8 @@ namespace VadonEditor::UI
 			keyboard_event.native_scancode = event->nativeScanCode();
 
 			VadonEditor::Network::MessageSerializer message_serializer;
-			char* data_ptr = message_serializer.allocate_message(::Vadon::Foundation::EditorMessageCategory::PLATFORM, sizeof(::Vadon::Foundation::EditorPlatformEventHeader) + sizeof(::Vadon::Foundation::PlatformKeyboardEvent));
-
-			memcpy(data_ptr, &platform_event_header, sizeof(::Vadon::Foundation::EditorPlatformEventHeader));
-			memcpy(data_ptr + sizeof(::Vadon::Foundation::EditorPlatformEventHeader), &keyboard_event, sizeof(::Vadon::Foundation::PlatformKeyboardEvent));
+			message_serializer.write_message(::Vadon::Foundation::EditorMessageCategory::PLATFORM, platform_event_header);
+			message_serializer.append_message_data<PlatformEventHeader>(keyboard_event);
 
 			m_client_info.application->get_network_system().send_message(message_serializer);
 
@@ -295,19 +292,19 @@ namespace VadonEditor::UI
 	{
 		if (m_client_info.is_valid() == true)
 		{
-			::Vadon::Foundation::EditorPlatformEventHeader platform_event_header;
+			using PlatformEventHeader = ::Vadon::Foundation::EditorPlatformEventHeader;
+			PlatformEventHeader platform_event_header;
 			platform_event_header.message_type = ::Vadon::Foundation::EditorPlatformMessageType::PLATFORM_EVENT;
 			platform_event_header.event_type = ::Vadon::Foundation::PlatformEventType::MOUSE_BUTTON;
 
 			::Vadon::Foundation::PlatformMouseButtonEvent mouse_button_event;
 			mouse_button_event.button = convert_qt_mouse_button(event->button());
 			mouse_button_event.down = true;
+			mouse_button_event.clicks = 1;
 
 			VadonEditor::Network::MessageSerializer message_serializer;
-			char* data_ptr = message_serializer.allocate_message(::Vadon::Foundation::EditorMessageCategory::PLATFORM, sizeof(::Vadon::Foundation::EditorPlatformEventHeader) + sizeof(::Vadon::Foundation::PlatformMouseButtonEvent));
-
-			memcpy(data_ptr, &platform_event_header, sizeof(::Vadon::Foundation::EditorPlatformEventHeader));
-			memcpy(data_ptr + sizeof(::Vadon::Foundation::EditorPlatformEventHeader), &mouse_button_event, sizeof(::Vadon::Foundation::PlatformMouseButtonEvent));
+			message_serializer.write_message(::Vadon::Foundation::EditorMessageCategory::PLATFORM, platform_event_header);
+			message_serializer.append_message_data<PlatformEventHeader>(mouse_button_event);
 
 			m_client_info.application->get_network_system().send_message(message_serializer);
 		}
@@ -319,19 +316,43 @@ namespace VadonEditor::UI
 	{
 		if (m_client_info.is_valid() == true)
 		{
-			::Vadon::Foundation::EditorPlatformEventHeader platform_event_header;
+			using PlatformEventHeader = ::Vadon::Foundation::EditorPlatformEventHeader;
+			PlatformEventHeader platform_event_header;
 			platform_event_header.message_type = ::Vadon::Foundation::EditorPlatformMessageType::PLATFORM_EVENT;
 			platform_event_header.event_type = ::Vadon::Foundation::PlatformEventType::MOUSE_BUTTON;
 
 			::Vadon::Foundation::PlatformMouseButtonEvent mouse_button_event;
 			mouse_button_event.button = convert_qt_mouse_button(event->button());
 			mouse_button_event.down = false;
+			mouse_button_event.clicks = 1;
 
 			VadonEditor::Network::MessageSerializer message_serializer;
-			char* data_ptr = message_serializer.allocate_message(::Vadon::Foundation::EditorMessageCategory::PLATFORM, sizeof(::Vadon::Foundation::EditorPlatformEventHeader) + sizeof(::Vadon::Foundation::PlatformMouseButtonEvent));
+			message_serializer.write_message(::Vadon::Foundation::EditorMessageCategory::PLATFORM, platform_event_header);
+			message_serializer.append_message_data<PlatformEventHeader>(mouse_button_event);
 
-			memcpy(data_ptr, &platform_event_header, sizeof(::Vadon::Foundation::EditorPlatformEventHeader));
-			memcpy(data_ptr + sizeof(::Vadon::Foundation::EditorPlatformEventHeader), &mouse_button_event, sizeof(::Vadon::Foundation::PlatformMouseButtonEvent));
+			m_client_info.application->get_network_system().send_message(message_serializer);
+		}
+
+		QWidget::mouseReleaseEvent(event);
+	}
+
+	void RenderWidget::mouseDoubleClickEvent(QMouseEvent* event)
+	{
+		if (m_client_info.is_valid() == true)
+		{
+			using PlatformEventHeader = ::Vadon::Foundation::EditorPlatformEventHeader;
+			PlatformEventHeader platform_event_header;
+			platform_event_header.message_type = ::Vadon::Foundation::EditorPlatformMessageType::PLATFORM_EVENT;
+			platform_event_header.event_type = ::Vadon::Foundation::PlatformEventType::MOUSE_BUTTON;
+
+			::Vadon::Foundation::PlatformMouseButtonEvent mouse_button_event;
+			mouse_button_event.button = convert_qt_mouse_button(event->button());
+			mouse_button_event.down = true; // NOTE: technically we should also send a release event but in Qt double click is only sent for the press
+			mouse_button_event.clicks = 2;
+
+			VadonEditor::Network::MessageSerializer message_serializer;
+			message_serializer.write_message(::Vadon::Foundation::EditorMessageCategory::PLATFORM, platform_event_header);
+			message_serializer.append_message_data<PlatformEventHeader>(mouse_button_event);
 
 			m_client_info.application->get_network_system().send_message(message_serializer);
 		}
@@ -343,20 +364,29 @@ namespace VadonEditor::UI
 	{
 		if (m_client_info.is_valid() == true)
 		{
-			::Vadon::Foundation::EditorPlatformEventHeader platform_event_header;
+			using PlatformEventHeader = ::Vadon::Foundation::EditorPlatformEventHeader;
+			PlatformEventHeader platform_event_header;
 			platform_event_header.message_type = ::Vadon::Foundation::EditorPlatformMessageType::PLATFORM_EVENT;
 			platform_event_header.event_type = ::Vadon::Foundation::PlatformEventType::MOUSE_MOTION;
 
 			::Vadon::Foundation::PlatformMouseMotionEvent mouse_motion_event;
 			mouse_motion_event.position_x = event->pos().x();
 			mouse_motion_event.position_y = event->pos().y();
-			// TODO: add relative motion!
+
+			// If we just regained focus, no relative motion on the first move event
+			if (m_mouse_focus_regained == false)
+			{
+				const QPoint mouse_relative_motion = event->pos() - m_last_mouse_pos;
+				mouse_motion_event.relative_motion_x = mouse_relative_motion.x();
+				mouse_motion_event.relative_motion_y = mouse_relative_motion.y();
+			}
+
+			m_last_mouse_pos = event->pos();
+			m_mouse_focus_regained = false;
 
 			VadonEditor::Network::MessageSerializer message_serializer;
-			char* data_ptr = message_serializer.allocate_message(::Vadon::Foundation::EditorMessageCategory::PLATFORM, sizeof(::Vadon::Foundation::EditorPlatformEventHeader) + sizeof(::Vadon::Foundation::PlatformMouseMotionEvent));
-
-			memcpy(data_ptr, &platform_event_header, sizeof(::Vadon::Foundation::EditorPlatformEventHeader));
-			memcpy(data_ptr + sizeof(::Vadon::Foundation::EditorPlatformEventHeader), &mouse_motion_event, sizeof(::Vadon::Foundation::PlatformMouseMotionEvent));
+			message_serializer.write_message(::Vadon::Foundation::EditorMessageCategory::PLATFORM, platform_event_header);
+			message_serializer.append_message_data<PlatformEventHeader>(mouse_motion_event);
 
 			m_client_info.application->get_network_system().send_message(message_serializer);
 		}
@@ -368,7 +398,8 @@ namespace VadonEditor::UI
 	{
 		if (m_client_info.is_valid() == true)
 		{
-			::Vadon::Foundation::EditorPlatformEventHeader platform_event_header;
+			using PlatformEventHeader = ::Vadon::Foundation::EditorPlatformEventHeader;
+			PlatformEventHeader platform_event_header;
 			platform_event_header.message_type = ::Vadon::Foundation::EditorPlatformMessageType::PLATFORM_EVENT;
 			platform_event_header.event_type = ::Vadon::Foundation::PlatformEventType::MOUSE_WHEEL;
 
@@ -400,14 +431,65 @@ namespace VadonEditor::UI
 			mouse_wheel_event.precise_y = mouse_wheel_event.y;
 
 			VadonEditor::Network::MessageSerializer message_serializer;
-			char* data_ptr = message_serializer.allocate_message(::Vadon::Foundation::EditorMessageCategory::PLATFORM, sizeof(::Vadon::Foundation::EditorPlatformEventHeader) + sizeof(::Vadon::Foundation::PlatformMouseWheelEvent));
-
-			memcpy(data_ptr, &platform_event_header, sizeof(::Vadon::Foundation::EditorPlatformEventHeader));
-			memcpy(data_ptr + sizeof(::Vadon::Foundation::EditorPlatformEventHeader), &mouse_wheel_event, sizeof(::Vadon::Foundation::PlatformMouseWheelEvent));
+			message_serializer.write_message(::Vadon::Foundation::EditorMessageCategory::PLATFORM, platform_event_header);
+			message_serializer.append_message_data<PlatformEventHeader>(mouse_wheel_event);
 
 			m_client_info.application->get_network_system().send_message(message_serializer);
 		}
 
 		QWidget::wheelEvent(event);
+	}
+
+	void RenderWidget::focusInEvent(QFocusEvent* event)
+	{
+		// Also track mouse when focus is gained
+		setMouseTracking(true);
+		m_mouse_focus_regained = true;
+
+		if (m_client_info.is_valid() == true)
+		{
+			using PlatformEventHeader = ::Vadon::Foundation::EditorPlatformEventHeader;
+			PlatformEventHeader platform_event_header;
+			platform_event_header.message_type = ::Vadon::Foundation::EditorPlatformMessageType::PLATFORM_EVENT;
+			platform_event_header.event_type = ::Vadon::Foundation::PlatformEventType::WINDOW;
+
+			::Vadon::Foundation::PlatformWindowEvent window_event;
+			window_event.type = ::Vadon::Foundation::PlatformWindowEventType::FOCUS_GAINED;
+			window_event.window_id = m_client_info.client_id;
+
+			VadonEditor::Network::MessageSerializer message_serializer;
+			message_serializer.write_message(::Vadon::Foundation::EditorMessageCategory::PLATFORM, platform_event_header);
+			message_serializer.append_message_data<PlatformEventHeader>(window_event);
+
+			m_client_info.application->get_network_system().send_message(message_serializer);
+		}
+
+		QWidget::focusInEvent(event);
+	}
+
+	void RenderWidget::focusOutEvent(QFocusEvent* event)
+	{
+		// Stop tracking mouse when focus is lost
+		setMouseTracking(false);
+
+		if (m_client_info.is_valid() == true)
+		{
+			using PlatformEventHeader = ::Vadon::Foundation::EditorPlatformEventHeader;
+			PlatformEventHeader platform_event_header;
+			platform_event_header.message_type = ::Vadon::Foundation::EditorPlatformMessageType::PLATFORM_EVENT;
+			platform_event_header.event_type = ::Vadon::Foundation::PlatformEventType::WINDOW;
+
+			::Vadon::Foundation::PlatformWindowEvent window_event;
+			window_event.type = ::Vadon::Foundation::PlatformWindowEventType::FOCUS_LOST;
+			window_event.window_id = m_client_info.client_id;
+
+			VadonEditor::Network::MessageSerializer message_serializer;
+			message_serializer.write_message(::Vadon::Foundation::EditorMessageCategory::PLATFORM, platform_event_header);
+			message_serializer.append_message_data<PlatformEventHeader>(window_event);
+
+			m_client_info.application->get_network_system().send_message(message_serializer);
+		}
+
+		QWidget::focusOutEvent(event);
 	}
 }

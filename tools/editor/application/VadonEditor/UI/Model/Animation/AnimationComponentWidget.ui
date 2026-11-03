@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>AnimationComponentWidget</class>
+ <widget class="QWidget" name="AnimationComponentWidget">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>800</width>
+    <height>600</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Animation Component Editor</string>
+  </property>
+  <layout class="QVBoxLayout" name="mainLayout">
+   <property name="sizeConstraint">
+    <enum>QLayout::SizeConstraint::SetMinAndMaxSize</enum>
+   </property>
+   <item>
+    <layout class="QFormLayout" name="mainForm">
+     <item row="0" column="0">
+      <widget class="QLabel" name="entityLabel">
+       <property name="text">
+        <string>Entity</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="1">
+      <widget class="QLabel" name="entityPathLabel">
+       <property name="text">
+        <string>N/A</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="0">
+      <widget class="QLabel" name="resourceLabel">
+       <property name="text">
+        <string>Animation library</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="1">
+      <layout class="QHBoxLayout" name="resourceHBox">
+       <item>
+        <widget class="QLabel" name="resourceHeaderLabel">
+         <property name="text">
+          <string>N/A</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QToolButton" name="resourceToolButton">
+         <property name="text">
+          <string/>
+         </property>
+         <property name="popupMode">
+          <enum>QToolButton::ToolButtonPopupMode::InstantPopup</enum>
+         </property>
+         <property name="arrowType">
+          <enum>Qt::ArrowType::DownArrow</enum>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+     <item row="2" column="0">
+      <widget class="QLabel" name="animationLabel">
+       <property name="text">
+        <string>Selected animation</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="1">
+      <layout class="QHBoxLayout" name="animationSelectHBox" stretch="1,0">
+       <item>
+        <widget class="QComboBox" name="animationComboBox"/>
+       </item>
+       <item>
+        <widget class="QPushButton" name="manageAnimationsButton">
+         <property name="text">
+          <string>Manage Animations</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+    </layout>
+   </item>
+  </layout>
+  <action name="actionCreateAnimation">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::DocumentNew"/>
+   </property>
+   <property name="text">
+    <string>Create Animation</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::MenuRole::TextHeuristicRole</enum>
+   </property>
+  </action>
+  <action name="actionClear">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::EditClear"/>
+   </property>
+   <property name="text">
+    <string>Clear</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::MenuRole::TextHeuristicRole</enum>
+   </property>
+  </action>
+ </widget>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>manageAnimationsButton</sender>
+   <signal>clicked()</signal>
+   <receiver>AnimationComponentWidget</receiver>
+   <slot>manage_animations_clicked()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>731</x>
+     <y>75</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>399</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>animationComboBox</sender>
+   <signal>activated(int)</signal>
+   <receiver>AnimationComponentWidget</receiver>
+   <slot>animation_selected(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>392</x>
+     <y>75</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>399</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionCreateAnimation</sender>
+   <signal>triggered()</signal>
+   <receiver>AnimationComponentWidget</receiver>
+   <slot>create_animation_triggered()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>399</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionClear</sender>
+   <signal>triggered()</signal>
+   <receiver>AnimationComponentWidget</receiver>
+   <slot>clear_animation_triggered()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>399</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+ <slots>
+  <slot>manage_animations_clicked()</slot>
+  <slot>animation_selected(int)</slot>
+  <slot>create_animation_triggered()</slot>
+  <slot>clear_animation_triggered()</slot>
+ </slots>
+</ui>

@@ -1147,6 +1147,14 @@ namespace Vadon::Utilities
 		return nullptr;
 	}
 
+	Serializer::~Serializer()
+	{
+		if (m_finalized == false)
+		{
+			Core::Logger::log_warning("Serializer was not finalized!\n");
+		}
+	}
+
 	Serializer::Result Serializer::open_array(std::string_view key)
 	{
 		const Result key_result = set_value_reference(key);

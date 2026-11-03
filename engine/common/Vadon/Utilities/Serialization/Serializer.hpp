@@ -3,7 +3,6 @@
 #include <Vadon/Common.hpp>
 #include <Vadon/Math/Color.hpp>
 #include <Vadon/Math/Vector.hpp>
-#include <Vadon/Utilities/Debugging/Assert.hpp>
 #include <vector>
 #include <memory>
 #include <string>
@@ -41,9 +40,12 @@ namespace Vadon::Utilities
 		using Instance = std::unique_ptr<Serializer>;
 		using KeyVector = std::vector<std::string>;
 
+		// FIXME: this only works if the data already comes in this format,
+		// which forces readers to do extra copies. Revise API so input implies
+		// a reader, null implies a writer, and serializer contains its own buffer for writing
 		VADONCOMMON_API static Instance create_serializer(std::vector<std::byte>& buffer, Type type, Mode mode);
 
-		virtual ~Serializer() { VADON_ASSERT(m_finalized == true, "Serializer was not finalized!"); }
+		virtual ~Serializer();
 
 		virtual Type get_type() const = 0;
 		bool is_reading() const { return m_mode == Mode::READ; }

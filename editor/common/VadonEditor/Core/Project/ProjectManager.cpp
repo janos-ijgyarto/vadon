@@ -18,15 +18,8 @@ namespace
 
 namespace VadonEditor::Core
 {
-	ProjectManager::ProjectManager()
+	bool ProjectManager::load_project_data(Vadon::Core::EngineCoreInterface& engine_core, std::string_view root_path, Vadon::Core::Project& project_data)
 	{
-
-	}
-
-	bool ProjectManager::load_project(Vadon::Core::EngineCoreInterface& engine_core, std::string_view root_path)
-	{
-		Vadon::Core::Logger::log_message(std::format("Project manager: loading project at path \"{}\"\n", root_path));
-
 		// First validate the path
 		std::filesystem::path fs_root_path(root_path);
 
@@ -50,8 +43,7 @@ namespace VadonEditor::Core
 		}
 
 		const std::string project_file_path = fs_root_path.generic_string();
-		Vadon::Core::Project& project_info = m_active_project;
-		project_info.custom_data_resource_id.invalidate(); // Reset custom properties
+		project_data.custom_data_resource_id.invalidate(); // Reset custom properties
 
 		Vadon::Core::RawFileDataBuffer project_file_data;
 
@@ -76,7 +68,7 @@ namespace VadonEditor::Core
 			return false;
 		}
 
-		if (Vadon::Core::Project::serialize_project_data(*serializer, project_info) == false)
+		if (Vadon::Core::Project::serialize_project_data(*serializer, project_data) == false)
 		{
 			Vadon::Core::Logger::log_error(std::format("Project manager: \"{}\" is not a valid project file!\n", project_file_path));
 			return false;
@@ -88,10 +80,26 @@ namespace VadonEditor::Core
 			return false;
 		}
 
-		project_info.root_path = std::filesystem::path(project_file_path).parent_path().generic_string();
+		project_data.root_path = std::filesystem::path(project_file_path).parent_path().generic_string();
 
-		Vadon::Core::Logger::log_message(std::format("Project manager: project \"{}\" loaded successfully!\n", project_info.name));
+		return true;
+	}
 
+	ProjectManager::ProjectManager()
+	{
+
+	}
+
+	bool ProjectManager::load_project(Vadon::Core::EngineCoreInterface& engine_core, std::string_view root_path)
+	{
+		Vadon::Core::Logger::log_message(std::format("Project manager: loading project at path \"{}\"\n", root_path));
+
+		if (load_project_data(engine_core, root_path, m_active_project) == false)
+		{
+			return false;
+		}
+
+		Vadon::Core::Logger::log_message(std::format("Project manager: project \"{}\" loaded successfully!\n", m_active_project.name));
 		return true;
 	}
 }

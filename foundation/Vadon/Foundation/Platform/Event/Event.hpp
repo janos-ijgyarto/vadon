@@ -61,6 +61,7 @@ namespace Vadon
 		{
 			PlatformMouseButton button = PlatformMouseButton::INVALID;
 			bool down = false;
+			uint8 clicks = 0;
 			// TODO: other data?
 		};
 
@@ -83,7 +84,8 @@ namespace Vadon
 
 		struct PlatformTextInputEvent
 		{
-			std::string text;
+			static constexpr size_t c_text_input_size = 32;
+			char text[c_text_input_size];
 		};
 
 		struct PlatformQuitEvent

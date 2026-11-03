@@ -115,14 +115,7 @@ namespace Vadon::ECS
 	};
 
 	template<typename T>
-	const T& TypedComponentHandle<T>::operator*() const 
-	{
-		const TypedComponentPool<T>* typed_pool = static_cast<const TypedComponentPool<T>*>(m_pool);
-		return *typed_pool->typed_get_component(m_owner);
-	}
-
-	template<typename T>
-	const T* TypedComponentHandle<T>::operator->() const 
+	const T* TypedComponentHandle<T>::get_ptr() const
 	{ 
 		if (m_pool != nullptr)
 		{

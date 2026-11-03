@@ -16,9 +16,11 @@ namespace VadonEditor::Model
 	{
 		Q_OBJECT
 	public:
-		Component(Core::Application& application);
+		Component(Core::Application& application, bool is_mandatory);
 
 		bool initialize(const QUuid& type_id);
+
+		bool is_mandatory() const { return m_is_mandatory; }
 
 		bool import_data(const QVariantMap& data_map) { return m_data.import_data(data_map); }
 		QVariantMap export_data() const { return m_data.export_data(); }
@@ -29,17 +31,20 @@ namespace VadonEditor::Model
 
 		const QUuid& get_type_id() const { return m_data.get_type_id(); }
 
-		QVariant get_property(const Core::PropertyID& property_id) const { return m_data.get_property(property_id); }
+		const Core::DataObject& get_data_object() const { return m_data; }
 		void set_property(const Core::PropertyID& property_id, const QVariant& value) { m_data.set_property(property_id, value); emit(property_edited(get_type_id(), property_id)); }
+		void notify_modified() { emit(component_modified(get_type_id())); }
 
 		bool serialize_property(const Core::PropertyID& property_id, QJsonObject& json_obj, bool labeled) const { return m_data.serialize_property_data(property_id, json_obj, labeled); }
 
 		static bool is_type_component(Core::Application& application, const QUuid& type_id);
 	signals:
 		void property_edited(const QUuid& component_id, const QUuid& property_id);
+		void component_modified(const QUuid& component_id);
 	private:
 		Core::Application& m_application;
 		Core::DataObject m_data;
+		bool m_is_mandatory;
 
 		friend Entity;
 	};

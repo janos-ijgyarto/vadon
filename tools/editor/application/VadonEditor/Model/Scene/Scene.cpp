@@ -59,14 +59,19 @@ namespace VadonEditor::Model
 		return Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::SceneSchema::c_type_uuid);
 	}
 
-	QUuid Scene::get_scene_entities_uuid()
+	QUuid Scene::get_entities_property_uuid()
 	{
 		return Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::SceneSchema::c_entities_property.id);
 	}
 
+	QUuid Scene::get_base_scene_property_uuid()
+	{
+		return Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::SceneSchema::c_base_scene_property.id);
+	}
+
 	void Scene::open_scene()
 	{
-		message_scene_opened(false);
+		message_scene_opened();
 	}
 
 	bool Scene::save_scene() const
@@ -82,15 +87,17 @@ namespace VadonEditor::Model
 
 	bool Scene::load_scene()
 	{
-		const QUuid scene_entities_uuid = Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::SceneSchema::c_entities_property.id);
-		QVariant entity_list_variant = m_resource->get_property(scene_entities_uuid);
+		QVariant entity_list_variant = m_resource->get_data_object().get_property(get_entities_property_uuid());
 
-		if (m_entity_model.load_data(entity_list_variant.toList()) == false)
+		if (m_resource->get_data_object().has_property(get_base_scene_property_uuid()) == true)
+		{
+			m_base_id = m_resource->get_data_object().get_property(get_base_scene_property_uuid()).toUuid();
+		}
+
+		if (m_entity_model.load_data(entity_list_variant.toList(), m_base_id) == false)
 		{
 			return false;
 		}
-
-		message_scene_opened(true);
 
 		return true;
 	}
@@ -154,6 +161,12 @@ namespace VadonEditor::Model
 				entity_component_property_edited(entity_id, component_id, property_id);
 			}
 		);
+		QObject::connect(&m_entity_model, &EntityModel::entity_component_modified,
+			[this](const QUuid& entity_id, const QUuid& component_id)
+			{
+				entity_component_modified(entity_id, component_id);
+			}
+		);
 
 		return true;
 	}
@@ -166,8 +179,7 @@ namespace VadonEditor::Model
 			return false;
 		}
 		
-		const QUuid scene_entities_uuid = Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::SceneSchema::c_entities_property.id);
-		m_resource->set_property(scene_entities_uuid, entity_list);
+		m_resource->set_property(get_entities_property_uuid(), entity_list);
 		return true;
 	}
 
@@ -188,7 +200,7 @@ namespace VadonEditor::Model
 		entity_added_message.entity_info.parent = Utilities::qt_uuid_to_vadon_uuid(entity->get_parent());
 		entity_added_message.entity_info.sub_scene = Utilities::qt_uuid_to_vadon_uuid(entity->get_sub_scene_id());
 
-		message_serializer.write_message_trivial(::Vadon::Foundation::EditorMessageCategory::MODEL, entity_added_message);
+		message_serializer.write_message(::Vadon::Foundation::EditorMessageCategory::MODEL, entity_added_message);
 
 		m_application.get_network_system().send_message(message_serializer);
 	}
@@ -204,7 +216,7 @@ namespace VadonEditor::Model
 		entity_removed_message.scene_id = Utilities::qt_uuid_to_vadon_uuid(m_id);
 		entity_removed_message.entity_id = Utilities::qt_uuid_to_vadon_uuid(id);
 
-		message_serializer.write_message_trivial(::Vadon::Foundation::EditorMessageCategory::MODEL, entity_removed_message);
+		message_serializer.write_message(::Vadon::Foundation::EditorMessageCategory::MODEL, entity_removed_message);
 
 		m_application.get_network_system().send_message(message_serializer);
 	}
@@ -214,21 +226,24 @@ namespace VadonEditor::Model
 		// FIXME: use temp allocator or shared serializer
 		VadonEditor::Network::MessageSerializer message_serializer;
 
-		::Vadon::Foundation::EditorModelMessageEntityModified entity_modified_message;
-		entity_modified_message.message_type = ::Vadon::Foundation::EditorModelMessageType::ENTITY_MODIFIED;
+		using MessageEntityModified = ::Vadon::Foundation::EditorModelMessageEntityModified;
+		{
+			MessageEntityModified entity_modified_message;
+			entity_modified_message.message_type = ::Vadon::Foundation::EditorModelMessageType::ENTITY_MODIFIED;
 
-		entity_modified_message.scene_id = Utilities::qt_uuid_to_vadon_uuid(m_id);
+			entity_modified_message.scene_id = Utilities::qt_uuid_to_vadon_uuid(m_id);
 
-		entity_modified_message.entity_id = Utilities::qt_uuid_to_vadon_uuid(id);
+			entity_modified_message.entity_id = Utilities::qt_uuid_to_vadon_uuid(id);
+
+			message_serializer.write_message(::Vadon::Foundation::EditorMessageCategory::MODEL, entity_modified_message);
+		}
 
 		Entity* entity = m_entity_model.find_entity_by_id(id);
 		const QString entity_name = entity->get_name();
 
-		entity_modified_message.entity_name_length = entity_name.length();
+		const QByteArray entity_name_str = entity_name.toUtf8();
 
-		char* message_data = message_serializer.allocate_message(::Vadon::Foundation::EditorMessageCategory::MODEL, sizeof(::Vadon::Foundation::EditorModelMessageEntityModified) + entity_modified_message.entity_name_length);
-		memcpy(message_data, &entity_modified_message, sizeof(::Vadon::Foundation::EditorModelMessageEntityModified));
-		memcpy(message_data + sizeof(::Vadon::Foundation::EditorModelMessageEntityModified), entity_name.toUtf8().constData(), entity_modified_message.entity_name_length);
+		message_serializer.append_message_raw_data<MessageEntityModified>(entity_name_str.constData(), entity_name_str.size(), &MessageEntityModified::entity_name);
 
 		m_application.get_network_system().send_message(message_serializer);
 	}
@@ -245,7 +260,7 @@ namespace VadonEditor::Model
 		component_added_message.entity_id = Utilities::qt_uuid_to_vadon_uuid(entity_id);
 		component_added_message.component_id = Utilities::qt_uuid_to_vadon_uuid(component_id);
 
-		message_serializer.write_message_trivial(::Vadon::Foundation::EditorMessageCategory::MODEL, component_added_message);
+		message_serializer.write_message(::Vadon::Foundation::EditorMessageCategory::MODEL, component_added_message);
 
 		m_application.get_network_system().send_message(message_serializer);
 	}
@@ -262,7 +277,7 @@ namespace VadonEditor::Model
 		component_removed_message.entity_id = Utilities::qt_uuid_to_vadon_uuid(entity_id);
 		component_removed_message.component_id = Utilities::qt_uuid_to_vadon_uuid(component_id);
 
-		message_serializer.write_message_trivial(::Vadon::Foundation::EditorMessageCategory::MODEL, component_removed_message);
+		message_serializer.write_message(::Vadon::Foundation::EditorMessageCategory::MODEL, component_removed_message);
 
 		m_application.get_network_system().send_message(message_serializer);
 	}
@@ -273,13 +288,18 @@ namespace VadonEditor::Model
 		// FIXME: use temp allocator or shared serializer
 		VadonEditor::Network::MessageSerializer message_serializer;
 
-		::Vadon::Foundation::EditorModelMessageComponentPropertyEdited component_property_edited;
-		component_property_edited.message_type = ::Vadon::Foundation::EditorModelMessageType::COMPONENT_PROPERTY_EDITED;
+		using MessageComponentPropertyEdited = ::Vadon::Foundation::EditorModelMessageComponentPropertyEdited;
+		{
+			MessageComponentPropertyEdited component_property_edited;
+			component_property_edited.message_type = ::Vadon::Foundation::EditorModelMessageType::COMPONENT_PROPERTY_EDITED;
 
-		component_property_edited.scene_id = Utilities::qt_uuid_to_vadon_uuid(m_id);
-		component_property_edited.entity_id = Utilities::qt_uuid_to_vadon_uuid(entity_id);
-		component_property_edited.component_id = Utilities::qt_uuid_to_vadon_uuid(component_id);
-		component_property_edited.property_id = Utilities::qt_uuid_to_vadon_uuid(property_id);
+			component_property_edited.scene_id = Utilities::qt_uuid_to_vadon_uuid(m_id);
+			component_property_edited.entity_id = Utilities::qt_uuid_to_vadon_uuid(entity_id);
+			component_property_edited.component_id = Utilities::qt_uuid_to_vadon_uuid(component_id);
+			component_property_edited.property_id = Utilities::qt_uuid_to_vadon_uuid(property_id);
+
+			message_serializer.write_message(::Vadon::Foundation::EditorMessageCategory::MODEL, component_property_edited);
+		}
 
 		const Entity* entity = m_entity_model.find_entity_by_id(entity_id);
 		const Component* component = entity->get_component(component_id);
@@ -295,14 +315,16 @@ namespace VadonEditor::Model
 		QJsonDocument property_obj_document(property_object);
 		QByteArray json_data = property_obj_document.toJson(QJsonDocument::JsonFormat::Compact); // Serialize as compact JSON to minimize overhead
 
-		component_property_edited.data_size = json_data.size();
-
-		char* message_data = message_serializer.allocate_message(::Vadon::Foundation::EditorMessageCategory::MODEL, sizeof(::Vadon::Foundation::EditorModelMessageComponentPropertyEdited) + json_data.size());
-
-		memcpy(message_data, &component_property_edited, sizeof(::Vadon::Foundation::EditorModelMessageComponentPropertyEdited));
-		memcpy(message_data + sizeof(::Vadon::Foundation::EditorModelMessageComponentPropertyEdited), json_data.constData(), json_data.size());
+		message_serializer.append_message_raw_data<MessageComponentPropertyEdited>(json_data.constData(), json_data.size(), &MessageComponentPropertyEdited::property_value);
 
 		m_application.get_network_system().send_message(message_serializer);
+	}
+
+	void Scene::entity_component_modified(const QUuid& entity_id, const QUuid& component_id)
+	{
+		Q_UNUSED(entity_id);
+		Q_UNUSED(component_id);
+		notify_modified();
 	}
 
 	bool Scene::is_sub_scene_acyclic(const QUuid& scene_id)
@@ -333,11 +355,8 @@ namespace VadonEditor::Model
 		return true;
 	}
 
-	void Scene::message_scene_opened(bool reload)
+	void Scene::message_scene_opened()
 	{
-		// TODO: use the "reload" flag to indicate whether the client should reload scene, or if they should just ensure it's loaded?
-		Q_UNUSED(reload);
-
 		// FIXME: use temp allocator or shared serializer
 		VadonEditor::Network::MessageSerializer message_serializer;
 
@@ -346,7 +365,7 @@ namespace VadonEditor::Model
 
 		scene_opened_message.scene_id = Utilities::qt_uuid_to_vadon_uuid(get_id());
 
-		message_serializer.write_message_trivial(::Vadon::Foundation::EditorMessageCategory::MODEL, scene_opened_message);
+		message_serializer.write_message(::Vadon::Foundation::EditorMessageCategory::MODEL, scene_opened_message);
 
 		m_application.get_network_system().send_message(message_serializer);
 	}

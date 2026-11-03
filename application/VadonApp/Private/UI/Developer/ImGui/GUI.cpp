@@ -1,11 +1,18 @@
 #if defined(VADON_DEVELOPER_GUI_IMGUI)
 #include <VadonApp/Private/UI/Developer/ImGui/GUI.hpp>
 
-#include <VadonApp/Private/Core/Application.hpp>
+#include <VadonApp/Core/Application.hpp>
+
+// FIXME: decouple from platform interface!
+// Client code should decide explicitly when to update
+// Dev GUI with new platform events
+// TODO: possible check before new frame to determine if
+// Platform events were provided (empty is valid as long as it was passed in)
+#include <VadonApp/Platform/PlatformInterface.hpp>
+
 #include <VadonApp/Private/UI/Developer/ImGui/GUIElements.hpp>
 #include <VadonApp/Private/UI/Developer/ImGui/Fonts/fontawesome-webfont.inl>
 
-#include <VadonApp/Platform/PlatformInterface.hpp>
 #include <VadonApp/Platform/Input/Keyboard.hpp>
 
 #include <VadonApp/UI/Developer/IconsFontAwesome7.h>
@@ -15,7 +22,8 @@
 
 #include <Vadon/Math/Matrix.hpp>
 
-// FIXME: could separate the renderer backend to make this file less cluttered?
+// FIXME: decouple from renderer backend
+// We should just provide command list, let client code manage initialization and dispatch
 #include <Vadon/Render/GraphicsAPI/GraphicsAPI.hpp>
 #include <Vadon/Render/GraphicsAPI/Buffer/BufferSystem.hpp>
 #include <Vadon/Render/GraphicsAPI/Pipeline/PipelineSystem.hpp>
@@ -1558,6 +1566,12 @@ namespace VadonApp::Private::UI::Developer::ImGUI
         update_gamepads();
     }
 
+    void process_text_input_event(const VadonApp::Platform::TextInputEvent& text_event)
+    {
+        ImGuiIO& io = ImGui::GetIO();
+        io.AddInputCharactersUTF8(text_event.text);
+    }
+
     void GUISystem::process_platform_events(const VadonApp::Platform::PlatformEventList& platform_events)
     {
         auto platform_event_visitor = Vadon::Utilities::VisitorOverloadList{
@@ -1618,8 +1632,7 @@ namespace VadonApp::Private::UI::Developer::ImGUI
             },
             [](const VadonApp::Platform::TextInputEvent& text_event)
             {
-                ImGuiIO& io = ImGui::GetIO();
-                io.AddInputCharactersUTF8(text_event.text.c_str());
+                process_text_input_event(text_event);
             },
             [](auto) { /* Default, do nothing */}
         };

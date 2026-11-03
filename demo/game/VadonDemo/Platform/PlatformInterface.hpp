@@ -42,7 +42,6 @@ namespace VadonDemo::Platform
 		VadonApp::Platform::WindowHandle m_main_window;
 
 		std::array<VadonApp::Platform::InputActionHandle, Vadon::Utilities::to_integral(GameInputAction::ACTION_COUNT)> m_input_actions;
-		float m_dispatch_timer = 0.0f;
 
 		friend Core::GameCore;
 	};

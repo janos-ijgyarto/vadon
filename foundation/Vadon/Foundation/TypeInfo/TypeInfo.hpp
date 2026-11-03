@@ -56,6 +56,11 @@ namespace Vadon
 				return c_base_type_uuids[static_cast<uint32>(base_type)];
 			}
 		};
+
+		struct EnumSchema
+		{
+			static constexpr UUIDString c_type_uuid{ "a121c34a-5643-4021-a2b6-16f67cb1a936" };
+		};
 	}
 }
 #endif

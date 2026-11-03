@@ -12,7 +12,7 @@ namespace VadonEditor::Model
 		Q_ASSERT_X(m_scene_lookup.empty() == true, "VadonEditor::Model::SceneSystem::SceneSystem", "System was not shut down correctly");
 	}
 
-	Scene* SceneSystem::create_scene()
+	Scene* SceneSystem::create_scene(const SceneID& base_scene_id)
 	{
 		Model::ResourceSystem& resource_system = m_application.get_model_system().get_resource_system();
 		Model::Resource* scene_resource = resource_system.create_resource(Scene::get_scene_type_uuid());
@@ -25,6 +25,24 @@ namespace VadonEditor::Model
 
 		// NOTE: save the contents of the empty scene into the Resource
 		Model::Scene* new_scene = internal_add_new_scene(scene_resource);
+		if (Utilities::is_uuid_valid(base_scene_id) == true)
+		{
+			new_scene->m_base_id = base_scene_id;
+
+			// Load the entity model with an empty list, since we will be filling it from the base scene
+			QVariantList entity_list;
+			if (new_scene->m_entity_model.load_data(entity_list, base_scene_id) == false)
+			{
+				Q_ASSERT_X(false, "VadonEditor::Model::SceneSystem::create_scene", "Failed to initialize inherited scene");
+				return nullptr;
+			}
+
+			// Set the base scene property in the newly created scene
+			// This needs to happen before the scene is instantiated
+			// to ensure that it loads the contents correctly
+			new_scene->m_resource->set_property(Scene::get_base_scene_property_uuid(), base_scene_id);
+		}
+
 		if (new_scene->store_scene_data() == false)
 		{
 			Q_ASSERT_X(false, "VadonEditor::Model::SceneSystem::create_scene", "Failed to store scene data");

@@ -24,6 +24,7 @@ namespace VadonEditor::UI
 		void add_folder_triggered();
 		void new_resource_triggered();
 		void new_scene_triggered();
+		void inherited_scene_triggered();
 
 		void selection_changed(const QItemSelection& selected, const QItemSelection& deselected);
 		void asset_double_clicked(const QModelIndex& index);

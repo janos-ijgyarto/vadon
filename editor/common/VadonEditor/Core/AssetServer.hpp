@@ -30,6 +30,8 @@ namespace VadonEditor::Core
 
 		VADONEDITOR_API bool initialize();
 		VADONEDITOR_API bool load_project(std::string_view root_path);
+		VADONEDITOR_API bool start_exporter(std::string_view output_path);
+		VADONEDITOR_API void update();
 		VADONEDITOR_API void shutdown();
 
 		VADONEDITOR_API Vadon::Core::EngineCoreInterface& get_engine_core();

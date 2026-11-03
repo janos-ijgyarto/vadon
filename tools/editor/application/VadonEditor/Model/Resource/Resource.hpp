@@ -33,9 +33,11 @@ namespace VadonEditor::Model
 		bool is_pending_remove() const { return m_pending_remove; }
 		bool is_modified() const { return m_modified; }
 
+		QString get_name() const { return get_data_object().get_property(get_name_property_id()).toString(); }
+
 		void notify_modifed();
 
-		QVariant get_property(const PropertyID& property_id) const { return m_data.get_property(property_id); }
+		const Core::DataObject& get_data_object() const { return m_data; }
 		void set_property(const PropertyID& property_id, const QVariant& value);
 
 		const Resource* get_owner() const { return m_owner; }
@@ -50,6 +52,8 @@ namespace VadonEditor::Model
 
 		static QUuid get_base_resource_type();
 		static QUuid get_imported_file_resource_type();
+
+		static QUuid get_name_property_id();
 	private:
 		Resource(Core::Application& application);
 

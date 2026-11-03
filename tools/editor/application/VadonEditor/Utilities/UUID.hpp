@@ -78,6 +78,17 @@ namespace VadonEditor::Utilities
 		}
 	}
 
+	inline QString get_labeled_uuid_label(const QString& uuid_string)
+	{
+		const qsizetype separator_index = uuid_string.indexOf('|');
+		if (separator_index != -1)
+		{
+			return uuid_string.left(separator_index);
+		}
+
+		return uuid_string;
+	}
+
 	inline QUuid parse_labeled_uuid(const QString& uuid_string)
 	{
 		const qsizetype separator_index = uuid_string.indexOf('|');

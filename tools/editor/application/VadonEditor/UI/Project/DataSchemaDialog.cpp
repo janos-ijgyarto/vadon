@@ -70,6 +70,16 @@ namespace
 
 			return QString("ResourceID<%1>").arg(resource_type_data->get_name());
 		}
+		case ::Vadon::Foundation::Property::Category::ENUM:
+		{
+			const qsizetype enum_type_offset = type_list_offset + 1;
+			Q_ASSERT_X(enum_type_offset < property_data.type_list.size(), "get_property_type_label", "Invalid property data");
+
+			const QUuid enum_type_uuid = property_data.type_list[enum_type_offset];
+			const VadonEditor::Core::EnumData* enum_data = project_data_schema.find_enum_data(enum_type_uuid);
+
+			return QString("Enum<%1>").arg(enum_data->get_name());
+		}
 		default:
 			Q_UNREACHABLE();
 		}

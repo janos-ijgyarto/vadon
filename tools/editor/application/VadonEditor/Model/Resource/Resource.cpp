@@ -120,11 +120,16 @@ namespace VadonEditor::Model
 		// FIXME: use temp allocator or shared serializer
 		VadonEditor::Network::MessageSerializer message_serializer;
 
-		::Vadon::Foundation::EditorModelMessageResourcePropertyEdited property_edited_message;
-		property_edited_message.message_type = ::Vadon::Foundation::EditorModelMessageType::RESOURCE_PROPERTY_EDITED;
+		using MessagePropertyEdited = ::Vadon::Foundation::EditorModelMessageResourcePropertyEdited;
+		{
+			MessagePropertyEdited property_edited_message;
+			property_edited_message.message_type = ::Vadon::Foundation::EditorModelMessageType::RESOURCE_PROPERTY_EDITED;
 
-		property_edited_message.resource_id = Utilities::qt_uuid_to_vadon_uuid(m_info.id);
-		property_edited_message.property_id = Utilities::qt_uuid_to_vadon_uuid(property_id);
+			property_edited_message.resource_id = Utilities::qt_uuid_to_vadon_uuid(m_info.id);
+			property_edited_message.property_id = Utilities::qt_uuid_to_vadon_uuid(property_id);
+
+			message_serializer.write_message(::Vadon::Foundation::EditorMessageCategory::MODEL, property_edited_message);
+		}
 
 		// NOTE: skip label, we are only serializing to message the plugin
 		QJsonObject property_object;
@@ -137,12 +142,7 @@ namespace VadonEditor::Model
 		QJsonDocument property_obj_document(property_object);
 		QByteArray json_data = property_obj_document.toJson(QJsonDocument::JsonFormat::Compact); // Serialize as compact JSON to minimize overhead
 
-		property_edited_message.data_size = json_data.size();
-
-		char* message_data = message_serializer.allocate_message(::Vadon::Foundation::EditorMessageCategory::MODEL, sizeof(::Vadon::Foundation::EditorModelMessageResourcePropertyEdited) + json_data.size());
-
-		memcpy(message_data, &property_edited_message, sizeof(::Vadon::Foundation::EditorModelMessageResourcePropertyEdited));
-		memcpy(message_data + sizeof(::Vadon::Foundation::EditorModelMessageResourcePropertyEdited), json_data.constData(), json_data.size());
+		message_serializer.append_message_raw_data<MessagePropertyEdited>(json_data.constData(), json_data.size(), &MessagePropertyEdited::data);
 
 		m_application.get_network_system().send_message(message_serializer);
 	}
@@ -177,7 +177,7 @@ namespace VadonEditor::Model
 			add_embedded_message.resource_id = Utilities::qt_uuid_to_vadon_uuid(m_info.id);
 			add_embedded_message.embedded_id = Utilities::qt_uuid_to_vadon_uuid(embedded_resource->get_info().id);
 
-			message_serializer.write_message_trivial(::Vadon::Foundation::EditorMessageCategory::MODEL, add_embedded_message);
+			message_serializer.write_message(::Vadon::Foundation::EditorMessageCategory::MODEL, add_embedded_message);
 
 			m_application.get_network_system().send_message(message_serializer);
 		}
@@ -208,6 +208,11 @@ namespace VadonEditor::Model
 	QUuid Resource::get_imported_file_resource_type()
 	{
 		return Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::FileResourceSchema::c_type_uuid);
+	}
+
+	QUuid Resource::get_name_property_id()
+	{
+		return Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::ResourceSchema::c_name_property.id);
 	}
 
 	Resource::Resource(Core::Application& application)
@@ -267,9 +272,16 @@ namespace VadonEditor::Model
 
 		if (m_embedded_resources.isEmpty() == false)
 		{
+			// Sort embedded resource keys so they have a deterministic order in the file
+			QList<ResourceID> embedded_resource_ids = m_embedded_resources.keys();
+			std::sort(embedded_resource_ids.begin(), embedded_resource_ids.end());
+
 			QJsonArray embedded_array;
-			for (auto embedded_it = m_embedded_resources.begin(); embedded_it != m_embedded_resources.end(); ++embedded_it)
+			for (const ResourceID& current_embedded_id : embedded_resource_ids)
 			{
+				auto embedded_it = m_embedded_resources.find(current_embedded_id);
+				Q_ASSERT_X(embedded_it != m_embedded_resources.end(), "VadonEditor::Model::Resource::internal_save", "Cannot find embedded resource!");
+
 				QJsonObject current_embedded_obj;
 				if (embedded_it.value()->internal_save(current_embedded_obj, labeled) == false)
 				{
@@ -394,7 +406,7 @@ namespace VadonEditor::Model
 		resource_created_message.type_id = Utilities::qt_uuid_to_vadon_uuid(m_info.type);
 		resource_created_message.resource_id = Utilities::qt_uuid_to_vadon_uuid(m_info.id);
 
-		message_serializer.write_message_trivial(::Vadon::Foundation::EditorMessageCategory::MODEL, resource_created_message);
+		message_serializer.write_message(::Vadon::Foundation::EditorMessageCategory::MODEL, resource_created_message);
 
 		m_application.get_network_system().send_message(message_serializer);
 	}
@@ -414,16 +426,19 @@ namespace VadonEditor::Model
 		// FIXME: use temp allocator or shared serializer
 		VadonEditor::Network::MessageSerializer message_serializer;
 
-		::Vadon::Foundation::EditorModelMessageResourceAssetCreated resource_asset_created_message;
-		resource_asset_created_message.message_type = ::Vadon::Foundation::EditorModelMessageType::RESOURCE_ASSET_CREATED;
+		using MessageAssetCreated = ::Vadon::Foundation::EditorModelMessageResourceAssetCreated;
 
-		resource_asset_created_message.resource_id = Utilities::qt_uuid_to_vadon_uuid(m_info.id);
-		resource_asset_created_message.asset_path_length = asset_info.path.length();
+		{
+			MessageAssetCreated resource_asset_created_message;
+			resource_asset_created_message.message_type = ::Vadon::Foundation::EditorModelMessageType::RESOURCE_ASSET_CREATED;
 
-		// FIXME: create a more elegant way to add a string to a message
-		char* message_data = message_serializer.allocate_message(::Vadon::Foundation::EditorMessageCategory::MODEL, sizeof(::Vadon::Foundation::EditorModelMessageResourceAssetCreated) + resource_asset_created_message.asset_path_length);
-		memcpy(message_data, &resource_asset_created_message, sizeof(::Vadon::Foundation::EditorModelMessageResourceAssetCreated));
-		memcpy(message_data + sizeof(::Vadon::Foundation::EditorModelMessageResourceAssetCreated), asset_info.path.toUtf8().constData(), resource_asset_created_message.asset_path_length);
+			resource_asset_created_message.resource_id = Utilities::qt_uuid_to_vadon_uuid(m_info.id);
+
+			message_serializer.write_message(::Vadon::Foundation::EditorMessageCategory::MODEL, resource_asset_created_message);
+		}
+
+		const QByteArray asset_path = asset_info.path.toUtf8();
+		message_serializer.append_message_raw_data(asset_path.constData(), asset_path.size(), &MessageAssetCreated::asset_path);
 
 		m_application.get_network_system().send_message(message_serializer);
 	}
@@ -446,7 +461,7 @@ namespace VadonEditor::Model
 		resource_loaded_message.resource_id = Utilities::qt_uuid_to_vadon_uuid(m_info.id);
 		resource_loaded_message.reload = reload;
 
-		message_serializer.write_message_trivial(::Vadon::Foundation::EditorMessageCategory::MODEL, resource_loaded_message);
+		message_serializer.write_message(::Vadon::Foundation::EditorMessageCategory::MODEL, resource_loaded_message);
 
 		m_application.get_network_system().send_message(message_serializer);
 	}

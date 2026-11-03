@@ -29,11 +29,11 @@ namespace VadonEditor::Core
 
 		void dispatch_message_to_editor(const char* data, size_t size) override;
 
+		::Vadon::Foundation::AssetServerToolchainConfiguration get_toolchain_configuration() const override;
+
 		bool run_asset_server(const AssetServerSettings& settings);
 		bool is_running() const;
 		void stop_asset_server();
-
-		void export_project_data(const QString& output_path);
 	private:
 		AssetServer(Core::Application& application);
 

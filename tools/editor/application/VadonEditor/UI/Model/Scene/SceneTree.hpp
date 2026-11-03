@@ -21,12 +21,16 @@ namespace VadonEditor::UI
 
 		QString get_label() const;
 		Model::Scene* get_scene() const { return m_scene; }
+
+		void set_entity_selected(const QUuid& entity_id);
 	signals:
 		void scene_modified(const QUuid& scene_id);
 		void scene_saved(const QUuid& scene_id);
+		void entity_selected(const QUuid& scene_id, const QUuid& entity_id);
 	private slots:
 		void entity_double_clicked(const QModelIndex& index);
 		void entity_widget_removed(QObject* widget_obj);
+		void entity_selection_changed(const QItemSelection& selected, const QItemSelection& deselected);
 
 		void save_triggered();
 
@@ -54,6 +58,7 @@ namespace VadonEditor::UI
 
 		QHash<QUuid, QWidget*> m_entity_widgets;
 		QHash<QWidget*, QUuid> m_widget_reverse_lookup;
+		bool m_ignore_selection_signals;
 
 		friend class SceneManager;
 	};

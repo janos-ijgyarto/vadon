@@ -25,6 +25,9 @@ namespace VadonEditor::Model
 
 		~ResourceSystem();
 
+		// NOTE: used by database 
+		VADONEDITOR_API void set_temp_file_root_path(std::string_view temp_file_root_path);
+
 		VADONEDITOR_API const Resource* find_resource(const Vadon::Model::ResourceID& resource_id) const;
 		Resource* find_resource(const Vadon::Model::ResourceID& resource_id) { return const_cast<Resource*>(std::as_const(*this).find_resource(resource_id)); }
 

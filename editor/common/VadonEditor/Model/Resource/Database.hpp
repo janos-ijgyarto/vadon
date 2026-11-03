@@ -33,6 +33,7 @@ namespace VadonEditor::Model
 		ResourceDatabase(Vadon::Core::EngineCoreInterface& engine_core, VadonEditor::Core::ProjectManager& project_manager);
 
 		bool initialize();
+		void set_temp_file_root_path(std::string_view temp_file_root_path);
 
 		bool save_resource(Vadon::Model::ResourceSystem& resource_system, Vadon::Model::ResourceHandle resource_handle) override;
 		Vadon::Model::ResourceHandle load_resource(Vadon::Model::ResourceSystem& resource_system, Vadon::Model::ResourceID resource_id) override;
@@ -47,6 +48,8 @@ namespace VadonEditor::Model
 		Vadon::Model::ResourceID import_resource(std::string_view path);
 		
 		bool import_project_resources();
+		void refresh();
+
 		std::vector<Vadon::Model::ResourceID> get_resource_list() const;
 
 		Vadon::Core::FileDatabaseHandle get_database(FileDatabaseType type) const { return m_file_databases[static_cast<size_t>(type)]; }
@@ -56,12 +59,18 @@ namespace VadonEditor::Model
 		void internal_import_resource(const Vadon::Model::ResourceInfo& resource_info, std::string_view path);
 		bool import_asset_file(Vadon::Model::ResourceID file_id);
 
+		void clear_stale_entries();
+
+		std::string get_temp_file_path(Vadon::Model::ResourceID file_id) const;
+
 		Vadon::Core::EngineCoreInterface& m_engine_core;
 		VadonEditor::Core::ProjectManager& m_project_manager;
 
 		std::unordered_map<Vadon::Model::ResourceID, ResourceDatabaseEntry> m_resource_entry_lookup;
 
 		std::array<Vadon::Core::FileDatabaseHandle, static_cast<size_t>(FileDatabaseType::TYPE_COUNT)> m_file_databases;
+
+		std::string m_temp_file_root_path;
 	};
 }
 #endif

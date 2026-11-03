@@ -18,6 +18,7 @@ namespace VadonEditor::Core
 	struct AssetInfo
 	{
 		static constexpr char c_dir_separator = '/';
+		static constexpr const char* c_temp_root_folder = "temp";
 
 		static constexpr int c_invalid_file_id = 0;
 

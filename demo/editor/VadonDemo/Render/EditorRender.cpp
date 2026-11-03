@@ -133,6 +133,7 @@ namespace VadonDemo::Render
         // TODO: anything else?
         return true;
     }
+
     bool EditorRender::init_frame_graph()
     {
         // FIXME: should not have a fixed frame graph, instead process active viewports and render tasks

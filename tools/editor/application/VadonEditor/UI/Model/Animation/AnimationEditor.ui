@@ -17,6 +17,9 @@
    <iconset theme="QIcon::ThemeIcon::CameraWeb"/>
   </property>
   <layout class="QVBoxLayout" name="mainLayout">
+   <property name="sizeConstraint">
+    <enum>QLayout::SizeConstraint::SetMinAndMaxSize</enum>
+   </property>
    <item>
     <widget class="QSplitter" name="mainSplitter">
      <property name="orientation">
@@ -60,6 +63,13 @@
           </widget>
          </item>
          <item>
+          <widget class="QLabel" name="playbackTimeLabel">
+           <property name="text">
+            <string>0.0</string>
+           </property>
+          </widget>
+         </item>
+         <item>
           <spacer name="playbackButtonsSpacer">
            <property name="orientation">
             <enum>Qt::Orientation::Horizontal</enum>
@@ -72,12 +82,48 @@
            </property>
           </spacer>
          </item>
+         <item>
+          <widget class="QLabel" name="timeScaleLabel">
+           <property name="toolTip">
+            <string>Time Scale</string>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QDoubleSpinBox" name="timeScaleSpinBox">
+           <property name="toolTip">
+            <string>Time Scale</string>
+           </property>
+           <property name="singleStep">
+            <double>0.100000000000000</double>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="loopButton">
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset theme="QIcon::ThemeIcon::MediaPlaylistShuffle"/>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+           <property name="checked">
+            <bool>false</bool>
+           </property>
+          </widget>
+         </item>
         </layout>
        </item>
        <item>
         <layout class="QHBoxLayout" name="channelButtonsHBox">
          <item>
-          <widget class="QToolButton" name="addChannelButton">
+          <widget class="QPushButton" name="addChannelButton">
            <property name="toolTip">
             <string>Add Channel</string>
            </property>
@@ -86,9 +132,6 @@
            </property>
            <property name="icon">
             <iconset theme="QIcon::ThemeIcon::ListAdd"/>
-           </property>
-           <property name="popupMode">
-            <enum>QToolButton::ToolButtonPopupMode::InstantPopup</enum>
            </property>
           </widget>
          </item>
@@ -238,30 +281,11 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>445</width>
+         <width>519</width>
          <height>580</height>
         </rect>
        </property>
-       <layout class="QVBoxLayout" name="propertiesScrollLayout" stretch="0,1,1">
-        <item>
-         <widget class="QGroupBox" name="animationPropertiesGroup">
-          <property name="title">
-           <string>Animation Properties</string>
-          </property>
-          <layout class="QFormLayout" name="animationPropertiesLayout">
-           <item row="0" column="0">
-            <widget class="QLabel" name="animationNameLabel">
-             <property name="text">
-              <string>Name:</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="1">
-            <widget class="QLineEdit" name="animationNameLineEdit"/>
-           </item>
-          </layout>
-         </widget>
-        </item>
+       <layout class="QVBoxLayout" name="propertiesScrollLayout" stretch="0,1">
         <item>
          <widget class="QGroupBox" name="channelPropertiesGroup">
           <property name="title">
@@ -274,16 +298,6 @@
               <string>ID:</string>
              </property>
             </widget>
-           </item>
-           <item row="2" column="0">
-            <widget class="QLabel" name="channelTagLabel">
-             <property name="text">
-              <string>Tag:</string>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="1">
-            <widget class="QLineEdit" name="channelTagLineEdit"/>
            </item>
            <item row="0" column="1">
             <widget class="QLabel" name="channelIDTextLabel">
@@ -303,6 +317,40 @@
             <widget class="QLabel" name="channelTypeTextLabel">
              <property name="text">
               <string>N/A</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="0">
+            <widget class="QLabel" name="channelTagLabel">
+             <property name="text">
+              <string>Tag:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="1">
+            <widget class="QLineEdit" name="channelTagLineEdit"/>
+           </item>
+           <item row="2" column="0">
+            <widget class="QLabel" name="channelSampleMethodLabel">
+             <property name="text">
+              <string>Sample method:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="1">
+            <widget class="QLabel" name="channelMetadataValueLabel">
+             <property name="text">
+              <string>N/A</string>
+             </property>
+             <property name="wordWrap">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="0">
+            <widget class="QLabel" name="channelMetadataLabel">
+             <property name="text">
+              <string>Metadata label:</string>
              </property>
             </widget>
            </item>
@@ -374,23 +422,6 @@
    </property>
    <property name="toolTip">
     <string>Remove Animation Channel</string>
-   </property>
-   <property name="menuRole">
-    <enum>QAction::MenuRole::TextHeuristicRole</enum>
-   </property>
-  </action>
-  <action name="actionSave">
-   <property name="icon">
-    <iconset theme="QIcon::ThemeIcon::DocumentSave"/>
-   </property>
-   <property name="text">
-    <string>Save</string>
-   </property>
-   <property name="toolTip">
-    <string>Save Animation</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+S</string>
    </property>
    <property name="menuRole">
     <enum>QAction::MenuRole::TextHeuristicRole</enum>
@@ -486,22 +517,6 @@
    </hints>
   </connection>
   <connection>
-   <sender>actionSave</sender>
-   <signal>triggered()</signal>
-   <receiver>AnimationEditor</receiver>
-   <slot>save_triggered()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>-1</x>
-     <y>-1</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>599</x>
-     <y>299</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
    <sender>actionRemoveChannel</sender>
    <signal>triggered()</signal>
    <receiver>AnimationEditor</receiver>
@@ -510,54 +525,6 @@
     <hint type="sourcelabel">
      <x>-1</x>
      <y>-1</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>599</x>
-     <y>299</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>removeChannelButton</sender>
-   <signal>clicked()</signal>
-   <receiver>actionRemoveChannel</receiver>
-   <slot>trigger()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>54</x>
-     <y>76</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>-1</x>
-     <y>-1</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>animationNameLineEdit</sender>
-   <signal>textChanged(QString)</signal>
-   <receiver>AnimationEditor</receiver>
-   <slot>animation_name_changed(QString)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>1007</x>
-     <y>53</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>599</x>
-     <y>299</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>channelTagLineEdit</sender>
-   <signal>textChanged(QString)</signal>
-   <receiver>AnimationEditor</receiver>
-   <slot>channel_tag_text_changed(QString)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>1002</x>
-     <y>156</y>
     </hint>
     <hint type="destinationlabel">
      <x>599</x>
@@ -613,18 +580,115 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>removeChannelButton</sender>
+   <signal>clicked()</signal>
+   <receiver>actionRemoveChannel</receiver>
+   <slot>trigger()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>54</x>
+     <y>76</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>channelTagLineEdit</sender>
+   <signal>textChanged(QString)</signal>
+   <receiver>AnimationEditor</receiver>
+   <slot>channel_tag_text_changed(QString)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>1002</x>
+     <y>156</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>599</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>addChannelButton</sender>
+   <signal>clicked()</signal>
+   <receiver>actionAddChannel</receiver>
+   <slot>trigger()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>28</x>
+     <y>76</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionAddChannel</sender>
+   <signal>triggered()</signal>
+   <receiver>AnimationEditor</receiver>
+   <slot>add_channel_triggered()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>599</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>timeScaleSpinBox</sender>
+   <signal>valueChanged(double)</signal>
+   <receiver>AnimationEditor</receiver>
+   <slot>time_scale_changed(double)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>636</x>
+     <y>44</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>599</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>loopButton</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>AnimationEditor</receiver>
+   <slot>looping_toggled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>649</x>
+     <y>44</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>599</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>add_channel_triggered()</slot>
   <slot>playback_start_triggered()</slot>
   <slot>playback_stop_triggered()</slot>
   <slot>timeline_zoom_changed()</slot>
-  <slot>save_triggered()</slot>
   <slot>remove_channel_triggered()</slot>
-  <slot>animation_name_changed(QString)</slot>
   <slot>channel_tag_text_changed(QString)</slot>
   <slot>key_time_changed(double)</slot>
   <slot>add_key_triggered()</slot>
   <slot>remove_keys_triggered()</slot>
+  <slot>channel_sample_method_changed(int)</slot>
+  <slot>time_scale_changed(double)</slot>
+  <slot>looping_toggled(bool)</slot>
  </slots>
 </ui>

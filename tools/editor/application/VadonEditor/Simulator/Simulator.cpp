@@ -12,9 +12,13 @@
 #include <VadonEditor/Network/NetworkSystem.hpp>
 #include <VadonEditor/Network/Message/MessageSerializer.hpp>
 
+#include <VadonEditor/Utilities/UUID.hpp>
+
 #include <Vadon/Foundation/Editor/Simulator/LibraryInterface.hpp>
 #include <Vadon/Foundation/Editor/Simulator/PluginInterface.hpp>
+
 #include <Vadon/Foundation/Editor/Network/Message/Plugin.hpp>
+#include <Vadon/Foundation/Editor/Network/Message/Simulator.hpp>
 
 #include <QCoreApplication>
 #include <QDebug>
@@ -23,6 +27,11 @@
 
 namespace
 {
+	struct SimulatorToolchainConfig
+	{
+		QByteArray temp_path;
+	};
+
 	// NOTE: null implementation of plugin in case no plugin path was provided (useful for testing)
 	class NullPlugin : public Vadon::Foundation::EditorSimulatorPluginInterface
 	{
@@ -66,7 +75,7 @@ namespace
 				test_message_out.other_number = 3 * test_message_in.other_number;
 
 				VadonEditor::Network::MessageSerializer serializer;
-				serializer.write_message_trivial(::Vadon::Foundation::EditorMessageCategory::TEST, test_message_out);
+				serializer.write_message(::Vadon::Foundation::EditorMessageCategory::TEST, test_message_out);
 
 				m_simulator.dispatch_message_to_editor(serializer.get_buffer().data(), serializer.get_buffer().size());
 			}
@@ -88,11 +97,6 @@ namespace
 	private:
 		::Vadon::Foundation::NullMetadataRegistry m_metadata_registry;
 	};
-
-	struct SimulatorSettings
-	{
-		std::string plugin_path;
-	};
 }
 
 namespace VadonEditor::Simulator
@@ -109,7 +113,14 @@ namespace VadonEditor::Simulator
 		VADONEDITOR_API_FUNCTION_POINTER(VadonEditorSimulatorPluginExit) m_exit_func;
 
 		::Vadon::Foundation::EditorSimulatorPluginInterface* m_plugin_interface;
+
+		// NOTE: have to create an object where we can store the UTF8-converted QStrings
+		// because the struct used by the plugin uses const char*
+		SimulatorToolchainConfig m_toolchain_config;
+
 		QTimer m_plugin_timer;
+
+		SimulatorSettingsData m_settings;
 
 		Internal(Core::Application& application)
 			: m_application(application)
@@ -122,7 +133,35 @@ namespace VadonEditor::Simulator
 
 		bool initialize()
 		{
-			// TODO: anything?
+			const Core::Configuration& configuration = m_application.get_configuration();
+			if (configuration.mode == Core::ApplicationMode::EDITOR)
+			{
+				QObject::connect(&m_application.get_network_system(), &Network::NetworkSystem::received_message,
+					[this](const QByteArray& data)
+					{
+						::Vadon::Foundation::EditorMessageReader message_reader(data.constData(), data.size());
+						switch (message_reader.get_current_category())
+						{
+						case ::Vadon::Foundation::EditorMessageCategory::SIMULATOR:
+						{
+							const ::Vadon::Foundation::EditorSimulatorMessageHeader* simulator_header = reinterpret_cast<const ::Vadon::Foundation::EditorSimulatorMessageHeader*>(message_reader.get_current_message_data());
+							switch (simulator_header->message_type)
+							{
+							case ::Vadon::Foundation::EditorSimulatorMessageType::REGISTER_SETTING:
+							{
+								const ::Vadon::Foundation::EditorSimulatorMessageRegisterSetting* register_setting_message = reinterpret_cast<const ::Vadon::Foundation::EditorSimulatorMessageRegisterSetting*>(message_reader.get_current_message_data());
+								const ::Vadon::Foundation::EditorMessageRawDataView label_view = message_reader.get_raw_data_view(register_setting_message->label);
+								register_setting(register_setting_message, label_view);
+							}
+							break;
+							}
+						}
+						break;
+						}
+					}
+				);
+			}
+
 			return true;
 		}
 
@@ -130,9 +169,9 @@ namespace VadonEditor::Simulator
 		{
 			VadonEditor::Core::PluginManager& plugin_manager = m_application.get_plugin_manager();
 			const VadonEditor::Core::ProjectManager& project_manager = m_application.get_project_manager();
-			const VadonEditor::Core::ProjectInfo& project_info = project_manager.get_project_info();
+			const VadonEditor::Core::EditorProject& editor_project = project_manager.get_editor_project();
 
-			const Core::EditorPluginInfo* editor_plugin_info = project_info.find_plugin_entry(configuration_name);
+			const Core::EditorPluginInfo* editor_plugin_info = editor_project.find_plugin_entry(configuration_name);
 			if (editor_plugin_info == nullptr)
 			{
 				qCritical() << "Invalid setting for project editor plugin!";
@@ -190,8 +229,8 @@ namespace VadonEditor::Simulator
 			}
 
 			const VadonEditor::Core::ProjectManager& project_manager = m_application.get_project_manager();
-			const VadonEditor::Core::ProjectInfo& project_info = project_manager.get_project_info();
-			if (m_plugin_interface->initialize(project_info.get_project_file_path().toUtf8().constData()) == false)
+			const VadonEditor::Core::SourceProjectInfo& source_project_info = project_manager.get_source_project().info;
+			if (m_plugin_interface->initialize(source_project_info.get_project_file_path().toUtf8().constData()) == false)
 			{
 				qCritical() << "Plugin failed to initialize!";
 				return false;
@@ -253,7 +292,7 @@ namespace VadonEditor::Simulator
 				init_message.error_code = 0;
 
 				VadonEditor::Network::MessageSerializer serializer;
-				serializer.write_message_trivial(::Vadon::Foundation::EditorMessageCategory::PLUGIN, init_message);
+				serializer.write_message(::Vadon::Foundation::EditorMessageCategory::PLUGIN, init_message);
 
 				m_application.get_simulator().dispatch_message_to_editor(serializer.get_buffer().data(), serializer.get_buffer().size());
 			}
@@ -272,14 +311,14 @@ namespace VadonEditor::Simulator
 			stop_simulator();
 		}
 
-		bool run_simulator(const SimulatorSettings& settings)
+		bool run_simulator(const SimulatorStartupOptions& startup_options)
 		{
 			const Core::Configuration& configuration = m_application.get_configuration();
 
 			Core::ProjectManager& project_manager = m_application.get_project_manager();
-			const Core::ProjectInfo& project_info = project_manager.get_project_info();
+			const Core::EditorProject& editor_project = project_manager.get_editor_project();
 
-			const Core::EditorPluginInfo* editor_plugin_info = project_info.find_plugin_entry(settings.configuration_name);
+			const Core::EditorPluginInfo* editor_plugin_info = editor_project.find_plugin_entry(startup_options.configuration_name);
 			if (editor_plugin_info == nullptr)
 			{
 				qCritical() << "Invalid setting for project editor plugin!";
@@ -296,17 +335,21 @@ namespace VadonEditor::Simulator
 					return true;
 				}
 
+				// Clear previous simulator settings
+				m_settings.clear();
+
 				QString program_path = QCoreApplication::applicationFilePath();
 				m_simulator_process.setProgram(program_path);
 
 				QStringList arguments{ QString("--%1").arg(Core::CommandLineState::get_parameter_key(Core::CommandLineParameter::IS_SIMULATOR)) };
+
 				arguments.push_back(QString("--%1").arg(Core::CommandLineState::get_parameter_key(Core::CommandLineParameter::STARTUP_PROJECT_PATH)));
-				arguments.push_back(project_info.get_project_file_path());
+				arguments.push_back(editor_project.info.get_project_file_path());
 
 				arguments.push_back(QString("--%1").arg(Core::CommandLineState::get_parameter_key(Core::CommandLineParameter::PLUGIN_CONFIG_NAME)));
-				arguments.push_back(settings.configuration_name);
+				arguments.push_back(startup_options.configuration_name);
 
-				if (settings.debug_break_on_init == true)
+				if (startup_options.debug_break_on_init == true)
 				{
 					arguments.push_back(QString("--%1").arg(Core::CommandLineState::get_parameter_key(Core::CommandLineParameter::DEBUG_BREAK_ON_INIT)));
 				}
@@ -323,8 +366,18 @@ namespace VadonEditor::Simulator
 			break;
 			case Core::ApplicationMode::SIMULATOR:
 			{
+				// Cache the export path so the asset server can request it
+				QString output_path = m_application.get_project_manager().get_editor_project().info.output_path;
+				if (output_path.isEmpty() == true)
+				{
+					qCritical() << "Simulator needs valid output path!";
+					return false;
+				}
+
+				m_toolchain_config.temp_path = QDir::cleanPath(output_path + "/temp").toUtf8();
+
 				// We are the simulator, load plugin!
-				if (run_plugin(settings.configuration_name) == false)
+				if (run_plugin(startup_options.configuration_name) == false)
 				{
 					return false;
 				}
@@ -393,7 +446,7 @@ namespace VadonEditor::Simulator
 					shutdown_message.plugin_type = ::Vadon::Foundation::EditorPluginMessageSource::SIMULATOR;
 					shutdown_message.message_type = ::Vadon::Foundation::EditorPluginMessageType::PLUGIN_SHUTDOWN;
 
-					message_serializer.write_message_trivial(::Vadon::Foundation::EditorMessageCategory::PLUGIN, shutdown_message);
+					message_serializer.write_message(::Vadon::Foundation::EditorMessageCategory::PLUGIN, shutdown_message);
 
 					m_application.get_network_system().send_message(message_serializer);
 				}
@@ -464,13 +517,114 @@ namespace VadonEditor::Simulator
 			// TODO: anything else?
 			qCritical() << "Error running simulator process: " << error;
 		}
+
+		::Vadon::Foundation::SimulatorToolchainConfiguration get_toolchain_configuration() const
+		{
+			::Vadon::Foundation::SimulatorToolchainConfiguration toolchain_config;
+			toolchain_config.temp_path = m_toolchain_config.temp_path.constData();
+
+			return toolchain_config;
+		}
+
+		const SimulatorSettingsData& get_settings() const
+		{
+			return m_settings;
+		}
+
+		void register_setting(const ::Vadon::Foundation::EditorSimulatorMessageRegisterSetting* register_message, const ::Vadon::Foundation::EditorMessageRawDataView& label_view)
+		{
+			SimulatorSetting new_setting;
+			new_setting.id = Utilities::vadon_uuid_to_qt_uuid(register_message->setting.id);
+			new_setting.type = Utilities::vadon_uuid_to_qt_uuid(register_message->setting.type);
+
+			new_setting.label = QString::fromLocal8Bit(label_view.data, label_view.size);
+
+			const ::Vadon::Foundation::BaseType setting_data_type = Core::TypeData::get_base_type(new_setting.type);
+			switch (setting_data_type)
+			{
+			// TODO: add support for other types!
+			// TODO2: also have a way to add a "button" instead of a toggle
+			case ::Vadon::Foundation::BaseType::BOOL:
+			{
+				new_setting.value = false;
+			}
+			break;
+			default:
+			{
+				qWarning() << "Simulator setting not supported for type" << new_setting.type;
+				return;
+			}
+			}
+
+			for (const SimulatorSetting& current_setting : m_settings.settings)
+			{
+				if (current_setting.id == new_setting.id)
+				{
+					qWarning() << "Simulator setting already registered with ID" << new_setting.id;
+					return;
+				}
+			}
+
+			m_settings.settings.push_back(new_setting);
+		}
+
+		void set_setting_value(const QUuid& id, const QVariant& value)
+		{
+			const Core::Configuration& configuration = m_application.get_configuration();
+			if(configuration.mode != Core::ApplicationMode::EDITOR)
+			{
+				return;
+			}
+
+			for (SimulatorSetting& current_setting : m_settings.settings)
+			{
+				if (current_setting.id == id)
+				{
+					current_setting.value = value;
+
+					// Message simulator to make sure it shuts down
+					VadonEditor::Network::MessageSerializer message_serializer;
+
+					using MessageUpdateSetting = ::Vadon::Foundation::EditorSimulatorMessageUpdateSetting;
+					{
+						MessageUpdateSetting update_message;
+						update_message.setting_id = Utilities::qt_uuid_to_vadon_uuid(current_setting.id);
+						update_message.message_type = ::Vadon::Foundation::EditorSimulatorMessageType::UPDATE_SETTING;
+
+						message_serializer.write_message(::Vadon::Foundation::EditorMessageCategory::SIMULATOR, update_message);
+					}
+
+					const ::Vadon::Foundation::BaseType setting_data_type = Core::TypeData::get_base_type(current_setting.type);
+					QByteArray message_data_buffer;
+					switch (setting_data_type)
+					{
+					// TODO: add support for other types!
+					// TODO2: also have a way to add a "button" instead of a toggle
+					case ::Vadon::Foundation::BaseType::BOOL:
+					{
+						const bool bool_value = value.toBool();
+						message_data_buffer.append(bool_value);
+					}
+						break;
+					}
+
+					message_serializer.append_message_raw_data<MessageUpdateSetting>(message_data_buffer.constData(), message_data_buffer.size(), &MessageUpdateSetting::data);
+
+					m_application.get_network_system().send_message(message_serializer);
+
+					return;
+				}
+			}
+
+			qWarning() << "Simulator setting not found:" << id;
+		}
 	};
 
 	Simulator::~Simulator() = default;
 
-	bool Simulator::run_simulator(const SimulatorSettings& settings)
+	bool Simulator::run_simulator(const SimulatorStartupOptions& startup_options)
 	{
-		return m_internal->run_simulator(settings);
+		return m_internal->run_simulator(startup_options);
 	}
 
 	bool Simulator::is_running() const
@@ -491,6 +645,21 @@ namespace VadonEditor::Simulator
 	void Simulator::dispatch_message_to_editor(const char* data, size_t size)
 	{
 		m_internal->m_application.get_network_system().send_message(QByteArrayView(data, size));
+	}
+
+	::Vadon::Foundation::SimulatorToolchainConfiguration Simulator::get_toolchain_configuration() const
+	{
+		return m_internal->get_toolchain_configuration();
+	}
+
+	const SimulatorSettingsData& Simulator::get_settings() const
+	{
+		return m_internal->get_settings();
+	}
+
+	void Simulator::set_setting_value(const QUuid& id, const QVariant& value)
+	{
+		m_internal->set_setting_value(id, value);
 	}
 
 	Simulator::Simulator(Core::Application& application)

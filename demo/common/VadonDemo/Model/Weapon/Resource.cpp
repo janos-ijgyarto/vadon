@@ -17,7 +17,7 @@ namespace VadonDemo::Model
 		TypeRegistry::add_property<WeaponDefinition>(VADON_GET_MEMBER_UUID(WeaponDefinition, projectile_prefab), Vadon::Utilities::MemberVariableBind<&WeaponDefinition::projectile_prefab>().bind_member_getter().bind_member_setter());
 		TypeRegistry::add_property<WeaponDefinition>(VADON_GET_MEMBER_UUID(WeaponDefinition, rate_of_fire), Vadon::Utilities::MemberVariableBind<&WeaponDefinition::rate_of_fire>().bind_member_getter().bind_member_setter());
 
-		Vadon::Utilities::TypeMetadata(metadata_registry, VADON_GET_TYPE_UUID(WeaponDefinition))
+		Vadon::Utilities::TypeMetadata<WeaponDefinition>(metadata_registry)
 			.add_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "VadonDemo::Model::WeaponDefinition")
 			.add_property(VADON_GET_MEMBER_UUID(WeaponDefinition, projectile_prefab))
 				.add_metadata(::Vadon::Foundation::CommonPropertyMetadata::NAME, "Projectile Prefab")

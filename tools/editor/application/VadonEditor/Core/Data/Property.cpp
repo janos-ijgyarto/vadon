@@ -44,6 +44,11 @@ namespace VadonEditor::Core
 			return ::Vadon::Foundation::Property::Category::RESOURCE;
 		}
 
+		if (root_type_id == Utilities::vadon_uuid_string_to_qt_uuid(::Vadon::Foundation::EnumSchema::c_type_uuid))
+		{
+			return ::Vadon::Foundation::Property::Category::ENUM;
+		}
+
 		if (TypeData::is_base_type(root_type_id))
 		{
 			return ::Vadon::Foundation::Property::Category::TRIVIAL;

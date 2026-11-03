@@ -33,9 +33,9 @@ namespace Vadon::Model
 		using _ResourceType = T;
 		using _TypedID = TypedResourceID<T>;
 
-		TypedResourceID<T>& operator=(const ResourceID& id) { data = id.data; return *this; }
+		TypedResourceID<T>& operator=(const ResourceID& id) { memcpy(this->data, id.data, ::Vadon::Foundation::UUID::c_uuid_width); return *this; }
 
-		ResourceID to_resource_id() const { return ResourceID{ .data = this->data }; }
+		ResourceID to_resource_id() const { ResourceID res_id; memcpy(res_id.data, this->data, ::Vadon::Foundation::UUID::c_uuid_width); return res_id; }
 		static TypedResourceID<T> from_resource_id(ResourceID id) { _TypedID typed_id; memcpy(typed_id.data, id.data, ::Vadon::Foundation::UUID::c_uuid_width); return typed_id; }
 
 		ResourceID& as_resource_id() { return *this; }

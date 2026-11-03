@@ -68,6 +68,59 @@ namespace Vadon::Utilities
 	template<is_trivial_variant_type T>
 	struct TypeErasureTrait<T> : public TrivialTypeErasureTrait<T> {};
 
+	template<typename T>
+	struct EnumTypeErasureTrait
+	{
+		static constexpr ::Vadon::Foundation::UUID get_erased_type_uuid()
+		{
+			return Vadon::Utilities::string_to_uuid(::Vadon::Foundation::EnumSchema::c_type_uuid);
+		}
+
+		static constexpr size_t get_nested_type_count()
+		{
+			// Enum "header" + the enum type itself
+			return 2;
+		}
+
+		static constexpr void add_erased_type_uuid(::Vadon::Foundation::UUID* uuid_array)
+		{
+			*uuid_array = get_erased_type_uuid();
+
+			++uuid_array;
+
+			*uuid_array = TypeRegistryTrait<T>::get_type_uuid();
+		}
+
+		static constexpr auto get_type_list()
+		{
+			std::array<::Vadon::Foundation::UUID, get_nested_type_count()> type_list;
+			add_erased_type_uuid(type_list.data());
+			return type_list;
+		}
+	};
+
+	struct EnumTypeTrait
+	{
+		VADONCOMMON_API static ::Vadon::Foundation::UUID to_uuid(const ::Vadon::Foundation::UUID& enum_type_uuid, size_t enum_value);
+		VADONCOMMON_API static size_t to_enum_value(const ::Vadon::Foundation::UUID& enum_type_uuid, const ::Vadon::Foundation::UUID& enum_value_uuid);
+	};
+
+	template<typename T>
+	struct EnumVariantTypeTrait
+	{
+		static Variant to_variant(const T& value)
+		{
+			const ::Vadon::Foundation::UUID enum_value_uuid = EnumTypeTrait::to_uuid(TypeRegistryTrait<T>::get_type_uuid(), static_cast<size_t>(value));
+			return VariantTypeTrait<::Vadon::Foundation::UUID>::to_variant(enum_value_uuid);
+		}
+
+		static T from_variant(const Variant& variant)
+		{
+			const ::Vadon::Foundation::UUID enum_value_uuid = VariantTypeTrait<::Vadon::Foundation::UUID>::from_variant(variant);
+			return static_cast<T>(EnumTypeTrait::to_enum_value(TypeRegistryTrait<T>::get_type_uuid(), enum_value_uuid));
+		}
+	};
+
 	template<typename Container, typename T>
 	struct ContainerTypeErasureTrait
 	{
@@ -117,9 +170,19 @@ namespace Vadon::Utilities
 	VADONCOMMON_API Variant get_erased_type_default_value(TypeID type_id);
 }
 
+#define VADON_DEFINE_ENUM_TYPE_ERASURE(_enum_type) template<>\
+struct Vadon::Utilities::TypeErasureTrait<_enum_type> : public Vadon::Utilities::EnumTypeErasureTrait<_enum_type> {}
+
+#define VADON_DEFINE_ENUM_VARIANT_TYPE_TRAIT(_enum_type) template<>\
+struct Vadon::Utilities::VariantTypeTrait<_enum_type> : public Vadon::Utilities::EnumVariantTypeTrait<_enum_type> {}
+
 // Define for both the "bare" object and the typed wrapper version
 #define VADON_DEFINE_OBJECT_TYPE_ERASURE(_type) template<>\
-struct Vadon::Utilities::TypeErasureTrait<_type> : public Vadon::Utilities::ObjectTypeErasureTrait<_type> {};\
-template<>\
-struct Vadon::Utilities::TypeErasureTrait<Vadon::Utilities::TypedObjectWrapper<_type>> : public TypedObjectWrapperTypeErasureTrait<_type> {};
+struct Vadon::Utilities::TypeErasureTrait<_type> : public Vadon::Utilities::ObjectTypeErasureTrait<_type> {}
+
+#define VADON_DEFINE_TYPED_OBJECT_WRAPPER_TYPE_ERASURE(_type) template<>\
+struct Vadon::Utilities::TypeErasureTrait<Vadon::Utilities::TypedObjectWrapper<_type>> : public TypedObjectWrapperTypeErasureTrait<_type> {}
+
+#define VADON_DEFINE_OBJECT_AND_WRAPPER_TYPE_ERASURE(_type) VADON_DEFINE_OBJECT_TYPE_ERASURE(_type);\
+VADON_DEFINE_TYPED_OBJECT_WRAPPER_TYPE_ERASURE(_type)
 #endif

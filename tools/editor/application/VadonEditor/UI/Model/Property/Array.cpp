@@ -42,12 +42,12 @@ namespace VadonEditor::UI
 		emit(remove_requested());
 	}
 
-	PropertyArray::PropertyArray(const PropertyWidgetInfo& info, QWidget* parent, Model::Resource* owner_resource)
+	PropertyArray::PropertyArray(Core::Application& application, const PropertyWidgetInfo& info, QWidget* parent, Model::Resource* owner_resource)
 		: PropertyWidget(info.property_id, info.init_value, parent)
+		, m_application(application)
 		, m_info(info)
 		, m_owner_resource(owner_resource)
 	{
-		Q_ASSERT_X(owner_resource != nullptr, "VadonEditor::UI::PropertyArray::PropertyArray", "Owner resource must not be null!");
 		m_ui.setupUi(this);
 
 		initialize();
@@ -55,6 +55,9 @@ namespace VadonEditor::UI
 
 	void PropertyArray::set_read_only(bool read_only)
 	{
+		m_ui.addButton->setVisible(read_only == false);
+		m_ui.addButton->setEnabled(read_only == false);
+
 		for (int item_index = 0; item_index < m_ui.arrayContentsVBox->count(); ++item_index)
 		{
 			QWidget* current_widget = m_ui.arrayContentsVBox->itemAt(item_index)->widget();
@@ -120,7 +123,7 @@ namespace VadonEditor::UI
 
 		new_entry_info.init_value = QVariant(); // FIXME: get default value based on type list?
 
-		PropertyWidget* new_entry_widget = PropertyWidget::create_widget(new_entry_info, this, m_owner_resource);
+		PropertyWidget* new_entry_widget = PropertyWidget::create_widget(m_application, new_entry_info, this, m_owner_resource);
 		if (new_entry_widget == nullptr)
 		{
 			return;
@@ -151,7 +154,7 @@ namespace VadonEditor::UI
 		{
 			array_entry_info.init_value = current_value;
 
-			PropertyWidget* array_entry_widget = PropertyWidget::create_widget(array_entry_info, this, m_owner_resource);
+			PropertyWidget* array_entry_widget = PropertyWidget::create_widget(m_application, array_entry_info, this, m_owner_resource);
 			if (array_entry_widget == nullptr)
 			{
 				continue;
@@ -165,14 +168,11 @@ namespace VadonEditor::UI
 
 	void PropertyArray::internal_add_array_entry(PropertyWidget* property_widget)
 	{
-		// Insert new item just before the spacer
-		const int spacer_index = m_ui.arrayContentsVBox->indexOf(m_ui.arrayContentsSpacer);
-
 		PropertyArrayEntry* new_array_entry = new PropertyArrayEntry(this, property_widget);
 		connect(new_array_entry, &PropertyArrayEntry::value_changed, this, &PropertyArray::array_entry_value_changed);
 		connect(new_array_entry, &PropertyArrayEntry::remove_requested, this, &PropertyArray::array_entry_remove_requested);
 
-		m_ui.arrayContentsVBox->insertWidget(spacer_index, new_array_entry);
+		m_ui.arrayContentsVBox->addWidget(new_array_entry);
 	}
 
 	void PropertyArray::update_entry_layout()
@@ -188,7 +188,5 @@ namespace VadonEditor::UI
 				++entry_index;
 			}
 		}
-
-		setMinimumHeight(qMin(entry_index * 100, 400));
 	}
 }

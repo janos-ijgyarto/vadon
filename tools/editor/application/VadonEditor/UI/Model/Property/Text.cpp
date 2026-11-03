@@ -1,5 +1,7 @@
 #include <VadonEditor/UI/Model/Property/Text.hpp>
 
+#include <QTextBlock>
+
 namespace VadonEditor::UI
 {
 	PropertyLineEdit::PropertyLineEdit(const QUuid& id, const QString& value, QWidget* parent)
@@ -28,6 +30,8 @@ namespace VadonEditor::UI
 		m_ui.plainTextEdit->blockSignals(true);
 		m_ui.plainTextEdit->setPlainText(value);
 		m_ui.plainTextEdit->blockSignals(false);
+
+		adjust_height();
 	}
 
 	void PropertyPlainTextEdit::set_read_only(bool read_only)
@@ -39,5 +43,19 @@ namespace VadonEditor::UI
 	{
 		// TODO: add delay?
 		internal_set_value(m_ui.plainTextEdit->toPlainText());
+
+		adjust_height();
+	}
+
+	void PropertyPlainTextEdit::adjust_height()
+	{
+		// FIXME: this is still not exactly accurate, but it's good enough for now
+		QFontMetrics font_metrics(m_ui.plainTextEdit->font());
+		const int line_spacing = font_metrics.lineSpacing();
+		const int block_count = m_ui.plainTextEdit->blockCount();
+		
+		const int total_height = qMax((line_spacing * block_count) + (m_ui.plainTextEdit->frameWidth() * 2) + 4, 30);
+
+		m_ui.plainTextEdit->setFixedHeight(qMin(total_height, 300));
 	}
 }

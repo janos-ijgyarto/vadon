@@ -9,6 +9,7 @@ namespace Vadon
 		{
 			PLUGIN,
 			ASSET_SERVER,
+			SIMULATOR,
 			MODEL,
 			PLATFORM,
 			TEST
@@ -19,6 +20,18 @@ namespace Vadon
 		{
 			int number;
 			float other_number;
+		};
+
+		struct EditorMessageRawDataEntry
+		{
+			uint32_t offset; // Byte offset from start of the whole buffer
+			uint32_t size; // Size in bytes
+		};
+
+		struct EditorMessageRawDataView
+		{
+			const char* data;
+			size_t size;
 		};
 
 		class EditorMessageReader
@@ -39,6 +52,15 @@ namespace Vadon
 			uint32 get_message_data_size() const { return *reinterpret_cast<const uint32*>(reinterpret_cast<const char*>(m_data) + m_current_offset + sizeof(::Vadon::Foundation::EditorMessageCategory)); }
 
 			const char* get_current_message_data() const { return reinterpret_cast<const char*>(m_data) + m_current_offset + c_header_size; }
+
+			EditorMessageRawDataView get_raw_data_view(const EditorMessageRawDataEntry& entry) const 
+			{
+				EditorMessageRawDataView view;
+				view.data = reinterpret_cast<const char*>(m_data) + entry.offset;
+				view.size = entry.size;
+
+				return view;
+			}
 
 			void next_message()
 			{

@@ -28,6 +28,8 @@ namespace VadonEditor::UI
 	private slots:
 		void text_changed();
 	private:
+		void adjust_height();
+
 		Ui::PropertyPlainTextEdit m_ui;
 	};
 }

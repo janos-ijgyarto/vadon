@@ -8,6 +8,7 @@
 #include <Vadon/Utilities/TypeInfo/TypeList/VariantTypeList.hpp>
 
 #include <algorithm>
+#include <cmath>
 
 namespace
 {
@@ -37,6 +38,10 @@ namespace
 		{
 			return Vadon::Math::ColorRGBA::from_rgba_vector(Vadon::Math::Vector::mix(Vadon::Math::ColorRGBA::to_rgba_vector(std::get<Vadon::Math::ColorRGBA>(value_a)),
 				Vadon::Math::ColorRGBA::to_rgba_vector(std::get<Vadon::Math::ColorRGBA>(value_b)), factor));
+		}
+		case Vadon::Utilities::type_list_index_v<::Vadon::Foundation::UUID, Vadon::Utilities::Variant>:
+		{
+			return factor < 0.5f ? value_a : value_b;
 		}
 		default:
 			break;
@@ -84,20 +89,22 @@ namespace Vadon::Model
 
 	void AnimationPlayer::update(Vadon::Core::EngineCoreInterface& engine_core, float delta_time)
 	{
-		if (is_looping() == true)
+		const Animation* animation_data = engine_core.get_system<AnimationSystem>().get_animation_data(m_animation);
+
+		if (animation_data->looping == true)
 		{
-			m_current_time += m_time_scale * delta_time;
-			if (m_current_time >= 1.0f)
+			m_current_time += m_time_scale * animation_data->time_scale * delta_time;
+			if (m_current_time > 1.0f)
 			{
-				m_current_time -= 1.0f;
+				m_current_time = std::fmodf(m_current_time, 1.0f);
 			}
 		} 
 		else if(m_current_time < 1.0f)
 		{
-			m_current_time = std::min(m_current_time + (m_time_scale * delta_time), 1.0f);
+			m_current_time = std::min(m_current_time + (m_time_scale * animation_data->time_scale * delta_time), 1.0f);
 		}
 
-		update_sample_data(engine_core);
+		update_sample_data(animation_data);
 	}
 
 	void AnimationPlayer::reset()
@@ -107,7 +114,7 @@ namespace Vadon::Model
 		m_sample_data.reset();
 	}
 
-	void AnimationPlayer::update_sample_data(Vadon::Core::EngineCoreInterface& engine_core)
+	void AnimationPlayer::update_sample_data(const Animation* animation_data)
 	{
 		if (m_animation.is_valid() == false)
 		{
@@ -118,8 +125,6 @@ namespace Vadon::Model
 		{
 			return;
 		}
-
-		const Animation* animation_data = engine_core.get_system<AnimationSystem>().get_animation_data(m_animation);
 
 		for (size_t channel_index = 0; channel_index < animation_data->channels.size(); ++channel_index)
 		{
@@ -133,17 +138,19 @@ namespace Vadon::Model
 				continue;
 			}
 
-			if (m_sample_method == AnimationSampleMethod::LAST_KEY)
+			if (current_channel.sample_method == AnimationChannelSampleMethod::LAST_KEY)
 			{
-				for (size_t key_index = 0; key_index < current_channel.get_key_count(); ++key_index)
+				size_t selected_key_index = 0;
+				for (size_t key_index = 1; key_index < current_channel.get_key_count(); ++key_index)
 				{
-					const AnimationKey key_data = current_channel.get_key(key_index);
-					if (key_data.time <= m_current_time)
+					if (current_channel.key_times[key_index] > m_current_time)
 					{
-						current_channel_sample.value = key_data.value;
 						break;
 					}
+					selected_key_index = key_index;
 				}
+				const AnimationKey selected_key_data = current_channel.get_key(selected_key_index);
+				current_channel_sample.value = selected_key_data.value;
 				continue;
 			}
 
@@ -175,9 +182,9 @@ namespace Vadon::Model
 				}
 			}
 
-			switch (m_sample_method)
+			switch (current_channel.sample_method)
 			{
-			case AnimationSampleMethod::LINEAR:
+			case AnimationChannelSampleMethod::LINEAR:
 			{
 				if (min_key_distance > 0)
 				{
@@ -228,7 +235,7 @@ namespace Vadon::Model
 				}
 			}
 				break;
-			case AnimationSampleMethod::NEAREST_NEIGHBOR:
+			case AnimationChannelSampleMethod::NEAREST_NEIGHBOR:
 				// Just use the value of the closest key
 				current_channel_sample.value = current_channel.get_key_data(closest_key_index);
 				break;

@@ -14,7 +14,7 @@ namespace VadonDemo::Model
 		Vadon::Utilities::TypeRegistry::add_property<Transform2D>(VADON_GET_MEMBER_UUID(Transform2D, rotation), Vadon::Utilities::MemberVariableBind<&Transform2D::rotation>().bind_member_getter().bind_member_setter());
 		Vadon::Utilities::TypeRegistry::add_property<Transform2D>(VADON_GET_MEMBER_UUID(Transform2D, scale), Vadon::Utilities::MemberVariableBind<&Transform2D::scale>().bind_member_getter().bind_member_setter());
 
-		Vadon::Utilities::TypeMetadata transform_metadata(metadata_registry, VADON_GET_TYPE_UUID(Transform2D));
+		Vadon::Utilities::TypeMetadata<Transform2D> transform_metadata(metadata_registry);
 		transform_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "VadonDemo::Model::Transform2D");
 		transform_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::COMPONENT, "VadonDemo/Model");
 
@@ -35,7 +35,7 @@ namespace VadonDemo::Model
 		Vadon::Utilities::TypeRegistry::add_property<Velocity2D>(VADON_GET_MEMBER_UUID(Velocity2D, top_speed), Vadon::Utilities::MemberVariableBind<&Velocity2D::top_speed>().bind_member_getter().bind_member_setter());
 		Vadon::Utilities::TypeRegistry::add_property<Velocity2D>(VADON_GET_MEMBER_UUID(Velocity2D, acceleration), Vadon::Utilities::MemberVariableBind<&Velocity2D::acceleration>().bind_member_getter().bind_member_setter());
 
-		Vadon::Utilities::TypeMetadata velocity_metadata(metadata_registry, VADON_GET_TYPE_UUID(Velocity2D));
+		Vadon::Utilities::TypeMetadata<Velocity2D> velocity_metadata(metadata_registry);
 		velocity_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "VadonDemo::Model::Velocity2D");
 		velocity_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::COMPONENT, "VadonDemo/Model");
 
@@ -56,7 +56,7 @@ namespace VadonDemo::Model
 
 		Vadon::Utilities::TypeRegistry::add_property<Health>(VADON_GET_MEMBER_UUID(Health, max_health), Vadon::Utilities::MemberVariableBind<&Health::max_health>().bind_member_getter().bind_member_setter());
 
-		Vadon::Utilities::TypeMetadata health_metadata(metadata_registry, VADON_GET_TYPE_UUID(Health));
+		Vadon::Utilities::TypeMetadata<Health> health_metadata(metadata_registry);
 		health_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "VadonDemo::Model::Health");
 		health_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::COMPONENT, "VadonDemo/Model");
 
@@ -73,7 +73,7 @@ namespace VadonDemo::Model
 		Vadon::Utilities::TypeRegistry::add_property<Player>(VADON_GET_MEMBER_UUID(Player, damage_delay), Vadon::Utilities::MemberVariableBind<&Player::damage_delay>().bind_member_getter().bind_member_setter());
 		Vadon::Utilities::TypeRegistry::add_property<Player>(VADON_GET_MEMBER_UUID(Player, starting_weapons), Vadon::Utilities::MemberVariableBind<&Player::starting_weapons>().bind_member_getter().bind_member_setter());
 
-		Vadon::Utilities::TypeMetadata player_metadata(metadata_registry, VADON_GET_TYPE_UUID(Player));
+		Vadon::Utilities::TypeMetadata<Player> player_metadata(metadata_registry);
 		player_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "VadonDemo::Model::Player");
 		player_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::COMPONENT, "VadonDemo/Model");
 
@@ -95,7 +95,7 @@ namespace VadonDemo::Model
 		Vadon::Utilities::TypeRegistry::add_property<Map>(VADON_GET_MEMBER_UUID(Map, display_name), Vadon::Utilities::MemberVariableBind<&Map::display_name>().bind_member_getter().bind_member_setter());
 		Vadon::Utilities::TypeRegistry::add_property<Map>(VADON_GET_MEMBER_UUID(Map, dimensions), Vadon::Utilities::MemberVariableBind<&Map::dimensions>().bind_member_getter().bind_member_setter());
 
-		Vadon::Utilities::TypeMetadata map_metadata(metadata_registry, VADON_GET_TYPE_UUID(Map));
+		Vadon::Utilities::TypeMetadata<Map> map_metadata(metadata_registry);
 		map_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "VadonDemo::Model::Map");
 		map_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::COMPONENT, "VadonDemo/Model");
 

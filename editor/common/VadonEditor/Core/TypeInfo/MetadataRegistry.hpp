@@ -51,6 +51,15 @@ namespace VadonEditor::Core
 
 		void set_property_metadata(const ::Vadon::Foundation::UUID& type_uuid, const ::Vadon::Foundation::UUID& property_uuid, const char* key, const char* value) override;
 		const char* get_property_metadata(const ::Vadon::Foundation::UUID& type_uuid, const ::Vadon::Foundation::UUID& property_uuid, const char* key) const override;
+
+		void register_enum(const ::Vadon::Foundation::UUID& enum_type_uuid) override;
+
+		void set_enum_metadata(const ::Vadon::Foundation::UUID& enum_type_uuid, const char* key, const char* value) override;
+		const char* get_enum_metadata(const ::Vadon::Foundation::UUID& enum_type_uuid, const char* key) override;
+
+		void register_enum_value(const ::Vadon::Foundation::UUID& enum_type_uuid, const ::Vadon::Foundation::UUID& enum_value_uuid) override;
+		void set_enum_value_metadata(const ::Vadon::Foundation::UUID& enum_type_uuid, const ::Vadon::Foundation::UUID& enum_value_uuid, const char* key, const char* value) override;
+		const char* get_enum_value_metadata(const ::Vadon::Foundation::UUID& enum_type_uuid, const ::Vadon::Foundation::UUID& enum_value_uuid, const char* key) override;
 	private:
 		MetadataRegistry();
 

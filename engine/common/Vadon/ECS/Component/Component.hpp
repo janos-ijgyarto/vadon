@@ -12,10 +12,20 @@ namespace Vadon::ECS
 	class ComponentHandle
 	{
 	public:
+		ComponentHandle()
+			: m_pool(nullptr)
+		{ }
+
+		// FIXME: could use a system where each component pool stores a "last change"
+		// counter, some way to indicate whether any query is up-to-date
+		// Handles can then check it and see if they need to re-query the component from the pool
+		// or if they can use a cached pointer
 		VADONCOMMON_API const void* get_raw() const;
 		void* get_raw() { return const_cast<void*>(std::as_const(*this).get_raw()); }
 
 		VADONCOMMON_API bool is_valid() const;
+
+		EntityHandle get_owner() const { return m_owner; }
 	protected:
 		ComponentHandle(ComponentPoolInterface* pool, EntityHandle owner)
 			: m_pool(pool), m_owner(owner)
@@ -32,10 +42,19 @@ namespace Vadon::ECS
 	class TypedComponentHandle : public ComponentHandle
 	{
 	public:
-		const T& operator *() const;
+		TypedComponentHandle()
+			: ComponentHandle()
+		{
+
+		}
+
+		const T* get_ptr() const;
+		T* get_ptr() { return const_cast<T*>(std::as_const(*this).get_ptr()); }
+
+		const T& operator *() const { return *(get_ptr()); }
 		T& operator *() { return const_cast<T&>(std::as_const(*this).operator*()); }
 
-		const T* operator->() const;
+		const T* operator->() const { return get_ptr(); }
 		T* operator->() { return const_cast<T*>(std::as_const(*this).operator->()); }
 	private:
 		TypedComponentHandle(ComponentPoolInterface* pool, EntityHandle owner)

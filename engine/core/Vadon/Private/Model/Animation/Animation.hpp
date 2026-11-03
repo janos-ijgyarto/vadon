@@ -7,6 +7,8 @@ namespace Vadon::Private::Model
 
 	using AnimationChannel = Vadon::Model::AnimationChannel;
 
+	using AnimationChannelSampleMethod = Vadon::Model::AnimationChannelSampleMethod;
+
 	using AnimationIntChannel = Vadon::Model::AnimationIntChannel;
 	using AnimationUintChannel = Vadon::Model::AnimationUintChannel;
 	using AnimationFloatChannel = Vadon::Model::AnimationFloatChannel;
@@ -16,10 +18,16 @@ namespace Vadon::Private::Model
 	using AnimationVector3iChannel = Vadon::Model::AnimationVector3iChannel;
 	using AnimationVector4Channel = Vadon::Model::AnimationVector4Channel;
 	using AnimationColorRGBAChannel = Vadon::Model::AnimationColorRGBAChannel;
+	using AnimationUUIDChannel = Vadon::Model::AnimationUUIDChannel;
 
 	using Animation = Vadon::Model::Animation;
 
 	using AnimationID = Vadon::Model::AnimationID;
 	using AnimationHandle = Vadon::Model::AnimationHandle;
+
+	using AnimationLibrary = Vadon::Model::AnimationLibrary;
+
+	using AnimationLibraryID = Vadon::Model::AnimationLibraryID;
+	using AnimationLibraryHandle = Vadon::Model::AnimationLibraryHandle;
 }
 #endif

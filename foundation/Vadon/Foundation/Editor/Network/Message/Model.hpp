@@ -1,5 +1,6 @@
 #ifndef VADON_FOUNDATION_EDITOR_NETWORK_MESSAGE_MODEL_HPP
 #define VADON_FOUNDATION_EDITOR_NETWORK_MESSAGE_MODEL_HPP
+#include <Vadon/Foundation/Editor/Network/Message/Message.hpp>
 #include <Vadon/Foundation/Model/Scene/Scene.hpp>
 namespace Vadon
 {
@@ -18,6 +19,7 @@ namespace Vadon
 			SCENE_SELECTED,
 			SCENE_CLOSED,
 			ENTITY_ADDED,
+			ENTITY_SELECTED,
 			ENTITY_MODIFIED,
 			ENTITY_REMOVED,
 			COMPONENT_ADDED,
@@ -40,7 +42,7 @@ namespace Vadon
 		struct EditorModelMessageResourceAssetCreated : public EditorModelMessageHeader
 		{
 			UUID resource_id;
-			uint32 asset_path_length;
+			EditorMessageRawDataEntry asset_path;
 			// TODO: anything else?
 		};
 
@@ -55,7 +57,7 @@ namespace Vadon
 		{
 			UUID resource_id;
 			UUID property_id;
-			uint32 data_size; // NOTE: only used if the data needed to be serialized to JSON
+			EditorMessageRawDataEntry data;
 		};
 
 		struct EditorModelMessageResourceRemoved : public EditorModelMessageHeader
@@ -103,11 +105,18 @@ namespace Vadon
 			// TODO: anything else?
 		};
 
+		struct EditorModelMessageEntitySelected : public EditorModelMessageHeader
+		{
+			UUID scene_id;
+			UUID entity_id;
+			// TODO: anything else?
+		};
+
 		struct EditorModelMessageEntityModified : public EditorModelMessageHeader
 		{
 			UUID scene_id;
 			UUID entity_id;
-			uint32 entity_name_length;
+			EditorMessageRawDataEntry entity_name;
 			// TODO: anything else?
 		};
 
@@ -132,7 +141,7 @@ namespace Vadon
 			UUID entity_id;
 			UUID component_id;
 			UUID property_id;
-			uint32 data_size;
+			EditorMessageRawDataEntry property_value;
 		};
 
 		struct EditorModelMessageComponentRemoved : public EditorModelMessageHeader

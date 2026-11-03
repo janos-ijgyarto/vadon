@@ -6,6 +6,16 @@
 
 namespace Vadon::Utilities
 {
+	::Vadon::Foundation::UUID EnumTypeTrait::to_uuid(const ::Vadon::Foundation::UUID& enum_type_uuid, size_t enum_value)
+	{
+		return TypeRegistry::get_enum_value_id(enum_type_uuid, enum_value);
+	}
+
+	size_t EnumTypeTrait::to_enum_value(const ::Vadon::Foundation::UUID& enum_type_uuid, const ::Vadon::Foundation::UUID& enum_value_uuid)
+	{
+		return TypeRegistry::get_enum_value(enum_type_uuid, enum_value_uuid);
+	}
+
 	TypeID get_erased_data_type_id(TypeID type_id)
 	{
 		// FIXME: find a way to delegate this logic to places that need it!

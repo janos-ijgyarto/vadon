@@ -88,11 +88,9 @@ namespace Vadon::Utilities
 			return internal_add_property(get_type_id<T>(), property_uuid, std::move(property_bind));
 		}
 
-		// FIXME: extract type from member function?
-		template <typename T, auto Ptr>
-		static bool bind_method(const MemberFunctionUUID& method_uuid)
+		static bool add_property(TypeID type_id, const PropertyUUID& property_uuid, MemberVariableBindBase property_bind)
 		{
-			return internal_bind_method(get_type_id<T>(), method_uuid, std::move(create_member_function_bind<Ptr>()));
+			return internal_add_property(type_id, property_uuid, std::move(property_bind));
 		}
 
 		// TODO: use std::expected so we can check for failure?
@@ -144,6 +142,24 @@ namespace Vadon::Utilities
 		VADONCOMMON_API static void apply_property_values(void* object, TypeID type_id, const PropertyList& properties);
 
 		VADONCOMMON_API static std::vector<TypeUUID> get_all_registered_types();
+
+		template<EnumType T>
+		static void register_enum_type()
+		{
+			register_enum_type(TypeRegistryTrait<T>::get_type_uuid());
+		}
+
+		VADONCOMMON_API static void register_enum_type(const TypeUUID& enum_type_uuid);
+
+		template<EnumType T>
+		static bool add_enum_value(const ::Vadon::Foundation::UUID& value_uuid, size_t value)
+		{
+			return internal_add_enum_value(get_type_id<T>(), value_uuid, value);
+		}
+
+		VADONCOMMON_API static TypeUUID get_enum_uuid(TypeID enum_type_id);
+		VADONCOMMON_API static size_t get_enum_value(const TypeUUID& enum_type_uuid, const ::Vadon::Foundation::UUID& value_uuid);
+		VADONCOMMON_API static ::Vadon::Foundation::UUID get_enum_value_id(const TypeUUID& enum_type_uuid, size_t enum_value);
 	private:
 		struct PropertyData
 		{
@@ -153,8 +169,6 @@ namespace Vadon::Utilities
 
 		struct TypeData
 		{
-			// TODO: allow storing readable name (if provided by client code)
-			// Add utility function to print the name if available
 			::Vadon::Foundation::TypeInfo info;
 			TypeID base_id;
 			bool base_type = false;
@@ -171,11 +185,23 @@ namespace Vadon::Utilities
 			bool has_property(const PropertyUUID& property_uuid) const;
 		};
 
+		struct EnumData
+		{
+			TypeUUID id;
+
+			std::unordered_map<::Vadon::Foundation::UUID, size_t> values;
+			std::unordered_map<size_t, ::Vadon::Foundation::UUID> value_ids;
+		};
+
+		VADONCOMMON_API TypeID internal_register_type_uuid(const TypeUUID& type_uuid);
+
 		static VADONCOMMON_API void internal_register_type(const TypeUUID& type_uuid, size_t size, size_t alignment, TypeID base_id = TypeID::INVALID);
 		static VADONCOMMON_API void internal_register_type_factory(TypeID type_id, ObjectFactory factory);
 
 		static VADONCOMMON_API bool internal_add_property(TypeID type_id, const PropertyUUID& property_uuid, MemberVariableBindBase property_bind);
 		static VADONCOMMON_API bool internal_bind_method(TypeID type_id, const MemberFunctionUUID& method_uuid, MemberFunctionBind method_bind);
+
+		static VADONCOMMON_API bool internal_add_enum_value(TypeID type_id, const ::Vadon::Foundation::UUID& value_uuid, size_t value);
 
 		void register_type_with_base(TypeID type_id, TypeData& data, TypeID base_id);
 
@@ -198,6 +224,7 @@ namespace Vadon::Utilities
 
 		// FIXME: use vector to improve lookup times?
 		std::unordered_map<TypeID, TypeData> m_type_lookup;
+		std::unordered_map<TypeID, EnumData> m_enum_lookup;
 	};
 }
 #endif

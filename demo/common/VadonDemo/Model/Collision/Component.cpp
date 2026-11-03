@@ -13,7 +13,7 @@ namespace VadonDemo::Model
 
 		Vadon::Utilities::TypeRegistry::add_property<Collision>(VADON_GET_MEMBER_UUID(Collision, radius), Vadon::Utilities::MemberVariableBind<&Collision::radius>().bind_member_getter().bind_member_setter());
 
-		Vadon::Utilities::TypeMetadata(metadata_registry, VADON_GET_TYPE_UUID(Collision))
+		Vadon::Utilities::TypeMetadata<Collision>(metadata_registry)
 			.add_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "VadonDemo::Model::Collision")
 			.add_metadata(::Vadon::Foundation::CommonTypeMetadata::COMPONENT, "VadonDemo/Model")
 			.add_property(VADON_GET_MEMBER_UUID(Collision, radius))

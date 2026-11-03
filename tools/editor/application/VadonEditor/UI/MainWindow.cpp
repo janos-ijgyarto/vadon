@@ -4,6 +4,7 @@
 #include <VadonEditor/Core/Logger.hpp>
 
 #include <VadonEditor/Core/Asset/AssetManager.hpp>
+#include <VadonEditor/Core/Asset/AssetServer.hpp>
 #include <VadonEditor/Core/Project/ProjectManager.hpp>
 
 #include <VadonEditor/Model/ModelSystem.hpp>
@@ -12,14 +13,17 @@
 
 #include <VadonEditor/Network/NetworkSystem.hpp>
 
+#include <VadonEditor/Simulator/Simulator.hpp>
+
 #include <VadonEditor/UI/UISystem.hpp>
 
 #include <VadonEditor/UI/Model/Resource/ResourceDialog.hpp>
 #include <VadonEditor/UI/Model/Scene/SceneDialog.hpp>
 
-#include <VadonEditor/UI/Project/Asset/ExportProjectDataDialog.hpp>
 #include <VadonEditor/UI/Project/DataSchemaDialog.hpp>
 #include <VadonEditor/UI/Project/ProjectSettingsDialog.hpp>
+
+#include <VadonEditor/UI/Simulator/SimulatorSettingsDialog.hpp>
 
 #include <VadonEditor/UI/Utilities/UUIDDialog.hpp>
 
@@ -66,14 +70,14 @@ namespace VadonEditor::UI
 
 	void MainWindow::new_resource_triggered()
 	{
-		// NOTE: we can fire-and-forget this object, it will clean itself up when the dialog closes
-		new NewResourceDialogBackend(m_application, this);
+		NewResourceDialog* new_resource_dialog = new NewResourceDialog(m_application, Model::Resource::get_base_resource_type(), QModelIndex(), this);
+		new_resource_dialog->show();
 	}
 
 	void MainWindow::new_scene_triggered()
 	{
 		NewSceneDialog* new_scene_dialog = new NewSceneDialog(m_application, this);
-		new_scene_dialog->open();
+		new_scene_dialog->show();
 	}
 
 	void MainWindow::save_triggered()
@@ -88,12 +92,12 @@ namespace VadonEditor::UI
 		OpenAssetDialog* open_asset_dialog = new OpenAssetDialog(m_application, this);
 		connect(open_asset_dialog, &OpenAssetDialog::asset_opened, this, &MainWindow::asset_opened);
 
-		open_asset_dialog->open();
+		open_asset_dialog->show();
 	}
 
 	void MainWindow::import_triggered()
 	{
-		const QString selected_file = QFileDialog::getOpenFileName(this, "Select File To Import", m_application.get_project_manager().get_project_info().root_path, QString(), nullptr, QFileDialog::Option::ReadOnly);
+		const QString selected_file = QFileDialog::getOpenFileName(this, "Select File To Import", m_application.get_project_manager().get_source_project().info.root_path, QString(), nullptr, QFileDialog::Option::ReadOnly);
 		if (selected_file.isEmpty() == false)
 		{
 			Core::AssetManager& asset_manager = m_application.get_asset_manager();
@@ -122,13 +126,13 @@ namespace VadonEditor::UI
 	void MainWindow::generate_uuid_triggered()
 	{
 		UUIDDialog* uuid_dialog = new UUIDDialog(this);
-		uuid_dialog->open();
+		uuid_dialog->show();
 	}
 
 	void MainWindow::project_settings_triggered()
 	{
 		ProjectSettingsDialog* project_settings_dialog = new ProjectSettingsDialog(m_application, this);
-		project_settings_dialog->open();
+		project_settings_dialog->show();
 	}
 
 	void MainWindow::run_plugin_triggered()
@@ -144,13 +148,13 @@ namespace VadonEditor::UI
 	void MainWindow::project_data_schema_triggered()
 	{
 		DataSchemaDialog* data_schema_dialog = new DataSchemaDialog(m_application, this);
-		data_schema_dialog->open();
+		data_schema_dialog->show();
 	}
 
 	void MainWindow::generate_data_schema_triggered()
 	{
 		Core::ProjectManager& project_manager = m_application.get_project_manager();
-		if (project_manager.generate_project_data_schema(m_application.get_project_manager().get_project_info().plugin_settings.selected_configuration) == false)
+		if (project_manager.generate_project_data_schema(m_application.get_project_manager().get_editor_project().plugin_settings.selected_configuration) == false)
 		{
 			QMessageBox::critical(this, "Project manager error", "Failed to generate project data schema!");
 		}
@@ -161,18 +165,26 @@ namespace VadonEditor::UI
 		}
 	}
 
-	void MainWindow::export_project_data_triggered()
+	void MainWindow::run_asset_server_triggered()
 	{
 		Core::ProjectManager& project_manager = m_application.get_project_manager();
-		const Core::ProjectInfo project_info = project_manager.get_project_info();
-		if (project_info.plugin_settings.selected_configuration.isEmpty() == true)
+		const Core::EditorProject& editor_project = project_manager.get_editor_project();
+		if (editor_project.info.output_path.isEmpty() == true)
 		{
-			QMessageBox::critical(this, "Project manager error", "Must select a valid plugin configuration before running asset server!");
+			QMessageBox::critical(this, "Asset server error", "Asset server requires a valid output path!");
 			return;
 		}
 
-		ExportProjectDataDialog* export_data_dialog = new ExportProjectDataDialog(m_application, this);
-		export_data_dialog->open();
+		Core::AssetServerSettings asset_server_settings;
+		asset_server_settings.debug_break_on_init = true;
+
+		asset_server_settings.configuration_name = editor_project.plugin_settings.selected_configuration;
+
+		if (m_application.get_asset_server().run_asset_server(asset_server_settings) == false)
+		{
+			QMessageBox::critical(this, "Asset server error", "Failed to start asset server!");
+			return;
+		}
 	}
 
 	void MainWindow::asset_opened(const QString& asset_path)
@@ -187,6 +199,19 @@ namespace VadonEditor::UI
 		}
 
 		asset_manager.open_asset(asset_index);
+	}
+
+	void MainWindow::simulator_settings_clicked()
+	{
+		Simulator::Simulator& simulator = m_application.get_simulator();
+		if (simulator.is_running() == false)
+		{
+			qCritical() << "Simulator is not running!";
+			return;
+		}
+
+		SimulatorSettingsDialog* settings_dialog = new SimulatorSettingsDialog(m_application, this);
+		settings_dialog->show();
 	}
 
 	void MainWindow::closeEvent(QCloseEvent* event)

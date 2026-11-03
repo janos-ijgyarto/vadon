@@ -55,7 +55,7 @@ namespace VadonEditor::UI
 		AddComponentDialog* add_component_dialog = new AddComponentDialog(m_entity->get_application(), component_id_list, this);
 		connect(add_component_dialog, &AddComponentDialog::component_type_selected, this, &EntityEditor::new_component_selected);
 
-		add_component_dialog->open();
+		add_component_dialog->show();
 	}
 
 	void EntityEditor::new_component_selected(const QUuid& component_type)
@@ -219,9 +219,8 @@ namespace VadonEditor::UI
 
 	bool EntityEditor::internal_add_component_widget(Model::Component* component)
 	{
-		const bool is_sub_scene = Utilities::is_uuid_valid(m_entity->get_sub_scene_id());
-		ComponentWidget* component_widget = new ComponentWidget(component, is_sub_scene);
-		if (component_widget->initialize(m_scene) == false)
+		ComponentWidget* component_widget = new ComponentWidget(m_scene, m_entity, component);
+		if (component_widget->initialize() == false)
 		{
 			Q_ASSERT_X(false, "VadonEditor::UI::EntityEditor::internal_add_component_widget", "Failed to initialize component widget!");
 			delete component_widget;

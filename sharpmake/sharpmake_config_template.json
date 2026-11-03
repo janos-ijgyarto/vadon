@@ -1,6 +1,6 @@
 {
-	"outputRootPath" : "path/to/output",
-	"fastBuildPath" : "path/to/fastbuild",
-	"vcpkgPath" : "path/to/vcpkgPath",
-	"qtPath" : "path/to/qt"
+	"vadonOutputRootPath" : "path/to/output",
+	"vadonFastBuildPath" : "path/to/fastbuild",
+	"vadonVcpkgPath" : "path/to/vcpkgPath",
+	"vadonQtPath" : "path/to/qt"
 }

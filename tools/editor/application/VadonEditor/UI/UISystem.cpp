@@ -62,7 +62,8 @@ namespace VadonEditor::UI
 				m_viewport_widget = new RenderWidget(m_main_window);
 				m_viewport_widget->register_client(client_info);
 
-				viewport_layout->addWidget(m_viewport_widget);
+				viewport_layout->addWidget(m_viewport_widget, 1);
+				viewport_layout->setStretch(0, 0);
 
 				// Adjust splitter so the viewport is more clearly visible
 				{
@@ -89,7 +90,7 @@ namespace VadonEditor::UI
 				window_request_response.handle = m_viewport_widget->winId();
 
 				VadonEditor::Network::MessageSerializer message_serializer;
-				message_serializer.write_message_trivial(::Vadon::Foundation::EditorMessageCategory::PLATFORM, window_request_response);
+				message_serializer.write_message(::Vadon::Foundation::EditorMessageCategory::PLATFORM, window_request_response);
 
 				m_application.get_network_system().send_message(message_serializer);
 			}
@@ -150,7 +151,7 @@ namespace VadonEditor::UI
 					launcher_accepted();
 				}
 			);
-			m_launcher_dialog->open();
+			m_launcher_dialog->show();
 		}
 		else
 		{
@@ -245,10 +246,11 @@ namespace VadonEditor::UI
 		}
 
 		// TODO: gather settings!
-		Simulator::SimulatorSettings settings;
-		settings.debug_break_on_init = true;
-		settings.configuration_name = m_application.get_project_manager().get_project_info().plugin_settings.selected_configuration;
-		if (simulator.run_simulator(settings) == false)
+		Simulator::SimulatorStartupOptions startup_options;
+		startup_options.debug_break_on_init = true;
+
+		startup_options.configuration_name = m_application.get_project_manager().get_editor_project().plugin_settings.selected_configuration;
+		if (simulator.run_simulator(startup_options) == false)
 		{
 			// TODO: error popup?
 		}

@@ -27,6 +27,49 @@ namespace Vadon::Utilities
 
 	template<typename T>
 	struct BaseDataTypeTrait : public std::false_type {};
+
+	template<typename T>
+	concept EnumType = std::is_enum_v<T>;
+
+	template <typename T, typename TMember>
+	struct MemberPointerInfo
+	{
+		using _ObjectType = T;
+		using _MemberType = TMember;
+	};
+
+	template <typename T, typename TMember>
+	constexpr auto get_member_pointer_info(TMember T::*)
+	{
+		return MemberPointerInfo<T, TMember>{};
+	}
+
+	template<auto Ptr>
+	struct PropertyUUIDTrait
+	{
+		static constexpr TypeUUID get_property_uuid()
+		{
+			static_assert(false, "Did not register UUID for member!");
+			return ::Vadon::Foundation::UUID{};
+		}
+	};
+
+	template<auto Ptr, ::Vadon::Foundation::UUID Uuid>
+	struct PropertyUUIDValue
+	{
+		static constexpr auto _Ptr = Ptr;
+		static constexpr auto _Uuid = Uuid;
+	};
+
+	template<auto Ptr, typename... Values>
+	constexpr ::Vadon::Foundation::UUID lookup_property_uuid()
+	{
+		::Vadon::Foundation::UUID found_uuid;
+
+		((Values::_Ptr == Ptr ? (found_uuid = Values::_Uuid) : ::Vadon::Foundation::UUID{}), ...);
+
+		return found_uuid;
+	}
 }
 
 #define VADON_REGISTER_TYPE_UUID(_type, _uuid_str) template<> \
@@ -42,6 +85,12 @@ struct ::Vadon::Utilities::TypeRegistryTrait<_type>\
 
 #define VADON_GET_TYPE_UUID(_type) ::Vadon::Utilities::TypeRegistryTrait<_type>::get_type_uuid()
 #define VADON_GET_TYPE_UUID_BASE64_STRING(_type) VADON_GET_UUID_BASE64_STRING(VADON_GET_TYPE_UUID(_type))
+
+#define VADON_MEMBER_UUID_VALUE(_member, _uuid_str) Vadon::Utilities::PropertyUUIDValue<&_member, Vadon::Utilities::UUIDLiteral(_uuid_str).result>
+#define VADON_DECLARE_MEMBER_UUID_LIST(...) template<auto Ptr>\
+static constexpr ::Vadon::Foundation::UUID get_property_uuid() {\
+	return Vadon::Utilities::lookup_property_uuid<Ptr, __VA_ARGS__>();\
+}\
 
 #define VADON_MEMBER_UUID_BASE(_name) c_##_name##_member_id
 #define VADON_DECLARE_MEMBER_UUID(_name, _uuid_str) static constexpr auto VADON_MEMBER_UUID_BASE(_name) = Vadon::Utilities::UUIDLiteral(_uuid_str).result
@@ -96,6 +145,8 @@ namespace Vadon::Utilities
 
 	VADON_REGISTER_TYPE_UUID(BoxedVariantDictionary, ::Vadon::Foundation::TypeInfo::get_base_type_uuid_string(::Vadon::Foundation::BaseType::DICTIONARY).string);
 	VADON_DECLARE_BASE_DATA_TYPE(BoxedVariantDictionary);
+
+	VADON_REGISTER_TYPE_UUID(::Vadon::Foundation::EnumSchema, ::Vadon::Foundation::EnumSchema::c_type_uuid.string);
 
 	constexpr ::Vadon::Foundation::UUID get_base_type_uuid(::Vadon::Foundation::BaseType base_type)
 	{

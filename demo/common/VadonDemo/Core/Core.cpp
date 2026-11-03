@@ -88,7 +88,7 @@ namespace VadonDemo::Core
 		m_ui.global_config_updated();
 	}
 
-	const GlobalConfiguration& VadonDemo::Core::Core::get_global_config() const
+	const GlobalConfiguration& Core::get_global_config() const
 	{
 		if(m_global_config.is_valid() == true)
 		{

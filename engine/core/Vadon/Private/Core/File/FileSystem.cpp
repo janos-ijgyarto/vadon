@@ -153,7 +153,8 @@ namespace Vadon::Private::Core
 		if (db_file_info != nullptr)
 		{
 			file_info = *db_file_info;
-			file_info.metadata = get_file_metadata(get_absolute_path(db_handle, db_file_info->path));
+			file_info.path = get_absolute_path(db_handle, db_file_info->path);
+			file_info.metadata = get_file_metadata(file_info.path);
 		}
 
 		return file_info;
@@ -174,7 +175,14 @@ namespace Vadon::Private::Core
 	void FileSystem::remove_file(FileDatabaseHandle db_handle, const FileID& file_id)
 	{
 		FileDatabaseData& database_data = m_database_pool.get(db_handle);
-		database_data.file_lookup.erase(file_id);
+		auto file_it = database_data.file_lookup.find(file_id);
+		if (file_it == database_data.file_lookup.end())
+		{
+			log_error("File system error: removing file entry that does not exist!");
+			return;
+		}
+
+		database_data.file_lookup.erase(file_it);
 	}
 
 	std::vector<FileID> FileSystem::get_all_files(FileDatabaseHandle db_handle) const
@@ -545,18 +553,32 @@ namespace Vadon::Private::Core
 	FileMetadata FileSystem::internal_get_file_metadata(const std::filesystem::path& file_path) const
 	{
 		FileMetadata metadata;
-		std::error_code fs_error;
+		metadata.exists = std::filesystem::exists(file_path);
 
-		std::filesystem::file_time_type file_write_time = std::filesystem::last_write_time(file_path, fs_error);
-		if (fs_error)
+		if (metadata.exists == true)
 		{
-			// TODO: log the specific error?
-			log_error(std::format("File system error: unable to get write time for file \"{}\"!\nError: \"{}\"\n", file_path.string(), fs_error.message()));
-			return metadata;
+			std::error_code fs_error;
+			std::filesystem::file_time_type file_write_time = std::filesystem::last_write_time(file_path, fs_error);
+			if (fs_error)
+			{
+				// TODO: log the specific error?
+				log_error(std::format("File system error: unable to get write time for file \"{}\"!\nError: \"{}\"\n", file_path.string(), fs_error.message()));
+				return metadata;
+			}
+
+			std::uintmax_t file_size = std::filesystem::file_size(file_path, fs_error);
+			if (fs_error)
+			{
+				// TODO: log the specific error?
+				log_error(std::format("File system error: unable to get size for file \"{}\"!\nError: \"{}\"\n", file_path.string(), fs_error.message()));
+				return metadata;
+			}
+
+			metadata.last_write_time = file_write_time;
+			metadata.size = file_size;
 		}
 
-		metadata.last_write_time = file_write_time;
-
+		// TODO: other metadata?
 		return metadata;
 	}
 }

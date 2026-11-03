@@ -12,7 +12,7 @@ namespace VadonDemo::Model
 
 		Vadon::Utilities::TypeRegistry::add_property<EnemyBase>(VADON_GET_MEMBER_UUID(EnemyBase, definition), Vadon::Utilities::MemberVariableBind<&EnemyBase::definition>().bind_member_getter().bind_member_setter());
 
-		Vadon::Utilities::TypeMetadata enemy_metadata(metadata_registry, VADON_GET_TYPE_UUID(EnemyBase));
+		Vadon::Utilities::TypeMetadata<EnemyBase> enemy_metadata(metadata_registry);
 		enemy_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "VadonDemo::Model::EnemyBase");
 		enemy_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::COMPONENT, "VadonDemo/Model");
 
@@ -26,7 +26,7 @@ namespace VadonDemo::Model
 
 		Vadon::Utilities::TypeRegistry::add_property<EnemyMovement>(VADON_GET_MEMBER_UUID(EnemyMovement, definition), Vadon::Utilities::MemberVariableBind<&EnemyMovement::definition>().bind_member_getter().bind_member_setter());
 
-		Vadon::Utilities::TypeMetadata movement_metadata(metadata_registry, VADON_GET_TYPE_UUID(EnemyMovement));
+		Vadon::Utilities::TypeMetadata<EnemyMovement> movement_metadata(metadata_registry);
 		movement_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "VadonDemo::Model::EnemyMovement");
 		movement_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::COMPONENT, "VadonDemo/Model");
 
@@ -40,7 +40,7 @@ namespace VadonDemo::Model
 
 		Vadon::Utilities::TypeRegistry::add_property<EnemyWeapon>(VADON_GET_MEMBER_UUID(EnemyWeapon, definition), Vadon::Utilities::MemberVariableBind<&EnemyWeapon::definition>().bind_member_getter().bind_member_setter());
 
-		Vadon::Utilities::TypeMetadata weapon_metadata(metadata_registry, VADON_GET_TYPE_UUID(EnemyWeapon));
+		Vadon::Utilities::TypeMetadata<EnemyWeapon> weapon_metadata(metadata_registry);
 		weapon_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "VadonDemo::Model::EnemyWeapon");
 		weapon_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::COMPONENT, "VadonDemo/Model");
 
@@ -54,7 +54,7 @@ namespace VadonDemo::Model
 
 		Vadon::Utilities::TypeRegistry::add_property<EnemyContactDamage>(VADON_GET_MEMBER_UUID(EnemyContactDamage, definition), Vadon::Utilities::MemberVariableBind<&EnemyContactDamage::definition>().bind_member_getter().bind_member_setter());
 
-		Vadon::Utilities::TypeMetadata contact_damage_metadata(metadata_registry, VADON_GET_TYPE_UUID(EnemyContactDamage));
+		Vadon::Utilities::TypeMetadata<EnemyContactDamage> contact_damage_metadata(metadata_registry);
 		contact_damage_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "VadonDemo::Model::EnemyContactDamage");
 		contact_damage_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::COMPONENT, "VadonDemo/Model");
 
@@ -75,7 +75,7 @@ namespace VadonDemo::Model
 		Vadon::Utilities::TypeRegistry::add_property<Spawner>(VADON_GET_MEMBER_UUID(Spawner, level_up_delay), Vadon::Utilities::MemberVariableBind<&Spawner::level_up_delay>().bind_member_getter().bind_member_setter());
 		Vadon::Utilities::TypeRegistry::add_property<Spawner>(VADON_GET_MEMBER_UUID(Spawner, max_level), Vadon::Utilities::MemberVariableBind<&Spawner::max_level>().bind_member_getter().bind_member_setter());
 
-		Vadon::Utilities::TypeMetadata spawner_metadata(metadata_registry, VADON_GET_TYPE_UUID(Spawner));
+		Vadon::Utilities::TypeMetadata<Spawner> spawner_metadata(metadata_registry);
 		spawner_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "VadonDemo::Model::Spawner");
 		spawner_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::COMPONENT, "VadonDemo/Model");
 

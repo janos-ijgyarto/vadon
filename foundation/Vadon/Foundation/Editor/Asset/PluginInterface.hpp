@@ -11,9 +11,10 @@ namespace Vadon
 		public:
 			virtual ~EditorAssetServerPluginInterface() {}
 
-			EditorAssetServerInterface& get_asset_server() { return m_asset_server; }
+			EditorAssetServerInterface& get_editor_interface() { return m_editor_interface; }
 
 			virtual bool initialize(const char* project_path) = 0;
+			virtual void update() = 0;
 			virtual void shutdown() = 0;
 
 			virtual void process_message_from_editor(const char* data, size_t size) = 0;
@@ -21,9 +22,9 @@ namespace Vadon
 			virtual void editor_connected() = 0;
 			virtual void editor_disconnected() = 0;
 		protected:
-			EditorAssetServerPluginInterface(EditorAssetServerInterface& asset_server) : m_asset_server(asset_server) {}
+			EditorAssetServerPluginInterface(EditorAssetServerInterface& editor_interface) : m_editor_interface(editor_interface) {}
 
-			EditorAssetServerInterface& m_asset_server;
+			EditorAssetServerInterface& m_editor_interface;
 		};
 	}
 }

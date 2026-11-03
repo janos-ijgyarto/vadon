@@ -9,6 +9,7 @@
 #include <Vadon/Utilities/Serialization/Serializer.hpp>
 
 #include <Vadon/Core/File/FileSystem.hpp>
+#include <Vadon/Utilities/Debugging/Assert.hpp>
 
 // FIXME: this is a quick hacky solution!
 // Long-term we should replace nlohmann with simdjson since it can now both read and write documents!
@@ -181,6 +182,12 @@ namespace VadonEditor::Model
 		return true;
 	}
 
+	void ResourceDatabase::set_temp_file_root_path(std::string_view temp_file_root_path)
+	{
+		// TODO: validate the path?
+		m_temp_file_root_path = temp_file_root_path;
+	}
+
 	bool ResourceDatabase::save_resource(Vadon::Model::ResourceSystem& resource_system, Vadon::Model::ResourceHandle resource_handle)
 	{
 		const Vadon::Model::ResourceInfo resource_info = resource_system.get_resource_info(resource_handle);
@@ -232,21 +239,18 @@ namespace VadonEditor::Model
 			return Vadon::Model::ResourceHandle();
 		}
 
-		// Check whether a temp file is also available		
-		std::filesystem::path temp_file_path = m_project_manager.get_active_project().root_path;
-		temp_file_path /= ".vadon/temp/model";
-		temp_file_path /= Vadon::Utilities::uuid_to_hex_string(resource_id) + ".vdtmp";
-
 		Vadon::Core::RawFileDataBuffer resource_file_buffer;
 
-		if (file_system.does_file_exist(temp_file_path.string()) == true)
+		// Check whether a temp file is also available		
+		const std::string temp_file_path = get_temp_file_path(resource_id);
+		if (file_system.does_file_exist(temp_file_path) == true)
 		{
 			// Temp file exists, check if it's more recent
-			const Vadon::Core::FileMetadata temp_file_metadata = file_system.get_file_metadata(temp_file_path.string());
+			const Vadon::Core::FileMetadata temp_file_metadata = file_system.get_file_metadata(temp_file_path);
 			if (temp_file_metadata.last_write_time > resource_file_info.metadata.last_write_time)
 			{
 				// Temp file was updated more recently, load data from there
-				if (file_system.load_file(temp_file_path.string(), resource_file_buffer) == false)
+				if (file_system.load_file(temp_file_path, resource_file_buffer) == false)
 				{
 					resource_system.log_error("Editor resource database: failed to load temp resource file!\n");
 				}
@@ -337,13 +341,7 @@ namespace VadonEditor::Model
 		const Vadon::Core::FileDatabaseHandle file_db = get_database(FileDatabaseType::RESOURCE);
 
 		Vadon::Core::FileSystem& file_system = m_engine_core.get_system<Vadon::Core::FileSystem>();
-
-		const Vadon::Core::FileID existing_file_id = file_system.find_file(file_db, path);
-		if (existing_file_id.is_valid() == true)
-		{
-			// Resource already imported to DB
-			return existing_file_id;
-		}
+		VADON_ASSERT(file_system.find_file(file_db, path).is_valid() == false, "Trying to import already imported resource!");
 
 		const std::string file_abs_path = file_system.get_absolute_path(file_db, path);
 
@@ -399,12 +397,20 @@ namespace VadonEditor::Model
 
 	bool ResourceDatabase::import_project_resources()
 	{
-		// Import all resources in the project
 		// FIXME: make use of a cache so we don't have to load every resource to get its ID
 		// Will need to check whether something changed between the cache and the actual files
 		const std::filesystem::path root_fs_path(m_project_manager.get_active_project().root_path);
 
+		if (std::filesystem::is_directory(root_fs_path) == false)
+		{
+			// Nothing to do
+			Vadon::Core::Logger::log_warning("Resource database: project directory is empty!");
+			return true;
+		}
+
 		bool all_valid = true;
+		const Vadon::Core::FileDatabaseHandle file_db = get_database(FileDatabaseType::RESOURCE);
+		Vadon::Core::FileSystem& file_system = m_engine_core.get_system<Vadon::Core::FileSystem>();
 
 		for (const auto& directory_entry : std::filesystem::recursive_directory_iterator(root_fs_path))
 		{
@@ -414,14 +420,39 @@ namespace VadonEditor::Model
 			}
 
 			const ::Vadon::Foundation::ResourceFileInfo::Type current_asset_type = get_file_asset_type(directory_entry.path());
-			if (current_asset_type != ::Vadon::Foundation::ResourceFileInfo::Type::NONE)
+			if (current_asset_type == ::Vadon::Foundation::ResourceFileInfo::Type::NONE)
 			{
-				const std::string relative_path = std::filesystem::relative(directory_entry.path(), root_fs_path).generic_string();
-				all_valid &= import_resource(relative_path).is_valid();
+				continue;
+			}
+
+			const std::string relative_path = std::filesystem::relative(directory_entry.path(), root_fs_path).generic_string();
+
+			const Vadon::Core::FileID existing_file_id = file_system.find_file(file_db, relative_path);
+			if (existing_file_id.is_valid() == true)
+			{
+				// Resource already imported to DB
+				continue;
+			}
+
+			const Vadon::Model::ResourceID new_resource_id = import_resource(relative_path);
+			if (new_resource_id.is_valid() == false)
+			{
+				all_valid = false;
 			}
 		}
 
 		return all_valid;
+	}
+
+	void ResourceDatabase::refresh()
+	{
+		// Import any new content that was added
+		if (import_project_resources() == false)
+		{
+			// TODO: log error
+		}
+
+		clear_stale_entries();
 	}
 
 	std::vector<Vadon::Model::ResourceID> ResourceDatabase::get_resource_list() const
@@ -508,5 +539,54 @@ namespace VadonEditor::Model
 		}
 
 		return true;
+	}
+
+	void ResourceDatabase::clear_stale_entries()
+	{
+		const Vadon::Core::FileDatabaseHandle file_db = get_database(FileDatabaseType::RESOURCE);
+		const Vadon::Core::FileDatabaseHandle asset_db = get_database(FileDatabaseType::ASSET_FILE);
+
+		Vadon::Core::FileSystem& file_system = m_engine_core.get_system<Vadon::Core::FileSystem>();
+
+		auto entry_it = m_resource_entry_lookup.begin();
+		while (entry_it != m_resource_entry_lookup.end())
+		{
+			const Vadon::Model::ResourceID current_resource_id = entry_it->first;
+			if (file_system.does_file_exist(file_db, current_resource_id) == true)
+			{
+				const Vadon::Core::FileInfo file_info = file_system.get_file_info(file_db, current_resource_id);
+				if (file_info.metadata.exists == true)
+				{
+					// File exists, move to next entry
+					++entry_it;
+					continue;
+				}
+			}
+
+			// File is no longer valid, remove the entry
+			const Vadon::Model::ResourceInfo& resource_info = entry_it->second.base_info;
+			if (Vadon::Utilities::TypeRegistry::is_base_of(Vadon::Utilities::TypeRegistry::get_type_id<Vadon::Model::FileResource>(), resource_info.type_id) == true)
+			{
+				// Asset file, so we should remove from the asset database
+				file_system.remove_file(asset_db, current_resource_id);
+			}
+
+			file_system.remove_file(file_db, current_resource_id);
+			entry_it = m_resource_entry_lookup.erase(entry_it);
+		}
+	}
+
+	std::string ResourceDatabase::get_temp_file_path(Vadon::Model::ResourceID file_id) const
+	{
+		if (m_temp_file_root_path.empty() == true)
+		{
+			return "";
+		}
+
+		std::filesystem::path temp_file_path = m_temp_file_root_path;
+		temp_file_path /= "model";
+		temp_file_path /= Vadon::Utilities::uuid_to_hex_string(file_id) + ".vdtmp";
+
+		return temp_file_path.string();
 	}
 }

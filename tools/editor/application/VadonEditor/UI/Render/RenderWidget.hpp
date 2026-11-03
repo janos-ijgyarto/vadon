@@ -35,11 +35,17 @@ namespace VadonEditor::UI
 
 		void mousePressEvent(QMouseEvent* event) override;
 		void mouseReleaseEvent(QMouseEvent* event) override;
+		void mouseDoubleClickEvent(QMouseEvent* event) override;
 		void mouseMoveEvent(QMouseEvent* event) override;
 
 		void wheelEvent(QWheelEvent* event) override;
 
+		void focusInEvent(QFocusEvent* event) override;
+		void focusOutEvent(QFocusEvent* event) override;
+
 		RenderClientInfo m_client_info;
+		QPoint m_last_mouse_pos;
+		bool m_mouse_focus_regained = false;
 	};
 }
 #endif

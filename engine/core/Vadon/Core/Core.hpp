@@ -9,7 +9,6 @@ namespace Vadon::Foundation
 }
 namespace Vadon::Core
 {
-	class EngineCoreInterface;
 	class EngineEnvironment;
 	struct CoreConfiguration;
 

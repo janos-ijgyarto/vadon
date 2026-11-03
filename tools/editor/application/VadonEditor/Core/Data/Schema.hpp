@@ -1,5 +1,6 @@
 #ifndef VADONEDITOR_CORE_DATA_SCHEMA_HPP
 #define VADONEDITOR_CORE_DATA_SCHEMA_HPP
+#include <VadonEditor/Core/Data/Enum.hpp>
 #include <VadonEditor/Core/Data/Type.hpp>
 #include <Vadon/Foundation/TypeInfo/MetadataRegistry.hpp>
 
@@ -38,11 +39,21 @@ namespace VadonEditor::Core
 			void set_property_metadata(const ::Vadon::Foundation::UUID& type_uuid, const ::Vadon::Foundation::UUID& property_uuid, const char* key, const char* value) override;
 			const char* get_property_metadata(const ::Vadon::Foundation::UUID& type_uuid, const ::Vadon::Foundation::UUID& property_uuid, const char* key) const override;
 
+			void register_enum(const ::Vadon::Foundation::UUID& enum_type_uuid) override;
+
+			void set_enum_metadata(const ::Vadon::Foundation::UUID& enum_type_uuid, const char* key, const char* value) override;
+			const char* get_enum_metadata(const ::Vadon::Foundation::UUID& enum_type_uuid, const char* key) override;
+
+			void register_enum_value(const ::Vadon::Foundation::UUID& enum_type_uuid, const ::Vadon::Foundation::UUID& enum_value_uuid) override;
+			void set_enum_value_metadata(const ::Vadon::Foundation::UUID& enum_type_uuid, const ::Vadon::Foundation::UUID& enum_value_uuid, const char* key, const char* value) override;
+			const char* get_enum_value_metadata(const ::Vadon::Foundation::UUID& enum_type_uuid, const ::Vadon::Foundation::UUID& enum_value_uuid, const char* key) override;
+
 			bool is_base_of(const QUuid& base_uuid, const QUuid& derived_uuid) const;
 		private:
 			void process_metadata();
 
 			QHash<QUuid, TypeData> m_types;
+			QHash<QUuid, EnumData> m_enums;
 			QList<::Vadon::Foundation::UUID> m_type_list; // NOTE: this is used for queries
 
 			friend DataSchema;
@@ -54,7 +65,12 @@ namespace VadonEditor::Core
 		const TypeMetadataRegistry& get_registry() const { return m_registry; }
 
 		const TypeData* find_type_data(const QUuid& type_uuid) const;
+		bool has_type_data(const QUuid& type_uuid) const { return find_type_data(type_uuid) != nullptr; }
+
 		const PropertyData* find_type_property_data(const QUuid& type_uuid, const QUuid& property_uuid) const;
+
+		const EnumData* find_enum_data(const QUuid& enum_type_uuid) const;
+		bool has_enum_data(const QUuid& enum_type_uuid) const { return find_enum_data(enum_type_uuid) != nullptr; }
 
 		bool save_schema(const QString& schema_file_path);
 		bool load_schema(const QString& schema_file_path);

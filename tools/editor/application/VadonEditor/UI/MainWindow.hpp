@@ -42,9 +42,11 @@ namespace VadonEditor::UI
 
         void project_data_schema_triggered();
         void generate_data_schema_triggered();
-        void export_project_data_triggered();
+        void run_asset_server_triggered();
 
         void asset_opened(const QString& asset_path);
+
+        void simulator_settings_clicked();
     protected:
         void closeEvent(QCloseEvent* event) override;
     private:

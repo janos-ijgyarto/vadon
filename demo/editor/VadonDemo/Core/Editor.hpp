@@ -1,12 +1,12 @@
 #ifndef VADONDEMO_CORE_EDITOR_HPP
 #define VADONDEMO_CORE_EDITOR_HPP
-#include <VadonDemo/Core/Logger.hpp>
 #include <VadonDemo/Platform/EditorPlatform.hpp>
 #include <VadonDemo/Render/EditorRender.hpp>
 #include <VadonDemo/UI/EditorUI.hpp>
 #include <VadonDemo/View/EditorView.hpp>
 
 #include <VadonEditor/Core/Editor.hpp>
+#include <VadonEditor/Core/Logger.hpp>
 
 #include <Vadon/Foundation/Editor/Simulator/PluginInterface.hpp>
 
@@ -14,17 +14,11 @@
 
 #include <chrono>
 
-namespace Vadon::Core
-{
-    class EngineCoreInterface;
-    class EngineEnvironment;
-}
 namespace VadonDemo::Core
 {
     class Core;
-    class EditorPluginInterface;
 
-    class EditorLogger : public Logger
+    class EditorLogger : public VadonEditor::Core::Logger
     {
     public:
         EditorLogger(::Vadon::Foundation::EditorSimulatorInterface& simulator_interface);

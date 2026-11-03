@@ -326,10 +326,10 @@ namespace VadonEditor::Core
 			case ApplicationMode::SIMULATOR:
 			{
 				// Simulator is connected to editor, now we can run the plugin
-				Simulator::SimulatorSettings settings;
-				settings.configuration_name = m_configuration.plugin_config_name;
+				Simulator::SimulatorStartupOptions startup_options;
+				startup_options.configuration_name = m_configuration.plugin_config_name;
 				// TODO: other settings?
-				if (m_simulator.run_simulator(settings) == false)
+				if (m_simulator.run_simulator(startup_options) == false)
 				{
 					// Failed to load plugin, exit!
 					request_quit(1);
@@ -441,7 +441,10 @@ namespace VadonEditor::Core
 				case ::Vadon::Foundation::EditorPluginMessageType::PLUGIN_LOG:
 				{
 					const ::Vadon::Foundation::EditorPluginMessageLog* plugin_log_message = reinterpret_cast<const ::Vadon::Foundation::EditorPluginMessageLog*>(message_reader.get_current_message_data());
-					const QString log_message_string = QByteArray(message_reader.get_current_message_data() + sizeof(::Vadon::Foundation::EditorPluginMessageLog), plugin_log_message->length);
+
+					const ::Vadon::Foundation::EditorMessageRawDataView log_message_view = message_reader.get_raw_data_view(plugin_log_message->message);
+
+					const QString log_message_string = QByteArray(log_message_view.data, log_message_view.size);
 
 					switch (plugin_log_message->log_type)
 					{

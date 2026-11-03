@@ -16,7 +16,7 @@ namespace Vadon.Tools.Editor
             base.ConfigureAll(conf, target);
 
             conf.ProjectPath += "/editor";
-            conf.SolutionFolder = "Editor";
+            conf.SolutionFolder += "/Editor";
         }
 
         protected static string EditorPath { get { return $"{ToolsPath}/editor"; } }
@@ -35,7 +35,7 @@ namespace Vadon.Tools.Editor
             base.ConfigureAll(conf, target);
 
             conf.ProjectPath += "/editor";
-            conf.SolutionFolder = "Editor";
+            conf.SolutionFolder += "/Editor";
         }
 
         protected static string EditorPath { get { return $"{ToolsPath}/editor"; } }

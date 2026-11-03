@@ -17,7 +17,7 @@ namespace Vadon.Application
             base.ConfigureAll(conf, target);
                         
             conf.ProjectPath += "/application";
-            conf.SolutionFolder = "Application";
+            conf.SolutionFolder += "/Application";
 
             conf.TargetPath = $"{BuildPath}/application/[project.Name]/[target.Platform]/[target.Optimization]/[target.BuildSystem]";
             conf.IntermediatePath = $"{BuildPath}/application/obj/[project.Name]/[target.Platform]/[target.Optimization]/[target.BuildSystem]";
@@ -57,13 +57,12 @@ namespace Vadon.Application
             AddShaderCompileStep(conf, target, $"{SourceRootPath}/VadonApp/Private/UI/Developer/ImGui/GUIShader.hlsl", Engine.ShaderTarget.Pixel, "ps_main", "VadonApp::Private::UI::Developer::ImGUI::ShaderPS", Engine.ShaderExportType.CPP);
         }
 
-        [ConfigurePriority(Engine.ConfigurePriorities.Optimization)]
-        [Configure(Engine.Optimization.Debug | Engine.Optimization.Dev | Engine.Optimization.Profile)]
-        public virtual void ConfigureNonReleaseLinking(Configuration conf, Engine.Target target)
+        public override void ConfigureNonReleaseLinking(Configuration conf, Engine.Target target)
         {    
+            base.ConfigureNonReleaseLinking(conf, target);
+
             // In all non-release builds, we create DLLs and link dynamically            
             conf.Output = Configuration.OutputType.Dll;
-            conf.Defines.Add("VADON_LINK_DYNAMIC");
             conf.Defines.Add("VADONAPP_EXPORTS");
         }
 

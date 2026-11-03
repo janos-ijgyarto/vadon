@@ -1,9 +1,6 @@
 using Sharpmake;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using System.Text;
 
 namespace Vadon.Utilities
 {
@@ -11,7 +8,7 @@ namespace Vadon.Utilities
     {
         public static string ConfigFilePath { get; private set; }
 
-        [CommandLine.Option("userConfigPath",
+        [CommandLine.Option("vadonUserConfigPath",
         @"Path to config file that contains parameters: ex: /userConfigPath(""path/to/user_config.json"")")]
         public static void CommandLineUserConfigPath(string path)
         {
@@ -99,57 +96,57 @@ namespace Vadon.Utilities
 
         public static string QtPath { get; private set; }
 
-        [CommandLine.Option("repositoryPath",
-        @"Path to Vadon repository: ex: /repositoryPath(""path/to/vadon"")")]
+        [CommandLine.Option("vadonRepositoryPath",
+        @"Path to Vadon repository: ex: /vadonRepositoryPath(""path/to/vadon"")")]
         public static void CommandLineRepositoryPath(string path)
         {
             RepositoryPath = path;
         }
 
-        [CommandLine.Option("outputRootPath",
-        @"Root path to build system output: ex: /outputRootPath(""path/to/output"")")]
+        [CommandLine.Option("vadonOutputRootPath",
+        @"Root path to build system output: ex: /vadonOutputRootPath(""path/to/output"")")]
         public static void CommandOutputRootPath(string path)
         {
             OutputRootPath = path;
         }
 
-        [CommandLine.Option("generatorOutputPath",
-        @"Path to Sharpmake generator output: ex: /generatorOutputPath(""path/to/generator/output"")")]
+        [CommandLine.Option("vadonGeneratorOutputPath",
+        @"Path to Sharpmake generator output: ex: /vadonGeneratorOutputPath(""path/to/generator/output"")")]
         public static void CommandLineGeneratorOutputPath(string path)
         {
             GeneratorOutputPath = path;
         }
 
-        [CommandLine.Option("buildPath",
-        @"Path to build output: ex: /buildPath(""path/to/build"")")]
+        [CommandLine.Option("vadonBuildPath",
+        @"Path to build output: ex: /vadonBuildPath(""path/to/build"")")]
         public static void CommandLineBuildOutputPath(string path)
         {
             BuildPath = path;
         }
 
-        [CommandLine.Option("fastBuildPath",
-        @"Path to FastBuild executable: ex: /fastBuildPath(""path/to/fastbuild"")")]
+        [CommandLine.Option("vadonFastBuildPath",
+        @"Path to FastBuild executable: ex: /vadonFastBuildPath(""path/to/fastbuild"")")]
         public static void CommandLineFastBuildPath(string path)
         {
             FastBuildPath = path;
         }
 
-        [CommandLine.Option("vcpkgPath",
-        @"Path to vcpkg root to manage dependencies: ex: /vcpkgPath(""path/to/vcpkg"")")]
+        [CommandLine.Option("vadonVcpkgPath",
+        @"Path to vcpkg root to manage dependencies: ex: /vadonVcpkgPath(""path/to/vcpkg"")")]
         public static void CommandLineVcpkgPath(string path)
         {
             VcpkgPath = path;
         }
 
-        [CommandLine.Option("thirdPartyInstallPath",
-        @"Path where vcpkg can install dependencies: ex: /thirdPartyInstallPath(""path/to/third/party/install"")")]
+        [CommandLine.Option("vadonThirdPartyInstallPath",
+        @"Path where vcpkg can install dependencies: ex: /vadonThirdPartyInstallPath(""path/to/third/party/install"")")]
         public static void CommandLineThirdPartyInstallPath(string path)
         {
             ThirdPartyInstallPath = path;
         }
 
-        [CommandLine.Option("qtPath",
-        @"Path to Qt: ex: /qtPath(""path/to/qt"")")]
+        [CommandLine.Option("vadonQtPath",
+        @"Path to Qt: ex: /vadonQtPath(""path/to/qt"")")]
         public static void CommandLineQtPath(string path)
         {
             QtPath = path;
@@ -186,8 +183,7 @@ namespace Vadon.Utilities
 
             if(string.IsNullOrEmpty(RepositoryPath))
             {
-                // Assume the scripts are inside the repo
-                RepositoryPath = Main.GetRepositoryRootPath();
+                throw new Sharpmake.Error("Must set valid repository path!");
             }
 
             if (string.IsNullOrEmpty(FastBuildPath))

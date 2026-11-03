@@ -16,7 +16,7 @@ namespace VadonDemo::Render
 		TypeRegistry::add_property<CanvasComponent>(VADON_GET_MEMBER_UUID(CanvasComponent, z_order), Vadon::Utilities::MemberVariableBind<&CanvasComponent::z_order>().bind_member_getter().bind_member_setter());
 		TypeRegistry::add_property<CanvasComponent>(VADON_GET_MEMBER_UUID(CanvasComponent, layer_def), Vadon::Utilities::MemberVariableBind<&CanvasComponent::layer_def>().bind_member_getter().bind_member_setter());
 
-		Vadon::Utilities::TypeMetadata canvas_component_metadata(metadata_registry, VADON_GET_TYPE_UUID(CanvasComponent));
+		Vadon::Utilities::TypeMetadata<CanvasComponent> canvas_component_metadata(metadata_registry);
 		canvas_component_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "VadonDemo::Render::CanvasComponent");
 		canvas_component_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::COMPONENT, "VadonDemo/Render");
 
@@ -47,7 +47,7 @@ namespace VadonDemo::Render
 		TypeRegistry::add_property<SpriteTilingComponent>(VADON_GET_MEMBER_UUID(SpriteTilingComponent, repeat), Vadon::Utilities::MemberVariableBind<&SpriteTilingComponent::repeat>().bind_member_getter().bind_member_setter());
 		TypeRegistry::add_property<SpriteTilingComponent>(VADON_GET_MEMBER_UUID(SpriteTilingComponent, rotate), Vadon::Utilities::MemberVariableBind<&SpriteTilingComponent::rotate>().bind_member_getter().bind_member_setter());
 
-		Vadon::Utilities::TypeMetadata sprite_tiling_metadata(metadata_registry, VADON_GET_TYPE_UUID(SpriteTilingComponent));
+		Vadon::Utilities::TypeMetadata<SpriteTilingComponent> sprite_tiling_metadata(metadata_registry);
 		sprite_tiling_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "VadonDemo::Render::SpriteTilingComponent");
 		sprite_tiling_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::COMPONENT, "VadonDemo/Render");
 
@@ -81,7 +81,7 @@ namespace VadonDemo::Render
 		TypeRegistry::add_property<FullscreenEffectComponent>(VADON_GET_MEMBER_UUID(FullscreenEffectComponent, shader), Vadon::Utilities::MemberVariableBind<&FullscreenEffectComponent::shader>().bind_member_getter().bind_member_setter());
 		TypeRegistry::add_property<FullscreenEffectComponent>(VADON_GET_MEMBER_UUID(FullscreenEffectComponent, view_agnostic), Vadon::Utilities::MemberVariableBind<&FullscreenEffectComponent::view_agnostic>().bind_member_getter().bind_member_setter());
 
-		Vadon::Utilities::TypeMetadata fullscreen_effect_metadata(metadata_registry, VADON_GET_TYPE_UUID(FullscreenEffectComponent));
+		Vadon::Utilities::TypeMetadata<FullscreenEffectComponent> fullscreen_effect_metadata(metadata_registry);
 		fullscreen_effect_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::NAME, "VadonDemo::Render::FullscreenEffectComponent");
 		fullscreen_effect_metadata.set_metadata(::Vadon::Foundation::CommonTypeMetadata::COMPONENT, "VadonDemo/Render");
 

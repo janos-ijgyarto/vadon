@@ -7,11 +7,13 @@
 namespace Vadon::Core
 {
 	using FileID = ::Vadon::Foundation::UUID;
-	using FileTimeType = std::chrono::time_point<std::chrono::file_clock>;
+	using FileTimeType = std::chrono::time_point<std::chrono::file_clock>; // FIXME: use int64_t so we don't have to include <chrono>!
 
 	struct FileMetadata
 	{
+		bool exists = false;
 		FileTimeType last_write_time; // Time since epoch
+		::Vadon::Foundation::uint64 size = 0; // Size in bytes
 	};
 
 	struct FileInfo

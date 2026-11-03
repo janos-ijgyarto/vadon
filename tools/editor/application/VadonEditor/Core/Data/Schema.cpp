@@ -322,6 +322,161 @@ namespace VadonEditor::Core
 		return metadata_it->constData();
 	}
 
+	void DataSchema::TypeMetadataRegistry::register_enum(const ::Vadon::Foundation::UUID& enum_type_uuid)
+	{
+		Q_ASSERT_X(enum_type_uuid.is_valid() == true, "VadonEditor::Core::DataSchema::register_enum", "Invalid UUID!");
+
+		const QUuid qt_enum_type_uuid = Utilities::vadon_uuid_to_qt_uuid(enum_type_uuid);
+		if (m_enums.find(qt_enum_type_uuid) != m_enums.end())
+		{
+			// TODO: log warning that enum was already registered!
+			return;
+		}
+
+		EnumData enum_data;
+
+		m_enums.insert(qt_enum_type_uuid, enum_data);
+	}
+
+	void DataSchema::TypeMetadataRegistry::set_enum_metadata(const ::Vadon::Foundation::UUID& enum_type_uuid, const char* key, const char* value)
+	{
+		Q_ASSERT_X(enum_type_uuid.is_valid(), "VadonEditor::Core::DataSchema::set_enum_metadata", "Invalid enum UUID!");
+		Q_ASSERT_X(key != nullptr, "VadonEditor::Core::DataSchema::set_enum_metadata", "Invalid key!");
+		Q_ASSERT_X(std::string_view(key).empty() == false, "VadonEditor::Core::DataSchema::set_enum_metadata", "Invalid key!");
+
+		const QUuid qt_enum_type_uuid = Utilities::vadon_uuid_to_qt_uuid(enum_type_uuid);
+
+		auto enum_metadata_it = m_enums.find(qt_enum_type_uuid);
+		if (enum_metadata_it == m_enums.end())
+		{
+			Q_ASSERT_X(false, "VadonEditor::Core::DataSchema::set_enum_metadata", "Enum not registered!");
+			return;
+		}
+
+		EnumData& enum_metadata = enum_metadata_it.value();
+		enum_metadata.metadata.insert(QString(key), QString(value).toUtf8());
+	}
+
+	const char* DataSchema::TypeMetadataRegistry::get_enum_metadata(const ::Vadon::Foundation::UUID& enum_type_uuid, const char* key)
+	{
+		Q_ASSERT_X(enum_type_uuid.is_valid(), "VadonEditor::Core::DataSchema::get_enum_metadata", "Invalid enum UUID!");
+		Q_ASSERT_X(key != nullptr, "VadonEditor::Core::DataSchema::get_enum_metadata", "Invalid key!");
+		Q_ASSERT_X(std::string_view(key).empty() == false, "VadonEditor::Core::DataSchema::get_enum_metadata", "Invalid key!");
+
+		const QUuid qt_enum_type_uuid = Utilities::vadon_uuid_to_qt_uuid(enum_type_uuid);
+
+		auto enum_metadata_it = m_enums.find(qt_enum_type_uuid);
+		if (enum_metadata_it == m_enums.end())
+		{
+			Q_ASSERT_X(false, "VadonEditor::Core::DataSchema::get_enum_metadata", "Enum not registered!");
+			// TODO: log warning/error?
+			return nullptr;
+		}
+
+		const EnumData& enum_metadata = enum_metadata_it.value();
+		auto metadata_string_it = enum_metadata.metadata.find(QString(key));
+		if (metadata_string_it != enum_metadata.metadata.end())
+		{
+			return metadata_string_it.value().constData();
+		}
+
+		return nullptr;
+	}
+
+	void DataSchema::TypeMetadataRegistry::register_enum_value(const ::Vadon::Foundation::UUID& enum_type_uuid, const ::Vadon::Foundation::UUID& enum_value_uuid)
+	{
+		Q_ASSERT_X(enum_type_uuid.is_valid() == true, "VadonEditor::Core::DataSchema::register_enum_value", "Invalid enum UUID!");
+		Q_ASSERT_X(enum_value_uuid.is_valid() == true, "VadonEditor::Core::DataSchema::register_enum_value", "Invalid enum value UUID!");
+
+		const QUuid qt_enum_type_uuid = Utilities::vadon_uuid_to_qt_uuid(enum_type_uuid);
+
+		auto enum_it = m_enums.find(qt_enum_type_uuid);
+		if (enum_it == m_enums.end())
+		{
+			Q_ASSERT_X(false, "VadonEditor::Core::DataSchema::register_enum_value", "Enum not registered!");
+			return;
+		}
+
+		EnumData& enum_metadata = enum_it.value();
+
+		const QUuid qt_enum_value_uuid = Utilities::vadon_uuid_to_qt_uuid(enum_value_uuid);
+		auto value_it = enum_metadata.values.find(qt_enum_value_uuid);
+		if (value_it != enum_metadata.values.end())
+		{
+			// TODO: log warning!
+			return;
+		}
+
+		EnumValueData value_data;
+		enum_metadata.values.insert(qt_enum_value_uuid, value_data);
+	}
+
+	void DataSchema::TypeMetadataRegistry::set_enum_value_metadata(const ::Vadon::Foundation::UUID& enum_type_uuid, const ::Vadon::Foundation::UUID& enum_value_uuid, const char* key, const char* value)
+	{
+		Q_ASSERT_X(enum_type_uuid.is_valid(), "VadonEditor::Core::DataSchema::set_enum_value_metadata", "Invalid enum UUID!");
+		Q_ASSERT_X(enum_value_uuid.is_valid() == true, "VadonEditor::Core::DataSchema::set_enum_value_metadata", "Invalid property UUID!");
+		Q_ASSERT_X(key != nullptr, "VadonEditor::Core::DataSchema::set_enum_value_metadata", "Invalid key!");
+		Q_ASSERT_X(std::string_view(key).empty() == false, "VadonEditor::Core::DataSchema::set_enum_value_metadata", "Invalid key!");
+
+		const QUuid qt_enum_type_uuid = Utilities::vadon_uuid_to_qt_uuid(enum_type_uuid);
+
+		auto enum_it = m_enums.find(qt_enum_type_uuid);
+		if (enum_it == m_enums.end())
+		{
+			Q_ASSERT_X(false, "VadonEditor::Core::DataSchema::set_enum_value_metadata", "Enum not registered!");
+			return;
+		}
+
+		EnumData& enum_metadata = enum_it.value();
+
+		const QUuid qt_enum_value_uuid = Utilities::vadon_uuid_to_qt_uuid(enum_value_uuid);
+		auto value_it = enum_metadata.values.find(qt_enum_value_uuid);
+		if (value_it == enum_metadata.values.end())
+		{
+			Q_ASSERT_X(false, "VadonEditor::Core::DataSchema::set_enum_value_metadata", "Enum value not registered!");
+			return;
+		}
+
+		EnumValueData& value_data = value_it.value();
+		value_data.metadata.insert(QString(key), QString(value).toUtf8());
+	}
+
+	const char* DataSchema::TypeMetadataRegistry::get_enum_value_metadata(const ::Vadon::Foundation::UUID& enum_type_uuid, const ::Vadon::Foundation::UUID& enum_value_uuid, const char* key)
+	{
+		Q_ASSERT_X(enum_type_uuid.is_valid(), "VadonEditor::Core::DataSchema::get_enum_value_metadata", "Invalid enum ID!");
+		Q_ASSERT_X(enum_value_uuid.is_valid() == true, "VadonEditor::Core::DataSchema::get_enum_value_metadata", "Invalid enum value UUID!");
+		Q_ASSERT_X(key != nullptr, "VadonEditor::Core::DataSchema::get_enum_value_metadata", "Invalid key!");
+		Q_ASSERT_X(std::string_view(key).empty() == false, "VadonEditor::Core::DataSchema::get_enum_value_metadata", "Invalid key!");
+
+		const QUuid qt_enum_type_uuid = Utilities::vadon_uuid_to_qt_uuid(enum_type_uuid);
+
+		auto enum_it = m_enums.find(qt_enum_type_uuid);
+		if (enum_it == m_enums.end())
+		{
+			Q_ASSERT_X(false, "VadonEditor::Core::DataSchema::get_enum_value_metadata", "Enum not registered!");
+			return nullptr;
+		}
+
+		const EnumData& enum_metadata = enum_it.value();
+
+		const QUuid qt_enum_value_uuid = Utilities::vadon_uuid_to_qt_uuid(enum_value_uuid);
+		auto value_it = enum_metadata.values.find(qt_enum_value_uuid);
+		if (value_it == enum_metadata.values.end())
+		{
+			Q_ASSERT_X(false, "VadonEditor::Core::DataSchema::get_enum_value_metadata", "Enum value not registered!");
+			return nullptr;
+		}
+
+		const EnumValueData& value_data = value_it.value();
+		const auto metadata_it = value_data.metadata.find(key);
+		if (metadata_it != value_data.metadata.end())
+		{
+			return metadata_it.value().constData();
+		}
+
+		return nullptr;
+	}
+
 	bool DataSchema::TypeMetadataRegistry::is_base_of(const QUuid& base_uuid, const QUuid& derived_uuid) const
 	{
 		Q_ASSERT_X(Utilities::is_uuid_valid(base_uuid) == true, "VadonEditor::Core::DataSchema::is_base_of", "Invalid type UUID!");
@@ -423,71 +578,134 @@ namespace VadonEditor::Core
 		return nullptr;
 	}
 
+	const EnumData* DataSchema::find_enum_data(const QUuid& enum_type_uuid) const
+	{
+		auto enum_it = m_registry.m_enums.find(enum_type_uuid);
+		if (enum_it == m_registry.m_enums.end())
+		{
+			// TODO: warning?
+			return nullptr;
+		}
+
+		return &enum_it.value();
+	}
+
 	bool DataSchema::save_schema(const QString& schema_file_path)
 	{
 		QJsonObject data_schema_root;
 
-		QJsonArray type_list_array;
-		for (auto type_it = m_registry.m_types.begin(); type_it != m_registry.m_types.end(); ++type_it)
 		{
-			const TypeData& current_type_data = type_it.value();
-
-			QJsonObject current_type_object;
+			QJsonArray type_list_array;
+			for (auto type_it = m_registry.m_types.begin(); type_it != m_registry.m_types.end(); ++type_it)
 			{
-				QJsonObject type_info_object;
+				const TypeData& current_type_data = type_it.value();
 
-				const QUuid type_uuid = Utilities::vadon_uuid_to_qt_uuid(current_type_data.info.id);
-				const QUuid base_uuid = Utilities::vadon_uuid_to_qt_uuid(current_type_data.info.base_id);
-
-				type_info_object["id"] = uuid_to_json_string(type_uuid);
-				type_info_object["base"] = uuid_to_json_string(base_uuid);
-				// TODO: any other info?
-
-				current_type_object["info"] = type_info_object;
-			}
-
-			{
-				QJsonObject type_metadata_object;
-				for (auto metadata_it = current_type_data.metadata.begin(); metadata_it != current_type_data.metadata.end(); ++metadata_it)
+				QJsonObject current_type_object;
 				{
-					type_metadata_object.insert(metadata_it.key(), metadata_it.value().constData());
-				}
-				current_type_object["metadata"] = type_metadata_object;
-			}
+					QJsonObject type_info_object;
 
-			{
-				QJsonArray type_properties_array;
-				for (auto property_it = current_type_data.properties.begin(); property_it != current_type_data.properties.end(); ++property_it)
+					const QUuid type_uuid = Utilities::vadon_uuid_to_qt_uuid(current_type_data.info.id);
+					const QUuid base_uuid = Utilities::vadon_uuid_to_qt_uuid(current_type_data.info.base_id);
+
+					type_info_object["id"] = uuid_to_json_string(type_uuid);
+					type_info_object["base"] = uuid_to_json_string(base_uuid);
+					// TODO: any other info?
+
+					current_type_object["info"] = type_info_object;
+				}
+
 				{
-					const PropertyData& current_property_data = property_it.value();
-					QJsonObject property_object;
-
-					property_object["id"] = uuid_to_json_string(property_it.key());
-
-					QJsonArray type_list;
-					for (const QUuid& current_type : current_property_data.type_list)
+					QJsonObject type_metadata_object;
+					for (auto metadata_it = current_type_data.metadata.begin(); metadata_it != current_type_data.metadata.end(); ++metadata_it)
 					{
-						type_list.push_back(Utilities::uuid_to_base64_string(current_type));
+						type_metadata_object.insert(metadata_it.key(), metadata_it.value().constData());
 					}
-					property_object["type_list"] = type_list;
-
-					QJsonObject property_metadata_object;
-					for (auto metadata_it = current_property_data.metadata.begin(); metadata_it != current_property_data.metadata.end(); ++metadata_it)
-					{
-						property_metadata_object.insert(metadata_it.key(), metadata_it.value().constData());
-					}
-
-					property_object["metadata"] = property_metadata_object;
-
-					type_properties_array.push_back(property_object);
+					current_type_object["metadata"] = type_metadata_object;
 				}
-				current_type_object["properties"] = type_properties_array;
+
+				{
+					QJsonArray type_properties_array;
+					for (auto property_it = current_type_data.properties.begin(); property_it != current_type_data.properties.end(); ++property_it)
+					{
+						const PropertyData& current_property_data = property_it.value();
+						QJsonObject property_object;
+
+						property_object["id"] = uuid_to_json_string(property_it.key());
+
+						QJsonArray type_list;
+						for (const QUuid& current_type : current_property_data.type_list)
+						{
+							type_list.push_back(Utilities::uuid_to_base64_string(current_type));
+						}
+						property_object["type_list"] = type_list;
+
+						QJsonObject property_metadata_object;
+						for (auto metadata_it = current_property_data.metadata.begin(); metadata_it != current_property_data.metadata.end(); ++metadata_it)
+						{
+							property_metadata_object.insert(metadata_it.key(), metadata_it.value().constData());
+						}
+
+						property_object["metadata"] = property_metadata_object;
+
+						type_properties_array.push_back(property_object);
+					}
+					current_type_object["properties"] = type_properties_array;
+				}
+
+				type_list_array.push_back(current_type_object);
 			}
 
-			type_list_array.push_back(current_type_object);
+			data_schema_root["type_list"] = type_list_array;
 		}
 
-		data_schema_root["type_list"] = type_list_array;
+		{
+			QJsonArray enum_list_array;
+
+			for (auto enum_it = m_registry.m_enums.begin(); enum_it != m_registry.m_enums.end(); ++enum_it)
+			{
+				const EnumData& current_enum_data = enum_it.value();
+
+				QJsonObject enum_data_obj;
+				enum_data_obj["id"] = uuid_to_json_string(enum_it.key());
+
+				{
+					QJsonObject enum_metadata_obj;
+					for (auto metadata_it = current_enum_data.metadata.begin(); metadata_it != current_enum_data.metadata.end(); ++metadata_it)
+					{
+						enum_metadata_obj.insert(metadata_it.key(), metadata_it.value().constData());
+					}
+					enum_data_obj["metadata"] = enum_metadata_obj;
+				}
+				
+				{
+					QJsonArray enum_values_array;
+
+					for (auto value_it = current_enum_data.values.begin(); value_it != current_enum_data.values.end(); ++value_it)
+					{
+						const EnumValueData& current_value_data = value_it.value();
+						QJsonObject enum_value_obj;
+						enum_value_obj["id"] = uuid_to_json_string(value_it.key());
+
+						{
+							QJsonObject value_metadata_obj;
+							for (auto metadata_it = current_value_data.metadata.begin(); metadata_it != current_value_data.metadata.end(); ++metadata_it)
+							{
+								value_metadata_obj.insert(metadata_it.key(), metadata_it.value().constData());
+							}
+							enum_value_obj["metadata"] = value_metadata_obj;
+						}
+
+						enum_values_array.push_back(enum_value_obj);
+					}
+
+					enum_data_obj["values"] = enum_values_array;
+				}
+
+				enum_list_array.push_back(enum_data_obj);
+			}
+
+			data_schema_root["enum_list"] = enum_list_array;
+		}
 
 		// Make sure path exists
 		const QDir project_dir;
@@ -651,6 +869,76 @@ namespace VadonEditor::Core
 		else
 		{
 			qCritical() << "Invalid schema format: cannot find type list!";
+			return false;
+		}
+
+		if (const QJsonValue enum_arr_value = root_obj["enum_list"]; enum_arr_value.isArray())
+		{
+			loaded_metadata_registry.m_enums.clear();
+
+			const QJsonArray& enum_array = enum_arr_value.toArray();
+			for (const QJsonValue& current_enum : enum_array)
+			{
+				EnumData new_enum_data;
+
+				const QJsonObject& enum_object = current_enum.toObject();
+				if (const QJsonValue enum_id_value = enum_object["id"]; enum_id_value.isString())
+				{
+					new_enum_data.id = json_string_to_uuid(enum_id_value);
+				}
+				else
+				{
+					qCritical() << "Invalid schema format: cannot find enum ID!";
+					return false;
+				}
+
+				if (const QJsonValue enum_values_value = enum_object["values"]; enum_values_value.isArray())
+				{
+					const QJsonArray enum_values = enum_values_value.toArray();
+					for (const QJsonValue& current_enum_value : enum_values)
+					{
+						const QJsonObject enum_value_obj = current_enum_value.toObject();
+
+						EnumValueData enum_value;
+
+						if (const QJsonValue enum_id_value = enum_value_obj["id"]; enum_id_value.isString())
+						{
+							enum_value.id = json_string_to_uuid(enum_id_value);
+						}
+						else
+						{
+							qCritical() << "Invalid schema format: cannot find enum value ID!";
+							return false;
+						}
+
+						if (const QJsonValue enum_metadata_value = enum_value_obj["metadata"]; enum_metadata_value.isObject())
+						{
+							const QJsonObject enum_metadata = enum_metadata_value.toObject();
+							for (auto metadata_it = enum_metadata.begin(); metadata_it != enum_metadata.end(); ++metadata_it)
+							{
+								enum_value.metadata.insert(metadata_it.key(), metadata_it.value().toString().toUtf8());
+							}
+						}
+
+						new_enum_data.values.insert(enum_value.id, enum_value);
+					}
+				}
+
+				if (const QJsonValue enum_metadata_value = enum_object["metadata"]; enum_metadata_value.isObject())
+				{
+					const QJsonObject enum_metadata = enum_metadata_value.toObject();
+					for (auto metadata_it = enum_metadata.begin(); metadata_it != enum_metadata.end(); ++metadata_it)
+					{
+						new_enum_data.metadata.insert(metadata_it.key(), metadata_it.value().toString().toUtf8());
+					}
+				}
+
+				loaded_metadata_registry.m_enums.insert(new_enum_data.id, new_enum_data);
+			}
+		}
+		else
+		{
+			qCritical() << "Invalid schema format: cannot find enum list!";
 			return false;
 		}
 

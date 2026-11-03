@@ -16,36 +16,62 @@
   <property name="windowTitle">
    <string>Create New Resource</string>
   </property>
-  <property name="modal">
-   <bool>true</bool>
-  </property>
-  <layout class="QVBoxLayout" name="mainLayout">
+  <layout class="QVBoxLayout" name="mainLayout" stretch="0,0,0">
    <item>
-    <layout class="QHBoxLayout" name="filterHBox">
+    <layout class="QHBoxLayout" name="typeHBox">
      <item>
-      <widget class="QLabel" name="filterLabel">
+      <widget class="QLabel" name="typeLabel">
        <property name="text">
-        <string>Type filter:</string>
+        <string>Resource type:</string>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QLineEdit" name="filterLineEdit"/>
+      <widget class="QLineEdit" name="typeLineEdit">
+       <property name="readOnly">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="typeSelectButton">
+       <property name="text">
+        <string/>
+       </property>
+       <property name="icon">
+        <iconset theme="QIcon::ThemeIcon::DocumentPageSetup"/>
+       </property>
+      </widget>
      </item>
     </layout>
    </item>
    <item>
-    <widget class="QTreeView" name="typeTreeView">
-     <property name="editTriggers">
-      <set>QAbstractItemView::EditTrigger::NoEditTriggers</set>
-     </property>
-     <property name="itemsExpandable">
-      <bool>false</bool>
-     </property>
-     <attribute name="headerVisible">
-      <bool>false</bool>
-     </attribute>
-    </widget>
+    <layout class="QHBoxLayout" name="filePathHBox">
+     <item>
+      <widget class="QLabel" name="filePathLabel">
+       <property name="text">
+        <string>File path:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="filePathLineEdit">
+       <property name="readOnly">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="filePathBrowseButton">
+       <property name="text">
+        <string/>
+       </property>
+       <property name="icon">
+        <iconset theme="QIcon::ThemeIcon::FolderOpen"/>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </item>
    <item>
     <widget class="QDialogButtonBox" name="buttonBox">
@@ -63,6 +89,22 @@
  <connections>
   <connection>
    <sender>buttonBox</sender>
+   <signal>accepted()</signal>
+   <receiver>NewResourceDialog</receiver>
+   <slot>accept()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>248</x>
+     <y>254</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>157</x>
+     <y>274</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>buttonBox</sender>
    <signal>rejected()</signal>
    <receiver>NewResourceDialog</receiver>
    <slot>reject()</slot>
@@ -78,14 +120,14 @@
    </hints>
   </connection>
   <connection>
-   <sender>typeTreeView</sender>
-   <signal>doubleClicked(QModelIndex)</signal>
+   <sender>typeSelectButton</sender>
+   <signal>clicked()</signal>
    <receiver>NewResourceDialog</receiver>
-   <slot>type_double_clicked(QModelIndex)</slot>
+   <slot>select_type_clicked()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>319</x>
-     <y>239</y>
+     <x>615</x>
+     <y>146</y>
     </hint>
     <hint type="destinationlabel">
      <x>319</x>
@@ -94,30 +136,14 @@
    </hints>
   </connection>
   <connection>
-   <sender>buttonBox</sender>
-   <signal>accepted()</signal>
+   <sender>filePathBrowseButton</sender>
+   <signal>clicked()</signal>
    <receiver>NewResourceDialog</receiver>
-   <slot>selection_accepted()</slot>
+   <slot>browse_file_path_clicked()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>319</x>
-     <y>458</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>319</x>
-     <y>239</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>filterLineEdit</sender>
-   <signal>textChanged(QString)</signal>
-   <receiver>NewResourceDialog</receiver>
-   <slot>filter_text_changed(QString)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>350</x>
-     <y>21</y>
+     <x>615</x>
+     <y>301</y>
     </hint>
     <hint type="destinationlabel">
      <x>319</x>
@@ -127,8 +153,7 @@
   </connection>
  </connections>
  <slots>
-  <slot>type_double_clicked(QModelIndex)</slot>
-  <slot>selection_accepted()</slot>
-  <slot>filter_text_changed(QString)</slot>
+  <slot>select_type_clicked()</slot>
+  <slot>browse_file_path_clicked()</slot>
  </slots>
 </ui>

@@ -23,6 +23,7 @@ namespace VadonEditor::Core
 		bool load_asset_data(int asset_id, QByteArray& data) const;
 
 		bool save_temp_file_data(QStringView temp_file_relative_path, QByteArrayView data);
+		void clear_temp_files(QStringView relative_path);
 
 		bool load_imported_file_data(int asset_id, QByteArray& data) const;
 
