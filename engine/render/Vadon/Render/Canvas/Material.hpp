@@ -59,12 +59,5 @@ namespace Vadon::Render::Canvas
 		MaterialOverrideFlags flags = MaterialOverrideFlags::DEFAULT;
 	};
 }
-namespace Vadon::Utilities
-{
-	template<>
-	struct EnableEnumBitwiseOperators<Vadon::Render::Canvas::MaterialOverrideFlags> : public std::true_type
-	{
-
-	};
-}
+VADON_ENABLE_BITWISE_OPERATORS(Vadon::Render::Canvas::MaterialOverrideFlags);
 #endif

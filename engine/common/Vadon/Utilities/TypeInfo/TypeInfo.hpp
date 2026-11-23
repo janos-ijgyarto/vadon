@@ -66,7 +66,7 @@ namespace Vadon::Utilities
 	{
 		::Vadon::Foundation::UUID found_uuid;
 
-		((Values::_Ptr == Ptr ? (found_uuid = Values::_Uuid) : ::Vadon::Foundation::UUID{}), ...);
+		((Values::_Ptr == Ptr ? (found_uuid = Values::_Uuid) : found_uuid), ...);
 
 		return found_uuid;
 	}

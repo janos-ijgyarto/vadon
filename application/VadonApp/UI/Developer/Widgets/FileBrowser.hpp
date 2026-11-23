@@ -95,12 +95,5 @@ namespace VadonApp::UI::Developer
 	};
 }
 
-namespace Vadon::Utilities
-{
-	template<>
-	struct EnableEnumBitwiseOperators<VadonApp::UI::Developer::FileBrowserDialog::Flags> : public std::true_type
-	{
-
-	};
-}
+VADON_ENABLE_BITWISE_OPERATORS(VadonApp::UI::Developer::FileBrowserDialog::Flags);
 #endif

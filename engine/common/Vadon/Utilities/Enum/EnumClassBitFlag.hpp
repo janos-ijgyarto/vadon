@@ -85,5 +85,14 @@ std::enable_if_t<Vadon::Utilities::EnableEnumBitwiseOperators<T>::value, T>& ope
 	return lhs;
 }
 
-#define VADON_ENABLE_BITWISE_OPERATORS(_type) template<> struct Vadon::Utilities::EnableEnumBitwiseOperators<_type> : public std::true_type{};
+namespace Vadon::Utilities
+{
+	template<typename T>
+	constexpr std::enable_if_t<Vadon::Utilities::EnableEnumBitwiseOperators<T>::value, bool> enum_has_any_flag(T value, T flags)
+	{
+		return to_bool(value & flags) == true;
+	}
+}
+
+#define VADON_ENABLE_BITWISE_OPERATORS(_type) template<> struct Vadon::Utilities::EnableEnumBitwiseOperators<_type> : public std::true_type{}
 #endif

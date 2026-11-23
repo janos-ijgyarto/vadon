@@ -84,13 +84,5 @@ namespace VadonApp::Platform
         GUI = LEFT_GUI | RIGHT_GUI
     };
 }
-
-namespace Vadon::Utilities
-{
-    template<>
-    struct EnableEnumBitwiseOperators<VadonApp::Platform::KeyModifiers> : public std::true_type
-    {
-
-    };
-}
+VADON_ENABLE_BITWISE_OPERATORS(VadonApp::Platform::KeyModifiers);
 #endif

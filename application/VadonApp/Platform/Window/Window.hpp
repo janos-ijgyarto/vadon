@@ -39,12 +39,5 @@ namespace VadonApp::Platform
 	using PlatformWindowHandle = uintptr_t; // Platform-dependent window handle
 }
 
-namespace Vadon::Utilities
-{
-	template<>
-	struct EnableEnumBitwiseOperators<VadonApp::Platform::WindowFlags> : public std::true_type
-	{
-
-	};
-}
+VADON_ENABLE_BITWISE_OPERATORS(VadonApp::Platform::WindowFlags);
 #endif

@@ -25,21 +25,8 @@ namespace VadonApp::UI::Developer
 		DEFAULT = NONE
 	};
 }
-
-namespace Vadon::Utilities
-{
-	template<>
-	struct EnableEnumBitwiseOperators<VadonApp::UI::Developer::WindowFlags> : public std::true_type
-	{
-
-	};
-
-	template<>
-	struct EnableEnumBitwiseOperators<VadonApp::UI::Developer::InputFlags> : public std::true_type
-	{
-
-	};
-}
+VADON_ENABLE_BITWISE_OPERATORS(VadonApp::UI::Developer::WindowFlags);
+VADON_ENABLE_BITWISE_OPERATORS(VadonApp::UI::Developer::InputFlags);
 
 namespace VadonApp::UI::Developer
 {

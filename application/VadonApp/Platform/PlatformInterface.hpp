@@ -83,11 +83,5 @@ namespace VadonApp::Platform
 		bool m_events_polled;
 	};
 }
-
-namespace Vadon::Utilities
-{
-	template <>
-	struct EnableEnumBitwiseOperators<VadonApp::Platform::FeatureFlags> : public std::true_type
-	{};
-}
+VADON_ENABLE_BITWISE_OPERATORS(VadonApp::Platform::FeatureFlags);
 #endif
