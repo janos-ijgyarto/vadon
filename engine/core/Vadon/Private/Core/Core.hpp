@@ -8,6 +8,7 @@
 
 #include <Vadon/Private/Render/RenderSystem.hpp>
 #include <Vadon/Private/Render/GraphicsAPI/GraphicsAPI.hpp>
+#include <Vadon/Private/Render/RHI/RHISystem.hpp>
 
 #include <Vadon/Private/Model/Resource/ResourceSystem.hpp>
 #include <Vadon/Private/Model/Scene/SceneSystem.hpp>
@@ -35,6 +36,7 @@ namespace Vadon::Private::Core
 
 		Render::RenderSystem m_render_system;
 		Render::GraphicsAPIBase::Implementation m_graphics_api;
+		Render::RHI::RHISystemBase::Implementation m_rhi;
 
 		Model::ResourceSystem m_resource_system;
 		Model::SceneSystem m_scene_system;

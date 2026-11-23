@@ -55,6 +55,21 @@ namespace Vadon.Engine.ThirdParty
     }
 
     [Sharpmake.Export]
+    public class D3D12 : ExportProject
+    {
+        public D3D12()
+            : base()
+        {            
+            Name = "d3d12";
+        }
+
+        public override void ConfigureAll(Configuration conf, Target target)
+        {
+            conf.Output = Configuration.OutputType.Lib;
+        }
+    }
+
+    [Sharpmake.Export]
     public class DXGI : ExportProject
     {
         public DXGI()
@@ -273,6 +288,93 @@ namespace Vadon.Engine.ThirdParty
         public NlohmannJson()
         {
             Name = "NlohmannJson";
+        }
+    }
+
+    [Sharpmake.Export]
+    public class NRI : InstalledProject
+    {
+        public NRI()
+        {
+            Name = "NRI";
+        }
+
+        public override void ConfigureDebug(Configuration conf, Target target)
+        {
+            base.ConfigureDebug(conf, target);
+                        
+            conf.LibraryFiles.Add($"{EngineInstallPath}/x64-windows/debug/lib/NRI.lib");
+        }
+
+        public override void ConfigureNonDebug(Configuration conf, Target target)
+        {
+            base.ConfigureNonDebug(conf, target);
+
+            conf.LibraryFiles.Add($"{EngineInstallPath}/x64-windows/lib/NRI.lib");
+        }
+    }
+
+    [Sharpmake.Export]
+    public class NRI_Shared : InstalledProject
+    {
+        public NRI_Shared()
+        {
+            Name = "NRI_Shared";
+        }
+
+        public override void ConfigureAll(Configuration conf, Target target)
+        {
+            base.ConfigureAll(conf, target);
+
+            conf.AddPublicDependency<NRI>(target);
+        }
+
+        public override void ConfigureDebug(Configuration conf, Target target)
+        {
+            base.ConfigureDebug(conf, target);
+                        
+            conf.LibraryFiles.Add($"{EngineInstallPath}/x64-windows/debug/lib/NRI_Shared.lib");
+        }
+
+        public override void ConfigureNonDebug(Configuration conf, Target target)
+        {
+            base.ConfigureNonDebug(conf, target);
+
+            conf.LibraryFiles.Add($"{EngineInstallPath}/x64-windows/lib/NRI_Shared.lib");
+        }
+    }
+
+    [Sharpmake.Export]
+    public class NRI_D3D12 : InstalledProject
+    {
+        public NRI_D3D12()
+        {
+            Name = "NRI_D3D12";
+        }
+
+        public override void ConfigureAll(Configuration conf, Target target)
+        {
+            base.ConfigureAll(conf, target);
+
+            conf.AddPublicDependency<NRI_Shared>(target);
+
+            conf.AddPrivateDependency<D3D12>(target);
+            conf.AddPrivateDependency<DXGI>(target);
+            conf.AddPrivateDependency<DXGUID>(target);
+        }
+
+        public override void ConfigureDebug(Configuration conf, Target target)
+        {
+            base.ConfigureDebug(conf, target);
+                        
+            conf.LibraryFiles.Add($"{EngineInstallPath}/x64-windows/debug/lib/NRI_D3D12.lib");
+        }
+
+        public override void ConfigureNonDebug(Configuration conf, Target target)
+        {
+            base.ConfigureNonDebug(conf, target);
+
+            conf.LibraryFiles.Add($"{EngineInstallPath}/x64-windows/lib/NRI_D3D12.lib");
         }
     }
 

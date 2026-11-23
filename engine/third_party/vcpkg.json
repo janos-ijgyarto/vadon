@@ -19,11 +19,20 @@
       "name": "nlohmann-json",
       "host": true
     },
+	  {
+	    "name": "nri",
+	    "host": true
+	  },
     {
       "name": "simdjson",
       "host": true
     }
   ],
+  "configuration": {
+	  "overlay-ports": [
+		  "./nri"
+	  ]
+},
   "builtin-baseline": "a1cae005c39be7b18ba319fced856b68d7276271",
   "overrides": [
     {
@@ -42,6 +51,10 @@
       "name": "nlohmann-json",
       "version": "3.11.2"
     },
+	  {
+		  "name": "nri",
+		  "version": "1.9.1"
+	  },
     {
       "name": "simdjson",
       "version": "4.6.6"

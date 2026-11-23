@@ -1,0 +1,7 @@
+#ifndef VADON_RENDER_RHI_COMMON_CONSTANTS_HPP
+#define VADON_RENDER_RHI_COMMON_CONSTANTS_HPP
+namespace Vadon::Render::RHI
+{
+
+}
+#endif

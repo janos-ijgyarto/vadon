@@ -21,6 +21,7 @@ namespace Vadon.Engine
             conf.Defines.Add("VADONCORE_EXPORTS");
             
             conf.AddPublicDependency<GraphicsAPI>(target);
+            conf.AddPublicDependency<RHI>(target);
         }
     }
 }

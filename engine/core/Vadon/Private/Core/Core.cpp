@@ -154,6 +154,13 @@ namespace Vadon::Private::Core
             return false;
         }
 
+        m_rhi = Render::RHI::RHISystemBase::get_rhi(*this);
+        if (m_rhi->initialize() == false)
+        {
+            Vadon::Core::Logger::log_error(c_failure_message);
+            return false;
+        }
+
         if (m_render_system.initialize() == false)
         {
             Vadon::Core::Logger::log_error(c_failure_message);
@@ -184,6 +191,10 @@ namespace Vadon::Private::Core
         m_resource_system.shutdown();
         m_task_system.shutdown();
         m_render_system.shutdown();
+        if (m_rhi != nullptr)
+        {
+            m_rhi->shutdown();
+        }
         if (m_graphics_api != nullptr)
         {
             m_graphics_api->shutdown();

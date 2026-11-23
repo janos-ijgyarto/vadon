@@ -5,6 +5,7 @@ using System.IO;
 [module: Sharpmake.Include("core/core.sharpmake.cs")]
 [module: Sharpmake.Include("graphics_api/graphics_api.sharpmake.cs")]
 [module: Sharpmake.Include("render/render.sharpmake.cs")]
+[module: Sharpmake.Include("rhi/rhi.sharpmake.cs")]
 [module: Sharpmake.Include("third_party/third_party.sharpmake.cs")]
 
 namespace Vadon.Engine

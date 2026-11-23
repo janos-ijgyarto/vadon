@@ -8,7 +8,7 @@ namespace Vadon::Render::Canvas
 }
 namespace Vadon::Render
 {
-	class RenderModule : public Core::SystemModule<Core::SystemModuleList, RenderModule, class Canvas::CanvasSystem, class FrameSystem, class TextSystem>
+	class RenderModule : public Core::SystemModule<Core::SystemModuleList, RenderModule, Canvas::CanvasSystem, class FrameSystem, class TextSystem>
 	{
 	};
 
