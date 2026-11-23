@@ -1,6 +1,4 @@
 @echo off
-pushd %~dp0
 echo Running setup for Vadon project
-call sharpmake/run_sharpmake.bat %*
-popd
+PowerShell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0sharpmake/sharpmake_entrypoint.ps1" -sharpmakeCommand "setup"
 pause

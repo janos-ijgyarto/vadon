@@ -1,6 +1,3 @@
 {
-	"vadonOutputRootPath" : "path/to/output",
-	"vadonFastBuildPath" : "path/to/fastbuild",
-	"vadonVcpkgPath" : "path/to/vcpkgPath",
-	"vadonQtPath" : "path/to/qt"
+	"sharpmakeExe" : "path/to/exe"
 }
